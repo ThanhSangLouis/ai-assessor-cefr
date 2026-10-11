@@ -3,13 +3,13 @@
 | Mục | Trạng thái |
 | --- | --- |
 | Lifecycle | proposed |
-| Phase hiện tại | 09 — Acceptance APPROVED cho phần đã làm; còn task BLOCKED |
+| Phase hiện tại | 09 — Acceptance APPROVED cho phần đã làm; M04-TASK-003 xong Phase 06, chờ Phase 07 |
 | Requirement | [01-requirement.md](01-requirement.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Research mode | **`SKIPPED`** (chọn tại Phase 01) — skip record: M04-D-003 trong [01-requirement.md](01-requirement.md) |
 | Specification | [03-specification.md](03-specification.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Test Plan | [04-test-plan.md](04-test-plan.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Plan & Tasks | [05-plan.md](05-plan.md), [06-tasks.md](06-tasks.md) · v0.2 · **APPROVED** 26/09/2026; task READY/BLOCKED theo dependency — xem 06-tasks.md |
-| Implementation | M04-TASK-001, 002 đã implement (Claude, theo yêu cầu chủ dự án); evidence [M04-EV-001](evidence/evidence-manifest.md). TASK-003 BLOCKED, chỉ còn chờ DEP-06 (audio có quyền dùng); DEP-03 đạt 28/09/2026 |
+| Implementation | M04-TASK-001, 002 đã implement (Claude, theo yêu cầu chủ dự án); evidence [M04-EV-001](evidence/evidence-manifest.md). TASK-003: adapter `features/local.py` có từ W3; thêm TEST-016 và smoke `tests/smoke/test_vad_smoke.py` 11/10/2026, PASS ([M04-EV-002](evidence/evidence-manifest.md)) — chờ Phase 07 |
 | Review | Phase 07 A1 **APPROVED** 26/09/2026, [review-log](reviews/review-log.md) |
 | Final Verification | Phase 08 evidence [M04-EV-P08](evidence/evidence-manifest.md) trên main 74afca9 — **APPROVED** 27/09/2026 |
 | Acceptance | Phase 09 **APPROVED** 27/09/2026 — nghiệm thu phần đã làm (AC-001–004 mức unit); M04-TASK-003 để mở |
@@ -157,3 +157,19 @@ USER VERDICT AT: 27/09/2026
 - [Evidence Manifest](evidence/evidence-manifest.md): chưa có implementation/test evidence của repo dự án.
 - [Review Records](reviews/review-log.md): chưa có Phase 07 review.
 - [Kế hoạch W2](../../../plan/week-02.md); [nguồn tài liệu](../../../sources/README.md).
+
+## Phase 06 record — M04-TASK-003 (11/10/2026)
+
+```text
+PHASE RECORD ID: M04-06-A2
+PHASE: 06 — Implementation & Test
+SUBJECT: M04-TASK-003 (DEP-06, Jira SCRUM-22); Claude làm theo yêu cầu chủ dự án, không qua prompt Antigravity
+BASE: main c427983
+CHANGES: tests/features/test_local.py (M04-TEST-016 với Silero thật không nạp được); tests/smoke/test_vad_smoke.py (M04-TEST-S1);
+  adapter features/local.py có sẵn từ W3-TASK-005, không sửa
+CHECKS: TEST-016 PASS — 10 đặc trưng vad_* None + FEATURE_NOT_COMPUTABLE, không VAD dự phòng, đặc trưng transcript vẫn có;
+  smoke S1 chạy thật, chặn socket: PASS, 0 lần thử kết nối; Silero 6.2.1 (MIT), 9 đoạn, đủ 10 giá trị vad_*;
+  CI-mode 308 passed, 13 skipped; có artifact Ridge 321 passed; ruff sạch
+USER VERDICT: PENDING
+NEXT ACTION: Phase 07 — Implementation Review
+```

@@ -3,13 +3,13 @@
 | Mục | Trạng thái |
 | --- | --- |
 | Lifecycle | proposed |
-| Phase hiện tại | 09 — Acceptance APPROVED cho phần đã làm; còn task BLOCKED |
+| Phase hiện tại | 09 — Acceptance APPROVED cho phần đã làm; M03-TASK-002 xong Phase 06, chờ Phase 07 |
 | Requirement | [01-requirement.md](01-requirement.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Research mode | **`RUN`** (chọn tại Phase 01); [02-research.md](02-research.md) review cùng Phase 03 |
 | Specification | [03-specification.md](03-specification.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Test Plan | [04-test-plan.md](04-test-plan.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Plan & Tasks | [05-plan.md](05-plan.md), [06-tasks.md](06-tasks.md) · v0.2 · **APPROVED** 26/09/2026; task READY/BLOCKED theo dependency — xem 06-tasks.md |
-| Implementation | M03-TASK-003, 004, 001 đã implement (Claude, theo yêu cầu chủ dự án); evidence [M03-EV-002](evidence/evidence-manifest.md). TASK-002 BLOCKED, chỉ còn chờ DEP-06 (audio có quyền dùng); DEP-03 đạt 28/09/2026 |
+| Implementation | M03-TASK-003, 004, 001 đã implement (Claude, theo yêu cầu chủ dự án); evidence [M03-EV-002](evidence/evidence-manifest.md). TASK-002: adapter `asr/local.py` có từ W3, smoke `tests/smoke/test_asr_smoke.py` thêm 11/10/2026; S1/S2 PASS trên audio của DEP-06 ([M03-EV-004](evidence/evidence-manifest.md)) — chờ Phase 07 |
 | Review | Phase 07 A1 **APPROVED** 26/09/2026; A2 (follow-up 07-A1-03) **APPROVED** 03/10/2026, [review-log](reviews/review-log.md) |
 | Final Verification | Phase 08 [M03-EV-P08](evidence/evidence-manifest.md) trên main 74afca9 — **APPROVED** 27/09/2026; [M03-EV-P08-A2](evidence/evidence-manifest.md) trên main ae72d57 — **APPROVED** 03/10/2026 |
 | Acceptance | Phase 09 **APPROVED** 27/09/2026 và 03/10/2026 (follow-up 07-A1-03) — nghiệm thu phần đã làm (AC-001, AC-003); AC-002 và M03-TASK-002 để mở |
@@ -203,3 +203,21 @@ USER VERDICT AT: 03/10/2026
 - [Evidence Manifest](evidence/evidence-manifest.md): evidence Phase 06 và Phase 08 của từng đợt.
 - [Review Records](reviews/review-log.md): Phase 07 A1 (26/09/2026), A2 (03/10/2026).
 - [Kế hoạch W2](../../../plan/week-02.md); [nguồn tài liệu](../../../sources/README.md).
+
+## Phase 06 record — M03-TASK-002 (11/10/2026)
+
+```text
+PHASE RECORD ID: M03-06-A3
+PHASE: 06 — Implementation & Test
+SUBJECT: M03-TASK-002 (Jira SCRUM-22 cho DEP-06); Claude làm theo yêu cầu chủ dự án, không qua prompt Antigravity
+BASE: main c427983
+CHANGES: tests/smoke/test_asr_smoke.py (M03-TEST-S1, S2); adapter asr/local.py có sẵn từ W3-TASK-005, không sửa
+CHECKS: smoke S1/S2 chạy thật, tắt mạng bằng cách chặn socket: PASS, 0 lần thử kết nối;
+  SHA-256 bốn tệp weight khớp M03-EV-001; status OK, asr_model whisper-small, 136 từ, 9,5–9,9 s;
+  S2 asr_conf_mean 0,990 — ngoài khoảng huấn luyện [0,691 ; 0,950] nhưng trong khoảng M05 chấp nhận
+  [0,561 ; 1,079] (ood_tolerance 0,5), nên không phải báo owner M05 theo Test Plan;
+  CI-mode 308 passed, 13 skipped; có artifact Ridge 321 passed; ruff sạch
+RESULT: M03-AC-002 có smoke evidence — đề xuất chuyển ĐẠT ở Phase 09
+USER VERDICT: PENDING
+NEXT ACTION: Phase 07 — Implementation Review
+```

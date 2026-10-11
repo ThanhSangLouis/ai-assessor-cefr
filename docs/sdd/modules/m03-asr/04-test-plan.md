@@ -52,7 +52,7 @@
 | Smoke | `AICEFR_SMOKE_AUDIO=<đường dẫn ngoài repo> python3 -m pytest -q -m smoke tests/smoke/test_asr_smoke.py` |
 | UT applicability | **YES** cho ánh xạ identifier, kiểm timestamp, bộ phát hiện hallucination, xử lý `prob`. **NO** cho lời gọi thật vào faster-whisper — thay bằng smoke S1 |
 | Coverage policy | Theo quyết định chung **TP-D-001** (xem cuối file) |
-| Hiện trạng | `NOT_RUN` — repo chưa có `pyproject.toml`, `tests/`, `pytest-cov`; đường dẫn test chốt ở Phase 05 theo skeleton của Thắng |
+| Hiện trạng | Unit chạy trên `main` từ 26/09/2026 (M03-EV-002, 003). Smoke S1/S2 chạy thật 11/10/2026: PASS, 0 lần thử kết nối mạng ([M03-EV-004](evidence/evidence-manifest.md)) |
 
 ## Evidence Phase 06/08
 

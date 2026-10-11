@@ -69,7 +69,7 @@ Fixture chỉ kiểm công thức; không nằm trong khoảng huấn luyện v�
 | Smoke | `AICEFR_SMOKE_AUDIO=<đường dẫn ngoài repo> python3 -m pytest -q -m smoke tests/smoke/test_vad_smoke.py` |
 | UT applicability | **YES** cho 18 công thức, bảng dữ liệu thiếu, kiểm nhất quán. **NO** cho lời gọi Silero thật — thay bằng smoke S1 |
 | Coverage policy | **TP-D-001** — xem [M03 Test Plan](../m03-asr/04-test-plan.md#quyết-định-cần-user--tp-d-001-chung-m03m04m05) |
-| Hiện trạng | `NOT_RUN` — chưa có mã nguồn; smoke còn phụ thuộc M03-O-002 (audio 16 kHz mono từ M02) |
+| Hiện trạng | Unit chạy trên `main` từ 26/09/2026 (M04-EV-001). TEST-016 (Silero thật không nạp được) và smoke S1 chạy thật 11/10/2026: PASS ([M04-EV-002](evidence/evidence-manifest.md)) |
 
 **CODEX CHECK RESULT:** mỗi FR/AC có test; 18 đặc trưng có giá trị kỳ vọng số; đủ success/invalid/boundary/failure/regression; không thêm requirement. TP-D-001 chốt theo khuyến nghị. **User verdict Phase 04:** APPROVED 26/09/2026 (Sang).
 
