@@ -6,6 +6,7 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | M04-EV-001 | M04-TASK-001, 002 (Jira SCRUM-24, 25); Claude implement theo yêu cầu chủ dự án | 06 | base `e92c1cf` trên `main` | `src/aicefr/features/`, `tests/features/`, xem mục dưới | Test ID 001–015, 017, 018 chạy thật; coverage `aicefr.features` 100 % | RECORDED — chờ Phase 07 |
 | M04-EV-002 | M04-TASK-003 (DEP-06, Jira SCRUM-22); Claude theo yêu cầu chủ dự án | 06 | base `c427983` trên `main` | `tests/features/test_local.py`, `tests/smoke/test_vad_smoke.py`; xem mục dưới | M04-TEST-016 và S1 chạy thật, PASS, 0 lần thử kết nối mạng | RECORDED — chờ Phase 07 |
+| M04-EV-P08-W4 | M04-TASK-003 | 08 | main `35d3514` (merge PR #32) | Xem mục dưới | CI 305 passed + 17 skipped; máy Sang 322 passed (có artifact), smoke 2 passed; 0 failed | RECORDED — chờ verdict |
 
 Lưu tại đây raw report của Antigravity, command output/test/coverage, ảnh browser QA và final verification khi phát sinh. File lớn có thể lưu ngoài Git nhưng phải có link ổn định, checksum và quyền truy cập cho người review. Mỗi evidence gắn đúng Prompt ID, Task ID, AC/Test ID và revision. Redact secret/PII/audio/transcript thật; không ghi PASS cho lệnh chưa chạy. Cập nhật 07-status.md trỏ tới evidence mới nhất.
 
@@ -87,3 +88,18 @@ UT EVIDENCE
 | 10 giá trị `vad_*` | silence_ratio 0,0296; mean_pause 0,0; pause_per_min 0,0; long_pause_ratio 0,0; pause_sd 0,0; mean_seg_len 4,1556 s; n_seg_per_min 14,0109; articulation_rate 3,6364; onset_delay 0,0; speech_sec 37,4 |
 
 **Ghi chú:** giọng tổng hợp gần như không có khoảng ngừng từ 0,30 s trở lên, nên các đặc trưng ngừng nghỉ bằng 0. Đó là tính chất của audio, không phải lỗi công thức; smoke chỉ chứng minh Silero chạy thật và đủ 10 giá trị. Cần audio người nói thật có quyền dùng nếu muốn quan sát ngừng nghỉ.
+
+## M04-EV-P08-W4 — Phase 08 Final Verification (M04-TASK-003, 11/10/2026)
+
+```text
+UT EVIDENCE
+- Final revision: main 35d3514cf3279f2cd6d87ce2db2f1d0d23de725b (merge PR #32; mã trùng head c541f31 đã kiểm)
+- CI GitHub run 38150517851 trên 35d3514, Python 3.11: 305 passed, 17 skipped; ruff sạch; kiểm tài liệu và file cấm PASS
+- Máy Sang (macOS, Python 3.12.14): không artifact 309 passed, 13 skipped; có artifact Ridge 322 passed;
+  smoke `-m smoke tests/smoke` với audio DEP-06, chặn mạng: 2 passed, 0 lần thử kết nối
+- Coverage aicefr.asr/features/scoring: 96 % (line + branch); adapter asr/local.py, features/local.py loại khỏi ngưỡng
+  theo TP-D-001 (kiểm bằng smoke)
+- CODEX CHECK RESULT: PASS
+- CODEX RECOMMENDATION: RECOMMEND APPROVAL
+- USER VERDICT: PENDING — chủ module ghi
+```
