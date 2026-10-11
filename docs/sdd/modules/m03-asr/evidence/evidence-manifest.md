@@ -9,6 +9,7 @@
 | M03-EV-003 | Follow-up 07-A1-03 (Jira SCRUM-50); Claude implement theo yêu cầu chủ dự án, không qua prompt Antigravity | 06 | base `2b428ce` trên `main` | `src/aicefr/asr/service.py`, `tests/asr/test_service.py`, `tests/asr/fixtures.py`, xem mục dưới | M03-TEST-005 mở rộng chạy thật; `asr/service.py` 100 % line/branch | VERIFIED — Phase 07–09 APPROVED 03/10/2026 |
 | M03-EV-P08-A2 | Follow-up 07-A1-03 (SCRUM-50) | 08 | main ae72d57 (ae72d57b03de0ae9333e8b549484d026feb3177c); fingerprint `8835acf872d8c0ab…` | Xem mục dưới | 192 passed + 11 skipped (CI), 203 passed (có artifact), 0 failed | APPROVED 03/10/2026 |
 | M03-EV-004 | M03-TASK-002 (DEP-06, Jira SCRUM-22); Claude theo yêu cầu chủ dự án | 06 | base `c427983` trên `main` | `tests/smoke/test_asr_smoke.py`, JSON evidence ngoài repo; xem mục dưới | M03-TEST-S1, S2 chạy thật, PASS, 0 lần thử kết nối mạng | RECORDED — chờ Phase 07 |
+| M03-EV-P08-W4 | M03-TASK-002 | 08 | main `35d3514` (merge PR #32) | Xem mục dưới | CI 305 passed + 17 skipped; máy Sang 322 passed (có artifact), smoke 2 passed; 0 failed | RECORDED — chờ verdict |
 
 Lưu tại đây raw report của Antigravity, command output/test/coverage, ảnh browser QA và final verification khi phát sinh. File lớn có thể lưu ngoài Git nhưng phải có link ổn định, checksum và quyền truy cập cho người review. Mỗi evidence gắn đúng Prompt ID, Task ID, AC/Test ID và revision. Redact secret/PII/audio/transcript thật; không ghi PASS cho lệnh chưa chạy. Cập nhật 07-status.md trỏ tới evidence mới nhất.
 
@@ -151,3 +152,18 @@ UT EVIDENCE
 | So với khoảng M05 chấp nhận | Trong khoảng (`feature_lo/hi` của `ridge_resp_v2` nới thêm `ood_tolerance`): không báo owner M05. Test đọc các giới hạn từ artifact lúc chạy; số cụ thể không chép vào repo public vì suy ra từ S&I. Chạy thử cả chuỗi ASR → M04 → Ridge trên audio này cho `ESTIMATED`, không reason OOD. Điểm đó không có ý nghĩa CEFR: giọng máy đọc kịch bản |
 
 Evidence JSON chỉ chứa metadata (không transcript, không audio); lưu ngoài repo cùng audio. Weight, audio, transcript không vào Git.
+
+## M03-EV-P08-W4 — Phase 08 Final Verification (M03-TASK-002, 11/10/2026)
+
+```text
+UT EVIDENCE
+- Final revision: main 35d3514cf3279f2cd6d87ce2db2f1d0d23de725b (merge PR #32; mã trùng head c541f31 đã kiểm)
+- CI GitHub run 38150517851 trên 35d3514, Python 3.11: 305 passed, 17 skipped; ruff sạch; kiểm tài liệu và file cấm PASS
+- Máy Sang (macOS, Python 3.12.14): không artifact 309 passed, 13 skipped; có artifact Ridge 322 passed;
+  smoke `-m smoke tests/smoke` với audio DEP-06, chặn mạng: 2 passed, 0 lần thử kết nối
+- Coverage aicefr.asr/features/scoring: 96 % (line + branch); adapter asr/local.py, features/local.py loại khỏi ngưỡng
+  theo TP-D-001 (kiểm bằng smoke)
+- CODEX CHECK RESULT: PASS
+- CODEX RECOMMENDATION: RECOMMEND APPROVAL
+- USER VERDICT: PENDING — chủ module ghi
+```

@@ -13,6 +13,8 @@ Phiếu đăng ký đề tài GV/SV, phân công thành viên, sổ tiến độ
 | Tổng kết W1 | [Tổng kết W1](../../reports/week-01/tong-ket-w1.md) | Tài liệu đầu vào/đã có; cần kiểm tra nội dung trước nghiệm thu |
 | Kế hoạch W1 | [Kế hoạch W1](../../plan/week-01.md) | Tài liệu đầu vào/đã có; cần kiểm tra nội dung trước nghiệm thu |
 | Quy tắc bàn giao W2 | [AGENTS.md](../../../AGENTS.md) và [skill chung](../../../.agents/skills/sdd-antigravity-orchestrator/SKILL.md) | Đã tạo cho W2; không phải minh chứng file rule W1 |
+| Email hỏi CUP&A về phạm vi giấy phép S&I (W4-S5, SCRUM-52) | [email-cupa-W4-S5.md](email-cupa-W4-S5.md) | Bản soạn, chưa gửi; người gửi cập nhật ngày gửi và trả lời |
+| Báo cáo tiến độ tuần 4 của Sang | [bao-cao-tuan-04-sang.md](../../reports/week-04/bao-cao-tuan-04-sang.md) | Bản để nộp lên projects-fit; chưa có xác nhận GVHD |
 
 ## Còn thiếu / cần xác minh
 

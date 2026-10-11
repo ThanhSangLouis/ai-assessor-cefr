@@ -173,3 +173,29 @@ CHECKS: TEST-016 PASS — 10 đặc trưng vad_* None + FEATURE_NOT_COMPUTABLE, 
 USER VERDICT: PENDING
 NEXT ACTION: Phase 07 — Implementation Review
 ```
+
+## Phase 08–09 chuẩn bị — M04-TASK-003 (11/10/2026)
+
+```text
+PHASE RECORD ID: M04-08-W4
+PHASE: 08 — Final Verification
+SUBJECT: M04-TASK-003 trên main 35d3514cf3279f2cd6d87ce2db2f1d0d23de725b (merge PR #32)
+CHECKS: xem M04-EV-P08-W4 — CI run 38150517851 PASS; 0 failed trên máy và CI; độ phủ 96 %
+CODEX CHECK RESULT: PASS
+CODEX RECOMMENDATION: RECOMMEND APPROVAL
+USER VERDICT: PENDING
+NEXT ACTION: chủ module ghi verdict Phase 07 (review-log), 08 và 09
+```
+
+| AC | Evidence | Đề xuất |
+| --- | --- | --- |
+| M04-AC-001..003 | Không đổi (M04-EV-001, P08) | ĐẠT (đã nghiệm thu) |
+| M04-AC-004 | TEST-016 và smoke S1 với Silero thật (M04-EV-002, M04-EV-P08-W4) | Đề xuất ĐẠT |
+
+```text
+PHASE RECORD ID: M04-09-W4
+PHASE: 09 — Acceptance
+CODEX CHECK RESULT: PASS — đủ evidence cho mọi AC; không còn task BLOCKED
+CODEX RECOMMENDATION: RECOMMEND APPROVAL
+USER VERDICT: PENDING
+```

@@ -221,3 +221,30 @@ RESULT: M03-AC-002 có smoke evidence — đề xuất chuyển ĐẠT ở Phase
 USER VERDICT: PENDING
 NEXT ACTION: Phase 07 — Implementation Review
 ```
+
+## Phase 08–09 chuẩn bị — M03-TASK-002 (11/10/2026)
+
+```text
+PHASE RECORD ID: M03-08-W4
+PHASE: 08 — Final Verification
+SUBJECT: M03-TASK-002 trên main 35d3514cf3279f2cd6d87ce2db2f1d0d23de725b (merge PR #32)
+CHECKS: xem M03-EV-P08-W4 — CI run 38150517851 PASS; 0 failed trên máy và CI; độ phủ 96 %
+CODEX CHECK RESULT: PASS
+CODEX RECOMMENDATION: RECOMMEND APPROVAL
+USER VERDICT: PENDING
+NEXT ACTION: chủ module ghi verdict Phase 07 (review-log), 08 và 09
+```
+
+| AC | Evidence | Đề xuất |
+| --- | --- | --- |
+| M03-AC-001 | Không đổi (M03-EV-002, 003) | ĐẠT (đã nghiệm thu) |
+| M03-AC-002 | Smoke S1/S2 chạy thật, không mạng, có model/version/SHA-256 (M03-EV-004, M03-EV-P08-W4) | Đề xuất ĐẠT |
+| M03-AC-003 | Không đổi | ĐẠT (đã nghiệm thu) |
+
+```text
+PHASE RECORD ID: M03-09-W4
+PHASE: 09 — Acceptance
+CODEX CHECK RESULT: PASS — đủ evidence cho mọi AC; không còn task BLOCKED
+CODEX RECOMMENDATION: RECOMMEND APPROVAL
+USER VERDICT: PENDING
+```
