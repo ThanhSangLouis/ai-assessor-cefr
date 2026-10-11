@@ -1,11 +1,12 @@
 # M03 — Review Records
 
-**Hiện trạng:** Phase 07 attempt A1 **APPROVED** 26/09/2026; attempt A2 (follow-up 07-A1-03) **APPROVED** 03/10/2026 (Sang).
+**Hiện trạng:** Phase 07 attempt A1 **APPROVED** 26/09/2026; attempt A2 (follow-up 07-A1-03) **APPROVED** 03/10/2026 (Sang); attempt A3 (M03-TASK-002) PASS, chờ verdict của Sang.
 
 | Review ID | Prompt ID / Task ID | Base/Head revision | Diff/evidence đã kiểm tra | Finding và resolution | User verdict |
 | --- | --- | --- | --- | --- | --- |
 | 07-M03-A1 | M03-TASK-003, 004, 001 (SCRUM-18, 19, 20); Claude implement theo yêu cầu chủ dự án (không qua prompt Antigravity) | base `main` `ecb835f` → correction PR `[Phase 07]` | toàn bộ `src/aicefr/asr/*, tests/asr/*`; evidence module; chạy lại test/lint | FINDING-07-A1-01, FINDING-07-A1-02, FINDING-07-A1-03, FINDING-07-A1-07 — xem dưới | APPROVED 26/09/2026 (Sang) |
 | 07-M03-A2 | Follow-up 07-A1-03 (SCRUM-50); Claude implement theo yêu cầu chủ dự án | base `main` `2b428ce` → PR #26 → `ae72d57` | `asr/service.py`, `tests/asr/*`, Spec/Test Plan v0.2.1; chạy lại test/lint | FINDING-07-A2-01 NIT ACCEPTED, FINDING-07-A2-02 MINOR follow-up | APPROVED 03/10/2026 (Sang) |
+| 07-M03-A3 | M03-TASK-002 (DEP-06, SCRUM-22); adapter từ W3-TASK-005, smoke do Claude viết theo yêu cầu chủ dự án | base `main` `c427983` → nhánh `feat/SCRUM-22-m03-m04-smoke` (PR #32) | `src/aicefr/asr/local.py`, `tests/asr/test_local.py`, `tests/smoke/test_asr_smoke.py`, M03-EV-004; chạy lại test/lint/smoke | FINDING-07-A3-01 MINOR RESOLVED, 07-A3-02 INFO, 07-A3-03 INFO | PENDING |
 
 ## Review Record 07-M03-A1
 
@@ -129,3 +130,51 @@ RESOLUTION EVIDENCE: —
 ```
 
 **Khác Spec/Test Plan — chủ dự án đã chấp nhận (03/10/2026):** Spec v0.2.1 (QC REJECT chép `QCResult.reasons`; thêm dòng bảng lỗi) và Test Plan v0.2.1 (mở rộng M03-TEST-005). Không đổi FR/AC.
+
+## Review Record 07-M03-A3 (11/10/2026)
+
+```text
+REVIEW ID: 07-M03-A3
+TASK/PROMPT ID: M03-TASK-002 (SCRUM-22 cho DEP-06)
+BASE/HEAD: base main c427983; head = nhánh feat/SCRUM-22-m03-m04-smoke (PR #32)
+REVIEWED SCOPE/FILES: src/aicefr/asr/local.py, tests/asr/test_local.py, tests/smoke/test_asr_smoke.py
+CHECKLIST RESULT: scope/traceability PASS (S1, S2 ↔ test smoke); functionality PASS — chỉ đọc weight local,
+  kiểm SHA-256 bốn tệp trước khi nạp, `local_files_only=True`, weight lạ giữ identifier để từ chối (M03-FR-003),
+  `prob=None` giữ nguyên; error/security PASS — lỗi nạp không lộ đường dẫn máy, smoke không ghi transcript;
+  tests PASS (unit offline + smoke thật); duplication/dead code MINOR (FINDING-07-A3-01, đã sửa)
+FINDINGS: FINDING-07-A3-01 MINOR RESOLVED; FINDING-07-A3-02 INFO; FINDING-07-A3-03 INFO
+CHECKS RERUN: `pytest -q -m "not smoke"` → 309 passed, 13 skipped; có artifact Ridge → 322 passed;
+  smoke `-m smoke tests/smoke` (audio DEP-06, chặn mạng) → 2 passed, 0 lần thử kết nối;
+  `ruff check src tests scripts`, `check_md_links.py`, `check_forbidden_files.py`, gitleaks sạch
+RESULT: PASS — đề xuất APPROVE
+USER VERDICT: PENDING
+```
+
+```text
+FINDING ID: FINDING-07-A3-01
+SEVERITY: MINOR
+CATEGORY: Simplicity
+LOCATION: src/aicefr/asr/local.py `FasterWhisperEngine.transcribe`
+OBSERVED EVIDENCE: khối `try: … except Exception: raise` không đổi hành vi.
+REQUIRED CHANGE: bỏ khối thừa.
+STATUS: RESOLVED
+RESOLUTION EVIDENCE: tests/asr 87 passed cùng tests/features; smoke S1/S2 PASS sau khi sửa.
+```
+```text
+FINDING ID: FINDING-07-A3-02
+SEVERITY: INFO
+CATEGORY: Traceability
+LOCATION: 06-tasks.md M03-TASK-002
+OBSERVED EVIDENCE: Plan dự kiến tên `asr/faster_whisper_engine.py`; code W3 đặt ở `asr/local.py`.
+REQUIRED CHANGE: không đổi tên (coordinator của Thắng import `asr.local`); ghi ánh xạ trong 06-tasks.md.
+STATUS: ACCEPTED
+```
+```text
+FINDING ID: FINDING-07-A3-03
+SEVERITY: INFO
+CATEGORY: Test data
+LOCATION: M03-EV-004
+OBSERVED EVIDENCE: audio smoke là giọng tổng hợp; asr_conf_mean cao hơn khoảng huấn luyện.
+REQUIRED CHANGE: không; smoke chỉ chứng minh chạy thật. Khi có audio người nói thật có đồng ý, chạy lại S2 để quan sát.
+STATUS: ACCEPTED
+```

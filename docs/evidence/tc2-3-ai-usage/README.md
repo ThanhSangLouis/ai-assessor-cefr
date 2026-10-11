@@ -28,7 +28,7 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W01](AI%20Prompt%20Log%20-%20W01%20-%202026-09-14_2026-09-20.xlsx) | 14–20/09/2026 | 0 | 0 | 14 | 14 |
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
-| [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026 | 20 | 0 | 0 | 20 |
+| [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026 | 20 | 0 | 17 | 37 |
 | [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 0 | 0 | 0 | 0 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
 
@@ -48,6 +48,8 @@ Bản tổng hợp trước khi tách được sao lưu ngoài Git tại
 Manifest kiểm tra và ánh xạ hàng cũ → file/hàng mới ở
 `../ai-assessor-cefr-runtime/evidence/weekly-prompt-logs-2026-10-08.json`.
 Từ nay ghi tiếp vào file của tuần tương ứng.
+
+Ngày 11/10/2026 Sang ghi **17 bản ghi** W04 vào sheet Sang, theo cùng mẫu sáu cột (cột F kèm phiên bản/model, nội dung AI tạo và phần Sang sửa/hoàn thiện). Mỗi dòng có minh chứng là PR: repo cá nhân `ThanhSangLouis/ai-assessor-cefr` PR #5–#17 (private, cần cấp quyền đọc cho GVHD) và PR #32 của repo này. Prompt được viết lại cho rõ nhưng bám đúng yêu cầu gốc trong phiên làm việc; không có số liệu suy ra từ S&I.
 
 ## Quy ước ghi AI Prompt Log
 

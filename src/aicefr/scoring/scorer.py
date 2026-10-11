@@ -80,6 +80,16 @@ class RidgeScorer:
         self._load_error = load_error
         self._clock = clock
 
+    @property
+    def artifact(self) -> ModelArtifact | None:
+        """The loaded artifact, or None when loading failed (W4-S3).
+
+        The coordinator needs it to build the M04 extractor from the same
+        `feature_order` (`FeatureExtractor.from_artifact`) and to read the window
+        policy; reaching into `_artifact` for that couples it to a private name.
+        """
+        return self._artifact
+
     @classmethod
     def load(
         cls,

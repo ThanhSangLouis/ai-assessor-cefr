@@ -42,7 +42,7 @@ Data flow, trạng thái, lỗi và reason code theo đúng [Specification](03-s
 | DEP-03 | M02 xác nhận DecodedAudio 16 kHz mono (M03-O-002) | Thắng | **Đạt** 28/09/2026 — PR #11 (M02-TASK-001) đưa `audio/decoder.py` lên `main`: mọi audio ra 16 kHz mono (`_OUTPUT_RATE_HZ = 16_000`, resample bằng soxr) | TASK-002 |
 | DEP-04 | Dependency `faster-whisper` trong `pyproject.toml` | Thắng (Sang làm thay) | **Đã có** — extra `asr` trong `pyproject.toml` | — |
 | DEP-05 | Weight `whisper-small` dạng CTranslate2 tải có chủ đích, ghi nguồn/license/SHA-256 — **thao tác của Sang**, không giao Antigravity | Sang | **Đã làm** — [M03-EV-001](evidence/evidence-manifest.md#m03-ev-001--weight-whisper-small-ctranslate2), 26/09/2026 | — |
-| DEP-06 | Audio có quyền dùng cho smoke, đặt ngoài repo | Sang | Chưa có | TASK-002 |
+| DEP-06 | Audio có quyền dùng cho smoke, đặt ngoài repo | Sang | **Đạt** 11/10/2026 cho smoke kỹ thuật — giọng tổng hợp do nhóm tạo bằng lệnh `say` của macOS (giọng Samantha, tốc độ 165), đọc một đoạn tiếng Anh nhóm tự viết; WAV 16 kHz mono, 38,541 s, SHA-256 `290f0436…a7427`; đặt ngoài repo (`~/aicefr-smoke/`). Không phải giọng người học, không có PII ([M03-EV-004](evidence/evidence-manifest.md)) | TASK-002 |
 | DEP-07 | `trained_with.asr_model` từ loader của M05 | Sang (M05-TASK-002) | **Đã có** — M05-TASK-002 nghiệm thu 27/09/2026 | TASK-004 (có thể dùng dict giả trong test) |
 
 ## Required checks mỗi task

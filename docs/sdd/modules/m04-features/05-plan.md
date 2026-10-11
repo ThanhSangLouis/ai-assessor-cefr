@@ -39,7 +39,7 @@ artifact (M05) ───┘     ├─ text_features(words, D)        (#1–8)
 | DEP-03 | M02 xác nhận DecodedAudio 16 kHz mono (M03-O-002); Thắng review M04 là consumer thứ hai | Thắng | **Đạt** 28/09/2026 — PR #11 (M02-TASK-001) đưa `audio/decoder.py` lên `main`: mọi audio ra 16 kHz mono (`_OUTPUT_RATE_HZ = 16_000`, resample bằng soxr) | TASK-003 |
 | DEP-04 | Dependency `silero-vad==6.2.1`, `numpy` trong `pyproject.toml` | Thắng (Sang làm thay) | **Đã có** — extra `vad` và lõi `numpy` trong `pyproject.toml` | — |
 | DEP-05 | Loader artifact M05 trả `feature_order`, `feature_version`, `trained_with` | Sang (M05-TASK-002) | **Đã có** — M05-TASK-002 nghiệm thu 27/09/2026 | TASK-002 |
-| DEP-06 | Audio có quyền dùng cho smoke, ngoài repo | Sang | Chưa có | TASK-003 |
+| DEP-06 | Audio có quyền dùng cho smoke, ngoài repo | Sang | **Đạt** 11/10/2026 cho smoke kỹ thuật — cùng audio với M03 ([M03-EV-004](../m03-asr/evidence/evidence-manifest.md)) | TASK-003 |
 
 ## Required checks mỗi task
 

@@ -36,18 +36,12 @@ HANDOFF MODE: tài liệu SDD; Antigravity chỉ nhận prompt sau Phase 05
 | M05-F-05 | `CRITERION_FEATURES` gán Fluency 6 đặc trưng, **trong đó có `filler_ratio`** — không có trong `feature_order` của Ridge v2. Coverage Fluency vì vậy tối đa 5/6 = 0,83 và luôn mang `FEATURE_NOT_COMPUTABLE`, kể cả khi mọi đặc trưng tính được. | `scorer.py`, artifact |
 | M05-F-06 | `SCORE_NEAR_BOUNDARY` được gắn ở cấp Assessment (bản cũ gắn vào danh sách bị bỏ, router không bao giờ thấy). | `scorer.py` comment |
 | M05-F-07 | Khoảng chấp nhận theo OOD: `total_dur` ≤ **77,8 s** (≥ 9,6 s), `vad_speech_sec` ≤ 76,7 s, `n_words` ≤ 208,75. Hồ sơ tham chiếu chia cửa sổ khi bài `> 60 s` (mục tiêu 45 s, 30–60 s, tối đa 10 cửa sổ), lấy **trung vị** và gắn `SCORE_AGGREGATED` → review. | artifact; `windows.py`, `pipeline.py` |
-| M05-F-08 | Metric artifact: `cv_pcc 0,6966`, `cv_rmse 0,5262`, GroupKFold 5 theo người nói, `train_n 876`, `calibration_version="chua-hieu-chuan"`. Tập huấn luyện: S&I 2025 dev P3/P4, chỉ lưu hệ số. | artifact |
+| M05-F-08 | Metric artifact: `cv_pcc`, `cv_rmse` và `train_n` ghi trong artifact (không chép số vào repo public vì là thống kê suy ra từ S&I, chờ CUP&A — SCRUM-52), GroupKFold 5 theo người nói, `calibration_version="chua-hieu-chuan"`. Tập huấn luyện: S&I 2025 dev P3/P4, chỉ lưu hệ số. | artifact |
 | M05-F-09 | Kiểm lệch tham chiếu so `vad_name` bằng `==` nhưng `asr_model` bằng chuỗi con (xem M03 Research F-04). | `pipeline.py` |
 
 ## Inference cho M05-O-001 (chưa hiệu chỉnh — chỉ để cân nhắc)
 
-Giả định sai số của model xấp xỉ phân phối chuẩn với độ lệch `cv_rmse = 0,526` (giả định này **chưa được kiểm**; `calibration_version` ghi chưa hiệu chỉnh). Khi đó xác suất band thật khác band ước lượng:
-
-| Điểm ước lượng | 2,25 | 2,50 | 2,75 | 3,00 | 3,25 | 3,50 | 4,00 | 4,25 | 4,50 |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| P(band khác) | 0,17 | 0,32 | 0,53 | 0,39 | 0,34 | 0,39 | 0,32 | 0,17 | 0,08 |
-
-Ngay tâm bậc B1 (3,25) xác suất sai band vẫn khoảng 1/3, vì B1 rộng 1,0 mà sai số ≈ 0,53.
+Giả định sai số của model xấp xỉ phân phối chuẩn với độ lệch bằng `cv_rmse` của artifact (giả định này **chưa được kiểm**; `calibration_version` ghi chưa hiệu chỉnh). Khi đó xác suất band thật khác band ước lượng lớn nhất ở sát ngưỡng band, và vẫn đáng kể ngay ở tâm bậc B1, vì sai số CV xấp xỉ một nửa độ rộng bậc B1. Bảng xác suất theo từng mức điểm tính từ `cv_rmse` nên chỉ lưu ở tài liệu nội bộ của chủ module cho tới khi CUP&A trả lời (W4-S4).
 
 ## Option cho M05-O-001 (near-boundary)
 

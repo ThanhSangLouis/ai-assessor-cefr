@@ -1,10 +1,11 @@
 # M04 — Evidence Manifest (danh mục bằng chứng)
 
-**Hiện trạng:** có evidence Phase 06 của M04-TASK-001, 002 (M04-EV-001); chưa qua Phase 07 review. Báo cáo và hình W1 cấp dự án nằm ở docs/reports/week-01/ và docs/design/week-01/.
+**Hiện trạng (11/10/2026):** M04-EV-001 (TASK-001, 002) và M04-EV-P08 đã qua Phase 07–09; M04-EV-002 (TASK-003) chờ Phase 07. Báo cáo và hình W1 cấp dự án nằm ở docs/reports/week-01/ và docs/design/week-01/.
 
 | Evidence ID | Prompt ID / Task ID | Phase | Base/Head revision, fingerprint | Loại / file hoặc link | Check và kết quả thực tế | Trạng thái |
 | --- | --- | --- | --- | --- | --- | --- |
 | M04-EV-001 | M04-TASK-001, 002 (Jira SCRUM-24, 25); Claude implement theo yêu cầu chủ dự án | 06 | base `e92c1cf` trên `main` | `src/aicefr/features/`, `tests/features/`, xem mục dưới | Test ID 001–015, 017, 018 chạy thật; coverage `aicefr.features` 100 % | RECORDED — chờ Phase 07 |
+| M04-EV-002 | M04-TASK-003 (DEP-06, Jira SCRUM-22); Claude theo yêu cầu chủ dự án | 06 | base `c427983` trên `main` | `tests/features/test_local.py`, `tests/smoke/test_vad_smoke.py`; xem mục dưới | M04-TEST-016 và S1 chạy thật, PASS, 0 lần thử kết nối mạng | RECORDED — chờ Phase 07 |
 
 Lưu tại đây raw report của Antigravity, command output/test/coverage, ảnh browser QA và final verification khi phát sinh. File lớn có thể lưu ngoài Git nhưng phải có link ổn định, checksum và quyền truy cập cho người review. Mỗi evidence gắn đúng Prompt ID, Task ID, AC/Test ID và revision. Redact secret/PII/audio/transcript thật; không ghi PASS cho lệnh chưa chạy. Cập nhật 07-status.md trỏ tới evidence mới nhất.
 
@@ -65,3 +66,24 @@ UT EVIDENCE
 ```
 
 **Ngoài Phase 08 này:** M04-TASK-003 (Silero + smoke, M04-TEST-016, S1) BLOCKED.
+
+## M04-EV-002 — TEST-016 và smoke S1: Silero thật, không mạng (11/10/2026)
+
+**Audio (DEP-06):** cùng tệp với [M03-EV-004](../../m03-asr/evidence/evidence-manifest.md) — giọng tổng hợp do nhóm tạo bằng lệnh `say` của macOS (giọng Samantha, tốc độ 165), đọc một đoạn tiếng Anh nhóm tự viết; WAV 16 kHz mono, 38,541 s, SHA-256 `290f0436…a7427`; đặt ngoài repo (`~/aicefr-smoke/`). Không phải giọng người học, không có PII.
+
+| Test ID | Test | Kết quả |
+| --- | --- | --- |
+| M04-TEST-016 | `test_m04_test_016_silero_import_failure_nulls_pause_features_without_fallback`: gói `silero_vad` không import được → 10 đặc trưng `vad_*` `None` + `FEATURE_NOT_COMPUTABLE`; `n_words`, `asr_conf_mean` vẫn có; không VAD dự phòng | PASS |
+| M04-TEST-S1 | `test_s1_silero_segments_the_audio_offline_and_gives_every_pause_feature` | PASS |
+
+**Lệnh smoke:** như M03-EV-004 (base `c427983`), exit 0. `vad_articulation_rate` cần số từ: lấy từ transcript whisper-small thật của cùng lượt, không dùng transcript viết sẵn.
+
+| Trường S1 | Giá trị |
+| --- | --- |
+| Gói | silero-vad 6.2.1 (MIT, model đi kèm gói), torch 2.14.1 |
+| Cấu hình | threshold 0,5; min_silence 150 ms; 16 kHz mono |
+| Mạng | 0 lần thử kết nối |
+| Số đoạn | 9; thời gian VAD 1,9 s cho 38,5 s audio |
+| 10 giá trị `vad_*` | silence_ratio 0,0296; mean_pause 0,0; pause_per_min 0,0; long_pause_ratio 0,0; pause_sd 0,0; mean_seg_len 4,1556 s; n_seg_per_min 14,0109; articulation_rate 3,6364; onset_delay 0,0; speech_sec 37,4 |
+
+**Ghi chú:** giọng tổng hợp gần như không có khoảng ngừng từ 0,30 s trở lên, nên các đặc trưng ngừng nghỉ bằng 0. Đó là tính chất của audio, không phải lỗi công thức; smoke chỉ chứng minh Silero chạy thật và đủ 10 giá trị. Cần audio người nói thật có quyền dùng nếu muốn quan sát ngừng nghỉ.

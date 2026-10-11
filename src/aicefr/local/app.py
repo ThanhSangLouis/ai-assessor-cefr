@@ -173,7 +173,7 @@ def create_runtime(
             scorer_instance = scorer or RidgeScorer.load(
                 Path(config["model_artifact"]) if config.get("model_artifact") else None
             )
-            artifact = getattr(scorer_instance, "_artifact", None)
+            artifact = getattr(scorer_instance, "artifact", None)
             if asr_engine is None:
                 model_dir = config.get("asr_model_dir")
 

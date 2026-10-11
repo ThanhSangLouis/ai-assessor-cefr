@@ -8,6 +8,7 @@
 | M03-EV-002 | M03-TASK-003, 004, 001 (Jira SCRUM-18, 19, 20); Claude implement theo yêu cầu chủ dự án | 06 | base `e92c1cf` trên `main` | `src/aicefr/asr/`, `tests/asr/`, xem mục dưới | Test ID 001–016 chạy thật; coverage `aicefr.asr` ≥ 99 % line/branch | RECORDED — chờ Phase 07 |
 | M03-EV-003 | Follow-up 07-A1-03 (Jira SCRUM-50); Claude implement theo yêu cầu chủ dự án, không qua prompt Antigravity | 06 | base `2b428ce` trên `main` | `src/aicefr/asr/service.py`, `tests/asr/test_service.py`, `tests/asr/fixtures.py`, xem mục dưới | M03-TEST-005 mở rộng chạy thật; `asr/service.py` 100 % line/branch | VERIFIED — Phase 07–09 APPROVED 03/10/2026 |
 | M03-EV-P08-A2 | Follow-up 07-A1-03 (SCRUM-50) | 08 | main ae72d57 (ae72d57b03de0ae9333e8b549484d026feb3177c); fingerprint `8835acf872d8c0ab…` | Xem mục dưới | 192 passed + 11 skipped (CI), 203 passed (có artifact), 0 failed | APPROVED 03/10/2026 |
+| M03-EV-004 | M03-TASK-002 (DEP-06, Jira SCRUM-22); Claude theo yêu cầu chủ dự án | 06 | base `c427983` trên `main` | `tests/smoke/test_asr_smoke.py`, JSON evidence ngoài repo; xem mục dưới | M03-TEST-S1, S2 chạy thật, PASS, 0 lần thử kết nối mạng | RECORDED — chờ Phase 07 |
 
 Lưu tại đây raw report của Antigravity, command output/test/coverage, ảnh browser QA và final verification khi phát sinh. File lớn có thể lưu ngoài Git nhưng phải có link ổn định, checksum và quyền truy cập cho người review. Mỗi evidence gắn đúng Prompt ID, Task ID, AC/Test ID và revision. Redact secret/PII/audio/transcript thật; không ghi PASS cho lệnh chưa chạy. Cập nhật 07-status.md trỏ tới evidence mới nhất.
 
@@ -125,3 +126,28 @@ UT EVIDENCE
 - CODEX RECOMMENDATION: RECOMMEND APPROVAL
 - USER VERDICT: APPROVED (Sang, 03/10/2026)
 ```
+
+## M03-EV-004 — Smoke S1/S2: faster-whisper `small` thật, không mạng (11/10/2026)
+
+**Audio (DEP-06):** giọng tổng hợp do nhóm tạo bằng lệnh `say` của macOS (giọng Samantha, tốc độ 165), đọc một đoạn tiếng Anh nhóm tự viết; WAV 16 kHz mono, 38,541 s, SHA-256 `290f0436…a7427`; đặt ngoài repo (`~/aicefr-smoke/`). Không phải giọng người học, không có PII. Dùng cho smoke kỹ thuật; không phải số liệu thực nghiệm, không dùng để nói về độ chính xác.
+
+**Lệnh:** `AICEFR_SMOKE_AUDIO=~/aicefr-smoke/smoke-s1.wav AICEFR_SMOKE_EVIDENCE=~/aicefr-smoke/evidence.json python -m pytest -q -m smoke tests/smoke` (base `c427983`). Exit 0, 2 passed (cùng lượt với M04-TEST-S1). Test chặn `socket.connect`, `connect_ex`, `create_connection`, `getaddrinfo` và đếm số lần bị gọi.
+
+| Trường S1 | Giá trị |
+| --- | --- |
+| Weight | `whisper-small` — Hugging Face `Systran/faster-whisper-small`, CTranslate2, license MIT; nơi lưu `~/models/faster-whisper-small/` |
+| SHA-256 | `model.bin` `3e305921…d170d671`, `config.json` `b55496ac…eab40edfd`, `tokenizer.json` `fb7b6319…d6cb6fd0ab`, `vocabulary.txt` `34ce3fe1…e453913` — khớp M03-EV-001 |
+| Engine | faster-whisper 1.2.1, CTranslate2 4.8.2; adapter tự kiểm SHA-256 trước khi nạp |
+| Decode config | `asr-decode-v1`: `language=en`, `word_timestamps=True`, `beam_size=5`, `vad_filter=False`, `condition_on_previous_text=False`, CPU `int8` |
+| Máy | macOS 26.4 arm64, 10 nhân, 24 GiB RAM, Python 3.12.14 |
+| Mạng | 0 lần thử kết nối |
+| Thời gian xử lý | 9,5–9,9 s cho 38,5 s audio (gồm nạp model) |
+| Kết quả | `status=OK`, `asr_model=whisper-small`, không reason, 136 từ có timestamp hợp lệ, `test_only=false` |
+
+| Trường S2 | Giá trị |
+| --- | --- |
+| `asr_conf_mean` | 0,990 (136/136 từ có probability) |
+| So với khoảng huấn luyện của artifact | Ngoài khoảng, phía cao — hợp lý với giọng tổng hợp sạch |
+| So với khoảng M05 chấp nhận | Trong khoảng (`feature_lo/hi` của `ridge_resp_v2` nới thêm `ood_tolerance`): không báo owner M05. Test đọc các giới hạn từ artifact lúc chạy; số cụ thể không chép vào repo public vì suy ra từ S&I. Chạy thử cả chuỗi ASR → M04 → Ridge trên audio này cho `ESTIMATED`, không reason OOD. Điểm đó không có ý nghĩa CEFR: giọng máy đọc kịch bản |
+
+Evidence JSON chỉ chứa metadata (không transcript, không audio); lưu ngoài repo cùng audio. Weight, audio, transcript không vào Git.

@@ -122,7 +122,7 @@ def test_factory_review_qc_bypasses_asr_pins_model_and_reopens_reviewed_report(t
     try:
         _provision_student(runtime)
         pipeline = runtime.app._student_api._service._pipeline
-        assert pipeline._scorer._artifact.sha256 == RIDGE_RESP_V2_SHA256
+        assert pipeline._scorer.artifact.sha256 == RIDGE_RESP_V2_SHA256
         assert pipeline._asr._engine is None
         assert isinstance(pipeline._extractor._vad, _LazyVad)
         assert pipeline._extractor._vad._engine is None

@@ -29,7 +29,7 @@
 | M03-TEST-015 | FR-003 / AC-003 | Unit | Weight ánh xạ về `whisper-medium`, artifact đòi `whisper-small` | `ASR_VERSION_MISMATCH`; `status=OK` giữ nguyên |
 | M03-TEST-016 | FR-001 / AC-001 | Unit (privacy) | Transcript fixture chứa chuỗi `SECRET-NAME-123`; chạy với `caplog` | Không bản ghi log nào chứa chuỗi đó; log có `response_id` và status |
 | M03-TEST-S1 | FR-001 / AC-002 | **Smoke** | faster-whisper `small` trên audio có quyền dùng, **tắt mạng** | Ghi evidence: tên weight, nguồn, license, SHA-256, `engine_version`, decode config, máy (OS/CPU/RAM), thời gian xử lý, `status`. Mạng tắt mà vẫn chạy được |
-| M03-TEST-S2 | Rủi ro Spec (Research I-01) | **Smoke — quan sát** | Cùng lượt S1: tính `asr_conf_mean` | **Ghi lại** giá trị và so với khoảng huấn luyện [0,691 ; 0,950]. Không phải tiêu chí pass/fail của M03; nếu nằm ngoài khoảng chấp nhận OOD thì báo owner M05 |
+| M03-TEST-S2 | Rủi ro Spec (Research I-01) | **Smoke — quan sát** | Cùng lượt S1: tính `asr_conf_mean` | **Ghi lại** giá trị và so với khoảng huấn luyện `[feature_lo ; feature_hi]` đọc từ artifact lúc chạy (không chép số vào repo vì license S&I). Không phải tiêu chí pass/fail của M03; nếu nằm ngoài khoảng chấp nhận OOD thì báo owner M05 |
 
 ## Bao phủ theo loại
 
@@ -52,7 +52,7 @@
 | Smoke | `AICEFR_SMOKE_AUDIO=<đường dẫn ngoài repo> python3 -m pytest -q -m smoke tests/smoke/test_asr_smoke.py` |
 | UT applicability | **YES** cho ánh xạ identifier, kiểm timestamp, bộ phát hiện hallucination, xử lý `prob`. **NO** cho lời gọi thật vào faster-whisper — thay bằng smoke S1 |
 | Coverage policy | Theo quyết định chung **TP-D-001** (xem cuối file) |
-| Hiện trạng | `NOT_RUN` — repo chưa có `pyproject.toml`, `tests/`, `pytest-cov`; đường dẫn test chốt ở Phase 05 theo skeleton của Thắng |
+| Hiện trạng | Unit chạy trên `main` từ 26/09/2026 (M03-EV-002, 003). Smoke S1/S2 chạy thật 11/10/2026: PASS, 0 lần thử kết nối mạng ([M03-EV-004](evidence/evidence-manifest.md)) |
 
 ## Evidence Phase 06/08
 

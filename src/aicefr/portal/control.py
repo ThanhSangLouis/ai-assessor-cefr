@@ -53,7 +53,7 @@ class RuntimeControl:
             name = json.loads(model[0])["name"]
             if not re.fullmatch(r"[A-Za-z0-9_-]{1,80}", name):
                 raise ValueError("invalid persisted model name")
-            artifact = getattr(self.pipeline._scorer, "_artifact", None)
+            artifact = getattr(self.pipeline._scorer, "artifact", None)
             if artifact is None or artifact.name != name:
                 self.pipeline._scorer = RidgeScorer(
                     artifact=load_artifact(self._model_dir() / f"{name}.json")
@@ -114,7 +114,7 @@ class RuntimeControl:
             directory = self._model_dir()
         except ModelArtifactError:
             return {"items": [], "revision": 0}
-        active = getattr(self.pipeline._scorer, "_artifact", None)
+        active = getattr(self.pipeline._scorer, "artifact", None)
         items = []
         for path in sorted(directory.glob("*.json"))[:100]:
             try:
@@ -175,7 +175,7 @@ class RuntimeControl:
             except Exception:
                 pass
             checks["database"] = False
-        checks["scoring_model"] = getattr(self.pipeline._scorer, "_artifact", None) is not None
+        checks["scoring_model"] = getattr(self.pipeline._scorer, "artifact", None) is not None
         try:
             self.pipeline._asr._load_engine()._load()
             checks["asr_model"] = True

@@ -44,7 +44,7 @@ Lưu tại đây raw report của Antigravity, command output/test/coverage, ả
 
 | Test ID | Test | Kết quả |
 | --- | --- | --- |
-| M05-TEST-001 | `test_golden_vectors_on_real_artifact` ×3 (mean 3,9465 B2 REVIEW; lo 2,2575 A2 REVIEW; hi 4,9414 B2 ESTIMATED) + provenance đọc từ artifact | PASS (ART-REAL) |
+| M05-TEST-001 | `test_golden_vectors_on_real_artifact` ×3 (vector `mean`, `feature_lo`, `feature_hi`; kỳ vọng tính lại từ artifact theo công thức Spec, không chép số S&I vào repo) + provenance đọc từ artifact | PASS (ART-REAL) |
 | M05-TEST-002 | `test_score_is_deterministic_apart_from_timestamp` | PASS |
 | M05-TEST-003 | `test_full_features_give_full_coverage_without_scores` (fluency = 1,0) | PASS (ART-REAL) |
 | M05-TEST-004 | `test_every_assessment_has_insufficient_evidence_interaction` | PASS |

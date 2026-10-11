@@ -78,23 +78,20 @@ class FasterWhisperEngine:
 
     def transcribe(self, audio: DecodedAudio) -> EngineResult:
         model = self._load()
-        try:
-            segments, _info = model.transcribe(
-                audio.samples, language="en", word_timestamps=True, beam_size=5,
-                vad_filter=False, condition_on_previous_text=False,
-            )
-            words: list[RawWord] = []
-            text: list[str] = []
-            for segment in segments:
-                text.append(str(segment.text))
-                for word in segment.words or ():
-                    probability = getattr(word, "probability", None)
-                    words.append(RawWord(
-                        text=str(word.word), start_s=float(word.start), end_s=float(word.end),
-                        prob=None if probability is None else float(probability),
-                    ))
-        except Exception:
-            raise
+        segments, _info = model.transcribe(
+            audio.samples, language="en", word_timestamps=True, beam_size=5,
+            vad_filter=False, condition_on_previous_text=False,
+        )
+        words: list[RawWord] = []
+        text: list[str] = []
+        for segment in segments:
+            text.append(str(segment.text))
+            for word in segment.words or ():
+                probability = getattr(word, "probability", None)
+                words.append(RawWord(
+                    text=str(word.word), start_s=float(word.start), end_s=float(word.end),
+                    prob=None if probability is None else float(probability),
+                ))
         return EngineResult(
             text="".join(text), words=tuple(words), engine="faster-whisper",
             engine_version=self._version, weight_name=f"Systran/faster-whisper-{self.weight_name}",
