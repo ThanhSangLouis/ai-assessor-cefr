@@ -10,13 +10,10 @@
 
 ### Giá trị vàng trên ART-REAL (tính từ công thức Spec ngày 26/09/2026, sai số 1e-4)
 
-| Vector | `overall_score` | Band | Near-boundary | `status` |
-| --- | --- | --- | --- | --- |
-| `mean` của artifact (mọi `z = 0`) | 3,9465 (= `intercept`) | B2 | có (cách 3,75 là 0,1965) | `REVIEW_REQUIRED` |
-| `feature_lo` | 2,2575 | A2 | có (cách 2,75 là 0,4925) | `REVIEW_REQUIRED` |
-| `feature_hi` | 4,9414 | B2 | không (cách 3,75 là 1,19) | `ESTIMATED` |
+Ba vector: `mean` của artifact (mọi `z = 0`), `feature_lo`, `feature_hi`. Kỳ vọng được test tính lại từ chính artifact theo công thức Spec:
+`overall = clip(intercept + Σ coef·(x − mean)/scale, 1, 6)`; band theo `band_thresholds`; `status = REVIEW_REQUIRED` khi điểm cách một ngưỡng không quá `boundary_margin`, ngược lại `ESTIMATED`. Với `mean`, `overall` phải bằng `intercept`.
 
-Cả ba vector nằm trong khoảng chấp nhận OOD. Đây là giá trị kiểm công thức, **không** phải metric chất lượng model.
+Không ghi số cụ thể ở đây: chúng suy ra từ S&I, license không cho công bố khi chưa được CUP&A duyệt (W4-S4, SCRUM-51). Cả ba vector nằm trong khoảng chấp nhận OOD. Đây là giá trị kiểm công thức, **không** phải metric chất lượng model.
 
 ## FR/AC → Test
 

@@ -72,7 +72,7 @@
 | Loại | Nội dung |
 | --- | --- |
 | Phụ thuộc | M05 cung cấp `trained_with.asr_model` từ artifact đang cấu hình |
-| Rủi ro → Test Plan | Phân phối `asr_conf_mean` từ engine local so với khoảng huấn luyện [0,691 ; 0,950] (Research I-01) |
+| Rủi ro → Test Plan | Phân phối `asr_conf_mean` từ engine local so với khoảng huấn luyện ghi trong artifact (`feature_lo`/`feature_hi`, ngoài repo) (Research I-01) |
 | Quyết định | **M03-O-001** — faster-whisper `small` cho mọi môi trường (user chốt 26/09/2026) |
 | Phụ thuộc | **M03-O-002** — yêu cầu 16 kHz mono giữ nguyên; Thắng xác nhận phía M02 trước Phase 05 |
 

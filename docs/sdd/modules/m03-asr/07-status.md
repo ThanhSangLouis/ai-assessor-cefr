@@ -10,7 +10,7 @@
 | Test Plan | [04-test-plan.md](04-test-plan.md) · v0.2 · **APPROVED** 26/09/2026 |
 | Plan & Tasks | [05-plan.md](05-plan.md), [06-tasks.md](06-tasks.md) · v0.2 · **APPROVED** 26/09/2026; task READY/BLOCKED theo dependency — xem 06-tasks.md |
 | Implementation | M03-TASK-003, 004, 001 đã implement (Claude, theo yêu cầu chủ dự án); evidence [M03-EV-002](evidence/evidence-manifest.md). TASK-002: adapter `asr/local.py` có từ W3, smoke `tests/smoke/test_asr_smoke.py` thêm 11/10/2026; S1/S2 PASS trên audio của DEP-06 ([M03-EV-004](evidence/evidence-manifest.md)) — chờ Phase 07 |
-| Review | Phase 07 A1 **APPROVED** 26/09/2026; A2 (follow-up 07-A1-03) **APPROVED** 03/10/2026, [review-log](reviews/review-log.md) |
+| Review | Phase 07 A1 **APPROVED** 26/09/2026; A2 (follow-up 07-A1-03) **APPROVED** 03/10/2026, [review-log](reviews/review-log.md); A3 (M03-TASK-002) PASS 11/10/2026, **chờ verdict** |
 | Final Verification | Phase 08 [M03-EV-P08](evidence/evidence-manifest.md) trên main 74afca9 — **APPROVED** 27/09/2026; [M03-EV-P08-A2](evidence/evidence-manifest.md) trên main ae72d57 — **APPROVED** 03/10/2026 |
 | Acceptance | Phase 09 **APPROVED** 27/09/2026 và 03/10/2026 (follow-up 07-A1-03) — nghiệm thu phần đã làm (AC-001, AC-003); AC-002 và M03-TASK-002 để mở |
 | Prompt hiện hành | NONE ISSUED; base revision/fingerprint NOT_SET |
@@ -214,8 +214,8 @@ BASE: main c427983
 CHANGES: tests/smoke/test_asr_smoke.py (M03-TEST-S1, S2); adapter asr/local.py có sẵn từ W3-TASK-005, không sửa
 CHECKS: smoke S1/S2 chạy thật, tắt mạng bằng cách chặn socket: PASS, 0 lần thử kết nối;
   SHA-256 bốn tệp weight khớp M03-EV-001; status OK, asr_model whisper-small, 136 từ, 9,5–9,9 s;
-  S2 asr_conf_mean 0,990 — ngoài khoảng huấn luyện [0,691 ; 0,950] nhưng trong khoảng M05 chấp nhận
-  [0,561 ; 1,079] (ood_tolerance 0,5), nên không phải báo owner M05 theo Test Plan;
+  S2 asr_conf_mean 0,990 — cao hơn khoảng huấn luyện của artifact nhưng vẫn trong khoảng M05 chấp nhận
+  (có ood_tolerance), nên không phải báo owner M05 theo Test Plan (các giới hạn đọc từ artifact lúc chạy);
   CI-mode 308 passed, 13 skipped; có artifact Ridge 321 passed; ruff sạch
 RESULT: M03-AC-002 có smoke evidence — đề xuất chuyển ĐẠT ở Phase 09
 USER VERDICT: PENDING

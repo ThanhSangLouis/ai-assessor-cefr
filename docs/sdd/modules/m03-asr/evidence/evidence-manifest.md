@@ -147,7 +147,7 @@ UT EVIDENCE
 | Trường S2 | Giá trị |
 | --- | --- |
 | `asr_conf_mean` | 0,990 (136/136 từ có probability) |
-| So với khoảng huấn luyện [0,691 ; 0,950] | Ngoài khoảng, phía cao — hợp lý với giọng tổng hợp sạch |
-| So với khoảng M05 chấp nhận | Trong [0,561 ; 1,079] (`feature_lo/hi` của `ridge_resp_v2`, `ood_tolerance` 0,5): không báo owner M05. Chạy thử cả chuỗi ASR → M04 → Ridge trên audio này cho `ESTIMATED`, không reason OOD. Điểm đó không có ý nghĩa CEFR: giọng máy đọc kịch bản |
+| So với khoảng huấn luyện của artifact | Ngoài khoảng, phía cao — hợp lý với giọng tổng hợp sạch |
+| So với khoảng M05 chấp nhận | Trong khoảng (`feature_lo/hi` của `ridge_resp_v2` nới thêm `ood_tolerance`): không báo owner M05. Test đọc các giới hạn từ artifact lúc chạy; số cụ thể không chép vào repo public vì suy ra từ S&I. Chạy thử cả chuỗi ASR → M04 → Ridge trên audio này cho `ESTIMATED`, không reason OOD. Điểm đó không có ý nghĩa CEFR: giọng máy đọc kịch bản |
 
 Evidence JSON chỉ chứa metadata (không transcript, không audio); lưu ngoài repo cùng audio. Weight, audio, transcript không vào Git.

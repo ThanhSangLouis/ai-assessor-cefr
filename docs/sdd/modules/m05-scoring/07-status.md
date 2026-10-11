@@ -133,7 +133,7 @@ NEXT ACTION: Phase 09 — Acceptance
 | AC | Nội dung | Evidence cuối | Kết quả |
 | --- | --- | --- | --- |
 | M05-AC-001 | Thiếu evidence không có score; Interaction luôn insufficient_evidence | M05-TEST-004, 005–008, 014 (M05-EV-001/002, EV-P08) | ĐẠT |
-| M05-AC-002 | Artifact hợp lệ → overall tái lập + 5 coverage, không score riêng tiêu chí | M05-TEST-001–003, 015–020 (giá trị vàng 3,9465 / 2,2575 / 4,9414) | ĐẠT |
+| M05-AC-002 | Artifact hợp lệ → overall tái lập + 5 coverage, không score riêng tiêu chí | M05-TEST-001–003, 015–020 (giá trị vàng tính lại từ artifact theo công thức Spec) | ĐẠT |
 | M05-AC-003 | Ba test lệch riêng asr_model, vad_name, feature_order | M05-TEST-009–013 | ĐẠT |
 
 **Regression / chất lượng trên main 74afca9:** 133 passed (có artifact), 123 passed + 10 skipped (CI), 0 failed; coverage branch 99 %; TP-D-001 không bị hạ, không thêm exclusion.
@@ -207,3 +207,14 @@ USER VERDICT AT: 03/10/2026
 - [Evidence Manifest](evidence/evidence-manifest.md): evidence Phase 06 và Phase 08 của từng đợt.
 - [Review Records](reviews/review-log.md): Phase 07 A1 (26/09/2026), A2 (03/10/2026).
 - [Kế hoạch W2](../../../plan/week-02.md); [nguồn tài liệu](../../../sources/README.md).
+
+## Ghi chú W4-S4 (SCRUM-51) — 11/10/2026
+
+Repo nộp bài đang public, còn license S&I không cho công bố thống kê suy ra từ dữ liệu khi chưa được CUP&A duyệt. Đã gỡ khỏi tài liệu và test của M03/M05:
+- hệ số và khoảng huấn luyện của `asr_conf_mean`;
+- metric CV (PCC, RMSE, `train_n`) và bảng xác suất sai band tính từ chúng;
+- ba giá trị vàng của M05-TEST-001.
+
+Test giờ tính kỳ vọng từ chính artifact (ngoài repo) theo công thức Spec, nên vẫn kiểm đúng như cũ: `tests/scoring/test_scorer.py` có artifact thì 3/3 PASS. Các số đã gỡ lưu ở tài liệu nội bộ của chủ module.
+
+Lịch sử Git còn các số này; theo kế hoạch W4, không viết lại lịch sử khi chưa có quyết định của nhóm và GVHD. Cách giảm rủi ro chính vẫn là chuyển repo sang private (W4-T1, Thắng).
