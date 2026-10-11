@@ -1,16 +1,22 @@
+import sys
 from importlib.metadata import PackageNotFoundError
 from types import ModuleType
 
 import numpy as np
 import pytest
+from tests.features.fixtures import make_audio, make_transcript
 
+from aicefr.contracts import ReasonCode
+from aicefr.features.extractor import FeatureExtractor
 from aicefr.features.local import SileroVadEngine, VadUnavailableError
+from aicefr.features.pauses import VAD_FEATURES
 
 
 def test_silero_checks_mono_float32_16khz_and_returns_seconds(monkeypatch):
     calls = {}
     model = object()
     package = ModuleType("silero_vad")
+
     def load(**kwargs):
         calls["load"] = kwargs
         return model
@@ -34,16 +40,20 @@ def test_silero_checks_mono_float32_16khz_and_returns_seconds(monkeypatch):
     assert calls["load"] == {"onnx": False}
     assert calls["arguments"][1] is model
     assert calls["arguments"][2] == {
-        "threshold": 0.6, "sampling_rate": 16_000,
-        "min_silence_duration_ms": 200, "return_seconds": True,
+        "threshold": 0.6,
+        "sampling_rate": 16_000,
+        "min_silence_duration_ms": 200,
+        "return_seconds": True,
     }
 
 
 @pytest.mark.parametrize(
     ("values", "rate"),
-    [(np.zeros((2, 20), dtype=np.float32), 16_000),
-     (np.zeros(20, dtype=np.float64), 16_000),
-     (np.zeros(20, dtype=np.float32), 8_000)],
+    [
+        (np.zeros((2, 20), dtype=np.float32), 16_000),
+        (np.zeros(20, dtype=np.float64), 16_000),
+        (np.zeros(20, dtype=np.float32), 8_000),
+    ],
 )
 def test_silero_rejects_noncontract_audio(values, rate):
     with pytest.raises(ValueError):
@@ -80,3 +90,21 @@ def test_invalid_silero_configuration_rejected():
         SileroVadEngine(min_silence_ms=True)
     with pytest.raises(ValueError):
         SileroVadEngine(min_silence_ms=150.0)
+
+
+def test_m04_test_016_silero_import_failure_nulls_pause_features_without_fallback(
+    monkeypatch, feature_order_v2
+):
+    # REF-03: when Silero cannot load, no other VAD steps in; the ten pause
+    # features are empty with a reason, the transcript features are unaffected.
+    monkeypatch.setattr("aicefr.features.local.version", lambda _: "6.2.1")
+    monkeypatch.setitem(sys.modules, "silero_vad", None)
+    vad = SileroVadEngine()
+    fs = FeatureExtractor(feature_order_v2, "v3", {}, vad).extract(make_transcript(), make_audio())
+
+    values = {v.name: v for v in fs.values}
+    for name in VAD_FEATURES:
+        assert values[name].value is None
+        assert values[name].missing_reason is ReasonCode.FEATURE_NOT_COMPUTABLE
+    assert values["n_words"].value is not None and values["asr_conf_mean"].value is not None
+    assert fs.vad_name == "silero" and fs.vad_version == "6.2.1"
