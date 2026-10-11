@@ -34,6 +34,7 @@ Thắng giữ hợp đồng dùng chung, pipeline coordinator, entrypoint API, m
 | W1 — 14–18/09 | [week-01.md](week-01.md) | DONE theo người dùng | Repo, module, SDD process, rubric/Jira/AI rules, use case, báo cáo |
 | W2 — 21–25/09 | [week-02.md](week-02.md) | SDD nháp; implementation chưa xác minh | Contract, test/plan/task và local smoke có điều kiện |
 | W3 — 28/09–02/10 | [week-03.md](week-03.md) | DRAFT | Tích hợp, teacher review, QA, evidence và nghiệm thu |
+| W4 — 05–11/10 | [week-04.md](week-04.md) | v2, đối chiếu 11/10/2026 | Nối đầu-cuối (đã đạt), chuẩn hoá repo nộp bài (còn mở), phân loại tính năng của repo gốc |
 
 Phân công Thắng/Sang/Nguyên và gate từng tuần nằm trong ba file trên. W1 đã đóng; ngày 25/09 repo dự án vẫn chưa có source code, nên lịch W3 phụ thuộc vào việc đồng bộ hoặc hoàn thành W2.
 
