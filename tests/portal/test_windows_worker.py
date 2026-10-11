@@ -75,7 +75,7 @@ def test_window_scoring_requires_all_windows_and_keeps_relative_word_evidence():
             )
 
     class Scorer:
-        _artifact = SimpleNamespace(
+        artifact = SimpleNamespace(
             feature_order=("total_dur",),
             feature_lo=(26,),
             feature_hi=(61,),

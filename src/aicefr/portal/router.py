@@ -221,7 +221,7 @@ class PortalRouter:
             counts = self.service.store.connection.execute(
                 "SELECT status,COUNT(*) FROM responses GROUP BY status"
             ).fetchall()
-            artifact = getattr(self.control.pipeline._scorer, "_artifact", None)
+            artifact = getattr(self.control.pipeline._scorer, "artifact", None)
             health.update(
                 response_statuses=dict(counts),
                 recording_available=recording_available(),

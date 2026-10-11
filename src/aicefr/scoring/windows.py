@@ -31,7 +31,7 @@ def score_windows(audio, transcript, extractor, scorer):
     window. Equal non-overlapping windows cover the entire input, including tails.
     The unchanged artifact maps the median score to its original band thresholds.
     """
-    artifact = scorer._artifact
+    artifact = scorer.artifact
     if artifact is None or "total_dur" not in artifact.feature_order:
         raise ValueError("window scoring needs a duration-aware artifact")
     position = artifact.feature_order.index("total_dur")

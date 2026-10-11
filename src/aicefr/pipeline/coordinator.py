@@ -119,7 +119,7 @@ class PipelineCoordinator:
             features = self._extractor.extract(transcript, result.audio)
             assessment = self._scorer.score(features, transcript)
             window_versions = {}
-            artifact = getattr(self._scorer, "_artifact", None)
+            artifact = getattr(self._scorer, "artifact", None)
             if (
                 self._long_response_windows
                 and transcript.status is AsrStatus.OK
