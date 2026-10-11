@@ -5,6 +5,8 @@ Needs, outside the repository (M03 Test Plan v0.2):
   AICEFR_ASR_MODEL_DIR     CTranslate2 weight `whisper-small` (M03-EV-001);
                            default ~/models/faster-whisper-small
   AICEFR_SMOKE_EVIDENCE    optional JSON file to write the S1/S2 record into
+  AICEFR_MODEL_DIR         optional; with the pinned Ridge artifact there, S2 says
+                           whether asr_conf_mean is inside its training range
 Without the audio or the model the test is skipped, never passed. The record
 holds metadata only: no transcript, no audio, no path inside the repository.
 
@@ -38,8 +40,6 @@ AUDIO = os.environ.get("AICEFR_SMOKE_AUDIO")
 MODEL_DIR = Path(os.environ.get("AICEFR_ASR_MODEL_DIR", "~/models/faster-whisper-small"))
 MODEL_DIR = MODEL_DIR.expanduser()
 EVIDENCE = os.environ.get("AICEFR_SMOKE_EVIDENCE")
-# asr_conf_mean seen in training (M03 Research I-01); S2 records, never gates.
-TRAINING_RANGE = (0.691, 0.950)
 MODEL_FILES = ("model.bin", "config.json", "tokenizer.json", "vocabulary.txt")
 
 
@@ -108,6 +108,20 @@ def network_blocked() -> Iterator[list[str]]:
         yield attempts
 
 
+def training_range() -> tuple[float, float, float] | None:
+    """`asr_conf_mean`'s training range and OOD tolerance, read from the pinned
+    artifact (AICEFR_MODEL_DIR). The numbers derive from S&I, so they are read at
+    run time and never written into this repository (W4-S4)."""
+    model_dir = os.environ.get("AICEFR_MODEL_DIR")
+    if not model_dir or not (Path(model_dir) / "ridge_resp_v2.json").is_file():
+        return None
+    from aicefr.scoring.artifact import load_artifact
+
+    art = load_artifact(Path(model_dir) / "ridge_resp_v2.json")
+    i = art.feature_order.index("asr_conf_mean")
+    return art.feature_lo[i], art.feature_hi[i], art.ood_tolerance
+
+
 def require_inputs() -> Path:
     if not AUDIO or not Path(AUDIO).expanduser().is_file():
         pytest.skip("AICEFR_SMOKE_AUDIO is not set to an existing file (DEP-06)")
@@ -140,7 +154,7 @@ def test_s1_faster_whisper_small_runs_offline_and_s2_records_confidence():
     # S2: observed, compared with the training range; out of range is reported, not failed.
     probs = [w.prob for w in transcript.words if w.prob is not None]
     conf_mean = sum(probs) / len(probs) if probs else None
-    low, high = TRAINING_RANGE
+    bounds = training_range()
     write_evidence(
         "M03-TEST-S1",
         {
@@ -173,13 +187,15 @@ def test_s1_faster_whisper_small_runs_offline_and_s2_records_confidence():
             "n_words": len(transcript.words),
         },
     )
-    write_evidence(
-        "M03-TEST-S2",
-        {
-            "asr_conf_mean": None if conf_mean is None else round(conf_mean, 4),
-            "words_with_prob": len(probs),
-            "training_range": list(TRAINING_RANGE),
-            "inside_training_range": conf_mean is not None and low <= conf_mean <= high,
-        },
-    )
+    s2 = {
+        "asr_conf_mean": None if conf_mean is None else round(conf_mean, 4),
+        "words_with_prob": len(probs),
+        "compared_with_artifact": bounds is not None,
+    }
+    if bounds is not None and conf_mean is not None:
+        low, high, tol = bounds
+        span = high - low
+        s2["inside_training_range"] = low <= conf_mean <= high
+        s2["inside_accepted_range"] = low - tol * span <= conf_mean <= high + tol * span
+    write_evidence("M03-TEST-S2", s2)
     assert conf_mean is not None, "the engine returned no word probabilities"

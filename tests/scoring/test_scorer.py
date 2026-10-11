@@ -59,18 +59,32 @@ def vec(artifact, name):
 # --- M05-TEST-001 / 003: giá trị vàng trên artifact thật -------------------------
 
 
-@pytest.mark.parametrize(
-    ("vector", "score", "band", "status"),
-    [
-        ("mean", 3.9465, Band.B2, AssessmentStatus.REVIEW_REQUIRED),
-        ("feature_lo", 2.2575, Band.A2, AssessmentStatus.REVIEW_REQUIRED),
-        ("feature_hi", 4.9414, Band.B2, AssessmentStatus.ESTIMATED),
-    ],
-)
-def test_golden_vectors_on_real_artifact(real_artifact, vector, score, band, status):
+def expected_from_spec(art, values):
+    """The M05 Spec formula restated, so the expectation is read from the artifact
+    itself rather than from numbers copied into a public repository: the artifact's
+    statistics come from S&I, whose licence forbids publishing them (W4-S4)."""
+    raw = art.intercept + sum(
+        coef * (values[name] - mean) / (scale or 1.0)
+        for name, mean, scale, coef in zip(
+            art.feature_order, art.mean, art.scale, art.coef, strict=True
+        )
+    )
+    score = min(max(raw, 1.0), 6.0)
+    t = art.band_thresholds
+    band = Band.A2 if score < t["A2_B1"] else Band.B1 if score < t["B1_B2"] else Band.B2
+    near = any(abs(score - x) <= art.boundary_margin for x in t.values())
+    return score, band, AssessmentStatus.REVIEW_REQUIRED if near else AssessmentStatus.ESTIMATED
+
+
+@pytest.mark.parametrize("vector", ["mean", "feature_lo", "feature_hi"])
+def test_golden_vectors_on_real_artifact(real_artifact, vector):
     """M05-TEST-001."""
     art = real_artifact
-    a = scorer_for(art).score(make_fs(art.feature_order, vec(art, vector)), make_transcript())
+    values = vec(art, vector)
+    score, band, status = expected_from_spec(art, values)
+    if vector == "mean":
+        assert score == pytest.approx(art.intercept)  # every z = 0
+    a = scorer_for(art).score(make_fs(art.feature_order, values), make_transcript())
     assert a.overall_score == pytest.approx(score, abs=1e-4)
     assert a.overall_band is band
     assert a.status is status
@@ -244,3 +258,9 @@ def test_log_has_ids_and_status_but_no_feature_values(fake18, mid, caplog):
     text = caplog.text
     assert "response_id=r1" in text and "status=" in text and "model_version=fake_v1" in text
     assert "0.123456" not in text and "n_words" not in text
+
+
+def test_artifact_is_exposed_for_the_m04_extractor(fake18, tmp_path):
+    """W4-S3: the coordinator joins M04 to M05 through a public name, not `_artifact`."""
+    assert RidgeScorer(artifact=fake18).artifact is fake18
+    assert RidgeScorer.load(tmp_path / "missing.json").artifact is None

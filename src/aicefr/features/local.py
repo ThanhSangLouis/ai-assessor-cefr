@@ -51,16 +51,13 @@ class SileroVadEngine:
         if values.size == 0:
             return []
         model, get_speech_timestamps = self._load()
-        try:
-            import torch
-            timestamps = get_speech_timestamps(
-                torch.from_numpy(values.copy()), model, threshold=self.threshold,
-                sampling_rate=16_000, min_silence_duration_ms=self.min_silence_ms,
-                return_seconds=True,
-            )
-            return [(float(item["start"]), float(item["end"])) for item in timestamps]
-        except Exception:
-            raise
+        import torch
+        timestamps = get_speech_timestamps(
+            torch.from_numpy(values.copy()), model, threshold=self.threshold,
+            sampling_rate=16_000, min_silence_duration_ms=self.min_silence_ms,
+            return_seconds=True,
+        )
+        return [(float(item["start"]), float(item["end"])) for item in timestamps]
 
 
 __all__ = ["SileroVadEngine", "VadUnavailableError"]
