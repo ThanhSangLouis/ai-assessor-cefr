@@ -8,7 +8,7 @@
 
 Bản nháp W2 dùng 5 tiêu chí theo lựa chọn của chủ dự án từ báo cáo tuần 1: Range, Accuracy, Fluency, Coherence, Phonology. `Interaction` giữ field `null` cùng reason `insufficient_evidence`; báo cáo chỉ hiển thị overall score/band và coverage/evidence của năm tiêu chí, không lặp overall thành năm điểm, theo quyết định của chủ dự án ngày 25/09/2026. Mô hình baseline là **ước lượng thử nghiệm** cho đến khi có dữ liệu và validation phù hợp. Metric báo cáo phải gắn với dataset, protocol và revision hiện hành. Task C, fine-tune mô hình nền, nghiên cứu người học thật, tuyên bố độ chính xác chuẩn hóa, sản phẩm mobile và production nằm ngoài mốc này. Những nội dung đó cần một đợt riêng nếu chủ dự án lựa chọn.
 
-M01–M08 là kiến trúc module của dự án; [đề cương gốc và báo cáo W1](../sources/README.md) cung cấp bối cảnh và yêu cầu đầu vào. SDD xác lập contract, test plan và phạm vi triển khai của từng module. Mọi path `src/aicefr/` dưới đây là **đề xuất**, chưa phải code đã tạo.
+M01–M08 là module nền của dự án; W5 bổ sung M09–M16 để tách các scope mới khỏi lịch sử approval cũ. [Đề cương gốc và báo cáo W1](../sources/README.md) cung cấp bối cảnh và yêu cầu đầu vào. SDD xác lập contract, test plan và phạm vi triển khai của từng module.
 
 ## 2. Module, chủ sở hữu và đường phụ thuộc
 
@@ -25,6 +25,19 @@ Phân công W2–W3 dưới đây là **đề xuất dựa trên chuyên môn W1
 | [M07 — Teacher Review](../sdd/modules/m07-teacher-review/01-requirement.md) | Định tuyến review, hàng đợi, duyệt/sửa và audit | Nguyên | review, api/review | M05, M06, M08 |
 | [M08 — Identity, Storage & Admin](../sdd/modules/m08-identity-storage-admin/01-requirement.md) | Tài khoản/role, consent, SQLite, lưu trữ, xuất/xóa tối thiểu | Thắng | auth, storage, infra | contract dùng chung |
 
+Module mở rộng W5 đều đang `DRAFT/PENDING`, chưa có quyền implement:
+
+| ID / SDD | Trách nhiệm W5 | Owner | Task W5 |
+| --- | --- | --- | --- |
+| [M09 — Trust Layer](../sdd/modules/m09-trust-layer/01-requirement.md) | LID, validity shield, conformal, provenance | Sang | W5-S01 |
+| [M10 — Learning Experience](../sdd/modules/m10-learning-experience/01-requirement.md) | Practice, lesson, review, achievement, streak | Sang | W5-S02/S03 |
+| [M11 — Identity & Account](../sdd/modules/m11-identity-account/01-requirement.md) | Account/session/admin/Google/consent W5 | Thắng | W5-T02 |
+| [M12 — Blind Evaluation](../sdd/modules/m12-blind-evaluation/01-requirement.md) | Blind rating, adjudication, agreement | Sang | W5-S04 |
+| [M13 — Learning Evidence](../sdd/modules/m13-learning-evidence/01-requirement.md) | Pronunciation, study, KPI, reliable change | Sang | W5-S03/S04 |
+| [M14 — Billing & Licensing](../sdd/modules/m14-billing-licensing/01-requirement.md) | Sandbox payment, entitlement, license | Thắng | W5-T03 |
+| [M15 — Product Web](../sdd/modules/m15-product-web/01-requirement.md) | Public/student/teacher/admin UI và browser QA | Nguyên | W5-N01–N04 |
+| [M16 — Monolith Runtime](../sdd/modules/m16-monolith-runtime/01-requirement.md) | Migration, worker, package, CI, integration | Thắng | W5-T01/T04 |
+
 Thắng giữ hợp đồng dùng chung, pipeline coordinator, entrypoint API, migration và CI. Nguyên giữ route/trang sinh viên và giảng viên trong file riêng; Sang giữ các package AI. Mỗi người chỉ sửa file thuộc phần mình; thay đổi schema/enum phải được cả ba review trước khi Thắng cập nhật.
 
 ## 3. Kế hoạch theo tuần
@@ -35,6 +48,7 @@ Thắng giữ hợp đồng dùng chung, pipeline coordinator, entrypoint API, m
 | W2 — 21–25/09 | [week-02.md](week-02.md) | SDD nháp; implementation chưa xác minh | Contract, test/plan/task và local smoke có điều kiện |
 | W3 — 28/09–02/10 | [week-03.md](week-03.md) | DRAFT | Tích hợp, teacher review, QA, evidence và nghiệm thu |
 | W4 — 05–11/10 | [week-04.md](week-04.md) | v2, đối chiếu 11/10/2026 | Nối đầu-cuối (đã đạt), chuẩn hoá repo nộp bài (còn mở), phân loại tính năng của repo gốc |
+| W5 — 12–18/10 | [week-05.md](week-05.md) | DRAFT, chờ duyệt | Bản monolith chạy được, đồng nhất chức năng với bản Sang tại `40907cc`, hoàn thiện code, dữ liệu, giao diện và verification |
 
 Phân công Thắng/Sang/Nguyên và gate từng tuần nằm trong ba file trên. W1 đã đóng; ngày 25/09 repo dự án vẫn chưa có source code, nên lịch W3 phụ thuộc vào việc đồng bộ hoặc hoàn thành W2.
 

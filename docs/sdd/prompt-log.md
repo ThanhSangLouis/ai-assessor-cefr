@@ -12,6 +12,14 @@ Prompt và evidence chính thức thuộc scope root của từng module/feature
 | M06 | [prompts/M06](modules/m06-diagnostic-report/prompts/prompt-log.md) | [evidence/M06](modules/m06-diagnostic-report/evidence/evidence-manifest.md) | [status/M06](modules/m06-diagnostic-report/07-status.md) |
 | M07 | [prompts/M07](modules/m07-teacher-review/prompts/prompt-log.md) | [evidence/M07](modules/m07-teacher-review/evidence/evidence-manifest.md) | [status/M07](modules/m07-teacher-review/07-status.md) |
 | M08 | [prompts/M08](modules/m08-identity-storage-admin/prompts/prompt-log.md) | [evidence/M08](modules/m08-identity-storage-admin/evidence/evidence-manifest.md) | [status/M08](modules/m08-identity-storage-admin/07-status.md) |
+| M09 | NONE ISSUED | chưa tạo | [status/M09](modules/m09-trust-layer/07-status.md) |
+| M10 | NONE ISSUED | chưa tạo | [status/M10](modules/m10-learning-experience/07-status.md) |
+| M11 | NONE ISSUED | chưa tạo | [status/M11](modules/m11-identity-account/07-status.md) |
+| M12 | NONE ISSUED | chưa tạo | [status/M12](modules/m12-blind-evaluation/07-status.md) |
+| M13 | NONE ISSUED | chưa tạo | [status/M13](modules/m13-learning-evidence/07-status.md) |
+| M14 | NONE ISSUED | chưa tạo | [status/M14](modules/m14-billing-licensing/07-status.md) |
+| M15 | NONE ISSUED | chưa tạo | [status/M15](modules/m15-product-web/07-status.md) |
+| M16 | NONE ISSUED | chưa tạo | [status/M16](modules/m16-monolith-runtime/07-status.md) |
 | W3 integration | [prompts/W3](features/w3-local-integration/prompts/prompt-log.md) | [evidence/W3](features/w3-local-integration/evidence/evidence-manifest.md) | [status/W3](features/w3-local-integration/07-status.md) |
 
 Quy trình: Phase 05 APPROVED → lưu prompt file và log trong module → xác minh fingerprint → bàn giao Antigravity → lưu raw report và evidence trong module → Codex review actual diff → cập nhật Status. Bản chat đơn thuần không tự tạo file prompt hoặc evidence.

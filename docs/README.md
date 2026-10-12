@@ -3,12 +3,12 @@
 | Nơi lưu | Nội dung | Quy tắc |
 | --- | --- | --- |
 | `../AGENTS.md`, `../ANTIGRAVITY.md`, `../.agents/skills/sdd-antigravity-orchestrator/` | Một bộ quy tắc/skill SDD dùng chung cho cả ba người và điểm vào Antigravity | Dùng bản trong repo, không dựa vào skill cài riêng trên từng máy |
-| `plan/three-week-roadmap.md` | Tổng quan 3 tuần và các quyết định còn mở | Dẫn tới ba kế hoạch tuần riêng |
-| `plan/week-01.md`, `week-02.md`, `week-03.md` | Kế hoạch/record theo tuần | W1 DONE; W2 có implementation/evidence theo từng module; W3 review/verification local |
-| `sdd/modules/<slug>/` | SDD độc lập theo 8 module M01–M08 | Mỗi module có Prompt Log, Evidence Manifest, Review Records và Status local |
+| `plan/three-week-roadmap.md` | Tổng quan các mốc và quyết định còn mở | Dẫn tới kế hoạch tuần riêng |
+| `plan/week-01.md` … `week-05.md` | Kế hoạch/record theo tuần | W5 là task bắt buộc theo người, giữ modular monolith |
+| `sdd/modules/<slug>/` | SDD độc lập theo M01–M16 | M01–M08 là nền hiện hành; M09–M16 là scope W5 DRAFT, mỗi module có Status local |
 | `sdd/features/w3-local-integration/` | Scope tích hợp W3, ba lane Luna, Codex review | Quyền implement trực tiếp từ Thắng; formal verdict PENDING |
 | `local-run.md` | Cài đặt, CLI/demo, cấu hình model local và restart | Audio/model/DB ngoài Git; không tự tải weights khi chạy |
-| `sdd/prompt-log.md` | Chỉ mục log prompt của 8 module | Prompt thật nằm trong prompts/ của từng module |
+| `sdd/prompt-log.md` | Chỉ mục log prompt module đã phát hành | Prompt thật nằm trong prompts/ của từng module; M09–M16 chưa phát prompt |
 | `evidence/` | Hồ sơ minh chứng theo rubric và checklist 12 mục | Dẫn tới artifact gốc, không nhân đôi số liệu |
 | `design/week-01/` | Hai bản hình sơ đồ lớp do nhóm đưa vào | Dùng bản sáng để review; bản tối là biến thể trình bày |
 | `reports/week-01/` | Tổng kết W1, báo cáo Word gốc và 4 hình được tách từ báo cáo | Giữ Word nguyên bản; hình lưu riêng để dẫn chiếu |
