@@ -1,0 +1,20 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -c "import json
+from aicefr.api.student import StudentStatus
+from aicefr.api.templates import render_status
+from aicefr.contracts import ResponseStatus
+results = []
+for status in ResponseStatus:
+    page = render_status(StudentStatus(response_id='fixture-refresh', status=status, revision=1, report_available=False))
+    refresh = '<meta http-equiv=\"refresh\" content=\"5\">' in page
+    expected = status in {ResponseStatus.QUEUED, ResponseStatus.RUNNING}
+    assert refresh == expected, (status, refresh, expected)
+    results.append({'status': status.value, 'refresh_5s': refresh})
+print(json.dumps(results))
+"
+STARTED: 2026-10-12T00:42:19.353783+07:00
+EXIT: 1
+
+
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+ImportError: cannot import name 'render_status' from 'aicefr.api.templates' (D:\LAPTRINH\TLCN\ai-assessor-cefr\src\aicefr\api\templates.py)

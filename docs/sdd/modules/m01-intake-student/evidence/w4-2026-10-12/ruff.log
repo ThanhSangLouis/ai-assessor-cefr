@@ -1,0 +1,6 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -m ruff check src/aicefr/api src/aicefr/report src/aicefr/review src/aicefr/storage tests/api tests/report tests/review tests/storage
+STARTED: 2026-10-12T00:50:17.405917+07:00
+EXIT: 0
+
+All checks passed!
+

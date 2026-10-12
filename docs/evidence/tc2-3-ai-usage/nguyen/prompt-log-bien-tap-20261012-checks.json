@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-12T01:40:03.036785+07:00",
+  "workbook": "docs/evidence/tc2-3-ai-usage/AI Prompt Log - W05 - 2026-10-12_2026-10-18.xlsx",
+  "before_sha256": "e1805251f53ccb30ba1df347f78fd5596d444678928a383fc12fa913a1d80526",
+  "after_sha256": "efe814a5083b021c12647a58aaf654012f2eb03e62570818a1bccd683af9c88a",
+  "changed_parts": [
+    "xl/worksheets/sheet2.xml",
+    "xl/worksheets/sheet4.xml"
+  ],
+  "allowed_cells": {
+    "xl/worksheets/sheet2.xml": [
+      "E5",
+      "D6",
+      "E6",
+      "F6",
+      "D7",
+      "E7",
+      "F7",
+      "D8",
+      "E8",
+      "F8",
+      "D9",
+      "E9",
+      "F9",
+      "D10",
+      "E10",
+      "F10",
+      "D11",
+      "E11",
+      "F11",
+      "D12",
+      "E12",
+      "F12",
+      "A11",
+      "B11",
+      "C11",
+      "A12",
+      "B12",
+      "C12"
+    ],
+    "xl/worksheets/sheet4.xml": [
+      "B5",
+      "B11",
+      "E10"
+    ]
+  },
+  "changed_row_heights": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "unrelated_content": "PRESERVED",
+  "summary_formulas": "PRESERVED",
+  "expected_counts": {
+    "total": 7,
+    "Nguyên": 7,
+    "Codex": 7
+  },
+  "render_and_formula_check": "FINAL_REIMPORT_VERIFIED; NO_FORMULA_ERRORS",
+  "original_prompts": "SAVED_VERBATIM_IN_MARKDOWN",
+  "markdown_links": {
+    "files_checked": 182,
+    "broken": []
+  },
+  "git_diff_check": 0,
+  "working_source_sha256": "UNCHANGED_FROM_W4_VERIFICATION"
+}

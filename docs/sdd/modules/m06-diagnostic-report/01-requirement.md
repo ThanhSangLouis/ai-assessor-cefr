@@ -11,7 +11,7 @@
 | TARGET | W2–W3 |
 | RELATED SCOPES | M03 transcript, M04 features, M05 assessment, M07 teacher review |
 | SOURCE BASIS | [Tài liệu nguồn do nhóm tạo](../../../sources/README.md), [báo cáo W1](../../../reports/week-01/bao-cao-tuan-01.docx); SDD hiện hành quyết định phạm vi, contract và approval của module |
-| CODE TARGET | `src/aicefr/report/` — đề xuất, chưa tạo |
+| CODE TARGET | `src/aicefr/report/` — actual hiện có, gồm SQLite repository |
 
 ## Requirement (Yêu cầu)
 

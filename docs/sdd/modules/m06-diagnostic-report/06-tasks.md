@@ -16,4 +16,4 @@ Task dưới đây là **bản nháp để review**, chưa phát prompt hoặc c
 - Unit test bắt buộc cho logic có thể kiểm thử; integration/API/browser check theo Test Plan. Nếu test không áp dụng, giải thích tại task đã duyệt và dùng alternative evidence.
 - Một task chỉ được đánh dấu hoàn thành sau actual diff, kết quả chạy thật, Code/Clean Code Review, Final Verification trên revision cuối và user verdict. Metric/test báo cáo phải gắn với lệnh chạy, revision và evidence của dự án.
 
-**Trạng thái task:** direct implementation/test evidence đã được ghi theo chỉ dẫn trực tiếp ngày 28/09/2026; không task nào được đánh dấu DONE/APPROVED. Kết quả chỉ dùng fixture, không phải đo lường CEFR. **Phase 05 verdict:** PENDING.
+**Trạng thái task tại 12/10/2026:** Validator/builder, report SQLite và persisted M07 callback có implementation/test. Fixture không là validation CEFR. [M06-W4-20261012](evidence/M06-W4-20261012.md) dẫn raw suite liên quan 127 passed / 3 skipped / 0 failed và source revision/working diff. Không task nào được ghi DONE/APPROVED thay người dùng. **Phase 05 verdict:** PENDING.

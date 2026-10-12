@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-12",
+  "user_instruction": "và hãy chuyển nội dung này vào file AI log w04",
+  "moved_records": 7,
+  "new_request_record": 1,
+  "actual_usage_date": "2026-10-12",
+  "workbooks": [
+    {
+      "week": "W04",
+      "path": "docs/evidence/tc2-3-ai-usage/AI Prompt Log - W04 - 2026-10-05_2026-10-11.xlsx",
+      "before_sha256": "03ea64c046d793e2c241b47fde6533a7df2f82bcce268140475a1188e400ec61",
+      "after_sha256": "d8536a85b5360fa2eb047774ded060113a9a029dc8ab6c30501013f3d1cb7109",
+      "changed_parts": [
+        "xl/worksheets/sheet2.xml",
+        "xl/worksheets/sheet4.xml"
+      ],
+      "allowed_cells": {
+        "xl/worksheets/sheet2.xml": [
+          "E5",
+          "E3",
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "A9",
+          "B9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "A10",
+          "B10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "A11",
+          "B11",
+          "C11",
+          "D11",
+          "E11",
+          "F11",
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12",
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13"
+        ],
+        "xl/worksheets/sheet4.xml": [
+          "B5",
+          "B11",
+          "E10"
+        ]
+      },
+      "unrelated_content": "PRESERVED",
+      "summary_formulas": "PRESERVED"
+    },
+    {
+      "week": "W05",
+      "path": "docs/evidence/tc2-3-ai-usage/AI Prompt Log - W05 - 2026-10-12_2026-10-18.xlsx",
+      "before_sha256": "efe814a5083b021c12647a58aaf654012f2eb03e62570818a1bccd683af9c88a",
+      "after_sha256": "51e8de5e82aec45871bffeef385910eac6d4aa544ea5413d0d3dc3ce5b089df2",
+      "changed_parts": [
+        "xl/worksheets/sheet2.xml",
+        "xl/worksheets/sheet4.xml"
+      ],
+      "allowed_cells": {
+        "xl/worksheets/sheet2.xml": [
+          "E5",
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8",
+          "A9",
+          "B9",
+          "C9",
+          "D9",
+          "E9",
+          "F9",
+          "A10",
+          "B10",
+          "C10",
+          "D10",
+          "E10",
+          "F10",
+          "A11",
+          "B11",
+          "C11",
+          "D11",
+          "E11",
+          "F11",
+          "A12",
+          "B12",
+          "C12",
+          "D12",
+          "E12",
+          "F12"
+        ],
+        "xl/worksheets/sheet4.xml": [
+          "B5",
+          "B11",
+          "E10"
+        ]
+      },
+      "unrelated_content": "PRESERVED",
+      "summary_formulas": "PRESERVED"
+    }
+  ],
+  "final_reimport": "VERIFIED",
+  "formula_errors": 0,
+  "render": "VERIFIED_TWO_WORKBOOKS",
+  "destination_summary": {
+    "week": "W04",
+    "summary": [
+      [
+        45
+      ]
+    ],
+    "nguyen": [
+      [
+        8
+      ]
+    ],
+    "codex": [
+      [
+        28
+      ]
+    ]
+  },
+  "source_summary": {
+    "week": "W05",
+    "summary": [
+      [
+        0
+      ]
+    ],
+    "nguyen": [
+      [
+        0
+      ]
+    ],
+    "codex": [
+      [
+        0
+      ]
+    ]
+  },
+  "moved_contents": "MATCH_ORIGINAL",
+  "source_rows": "CLEARED",
+  "broken_markdown_links": [],
+  "git_diff_check": 0,
+  "working_source": "UNCHANGED"
+}

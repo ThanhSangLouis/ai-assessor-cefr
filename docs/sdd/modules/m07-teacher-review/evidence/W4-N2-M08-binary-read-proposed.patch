@@ -1,0 +1,27 @@
+--- a/src/aicefr/storage/blob.py
++++ b/src/aicefr/storage/blob.py
+@@ -61,7 +61,8 @@
+     def read(self, blob: BlobRef) -> bytes:
+         try:
+             descriptor = os.open(
+-                self._path(blob.blob_id), os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
++                self._path(blob.blob_id),
++                os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+             )
+             try:
+                 details = os.fstat(descriptor)
+--- a/tests/storage/test_sqlite_blob_store.py
++++ b/tests/storage/test_sqlite_blob_store.py
+@@ -253,3 +253,12 @@
+         is None
+     )
+     connection.close()
++
++
++def test_blob_read_preserves_binary_newlines_and_control_bytes(tmp_path):
++    blobs = BlobStore(tmp_path / "binary-fixture", max_bytes=64)
++    payload = b"fixture\r\n\x1a\x00tail"
++    blob = blobs.store(payload)
++
++    assert blobs.read(blob) == payload
++    assert (blobs.root / blob.blob_id).read_bytes() == payload

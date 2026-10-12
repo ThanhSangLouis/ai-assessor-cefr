@@ -36,3 +36,8 @@
 - Phase 01/03/04/05 M07 được duyệt trước prompt W3.
 
 **CODEX CHECK RESULT:** DRAFT — ranh giới và phụ thuộc đã mô tả; các quyết định mở/approval khiến task chưa `READY`. **User verdict Phase 05:** PENDING.
+
+
+## Actual implementation — W4-N4, 12/10/2026
+
+Contract/reason routing, queue/API/UI, decision/audit/CAS và portal claim/reopen có implementation/test. Cross-owner/user verdict PENDING; current browser NOT_RUN. Source đã có trong Git tại base `3b2d2b7`; working fix binary read M08/regression test được Nguyên cho phép riêng ngày 12/10. [Evidence hiện hành](evidence/M07-W4-20261012.md) thay snapshot 28/09 làm nguồn current technical record; snapshot cũ giữ lịch sử. Chưa có Phase 05 approval hoặc prompt Antigravity mới từ lượt này.

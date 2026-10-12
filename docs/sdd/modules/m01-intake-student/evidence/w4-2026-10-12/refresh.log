@@ -1,0 +1,18 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -c "import json
+from aicefr.api.student import StudentStatus
+from aicefr.api.templates import render_student_status
+from aicefr.contracts import ResponseStatus
+results = []
+for status in ResponseStatus:
+    page = render_student_status(StudentStatus(response_id='fixture-refresh', status=status, revision=1, report_available=False))
+    refresh = '<meta http-equiv=\"refresh\" content=\"5\">' in page
+    expected = status in {ResponseStatus.QUEUED, ResponseStatus.RUNNING}
+    assert refresh == expected, (status, refresh, expected)
+    results.append({'status': status.value, 'refresh_5s': refresh})
+print(json.dumps(results))
+"
+STARTED: 2026-10-12T00:50:17.548720+07:00
+EXIT: 0
+
+[{"status": "QUEUED", "refresh_5s": true}, {"status": "RUNNING", "refresh_5s": true}, {"status": "COMPLETED", "refresh_5s": false}, {"status": "REVIEW_REQUIRED", "refresh_5s": false}, {"status": "REJECTED", "refresh_5s": false}, {"status": "FAILED", "refresh_5s": false}]
+

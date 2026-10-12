@@ -1,0 +1,91 @@
+{
+  "scope": "W4-N1/N2/N3/N4; M01/M06/M07",
+  "date": "2026-10-12",
+  "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "branch": "codex/w4-nguyen-completion",
+  "trees": {
+    "src": "4d2236e5abed2b41d5c264057a1941ebf9eb4693",
+    "tests": "ae2a8c7a5759d4e1930b54cf89440cf5a1e6a7c0",
+    "scripts": "1498760f205bf177177868c8861fe48c0c9a629c"
+  },
+  "source_diff": "diff --git a/src/aicefr/storage/blob.py b/src/aicefr/storage/blob.py\nindex 5a79ce8..69b392f 100644\n--- a/src/aicefr/storage/blob.py\n+++ b/src/aicefr/storage/blob.py\n@@ -61,7 +61,8 @@ class BlobStore:\n     def read(self, blob: BlobRef) -> bytes:\n         try:\n             descriptor = os.open(\n-                self._path(blob.blob_id), os.O_RDONLY | getattr(os, \"O_NOFOLLOW\", 0)\n+                self._path(blob.blob_id),\n+                os.O_RDONLY | getattr(os, \"O_BINARY\", 0) | getattr(os, \"O_NOFOLLOW\", 0),\n             )\n             try:\n                 details = os.fstat(descriptor)\ndiff --git a/tests/storage/test_sqlite_blob_store.py b/tests/storage/test_sqlite_blob_store.py\nindex 2965d23..1475586 100644\n--- a/tests/storage/test_sqlite_blob_store.py\n+++ b/tests/storage/test_sqlite_blob_store.py\n@@ -11,6 +11,15 @@ from aicefr.storage.service import ResponseService\n from aicefr.storage.sqlite import SQLiteStore\n \n \n+def test_blob_read_preserves_binary_newlines_and_control_bytes(tmp_path):\n+    blobs = BlobStore(tmp_path / \"binary-fixture\", max_bytes=64)\n+    payload = b\"fixture\\r\\n\\x1a\\x00tail\"\n+    blob = blobs.store(payload)\n+\n+    assert blobs.read(blob) == payload\n+    assert (blobs.root / blob.blob_id).read_bytes() == payload\n+\n+\n class Clock:\n     def __init__(self):\n         self.now = datetime(2026, 9, 28, tzinfo=UTC)",
+  "working_file_sha256": {
+    "src/aicefr/storage/blob.py": "dfa07265aeab27a8414c33953e0e498823d0f1449192f563a6f71a08df9e3579",
+    "tests/storage/test_sqlite_blob_store.py": "0389c9ab9404909cb7a4afb603bf6f553ecd5060cd67ddfbabc57726f912621b"
+  },
+  "model_directory_configured": false,
+  "python": "Python 3.12.10",
+  "checks": [
+    {
+      "check_id": "pytest",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "-m",
+        "not smoke",
+        "tests/api",
+        "tests/report",
+        "tests/review",
+        "tests/local",
+        "tests/pipeline",
+        "tests/portal",
+        "tests/storage",
+        "--cov=aicefr.api",
+        "--cov=aicefr.report",
+        "--cov=aicefr.review",
+        "--cov-branch",
+        "--cov-report=term-missing",
+        "--cov-report=json:D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\coverage.json",
+        "--junitxml=D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\pytest.xml"
+      ],
+      "started_at": "2026-10-12T00:49:52.466620+07:00",
+      "exit_code": 0,
+      "log": "pytest.log",
+      "sha256": "804016880db8ce0a06b6be8b39b77902979f104e3ecc02420771e73f28f40f74",
+      "tail": "      0      0      0   100%\nsrc\\aicefr\\report\\contracts.py      78      6     12      6    87%   55, 57, 112, 116, 118, 120\nsrc\\aicefr\\report\\service.py       173     17     66     13    87%   55, 84, 90, 92, 96, 98, 101, 105, 108-109, 188, 210, 244-250, 252-258, 331\nsrc\\aicefr\\report\\sqlite.py         17      0      2      0   100%\nsrc\\aicefr\\review\\__init__.py        0      0      0      0   100%\nsrc\\aicefr\\review\\routing.py        16      1      4      1    90%   64\nsrc\\aicefr\\review\\service.py       148     31     30      9    75%   40, 42, 44, 112, 117, 137, 179-200, 205-231, 245, 247, 280-286, 292\nsrc\\aicefr\\review\\sqlite.py        102      8     24      8    87%   124, 154, 222, 289, 312, 314, 323, 348\n----------------------------------------------------------------------------\nTOTAL                             1239    165    362     95    83%\nCoverage JSON written to file D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\coverage.json\n=========================== short test summary info ===========================\nSKIPPED [1] tests\\local\\test_factory_integration.py:117: artifact path unavailable\nSKIPPED [1] tests\\portal\\test_portal.py:449: pinned external model artifact unavailable\nSKIPPED [1] tests\\storage\\test_sqlite_blob_store.py:165: symlink creation is unavailable on this Windows host: 1314\n127 passed, 3 skipped in 23.59s\n"
+    },
+    {
+      "check_id": "ruff",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "src/aicefr/api",
+        "src/aicefr/report",
+        "src/aicefr/review",
+        "src/aicefr/storage",
+        "tests/api",
+        "tests/report",
+        "tests/review",
+        "tests/storage"
+      ],
+      "started_at": "2026-10-12T00:50:17.405917+07:00",
+      "exit_code": 0,
+      "log": "ruff.log",
+      "sha256": "f2ce8742dc0783dd16f066fcc9653d4960630bad3005a8fdd3bec618a5dde780",
+      "tail": "All checks passed!\n"
+    },
+    {
+      "check_id": "refresh",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-c",
+        "import json\nfrom aicefr.api.student import StudentStatus\nfrom aicefr.api.templates import render_student_status\nfrom aicefr.contracts import ResponseStatus\nresults = []\nfor status in ResponseStatus:\n    page = render_student_status(StudentStatus(response_id='fixture-refresh', status=status, revision=1, report_available=False))\n    refresh = '<meta http-equiv=\"refresh\" content=\"5\">' in page\n    expected = status in {ResponseStatus.QUEUED, ResponseStatus.RUNNING}\n    assert refresh == expected, (status, refresh, expected)\n    results.append({'status': status.value, 'refresh_5s': refresh})\nprint(json.dumps(results))\n"
+      ],
+      "started_at": "2026-10-12T00:50:17.548720+07:00",
+      "exit_code": 0,
+      "log": "refresh.log",
+      "sha256": "99ec6e49a63d42eadb4ea5d3e7134f17adcc8c93d411e729835cd9575f2b6fa2",
+      "tail": "[{\"status\": \"QUEUED\", \"refresh_5s\": true}, {\"status\": \"RUNNING\", \"refresh_5s\": true}, {\"status\": \"COMPLETED\", \"refresh_5s\": false}, {\"status\": \"REVIEW_REQUIRED\", \"refresh_5s\": false}, {\"status\": \"REJECTED\", \"refresh_5s\": false}, {\"status\": \"FAILED\", \"refresh_5s\": false}]\n"
+    }
+  ],
+  "browser_current_revision": "NOT_RUN",
+  "browser_reason": "No browser runtime in the project environment; historical W3 evidence is referenced separately.",
+  "cefr_validation": "NOT_EVALUATED",
+  "user_verdict": "PENDING"
+}

@@ -11,7 +11,7 @@
 | TARGET | W2 chuẩn bị contract; W3 triển khai |
 | RELATED SCOPES | M05 score/reason, M06 diagnostic report, M08 account/DB |
 | SOURCE BASIS | [Tài liệu nguồn do nhóm tạo](../../../sources/README.md), [báo cáo W1](../../../reports/week-01/bao-cao-tuan-01.docx); SDD hiện hành quyết định phạm vi, contract và approval của module |
-| CODE TARGET | `src/aicefr/review/`, `src/aicefr/api/review.py` — đề xuất, chưa tạo |
+| CODE TARGET | `src/aicefr/review/`, `src/aicefr/api/review.py` — actual hiện có |
 
 ## Requirement (Yêu cầu)
 

@@ -1,0 +1,15 @@
+{
+  "algorithm": "sdd-workspace-v2",
+  "base_revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "file_count": 367,
+  "fingerprint": "47713321b79619cdfca68b593e2dcf06ab975e13a47afbf21d312f65b367e79b",
+  "git_status": [
+    " M \"docs/evidence/tc2-3-ai-usage/AI Prompt Log - W05 - 2026-10-12_2026-10-18.xlsx\"",
+    " D docs/reports/week-03/~$o-cao-tuan-03.docx",
+    "?? docs/sdd/modules/m01-intake-student/evidence/w4-2026-10-12/execution-baseline.json"
+  ],
+  "index_digest": "3d3af009a09f69737164b0066592b07198c7fecc0b73cae1d27764424a7f7e1e",
+  "metadata_files": [],
+  "mode": "git",
+  "root": "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr"
+}

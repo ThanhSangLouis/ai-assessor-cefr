@@ -1,0 +1,49 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -m pytest -p no:cacheprovider -q tests/storage/test_sqlite_blob_store.py::test_blob_read_preserves_binary_newlines_and_control_bytes
+EXIT: 1
+F                                                                        [100%]
+================================== FAILURES ===================================
+_________ test_blob_read_preserves_binary_newlines_and_control_bytes __________
+
+tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-4/test_blob_read_preserves_binar0')
+
+    def test_blob_read_preserves_binary_newlines_and_control_bytes(tmp_path):
+        blobs = BlobStore(tmp_path / "binary-fixture", max_bytes=64)
+        payload = b"fixture\r\n\x1a\x00tail"
+        blob = blobs.store(payload)
+    
+>       assert blobs.read(blob) == payload
+               ^^^^^^^^^^^^^^^^
+
+tests\storage\test_sqlite_blob_store.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <aicefr.storage.blob.BlobStore object at 0x00000144467CC5C0>
+blob = BlobRef(blob_id='a69956898bdb44f094b1b832241fc50d', sha256='314e1994c63a0e8c7c7a1d448d1c3c10efbbcc1522c1954e386388c2c7820863', size_bytes=15)
+
+    def read(self, blob: BlobRef) -> bytes:
+        try:
+            descriptor = os.open(
+                self._path(blob.blob_id), os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+            )
+            try:
+                details = os.fstat(descriptor)
+                if (
+                    not stat.S_ISREG(details.st_mode)
+                    or details.st_size != blob.size_bytes
+                    or details.st_size > self.max_bytes
+                ):
+                    raise BlobIntegrityError("blob integrity failure")
+                data = os.read(descriptor, blob.size_bytes + 1)
+            finally:
+                os.close(descriptor)
+        except OSError:
+            raise BlobIntegrityError("blob unavailable") from None
+        if len(data) != blob.size_bytes or hashlib.sha256(data).hexdigest() != blob.sha256:
+>           raise BlobIntegrityError("blob integrity failure")
+E           aicefr.storage.blob.BlobIntegrityError: blob integrity failure
+
+src\aicefr\storage\blob.py:80: BlobIntegrityError
+=========================== short test summary info ===========================
+FAILED tests/storage/test_sqlite_blob_store.py::test_blob_read_preserves_binary_newlines_and_control_bytes
+1 failed in 0.39s
+

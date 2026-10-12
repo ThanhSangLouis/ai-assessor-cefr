@@ -36,3 +36,8 @@
 - AC và test plan Phase 01/03/04/05 được người dùng duyệt.
 
 **CODEX CHECK RESULT:** DRAFT — ranh giới và phụ thuộc đã mô tả; các quyết định mở/approval khiến task chưa `READY`. **User verdict Phase 05:** PENDING.
+
+
+## Actual implementation — W4-N4, 12/10/2026
+
+Submit/status/report và template có code/test; auto-refresh 5 giây đã kiểm tra cả 6 trạng thái. Browser W3 có evidence lịch sử, current browser NOT_RUN. Source đã có trong Git tại base `3b2d2b7`; working fix binary read M08/regression test được Nguyên cho phép riêng ngày 12/10. [Evidence hiện hành](evidence/M01-W4-20261012.md) thay snapshot 28/09 làm nguồn current technical record; snapshot cũ giữ lịch sử. Chưa có Phase 05 approval hoặc prompt Antigravity mới từ lượt này.

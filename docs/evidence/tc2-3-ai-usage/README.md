@@ -10,7 +10,11 @@ AI Usage Log, prompt gốc, mục đích dùng AI, file sinh ra, phần người
 
 | Artifact | Vai trò | Tình trạng |
 | --- | --- | --- |
-| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp cho riêng tuần đó | W01–W04 đã tách; W05–W06 chuẩn bị trống, 08/10/2026 |
+| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 có 3 bản ghi Nguyên trong PR này; W06 chưa có bản ghi |
+| [Kiểm tra task và tạo PR W4 của Nguyên](nguyen/pr-W4-20261012.md) | Ba yêu cầu thực tế ngày 12/10; phạm vi commit và ánh xạ workbook | W05 trong PR: 3 dòng Nguyên/Codex; không khép lịch sử W04 còn thiếu |
+| [Chuyển log Nguyên sang W04](nguyen/chuyen-log-sang-W04-20261012.md) | Ánh xạ 7 dòng từ W05 sang W04 và yêu cầu chuyển file | Ngoại lệ nơi lưu theo chỉ dẫn Nguyên; giữ ngày thực tế 12/10/2026 |
+| [Biên tập prompt của Nguyên](nguyen/prompt-log-bien-tap-20261012.md) | Đối chiếu nội dung gốc và phiên bản diễn đạt chuyên nghiệp của W05, hàng 6–12 | Biên tập theo yêu cầu ngày 12/10; bản gốc được giữ để kiểm tra |
+| [Audit AI log W04 của Nguyên](nguyen/W04-audit.md) | Xác nhận thiếu lịch sử; phạm vi tìm nguồn và quy tắc phục hồi | HISTORICAL_EVIDENCE_MISSING; không backfill từ commit |
 | [AI Usage Log](ai-usage-log.md) | Bốn bản ghi Codex lúc khởi tạo; prompt mới ghi trong Excel | Lịch sử |
 | [AI Usage Log của Sang W1–W3](sang/README.md) ([CSV đầy đủ](sang/ai-usage-log-sang-W1-W3.csv)) | Bản xuất 55 dòng từ ba tab Sang trong Google Sheet, mỗi dòng có PR/commit; kèm 7 lỗi của AI đã phát hiện và sửa, quy trình kiểm soát đầu ra AI | Đủ W1–W3 (04/10/2026) |
 | [Prompt Log các module](../../sdd/prompt-log.md) | Log prompt theo module/feature và người thực hiện | Đọc trạng thái từng scope |
@@ -28,8 +32,8 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W01](AI%20Prompt%20Log%20-%20W01%20-%202026-09-14_2026-09-20.xlsx) | 14–20/09/2026 | 0 | 0 | 14 | 14 |
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
-| [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026 | 20 | 0 | 17 | 37 |
-| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 0 | 0 | 0 | 0 |
+| [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
+| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 0 | 3 | 0 | 3 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
 
 Số lượng tại thời điểm tách ngày 08/10/2026: giữ đủ **46 bản ghi gốc**, thêm một
@@ -71,4 +75,12 @@ Sau khi nhập CSV Sang, tổng sau lượt nhập là **107 bản ghi** (55 dò
 
 Lượt chuẩn bị commit/push ngày 08/10/2026 ghi tại W04, sheet Thắng, hàng 24; tổng sau lượt chuẩn bị **108 bản ghi**. Người dùng đã duyệt tên commit và cho phép commit/push sau lượt chuẩn bị.
 
-Lượt thực hiện commit/push theo xác nhận của Thắng ghi tại W04, sheet Thắng, hàng 25; tổng hiện tại **109 bản ghi**. Kết quả thực thi và commit remote lưu trong evidence local `pre-push-2026-10-08.json`.
+Lượt thực hiện commit/push theo xác nhận của Thắng ghi tại W04, sheet Thắng, hàng 25; tổng tại thời điểm đó **109 bản ghi**. Kết quả thực thi và commit remote lưu trong evidence local `pre-push-2026-10-08.json`.
+
+Ngày 12/10/2026, ghi **5 bản ghi thực tế** tại W05, sheet Nguyên, hàng 6–10: đọc plan W4; yêu cầu hoàn thiện task; xác nhận chưa có khảo sát/lịch sử AI W04; chỉ dẫn giả định ba vị trí giám khảo; cho phép fix binary read M08 và nhận thông báo Thắng. Minh chứng dẫn tới [báo cáo cá nhân W4](../../reports/week-04/bao-cao-tuan-04-nguyen.md) và [audit W04](nguyen/W04-audit.md). Công thức Tổng hợp đã tính lại: tổng 5, Nguyên 5, Codex 5; kiểm tra render và không có lỗi công thức. Các sheet/formula/định dạng khác được bảo toàn. Hoạt động ngày 12/10 thuộc W05 dù task là W4. Số 0 trong sheet Nguyên W04 là số bản ghi có nguồn, không chứng minh Nguyên không dùng AI trong tuần đó.
+
+Tiếp theo trong ngày 12/10, Nguyên yêu cầu sửa lời văn prompt theo phong cách chuyên nghiệp. Đã biên tập năm dòng W05 hiện có và ghi thêm hai yêu cầu chỉnh log tại hàng 11–12; **tổng W05 tại thời điểm đó là 7**. Cột E được ghi rõ là lời văn đã biên tập, giữ nguyên ý nghĩa, ngày dùng AI và tool; [hồ sơ đối chiếu](nguyen/prompt-log-bien-tap-20261012.md) giữ nội dung gốc. Cột F dẫn tới minh chứng cụ thể; chiều cao các hàng được điều chỉnh để đọc đủ nội dung. Tổng hợp đếm 7 cho Nguyên/Codex và toàn workbook, các công thức và sheet khác giữ nguyên. Không dùng phiên bản biên tập làm bằng chứng prompt đã được gửi nguyên văn trong quá khứ.
+
+Sau đó Nguyên yêu cầu **chuyển nội dung vào file W04**. Bảy dòng được chuyển sang W04, hàng 6–12; yêu cầu chuyển được ghi ở hàng 13. Tại thời điểm chuyển, W04 có 8 dòng Nguyên, tổng workbook 45; W05 còn 0 dòng. Đây là ngoại lệ nơi lưu theo chỉ dẫn mới nhất của Nguyên. Ngày dùng AI vẫn **12/10/2026**, thuộc W05 theo lịch; phụ đề và minh chứng W04 ghi rõ phần bổ sung sau tuần. Bảng trên đếm nội dung đang lưu trong từng file. Khoảng lịch sử 05–11/10 của Nguyên vẫn thiếu nguồn, không được coi là đã khôi phục từ các dòng ngày 12/10.
+
+Lượt kiểm tra task/tạo PR ngày 12/10 của Nguyên ghi **3 bản ghi mới** tại W05. [Record PR](nguyen/pr-W4-20261012.md) và [checks](nguyen/pr-W4-20261012-checks.json) giữ prompt gốc, ánh xạ hàng và phạm vi bảo toàn workbook. Bản local đầy đủ có 10 dòng (ba dòng mới ở hàng 13–15); bản đưa vào PR của Nguyên có ba dòng mới ở hàng 6–8, giữ bảy bản ghi ngoài phạm vi trong workspace. Ngày dùng AI thực tế vẫn 12/10, các công thức Tổng hợp và sheet của người khác được bảo toàn.

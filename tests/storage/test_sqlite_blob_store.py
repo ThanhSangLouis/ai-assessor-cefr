@@ -11,6 +11,15 @@ from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import SQLiteStore
 
 
+def test_blob_read_preserves_binary_newlines_and_control_bytes(tmp_path):
+    blobs = BlobStore(tmp_path / "binary-fixture", max_bytes=64)
+    payload = b"fixture\r\n\x1a\x00tail"
+    blob = blobs.store(payload)
+
+    assert blobs.read(blob) == payload
+    assert (blobs.root / blob.blob_id).read_bytes() == payload
+
+
 class Clock:
     def __init__(self):
         self.now = datetime(2026, 9, 28, tzinfo=UTC)

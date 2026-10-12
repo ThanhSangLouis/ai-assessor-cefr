@@ -11,6 +11,7 @@ Bối cảnh, người dùng, khảo sát/phỏng vấn có nguồn, so sánh gi
 | Tài liệu | Đường dẫn | Tình trạng |
 | --- | --- | --- |
 | Báo cáo W1 | [Báo cáo W1](../../reports/week-01/bao-cao-tuan-01.docx) | Tài liệu đầu vào/đã có; cần kiểm tra nội dung trước nghiệm thu |
+| W4-N5 — Bộ khảo sát/phỏng vấn | [Instrument](W4-N5-khao-sat-phong-van.md), [template](W4-N5-data-template.json), [manifest](W4-N5-evidence-manifest.md) | PREPARED ngày 12/10/2026; dữ liệu thật NOT_RUN, Nguyên xác nhận chưa có |
 
 ## Còn thiếu / cần xác minh
 

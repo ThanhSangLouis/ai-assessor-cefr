@@ -61,7 +61,8 @@ class BlobStore:
     def read(self, blob: BlobRef) -> bytes:
         try:
             descriptor = os.open(
-                self._path(blob.blob_id), os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                self._path(blob.blob_id),
+                os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0),
             )
             try:
                 details = os.fstat(descriptor)
