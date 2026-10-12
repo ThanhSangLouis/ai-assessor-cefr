@@ -160,3 +160,15 @@
 - Bản cam kết sản phẩm cuối kèm bộ metric phải thống nhất bằng văn bản, có chữ ký sinh viên và GVHD, trong **tuần 7–10**. Hạn chót là **trước tuần 11 (23/11/2026)**.
 - Nhóm nên nộp nháp ở tuần 6–7.
 - Các tính năng "chờ chốt phạm vi" ở mục 2 phải quyết trước khi viết bản cam kết.
+
+## 6. Follow-up của Nguyên — 12/10/2026 (W05)
+
+Giữ nguyên snapshot/kết quả 11/10 ở các mục trên. [Báo cáo cá nhân của Nguyên](../reports/week-04/bao-cao-tuan-04-nguyen.md) ghi evidence và kết quả xử lý chuyển tiếp:
+
+- N1–N3 đã đối chiếu và kiểm tra lại. Phát hiện binary-read bug Windows trong M08; Nguyên cho phép fix và nhận việc thông báo Thắng. Suite liên quan sau fix: 127 passed / 3 skipped / 0 failed; lệnh/revision/working diff và giới hạn được dẫn ở báo cáo.
+- N4 đã đồng bộ hiện trạng/evidence M01/M06/M07; Phase formal 01 và các verdict vẫn PENDING, không suy approval từ implementation.
+- N5 có bộ khảo sát/phỏng vấn, consent/data template và manifest; Nguyên xác nhận chưa có kết quả thật, thu thập NOT_RUN.
+- N6 có roster/protocol/mẫu cam kết. Ba vị trí là giả định theo chỉ dẫn Nguyên; cam kết thật NOT_VERIFIED.
+- AI log W04 đã audit nhưng thiếu lịch sử gốc. Prompt ngày 12/10 ban đầu ghi W05, sau đó chuyển sang sheet Nguyên W04 theo chỉ dẫn trực tiếp của Nguyên; giữ ngày 12/10 và ghi rõ bổ sung sau tuần. Không coi các dòng chuyển này là lịch sử dùng AI ngày 05–11/10.
+
+Task thu thập người thật, khôi phục lịch sử và verdict SDD chưa được ghi DONE. Tài liệu này không thay trạng thái owner/module khác hoặc claim cả nhóm đã nghiệm thu.

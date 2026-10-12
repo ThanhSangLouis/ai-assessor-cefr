@@ -126,3 +126,11 @@ cookie flags và session issuance theo owner M08.
 | Thắng / M08 | schema v2, audit event, response revision, session/cookie host boundary | PENDING |
 | Sang / M03–M05 | reason map, source version và semantic `NOT_EVALUATED` | PENDING |
 | Nguyên / M01–M06–M07 | UI wording, report verification boundary, fixture/browser evidence | SELF-REVIEW PENDING Phase 07 |
+
+## Actual boundary update — W4-N4, 12/10/2026
+
+Các mô tả W2/W3 ở trên giữ vai trò snapshot contract DRAFT. Implementation tại base `3b2d2b7` đã có `report/sqlite.py`; report, decision/audit và candidate dùng cùng M08 transaction/connection. Coordinator gọi `build_and_store` và `add_candidate`; runtime không phụ thuộc polling để tạo candidate. Portal đã có claim/release/expiry và reopen kèm revision/lý do, nên câu “không mở lại trong W3 scope” không mô tả đầy đủ actual PARITY-001. Đây là đối chiếu hiện trạng, không tự duyệt contract mở rộng.
+
+[M07-W4-20261012](evidence/M07-W4-20261012.md) đối chiếu Actor/Consent/Response/Blob/Audit và kiểm tra role, CAS, transaction rollback, lưu lịch sử trước/sau. Source M08 sửa binary read Windows theo quyền riêng Nguyên ngày 12/10; không claim Thắng/Sang đã approve. Review liên owner và formal phase vẫn `PENDING`.
+
+D030/chấm mù kép chưa có implementation được duyệt; [W4-N6](evidence/W4-N6-giam-khao-va-phan-xu.md) chỉ chuẩn bị protocol. Không dùng màn hình teacher hiện tại để suy ra giám khảo được che điểm AI.

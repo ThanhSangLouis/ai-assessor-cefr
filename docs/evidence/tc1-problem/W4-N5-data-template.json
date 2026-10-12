@@ -1,0 +1,21 @@
+{
+  "task_id": "W4-N5",
+  "instrument_version": "v1.0",
+  "status": "NOT_RUN",
+  "prepared_at": "2026-10-12",
+  "owner": "Nguyên",
+  "survey_responses": [],
+  "interviews": [],
+  "findings": [],
+  "record_fields": {
+    "survey": ["participant_code", "collected_at", "consent_evidence_id", "instrument_version", "answers", "source_evidence_id", "withdrawn"],
+    "interview": ["participant_code", "conducted_at", "consent_evidence_id", "recording_consent", "instrument_version", "notes_redacted", "source_evidence_id", "participant_checked_notes", "withdrawn"],
+    "finding": ["finding_id", "source_evidence_ids", "observation", "related_fr_ac_ids", "proposal", "owner_verdict"]
+  },
+  "rules": [
+    "Only append actual consenting participants; field lists are schema guidance, not response records.",
+    "Keep real identifiers, contact details, signatures and unredacted raw notes outside Git.",
+    "Use null for missing answers; do not invent counts or quotes.",
+    "Excluded or withdrawn records must not enter published aggregates."
+  ]
+}

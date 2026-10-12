@@ -1,0 +1,104 @@
+{
+  "date": "2026-10-12",
+  "actual_usage_date": "2026-10-12",
+  "prompt_count_added": 3,
+  "working_rows_to_pr_rows": {
+    "13": 6,
+    "14": 7,
+    "15": 8
+  },
+  "outside_scope_records_retained_local": 7,
+  "snapshots": [
+    {
+      "variant": "working",
+      "before_sha256": "e39439d17b5837f2d12494e111563701d150226e08b6d91e68a503975e88667d",
+      "after_sha256": "1e32c2ff0acb02dea7e7921ef0c564d01741b5dfd92be21e731eb18557314e91",
+      "new_rows": [
+        13,
+        14,
+        15
+      ],
+      "nguyen_total": 10,
+      "workbook_total": 10,
+      "codex_total": 10,
+      "changed_parts": [
+        "xl/worksheets/sheet2.xml",
+        "xl/worksheets/sheet4.xml"
+      ],
+      "allowed_cells": {
+        "xl/worksheets/sheet2.xml": [
+          "A13",
+          "B13",
+          "C13",
+          "D13",
+          "E13",
+          "F13",
+          "A14",
+          "B14",
+          "C14",
+          "D14",
+          "E14",
+          "F14",
+          "A15",
+          "B15",
+          "C15",
+          "D15",
+          "E15",
+          "F15"
+        ],
+        "xl/worksheets/sheet4.xml": [
+          "B5",
+          "B11",
+          "E10"
+        ]
+      },
+      "unrelated_cells_styles_formulas_and_other_sheets": "PRESERVED"
+    },
+    {
+      "variant": "index",
+      "before_sha256": "bc10168a638c1e63f9803ade7fd4c383aa930819367a6ab6ccb52cf8c703eeb6",
+      "after_sha256": "2fe44b86ed5176ac938fee284e0dacff28d20397d27f1a5d434d5ebaa08af5f3",
+      "new_rows": [
+        6,
+        7,
+        8
+      ],
+      "nguyen_total": 3,
+      "workbook_total": 3,
+      "codex_total": 3,
+      "changed_parts": [
+        "xl/worksheets/sheet2.xml",
+        "xl/worksheets/sheet4.xml"
+      ],
+      "allowed_cells": {
+        "xl/worksheets/sheet2.xml": [
+          "A6",
+          "B6",
+          "C6",
+          "D6",
+          "E6",
+          "F6",
+          "A7",
+          "B7",
+          "C7",
+          "D7",
+          "E7",
+          "F7",
+          "A8",
+          "B8",
+          "C8",
+          "D8",
+          "E8",
+          "F8"
+        ],
+        "xl/worksheets/sheet4.xml": [
+          "B5",
+          "B11",
+          "E10"
+        ]
+      },
+      "unrelated_cells_styles_formulas_and_other_sheets": "PRESERVED"
+    }
+  ],
+  "artifact_tool_reimport_render": "VERIFIED: counts 10 local / 3 PR, formula error scan empty, new rows and summaries rendered and reviewed"
+}

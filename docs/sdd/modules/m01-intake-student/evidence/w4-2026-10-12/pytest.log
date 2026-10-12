@@ -1,0 +1,33 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -m pytest -p no:cacheprovider -q -m "not smoke" tests/api tests/report tests/review tests/local tests/pipeline tests/portal tests/storage --cov=aicefr.api --cov=aicefr.report --cov=aicefr.review --cov-branch --cov-report=term-missing --cov-report=json:D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\coverage.json --junitxml=D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\pytest.xml
+STARTED: 2026-10-12T00:49:52.466620+07:00
+EXIT: 0
+
+....................................s................................... [ 55%]
+............s...................................s.........               [100%]
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                             Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------
+src\aicefr\api\__init__.py           0      0      0      0   100%
+src\aicefr\api\review.py            21      0      0      0   100%
+src\aicefr\api\student.py          116      5     22      4    93%   44, 60, 92, 181-182, 193->195
+src\aicefr\api\templates.py        115     12     20      7    84%   177-184, 188-195, 239, 270-271, 286->302, 315->319, 319->331
+src\aicefr\api\wsgi.py             453     85    182     47    78%   103, 124, 132, 135-141, 196, 201, 202->204, 205, 212, 221, 257, 265, 275, 291, 297-298, 342, 353, 360, 376, 379, 383, 412, 451, 465, 475-476, 484, 522, 528->535, 537, 550-559, 563, 569-577, 587, 595, 597-606, 611, 627-628, 639-640, 642, 647-648, 650, 652, 658, 662, 669-670, 672, 675, 678, 684, 689-690, 692, 697, 702, 706, 709-712, 714, 747, 754, 759-761
+src\aicefr\report\__init__.py        0      0      0      0   100%
+src\aicefr\report\contracts.py      78      6     12      6    87%   55, 57, 112, 116, 118, 120
+src\aicefr\report\service.py       173     17     66     13    87%   55, 84, 90, 92, 96, 98, 101, 105, 108-109, 188, 210, 244-250, 252-258, 331
+src\aicefr\report\sqlite.py         17      0      2      0   100%
+src\aicefr\review\__init__.py        0      0      0      0   100%
+src\aicefr\review\routing.py        16      1      4      1    90%   64
+src\aicefr\review\service.py       148     31     30      9    75%   40, 42, 44, 112, 117, 137, 179-200, 205-231, 245, 247, 280-286, 292
+src\aicefr\review\sqlite.py        102      8     24      8    87%   124, 154, 222, 289, 312, 314, 323, 348
+----------------------------------------------------------------------------
+TOTAL                             1239    165    362     95    83%
+Coverage JSON written to file D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\coverage.json
+=========================== short test summary info ===========================
+SKIPPED [1] tests\local\test_factory_integration.py:117: artifact path unavailable
+SKIPPED [1] tests\portal\test_portal.py:449: pinned external model artifact unavailable
+SKIPPED [1] tests\storage\test_sqlite_blob_store.py:165: symlink creation is unavailable on this Windows host: 1314
+127 passed, 3 skipped in 23.59s
+

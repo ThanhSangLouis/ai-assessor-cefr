@@ -15,6 +15,8 @@ Phiếu đăng ký đề tài GV/SV, phân công thành viên, sổ tiến độ
 | Quy tắc bàn giao W2 | [AGENTS.md](../../../AGENTS.md) và [skill chung](../../../.agents/skills/sdd-antigravity-orchestrator/SKILL.md) | Đã tạo cho W2; không phải minh chứng file rule W1 |
 | Email hỏi CUP&A về phạm vi giấy phép S&I (W4-S5, SCRUM-52) | [email-cupa-W4-S5.md](email-cupa-W4-S5.md) | Bản soạn, chưa gửi; người gửi cập nhật ngày gửi và trả lời |
 | Báo cáo tiến độ tuần 4 của Sang | [bao-cao-tuan-04-sang.md](../../reports/week-04/bao-cao-tuan-04-sang.md) | Bản để nộp lên projects-fit; chưa có xác nhận GVHD |
+| Báo cáo tuần 4 của Nguyên | [bao-cao-tuan-04-nguyen.md](../../reports/week-04/bao-cao-tuan-04-nguyen.md) | Hồ sơ chuyển tiếp hoàn thiện 12/10; chưa nộp/được GVHD xác nhận |
+| W4-N6 — Giám khảo và phân xử | [Roster/protocol/mẫu cam kết](../../sdd/modules/m07-teacher-review/evidence/W4-N6-giam-khao-va-phan-xu.md) | PREPARED; cam kết thật NOT_VERIFIED, không có chữ ký từ lượt này |
 
 ## Còn thiếu / cần xác minh
 

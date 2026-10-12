@@ -11,7 +11,7 @@
 | TARGET | W2 |
 | RELATED SCOPES | M08 (auth/consent/storage), M02–M06 (pipeline và report) |
 | SOURCE BASIS | [Tài liệu nguồn do nhóm tạo](../../../sources/README.md), [báo cáo W1](../../../reports/week-01/bao-cao-tuan-01.docx); SDD hiện hành quyết định phạm vi, contract và approval của module |
-| CODE TARGET | `src/aicefr/api/student.py`, `src/aicefr/api/templates/` — đề xuất, chưa tạo |
+| CODE TARGET | `src/aicefr/api/student.py`, `src/aicefr/api/templates.py`, `src/aicefr/api/wsgi.py` — actual hiện có |
 
 ## Requirement (Yêu cầu)
 

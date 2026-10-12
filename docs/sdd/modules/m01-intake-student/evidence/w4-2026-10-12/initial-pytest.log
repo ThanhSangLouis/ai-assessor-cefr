@@ -1,0 +1,111 @@
+COMMAND: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -m pytest -p no:cacheprovider -q -m "not smoke" tests/api tests/report tests/review tests/local tests/pipeline tests/portal --cov=aicefr.api --cov=aicefr.report --cov=aicefr.review --cov-branch --cov-report=term-missing --cov-report=json:D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\coverage.json --junitxml=D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\pytest.xml
+STARTED: 2026-10-12T00:41:50.330986+07:00
+EXIT: 1
+
+...................................Fs..............FF................... [ 64%]
+............s...........................                                 [100%]
+================================== FAILURES ===================================
+_ test_factory_missing_model_is_not_evaluated_and_persists_report_and_review __
+
+tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-0/test_factory_missing_model_is_0')
+
+    def test_factory_missing_model_is_not_evaluated_and_persists_report_and_review(tmp_path):
+        missing_path = tmp_path / "missing-model.json"
+        runtime = create_runtime(
+            tmp_path / "data-missing-model", config=_config(model_path=missing_path)
+        )
+        try:
+            _provision_student(runtime)
+            status = _submit(runtime, _wav(silence_ratio=0.0))
+            report = SQLiteReportRepository(runtime.store).get(status.response_id)
+            candidate = SQLiteReviewRepository(runtime.store).get(status.response_id)
+            response = runtime.store.get_response(status.response_id)
+>           assert response is not None and response.status is ResponseStatus.REVIEW_REQUIRED
+E           AssertionError: assert (ResponseRecord(response_id='262653a5bfd146139bcb23cf7012266d', owner_id='fixture-student', task_id='fixture-speaking',...n=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 58, 44480, tzinfo=datetime.timezone.utc), audio_available=True) is not None and <ResponseStatus.FAILED: 'FAILED'> is <ResponseStatus.REVIEW_REQUIRED: 'REVIEW_REQUIRED'>)
+E            +  where <ResponseStatus.FAILED: 'FAILED'> = ResponseRecord(response_id='262653a5bfd146139bcb23cf7012266d', owner_id='fixture-student', task_id='fixture-speaking',...n=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 58, 44480, tzinfo=datetime.timezone.utc), audio_available=True).status
+E            +  and   <ResponseStatus.REVIEW_REQUIRED: 'REVIEW_REQUIRED'> = ResponseStatus.REVIEW_REQUIRED
+
+tests\local\test_factory_integration.py:106: AssertionError
+------------------------------ Captured log call ------------------------------
+ERROR    aicefr.pipeline.coordinator:coordinator.py:171 pipeline failed response_id=262653a5bfd146139bcb23cf7012266d
+_____ test_pipeline_sniffs_supported_containers_from_generated_audio[OGG] _____
+
+tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-0/test_pipeline_sniffs_supported1')
+audio_format = 'OGG'
+
+    @pytest.mark.parametrize("audio_format", ["FLAC", "OGG", "MP3"])
+    def test_pipeline_sniffs_supported_containers_from_generated_audio(
+        tmp_path, audio_format
+    ):
+        if audio_format not in sf.available_formats():
+            pytest.skip(f"libsndfile does not support {audio_format}")
+        stack = _Stack(tmp_path)
+        record = stack.submit(_audio(format=audio_format))
+        stack.pipeline.enqueue(record)
+>       assert stack.store.get_response(record.response_id).status is ResponseStatus.COMPLETED
+E       AssertionError: assert <ResponseStatus.FAILED: 'FAILED'> is <ResponseStatus.COMPLETED: 'COMPLETED'>
+E        +  where <ResponseStatus.FAILED: 'FAILED'> = ResponseRecord(response_id='2790cc43cfb14f449913b5b3e0cf9c32', owner_id='fixture-student', task_id='fixture-task', tas...=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 242763, tzinfo=datetime.timezone.utc), audio_available=True).status
+E        +    where ResponseRecord(response_id='2790cc43cfb14f449913b5b3e0cf9c32', owner_id='fixture-student', task_id='fixture-task', tas...=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 242763, tzinfo=datetime.timezone.utc), audio_available=True) = get_response('2790cc43cfb14f449913b5b3e0cf9c32')
+E        +      where get_response = <aicefr.storage.sqlite.SQLiteStore object at 0x000001C6DDE23500>.get_response
+E        +        where <aicefr.storage.sqlite.SQLiteStore object at 0x000001C6DDE23500> = <test_coordinator._Stack object at 0x000001C6DDE232C0>.store
+E        +      and   '2790cc43cfb14f449913b5b3e0cf9c32' = ResponseRecord(response_id='2790cc43cfb14f449913b5b3e0cf9c32', owner_id='fixture-student', task_id='fixture-task', tas...=1, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 242763, tzinfo=datetime.timezone.utc), audio_available=True).response_id
+E        +  and   <ResponseStatus.COMPLETED: 'COMPLETED'> = ResponseStatus.COMPLETED
+
+tests\pipeline\test_coordinator.py:393: AssertionError
+------------------------------ Captured log call ------------------------------
+ERROR    aicefr.pipeline.coordinator:coordinator.py:171 pipeline failed response_id=2790cc43cfb14f449913b5b3e0cf9c32
+_____ test_pipeline_sniffs_supported_containers_from_generated_audio[MP3] _____
+
+tmp_path = WindowsPath('C:/Users/PC/AppData/Local/Temp/pytest-of-PC/pytest-0/test_pipeline_sniffs_supported2')
+audio_format = 'MP3'
+
+    @pytest.mark.parametrize("audio_format", ["FLAC", "OGG", "MP3"])
+    def test_pipeline_sniffs_supported_containers_from_generated_audio(
+        tmp_path, audio_format
+    ):
+        if audio_format not in sf.available_formats():
+            pytest.skip(f"libsndfile does not support {audio_format}")
+        stack = _Stack(tmp_path)
+        record = stack.submit(_audio(format=audio_format))
+        stack.pipeline.enqueue(record)
+>       assert stack.store.get_response(record.response_id).status is ResponseStatus.COMPLETED
+E       AssertionError: assert <ResponseStatus.FAILED: 'FAILED'> is <ResponseStatus.COMPLETED: 'COMPLETED'>
+E        +  where <ResponseStatus.FAILED: 'FAILED'> = ResponseRecord(response_id='dfc1e47313c546399053a299b0921ebc', owner_id='fixture-student', task_id='fixture-task', tas...=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 326785, tzinfo=datetime.timezone.utc), audio_available=True).status
+E        +    where ResponseRecord(response_id='dfc1e47313c546399053a299b0921ebc', owner_id='fixture-student', task_id='fixture-task', tas...=3, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 326785, tzinfo=datetime.timezone.utc), audio_available=True) = get_response('dfc1e47313c546399053a299b0921ebc')
+E        +      where get_response = <aicefr.storage.sqlite.SQLiteStore object at 0x000001C6DDE20FE0>.get_response
+E        +        where <aicefr.storage.sqlite.SQLiteStore object at 0x000001C6DDE20FE0> = <test_coordinator._Stack object at 0x000001C6DDE22150>.store
+E        +      and   'dfc1e47313c546399053a299b0921ebc' = ResponseRecord(response_id='dfc1e47313c546399053a299b0921ebc', owner_id='fixture-student', task_id='fixture-task', tas...=1, created_at=datetime.datetime(2026, 10, 11, 17, 41, 59, 326785, tzinfo=datetime.timezone.utc), audio_available=True).response_id
+E        +  and   <ResponseStatus.COMPLETED: 'COMPLETED'> = ResponseStatus.COMPLETED
+
+tests\pipeline\test_coordinator.py:393: AssertionError
+------------------------------ Captured log call ------------------------------
+ERROR    aicefr.pipeline.coordinator:coordinator.py:171 pipeline failed response_id=dfc1e47313c546399053a299b0921ebc
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                             Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------
+src\aicefr\api\__init__.py           0      0      0      0   100%
+src\aicefr\api\review.py            21      0      0      0   100%
+src\aicefr\api\student.py          116      5     22      4    93%   44, 60, 92, 181-182, 193->195
+src\aicefr\api\templates.py        115     12     20      7    84%   177-184, 188-195, 239, 270-271, 286->302, 315->319, 319->331
+src\aicefr\api\wsgi.py             453     85    182     47    78%   103, 124, 132, 135-141, 196, 201, 202->204, 205, 212, 221, 257, 265, 275, 291, 297-298, 342, 353, 360, 376, 379, 383, 412, 451, 465, 475-476, 484, 522, 528->535, 537, 550-559, 563, 569-577, 587, 595, 597-606, 611, 627-628, 639-640, 642, 647-648, 650, 652, 658, 662, 669-670, 672, 675, 678, 684, 689-690, 692, 697, 702, 706, 709-712, 714, 747, 754, 759-761
+src\aicefr\report\__init__.py        0      0      0      0   100%
+src\aicefr\report\contracts.py      78      6     12      6    87%   55, 57, 112, 116, 118, 120
+src\aicefr\report\service.py       173     17     66     13    87%   55, 84, 90, 92, 96, 98, 101, 105, 108-109, 188, 210, 244-250, 252-258, 331
+src\aicefr\report\sqlite.py         17      0      2      0   100%
+src\aicefr\review\__init__.py        0      0      0      0   100%
+src\aicefr\review\routing.py        16      1      4      1    90%   64
+src\aicefr\review\service.py       148     31     30      9    75%   40, 42, 44, 112, 117, 137, 179-200, 205-231, 245, 247, 280-286, 292
+src\aicefr\review\sqlite.py        102      8     24      8    87%   124, 154, 222, 289, 312, 314, 323, 348
+----------------------------------------------------------------------------
+TOTAL                             1239    165    362     95    83%
+Coverage JSON written to file D:\LAPTRINH\TLCN\ai-assessor-cefr\docs\sdd\modules\m01-intake-student\evidence\w4-2026-10-12\coverage.json
+=========================== short test summary info ===========================
+SKIPPED [1] tests\local\test_factory_integration.py:117: artifact path unavailable
+SKIPPED [1] tests\portal\test_portal.py:449: pinned external model artifact unavailable
+FAILED tests/local/test_factory_integration.py::test_factory_missing_model_is_not_evaluated_and_persists_report_and_review
+FAILED tests/pipeline/test_coordinator.py::test_pipeline_sniffs_supported_containers_from_generated_audio[OGG]
+FAILED tests/pipeline/test_coordinator.py::test_pipeline_sniffs_supported_containers_from_generated_audio[MP3]
+3 failed, 107 passed, 2 skipped in 25.33s
+

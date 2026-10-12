@@ -1,0 +1,79 @@
+{
+  "date": "2026-10-12T01:04:57.512989+07:00",
+  "base_revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "branch": "codex/w4-nguyen-completion",
+  "checks": [
+    {
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "scripts/ci/check_md_links.py"
+      ],
+      "started_at": "2026-10-12T01:04:56.751364+07:00",
+      "exit_code": 0,
+      "stdout": "Đã kiểm tra 173 file Markdown.\n17 link trỏ ra ngoài repo (bỏ qua):\n  docs/evidence/local-setup-2026-10-08.md: ../../../ai-assessor-cefr-runtime/README.md\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/pyproject.toml\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/api/main.py\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/storage/repository.py\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/contracts.py\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/pipeline.py\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/scorer.py\n  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/report/comments.py\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/scorer.py\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/pipeline.py\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_resp_v1.json\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_resp_v2.json\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_v3.json\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/tools/train_scorer.py\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/contracts.py\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/docs/plan/QUYET_DINH.md\n  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/docs/plan/QUYET_DINH.md\nKhông có link hỏng trong repo.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-X",
+        "utf8",
+        "scripts/ci/check_forbidden_files.py"
+      ],
+      "started_at": "2026-10-12T01:04:57.016924+07:00",
+      "exit_code": 0,
+      "stdout": "Đã kiểm tra 366 file: không có file bị cấm.\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "started_at": "2026-10-12T01:04:57.137441+07:00",
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "check_id": "tracked_and_untracked_documents",
+      "markdown_files": 181,
+      "broken_links": [],
+      "forbidden_files": [],
+      "exit_code": 0
+    },
+    {
+      "check_id": "raw_evidence_and_working_source",
+      "initial_and_final_log_hashes": "MATCH",
+      "working_file_hashes": "MATCH",
+      "source_diff": "MATCH",
+      "passed": 127,
+      "skipped": 3,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "check_id": "workbook_w05",
+      "Nguyên_rows": [
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "date": "2026-10-12",
+      "total_prompts": 5,
+      "nguyen_prompts": 5,
+      "codex_prompts": 5,
+      "sha256": "e1805251f53ccb30ba1df347f78fd5596d444678928a383fc12fa913a1d80526",
+      "render": "VERIFIED_LOCAL",
+      "formulas": "NO_ERRORS",
+      "unrelated_content": "PRESERVED",
+      "exit_code": 0
+    }
+  ],
+  "scope_note": "Document/working source checks; not formal SDD acceptance or current browser/model evaluation."
+}

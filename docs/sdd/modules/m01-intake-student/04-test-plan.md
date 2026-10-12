@@ -21,3 +21,8 @@ Test ở đây là **ca dự kiến**, chưa được chạy. Fixture tạo bở
 - Test với audio có quyền sử dụng là smoke/integration riêng; không đưa audio, transcript chứa PII hoặc secret vào Git/log. Chưa có data/consent/approval thì đánh dấu `NOT_RUN` thay vì tạo kết quả thay thế.
 
 **CODEX CHECK RESULT:** DRAFT — mỗi AC có ca kiểm tra; lệnh và coverage policy còn chờ stack. **User verdict Phase 04:** PENDING.
+
+
+## Actual verification — W4-N4, 12/10/2026
+
+Các Test ID ở bảng giữ nguyên là thiết kế DRAFT. [M01-W4-20261012](evidence/M01-W4-20261012.md) đối chiếu từng Test/FR/AC với implementation và test actual; suite liên quan 127 passed / 3 skipped / 0 failed. Đây là technical verification sau direct instruction; Phase 04/08 và user acceptance vẫn PENDING. Coverage thực đo nằm trong evidence; không tự đặt threshold hoặc biến fixture thành metric CEFR.

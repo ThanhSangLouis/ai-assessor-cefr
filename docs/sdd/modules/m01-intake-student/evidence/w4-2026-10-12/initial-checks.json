@@ -1,0 +1,90 @@
+{
+  "scope": "W4-N1/N2/N3/N4; M01/M06/M07",
+  "date": "2026-10-12",
+  "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "branch": "codex/w4-nguyen-completion",
+  "trees": {
+    "src": "4d2236e5abed2b41d5c264057a1941ebf9eb4693",
+    "tests": "ae2a8c7a5759d4e1930b54cf89440cf5a1e6a7c0",
+    "scripts": "1498760f205bf177177868c8861fe48c0c9a629c"
+  },
+  "source_diff": "",
+  "model_directory_configured": false,
+  "python": "Python 3.12.10",
+  "checks": [
+    {
+      "check_id": "pytest",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-m",
+        "pytest",
+        "-p",
+        "no:cacheprovider",
+        "-q",
+        "-m",
+        "not smoke",
+        "tests/api",
+        "tests/report",
+        "tests/review",
+        "tests/local",
+        "tests/pipeline",
+        "tests/portal",
+        "--cov=aicefr.api",
+        "--cov=aicefr.report",
+        "--cov=aicefr.review",
+        "--cov-branch",
+        "--cov-report=term-missing",
+        "--cov-report=json:D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\coverage.json",
+        "--junitxml=D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\pytest.xml"
+      ],
+      "started_at": "2026-10-12T00:41:50.330986+07:00",
+      "exit_code": 1,
+      "log": "initial-pytest.log",
+      "sha256": "22131291af32674da971754395e149603d248fc374fdc87c8e531340a5788710",
+      "tail": "8, 210, 244-250, 252-258, 331\nsrc\\aicefr\\report\\sqlite.py         17      0      2      0   100%\nsrc\\aicefr\\review\\__init__.py        0      0      0      0   100%\nsrc\\aicefr\\review\\routing.py        16      1      4      1    90%   64\nsrc\\aicefr\\review\\service.py       148     31     30      9    75%   40, 42, 44, 112, 117, 137, 179-200, 205-231, 245, 247, 280-286, 292\nsrc\\aicefr\\review\\sqlite.py        102      8     24      8    87%   124, 154, 222, 289, 312, 314, 323, 348\n----------------------------------------------------------------------------\nTOTAL                             1239    165    362     95    83%\nCoverage JSON written to file D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\docs\\sdd\\modules\\m01-intake-student\\evidence\\w4-2026-10-12\\coverage.json\n=========================== short test summary info ===========================\nSKIPPED [1] tests\\local\\test_factory_integration.py:117: artifact path unavailable\nSKIPPED [1] tests\\portal\\test_portal.py:449: pinned external model artifact unavailable\nFAILED tests/local/test_factory_integration.py::test_factory_missing_model_is_not_evaluated_and_persists_report_and_review\nFAILED tests/pipeline/test_coordinator.py::test_pipeline_sniffs_supported_containers_from_generated_audio[OGG]\nFAILED tests/pipeline/test_coordinator.py::test_pipeline_sniffs_supported_containers_from_generated_audio[MP3]\n3 failed, 107 passed, 2 skipped in 25.33s\n"
+    },
+    {
+      "check_id": "ruff",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-m",
+        "ruff",
+        "check",
+        "src/aicefr/api",
+        "src/aicefr/report",
+        "src/aicefr/review",
+        "tests/api",
+        "tests/report",
+        "tests/review"
+      ],
+      "started_at": "2026-10-12T00:42:18.602292+07:00",
+      "exit_code": 0,
+      "log": "initial-ruff.log",
+      "sha256": "7ae86a587080ce4fb3629cef5def6909065ea6cceb093bc985213e1560565f6d",
+      "tail": "All checks passed!\n"
+    },
+    {
+      "check_id": "refresh",
+      "argv": [
+        "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr\\.venv\\Scripts\\python.exe",
+        "-c",
+        "import json\nfrom aicefr.api.student import StudentStatus\nfrom aicefr.api.templates import render_status\nfrom aicefr.contracts import ResponseStatus\nresults = []\nfor status in ResponseStatus:\n    page = render_status(StudentStatus(response_id='fixture-refresh', status=status, revision=1, report_available=False))\n    refresh = '<meta http-equiv=\"refresh\" content=\"5\">' in page\n    expected = status in {ResponseStatus.QUEUED, ResponseStatus.RUNNING}\n    assert refresh == expected, (status, refresh, expected)\n    results.append({'status': status.value, 'refresh_5s': refresh})\nprint(json.dumps(results))\n"
+      ],
+      "started_at": "2026-10-12T00:42:19.353783+07:00",
+      "exit_code": 1,
+      "log": "initial-refresh.log",
+      "sha256": "f0b381050835e53077d24fb24593453fee5a0795d0514771d9a6d140723a4f18",
+      "tail": ""
+    }
+  ],
+  "browser_current_revision": "NOT_RUN",
+  "browser_reason": "No browser runtime in the project environment; historical W3 evidence is referenced separately.",
+  "cefr_validation": "NOT_EVALUATED",
+  "user_verdict": "PENDING",
+  "artifact_relocation": {
+    "reason": "Preserve first attempt before final rerun; argv retains original output paths.",
+    "coverage.json": "initial-coverage.json",
+    "pytest.xml": "initial-pytest.xml",
+    "execution-baseline.json": "initial-execution-baseline.json"
+  }
+}
