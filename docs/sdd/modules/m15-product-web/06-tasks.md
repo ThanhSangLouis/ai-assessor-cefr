@@ -5,7 +5,7 @@
 
 | Task | W5 | Deliverable / trace | Readiness |
 | --- | --- | --- | --- |
-| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — Phase 07 A2R2 còn R01–R03 mở; correction bundle đã dùng, cùng vấn đề traceability R02 tái diễn nên cần chủ dự án quyết định hướng tiếp theo. Runner hiện không liệt kê Gemini 3.6 Flash (High); Phase 08 chưa bắt đầu; 001A chưa verified |
+| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — Phase 07 A2R2 còn R01–R03 mở. Phase 05 Amendment v0.3 đề xuất một lượt correction A2R3; user verdict `PENDING`. Gemini 3.8 Flash (High) được user cho phép riêng cho lượt này sau khi amendment được duyệt. Phase 08 chưa bắt đầu; 001A chưa verified |
 | `M15-TASK-001B` | W5-N01.1–N01.3 | assets/font/package, nav, landing/login/bands/consent/account; TEST-001/002/008–012 | `BLOCKED` — scope W5-N01 được duyệt; route/asset owner, M11/M09 contracts, M16 asset/runtime impact còn thiếu; M05 đã accepted, M08 review còn pending |
 | `M15-TASK-002` | W5-N01.4–N01.7 | record/upload/preparation/progress/report/history; TEST-002–004/008/012 | `BLOCKED` — scope W5-N01 được duyệt; M01/M02/M06/M08/M09/M13 consumer contracts, M02 owner review và Phase 05 readiness còn thiếu; M05 semantics đã accepted |
 | `M15-TASK-003` | W5-N02.1–N02.6 | practice/lesson/review/result/progress; TEST-005/008/012 | `BLOCKED` — scope W5-N02 được duyệt; M10/M13 payload, enum, disclosure và W5-T01 persistence chưa được freeze/duyệt |
@@ -22,3 +22,9 @@
 - **Input:** Specification v0.3 §§Design tokens/components, Layout/navigation, Assets/motion; Test Plan v0.2 M15-TEST-001/008/009/012; hiện trạng `_document`/`LOCAL_CSS` ở `api/templates.py`. Không phụ thuộc producer contract mới vì không đổi route/role/nav.
 - **Expected output:** diff nhỏ có Task ID; targeted/related pytest + lint/format + non-smoke regression; coverage line/branch và critical uncovered branches; browser result JSON ở desktop/mobile với focus/overflow/theme/reduced-motion/print, screenshot SHA-256, console/network/external summary; raw report đúng prompt. Checks chưa chạy phải là `NOT_RUN`/`VERIFICATION_FAILED`, không suy từ code.
 - **Done boundary:** chỉ `M15-TASK-001A` có thể qua review/verification. Parent W5-N01.1/W5-N01/M15 chưa `DONE`: Roboto/assets/nav/API/journey và full browser matrix còn trong 001B/002–006. Không dùng prompt 001A để sửa các task khác.
+
+### Phase 05 amendment candidate — A2R3 final correction
+
+- [Amendment v0.3](05-001a-final-correction-amendment-v0.3.md) and [Phase 05 review](reviews/phase-05-001a-final-correction-2026-10-15.md) define one final attempt for A2R2 findings R01–R03. Both are `DRAFT`/user verdict `PENDING`; no prompt has been created or sent.
+- If approved, base revision and fingerprint must be captured after the Phase 05 decision is recorded and before handoff. The only model override is Gemini 3.8 Flash (High) for this one attempt.
+- If R01–R03 are not resolved or required gates lack supported evidence, keep the task `CHANGES_REQUIRED`/`VERIFICATION_FAILED`; no additional correction attempt is authorized by this amendment.
