@@ -7,6 +7,7 @@ import json
 import secrets
 import uuid
 from collections import Counter
+from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any
 
@@ -276,17 +277,221 @@ class PortalService:
         items = []
         for row in rows:
             item = self._item(row)
-            item["report"] = json.loads(row[12]) if row[12] else None
+            # Personal export is an explicit public projection. It retains the
+            # familiar response/report shape while excluding transcript, audio,
+            # evidence text, credential material and provider identifiers.
+            raw_report = json.loads(row[12]) if row[12] else None
+            item["report"] = self._safe_export_report(raw_report)
             items.append(item)
         consent = self.store.get_consent(actor.actor_id)
         self.audit(actor, "data_exported", actor.actor_id)
+        profile = self.identity_accounts.get_profile(token) if self.identity_accounts else None
+        connection = self.store.connection
+        learning = {}
+        for table, columns in (
+            (
+                "practice_attempts",
+                "attempt_id,mission_id,prompt_version,status,measurements,evidence,created_at,updated_at",
+            ),
+            (
+                "step_attempts",
+                "attempt_id,lesson_id,lesson_version,step_id,rules_version,status,measurements,evidence,revision,created_at",
+            ),
+            ("review_items", "review_id,content_key,box,due_at,state,updated_at"),
+            ("achievements", "code,unlocked_at,seen_at"),
+            ("streak_days", "local_date,effort_count"),
+        ):
+            rows_for_table = connection.execute(
+                f"SELECT {columns} FROM {table} WHERE owner_id=? ORDER BY 1", (actor.actor_id,)
+            ).fetchall()
+            learning[table] = []
+            for record in rows_for_table:
+                item = dict(zip(columns.split(","), record, strict=True))
+                if table in {"practice_attempts", "step_attempts"}:
+                    item["measurements"] = self._safe_measurements(item["measurements"])
+                    item["evidence"] = self._safe_learning_evidence(item["evidence"])
+                learning[table].append(item)
+        study = connection.execute(
+            "SELECT s.study_id,e.arm,e.enrolled_at,e.withdrawn_at,v.phase,"
+            "v.answers_json,v.submitted_at "
+            "FROM study_enrollments e JOIN feedback_studies s ON s.study_id=e.study_id "
+            "LEFT JOIN study_surveys v ON v.enrollment_id=e.enrollment_id "
+            "WHERE e.participant_id=? ORDER BY s.study_id,v.phase",
+            (actor.actor_id,),
+        ).fetchall()
+        study_data = [
+            {
+                "study_id": row[0],
+                "arm": row[1],
+                "enrolled_at": row[2],
+                "withdrawn_at": row[3],
+                "phase": row[4],
+                "answers": self._safe_likert_answers(row[5]) if row[5] else None,
+                "submitted_at": row[6],
+            }
+            for row in study
+        ]
+        receipts = connection.execute(
+            "SELECT r.receipt_id,r.issued_at,o.amount_minor,o.currency,o.state "
+            "FROM billing_receipts r JOIN billing_orders o ON o.order_id=r.order_id "
+            "WHERE r.account_id=? ORDER BY r.issued_at",
+            (actor.actor_id,),
+        ).fetchall()
+        sessions = connection.execute(
+            "SELECT m.device,m.method,m.expires_at,m.revoked_at FROM session_metadata m "
+            "JOIN sessions s ON s.token_digest=m.token_digest WHERE s.actor_id=? "
+            "ORDER BY m.expires_at",
+            (actor.actor_id,),
+        ).fetchall()
+        consent_events = connection.execute(
+            "SELECT consent_version,state,research_allowed,recorded_at,source "
+            "FROM consent_events WHERE account_id=? ORDER BY recorded_at,event_id",
+            (actor.actor_id,),
+        ).fetchall()
         return {
             "actor_id": actor.actor_id,
             "exported_at": datetime.now(UTC).isoformat(),
+            "profile": asdict(profile) if profile else None,
             "consent": consent.model_dump(mode="json") if consent else None,
+            "consent_history": [
+                {
+                    "consent_version": row[0],
+                    "state": row[1],
+                    "research_allowed": bool(row[2]),
+                    "recorded_at": row[3],
+                    "source": row[4] if row[4] in {"self_service", "admin"} else "other",
+                }
+                for row in consent_events
+            ],
+            "sessions": [
+                {
+                    "device": row[0][:32],
+                    "method": row[1] if row[1] in {"password", "google"} else "other",
+                    "expires_at": row[2],
+                    "revoked_at": row[3],
+                }
+                for row in sessions
+            ],
             "row_count": len(items),
             "responses": items,
+            "learning": learning,
+            "study_participation": study_data,
+            "receipts": [
+                {
+                    "receipt_id": r[0],
+                    "issued_at": r[1],
+                    "amount_minor": r[2],
+                    "currency": r[3],
+                    "state": r[4],
+                }
+                for r in receipts
+            ],
         }
+
+    @staticmethod
+    def _safe_measurements(raw: str) -> dict[str, int | float | bool | None]:
+        try:
+            values = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(values, dict):
+            return {}
+        return {
+            key: value
+            for key, value in values.items()
+            if isinstance(key, str)
+            and len(key) <= 48
+            and not any(
+                word in key.lower() for word in ("secret", "token", "transcript", "path", "id")
+            )
+            and (value is None or type(value) in {int, float, bool})
+        }
+
+    @staticmethod
+    def _safe_learning_evidence(raw: str) -> dict[str, Any]:
+        try:
+            evidence = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(evidence, dict):
+            return {}
+        safe: dict[str, Any] = {}
+        for key, value in evidence.items():
+            if (
+                not isinstance(key, str)
+                or len(key) > 48
+                or any(
+                    word in key.lower()
+                    for word in ("secret", "token", "transcript", "provider", "path", "nonce")
+                )
+            ):
+                continue
+            if type(value) in {int, float, bool} or value is None:
+                safe[key] = value
+            elif key in {"pattern", "error_code", "status", "reason_code", "kind"} and isinstance(
+                value, str
+            ):
+                safe[key] = value[:64]
+            elif key == "examples" and isinstance(value, list):
+                safe[key] = [
+                    {
+                        nested_key: nested_value[:64]
+                        for nested_key, nested_value in example.items()
+                        if nested_key in {"expected", "heard", "pattern"}
+                        and isinstance(nested_value, str)
+                    }
+                    for example in value[:5]
+                    if isinstance(example, dict)
+                ]
+        return safe
+
+    @staticmethod
+    def _safe_likert_answers(raw: str) -> dict[str, int]:
+        try:
+            answers = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(answers, dict):
+            return {}
+        return {
+            key: value
+            for key, value in answers.items()
+            if key in {"q1", "q2", "q3", "q4", "q5"} and type(value) is int and 1 <= value <= 5
+        }
+
+    @staticmethod
+    def _safe_export_report(report: dict[str, Any] | None) -> dict[str, Any] | None:
+        if report is None:
+            return None
+        keys = {
+            "response_id",
+            "assessment_status",
+            "overall_score",
+            "overall_band",
+            "teacher_verified",
+            "teacher_final",
+            "source_versions",
+            "limitations",
+            "criteria",
+            "interaction",
+            "generated_at",
+            "rubric_version",
+        }
+        result = {key: value for key, value in report.items() if key in keys}
+        # Evidence may contain transcript fragments or media references. Keep only
+        # the criterion-level score/coverage and summary labels.
+        criteria = result.get("criteria")
+        if isinstance(criteria, list):
+            result["criteria"] = [
+                {
+                    k: v
+                    for k, v in item.items()
+                    if k in {"criterion", "score", "band", "coverage", "status"}
+                }
+                for item in criteria
+                if isinstance(item, dict)
+            ]
+        return result
 
     def profile(self, token: str) -> dict[str, Any]:
         actor = self.actor(token, frozenset({ActorRole.STUDENT}))

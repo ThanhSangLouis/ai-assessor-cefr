@@ -188,6 +188,7 @@ class IdentityRepository:
         now: datetime,
         *,
         current_digest: str | None = None,
+        student_seat_check: Any | None = None,
     ) -> list[CreatedAccount]:
         if not 1 <= len(entries) <= 200:
             raise ValidationError("batch_size")
@@ -218,6 +219,12 @@ class IdentityRepository:
                 for actor_id in ids
             ):
                 raise ConflictError("duplicate_account")
+            student_count = sum(entry.role is ActorRole.STUDENT for entry, _, _ in entries)
+            if student_count and student_seat_check is not None:
+                # BillingRepository shares this connection, so this check and every
+                # account insert commit or roll back as one unit.
+                if not student_seat_check(student_count):
+                    raise ValidationError("student_seat_limit_reached")
             created = []
             for entry, password_hash, temp_hash in entries:
                 connection.execute(
@@ -639,6 +646,7 @@ class IdentityRepository:
         now: datetime,
         *,
         current_digest: str | None = None,
+        student_seat_check: Any | None = None,
     ) -> AccountProfile:
         if not _valid_actor_id(actor_id) or not isinstance(role, ActorRole):
             raise ValidationError("invalid_account")
@@ -651,6 +659,9 @@ class IdentityRepository:
                     "SELECT 1 FROM accounts WHERE actor_id=?", (actor_id,)
                 ).fetchone():
                     raise ConflictError("duplicate_account")
+                if role is ActorRole.STUDENT and student_seat_check is not None:
+                    if not student_seat_check(1):
+                        raise ValidationError("student_seat_limit_reached")
                 connection.execute(
                     "INSERT INTO accounts(actor_id,role,password_hash) VALUES(?,?,?)",
                     (actor_id, role.value, password_hash),
