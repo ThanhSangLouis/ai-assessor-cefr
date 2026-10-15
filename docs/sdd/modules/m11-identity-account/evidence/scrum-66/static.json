@@ -1,0 +1,26 @@
+{
+  "lint": {
+    "exit_code": 0,
+    "files": null
+  },
+  "format": {
+    "exit_code": 0,
+    "files": 28
+  },
+  "links": {
+    "exit_code": 0,
+    "files": null
+  },
+  "forbidden": {
+    "exit_code": 0,
+    "files": null
+  },
+  "diff": {
+    "exit_code": 0,
+    "files": null
+  },
+  "wheel_source_match": {
+    "mismatches": [],
+    "sha256": "b271e2a82e7dbd0328e384ed66f29cd7d8b158274597d641033acab70304f59e"
+  }
+}

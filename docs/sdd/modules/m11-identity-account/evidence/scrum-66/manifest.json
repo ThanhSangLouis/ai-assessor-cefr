@@ -1,0 +1,27 @@
+{
+  "reviewed_product_revision": "311b02952e61ff0889ed82fc1b695a8ea79411ad",
+  "actual_base": "b2b573fce8da5ce679fbfc034c91b8f0aed3e7f0",
+  "main_base": "840efb9",
+  "historical_target": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "reference_sang": "40907cc35b3d04408f9a8713f16d9be99f4cd6c7",
+  "full_coverage_json_external": "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/scrum-66-2026-10-15/final-coverage.json",
+  "full_coverage_sha256": "14bde39a7adc12d795b18233dd092296fc88c4e78484fa6c60555a83bb7d9c8d",
+  "wheel_sha256": "b271e2a82e7dbd0328e384ed66f29cd7d8b158274597d641033acab70304f59e",
+  "artifact_sha256": {
+    "baseline-pytest.log": "c1f463a30cdc815b2ef4c147c462f850bf04e91219543ccbf2209b1ec4603ac9",
+    "final-pytest.log": "096a4fcbd024fdb39dd173ee6190043a5dc003e0a975996b5d8632b3d3fc8e66",
+    "final-pytest.xml": "d364cef1f9da8e981aefb8f491ffad93e90d1acfe3285740d0decd28d20c23a8",
+    "wheel-build.log": "f53018e11eb8d76577121d071c48b35d34949c4a2278d9fa27499a826536b3e4",
+    "wheel-browser.log": "79eac6ad8af5453226e895ef192d4e03cf28694f2e76d5b55e444bb146e3e0af",
+    "wheel-browser.json": "b7581ff6002f28f32ef00c7251a18844a69124f847a3e6c9e3467262830ceda1",
+    "wheel-server.log": "042c2dc4590c7d6850710a28b4f0370b83f10f916aca209405d88055d19ed9eb",
+    "static.json": "17e5fbb88867425dc9e53fd897712ac1c5dbca30c392a70446ac31c02618bcf0",
+    "lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "format.log": "2bcbe8e6e763d11737554aa861ef6606aea9d87114a002aa9bd426ec920674cf",
+    "links.log": "64324a534bba9a2e252718b04a920f868637e48771a00def51cbfd47fbe84ea2",
+    "forbidden.log": "09fd752d25a628009aabe8fc1311fadd906a29a03049e038ceb4c370818ff714",
+    "diff.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "global-format.log": "a43a3f9e16155fec57a3a19a7cd61b1037de950d793b6c2016fc60fe10006ef7",
+    "coverage-summary.json": "ac384b7f5fe85297aeae644c6e3702cf02a4a1b3c063f7f2098e550214936530"
+  }
+}
