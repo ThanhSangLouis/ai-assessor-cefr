@@ -26,11 +26,14 @@ class DataControl:
         self.portal, self.blobs = portal, blobs
 
     def _queue_blob(self, response) -> None:
+        self._queue_blob_ref(response.blob)
+
+    def _queue_blob_ref(self, blob: BlobRef) -> None:
         connection = self.portal.store.connection
         now = datetime.now(UTC)
         connection.execute(
             "INSERT OR IGNORE INTO blob_deletions VALUES (?,?)",
-            (response.blob.blob_id, now.isoformat()),
+            (blob.blob_id, now.isoformat()),
         )
         if connection.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='cleanup_intents'"
@@ -47,7 +50,7 @@ class DataControl:
                     uuid.uuid4().hex,
                     None,
                     "blob",
-                    response.blob.blob_id,
+                    blob.blob_id,
                     "pending",
                     0,
                     stamp,
@@ -91,6 +94,17 @@ class DataControl:
                     ):
                         live = connection.execute(
                             "SELECT 1 FROM learning_media WHERE blob_id=? LIMIT 1", (blob_id,)
+                        ).fetchone()
+                    if (
+                        not live
+                        and connection.execute(
+                            "SELECT 1 FROM sqlite_master WHERE type='table' "
+                            "AND name='learning_audio_artifacts'"
+                        ).fetchone()
+                    ):
+                        live = connection.execute(
+                            "SELECT 1 FROM learning_audio_artifacts WHERE blob_id=? LIMIT 1",
+                            (blob_id,),
                         ).fetchone()
                     if live:
                         connection.execute("DELETE FROM blob_deletions WHERE blob_id=?", (blob_id,))
@@ -172,7 +186,10 @@ class DataControl:
             "responses": ("owner_id=?", (actor_id,)),
             "practice_attempts": ("owner_id=?", (actor_id,)),
             "step_attempts": ("owner_id=?", (actor_id,)),
+            "learning_audio_artifacts": ("owner_id=?", (actor_id,)),
+            "teacher_override_events": ("owner_id=?", (actor_id,)),
             "review_items": ("owner_id=?", (actor_id,)),
+            "step_review_items": ("owner_id=?", (actor_id,)),
             "achievements": ("owner_id=?", (actor_id,)),
             "streak_days": ("owner_id=?", (actor_id,)),
             "study_enrollments": ("participant_id=?", (actor_id,)),
@@ -299,7 +316,10 @@ class DataControl:
         for table, id_column in (
             ("practice_attempts", "attempt_id"),
             ("step_attempts", "attempt_id"),
+            ("learning_audio_artifacts", "artifact_id"),
+            ("teacher_override_events", "event_id"),
             ("review_items", "review_id"),
+            ("step_review_items", "review_id"),
             ("study_enrollments", "enrollment_id"),
             ("billing_quotes", "quote_id"),
             ("billing_orders", "order_id"),
@@ -400,6 +420,17 @@ class DataControl:
                     stamp,
                 ),
             )
+            if connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
+            ).fetchone():
+                for artifact in connection.execute(
+                    "SELECT blob_id,sha256,size_bytes FROM learning_audio_artifacts "
+                    "WHERE owner_id=?",
+                    (actor_id,),
+                ).fetchall():
+                    self._queue_blob_ref(
+                        BlobRef(blob_id=artifact[0], sha256=artifact[1], size_bytes=artifact[2])
+                    )
             link_ids: set[tuple[str, str]] = set()
             # Capture only primary IDs of rows directly owned by this actor.
             # Shared lesson/task/unit IDs must not select unrelated audit rows.
@@ -546,9 +577,16 @@ class DataControl:
                 "achievements",
                 "streak_days",
                 "review_items",
+                "step_review_items",
                 "practice_attempts",
             ):
                 connection.execute(f"DELETE FROM {table} WHERE owner_id=?", (actor_id,))
+            if connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='teacher_override_events'"
+            ).fetchone():
+                connection.execute(
+                    "DELETE FROM teacher_override_events WHERE owner_id=?", (actor_id,)
+                )
             connection.execute("DELETE FROM sessions WHERE actor_id=?", (actor_id,))
             connection.execute("DELETE FROM consents WHERE participant_id=?", (actor_id,))
             connection.execute("DELETE FROM consent_events WHERE account_id=?", (actor_id,))
@@ -661,6 +699,16 @@ class DataControl:
         owned_attempts = {}
         for table in ("practice_attempts", "step_attempts"):
             owned_attempts[table] = eligible_attempts(self.portal.store.connection, table)
+        override_count = 0
+        if owned_attempts["step_attempts"]:
+            old_step_ids = [row[0] for row in owned_attempts["step_attempts"]]
+            placeholders = ",".join("?" for _ in old_step_ids)
+            override_count = self.portal.store.connection.execute(
+                "SELECT COUNT(*) FROM teacher_override_events WHERE attempt_id IN ("
+                + placeholders
+                + ")",
+                old_step_ids,
+            ).fetchone()[0]
         job_cutoff = cutoff.timestamp()
         old_jobs = self.portal.store.connection.execute(
             "SELECT job_id FROM durable_jobs WHERE state IN ('succeeded','failed') "
@@ -676,6 +724,7 @@ class DataControl:
             "days": days,
             "row_count": len(rows)
             + sum(map(len, owned_attempts.values()))
+            + override_count
             + len(old_jobs)
             + len(old_intents),
             "response_ids": [row[0] for row in rows],
@@ -684,6 +733,7 @@ class DataControl:
             },
             "obsolete_job_ids": [row[0] for row in old_jobs],
             "completed_cleanup_ids": [row[0] for row in old_intents],
+            "teacher_override_event_count": override_count,
         }
         if not apply:
             return result
@@ -706,9 +756,20 @@ class DataControl:
                 "SELECT intent_id FROM cleanup_intents WHERE state='complete' AND updated_at<?",
                 (job_cutoff,),
             ).fetchall()
+            override_count = 0
+            if owned_attempts["step_attempts"]:
+                old_step_ids = [row[0] for row in owned_attempts["step_attempts"]]
+                placeholders = ",".join("?" for _ in old_step_ids)
+                override_count = connection.execute(
+                    "SELECT COUNT(*) FROM teacher_override_events WHERE attempt_id IN ("
+                    + placeholders
+                    + ")",
+                    old_step_ids,
+                ).fetchone()[0]
             result.update(
                 row_count=len(rows)
                 + sum(map(len, owned_attempts.values()))
+                + override_count
                 + len(old_jobs)
                 + len(old_intents),
                 response_ids=[row[0] for row in rows],
@@ -717,12 +778,25 @@ class DataControl:
                 },
                 obsolete_job_ids=[row[0] for row in old_jobs],
                 completed_cleanup_ids=[row[0] for row in old_intents],
+                teacher_override_event_count=override_count,
             )
             # Delete mutable learner evidence before parent attempts; immutable
             # submitted research rows remain outside this retention policy.
             old_practice = [row[0] for row in owned_attempts["practice_attempts"]]
             if old_practice:
                 placeholders = ",".join("?" for _ in old_practice)
+                if connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='learning_audio_artifacts'"
+                ).fetchone():
+                    for blob_id, sha256, size_bytes in connection.execute(
+                        "SELECT blob_id,sha256,size_bytes FROM learning_audio_artifacts "
+                        f"WHERE practice_attempt_id IN ({placeholders})",
+                        old_practice,
+                    ).fetchall():
+                        self._queue_blob_ref(
+                            BlobRef(blob_id=blob_id, sha256=sha256, size_bytes=size_bytes)
+                        )
                 connection.execute(
                     f"DELETE FROM review_items WHERE source_attempt IN ({placeholders})",
                     old_practice,
@@ -734,6 +808,61 @@ class DataControl:
             ids = [row[0] for row in owned_attempts["step_attempts"]]
             if ids:
                 placeholders = ",".join("?" for _ in ids)
+                # Teacher feedback is personal learning data. Retention erases
+                # it together with its source attempt under an explicit,
+                # short-lived privacy-erasure intent so append-only audit
+                # protections cannot leave orphan feedback behind.
+                events = connection.execute(
+                    "SELECT DISTINCT owner_id,attempt_id FROM teacher_override_events "
+                    f"WHERE attempt_id IN ({placeholders})",
+                    ids,
+                ).fetchall()
+                cleanup_at = datetime.now(UTC)
+                cleanup_stamp = cleanup_at.isoformat()
+                for event_owner, source_attempt in events:
+                    connection.execute(
+                        """INSERT INTO cleanup_intents(
+                            intent_id,owner_id,resource_kind,resource_id,state,attempt,
+                            available_at,created_at,updated_at,last_reason
+                        ) VALUES(?,?,'privacy_erasure',?,'running',0,?,?,?,NULL)
+                        ON CONFLICT(resource_kind,resource_id) DO UPDATE SET
+                            state='running',updated_at=excluded.updated_at""",
+                        (
+                            uuid.uuid4().hex,
+                            event_owner,
+                            f"learning-override-retention:{source_attempt}",
+                            cleanup_at.timestamp(),
+                            cleanup_stamp,
+                            cleanup_stamp,
+                        ),
+                    )
+                if events:
+                    connection.execute(
+                        f"DELETE FROM teacher_override_events WHERE attempt_id IN ({placeholders})",
+                        ids,
+                    )
+                    connection.execute(
+                        "UPDATE cleanup_intents SET state='complete',updated_at=? "
+                        "WHERE resource_kind='privacy_erasure' AND resource_id LIKE "
+                        "'learning-override-retention:%' AND state='running'",
+                        (cleanup_stamp,),
+                    )
+                if connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='learning_audio_artifacts'"
+                ).fetchone():
+                    for blob_id, sha256, size_bytes in connection.execute(
+                        "SELECT blob_id,sha256,size_bytes FROM learning_audio_artifacts "
+                        f"WHERE step_attempt_id IN ({placeholders})",
+                        ids,
+                    ).fetchall():
+                        self._queue_blob_ref(
+                            BlobRef(blob_id=blob_id, sha256=sha256, size_bytes=size_bytes)
+                        )
+                connection.execute(
+                    f"DELETE FROM step_review_items WHERE source_step_attempt IN ({placeholders})",
+                    ids,
+                )
                 connection.execute(
                     f"DELETE FROM step_attempts WHERE attempt_id IN ({placeholders})", ids
                 )
@@ -796,6 +925,15 @@ class DataControl:
                     "SELECT blob_id FROM learning_media WHERE blob_id IS NOT NULL"
                 )
             )
+        if self.portal.store.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
+        ).fetchone():
+            referenced.update(
+                row[0]
+                for row in self.portal.store.connection.execute(
+                    "SELECT blob_id FROM learning_audio_artifacts"
+                )
+            )
         ids = [
             name
             for name in self.blobs.orphan_ids(referenced)
@@ -818,6 +956,16 @@ class DataControl:
                         "SELECT blob_id FROM learning_media WHERE blob_id IS NOT NULL"
                     )
                 )
+                if connection.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='learning_audio_artifacts'"
+                ).fetchone():
+                    referenced.update(
+                        row[0]
+                        for row in connection.execute(
+                            "SELECT blob_id FROM learning_audio_artifacts"
+                        )
+                    )
                 for name in ids:
                     if name in referenced:
                         continue
@@ -869,6 +1017,16 @@ class DataControl:
                         prior = refs.setdefault(blob_id, (sha256, size_bytes))
                         if prior != (sha256, size_bytes):
                             raise ValueError("shared media metadata conflict")
+                if snapshot.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' "
+                    "AND name='learning_audio_artifacts'"
+                ).fetchone():
+                    for blob_id, sha256, size_bytes in snapshot.execute(
+                        "SELECT blob_id,sha256,size_bytes FROM learning_audio_artifacts"
+                    ):
+                        prior = refs.setdefault(blob_id, (sha256, size_bytes))
+                        if prior != (sha256, size_bytes):
+                            raise ValueError("shared media metadata conflict")
                 blob_dir = destination / "blobs"
                 blob_dir.mkdir()
                 for blob_id, (sha256, size_bytes) in sorted(refs.items()):
@@ -910,7 +1068,14 @@ class DataControl:
                 "response_count": response_count,
                 "created_at": datetime.now(UTC).isoformat(),
                 "includes": ["metadata", "blobs"],
-                "media_families": ["responses", "learning_media"],
+                "media_families": ["responses", "learning_media", "learning_audio_artifacts"],
+                "learning_tables": [
+                    "learning_audio_artifacts",
+                    "review_items",
+                    "step_review_items",
+                    "teacher_override_events",
+                    "learning_seed_manifest",
+                ],
                 "sensitive_files": sensitive_files,
                 "files": files,
             }
@@ -989,11 +1154,24 @@ class DataControl:
         if not isinstance(manifest, dict):
             raise ValueError("backup manifest is invalid")
         files = manifest.get("files")
+        source_schema_version = manifest.get("schema_version")
+        expected_learning_tables = [
+            "learning_audio_artifacts",
+            "review_items",
+            "step_review_items",
+            "teacher_override_events",
+            "learning_seed_manifest",
+        ]
         if (
-            type(manifest.get("schema_version")) is not int
-            or manifest["schema_version"] != self.portal.store.SCHEMA_VERSION
+            type(source_schema_version) is not int
+            or source_schema_version not in {10, self.portal.store.SCHEMA_VERSION}
             or not isinstance(files, dict)
             or not isinstance(manifest.get("sensitive_files", []), list)
+            or (
+                source_schema_version == self.portal.store.SCHEMA_VERSION
+                and manifest.get("learning_tables") != expected_learning_tables
+            )
+            or (source_schema_version == 10 and "learning_tables" in manifest)
         ):
             raise ValueError("backup manifest is invalid")
         if any(
@@ -1032,10 +1210,7 @@ class DataControl:
         try:
             if connection.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                 raise ValueError("backup database integrity check failed")
-            if (
-                connection.execute("PRAGMA user_version").fetchone()[0]
-                != self.portal.store.SCHEMA_VERSION
-            ):
+            if connection.execute("PRAGMA user_version").fetchone()[0] != source_schema_version:
                 raise ValueError("backup schema version mismatch")
             if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
                 raise ValueError("backup foreign-key check failed")
@@ -1051,6 +1226,15 @@ class DataControl:
             ).fetchone():
                 for blob_id, sha256, size_bytes in connection.execute(
                     "SELECT blob_id,sha256,size_bytes FROM learning_media WHERE blob_id IS NOT NULL"
+                ):
+                    prior = refs.setdefault(blob_id, (sha256, size_bytes))
+                    if prior != (sha256, size_bytes):
+                        raise ValueError("shared media metadata conflict")
+            if connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
+            ).fetchone():
+                for blob_id, sha256, size_bytes in connection.execute(
+                    "SELECT blob_id,sha256,size_bytes FROM learning_audio_artifacts"
                 ):
                     prior = refs.setdefault(blob_id, (sha256, size_bytes))
                     if prior != (sha256, size_bytes):
@@ -1091,6 +1275,15 @@ class DataControl:
                     "SELECT * FROM diagnostic_reports LIMIT 1"
                 ).fetchall()
                 restored_store.connection.execute("SELECT * FROM learning_media LIMIT 1").fetchall()
+                restored_store.connection.execute(
+                    "SELECT * FROM learning_audio_artifacts LIMIT 1"
+                ).fetchall()
+                restored_store.connection.execute(
+                    "SELECT * FROM teacher_override_events LIMIT 1"
+                ).fetchall()
+                restored_store.connection.execute(
+                    "SELECT * FROM learning_seed_manifest LIMIT 1"
+                ).fetchall()
             finally:
                 if restored_store is not None:
                     restored_store.close()
@@ -1119,7 +1312,8 @@ class DataControl:
             raise
         return {
             "restored": True,
-            "schema_version": manifest["schema_version"],
+            "schema_version": self.portal.store.SCHEMA_VERSION,
+            "source_schema_version": source_schema_version,
             "blob_count": len(refs),
         }
 

@@ -40,7 +40,7 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
 
     now = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
     migrated = SQLiteStore(data_dir)
-    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (10,)
+    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (11,)
     legacy_account = migrated.connection.execute(
         "SELECT actor_id,role,password_hash FROM accounts WHERE actor_id='student'"
     ).fetchone()
@@ -129,7 +129,7 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
     assert migrated.connection.execute(
         "SELECT token_digest FROM sessions WHERE actor_id='student'"
     ).fetchone() == (session_digest,)
-    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (10,)
+    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (11,)
     assert raw_session not in repr(migrated.connection.execute("SELECT * FROM accounts").fetchall())
     assert subject not in repr(
         migrated.connection.execute("SELECT * FROM account_identities").fetchall()
@@ -139,7 +139,7 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
     migrated.close()
     reopened = SQLiteStore(data_dir)
     try:
-        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (10,)
+        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (11,)
         reopened_repository = IdentityRepository(reopened)
         reopened_auth = AuthService(
             reopened,

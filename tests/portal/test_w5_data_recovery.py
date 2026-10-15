@@ -22,7 +22,7 @@ def _publishable_media_reference(runtime, blob):
     )
     runtime.store.connection.execute(
         "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
-        "VALUES('recovery-lesson','recovery-unit','Recovery lesson',1,?)",
+        "VALUES('recovery-lesson','recovery-unit','Recovery lesson',NULL,?)",
         (now,),
     )
     runtime.store.connection.execute(
@@ -30,6 +30,9 @@ def _publishable_media_reference(runtime, blob):
         "created_at) "
         "VALUES('recovery-lesson',1,'published','rules-v1',?,?)",
         (now, now),
+    )
+    runtime.store.connection.execute(
+        "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='recovery-lesson'"
     )
     runtime.store.connection.execute(
         "INSERT INTO learning_media(media_id,lesson_id,media_kind,blob_id,sha256,size_bytes,"
@@ -116,14 +119,16 @@ def test_retention_prunes_old_completed_attempts_and_jobs_but_keeps_active_work(
     )
     runtime.store.connection.execute(
         "INSERT INTO practice_attempts(attempt_id,owner_id,mission_id,prompt_version,status,"
-        "created_at,updated_at) VALUES('old-practice','fixture-a','mission-v1','prompt-v1',"
-        "'completed',?,?)",
+        "created_at,updated_at,idempotency_key) "
+        "VALUES('old-practice','fixture-a','mission-v1','prompt-v1','completed',?,?,"
+        "'retention-old-practice')",
         (old, old),
     )
     runtime.store.connection.execute(
         "INSERT INTO practice_attempts(attempt_id,owner_id,mission_id,prompt_version,status,"
-        "created_at,updated_at) VALUES('active-practice','fixture-a','mission-v1','prompt-v1',"
-        "'in_progress',?,?)",
+        "created_at,updated_at,idempotency_key) "
+        "VALUES('active-practice','fixture-a','mission-v1','prompt-v1','in_progress',?,?,"
+        "'retention-active-practice')",
         (old, old),
     )
     runtime.store.connection.execute(
@@ -142,7 +147,7 @@ def test_retention_prunes_old_completed_attempts_and_jobs_but_keeps_active_work(
     )
     runtime.store.connection.execute(
         "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
-        "VALUES('retention-lesson','retention-unit','Retention lesson',1,?)",
+        "VALUES('retention-lesson','retention-unit','Retention lesson',NULL,?)",
         (old,),
     )
     runtime.store.connection.execute(
@@ -157,7 +162,7 @@ def test_retention_prunes_old_completed_attempts_and_jobs_but_keeps_active_work(
     )
     runtime.store.connection.executemany(
         "INSERT INTO step_attempts(attempt_id,owner_id,lesson_id,lesson_version,step_id,"
-        "rules_version,status,created_at) VALUES(?,?,?,?,?,?,?,?)",
+        "rules_version,status,created_at,idempotency_key) VALUES(?,?,?,?,?,?,?,?,?)",
         [
             (
                 "old-step",
@@ -168,6 +173,7 @@ def test_retention_prunes_old_completed_attempts_and_jobs_but_keeps_active_work(
                 "rules-v1",
                 "completed",
                 old,
+                "retention-old-step",
             ),
             (
                 "active-step",
@@ -178,6 +184,7 @@ def test_retention_prunes_old_completed_attempts_and_jobs_but_keeps_active_work(
                 "rules-v1",
                 "active",
                 old,
+                "retention-active-step",
             ),
         ],
     )
