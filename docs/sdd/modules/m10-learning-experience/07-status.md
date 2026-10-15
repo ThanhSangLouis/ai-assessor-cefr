@@ -19,3 +19,5 @@ User chỉ định thực thi S02 sau S01, với Luna implement/root review và 
 ### SCRUM-70 verification package
 
 Final source/test e792ae6; full889PASS, pure coverage96,091%statement/88,821%branch; clean wheel129/129bytes và browser API handoff107/107PASS. [Final verification](evidence/scrum-70/final-verification.md), [review](reviews/SCRUM-70-review.md). Task-local implementation READY_FOR_REVIEW; reviewer/user acceptance vẫn PENDING, không đổi global DRAFT. Tạo PR riêng rồi dừng; chưa thực thi SCRUM-71/72.
+
+PR đã tạo: [#41 — SCRUM-70](https://github.com/thanglb2005/ai-assessor-cefr/pull/41), base nhánh G1. Dừng tại đây sau kiểm tra publication/CI; không bắt đầu S03/S04. Jira/reviewer acceptance PENDING.
