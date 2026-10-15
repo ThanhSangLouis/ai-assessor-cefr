@@ -7,12 +7,33 @@ import getpass
 import ipaddress
 import sys
 from pathlib import Path
-from wsgiref.simple_server import make_server
+from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 from aicefr.auth.service import AuthService
 from aicefr.contracts import ActorRole
 from aicefr.local.app import SQLiteSessionRepository, create_runtime, load_config
 from aicefr.storage.sqlite import SQLiteStore
+
+
+class SafeAccessLogHandler(WSGIRequestHandler):
+    """Log fixed request metadata without path, query, headers, or body."""
+
+    def log_request(self, code="-", size="-"):
+        method = (
+            self.command
+            if self.command in {"GET", "POST", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+            else "OTHER"
+        )
+        self.log_message("HTTP %s %s %s", method, code, size)
+
+    def log_message(self, format, *args):
+        # `requestline` includes the query string and must never enter the log.
+        if format.startswith("HTTP "):
+            super().log_message("%s", format % args)
+
+    def log_error(self, format, *args):
+        # BaseHTTPRequestHandler error messages may include an attacker supplied path.
+        return
 
 
 def _demo_config() -> dict[str, object]:
@@ -112,7 +133,9 @@ def main(argv: list[str] | None = None) -> int:
         print("DEMO LOCAL: chỉ dùng tài khoản/audio giả; QC không đại diện cấu hình vận hành.")
     server = None
     try:
-        server = make_server(str(address), args.port, runtime.app)
+        server = make_server(
+            str(address), args.port, runtime.app, handler_class=SafeAccessLogHandler
+        )
         print(f"Local server: http://{address}:{args.port}/login")
         server.serve_forever()
     except KeyboardInterrupt:

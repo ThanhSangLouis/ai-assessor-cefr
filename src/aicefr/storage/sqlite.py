@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from aicefr.auth.service import AccountRecord
+from aicefr.auth.service import IDLE_TTL, AccountRecord
 from aicefr.contracts import (
     Actor,
     ActorRole,
@@ -317,6 +317,28 @@ class SQLiteStore:
                     session.absolute_expires_at.isoformat(),
                 ),
             )
+
+    def touch_session(self, session: SessionRecord, *, now: datetime) -> bool:
+        """Refresh an existing live session without recreating a revoked row."""
+        idle_expires = min(now + IDLE_TTL, session.absolute_expires_at)
+        with self.transaction() as connection:
+            cursor = connection.execute(
+                "UPDATE sessions SET last_seen_at=?,idle_expires_at=? "
+                "WHERE token_digest=? AND actor_id=? AND role=? AND created_at=? "
+                "AND absolute_expires_at=? AND idle_expires_at>? AND absolute_expires_at>?",
+                (
+                    now.isoformat(),
+                    idle_expires.isoformat(),
+                    session.token_digest,
+                    session.actor_id,
+                    session.role.value,
+                    session.created_at.isoformat(),
+                    session.absolute_expires_at.isoformat(),
+                    now.isoformat(),
+                    now.isoformat(),
+                ),
+            )
+            return cursor.rowcount == 1
 
     def delete_session(self, digest: str) -> None:
         """Revoke a session by its stored token digest; missing sessions are harmless."""

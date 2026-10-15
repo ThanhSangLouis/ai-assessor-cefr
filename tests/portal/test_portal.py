@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 
 import pytest
 
+from aicefr.auth.errors import ConflictError
 from aicefr.auth.service import AuthorizationError
 from aicefr.contracts import Band, ReviewAction
 from aicefr.local.app import create_runtime
@@ -82,9 +83,7 @@ def test_staff_report_not_ready_returns_controlled_conflict(portal_runtime):
             else:
                 assert "Báo cáo chưa sẵn sàng" in view["body"].decode()
     assert (
-        http(runtime, f"/api/student/responses/{response.response_id}/report", tokens["b"])[
-            "code"
-        ]
+        http(runtime, f"/api/student/responses/{response.response_id}/report", tokens["b"])["code"]
         == 404
     )
 
@@ -155,10 +154,10 @@ def test_lockout_unlock_disable_and_session_revocation(portal_runtime):
     for token in (tokens["a"], new_token):
         with pytest.raises(AuthorizationError):
             runtime.auth.resolve(token)
-    with pytest.raises(AuthorizationError):
-        runtime.portal.change_account(
-            tokens["admin"], "fixture-admin", AccountChange(disabled=True)
-        )
+        with pytest.raises(ConflictError, match="self_action_prohibited"):
+            runtime.portal.change_account(
+                tokens["admin"], "fixture-admin", AccountChange(disabled=True)
+            )
     accounts = runtime.portal.accounts(tokens["admin"])
     assert "password" not in json.dumps(accounts)
     assert http(runtime, "/api/admin/accounts", tokens["teacher"])["code"] == 403
@@ -313,9 +312,43 @@ def test_erasure_preview_fingerprint_and_retention_keep_scores(portal_runtime):
     assert report.overall_score == 4.3
     assert report.comments == ()
     assert runtime.store.get_response(second.response_id).audio_available
+    now = datetime.now(UTC).isoformat()
+    runtime.store.connection.execute(
+        "INSERT OR IGNORE INTO account_profiles(account_id,updated_at) VALUES (?,?)",
+        ("fixture-a", now),
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO temporary_passwords(account_id,password_hash,expires_at,"
+        "created_at,created_by) "
+        "VALUES (?,?,?,?,?)",
+        ("fixture-a", "fixture-hash", now, now, "fixture-admin"),
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO account_identities(identity_id,account_id,provider,subject_hash,created_at) "
+        "VALUES (?,?,?,?,?)",
+        ("fixture-identity", "fixture-a", "google", "fixture-subject-hash", now),
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO activity_events(event_id,account_id,kind,object_id,recorded_at,detail_code) "
+        "VALUES (?,?,?,?,?,?)",
+        ("fixture-activity", "fixture-a", "fixture", None, now, None),
+    )
     preview = runtime.data.erasure_preview(tokens["admin"], "fixture-a")
     runtime.data.erase(tokens["admin"], "fixture-a", "fixture-a", preview["fingerprint"])
-    assert runtime.store.get_account("fixture-a") is None
+    retained = runtime.store.get_account("fixture-a")
+    assert retained is not None and retained.disabled and retained.password_hash == ""
+    for table, owner_column in (
+        ("account_profiles", "account_id"),
+        ("temporary_passwords", "account_id"),
+        ("account_identities", "account_id"),
+        ("activity_events", "account_id"),
+    ):
+        assert (
+            runtime.store.connection.execute(
+                f"SELECT 1 FROM {table} WHERE {owner_column}='fixture-a'"
+            ).fetchone()
+            is None
+        )
     assert runtime.portal.statistics(tokens["admin"], PageQuery())["total"] == 0
     assert runtime.store.list_audit()
     with pytest.raises(AuthorizationError):
@@ -349,6 +382,59 @@ def test_backup_includes_verified_blobs_and_safe_orphan_preview(portal_runtime, 
     runtime.data.orphans(tokens["admin"], apply=True)
     assert runtime.responses.blobs.read(response.blob)
     assert not runtime.responses.blobs._path(orphan.blob_id).exists()
+
+
+def test_erasure_scrubs_identity_but_retains_immutable_consent_history(portal_runtime):
+    runtime, tokens = portal_runtime
+    original = runtime.store.get_account("fixture-a").password_hash
+    runtime.accounts.set_consent(tokens["a"], "consent-v1", True)
+    now = datetime.now(UTC).isoformat()
+    runtime.store.connection.execute(
+        "INSERT INTO feedback_studies(study_id,title,state,seed,config_json,created_by,created_at) "
+        "VALUES (?,?,?,?,?,?,?)",
+        ("fixture-study", "Fixture", "RUNNING", 1, "{}", "fixture-admin", now),
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO study_enrollments(enrollment_id,study_id,participant_id,"
+        "pseudonym,arm,enrolled_at) "
+        "VALUES (?,?,?,?,?,?)",
+        ("fixture-enrollment", "fixture-study", "fixture-a", "pseudonym-a", "control", now),
+    )
+    preview = runtime.data.erasure_preview(tokens["admin"], "fixture-a")
+    consent_count = runtime.store.connection.execute(
+        "SELECT COUNT(*) FROM consent_events WHERE account_id='fixture-a'"
+    ).fetchone()[0]
+
+    runtime.data.erase(tokens["admin"], "fixture-a", "fixture-a", preview["fingerprint"])
+
+    retained = runtime.store.get_account("fixture-a")
+    assert retained is not None and retained.disabled
+    assert retained.password_hash != original
+    assert retained.password_hash == ""
+    assert (
+        runtime.store.connection.execute(
+            "SELECT COUNT(*) FROM consent_events WHERE account_id='fixture-a'"
+        ).fetchone()[0]
+        == consent_count
+    )
+    assert runtime.store.connection.execute(
+        "SELECT withdrawn_at FROM study_enrollments WHERE participant_id='fixture-a'"
+    ).fetchone()[0]
+    for table, owner_column in (
+        ("sessions", "actor_id"),
+        ("account_profiles", "account_id"),
+        ("temporary_passwords", "account_id"),
+        ("account_identities", "account_id"),
+        ("activity_events", "account_id"),
+    ):
+        assert (
+            runtime.store.connection.execute(
+                f"SELECT 1 FROM {table} WHERE {owner_column}='fixture-a'"
+            ).fetchone()
+            is None
+        )
+    with pytest.raises(AuthorizationError):
+        runtime.auth.login("fixture-a", "fixture-password")
 
 
 def test_qc_cas_validation_restart_and_old_report_provenance(portal_runtime):

@@ -9,6 +9,10 @@ from urllib.parse import parse_qs
 import soundfile as sf
 
 from aicefr.api.wsgi import HttpInputError, WebResponse
+from aicefr.auth.errors import AuthorizationError as AccountAuthorizationError
+from aicefr.auth.errors import ConflictError, LockoutError, NotFoundError
+from aicefr.auth.errors import ResourceNotFound as AccountResourceNotFound
+from aicefr.auth.errors import ValidationError as AccountValidationError
 from aicefr.contracts import ActorRole
 from aicefr.portal import templates as html
 from aicefr.portal.contracts import (
@@ -26,8 +30,9 @@ from aicefr.storage.sqlite import ConcurrentResponseUpdate
 
 
 class PortalRouter:
-    def __init__(self, service, control, data, metrics) -> None:
+    def __init__(self, service, control, data, metrics, identity_api=None) -> None:
         self.service, self.control, self.data, self.metrics = service, control, data, metrics
+        self.identity_api = identity_api
 
     @staticmethod
     def query(environ) -> PageQuery:
@@ -39,6 +44,10 @@ class PortalRouter:
         return PageQuery(**{key: value[0] for key, value in parsed.items() if value[0]})
 
     def dispatch(self, app, environ):
+        if self.identity_api is not None:
+            identity_response = self.identity_api.dispatch(app, environ)
+            if identity_response is not None:
+                return identity_response
         try:
             return self._dispatch(app, environ)
         except HttpInputError:
@@ -51,6 +60,29 @@ class PortalRouter:
             raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, error.reason.value) from error
         except BlobIntegrityError as error:
             raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE") from error
+        except ConflictError as error:
+            raise HttpInputError(HTTPStatus.CONFLICT, "ACCOUNT_CONFLICT") from error
+        except AccountValidationError as error:
+            raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_ACCOUNT") from error
+        except NotFoundError as error:
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE") from error
+        except AccountResourceNotFound as error:
+            # ResourceNotFound inherits AuthorizationError for existing auth callers;
+            # preserve its privacy-safe 404 instead of treating it as a missing session.
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE") from error
+        except LockoutError as error:
+            raise HttpInputError(HTTPStatus.TOO_MANY_REQUESTS, "LOGIN_LOCKED") from error
+        except AccountAuthorizationError as error:
+            forbidden = error.code in {
+                "access_denied",
+                "access denied",
+                "self_action_prohibited",
+                "password_change_required",
+            }
+            raise HttpInputError(
+                HTTPStatus.FORBIDDEN if forbidden else HTTPStatus.UNAUTHORIZED,
+                "ACCESS_DENIED" if forbidden else "SESSION_REQUIRED",
+            ) from error
 
     def _dispatch(self, app, environ):
         method = environ.get("REQUEST_METHOD", "GET").upper()
@@ -238,10 +270,30 @@ class PortalRouter:
             if method == "GET":
                 return result(self.service.accounts(token), html.accounts)
             if method == "POST":
+                request = AccountCreate(**app._request_values(environ))
+                if self.identity_api is None:
+                    raise HttpInputError(
+                        HTTPStatus.SERVICE_UNAVAILABLE, "ACCOUNT_SERVICE_UNAVAILABLE"
+                    )
+                try:
+                    created = self.identity_api.accounts.create_legacy_account(
+                        token,
+                        request.actor_id,
+                        request.role,
+                        request.password.get_secret_value(),
+                    )
+                except ConflictError as error:
+                    raise HttpInputError(HTTPStatus.CONFLICT, "ACCOUNT_CONFLICT") from error
+                except AccountValidationError as error:
+                    raise HttpInputError(
+                        HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_ACCOUNT"
+                    ) from error
                 return changed(
-                    self.service.create_account(
-                        token, AccountCreate(**app._request_values(environ))
-                    ),
+                    {
+                        "actor_id": created.actor_id,
+                        "role": created.role.value,
+                        "temporary_password_required": created.temporary_password_required,
+                    },
                     path,
                 )
         if len(parts) == 3 and parts[:2] == ["admin", "accounts"] and method == "POST":
