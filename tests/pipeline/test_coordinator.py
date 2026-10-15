@@ -76,9 +76,7 @@ class _Asr:
             decode_config_version="fixture-decode-v1",
             audio_sha256=audio.audio_sha256,
             asr_model="small",
-            reasons=(ReasonCode.ASR_FAILED,)
-            if self.status is AsrStatus.ASR_FAILED
-            else (),
+            reasons=(ReasonCode.ASR_FAILED,) if self.status is AsrStatus.ASR_FAILED else (),
             test_only=self.test_only,
         )
 
@@ -152,12 +150,8 @@ class _Stack:
         self.responses = ResponseService(self.store, self.blobs, consent)
         self.review_repository = SQLiteReviewRepository(self.store)
         self.reports = SQLiteReportRepository(self.store)
-        self.report_service = ReportService(
-            self.reports, decision_verifier=self.review_repository
-        )
-        self.reviews = ReviewService(
-            self.review_repository, report_sink=self.report_service
-        )
+        self.report_service = ReportService(self.reports, decision_verifier=self.review_repository)
+        self.reviews = ReviewService(self.review_repository, report_sink=self.report_service)
         self.asr = asr or _Asr()
         self.pipeline = PipelineCoordinator(
             responses=self.responses,
@@ -223,9 +217,7 @@ def test_sqlite_final_write_failure_rolls_back_report_status_and_candidate(
 ):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.store.connection.execute(f"""
@@ -249,9 +241,7 @@ def test_sqlite_final_write_failure_rolls_back_report_status_and_candidate(
 def test_failure_recovery_does_not_mutate_newer_running_revision(tmp_path, monkeypatch):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.store.connection.execute("""
@@ -414,9 +404,7 @@ def test_asr_refusal_survives_scorer_model_refusal_without_estimate(tmp_path):
     stack = _Stack(
         tmp_path,
         asr=_Asr(AsrStatus.ASR_FAILED),
-        scorer=_Scorer(
-            AssessmentStatus.NOT_EVALUATED, (ReasonCode.MODEL_VERSION_MISSING,)
-        ),
+        scorer=_Scorer(AssessmentStatus.NOT_EVALUATED, (ReasonCode.MODEL_VERSION_MISSING,)),
     )
     record = stack.submit()
 
@@ -466,9 +454,7 @@ def test_review_decision_report_callback_failure_rolls_back_decision_and_audit(t
 def test_scorer_near_boundary_creates_durable_candidate(tmp_path):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.pipeline.enqueue(record)
@@ -481,9 +467,7 @@ def test_scorer_near_boundary_creates_durable_candidate(tmp_path):
 
 
 @pytest.mark.parametrize("audio_format", ["FLAC", "OGG", "MP3"])
-def test_pipeline_sniffs_supported_containers_from_generated_audio(
-    tmp_path, audio_format
-):
+def test_pipeline_sniffs_supported_containers_from_generated_audio(tmp_path, audio_format):
     if audio_format not in sf.available_formats():
         pytest.skip(f"libsndfile does not support {audio_format}")
     stack = _Stack(tmp_path)
@@ -572,7 +556,8 @@ def test_success_report_contains_only_valid_transcript_and_feature_evidence(tmp_
     assert report.source_versions["feature_set"] == "fixture-features-v1"
     assert report.source_versions["qc_config"] == "fixture-qc-v1"
     assert {comment.source for comment in report.comments} == {
-        EvidenceSource.TRANSCRIPT, EvidenceSource.FEATURE_SET
+        EvidenceSource.TRANSCRIPT,
+        EvidenceSource.FEATURE_SET,
     }
     assert len(report.comments) == 2
     assert report.evidence_issues == ()
@@ -604,67 +589,93 @@ def test_builder_drops_foreign_and_stale_evidence_refs():
             audio_sha256="0" * 64,
         ),
         Transcript(
-            response_id="local-response", status=AsrStatus.OK, text="hello",
-            words=(), engine="fixture", engine_version="1",
-            decode_config_version="decode-v1", audio_sha256="0" * 64,
+            response_id="local-response",
+            status=AsrStatus.OK,
+            text="hello",
+            words=(),
+            engine="fixture",
+            engine_version="1",
+            decode_config_version="decode-v1",
+            audio_sha256="0" * 64,
         ),
     )
     transcript = Transcript(
-        response_id="local-response", status=AsrStatus.OK, text="hello", words=(),
-        engine="fixture", engine_version="1", decode_config_version="decode-v1",
+        response_id="local-response",
+        status=AsrStatus.OK,
+        text="hello",
+        words=(),
+        engine="fixture",
+        engine_version="1",
+        decode_config_version="decode-v1",
         audio_sha256="0" * 64,
     )
     features = FeatureSet(
         response_id="local-response",
         values=(FeatureValue(name="words_per_minute", value=120.0, unit="words/min"),),
         feature_version="fixture-features-v1",
-        vad_name=None, vad_version=None, vad_threshold=None, vad_min_silence_ms=None,
-        asr_model=None, transcript_ref=None, audio_sha256="0" * 64,
+        vad_name=None,
+        vad_version=None,
+        vad_threshold=None,
+        vad_min_silence_ms=None,
+        asr_model=None,
+        transcript_ref=None,
+        audio_sha256="0" * 64,
     )
-    report = DiagnosticReportBuilder().build(ReportInput(
-        response_id="local-response", audio_duration_s=1, assessment=assessment,
-        transcript=transcript, features=features,
-        evidence_refs=(
-            EvidenceRef(
-                evidence_id="foreign", response_id="foreign-response",
-                source=EvidenceSource.TRANSCRIPT, source_version="decode-v1",
-                criterion=Criterion.FLUENCY,
+    report = DiagnosticReportBuilder().build(
+        ReportInput(
+            response_id="local-response",
+            audio_duration_s=1,
+            assessment=assessment,
+            transcript=transcript,
+            features=features,
+            evidence_refs=(
+                EvidenceRef(
+                    evidence_id="foreign",
+                    response_id="foreign-response",
+                    source=EvidenceSource.TRANSCRIPT,
+                    source_version="decode-v1",
+                    criterion=Criterion.FLUENCY,
+                ),
+                EvidenceRef(
+                    evidence_id="stale",
+                    response_id="local-response",
+                    source=EvidenceSource.FEATURE_SET,
+                    source_version="stale-features",
+                    criterion=Criterion.FLUENCY,
+                ),
+                EvidenceRef(
+                    evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
+                    response_id="local-response",
+                    source=EvidenceSource.FEATURE_SET,
+                    source_version="fixture-features-v1",
+                    criterion=Criterion.FLUENCY,
+                ),
             ),
-            EvidenceRef(
-                evidence_id="stale", response_id="local-response",
-                source=EvidenceSource.FEATURE_SET, source_version="stale-features",
-                criterion=Criterion.FLUENCY,
+            comment_requests=(
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.WORD_TIMING_OBSERVED,
+                    evidence_id="foreign",
+                ),
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
+                    evidence_id="stale",
+                ),
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
+                    evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
+                ),
             ),
-            EvidenceRef(
-                evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
-                response_id="local-response",
-                source=EvidenceSource.FEATURE_SET,
-                source_version="fixture-features-v1",
-                criterion=Criterion.FLUENCY,
-            ),
-        ),
-        comment_requests=(
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.WORD_TIMING_OBSERVED,
-                evidence_id="foreign",
-            ),
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
-                evidence_id="stale",
-            ),
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
-                evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
-            ),
-        ),
-    ))
+        )
+    )
     assert report.comments == ()
     assert {issue.reason for issue in report.evidence_issues} == {
-        "EVIDENCE_RESPONSE_MISMATCH", "EVIDENCE_SOURCE_VERSION_MISMATCH",
-        "EVIDENCE_FEATURE_VALUE_MISMATCH", "COMMENT_EVIDENCE_MISSING",
+        "EVIDENCE_RESPONSE_MISMATCH",
+        "EVIDENCE_SOURCE_VERSION_MISMATCH",
+        "EVIDENCE_FEATURE_VALUE_MISMATCH",
+        "COMMENT_EVIDENCE_MISSING",
     }
 
 
@@ -683,10 +694,14 @@ def test_invalid_timestamps_and_missing_features_produce_no_evidence(tmp_path):
     )
     features = FeatureSet(
         response_id=response_id,
-        values=(FeatureValue(
-            name="words_per_minute", value=None, unit="words/min",
-            missing_reason=ReasonCode.FEATURE_NOT_COMPUTABLE,
-        ),),
+        values=(
+            FeatureValue(
+                name="words_per_minute",
+                value=None,
+                unit="words/min",
+                missing_reason=ReasonCode.FEATURE_NOT_COMPUTABLE,
+            ),
+        ),
         feature_version="fixture-features-v1",
         vad_name=None,
         vad_version=None,
@@ -698,9 +713,7 @@ def test_invalid_timestamps_and_missing_features_produce_no_evidence(tmp_path):
     )
     assessment = _Scorer().score(features, transcript)
 
-    report_input = stack.pipeline._report_input(
-        response_id, 1.0, assessment, transcript, features
-    )
+    report_input = stack.pipeline._report_input(response_id, 1.0, assessment, transcript, features)
 
     assert report_input.evidence_refs == ()
     assert report_input.comment_requests == ()

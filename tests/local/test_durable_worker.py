@@ -177,17 +177,24 @@ def test_worker_renews_lease_while_pipeline_is_blocked(tmp_path):
         assert extended_lease is not None and extended_lease > initial_lease + 0.5
         release_pipeline.set()
         deadline = time.monotonic() + 5
-        while jobs.get(
-            runtime.store.connection.execute(
-                "SELECT job_id FROM durable_jobs WHERE response_id=?", (response.response_id,)
-            ).fetchone()[0]
-        ).state != "succeeded" and time.monotonic() < deadline:
+        while (
+            jobs.get(
+                runtime.store.connection.execute(
+                    "SELECT job_id FROM durable_jobs WHERE response_id=?", (response.response_id,)
+                ).fetchone()[0]
+            ).state
+            != "succeeded"
+            and time.monotonic() < deadline
+        ):
             time.sleep(0.01)
-        assert jobs.get(
-            runtime.store.connection.execute(
-                "SELECT job_id FROM durable_jobs WHERE response_id=?", (response.response_id,)
-            ).fetchone()[0]
-        ).state == "succeeded"
+        assert (
+            jobs.get(
+                runtime.store.connection.execute(
+                    "SELECT job_id FROM durable_jobs WHERE response_id=?", (response.response_id,)
+                ).fetchone()[0]
+            ).state
+            == "succeeded"
+        )
     finally:
         release_pipeline.set()
         worker.close()
