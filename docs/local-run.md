@@ -165,3 +165,54 @@ Browser QA mở rộng: `scripts/qa/parity_app_browser.py --config <config> --ev
 Real-model smoke: `scripts/qa/parity_model_smoke.py --help`. Hai runner dùng data-dir
 fixture riêng; các số đo kỹ thuật và giới hạn được ghi ở
 [verification PARITY-001](evidence/parity-001-verification-2026-10-08.md).
+
+## W5-T01 — Schema v9 và durable worker
+
+Khi mở data-dir schema v4 bằng bản W5-T01, `SQLiteStore` tự tạo snapshot trong
+`<data-dir>/backups/schema-v4-<timestamp>/`, sau đó áp dụng năm migration additive
+identity → learning → research → billing → jobs/cleanup trong một transaction.
+Snapshot có database, blobs và manifest SHA-256; file dữ liệu/backup giữ ngoài Git.
+Dừng app/worker cũ và thử trên bản sao dữ liệu trước khi nâng data-dir cần giữ.
+Schema mới hơn, partial hoặc ledger/schema shape sai bị từ chối khi startup.
+
+`async_pipeline=true` dùng job bền vững trong cùng SQLite file, có lease,
+heartbeat, bounded retry và idempotency. Restart phục hồi lease hết hạn;
+lease còn hiệu lực không bị coi là interrupted. Request/worker/heartbeat dùng
+connection riêng, không chia sẻ connection giữa thread. Lỗi hoặc thiếu model
+không tạo score giả.
+
+`GET /live` (cùng `/health`, `/healthz`) chỉ báo process alive. `GET /ready`
+(cùng `/readyz`) kiểm config/schema/database/blob/worker/model và trả 503 khi
+thiếu prerequisite; response chỉ có booleans, không đường dẫn/secret.
+
+Rollback dùng code trước migration và data-dir restore mới. Với snapshot tự tạo:
+
+```python
+from pathlib import Path
+from aicefr.storage.migrations import restore_backup
+
+restore_backup(
+    Path("/path/to/data/backups/schema-v4-TIMESTAMP"),
+    Path("/path/to/restored-v4-data"),
+)
+```
+
+Helper kiểm manifest/checksum, từ chối symlink/path traversal và không ghi đè
+thư mục đang chứa dữ liệu. Sau restore, chạy **code trước migration** trên bản
+v4 để kiểm report; mở bằng code W5 sẽ nâng lên v9 lại. Không xóa snapshot hoặc
+bản database lỗi để ép rollback thành công.
+
+Kiểm clean-wheel trên Linux bằng wheelhouse dependency đã chuẩn bị ngoài Git:
+
+```bash
+python -m build --wheel --no-isolation --outdir /tmp/aicefr-w5-wheels
+python scripts/qa/w5_foundation_smoke.py \
+  --wheel /tmp/aicefr-w5-wheels/aicefr-0.1.0-py3-none-any.whl \
+  --python-dependency-cache /path/to/offline-wheelhouse \
+  --evidence-dir /tmp/aicefr-w5-wheel-evidence
+```
+
+Script tạo venv sạch, cài wheel offline và kiểm CLI/HTTP thật, login, liveness,
+readiness thiếu model, static assets và backup/restore report từ fixture QC REVIEW.
+Không dùng kết quả này làm evidence ASR/VAD inference hoặc CEFR accuracy.
+Evidence/review task: [SCRUM-65 review](sdd/modules/m16-monolith-runtime/evidence/scrum-65/review.md).

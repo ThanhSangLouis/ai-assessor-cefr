@@ -1,0 +1,12 @@
+{
+  "ready": true,
+  "checks": {
+    "configuration": true,
+    "schema": true,
+    "database": true,
+    "blobs": true,
+    "scoring_model": true,
+    "asr_model": true,
+    "vad_model": true
+  }
+}

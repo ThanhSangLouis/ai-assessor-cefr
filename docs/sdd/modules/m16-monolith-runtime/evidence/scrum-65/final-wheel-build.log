@@ -1,0 +1,285 @@
+* Getting build dependencies for wheel...
+running egg_info
+writing src/aicefr.egg-info/PKG-INFO
+writing dependency_links to src/aicefr.egg-info/dependency_links.txt
+writing requirements to src/aicefr.egg-info/requires.txt
+writing top-level names to src/aicefr.egg-info/top_level.txt
+reading manifest file 'src/aicefr.egg-info/SOURCES.txt'
+writing manifest file 'src/aicefr.egg-info/SOURCES.txt'
+* Building wheel...
+running bdist_wheel
+running build
+running build_py
+copying src/aicefr/__init__.py -> build/lib/aicefr
+copying src/aicefr/limits.py -> build/lib/aicefr
+copying src/aicefr/contracts.py -> build/lib/aicefr
+copying src/aicefr/observability.py -> build/lib/aicefr
+copying src/aicefr/review/sqlite.py -> build/lib/aicefr/review
+copying src/aicefr/review/__init__.py -> build/lib/aicefr/review
+copying src/aicefr/review/routing.py -> build/lib/aicefr/review
+copying src/aicefr/review/service.py -> build/lib/aicefr/review
+copying src/aicefr/audio/pipeline.py -> build/lib/aicefr/audio
+copying src/aicefr/audio/__init__.py -> build/lib/aicefr/audio
+copying src/aicefr/audio/recordings.py -> build/lib/aicefr/audio
+copying src/aicefr/audio/config.py -> build/lib/aicefr/audio
+copying src/aicefr/audio/decoder.py -> build/lib/aicefr/audio
+copying src/aicefr/portal/router.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/tasks.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/__init__.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/templates.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/contracts.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/control.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/service.py -> build/lib/aicefr/portal
+copying src/aicefr/portal/data.py -> build/lib/aicefr/portal
+copying src/aicefr/qc/measurements.py -> build/lib/aicefr/qc
+copying src/aicefr/qc/__init__.py -> build/lib/aicefr/qc
+copying src/aicefr/qc/policy.py -> build/lib/aicefr/qc
+copying src/aicefr/features/__init__.py -> build/lib/aicefr/features
+copying src/aicefr/features/text.py -> build/lib/aicefr/features
+copying src/aicefr/features/local.py -> build/lib/aicefr/features
+copying src/aicefr/features/pauses.py -> build/lib/aicefr/features
+copying src/aicefr/features/extractor.py -> build/lib/aicefr/features
+copying src/aicefr/api/review.py -> build/lib/aicefr/api
+copying src/aicefr/api/__init__.py -> build/lib/aicefr/api
+copying src/aicefr/api/templates.py -> build/lib/aicefr/api
+copying src/aicefr/api/student.py -> build/lib/aicefr/api
+copying src/aicefr/api/wsgi.py -> build/lib/aicefr/api
+copying src/aicefr/scoring/ridge.py -> build/lib/aicefr/scoring
+copying src/aicefr/scoring/artifact.py -> build/lib/aicefr/scoring
+copying src/aicefr/scoring/coverage.py -> build/lib/aicefr/scoring
+copying src/aicefr/scoring/__init__.py -> build/lib/aicefr/scoring
+copying src/aicefr/scoring/windows.py -> build/lib/aicefr/scoring
+copying src/aicefr/scoring/scorer.py -> build/lib/aicefr/scoring
+copying src/aicefr/report/sqlite.py -> build/lib/aicefr/report
+copying src/aicefr/report/__init__.py -> build/lib/aicefr/report
+copying src/aicefr/report/contracts.py -> build/lib/aicefr/report
+copying src/aicefr/report/service.py -> build/lib/aicefr/report
+copying src/aicefr/local/worker.py -> build/lib/aicefr/local
+copying src/aicefr/local/app.py -> build/lib/aicefr/local
+copying src/aicefr/local/__init__.py -> build/lib/aicefr/local
+copying src/aicefr/local/commands.py -> build/lib/aicefr/local
+copying src/aicefr/local/__main__.py -> build/lib/aicefr/local
+copying src/aicefr/local/lock.py -> build/lib/aicefr/local
+copying src/aicefr/auth/memory.py -> build/lib/aicefr/auth
+copying src/aicefr/auth/__init__.py -> build/lib/aicefr/auth
+copying src/aicefr/auth/service.py -> build/lib/aicefr/auth
+copying src/aicefr/storage/blob.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/sqlite.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/__init__.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/paths.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/jobs.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/migrations.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/providers.py -> build/lib/aicefr/storage
+copying src/aicefr/storage/service.py -> build/lib/aicefr/storage
+copying src/aicefr/asr/validation.py -> build/lib/aicefr/asr
+copying src/aicefr/asr/__init__.py -> build/lib/aicefr/asr
+copying src/aicefr/asr/local.py -> build/lib/aicefr/asr
+copying src/aicefr/asr/hallucination.py -> build/lib/aicefr/asr
+copying src/aicefr/asr/identity.py -> build/lib/aicefr/asr
+copying src/aicefr/asr/service.py -> build/lib/aicefr/asr
+copying src/aicefr/pipeline/coordinator.py -> build/lib/aicefr/pipeline
+copying src/aicefr/pipeline/__init__.py -> build/lib/aicefr/pipeline
+running egg_info
+writing src/aicefr.egg-info/PKG-INFO
+writing dependency_links to src/aicefr.egg-info/dependency_links.txt
+writing requirements to src/aicefr.egg-info/requires.txt
+writing top-level names to src/aicefr.egg-info/top_level.txt
+reading manifest file 'src/aicefr.egg-info/SOURCES.txt'
+writing manifest file 'src/aicefr.egg-info/SOURCES.txt'
+copying src/aicefr/api/static/report.js -> build/lib/aicefr/api/static
+copying src/aicefr/api/static/recorder.js -> build/lib/aicefr/api/static
+copying src/aicefr/storage/migrations/007_research.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/005_identity.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/008_billing.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/009_jobs.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/006_learning.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/api/static/recorder.js -> build/lib/aicefr/api/static
+copying src/aicefr/api/static/report.js -> build/lib/aicefr/api/static
+copying src/aicefr/storage/migrations/005_identity.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/006_learning.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/007_research.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/008_billing.sql -> build/lib/aicefr/storage/migrations
+copying src/aicefr/storage/migrations/009_jobs.sql -> build/lib/aicefr/storage/migrations
+installing to build/bdist.linux-x86_64/wheel
+running install
+running install_lib
+creating build/bdist.linux-x86_64/wheel
+creating build/bdist.linux-x86_64/wheel/aicefr
+creating build/bdist.linux-x86_64/wheel/aicefr/review
+copying build/lib/aicefr/review/sqlite.py -> build/bdist.linux-x86_64/wheel/./aicefr/review
+copying build/lib/aicefr/review/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/review
+copying build/lib/aicefr/review/routing.py -> build/bdist.linux-x86_64/wheel/./aicefr/review
+copying build/lib/aicefr/review/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/review
+creating build/bdist.linux-x86_64/wheel/aicefr/audio
+copying build/lib/aicefr/audio/pipeline.py -> build/bdist.linux-x86_64/wheel/./aicefr/audio
+copying build/lib/aicefr/audio/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/audio
+copying build/lib/aicefr/audio/recordings.py -> build/bdist.linux-x86_64/wheel/./aicefr/audio
+copying build/lib/aicefr/audio/config.py -> build/bdist.linux-x86_64/wheel/./aicefr/audio
+copying build/lib/aicefr/audio/decoder.py -> build/bdist.linux-x86_64/wheel/./aicefr/audio
+creating build/bdist.linux-x86_64/wheel/aicefr/portal
+copying build/lib/aicefr/portal/router.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/tasks.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/templates.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/contracts.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/control.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+copying build/lib/aicefr/portal/data.py -> build/bdist.linux-x86_64/wheel/./aicefr/portal
+creating build/bdist.linux-x86_64/wheel/aicefr/qc
+copying build/lib/aicefr/qc/measurements.py -> build/bdist.linux-x86_64/wheel/./aicefr/qc
+copying build/lib/aicefr/qc/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/qc
+copying build/lib/aicefr/qc/policy.py -> build/bdist.linux-x86_64/wheel/./aicefr/qc
+creating build/bdist.linux-x86_64/wheel/aicefr/features
+copying build/lib/aicefr/features/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/features
+copying build/lib/aicefr/features/text.py -> build/bdist.linux-x86_64/wheel/./aicefr/features
+copying build/lib/aicefr/features/local.py -> build/bdist.linux-x86_64/wheel/./aicefr/features
+copying build/lib/aicefr/features/pauses.py -> build/bdist.linux-x86_64/wheel/./aicefr/features
+copying build/lib/aicefr/features/extractor.py -> build/bdist.linux-x86_64/wheel/./aicefr/features
+creating build/bdist.linux-x86_64/wheel/aicefr/api
+copying build/lib/aicefr/api/review.py -> build/bdist.linux-x86_64/wheel/./aicefr/api
+creating build/bdist.linux-x86_64/wheel/aicefr/api/static
+copying build/lib/aicefr/api/static/report.js -> build/bdist.linux-x86_64/wheel/./aicefr/api/static
+copying build/lib/aicefr/api/static/recorder.js -> build/bdist.linux-x86_64/wheel/./aicefr/api/static
+copying build/lib/aicefr/api/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/api
+copying build/lib/aicefr/api/templates.py -> build/bdist.linux-x86_64/wheel/./aicefr/api
+copying build/lib/aicefr/api/student.py -> build/bdist.linux-x86_64/wheel/./aicefr/api
+copying build/lib/aicefr/api/wsgi.py -> build/bdist.linux-x86_64/wheel/./aicefr/api
+creating build/bdist.linux-x86_64/wheel/aicefr/scoring
+copying build/lib/aicefr/scoring/ridge.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+copying build/lib/aicefr/scoring/artifact.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+copying build/lib/aicefr/scoring/coverage.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+copying build/lib/aicefr/scoring/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+copying build/lib/aicefr/scoring/windows.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+copying build/lib/aicefr/scoring/scorer.py -> build/bdist.linux-x86_64/wheel/./aicefr/scoring
+creating build/bdist.linux-x86_64/wheel/aicefr/report
+copying build/lib/aicefr/report/sqlite.py -> build/bdist.linux-x86_64/wheel/./aicefr/report
+copying build/lib/aicefr/report/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/report
+copying build/lib/aicefr/report/contracts.py -> build/bdist.linux-x86_64/wheel/./aicefr/report
+copying build/lib/aicefr/report/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/report
+creating build/bdist.linux-x86_64/wheel/aicefr/local
+copying build/lib/aicefr/local/worker.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+copying build/lib/aicefr/local/app.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+copying build/lib/aicefr/local/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+copying build/lib/aicefr/local/commands.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+copying build/lib/aicefr/local/__main__.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+copying build/lib/aicefr/local/lock.py -> build/bdist.linux-x86_64/wheel/./aicefr/local
+creating build/bdist.linux-x86_64/wheel/aicefr/auth
+copying build/lib/aicefr/auth/memory.py -> build/bdist.linux-x86_64/wheel/./aicefr/auth
+copying build/lib/aicefr/auth/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/auth
+copying build/lib/aicefr/auth/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/auth
+copying build/lib/aicefr/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr
+creating build/bdist.linux-x86_64/wheel/aicefr/storage
+copying build/lib/aicefr/storage/blob.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/sqlite.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/paths.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/jobs.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+creating build/bdist.linux-x86_64/wheel/aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations/007_research.sql -> build/bdist.linux-x86_64/wheel/./aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations/005_identity.sql -> build/bdist.linux-x86_64/wheel/./aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations/008_billing.sql -> build/bdist.linux-x86_64/wheel/./aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations/009_jobs.sql -> build/bdist.linux-x86_64/wheel/./aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations/006_learning.sql -> build/bdist.linux-x86_64/wheel/./aicefr/storage/migrations
+copying build/lib/aicefr/storage/migrations.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/providers.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/storage/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/storage
+copying build/lib/aicefr/limits.py -> build/bdist.linux-x86_64/wheel/./aicefr
+creating build/bdist.linux-x86_64/wheel/aicefr/asr
+copying build/lib/aicefr/asr/validation.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/asr/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/asr/local.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/asr/hallucination.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/asr/identity.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/asr/service.py -> build/bdist.linux-x86_64/wheel/./aicefr/asr
+copying build/lib/aicefr/contracts.py -> build/bdist.linux-x86_64/wheel/./aicefr
+creating build/bdist.linux-x86_64/wheel/aicefr/pipeline
+copying build/lib/aicefr/pipeline/coordinator.py -> build/bdist.linux-x86_64/wheel/./aicefr/pipeline
+copying build/lib/aicefr/pipeline/__init__.py -> build/bdist.linux-x86_64/wheel/./aicefr/pipeline
+copying build/lib/aicefr/observability.py -> build/bdist.linux-x86_64/wheel/./aicefr
+running install_egg_info
+Copying src/aicefr.egg-info to build/bdist.linux-x86_64/wheel/./aicefr-0.1.0-py3.12.egg-info
+running install_scripts
+creating build/bdist.linux-x86_64/wheel/aicefr-0.1.0.dist-info/WHEEL
+creating '/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/scrum-65-2026-10-15/final-wheels/.tmp-894p80iq/aicefr-0.1.0-py3-none-any.whl' and adding 'build/bdist.linux-x86_64/wheel' to it
+adding 'aicefr/__init__.py'
+adding 'aicefr/contracts.py'
+adding 'aicefr/limits.py'
+adding 'aicefr/observability.py'
+adding 'aicefr/api/__init__.py'
+adding 'aicefr/api/review.py'
+adding 'aicefr/api/student.py'
+adding 'aicefr/api/templates.py'
+adding 'aicefr/api/wsgi.py'
+adding 'aicefr/api/static/recorder.js'
+adding 'aicefr/api/static/report.js'
+adding 'aicefr/asr/__init__.py'
+adding 'aicefr/asr/hallucination.py'
+adding 'aicefr/asr/identity.py'
+adding 'aicefr/asr/local.py'
+adding 'aicefr/asr/service.py'
+adding 'aicefr/asr/validation.py'
+adding 'aicefr/audio/__init__.py'
+adding 'aicefr/audio/config.py'
+adding 'aicefr/audio/decoder.py'
+adding 'aicefr/audio/pipeline.py'
+adding 'aicefr/audio/recordings.py'
+adding 'aicefr/auth/__init__.py'
+adding 'aicefr/auth/memory.py'
+adding 'aicefr/auth/service.py'
+adding 'aicefr/features/__init__.py'
+adding 'aicefr/features/extractor.py'
+adding 'aicefr/features/local.py'
+adding 'aicefr/features/pauses.py'
+adding 'aicefr/features/text.py'
+adding 'aicefr/local/__init__.py'
+adding 'aicefr/local/__main__.py'
+adding 'aicefr/local/app.py'
+adding 'aicefr/local/commands.py'
+adding 'aicefr/local/lock.py'
+adding 'aicefr/local/worker.py'
+adding 'aicefr/pipeline/__init__.py'
+adding 'aicefr/pipeline/coordinator.py'
+adding 'aicefr/portal/__init__.py'
+adding 'aicefr/portal/contracts.py'
+adding 'aicefr/portal/control.py'
+adding 'aicefr/portal/data.py'
+adding 'aicefr/portal/router.py'
+adding 'aicefr/portal/service.py'
+adding 'aicefr/portal/tasks.py'
+adding 'aicefr/portal/templates.py'
+adding 'aicefr/qc/__init__.py'
+adding 'aicefr/qc/measurements.py'
+adding 'aicefr/qc/policy.py'
+adding 'aicefr/report/__init__.py'
+adding 'aicefr/report/contracts.py'
+adding 'aicefr/report/service.py'
+adding 'aicefr/report/sqlite.py'
+adding 'aicefr/review/__init__.py'
+adding 'aicefr/review/routing.py'
+adding 'aicefr/review/service.py'
+adding 'aicefr/review/sqlite.py'
+adding 'aicefr/scoring/__init__.py'
+adding 'aicefr/scoring/artifact.py'
+adding 'aicefr/scoring/coverage.py'
+adding 'aicefr/scoring/ridge.py'
+adding 'aicefr/scoring/scorer.py'
+adding 'aicefr/scoring/windows.py'
+adding 'aicefr/storage/__init__.py'
+adding 'aicefr/storage/blob.py'
+adding 'aicefr/storage/jobs.py'
+adding 'aicefr/storage/migrations.py'
+adding 'aicefr/storage/paths.py'
+adding 'aicefr/storage/providers.py'
+adding 'aicefr/storage/service.py'
+adding 'aicefr/storage/sqlite.py'
+adding 'aicefr/storage/migrations/005_identity.sql'
+adding 'aicefr/storage/migrations/006_learning.sql'
+adding 'aicefr/storage/migrations/007_research.sql'
+adding 'aicefr/storage/migrations/008_billing.sql'
+adding 'aicefr/storage/migrations/009_jobs.sql'
+adding 'aicefr-0.1.0.dist-info/METADATA'
+adding 'aicefr-0.1.0.dist-info/WHEEL'
+adding 'aicefr-0.1.0.dist-info/top_level.txt'
+adding 'aicefr-0.1.0.dist-info/RECORD'
+removing build/bdist.linux-x86_64/wheel
+Successfully built aicefr-0.1.0-py3-none-any.whl

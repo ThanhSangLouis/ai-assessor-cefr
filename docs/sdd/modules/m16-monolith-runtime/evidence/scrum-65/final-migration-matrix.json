@@ -1,0 +1,214 @@
+{
+  "task": "SCRUM-65",
+  "actual_branch_base": "9968abc",
+  "historical_target": "3b2d2b7",
+  "reference": "40907cc",
+  "checks": {
+    "legacy_all_11_tables_preserved": true,
+    "blob_hashes_preserved": true,
+    "schema_v9": true,
+    "migration_ledger_5_groups": true,
+    "integrity_ok": true,
+    "foreign_keys_ok": true,
+    "rerun_no_content_changes": true,
+    "restore_schema_v4": true,
+    "restore_content_matches": true,
+    "restore_blob_hashes_match": true,
+    "private_snapshot_source_unchanged": true
+  },
+  "legacy_matrix": {
+    "accounts": {
+      "before": {
+        "rows": 3,
+        "sha256": "e82f56e7840ee7822be8ebd7b5553350f0c39921ba425c8bfc6dc0d00082ff60"
+      },
+      "after": {
+        "rows": 3,
+        "sha256": "e82f56e7840ee7822be8ebd7b5553350f0c39921ba425c8bfc6dc0d00082ff60"
+      }
+    },
+    "audit": {
+      "before": {
+        "rows": 15,
+        "sha256": "2e36eb0a68fa994a39d705edd56e44e9de1ce902e99df3b104cbb9adfa507d6d"
+      },
+      "after": {
+        "rows": 15,
+        "sha256": "2e36eb0a68fa994a39d705edd56e44e9de1ce902e99df3b104cbb9adfa507d6d"
+      }
+    },
+    "blob_deletions": {
+      "before": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "after": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "consents": {
+      "before": {
+        "rows": 1,
+        "sha256": "c27394cda46a97f486db4c91897e2a2ac38128f0dee4ae7b22a9baa9ce1c03b5"
+      },
+      "after": {
+        "rows": 1,
+        "sha256": "c27394cda46a97f486db4c91897e2a2ac38128f0dee4ae7b22a9baa9ce1c03b5"
+      }
+    },
+    "diagnostic_reports": {
+      "before": {
+        "rows": 4,
+        "sha256": "f18918284b41cecc9e21deed8427b8bd60b11080d250fe93afffaabd50e88b86"
+      },
+      "after": {
+        "rows": 4,
+        "sha256": "f18918284b41cecc9e21deed8427b8bd60b11080d250fe93afffaabd50e88b86"
+      }
+    },
+    "responses": {
+      "before": {
+        "rows": 4,
+        "sha256": "a37e1edf18eee596d5946bccbd13d644913ae7454c467ccb93767186c1ed6a3f"
+      },
+      "after": {
+        "rows": 4,
+        "sha256": "a37e1edf18eee596d5946bccbd13d644913ae7454c467ccb93767186c1ed6a3f"
+      }
+    },
+    "review_candidates": {
+      "before": {
+        "rows": 2,
+        "sha256": "7365e1284d68c835de6f0933e33927a4b755f8b14cc370254aecdccb2354f3ab"
+      },
+      "after": {
+        "rows": 2,
+        "sha256": "7365e1284d68c835de6f0933e33927a4b755f8b14cc370254aecdccb2354f3ab"
+      }
+    },
+    "review_decisions": {
+      "before": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "after": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "runtime_settings": {
+      "before": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "after": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      }
+    },
+    "sessions": {
+      "before": {
+        "rows": 14,
+        "sha256": "b1ad8b695bc554024d9ad19969ee9257366a70a87baa872a186caf72bd1c7161"
+      },
+      "after": {
+        "rows": 14,
+        "sha256": "b1ad8b695bc554024d9ad19969ee9257366a70a87baa872a186caf72bd1c7161"
+      }
+    },
+    "speaking_tasks": {
+      "before": {
+        "rows": 2,
+        "sha256": "3d4122e236629468e04e9bc5e7739923b9ac63bbb790beafdc06d1eba6cbca71"
+      },
+      "after": {
+        "rows": 2,
+        "sha256": "3d4122e236629468e04e9bc5e7739923b9ac63bbb790beafdc06d1eba6cbca71"
+      }
+    }
+  },
+  "new_schema_tables": [
+    "account_identities",
+    "account_profiles",
+    "accounts",
+    "achievements",
+    "activity_events",
+    "adjudications",
+    "audit",
+    "billing_orders",
+    "billing_plans",
+    "billing_quotes",
+    "billing_receipts",
+    "blob_deletions",
+    "cleanup_intents",
+    "consent_events",
+    "consents",
+    "diagnostic_reports",
+    "durable_jobs",
+    "entitlements",
+    "feedback_studies",
+    "learning_lessons",
+    "learning_media",
+    "learning_paths",
+    "learning_units",
+    "lesson_steps",
+    "lesson_versions",
+    "licenses",
+    "machine_seen",
+    "payment_events",
+    "practice_attempts",
+    "rating_assignments",
+    "rating_batches",
+    "research_ratings",
+    "responses",
+    "review_candidates",
+    "review_decisions",
+    "review_items",
+    "review_sessions",
+    "runtime_settings",
+    "schema_migrations",
+    "sem_configs",
+    "session_metadata",
+    "sessions",
+    "speaking_tasks",
+    "step_attempts",
+    "streak_days",
+    "study_enrollments",
+    "study_surveys",
+    "temporary_passwords"
+  ],
+  "migration_ledger": [
+    [
+      5,
+      "identity",
+      "9fff3272b895a0f04f06ba85e0bb19fce7d0c4e57e553ae6c37d0f7eea56fbac"
+    ],
+    [
+      6,
+      "learning",
+      "e3de9f7d478b8212f9db8bbc73cdada7196a07e832c56e483356b0c8605b645d"
+    ],
+    [
+      7,
+      "research",
+      "9eae23c7f259d38ee7bfbda960cedb51824d44cc02a54a379298915b995431cc"
+    ],
+    [
+      8,
+      "billing",
+      "c0bc056964153fa4a6a6ca14e1ef9a4e4262059116109bc463b884318f2ca6f0"
+    ],
+    [
+      9,
+      "jobs",
+      "64e307f5785f19e3e4117dc8365ba0722612893ed3dbae874c0d6296aa428571"
+    ]
+  ],
+  "blob_count": 4,
+  "result": "PASS",
+  "notes": [
+    "Trial uses copy of local demo backup, original live data not migrated.",
+    "Source snapshot private; no password/session/report content emitted, only counts/digests."
+  ]
+}

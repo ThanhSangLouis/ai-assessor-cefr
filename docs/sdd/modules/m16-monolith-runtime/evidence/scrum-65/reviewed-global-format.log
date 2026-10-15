@@ -1,0 +1,487 @@
+unformatted: File would be reformatted
+  --> scripts/ci/check_forbidden_files.py:8:13
+   |
+7  | FORBIDDEN = [
+   -     "*.wav", "*.mp3", "*.m4a", "*.flac", "*.ogg", "*.webm",
+   -     "*.bin", "*.pt", "*.pth", "*.onnx", "*.safetensors", "*.ckpt",
+   -     "*.db", "*.sqlite", "*.sqlite3",
+   -     ".env", ".env.*", "*.pem", "*.key", "*.p12",
+8  +     "*.wav",
+9  +     "*.mp3",
+10 +     "*.m4a",
+11 +     "*.flac",
+12 +     "*.ogg",
+13 +     "*.webm",
+14 +     "*.bin",
+15 +     "*.pt",
+16 +     "*.pth",
+17 +     "*.onnx",
+18 +     "*.safetensors",
+19 +     "*.ckpt",
+20 +     "*.db",
+21 +     "*.sqlite",
+22 +     "*.sqlite3",
+23 +     ".env",
+24 +     ".env.*",
+25 +     "*.pem",
+26 +     "*.key",
+27 +     "*.p12",
+28 | ]
+--------------------------------------------------------------------------------
+36 |     hits = [
+   -         f for f in files
+   -         if f and f.split("/")[-1] not in ALLOWED
+37 +         f
+38 +         for f in files
+39 +         if f
+40 +         and f.split("/")[-1] not in ALLOWED
+41 |         and any(fnmatch.fnmatch(f.split("/")[-1], p) for p in FORBIDDEN)
+   |
+
+unformatted: File would be reformatted
+ --> src/aicefr/api/__init__.py:2:1
+  |
+1 | """HTTP-facing adapters and presentation helpers for student and teacher flows."""
+  -
+  |
+
+unformatted: File would be reformatted
+   --> src/aicefr/api/student.py:165:36
+    |
+164 |     def submit(self, session_token: str, request: SubmitRequest) -> StudentStatus:
+    -         actor = self._auth.resolve(
+    -             session_token, allowed_roles=frozenset({ActorRole.STUDENT})
+    -         )
+165 +         actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
+166 |         self._task_access.require_open(request.task_id, request.task_version)
+--------------------------------------------------------------------------------
+195 |     def status(self, session_token: str, response_id: str) -> StudentStatus:
+    -         actor = self._auth.resolve(
+    -             session_token, allowed_roles=frozenset({ActorRole.STUDENT})
+    -         )
+196 +         actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
+197 |         return self._status(self._responses.get_response(actor, response_id))
+198 |
+199 |     def report(self, session_token: str, response_id: str) -> StudentReportView:
+    -         actor = self._auth.resolve(
+    -             session_token, allowed_roles=frozenset({ActorRole.STUDENT})
+    -         )
+200 +         actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
+201 |         response = self._responses.get_response(actor, response_id)
+    |
+
+unformatted: File would be reformatted
+   --> src/aicefr/asr/local.py:70:37
+    |
+69  |             self._model = WhisperModel(
+    -                 str(self.model_dir), device=self.device, compute_type=self.compute_type,
+    -                 local_files_only=True, cpu_threads=1 if self.device == "cpu" else 0,
+70  +                 str(self.model_dir),
+71  +                 device=self.device,
+72  +                 compute_type=self.compute_type,
+73  +                 local_files_only=True,
+74  +                 cpu_threads=1 if self.device == "cpu" else 0,
+75  |             )
+--------------------------------------------------------------------------------
+84  |         segments, _info = model.transcribe(
+    -             audio.samples, language="en", word_timestamps=True, beam_size=5,
+    -             vad_filter=False, condition_on_previous_text=False,
+85  +             audio.samples,
+86  +             language="en",
+87  +             word_timestamps=True,
+88  +             beam_size=5,
+89  +             vad_filter=False,
+90  +             condition_on_previous_text=False,
+91  |         )
+--------------------------------------------------------------------------------
+97  |                 probability = getattr(word, "probability", None)
+    -                 words.append(RawWord(
+    -                     text=str(word.word), start_s=float(word.start), end_s=float(word.end),
+    -                     prob=None if probability is None else float(probability),
+    -                 ))
+98  +                 words.append(
+99  +                     RawWord(
+100 +                         text=str(word.word),
+101 +                         start_s=float(word.start),
+102 +                         end_s=float(word.end),
+103 +                         prob=None if probability is None else float(probability),
+104 +                     )
+105 +                 )
+106 |         return EngineResult(
+    -             text="".join(text), words=tuple(words), engine="faster-whisper",
+    -             engine_version=self._version, weight_name=f"Systran/faster-whisper-{self.weight_name}",
+107 +             text="".join(text),
+108 +             words=tuple(words),
+109 +             engine="faster-whisper",
+110 +             engine_version=self._version,
+111 +             weight_name=f"Systran/faster-whisper-{self.weight_name}",
+112 |         )
+    |
+
+unformatted: File would be reformatted
+  --> src/aicefr/audio/__init__.py:8:19
+   |
+7  | __all__ = [
+   -     "AudioFormat", "QCConfig", "DecodeResult", "decode_and_measure",
+   -     "PipelineResult", "process_audio",
+8  +     "AudioFormat",
+9  +     "QCConfig",
+10 +     "DecodeResult",
+11 +     "decode_and_measure",
+12 +     "PipelineResult",
+13 +     "process_audio",
+14 | ]
+   |
+
+unformatted: File would be reformatted
+  --> src/aicefr/audio/config.py:51:30
+   |
+50 |         for name in (
+   -             "min_duration_s", "max_duration_s", "silence_threshold", "clipping_threshold",
+   -             "review_silence_ratio", "reject_silence_ratio", "review_clipping_ratio",
+51 +             "min_duration_s",
+52 +             "max_duration_s",
+53 +             "silence_threshold",
+54 +             "clipping_threshold",
+55 +             "review_silence_ratio",
+56 +             "reject_silence_ratio",
+57 +             "review_clipping_ratio",
+58 |             "reject_clipping_ratio",
+--------------------------------------------------------------------------------
+67 |         for name in (
+   -             "review_silence_ratio", "reject_silence_ratio", "review_clipping_ratio",
+68 +             "review_silence_ratio",
+69 +             "reject_silence_ratio",
+70 +             "review_clipping_ratio",
+71 |             "reject_clipping_ratio",
+   |
+
+unformatted: File would be reformatted
+  --> src/aicefr/audio/pipeline.py:30:7
+   |
+29 | def process_audio(
+   -     *, response_id: str, data: bytes, declared_extension: str, config: QCConfig, asr: AsrPort,
+30 +     *,
+31 +     response_id: str,
+32 +     data: bytes,
+33 +     declared_extension: str,
+34 +     config: QCConfig,
+35 +     asr: AsrPort,
+36 | ) -> PipelineResult:
+   |
+
+unformatted: File would be reformatted
+  --> src/aicefr/features/local.py:39:1
+   |
+38 |             from silero_vad import get_speech_timestamps, load_silero_vad
+39 +
+40 |             model = load_silero_vad(onnx=False)
+--------------------------------------------------------------------------------
+55 |         import torch
+56 +
+57 |         timestamps = get_speech_timestamps(
+   -             torch.from_numpy(values.copy()), model, threshold=self.threshold,
+   -             sampling_rate=16_000, min_silence_duration_ms=self.min_silence_ms,
+58 +             torch.from_numpy(values.copy()),
+59 +             model,
+60 +             threshold=self.threshold,
+61 +             sampling_rate=16_000,
+62 +             min_silence_duration_ms=self.min_silence_ms,
+63 |             return_seconds=True,
+   |
+
+unformatted: File would be reformatted
+ --> src/aicefr/report/__init__.py:2:1
+  |
+1 | """Diagnostic report contracts, validation and storage for M06."""
+  -
+  |
+
+unformatted: File would be reformatted
+ --> src/aicefr/review/__init__.py:2:1
+  |
+1 | """Teacher-review routing, queue and auditable decision services for M07."""
+  -
+  |
+
+unformatted: File would be reformatted
+   --> src/aicefr/scoring/artifact.py:105:19
+    |
+104 |     if any(
+    -         low > high
+    -         for low, high in zip(vectors["feature_lo"], vectors["feature_hi"], strict=True)
+105 +         low > high for low, high in zip(vectors["feature_lo"], vectors["feature_hi"], strict=True)
+106 |     ):
+--------------------------------------------------------------------------------
+110 |         raise ValueError(f"band_thresholds phải gồm A2_B1, B1_B2, nhận {sorted(thresholds)}")
+    -     if (not all(math.isfinite(value) and 1.0 <= value <= 6.0 for value in thresholds.values())
+    -             or thresholds["A2_B1"] >= thresholds["B1_B2"]):
+111 +     if (
+112 +         not all(math.isfinite(value) and 1.0 <= value <= 6.0 for value in thresholds.values())
+113 +         or thresholds["A2_B1"] >= thresholds["B1_B2"]
+114 +     ):
+115 |         raise ValueError("band thresholds must be finite, ordered, and within [1, 6]")
+    |
+
+unformatted: File would be reformatted
+   --> src/aicefr/scoring/scorer.py:128:12
+    |
+127 |             return self._not_evaluated(features, tuple(transcript.reasons))
+    -         if (len(art.scale) != len(art.feature_order)
+    -                 or any(not math.isfinite(value) or value <= 0 for value in art.scale)):
+128 +         if len(art.scale) != len(art.feature_order) or any(
+129 +             not math.isfinite(value) or value <= 0 for value in art.scale
+130 +         ):
+131 |             return self._not_evaluated(features, (ReasonCode.MODEL_ARTIFACT_INVALID,))
+    |
+
+unformatted: File would be reformatted
+ --> tests/api/__init__.py:2:1
+  |
+1 | """Tests for thin API boundaries."""
+  -
+  |
+
+unformatted: File would be reformatted
+   --> tests/api/test_student.py:172:9
+    |
+171 |     body = (
+    -         f"--{boundary}\r\n"
+    -         'Content-Disposition: form-data; name="task_id"\r\n\r\n'
+    -         "fixture-task\r\n"
+    -         f"--{boundary}\r\n"
+    -         'Content-Disposition: form-data; name="task_version"\r\n\r\n'
+    -         "v1\r\n"
+    -         f"--{boundary}\r\n"
+    -         'Content-Disposition: form-data; name="consent_version"\r\n\r\n'
+    -         "consent-v1\r\n"
+    -         f"--{boundary}\r\n"
+    -         'Content-Disposition: form-data; name="audio"; filename="fixture.wav"\r\n'
+    -         "Content-Type: audio/wav\r\n\r\n"
+    -     ).encode() + b"fixture-audio" + f"\r\n--{boundary}--\r\n".encode()
+172 +         (
+173 +             f"--{boundary}\r\n"
+174 +             'Content-Disposition: form-data; name="task_id"\r\n\r\n'
+175 +             "fixture-task\r\n"
+176 +             f"--{boundary}\r\n"
+177 +             'Content-Disposition: form-data; name="task_version"\r\n\r\n'
+178 +             "v1\r\n"
+179 +             f"--{boundary}\r\n"
+180 +             'Content-Disposition: form-data; name="consent_version"\r\n\r\n'
+181 +             "consent-v1\r\n"
+182 +             f"--{boundary}\r\n"
+183 +             'Content-Disposition: form-data; name="audio"; filename="fixture.wav"\r\n'
+184 +             "Content-Type: audio/wav\r\n\r\n"
+185 +         ).encode()
+186 +         + b"fixture-audio"
+187 +         + f"\r\n--{boundary}--\r\n".encode()
+188 +     )
+189 |     return f"multipart/form-data; boundary={boundary}", body
+    |
+
+unformatted: File would be reformatted
+   --> tests/asr/test_local.py:96:53
+   |
+95 |     module = ModuleType("faster_whisper")
+   -     module.WhisperModel = lambda *_args, **_kwargs: (loads.append(True) or Model())
+96 +     module.WhisperModel = lambda *_args, **_kwargs: loads.append(True) or Model()
+97 |     monkeypatch.setitem(__import__("sys").modules, "faster_whisper", module)
+   |
+
+unformatted: File would be reformatted
+   --> tests/audio/test_decoder.py:37:25
+    |
+36  | def audio_bytes(
+    -     samples: np.ndarray, rate: int = 16_000, *, format: str = "WAV",
+37  +     samples: np.ndarray,
+38  +     rate: int = 16_000,
+39  +     *,
+40  +     format: str = "WAV",
+41  |     subtype: str | None = None,
+--------------------------------------------------------------------------------
+118 | def test_whitelisted_formats(container: str, subtype: str, extension: str) -> None:
+    -     data = audio_bytes(np.sin(np.arange(3_200) * 0.03).astype(np.float32) * 0.3,
+    -                        format=container, subtype=subtype)
+119 +     data = audio_bytes(
+120 +         np.sin(np.arange(3_200) * 0.03).astype(np.float32) * 0.3, format=container, subtype=subtype
+121 +     )
+122 |     result = decode_and_measure(data, extension, config())
+    |
+
+unformatted: File would be reformatted
+  --> tests/audio/test_pipeline.py:37:10
+   |
+36 |         (np.full(1_600, 0.25, dtype=np.float32), QCStatus.PASS, 1),
+   -         (np.concatenate((np.zeros(960), np.full(640, 0.25))).astype(np.float32),
+   -          QCStatus.REVIEW, 0),
+37 +         (
+38 +             np.concatenate((np.zeros(960), np.full(640, 0.25))).astype(np.float32),
+39 +             QCStatus.REVIEW,
+40 +             0,
+41 +         ),
+42 |         (np.zeros(1_600, dtype=np.float32), QCStatus.REJECT, 0),
+43 |     ],
+44 | )
+   - def test_pass_only_dispatch(signal: np.ndarray, expected_status: QCStatus,
+   -                             expected_calls: int) -> None:
+45 + def test_pass_only_dispatch(
+46 +     signal: np.ndarray, expected_status: QCStatus, expected_calls: int
+47 + ) -> None:
+48 |     spy = AsrSpy()
+49 |     result = process_audio(
+   -         response_id="synthetic-r1", data=audio_bytes(signal), declared_extension="wav",
+   -         config=config(), asr=spy,
+50 +         response_id="synthetic-r1",
+51 +         data=audio_bytes(signal),
+52 +         declared_extension="wav",
+53 +         config=config(),
+54 +         asr=spy,
+55 |     )
+--------------------------------------------------------------------------------
+67 |     result = process_audio(
+   -         response_id="synthetic-r2", data=b"", declared_extension="wav", config=config(),
+68 +         response_id="synthetic-r2",
+69 +         data=b"",
+70 +         declared_extension="wav",
+71 +         config=config(),
+72 |         asr=spy,
+   |
+
+unformatted: File would be reformatted
+  --> tests/portal/test_portal.py:85:93
+   |
+84 |     assert (
+   -         http(runtime, f"/api/student/responses/{response.response_id}/report", tokens["b"])[
+   -             "code"
+   -         ]
+85 +         http(runtime, f"/api/student/responses/{response.response_id}/report", tokens["b"])["code"]
+86 |         == 404
+   |
+
+unformatted: File would be reformatted
+  --> tests/qc/test_measurements.py:16:26
+   |
+15 |     samples = np.array([0.0, 0.01, 0.2, -0.99], dtype=np.float32)
+   -     audio = DecodedAudio(samples=samples, sample_rate_hz=16_000, duration_s=4 / 16_000,
+   -                          audio_sha256="synthetic")
+16 +     audio = DecodedAudio(
+17 +         samples=samples, sample_rate_hz=16_000, duration_s=4 / 16_000, audio_sha256="synthetic"
+18 +     )
+19 |     by_name = {item.name: item for item in measure_audio(audio, config())}
+--------------------------------------------------------------------------------
+39 |     with pytest.raises(ValidationError):
+   -         DecodedAudio(samples=np.array([float("nan")], dtype=np.float32), sample_rate_hz=16_000,
+   -                      duration_s=1 / 16_000, audio_sha256="synthetic")
+40 +         DecodedAudio(
+41 +             samples=np.array([float("nan")], dtype=np.float32),
+42 +             sample_rate_hz=16_000,
+43 +             duration_s=1 / 16_000,
+44 +             audio_sha256="synthetic",
+45 +         )
+   |
+
+unformatted: File would be reformatted
+  --> tests/qc/test_policy.py:58:23
+   |
+57 |         qc_config_version="test-m02-v1",
+   -         measurements=(QCMeasurement(name="duration_s", value=None, unit="s",
+   -                                      missing_reason=ReasonCode.QC_DECODE_FAILED),),
+58 +         measurements=(
+59 +             QCMeasurement(
+60 +                 name="duration_s", value=None, unit="s", missing_reason=ReasonCode.QC_DECODE_FAILED
+61 +             ),
+62 +         ),
+63 |     )
+   |
+
+unformatted: File would be reformatted
+ --> tests/report/__init__.py:2:1
+  |
+1 | """Tests for evidence-bound diagnostic reports."""
+  -
+  |
+
+unformatted: File would be reformatted
+   --> tests/report/test_sqlite_report.py:29:30
+    |
+28  |     return DiagnosticReport(
+    -         response_id="a" * 32, status=ReportStatus.PROVISIONAL,
+29  +         response_id="a" * 32,
+30  +         status=ReportStatus.PROVISIONAL,
+31  |         assessment_status=AssessmentStatus.NOT_EVALUATED,
+--------------------------------------------------------------------------------
+78  |     now = datetime(2026, 10, 2, tzinfo=UTC)
+    -     review_repository.add(ReviewCandidate(
+    -         response_id=report.response_id, response_revision=1,
+    -         assessment_status=AssessmentStatus.NOT_EVALUATED, proposed_band=None,
+    -         reasons=(ReasonCode.MODEL_VERSION_MISSING,),
+    -         source_versions={"model": "unavailable"}, state=ReviewState.PENDING,
+    -         created_at=now, updated_at=now,
+    -     ))
+79  +     review_repository.add(
+80  +         ReviewCandidate(
+81  +             response_id=report.response_id,
+82  +             response_revision=1,
+83  +             assessment_status=AssessmentStatus.NOT_EVALUATED,
+84  +             proposed_band=None,
+85  +             reasons=(ReasonCode.MODEL_VERSION_MISSING,),
+86  +             source_versions={"model": "unavailable"},
+87  +             state=ReviewState.PENDING,
+88  +             created_at=now,
+89  +             updated_at=now,
+90  +         )
+91  +     )
+92  |     store.connection.execute("""
+--------------------------------------------------------------------------------
+96  |     service = ReviewService(
+    -         review_repository, clock=lambda: now,
+97  +         review_repository,
+98  +         clock=lambda: now,
+99  |         report_sink=ReportService(report_repository, decision_verifier=review_repository),
+100 |     )
+101 |     try:
+    -         service.decide(teacher, report.response_id, ReviewActionRequest(
+    -             action=ReviewAction.OVERRIDE, expected_revision=1,
+    -             final_band="B1", reason="fixture verification",
+    -         ))
+102 +         service.decide(
+103 +             teacher,
+104 +             report.response_id,
+105 +             ReviewActionRequest(
+106 +                 action=ReviewAction.OVERRIDE,
+107 +                 expected_revision=1,
+108 +                 final_band="B1",
+109 +                 reason="fixture verification",
+110 +             ),
+111 +         )
+112 |     except Exception:
+--------------------------------------------------------------------------------
+127 |         ResponseRecord(
+    -             response_id=response_id, owner_id=actor.actor_id, task_id="task",
+    -             task_version="v1", blob=BlobRef(blob_id="b" * 32, sha256="c" * 64, size_bytes=1),
+128 +             response_id=response_id,
+129 +             owner_id=actor.actor_id,
+130 +             task_id="task",
+131 +             task_version="v1",
+132 +             blob=BlobRef(blob_id="b" * 32, sha256="c" * 64, size_bytes=1),
+133 |             created_at=datetime(2026, 10, 2, tzinfo=UTC),
+134 |         ),
+135 |         AuditEvent(
+    -             event_id="d" * 32, actor_id=actor.actor_id, action="submitted",
+    -             object_id=response_id, recorded_at=datetime(2026, 10, 2, tzinfo=UTC),
+136 +             event_id="d" * 32,
+137 +             actor_id=actor.actor_id,
+138 +             action="submitted",
+139 +             object_id=response_id,
+140 +             recorded_at=datetime(2026, 10, 2, tzinfo=UTC),
+141 |         ),
+    |
+
+unformatted: File would be reformatted
+ --> tests/review/__init__.py:2:1
+  |
+1 | """Tests for teacher queue, optimistic locking and audit."""
+  -
+  |
+
+23 files would be reformatted, 112 files already formatted
