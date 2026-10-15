@@ -7,6 +7,7 @@ module này không import thư viện ASR nào nên unit test không cần model
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -51,10 +52,16 @@ class EngineResult:
     engine_version: str
     weight_name: str
     test_only: bool = False
+    language: str | None = None
+    language_probability: float | None = None
+    language_method: str | None = None
+    language_version: str | None = None
 
 
 class AsrEngine(Protocol):
     def transcribe(self, audio: DecodedAudio) -> EngineResult: ...
+
+    def detect_language(self, audio: DecodedAudio) -> tuple[str | None, float | None]: ...
 
 
 @dataclass
@@ -84,6 +91,10 @@ class AsrService:
             "engine_version": "not-loaded",
             "decode_config_version": DECODE_CONFIG_VERSION,
             "audio_sha256": audio.audio_sha256,
+            "language": None,
+            "language_probability": None,
+            "language_method": None,
+            "language_version": None,
         }
         if qc.status is QCStatus.REJECT:
             # Chép lý do QC của M02 để M05/M06 báo được vì sao bài không chấm.
@@ -99,11 +110,29 @@ class AsrService:
             return Transcript(status=AsrStatus.ASR_FAILED, reasons=(ReasonCode.ASR_FAILED,), **base)
 
         asr_model = resolve_asr_model(result.weight_name, self.weight_map)
+        raw_language_probability = result.language_probability
+        language_probability = (
+            float(raw_language_probability)
+            if isinstance(raw_language_probability, (int, float))
+            and not isinstance(raw_language_probability, bool)
+            and math.isfinite(raw_language_probability)
+            and 0.0 <= raw_language_probability <= 1.0
+            else None
+        )
+        language = (
+            result.language.strip().lower()
+            if isinstance(result.language, str) and result.language.strip()
+            else None
+        )
         base |= {
             "engine": result.engine,
             "engine_version": result.engine_version,
             "asr_model": asr_model,
             "test_only": result.test_only,
+            "language": language,
+            "language_probability": language_probability,
+            "language_method": result.language_method if language is not None else None,
+            "language_version": result.language_version if language is not None else None,
         }
         version_reasons = asr_version_reasons(asr_model, self.trained_asr_model)
         try:

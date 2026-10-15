@@ -7,6 +7,7 @@ import logging
 import math
 from collections.abc import Callable
 from datetime import UTC, datetime
+from typing import Any
 
 import soundfile as sf
 
@@ -43,6 +44,7 @@ from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.jobs import LeaseLost
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import ConcurrentResponseUpdate
+from aicefr.trust.contracts import TrustDisposition
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +61,7 @@ class PipelineCoordinator:
         extractor: FeatureExtractor,
         scorer: RidgeScorer,
         long_response_windows: bool = False,
+        trust_evaluator: Any | None = None,
     ) -> None:
         self._responses = responses
         self._reports = reports
@@ -68,6 +71,7 @@ class PipelineCoordinator:
         self._extractor = extractor
         self._scorer = scorer
         self._long_response_windows = long_response_windows
+        self._trust_evaluator = trust_evaluator
         self._commit_guard: Callable[[str, int], None] | None = None
 
     def set_commit_guard(self, guard: Callable[[str, int], None] | None) -> None:
@@ -139,11 +143,30 @@ class PipelineCoordinator:
                 and result.audio.duration_s
                 > artifact.feature_hi[artifact.feature_order.index("total_dur")]
             ):
-                from aicefr.scoring.windows import score_windows
+                from aicefr.scoring.windows import WindowGeometryError, score_windows
 
-                assessment, window_versions = score_windows(
-                    result.audio, transcript, self._extractor, self._scorer
-                )
+                try:
+                    assessment, window_versions = score_windows(
+                        result.audio, transcript, self._extractor, self._scorer
+                    )
+                except WindowGeometryError:
+                    assessment = assessment.model_copy(
+                        update={
+                            "status": AssessmentStatus.NOT_EVALUATED,
+                            "overall_score": None,
+                            "overall_band": None,
+                            "reasons": tuple(
+                                dict.fromkeys(
+                                    (*assessment.reasons, ReasonCode.LONG_RESPONSE_REVIEW)
+                                )
+                            ),
+                            "teacher_verified": False,
+                        }
+                    )
+                    window_versions = {
+                        "aggregation": "median-windows-v1",
+                        "window_results": "[]",
+                    }
             if transcript.status is not AsrStatus.OK:
                 reasons = tuple(dict.fromkeys((*transcript.reasons, *assessment.reasons)))
                 assessment = assessment.model_copy(
@@ -155,14 +178,50 @@ class PipelineCoordinator:
                         "teacher_verified": False,
                     }
                 )
+            trust = None
+            trust_provenance: dict[str, str] = {}
+            if self._trust_evaluator is not None:
+                window_sets = None
+                if window_versions:
+                    window_features = self._trust_window_features(result.audio, transcript)
+                    window_sets = (
+                        self._trust_evaluator.predict_windows(window_features)
+                        if window_features is not None
+                        else ()
+                    )
+                    if window_sets is None:
+                        window_sets = ()
+                trust = self._trust_evaluator.assess(
+                    audio=result.audio,
+                    transcript=transcript,
+                    features=features,
+                    assessment=assessment,
+                    task_id=response.task_id,
+                    task_version=response.task_version,
+                    asr=self._asr,
+                    conformal_sets=window_sets,
+                )
+                assessment = self._apply_trust(assessment, trust)
+                trust_provenance = self._trust_provenance(trust)
             needs_review = assessment.status is not AssessmentStatus.ESTIMATED
+            rejected_by_trust = trust is not None and trust.disposition is TrustDisposition.REJECTED
             final_reason = (
                 transcript.reasons[0]
                 if transcript.status is not AsrStatus.OK and transcript.reasons
-                else self._assessment_reason(assessment)
+                else (
+                    ReasonCode.LANGUAGE_NOT_ENGLISH
+                    if rejected_by_trust
+                    else self._assessment_reason(assessment)
+                )
             )
             report_input = self._report_input(
-                response.response_id, result.audio.duration_s, assessment, transcript, features
+                response.response_id,
+                result.audio.duration_s,
+                assessment,
+                transcript,
+                features,
+                trust=trust,
+                provenance=trust_provenance,
             )
             if window_versions:
                 report_input = report_input.model_copy(
@@ -173,8 +232,18 @@ class PipelineCoordinator:
                 current,
                 assessment,
                 report_input,
-                ResponseStatus.REVIEW_REQUIRED if needs_review else ResponseStatus.COMPLETED,
-                "pipeline_review_required" if needs_review else "pipeline_completed",
+                (
+                    ResponseStatus.REJECTED
+                    if rejected_by_trust
+                    else (
+                        ResponseStatus.REVIEW_REQUIRED if needs_review else ResponseStatus.COMPLETED
+                    )
+                ),
+                (
+                    "pipeline_rejected"
+                    if rejected_by_trust
+                    else ("pipeline_review_required" if needs_review else "pipeline_completed")
+                ),
                 final_reason,
                 qc_candidate=False,
             )
@@ -290,6 +359,9 @@ class PipelineCoordinator:
         assessment: Assessment,
         transcript: Transcript,
         features: FeatureSet,
+        *,
+        trust: Any | None = None,
+        provenance: dict[str, str] | None = None,
     ) -> ReportInput:
         refs: list[EvidenceRef] = []
         requests: list[CommentRequest] = []
@@ -354,7 +426,110 @@ class PipelineCoordinator:
             evidence_refs=tuple(refs),
             comment_requests=tuple(requests),
             source_versions={"qc_config": self._qc_config.version},
+            trust=trust,
+            provenance=provenance or {},
         )
+
+    @staticmethod
+    def _apply_trust(assessment: Assessment, trust: Any) -> Assessment:
+        """Route trust outcomes while keeping all score and feature values intact."""
+        reasons = tuple(dict.fromkeys((*assessment.reasons, *trust.reasons)))
+        disposition = trust.disposition
+        if assessment.status is AssessmentStatus.NOT_EVALUATED:
+            # Trust observations can add a route reason, but cannot rehabilitate
+            # an ASR/scorer prerequisite failure into a score or review estimate.
+            return assessment.model_copy(
+                update={
+                    "overall_score": None,
+                    "overall_band": None,
+                    "reasons": reasons,
+                    "teacher_verified": False,
+                }
+            )
+        if disposition is TrustDisposition.CONTINUE:
+            return assessment.model_copy(update={"reasons": reasons})
+        if (
+            disposition is TrustDisposition.NOT_EVALUATED
+            or disposition is TrustDisposition.REJECTED
+        ):
+            return assessment.model_copy(
+                update={
+                    "status": AssessmentStatus.NOT_EVALUATED,
+                    "overall_score": None,
+                    "overall_band": None,
+                    "reasons": reasons,
+                    "teacher_verified": False,
+                }
+            )
+        return assessment.model_copy(
+            update={
+                "status": AssessmentStatus.REVIEW_REQUIRED,
+                "reasons": reasons,
+                "teacher_verified": False,
+            }
+        )
+
+    @staticmethod
+    def _trust_provenance(trust: Any) -> dict[str, str]:
+        values: dict[str, str] = {"trust_policy": "trust-policy-v1"}
+        if trust.language is not None:
+            values["language_method"] = trust.language.method
+            values["language_version"] = trust.language.version
+        if trust.prediction_set is not None:
+            values["calibration_id"] = trust.prediction_set.calibration_id
+            values["calibration_sha256"] = trust.prediction_set.checksum
+        if trust.relevance:
+            values["guard_thresholds"] = ",".join(
+                sorted({item.threshold_version for item in trust.relevance})
+            )
+        return values
+
+    def _trust_window_features(
+        self, audio: Any, transcript: Transcript
+    ) -> tuple[FeatureSet, ...] | None:
+        """Rebuild each covered window's immutable feature vector for CV+ evaluation."""
+        artifact = getattr(self._scorer, "artifact", None)
+        if artifact is None or "total_dur" not in artifact.feature_order:
+            return None
+        from aicefr.contracts import DecodedAudio
+        from aicefr.scoring.windows import window_ranges
+
+        position = artifact.feature_order.index("total_dur")
+        minimum = max(30.0, artifact.feature_lo[position])
+        maximum = min(60.0, artifact.feature_hi[position])
+        try:
+            ranges = window_ranges(audio.duration_s, minimum=minimum, maximum=maximum)
+            results = []
+            for start, end in ranges:
+                left, right = round(start * 16000), round(end * 16000)
+                samples = audio.samples[left:right].copy()
+                import hashlib
+
+                digest = hashlib.sha256(samples.tobytes()).hexdigest()
+                segment = DecodedAudio(
+                    samples=samples,
+                    sample_rate_hz=16000,
+                    duration_s=len(samples) / 16000,
+                    audio_sha256=digest,
+                )
+                words = tuple(
+                    word.model_copy(
+                        update={"start_s": word.start_s - start, "end_s": word.end_s - start}
+                    )
+                    for word in transcript.words
+                    if start <= word.start_s <= word.end_s <= end
+                )
+                local_transcript = transcript.model_copy(
+                    update={
+                        "words": words,
+                        "text": " ".join(word.text for word in words),
+                        "audio_sha256": digest,
+                    }
+                )
+                results.append(self._extractor.extract(local_transcript, segment))
+            return tuple(results)
+        except Exception:
+            return None
 
     @staticmethod
     def _container_extension(data: bytes) -> str:

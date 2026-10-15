@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from aicefr.contracts import (
     Assessment,
     AssessmentStatus,
+    Criterion,
     FeatureSet,
     ReasonCode,
     ReviewDecision,
@@ -28,6 +29,7 @@ from aicefr.report.contracts import (
     ReportStatus,
     TeacherFinalResult,
 )
+from aicefr.trust.contracts import TrustAssessment
 
 
 class _Frozen(BaseModel):
@@ -43,6 +45,8 @@ class ReportInput(_Frozen):
     evidence_refs: tuple[EvidenceRef, ...] = ()
     comment_requests: tuple[CommentRequest, ...] = ()
     source_versions: dict[str, str] = Field(default_factory=dict)
+    trust: TrustAssessment | None = None
+    provenance: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _all_artifacts_match_response(self) -> ReportInput:
@@ -164,6 +168,8 @@ class MemoryReportRepository:
 class DiagnosticReportBuilder:
     """Builds only observations grounded in checked EvidenceRef records."""
 
+    MAX_INDICATOR_EVIDENCE_REFS = 8
+
     _TEMPLATE_TEXT: dict[CommentTemplate, str] = {
         CommentTemplate.WORD_TIMING_OBSERVED: "Có mốc từ được ghi nhận trong transcript.",
         CommentTemplate.PAUSE_MEASUREMENT_OBSERVED: "Có mốc dừng được ghi nhận trong dữ liệu.",
@@ -184,6 +190,27 @@ class DiagnosticReportBuilder:
         issues = (*evidence.issues, *request_issues)
         assessment = report_input.assessment
         limitations = self._limitations(assessment.status, issues)
+        trust = report_input.trust
+        indicators = ()
+        if trust is not None:
+            evidence_by_criterion: dict[Criterion, list[str]] = {
+                criterion: [] for criterion in Criterion
+            }
+            for reference in evidence.valid.values():
+                evidence_by_criterion[reference.criterion].append(reference.evidence_id)
+            indicators = tuple(
+                indicator.model_copy(
+                    update={
+                        "evidence_refs": tuple(
+                            evidence_by_criterion[indicator.name][
+                                : self.MAX_INDICATOR_EVIDENCE_REFS
+                            ]
+                        )
+                    }
+                )
+                for indicator in trust.criterion_indicators
+            )
+            trust = trust.model_copy(update={"criterion_indicators": indicators})
         if ReasonCode.SCORE_AGGREGATED in assessment.reasons:
             limitations += (
                 "Bài dài dùng tổng hợp các cửa sổ, chưa được validation CEFR; "
@@ -203,6 +230,10 @@ class DiagnosticReportBuilder:
             evidence_issues=tuple(issues),
             limitations=limitations,
             source_versions=self._source_versions(report_input) | report_input.source_versions,
+            trust=trust,
+            prediction_set=(trust.prediction_set if trust else None),
+            criterion_indicators=indicators,
+            provenance=report_input.provenance,
         )
 
     def apply_review(self, report: DiagnosticReport, decision: ReviewDecision) -> DiagnosticReport:
