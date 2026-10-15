@@ -1,6 +1,6 @@
 # M15 — Specification
 
-**Version:** v0.3 · **STATUS:** DRAFT, Phase 03 user verdict `PENDING`.
+**Version:** v0.3 · **STATUS:** Phase 03 user verdict `APPROVED` ngày 15/10/2026; producer-dependent contract chưa freeze.
 **Inputs:** Requirement v0.2 `APPROVED`; Research v0.3 `RUN`; `docs/plan/week-05.md` §6/9.3; backend handoff M11 SCRUM-66 và M14 SCRUM-67 tại target `d60e8a4`. M10/M12/M13/M16 và global M11/M14 contract vẫn chưa có approval module; phần consumer dưới đây chưa được freeze.
 
 ## Mục tiêu và ranh giới
@@ -79,4 +79,4 @@ Machine-readable result has revision, route, role, viewport, steps/assertions, c
 | M15-FR-007 | M15-AC-002/004/005/006 | M15-TEST-007/008/012 | W5-N04 |
 | M15-FR-009 | M15-AC-008 | M15-TEST-011 | W5-N04 |
 
-**Open dependency:** backend M11 SCRUM-66 và M14 SCRUM-67 có code/handoff ở revision `d60e8a4`, nhưng reviewer/user verdict toàn module vẫn `PENDING`. M10/M12/M13 còn Phase 01 `PENDING`; M16 integration gate cũng chưa được chấp nhận. Route canonical/alias, normalized payload/error/reason enum, M12 forbidden-field matrix, M13 metric disclosure, M11 one-time password policy và M14 order/receipt view-model chưa freeze. User đã chọn các đề xuất Codex làm hướng xử lý M15-P03-01–05, sẽ cung cấp contract đã duyệt; nếu contract khác, cập nhật M15 và re-review Phase 03 đúng impact trước Phase 04/05/prompt. Research static và backend browser smoke không thay browser QA M15.
+**Open dependency:** backend M11 SCRUM-66 và M14 SCRUM-67 có code/handoff ở revision `d60e8a4`, nhưng reviewer/user verdict toàn module vẫn `PENDING`. M10/M12/M13 còn Phase 01 `PENDING`; M16 integration gate cũng chưa được chấp nhận. Route canonical/alias, normalized payload/error/reason enum, M12 forbidden-field matrix, M13 metric disclosure, M11 one-time password policy và M14 order/receipt view-model chưa freeze. User đã chọn các đề xuất Codex làm hướng xử lý M15-P03-01–05 và duyệt Phase 03; sẽ cung cấp contract đã duyệt. Nếu contract khác giả định, cập nhật M15 và re-review Phase 03 đúng impact trước Phase 05/prompt. Research static và backend browser smoke không thay browser QA M15.

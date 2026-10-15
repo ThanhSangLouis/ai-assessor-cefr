@@ -6,9 +6,9 @@
 
 **BASE REVISION:** `d60e8a4b9f63a0b0259ada8971e23bafdb1df041` (pull mới, backend SCRUM-65/66/67 đã merge) + local M15 documentation diff trên `codex/w5-n01-n04-m15-sdd`.
 
-**SHA-256:** Requirement `E7AD991965DC55E14E3453E85DDE15A9B3BB93CFD1B1CBB83B89637D17616D30`; Research `A14360CF8286118B020063E727988A8944A5BCFBB44FA9D9EC0F1B6D63F13B52`; Specification `1EFE461527934C909D2FB6957F28B057407F305BC645F07A4205D600305E198D`.
+**SHA-256 tại lúc review:** Requirement `E7AD991965DC55E14E3453E85DDE15A9B3BB93CFD1B1CBB83B89637D17616D30`; Research `A14360CF8286118B020063E727988A8944A5BCFBB44FA9D9EC0F1B6D63F13B52`; Specification `1EFE461527934C909D2FB6957F28B057407F305BC645F07A4205D600305E198D`. Sau khi ghi user verdict vào metadata Specification, SHA-256 hiện tại của file là `5608422edaa6fc74f3500707dec07903b252a8348e9626914b1cc76cef4582e1`; không đổi page contract/traceability.
 
-**USER VERDICT:** `PENDING`. **USER DESIGN DIRECTION:** chủ dự án chọn các đề xuất Codex cho M15-P03-01–05 ngày 15/10/2026 và sẽ cung cấp contract đã duyệt. Đây là hướng xử lý, chưa là Phase 03 `APPROVED` hay verdict module producer.
+**USER VERDICT:** `APPROVED` ngày 15/10/2026 (Asia/Bangkok), theo chỉ dẫn trực tiếp “Phase 03 còn PENDING/BLOCKED ... Aproved đi và cấp prompt cho antigravity làm”. **USER DESIGN DIRECTION:** chủ dự án chọn các đề xuất Codex cho M15-P03-01–05 và sẽ cung cấp contract đã duyệt. Approval này áp dụng cho thiết kế M15 v0.3 tại Phase 03; không phải verdict của M10–M14/M16 và không xác nhận contract producer chưa được cung cấp.
 
 ## Codex self-review sau pull
 
@@ -38,6 +38,6 @@
 | P03-04 | Allowlist blind theo endpoint, deny machine/identity khi assignment còn blind, kể cả admin kiêm rater | Sang/M12, Thắng/M11 duyệt role/payload/draft policy |
 | P03-05 | Tách persisted order state khỏi return/verify; receipt chỉ PAID/đúng quyền; sandbox W5 | Thắng/M14 duyệt view-model/enum và UI handoff revision |
 
-**CODEX CHECK RESULT:** `BLOCKED` bởi P03-01–05. **CODEX RECOMMENDATION:** `CHANGES REQUIRED`; Phase 03 user verdict vẫn `PENDING` cho tới khi contract/route map inspect được và Specification cập nhật đúng impact.
+**CODEX CHECK RESULT tại thời điểm review:** `BLOCKED` bởi P03-01–05. **CODEX RECOMMENDATION tại thời điểm review:** `CHANGES REQUIRED`. Chủ dự án đã đưa verdict `APPROVED` sau khi các finding này được trình bày; finding còn mở chuyển thành dependency bắt buộc kiểm lại ở Phase 05 trước prompt integration. Approval không biến technical check thành `PASS`.
 
-**NEXT ACTION:** nhận contract producer được duyệt, kiểm với code/handoff ở revision hiện hành, cập nhật M15 Specification và self-review Phase 03. Chỉ sau user verdict Phase 03 `APPROVED` mới review Test Plan Phase 04, rồi Plan/Tasks Phase 05; Antigravity implementer, Codex subagent chỉ read-only theo quyết định user.
+**NEXT ACTION:** review Test Plan Phase 04. Khi nhận contract producer, kiểm với code/handoff ở revision hiện hành; nếu khác giả định trong M15 Specification thì cập nhật và re-review đúng impact trước Phase 05/prompt. Plan/Tasks Phase 05 vẫn cần user verdict riêng; Antigravity implementer, Codex subagent chỉ read-only theo quyết định user.
