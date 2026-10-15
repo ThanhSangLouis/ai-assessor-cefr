@@ -1,0 +1,6 @@
+# SCRUM-70 — Review binding và media visibility
+Baseline: 3b2d2b78ba5bb35bd162b8f3e5de21ade946d237; tham chiếu: 40907cc35b3d04408f9a8713f16d9be99f4cd6c7; parent51eff1f.
+Quyền user: Luna implement, Codex review, PR riêng. Sửa hai MAJOR đã xác minh:
+1. POST review replay đang tra owner/key rồi bỏ qua review_id trong URL. Tra review theo ID/owner cả sau khi advance; so source kind/attempt/content với binding đã lưu. Route owned khác phải 409; unknown/foreign404; replay đúng sau advance vẫn trả attempt cũ, không chạy lại/advance. Không thêm schema nếu truy vấn existing review identity đủ. Bổ sung HTTP regressions cả practice và step.
+2. get_lesson_media(published_only) chỉ kiểm lesson version published, bỏ parent path draft. Áp cùng predicate published path như get_lesson; teacher draft media giữ auth hiện hành và old version published vẫn đọc được. Bổ sung test student không đọc media của lesson published trong draft path, rồi đọc được sau publish path.
+Vùng sửa: storage/learning.py, practice/service.py, lessons/service.py, api/learning.py nếu cần; test API mới/bổ sung learning tests. Không sửa migration011, file fixture do agent khác đang sửa, không commit/push. Chạy targeted tests/Ruff, trả kết quả và diff để root review. Dừng product edits khi bàn giao để final wheel/full test chạy trên source cố định.
