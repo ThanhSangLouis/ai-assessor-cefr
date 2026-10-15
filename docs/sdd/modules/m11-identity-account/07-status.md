@@ -11,3 +11,9 @@
 | Prompt | NONE ISSUED |
 
 M11 không thay verdict lịch sử M08. Dependency hoặc impact sang M08 chỉ được cập nhật sau khi user duyệt scope và compatibility plan.
+
+## SCRUM-66 — Backend task verification 15/10/2026
+
+Theo [quyền giao task trực tiếp](evidence/scrum-66/authority.md), backend T02 đã implement và được Codex kiểm độc lập: 425 test PASS; pure auth services đạt target coverage; clean-wheel/browser PASS. Xem [review](evidence/scrum-66/review.md), [prompt log](prompts/SCRUM-66-prompt-log.md).
+
+Trạng thái task: READY FOR REVIEW. Bảng DRAFT/PENDING phía trên là trạng thái approval module gốc, không bị tự đổi thành APPROVED. N01/N04 UI và review Nguyên/Sang còn PENDING; không tự đóng Jira.

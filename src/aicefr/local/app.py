@@ -5,9 +5,11 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from aicefr.api.identity import IdentityApi
 from aicefr.api.review import ReviewApi
 from aicefr.api.student import (
     StudentApi,
@@ -47,6 +49,8 @@ class LocalRuntime:
     data: DataControl
     worker: Any | None = None
     providers: RepositoryProviders | None = None
+    accounts: Any | None = None
+    google: Any | None = None
 
     def close(self) -> None:
         if self.worker is not None:
@@ -65,6 +69,9 @@ class SQLiteSessionRepository:
 
     def put_session(self, session: Any) -> None:
         self._store.put_session(session)
+
+    def touch_session(self, session: Any, *, now: datetime) -> bool:
+        return self._store.touch_session(session, now=now)
 
     def delete_session(self, digest: str) -> None:
         with self._store.transaction() as connection:
@@ -135,8 +142,27 @@ def create_runtime(
             qc = QCConfig(**json.loads(stored_qc[0]))
         providers = (repository_factory or build_providers)(store)
         blobs = BlobStore(store.data_dir, max_bytes=qc.max_input_bytes)
+        from aicefr.auth.accounts import AccountService
+        from aicefr.storage.identity import IdentityRepository
+
+        identity_repository = IdentityRepository(store)
         consents = ConsentService(store)
-        auth = AuthService(store, SQLiteSessionRepository(store))
+        auth = AuthService(
+            store,
+            SQLiteSessionRepository(store),
+            identity_repository=identity_repository,
+        )
+        accounts = AccountService(auth, identity_repository)
+        from aicefr.auth.google import GoogleConfig, GoogleIdentityService
+
+        google_config = dict(config.get("google", {}))
+        google_config.setdefault("data_dir", store.data_dir)
+        google = GoogleIdentityService(
+            auth,
+            identity_repository,
+            GoogleConfig(**google_config),
+        )
+        identity_api = IdentityApi(auth, accounts, google)
         responses = ResponseService(store, blobs, consents)
         if config.get("recover_interrupted", False):
             from aicefr.contracts import ReasonCode, ResponseStatus
@@ -253,7 +279,7 @@ def create_runtime(
         tasks = TaskRepository(store)
         for item in config["tasks"]:
             tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
-        portal = PortalService(auth, store, tasks)
+        portal = PortalService(auth, store, tasks, accounts)
         control = RuntimeControl(portal, pipeline, config)
         control._asr_injected = asr_engine is not None
         data = DataControl(portal, blobs)
@@ -295,11 +321,22 @@ def create_runtime(
             demo=bool(config.get("demo", False)),
             consent_version=str(config.get("consent_version", "local-v1")),
             max_request_bytes=qc.max_input_bytes + 1024 * 1024,
-            portal=PortalRouter(portal, control, data, metrics),
+            portal=PortalRouter(portal, control, data, metrics, identity_api),
             metrics=metrics,
         )
         return LocalRuntime(
-            app, store, auth, consents, responses, portal, control, data, worker, providers
+            app,
+            store,
+            auth,
+            consents,
+            responses,
+            portal,
+            control,
+            data,
+            worker,
+            providers,
+            accounts,
+            google,
         )
     except Exception:
         if worker is not None:

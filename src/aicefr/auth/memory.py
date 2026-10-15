@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 from datetime import datetime, timedelta
 
-from aicefr.auth.service import AccountRecord
+from aicefr.auth.service import IDLE_TTL, AccountRecord
 from aicefr.contracts import ConsentRecord, SessionRecord
 
 
@@ -43,6 +43,26 @@ class MemoryIdentityRepository:
 
     def put_session(self, session: SessionRecord) -> None:
         self.sessions[session.token_digest] = session
+
+    def touch_session(self, session: SessionRecord, *, now: datetime) -> bool:
+        current = self.sessions.get(session.token_digest)
+        if (
+            current is None
+            or current.actor_id != session.actor_id
+            or current.role is not session.role
+            or current.created_at != session.created_at
+            or current.absolute_expires_at != session.absolute_expires_at
+            or now >= current.idle_expires_at
+            or now >= current.absolute_expires_at
+        ):
+            return False
+        self.sessions[session.token_digest] = current.model_copy(
+            update={
+                "last_seen_at": now,
+                "idle_expires_at": min(now + IDLE_TTL, current.absolute_expires_at),
+            }
+        )
+        return True
 
     def delete_session(self, digest: str) -> None:
         self.sessions.pop(digest, None)

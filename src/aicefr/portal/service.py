@@ -21,8 +21,19 @@ STAFF = frozenset({ActorRole.TEACHER, ActorRole.ADMIN})
 
 
 class PortalService:
-    def __init__(self, auth: AuthService, store: SQLiteStore, tasks: TaskRepository) -> None:
+    def __init__(
+        self,
+        auth: AuthService,
+        store: SQLiteStore,
+        tasks: TaskRepository,
+        accounts: Any | None = None,
+    ) -> None:
         self.auth, self.store, self.tasks = auth, store, tasks
+        if accounts is None and auth.identity_repository is not None:
+            from aicefr.auth.accounts import AccountService
+
+            accounts = AccountService(auth, auth.identity_repository)
+        self.identity_accounts = accounts
 
     def actor(self, token: str, roles: frozenset[ActorRole] | None = None) -> Actor:
         return self.auth.resolve(token, allowed_roles=roles)
@@ -351,38 +362,27 @@ class PortalService:
         ]
 
     def create_account(self, token: str, request: AccountCreate) -> dict[str, Any]:
-        actor = self.actor(token, frozenset({ActorRole.ADMIN}))
-        with self.store.transaction():
-            if self.store.get_account(request.actor_id) is not None:
-                raise ConcurrentResponseUpdate("account already exists")
-            created = self.auth.bootstrap_fixture_account(
-                request.actor_id, request.role, request.password.get_secret_value()
-            )
-            self.audit(actor, "account_created", created.actor_id)
-        return created.model_dump(mode="json")
+        if self.identity_accounts is None:
+            raise AuthorizationError("identity account service unavailable")
+        created = self.identity_accounts.create_legacy_account(
+            token,
+            request.actor_id,
+            request.role,
+            request.password.get_secret_value(),
+        )
+        return {
+            "actor_id": created.actor_id,
+            "role": created.role.value,
+            "temporary_password_required": created.temporary_password_required,
+        }
 
     def change_account(self, token: str, actor_id: str, request: AccountChange) -> dict[str, Any]:
-        actor = self.actor(token, frozenset({ActorRole.ADMIN}))
-        with self.store.transaction() as connection:
-            account = self.store.get_account(actor_id)
-            if account is None:
-                raise ResourceNotFound("account unavailable")
-            if actor_id == actor.actor_id and request.disabled:
-                raise AuthorizationError("cannot disable your own administrator account")
-            if request.disabled is not None:
-                connection.execute(
-                    "UPDATE accounts SET disabled=? WHERE actor_id=?",
-                    (int(request.disabled), actor_id),
-                )
-                if request.disabled:
-                    connection.execute("DELETE FROM sessions WHERE actor_id=?", (actor_id,))
-            if request.unlock:
-                connection.execute(
-                    "UPDATE accounts SET failed_attempts=0,locked_until=NULL WHERE actor_id=?",
-                    (actor_id,),
-                )
-            self.audit(actor, "account_changed", actor_id)
-        return next(item for item in self.accounts(token) if item["actor_id"] == actor_id)
+        if self.identity_accounts is None:
+            raise AuthorizationError("identity account service unavailable")
+        change = getattr(self.identity_accounts, "change_legacy_account", None)
+        if change is None:
+            raise AuthorizationError("identity account service unavailable")
+        return change(token, actor_id, request.disabled, request.unlock)
 
     def task_list(self, token: str, *, admin: bool = False) -> list[dict[str, Any]]:
         self.actor(token, frozenset({ActorRole.ADMIN}) if admin else None)
