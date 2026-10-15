@@ -79,7 +79,7 @@ def test_restart_restores_response_audit_session_and_checksum(tmp_path):
     assert restarted_responses.get_blob(owner, record.response_id) == b"synthetic fixture bytes"
     assert len(restarted.list_audit()) == 2
     version = restarted.connection.execute("PRAGMA user_version").fetchone()[0]
-    assert version == SQLiteStore.SCHEMA_VERSION == 10
+    assert version == SQLiteStore.SCHEMA_VERSION == 11
     assert restarted.connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     restarted.close()
 

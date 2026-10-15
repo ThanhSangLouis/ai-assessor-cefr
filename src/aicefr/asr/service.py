@@ -161,3 +161,7 @@ class AsrService:
         if self._engine is None:
             self._engine = self.engine_loader()
         return self._engine
+
+    def load_engine(self) -> AsrEngine:
+        """Return the configured lazy engine for purpose-specific runtime adapters."""
+        return self._load_engine()

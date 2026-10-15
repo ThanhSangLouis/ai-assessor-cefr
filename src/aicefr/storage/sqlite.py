@@ -84,7 +84,9 @@ class SQLiteStore:
                 if version == 3:
                     self._upgrade_v3_to_v4()
                     version = 4
-                if version != 4 and version != self.SCHEMA_VERSION:
+                # W5 migration verifies the checksum ledger before extending an
+                # already-upgraded schema (including the supported v10→v11 path).
+                if version < 4 or version > self.SCHEMA_VERSION:
                     raise RuntimeError("unsupported SQLite schema version")
                 migrate_w5(self.connection, Path(data_dir), lock_held=True)
         except Exception:

@@ -51,6 +51,7 @@ from aicefr.review.service import (
     ReviewNotFound,
     StaleReview,
 )
+from aicefr.storage.learning import LearningConflict
 from aicefr.storage.service import ResponseService
 
 StartResponse = Callable[[str, list[tuple[str, str]]], Any]
@@ -144,6 +145,7 @@ class StudentTeacherApp:
         max_request_bytes: int = 10 * 1024 * 1024,
         portal: Any | None = None,
         metrics: Any | None = None,
+        learning_api: Any | None = None,
     ) -> None:
         if max_request_bytes <= 0:
             raise ValueError("max_request_bytes must be positive")
@@ -159,6 +161,7 @@ class StudentTeacherApp:
         self._max_request_bytes = max_request_bytes
         self._portal = portal
         self._metrics = metrics
+        self._learning_api = learning_api
         self._limiter = RateLimiter()
 
     def __call__(self, environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
@@ -192,7 +195,19 @@ class StudentTeacherApp:
         except (ReportNotFound, UnverifiedReviewDecision):
             response = self._controlled_error(environ, HTTPStatus.CONFLICT, "REPORT_NOT_READY")
         except ValidationError:
-            response = self._controlled_error(environ, HTTPStatus.BAD_REQUEST, "INVALID_REQUEST")
+            learning_request = str(environ.get("PATH_INFO", "")).startswith(
+                ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
+            )
+            status = HTTPStatus.UNPROCESSABLE_ENTITY if learning_request else HTTPStatus.BAD_REQUEST
+            response = self._controlled_error(environ, status, "INVALID_REQUEST")
+        except LearningConflict:
+            response = self._controlled_error(environ, HTTPStatus.CONFLICT, "IDEMPOTENCY_CONFLICT")
+        except ValueError:
+            learning_request = str(environ.get("PATH_INFO", "")).startswith(
+                ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
+            )
+            status = HTTPStatus.UNPROCESSABLE_ENTITY if learning_request else HTTPStatus.BAD_REQUEST
+            response = self._controlled_error(environ, status, "INVALID_REQUEST")
         except Exception:
             # Do not leak internal paths, database details, or submitted content.
             response = self._controlled_error(
@@ -246,6 +261,10 @@ class StudentTeacherApp:
     def _dispatch(self, environ: dict[str, Any]) -> WebResponse:
         method = str(environ.get("REQUEST_METHOD", "GET")).upper()
         path = str(environ.get("PATH_INFO", "/"))
+        if self._learning_api is not None:
+            learning_response = self._learning_api.dispatch(self, environ)
+            if learning_response is not None:
+                return learning_response
         if self._portal is not None:
             portal_response = self._portal.dispatch(self, environ)
             if portal_response is not None:

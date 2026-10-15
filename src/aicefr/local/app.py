@@ -5,13 +5,14 @@ from __future__ import annotations
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from aicefr.api.billing import BillingApi
 from aicefr.api.data_operations import DataOperationsApi
 from aicefr.api.identity import IdentityApi
+from aicefr.api.learning import LearningApi
 from aicefr.api.review import ReviewApi
 from aicefr.api.student import (
     StudentApi,
@@ -54,6 +55,9 @@ class LocalRuntime:
     accounts: Any | None = None
     google: Any | None = None
     billing: Any | None = None
+    learning_repository: Any | None = None
+    practice: Any | None = None
+    lessons: Any | None = None
 
     def close(self) -> None:
         if self.worker is not None:
@@ -115,6 +119,7 @@ def create_runtime(
     scorer: Any | None = None,
     pipeline: Any | None = None,
     repository_factory: Callable[[SQLiteStore], RepositoryProviders] | None = None,
+    practice_runner: Any | None = None,
 ) -> LocalRuntime:
     """Build persistent services; injected engines are for deterministic tests."""
     from aicefr.audio.config import AudioFormat, QCConfig
@@ -137,6 +142,12 @@ def create_runtime(
     )
     store = SQLiteStore(data_dir)
     worker = None
+    learning_asr = (
+        AsrService(engine_loader=lambda: asr_engine, trained_asr_model=None)
+        if asr_engine is not None
+        else None
+    )
+    learning_vad = vad_engine
     try:
         stored_qc = store.connection.execute(
             "SELECT payload FROM runtime_settings WHERE key='qc_config'"
@@ -269,6 +280,7 @@ def create_runtime(
                         artifact.trained_with.get("asr_model") if artifact is not None else None
                     ),
                 )
+            learning_asr = asr
             if artifact is not None:
                 feature_order = artifact.feature_order
                 feature_version = artifact.feature_version
@@ -291,6 +303,7 @@ def create_runtime(
                 if artifact is not None
                 else FeatureExtractor(feature_order, feature_version, trained_with, vad_engine)
             )
+            learning_vad = vad_engine or getattr(extractor, "_vad", None)
             from aicefr.pipeline.coordinator import PipelineCoordinator
             from aicefr.trust.service import RuntimeTrustEvaluator
 
@@ -319,6 +332,58 @@ def create_runtime(
         data = DataControl(portal, blobs)
         data_api = DataOperationsApi(auth, portal, data)
         metrics = Metrics()
+
+        from aicefr.lessons.service import LessonService
+        from aicefr.practice.runner import PracticeRunner
+        from aicefr.practice.service import PracticeService
+        from aicefr.storage.learning import LearningRepository
+
+        learning_repository = LearningRepository(store)
+        # Seed the authored sample catalogue before exposing learning routes.
+        # The repository tracks seed ownership and never replaces teacher edits.
+        from aicefr.lessons.seed import seed_sample
+
+        seed_sample(learning_repository, now=datetime.now(UTC))
+        if practice_runner is None:
+            if learning_asr is None:
+
+                def load_learning_asr():
+                    model_dir = config.get("asr_model_dir")
+                    if not model_dir:
+                        raise ModelUnavailableError("local ASR model is not configured")
+                    from aicefr.asr.local import FasterWhisperEngine
+
+                    return FasterWhisperEngine(
+                        Path(model_dir),
+                        weight_name=str(config.get("asr_weight_name", "small")),
+                        device=str(config.get("asr_device", "cpu")),
+                        compute_type=str(config.get("asr_compute_type", "int8")),
+                    )
+
+                learning_asr = AsrService(engine_loader=load_learning_asr, trained_asr_model=None)
+            if learning_vad is None and bool(config.get("vad_enabled", True)):
+                learning_vad = _LazyVad(
+                    float(config.get("vad_threshold", 0.5)),
+                    int(config.get("vad_min_silence_ms", 150)),
+                )
+            if learning_vad is None:
+
+                class _UnavailableVad:
+                    def segments(self, samples, sample_rate_hz):
+                        raise RuntimeError("VAD is disabled for learning")
+
+                learning_vad = _UnavailableVad()
+            practice_runner = PracticeRunner(qc_config=qc, asr=learning_asr, vad=learning_vad)
+        practice = PracticeService(
+            learning_repository, blobs, practice_runner, evidence_provider=learning_repository
+        )
+        lessons = LessonService(learning_repository, blobs, practice_runner, qc_config=qc)
+        learning_api = LearningApi(
+            practice,
+            lessons,
+            consents=consents,
+            consent_version=str(config.get("consent_version", "local-v1")),
+        )
         worker = None
         starter = pipeline
         if config.get("async_pipeline", False):
@@ -366,6 +431,7 @@ def create_runtime(
                 data_api=data_api,
             ),
             metrics=metrics,
+            learning_api=learning_api,
         )
         return LocalRuntime(
             app,
@@ -381,6 +447,9 @@ def create_runtime(
             accounts,
             google,
             billing,
+            learning_repository,
+            practice,
+            lessons,
         )
     except Exception:
         if worker is not None:

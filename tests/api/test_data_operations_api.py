@@ -379,22 +379,31 @@ def test_admin_backup_and_restore_include_protected_key_and_audit_restore(tmp_pa
         now = "2026-10-15T00:00:00+00:00"
         media = runtime.responses.blobs.store(b"published lesson media")
         runtime.store.connection.execute(
-            "INSERT INTO learning_paths VALUES('backup-path','Path','', 'published',1,?,?)",
+            "INSERT INTO learning_paths("
+            "path_id,title,description,state,revision,created_at,updated_at) "
+            "VALUES('backup-path','Path','', 'published',1,?,?)",
             (now, now),
         )
         runtime.store.connection.execute(
-            "INSERT INTO learning_units VALUES('backup-unit','backup-path','Unit',1)"
+            "INSERT INTO learning_units(unit_id,path_id,title,ordinal) "
+            "VALUES('backup-unit','backup-path','Unit',1)"
         )
         runtime.store.connection.execute(
-            "INSERT INTO learning_lessons VALUES('backup-lesson','backup-unit','Lesson',1,?)",
+            "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
+            "VALUES('backup-lesson','backup-unit','Lesson',NULL,?)",
             (now,),
         )
         runtime.store.connection.execute(
-            "INSERT INTO lesson_versions VALUES('backup-lesson',1,'published','rules-v1',?,?)",
+            "INSERT INTO lesson_versions(lesson_id,version,state,rules_version,published_at,"
+            "created_at) VALUES('backup-lesson',1,'published','rules-v1',?,?)",
             (now, now),
         )
         runtime.store.connection.execute(
-            "INSERT INTO learning_media VALUES('backup-media','backup-lesson','audio',?,?,?,?)",
+            "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='backup-lesson'"
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_media(media_id,lesson_id,media_kind,blob_id,sha256,size_bytes,"
+            "created_at) VALUES('backup-media','backup-lesson','audio',?,?,?,?)",
             (media.blob_id, media.sha256, media.size_bytes, now),
         )
         runtime.accounts.set_consent(student, "backup-consent-v1", True)

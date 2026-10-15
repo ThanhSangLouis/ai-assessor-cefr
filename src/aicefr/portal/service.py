@@ -291,13 +291,32 @@ class PortalService:
         for table, columns in (
             (
                 "practice_attempts",
-                "attempt_id,mission_id,prompt_version,status,measurements,evidence,created_at,updated_at",
+                "attempt_id,mission_id,prompt_version,purpose,attempt_state,rules_version,"
+                "mission_snapshot,result_json,reasons_json,status,measurements,evidence,revision,"
+                "created_at,updated_at",
             ),
             (
                 "step_attempts",
-                "attempt_id,lesson_id,lesson_version,step_id,rules_version,status,measurements,evidence,revision,created_at",
+                "attempt_id,lesson_id,lesson_version,step_id,rules_version,attempt_state,"
+                "round_index,result_json,reasons_json,status,measurements,evidence,revision,"
+                "created_at,updated_at",
             ),
-            ("review_items", "review_id,content_key,box,due_at,state,updated_at"),
+            (
+                "review_items",
+                "review_id,source_attempt,content_key,box,due_at,state,revision,updated_at",
+            ),
+            (
+                "learning_audio_artifacts",
+                "artifact_id,attempt_kind,practice_attempt_id,step_attempt_id,content_type,sha256,size_bytes,created_at",
+            ),
+            (
+                "teacher_override_events",
+                "event_id,attempt_id,actor_id,old_value,new_value,reason,recorded_at",
+            ),
+            (
+                "step_review_items",
+                "review_id,source_step_attempt,content_key,box,due_at,state,revision,updated_at",
+            ),
             ("achievements", "code,unlocked_at,seen_at"),
             ("streak_days", "local_date,effort_count"),
         ):
@@ -310,6 +329,13 @@ class PortalService:
                 if table in {"practice_attempts", "step_attempts"}:
                     item["measurements"] = self._safe_measurements(item["measurements"])
                     item["evidence"] = self._safe_learning_evidence(item["evidence"])
+                    item["result"] = self._safe_learning_payload(item.pop("result_json"))
+                    item.pop("result_json", None)
+                    if table == "practice_attempts":
+                        item["mission_snapshot"] = self._safe_learning_payload(
+                            item["mission_snapshot"]
+                        )
+                    item["reasons"] = self._safe_learning_payload(item.pop("reasons_json"))
                 learning[table].append(item)
         study = connection.execute(
             "SELECT s.study_id,e.arm,e.enrolled_at,e.withdrawn_at,v.phase,"
@@ -444,6 +470,51 @@ class PortalService:
                     if isinstance(example, dict)
                 ]
         return safe
+
+    @classmethod
+    def _safe_learning_payload(cls, raw: str | None) -> Any:
+        """Keep typed learning facts while excluding transcript/audio and secret fields."""
+        if raw is None:
+            return None
+        try:
+            value = json.loads(raw)
+        except (TypeError, json.JSONDecodeError):
+            return None
+
+        def project(item: Any) -> Any:
+            if isinstance(item, dict):
+                projected = {}
+                for key, child in item.items():
+                    if not isinstance(key, str) or len(key) > 64:
+                        continue
+                    lowered = key.lower()
+                    if any(
+                        word in lowered
+                        for word in (
+                            "secret",
+                            "token",
+                            "transcript",
+                            "provider",
+                            "path",
+                            "nonce",
+                            "audio",
+                            "blob",
+                            "heard_text",
+                            "heard_token",
+                        )
+                    ):
+                        continue
+                    projected[key] = project(child)
+                return projected
+            if isinstance(item, list):
+                return [project(child) for child in item[:512]]
+            if isinstance(item, str):
+                return item[:2_048]
+            if item is None or type(item) in {bool, int, float}:
+                return item
+            return None
+
+        return project(value)
 
     @staticmethod
     def _safe_likert_answers(raw: str) -> dict[str, int]:
