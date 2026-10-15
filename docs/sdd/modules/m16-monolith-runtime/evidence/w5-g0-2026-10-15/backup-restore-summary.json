@@ -1,0 +1,36 @@
+{
+  "task": "W5-G0",
+  "target_baseline": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "reference_baseline": "40907cc35b3d04408f9a8713f16d9be99f4cd6c7",
+  "created_utc": "2026-10-15T03:55:31.013390+00:00",
+  "result": "PASS",
+  "checks": {
+    "source_unchanged": true,
+    "backup_database_matches": true,
+    "restore_database_matches": true,
+    "backup_blob_hashes_match": true,
+    "restore_blob_hashes_match": true,
+    "integrity_ok": true,
+    "foreign_keys_ok": true
+  },
+  "blob_count": 4,
+  "backup_db_sha256": "27d3a9aa710326972d805f247901eb4fe7db5b86cc45451ee7dc1287fe7021d3",
+  "schema_version": 4,
+  "table_count": 11,
+  "row_counts": {
+    "accounts": 3,
+    "audit": 15,
+    "blob_deletions": 0,
+    "consents": 1,
+    "diagnostic_reports": 4,
+    "responses": 4,
+    "review_candidates": 2,
+    "review_decisions": 0,
+    "runtime_settings": 0,
+    "sessions": 14,
+    "speaking_tasks": 2
+  },
+  "local_backup": "ai-assessor-cefr-runtime/backups/w5-g0-2026-10-15",
+  "local_restore": "ai-assessor-cefr-runtime/restore-checks/w5-g0-2026-10-15",
+  "method": "SQLite read-only source + backup API; copy blobs; restore to separate directory; open restored SQLiteStore from target baseline; compare table contents/counts, blob hashes, integrity/FK checks and original source unchanged."
+}

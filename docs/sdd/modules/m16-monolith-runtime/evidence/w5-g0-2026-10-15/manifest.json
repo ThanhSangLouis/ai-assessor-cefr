@@ -1,0 +1,154 @@
+{
+  "task": "W5-G0",
+  "jira": "SCRUM-62",
+  "date": "2026-10-15",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "owner": "Thắng",
+  "reviewers": {
+    "Sang": "PENDING",
+    "Nguyên": "PENDING"
+  },
+  "user_verdict": "PENDING",
+  "target_baseline": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "reference_baseline": "40907cc35b3d04408f9a8713f16d9be99f4cd6c7",
+  "plan_source": "5b477bdce97672940dd18e5b3ce8d9283b4d316c",
+  "branch": "feat/W5-product-parity",
+  "branch_head": "5b477bdce97672940dd18e5b3ce8d9283b4d316c",
+  "branch_matches_required_start": false,
+  "baseline_checkout": "/tmp/aicefr-w5-g0-baseline",
+  "branch_worktree": "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/worktrees/w5-product-parity",
+  "source_implementation_modified": false,
+  "checks": {
+    "pytest": {
+      "result": "PASS",
+      "passed": 322,
+      "deselected_smoke": 2,
+      "failed": 0,
+      "skipped": 0,
+      "command": "PYTHONPATH=src AICEFR_MODEL_DIR=<runtime>/models HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 OMP_NUM_THREADS=1 <venv>/bin/python -m pytest -q -m \"not smoke\" --cov=aicefr --cov-branch --cov-report=term-missing --cov-report=json:<local-evidence>/coverage.json"
+    },
+    "lint": {
+      "result": "PASS"
+    },
+    "format": {
+      "result": "FAIL",
+      "files_need_formatting": 28
+    },
+    "wheel": {
+      "result": "PASS",
+      "isolation": false
+    },
+    "local_boot": {
+      "result": "PASS",
+      "mode": "wheel target install, dependencies reused; GET /login HTTP 200"
+    },
+    "browser": {
+      "result": "PASS",
+      "viewport_checks": 11,
+      "desktop_viewport": "1280x800",
+      "mobile_viewport": "390x844",
+      "observed_http_statuses": [
+        200,
+        201,
+        303,
+        403,
+        404
+      ],
+      "expected_denial_statuses": [
+        403,
+        404
+      ],
+      "audio_mime_and_sha256_verified": true,
+      "response_count_after_withdrawal": 1,
+      "console_error_count": 0,
+      "failed_request_count": 0,
+      "external_request_count": 0,
+      "screenshots_sha256": {
+        "browser-qa-desktop-student-report.png": "6beb95e4e4a55ea87205a2460f2b1fc136be88f196ca3f3e6a3fab31bbabd687",
+        "browser-qa-desktop-teacher-review.png": "1102aab39e0b62ccfc8e172772e5398806952edc5dcff56515bc6b79ade5ab5c",
+        "browser-qa-mobile-student-upload.png": "2b0a8550b48dd1fbc60b15fc24bc6016adc6db10c70da738dc42f4910e021418",
+        "browser-qa-mobile-teacher-detail.png": "957fb973bc0f260132055ceb0e9d35103b8e99f44d573498ffb163c363a05203"
+      },
+      "generated_audio_sha256": "72ad0f4e1e0dc50a87b7ccf4e803e4b3f04a69c98b4ada33de3db59bdc643d1f",
+      "asr_vad_real_smoke": "NOT_RUN; QC REVIEW bypasses ASR/VAD model execution"
+    },
+    "backup_restore": {
+      "task": "W5-G0",
+      "target_baseline": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+      "reference_baseline": "40907cc35b3d04408f9a8713f16d9be99f4cd6c7",
+      "created_utc": "2026-10-15T03:55:31.013390+00:00",
+      "result": "PASS",
+      "checks": {
+        "source_unchanged": true,
+        "backup_database_matches": true,
+        "restore_database_matches": true,
+        "backup_blob_hashes_match": true,
+        "restore_blob_hashes_match": true,
+        "integrity_ok": true,
+        "foreign_keys_ok": true
+      },
+      "blob_count": 4,
+      "backup_db_sha256": "27d3a9aa710326972d805f247901eb4fe7db5b86cc45451ee7dc1287fe7021d3",
+      "schema_version": 4,
+      "table_count": 11,
+      "row_counts": {
+        "accounts": 3,
+        "audit": 15,
+        "blob_deletions": 0,
+        "consents": 1,
+        "diagnostic_reports": 4,
+        "responses": 4,
+        "review_candidates": 2,
+        "review_decisions": 0,
+        "runtime_settings": 0,
+        "sessions": 14,
+        "speaking_tasks": 2
+      },
+      "local_backup": "ai-assessor-cefr-runtime/backups/w5-g0-2026-10-15",
+      "local_restore": "ai-assessor-cefr-runtime/restore-checks/w5-g0-2026-10-15",
+      "method": "SQLite read-only source + backup API; copy blobs; restore to separate directory; open restored SQLiteStore from target baseline; compare table contents/counts, blob hashes, integrity/FK checks and original source unchanged."
+    },
+    "real_asr_vad_smoke": {
+      "result": "NOT_RUN",
+      "reason": "Outside minimum G0 browser smoke; browser fixture intentionally follows QC REVIEW."
+    }
+  },
+  "decisions_pending": [
+    "Nhánh triển khai local feat/W5-product-parity-baseline đã tạo đúng 3b2d2b7 theo đề xuất được người dùng giao lựa chọn; nhánh remote cũ được bảo toàn. Reviewer xác nhận tên nhánh và ownership.",
+    "Format baseline FAIL; ghi nhận lỗi có sẵn, không tự format source của baseline. Reviewer/chủ dự án quyết định xử lý.",
+    "Phân công file dưới đây là bản dự thảo từ kế hoạch; chưa phải xác nhận khóa file của Sang/Nguyên."
+  ],
+  "environment": {
+    "python": "Python 3.12.3",
+    "ruff": "ruff 0.16.10",
+    "pip": "pip 24.0 from /home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/lib/python3.12/site-packages/pip (python 3.12)",
+    "dependencies": "Reused existing .venv; versions saved in local installed-packages.txt; no network dependency installation."
+  },
+  "target-source_git_tree_sha256": "bc44a148eb3f8b2c36dae5ca3d4b609041f3d68fc0fb636f247c965a70946789",
+  "reference-source_git_tree_sha256": "8f17599aa2a6d9d6bb1387ceb4f5c2bc846f0bc9c0bd663ee8bc845fdbe64c08",
+  "artifacts_sha256": {
+    "backup-restore-summary.json": "1f5100214aceb797dfec6698e57bdc1eaabed2ff556e19c6fe023f8c4aa514e3",
+    "browser/browser-qa-desktop-student-report.png": "6beb95e4e4a55ea87205a2460f2b1fc136be88f196ca3f3e6a3fab31bbabd687",
+    "browser/browser-qa-desktop-teacher-review.png": "1102aab39e0b62ccfc8e172772e5398806952edc5dcff56515bc6b79ade5ab5c",
+    "browser/browser-qa-mobile-student-upload.png": "2b0a8550b48dd1fbc60b15fc24bc6016adc6db10c70da738dc42f4910e021418",
+    "browser/browser-qa-mobile-teacher-detail.png": "957fb973bc0f260132055ceb0e9d35103b8e99f44d573498ffb163c363a05203",
+    "browser-sandbox-attempt.log": "e5154b8b0aa50f6b7c347971cf4a41877cd37dd302ea49ccfc84109a18f27370",
+    "browser.log": "fc4ec0ffe34173ebe7a98bc1e62792418a7ef4a76f8a587ae899c9d1b6d9e482",
+    "forbidden-files.log": "30211a06b3e41b27a3848b68195bc4fb2178cb5d2ffecf86cb08d84a88b0246a",
+    "format.log": "097297c789eb34f6622c9562f4e0281f7c5729eb17bea9ea585506705f875e9d",
+    "installed-packages.txt": "0993c4752811c9d992495d756103e428f304b291307f217a9e0978d20024400f",
+    "lint.log": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+    "markdown-links.log": "6fd634958a5f90803a8c126a9599310c161ead711c0b6db6332550bad8c5f6fd",
+    "pytest.log": "eb0d2980bc8a427fb7e280b489aac022eb195db1d92b2dc2dc3bc7a22cbc69a5",
+    "reference-source.txt": "8f17599aa2a6d9d6bb1387ceb4f5c2bc846f0bc9c0bd663ee8bc845fdbe64c08",
+    "static-checks.json": "5b8f2b239ba0008149a6a8ab2b7670b75f2fff1a31cb8723cf928c4a1682eca0",
+    "target-source.txt": "bc44a148eb3f8b2c36dae5ca3d4b609041f3d68fc0fb636f247c965a70946789",
+    "wheel-boot.json": "dab0e4dbe209b590b07451b54384fbb87e5f8320fd3ef04ba6648992744fb9a3",
+    "wheel-boot.log": "194db5c3b9eb4e50f90d45b3e443d29a531cc4bebeffad2e29083ef8756d16d1",
+    "wheel-install.log": "9b2ad53b6879dbe40f00239e888311c19640b247ceaf3c0bbe9f771bd9aa7eea",
+    "wheel.log": "7fe41e0ec1e90d876af6315adfd6c341ac28b782cf1bc56ee34b25c393a556fa"
+  },
+  "implementation_branch": "feat/W5-product-parity-baseline",
+  "implementation_branch_head": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "implementation_branch_matches_target": true
+}

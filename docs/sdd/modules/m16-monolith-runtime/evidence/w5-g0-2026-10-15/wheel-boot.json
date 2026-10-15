@@ -1,0 +1,24 @@
+{
+  "result": "PASS",
+  "target_baseline": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+  "reference_baseline": "40907cc35b3d04408f9a8713f16d9be99f4cd6c7",
+  "command": [
+    "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/python",
+    "-u",
+    "-m",
+    "aicefr.local",
+    "serve",
+    "--data-dir",
+    "/tmp/aicefr-w5-g0-wheel-e5vrh6t_/data",
+    "--demo",
+    "--port",
+    "57219"
+  ],
+  "module_loaded_from": "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/w5-g0-2026-10-15/wheel-install/aicefr/__init__.py",
+  "login_status": 200,
+  "data": "fresh isolated fixture directory",
+  "limitations": [
+    "Wheel installed --no-deps into an isolated target; dependencies reused from existing Python environment.",
+    "Login boot only; real model pipeline not exercised."
+  ]
+}
