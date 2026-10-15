@@ -13,9 +13,9 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from time import monotonic, sleep
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 MIGRATION_DIR = Path(__file__).with_name("migrations")
-GROUPS = ("identity", "learning", "research", "billing", "jobs")
+GROUPS = ("identity", "learning", "research", "billing", "jobs", "privacy")
 
 
 @contextmanager
@@ -79,14 +79,49 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def create_pre_migration_backup(connection: sqlite3.Connection, data_dir: Path) -> Path:
+def _read_protected_key(path: Path) -> bytes:
+    import stat
+
+    info = path.lstat()
+    expected_uid = os.getuid() if hasattr(os, "getuid") else None
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or info.st_nlink != 1
+        or (expected_uid is not None and info.st_uid != expected_uid)
+        or info.st_mode & 0o077
+    ):
+        raise ValueError("protected key file is unsafe")
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        opened = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(opened.st_mode)
+            or opened.st_nlink != 1
+            or (expected_uid is not None and opened.st_uid != expected_uid)
+            or opened.st_ino != info.st_ino
+            or opened.st_dev != info.st_dev
+            or opened.st_mode & 0o077
+            or opened.st_size > 4096
+        ):
+            raise ValueError("protected key file is unsafe")
+        data = os.read(descriptor, 4097)
+        if len(data) != opened.st_size or len(data) > 4096:
+            raise ValueError("protected key file is unsafe")
+        return data
+    finally:
+        os.close(descriptor)
+
+
+def create_pre_migration_backup(
+    connection: sqlite3.Connection, data_dir: Path, *, schema_version: int = 4
+) -> Path:
     """Snapshot the v4 database and blob tree without overwriting an earlier backup."""
     backups = data_dir / "backups"
     if backups.is_symlink():
         raise ValueError("backup directory cannot be a symlink")
     backups.mkdir(mode=0o700, exist_ok=True)
     os.chmod(backups, 0o700)
-    target = backups / f"schema-v4-{time.time_ns()}"
+    target = backups / f"schema-v{schema_version}-{time.time_ns()}"
     target.mkdir(mode=0o700)
     try:
         database = target / "metadata.sqlite3"
@@ -103,9 +138,19 @@ def create_pre_migration_backup(connection: sqlite3.Connection, data_dir: Path) 
             shutil.copytree(source_blobs, target / "blobs", copy_function=shutil.copy2)
             for item in (target / "blobs").rglob("*"):
                 os.chmod(item, 0o700 if item.is_dir() else 0o600)
+        sensitive_files = []
+        for filename in ("billing-hmac.key", "google-flow-hmac.key"):
+            source_key = data_dir / filename
+            if source_key.exists() or source_key.is_symlink():
+                data = _read_protected_key(source_key)
+                key_target = target / filename
+                key_target.write_bytes(data)
+                os.chmod(key_target, 0o600)
+                sensitive_files.append(filename)
         files = sorted(p for p in target.rglob("*") if p.is_file())
         manifest = {
-            "schema_version": 4,
+            "schema_version": schema_version,
+            "sensitive_files": sensitive_files,
             "files": {str(p.relative_to(target)): _sha256(p) for p in files},
         }
         manifest_path = target / "manifest.json"
@@ -119,8 +164,18 @@ def create_pre_migration_backup(connection: sqlite3.Connection, data_dir: Path) 
 
 def restore_backup(source: Path | str, destination: Path | str) -> Path:
     """Verify a backup manifest and restore its database/blob files to a new path."""
-    source_path = Path(source).resolve()
-    destination_path = Path(destination).resolve()
+    source_input = Path(source).expanduser().absolute()
+    destination_input = Path(destination).expanduser().absolute()
+    for candidate in (
+        source_input,
+        *source_input.parents,
+        destination_input,
+        *destination_input.parents,
+    ):
+        if candidate.is_symlink():
+            raise ValueError("restore paths cannot contain symlinks")
+    source_path = source_input.resolve(strict=True)
+    destination_path = destination_input.resolve(strict=False)
     if (
         destination_path == source_path
         or destination_path.is_relative_to(source_path)
@@ -134,7 +189,8 @@ def restore_backup(source: Path | str, destination: Path | str) -> Path:
         raise ValueError("backup manifest is missing or unsafe")
     manifest = json.loads(manifest_path.read_text())
     files = manifest.get("files")
-    if manifest.get("schema_version") != 4 or not isinstance(files, dict):
+    backup_schema = manifest.get("schema_version")
+    if backup_schema not in {4, 9, 10} or not isinstance(files, dict):
         raise ValueError("backup manifest is invalid")
     if "metadata.sqlite3" not in files:
         raise ValueError("backup manifest does not include database")
@@ -160,6 +216,18 @@ def restore_backup(source: Path | str, destination: Path | str) -> Path:
     actual.discard(Path("manifest.json"))
     if actual != listed:
         raise ValueError("backup manifest file list is incomplete")
+    database = sqlite3.connect(
+        f"file:{(source_path / 'metadata.sqlite3').as_posix()}?mode=ro", uri=True
+    )
+    try:
+        if database.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise ValueError("backup database integrity check failed")
+        if database.execute("PRAGMA user_version").fetchone()[0] != backup_schema:
+            raise ValueError("backup schema version mismatch")
+        if database.execute("PRAGMA foreign_key_check").fetchone() is not None:
+            raise ValueError("backup foreign-key check failed")
+    finally:
+        database.close()
     destination_path.mkdir(parents=True, exist_ok=True, mode=0o700)
     shutil.copy2(source_path / "metadata.sqlite3", destination_path / "metadata.sqlite3")
     if (source_path / "blobs").is_dir():
@@ -168,6 +236,13 @@ def restore_backup(source: Path | str, destination: Path | str) -> Path:
             os.chmod(item, 0o700 if item.is_dir() else 0o600)
         os.chmod(destination_path / "blobs", 0o700)
     os.chmod(destination_path / "metadata.sqlite3", 0o600)
+    for filename in manifest.get("sensitive_files", []):
+        if filename not in {"billing-hmac.key", "google-flow-hmac.key"}:
+            raise ValueError("backup sensitive file manifest is invalid")
+        data = _read_protected_key(source_path / filename)
+        target_key = destination_path / filename
+        target_key.write_bytes(data)
+        os.chmod(target_key, 0o600)
     os.chmod(destination_path, 0o700)
     return destination_path
 
@@ -229,6 +304,7 @@ def _verify_group(connection: sqlite3.Connection, group: str) -> None:
             "entitlements",
         },
         "jobs": {"durable_jobs", "cleanup_intents"},
+        "privacy": {"privacy_erasure_links"},
     }[group]
     actual = {
         row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -321,6 +397,15 @@ def _expected_objects() -> dict[str, tuple[str, str]]:
             "CREATE TABLE accounts(actor_id TEXT PRIMARY KEY);"
             "CREATE TABLE sessions(token_digest TEXT PRIMARY KEY);"
             "CREATE TABLE responses(response_id TEXT PRIMARY KEY);"
+            "CREATE TABLE audit (\n"
+            "                event_id TEXT PRIMARY KEY, actor_id TEXT NOT NULL, "
+            "action TEXT NOT NULL,\n"
+            "                object_id TEXT NOT NULL, recorded_at TEXT NOT NULL, reason TEXT\n"
+            "            );"
+            "CREATE TRIGGER audit_no_update BEFORE UPDATE ON audit "
+            "BEGIN SELECT RAISE(ABORT, 'audit is append-only'); END;"
+            "CREATE TRIGGER audit_no_delete BEFORE DELETE ON audit "
+            "BEGIN SELECT RAISE(ABORT, 'audit is append-only'); END;"
             "CREATE TABLE schema_migrations(version INTEGER PRIMARY KEY, "
             "name TEXT NOT NULL UNIQUE, checksum TEXT NOT NULL);"
         )
@@ -357,18 +442,23 @@ def migrate(connection: sqlite3.Connection, data_dir: Path, *, lock_held: bool =
         if version == SCHEMA_VERSION:
             verify_current_schema(connection)
             return
-        if version != 4:
+        if version not in {4, 9}:
             raise RuntimeError("unsupported partial SQLite schema")
-        _verify_v4_preflight(connection)
-        create_pre_migration_backup(connection, data_dir)
+        if version == 4:
+            _verify_v4_preflight(connection)
+        create_pre_migration_backup(connection, data_dir, schema_version=version)
         connection.execute("BEGIN IMMEDIATE")
         try:
-            connection.execute(
-                "CREATE TABLE schema_migrations("
-                "version INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, "
-                "checksum TEXT NOT NULL)"
-            )
-            for migration_version, group in enumerate(GROUPS, start=5):
+            if version == 4:
+                connection.execute(
+                    "CREATE TABLE schema_migrations("
+                    "version INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, "
+                    "checksum TEXT NOT NULL)"
+                )
+                pending = list(enumerate(GROUPS, start=5))
+            else:
+                pending = [(10, "privacy")]
+            for migration_version, group in pending:
                 path = MIGRATION_DIR / f"{migration_version:03d}_{group}.sql"
                 sql = path.read_text()
                 _run_sql(connection, sql)

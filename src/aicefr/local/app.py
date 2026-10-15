@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from aicefr.api.billing import BillingApi
+from aicefr.api.data_operations import DataOperationsApi
 from aicefr.api.identity import IdentityApi
 from aicefr.api.review import ReviewApi
 from aicefr.api.student import (
@@ -51,6 +53,7 @@ class LocalRuntime:
     providers: RepositoryProviders | None = None
     accounts: Any | None = None
     google: Any | None = None
+    billing: Any | None = None
 
     def close(self) -> None:
         if self.worker is not None:
@@ -153,6 +156,27 @@ def create_runtime(
             identity_repository=identity_repository,
         )
         accounts = AccountService(auth, identity_repository)
+        from aicefr.billing import BillingService
+        from aicefr.billing.gateways import GatewayRegistry
+        from aicefr.billing.licenses import LicenseService
+        from aicefr.billing.secrets import KeyRing
+        from aicefr.storage.billing import BillingRepository
+
+        billing_config = dict(config.get("billing", {}))
+        keyring = KeyRing(store.data_dir)
+        gateways = GatewayRegistry(
+            billing_config.get("gateways", {}), store.data_dir, keyring=keyring
+        )
+        billing_repository = BillingRepository(store)
+        licenses = LicenseService(
+            auth,
+            store,
+            keyring,
+            organization=billing_config.get("organization_id", "local-demo"),
+        )
+        billing = BillingService(auth, billing_repository, gateways, licenses, billing_config)
+        accounts.student_seat_check = billing.can_add_students
+        billing_api = BillingApi(auth, billing, gateways, licenses)
         from aicefr.auth.google import GoogleConfig, GoogleIdentityService
 
         google_config = dict(config.get("google", {}))
@@ -283,6 +307,7 @@ def create_runtime(
         control = RuntimeControl(portal, pipeline, config)
         control._asr_injected = asr_engine is not None
         data = DataControl(portal, blobs)
+        data_api = DataOperationsApi(auth, portal, data)
         metrics = Metrics()
         worker = None
         starter = pipeline
@@ -321,7 +346,15 @@ def create_runtime(
             demo=bool(config.get("demo", False)),
             consent_version=str(config.get("consent_version", "local-v1")),
             max_request_bytes=qc.max_input_bytes + 1024 * 1024,
-            portal=PortalRouter(portal, control, data, metrics, identity_api),
+            portal=PortalRouter(
+                portal,
+                control,
+                data,
+                metrics,
+                identity_api,
+                billing_api=billing_api,
+                data_api=data_api,
+            ),
             metrics=metrics,
         )
         return LocalRuntime(
@@ -337,6 +370,7 @@ def create_runtime(
             providers,
             accounts,
             google,
+            billing,
         )
     except Exception:
         if worker is not None:

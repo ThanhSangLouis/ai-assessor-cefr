@@ -96,7 +96,7 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
     legacy.close()
 
     store = SQLiteStore(data_dir)
-    assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 9
+    assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
     assert store.connection.execute("SELECT actor_id,password_hash FROM accounts").fetchall() == [
         ("student", "hash")
     ]
@@ -128,12 +128,12 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
         )
     assert (restored / "blobs" / ("b" * 32)).read_bytes() == b"fixture audio"
     migrated_again = SQLiteStore(data_dir)
-    assert migrated_again.connection.execute("PRAGMA user_version").fetchone()[0] == 9
+    assert migrated_again.connection.execute("PRAGMA user_version").fetchone()[0] == 10
     assert migrated_again.connection.execute("SELECT COUNT(*) FROM accounts").fetchone() == (1,)
     assert migrated_again.connection.execute("SELECT COUNT(*) FROM sessions").fetchone() == (1,)
     assert migrated_again.connection.execute(
         "SELECT COUNT(*) FROM schema_migrations"
-    ).fetchone() == (5,)
+    ).fetchone() == (6,)
     migrated_again.close()
 
 
@@ -212,7 +212,7 @@ def test_w5_concurrent_fresh_initializers_serialize_migrations(tmp_path):
         return version
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(lambda _: initialize(), range(2))) == [9, 9]
+        assert list(pool.map(lambda _: initialize(), range(2))) == [10, 10]
 
 
 def test_w5_restore_rejects_incomplete_or_escaping_manifests(tmp_path):
@@ -292,7 +292,7 @@ def test_w5_providers_offer_typed_bounded_save_get_contracts(tmp_path):
         "INSERT INTO consent_events VALUES('consent-1','student','v1','accepted',1,?,'web')",
         (timestamp,),
     )
-    with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+    with pytest.raises(sqlite3.IntegrityError, match="authorized privacy erasure"):
         store.connection.execute("DELETE FROM consent_events WHERE event_id='consent-1'")
 
     path = providers.learning.save_path(LearningPathRecord("path-1", "A2 to B1"))

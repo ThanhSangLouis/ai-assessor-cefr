@@ -593,7 +593,8 @@ def test_runtime_key_is_private_and_unsafe_key_file_disables_service(tmp_path):
 
 def test_runtime_key_refuses_symlink(tmp_path):
     data_dir = tmp_path / "symlink-data"
-    data_dir.mkdir()
+    initial = SQLiteStore(data_dir)
+    initial.close()
     target = tmp_path / "unprotected-key"
     target.write_bytes(b"k" * 32)
     (data_dir / "google-flow-hmac.key").symlink_to(target)

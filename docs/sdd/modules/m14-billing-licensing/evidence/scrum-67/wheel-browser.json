@@ -1,0 +1,25 @@
+{
+  "base_url": "http://127.0.0.1:33695",
+  "journey": [
+    "admin quoted, ordered, signed-settled, replayed and fetched receipt",
+    "admin exercised retention preview, backup, fresh restore and erasure preview",
+    "student and cross-origin request were denied admin mutations"
+  ],
+  "external_requests_blocked": 0,
+  "login_statuses": {
+    "admin": [
+      200,
+      303
+    ],
+    "student": [
+      200,
+      303
+    ]
+  },
+  "page_errors": [],
+  "console_error_count": 0,
+  "clean_wheel": true,
+  "wheel_sha256": "20208b40b5ad0de57a0c3a2a5d7b7303129cca3f0ba9eb987c43fe4419a5b24f",
+  "source_bytes_match_wheel": true,
+  "schema_version": 10
+}

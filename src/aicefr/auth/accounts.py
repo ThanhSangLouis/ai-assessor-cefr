@@ -19,6 +19,9 @@ class AccountService:
     def __init__(self, auth: AuthService, repository: Any) -> None:
         self.auth = auth
         self.repository = repository
+        # Optional organization seat policy injected by the local composition root.
+        # The repository invokes it inside the same transaction as account inserts.
+        self.student_seat_check = None
         if self.auth.identity_repository is None:
             self.auth.identity_repository = repository
 
@@ -120,7 +123,11 @@ class AccountService:
             for entry, password in zip(accounts, passwords, strict=True)
         ]
         created = self.repository.create_accounts(
-            actor, values, self._now(), current_digest=_digest(token)
+            actor,
+            values,
+            self._now(),
+            current_digest=_digest(token),
+            student_seat_check=self.student_seat_check,
         )
         return [
             CreatedAccount(row.actor, password)
@@ -140,6 +147,7 @@ class AccountService:
             self.auth._hasher.hash(password),
             self._now(),
             current_digest=_digest(token),
+            student_seat_check=self.student_seat_check,
         )
 
     def change_legacy_account(

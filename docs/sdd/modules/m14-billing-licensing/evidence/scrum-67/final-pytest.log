@@ -1,0 +1,83 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/worktrees/scrum-67
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1, cov-7.1.0
+collected 602 items / 2 deselected / 600 selected
+
+tests/api/test_billing_api.py ..                                         [  0%]
+tests/api/test_billing_webhook_contract.py ......                        [  1%]
+tests/api/test_data_operations_api.py .....................              [  4%]
+tests/api/test_google_identity_api.py ......                             [  5%]
+tests/api/test_identity_api.py ........                                  [  7%]
+tests/api/test_local_sessions.py .                                       [  7%]
+tests/api/test_student.py ..............                                 [  9%]
+tests/asr/test_hallucination.py ..............                           [ 12%]
+tests/asr/test_identity_validation.py ...........                        [ 13%]
+tests/asr/test_local.py .......                                          [ 15%]
+tests/asr/test_service.py .....................                          [ 18%]
+tests/audio/test_decoder.py ............                                 [ 20%]
+tests/audio/test_pipeline.py ....                                        [ 21%]
+tests/auth/test_auth.py ..                                               [ 21%]
+tests/auth/test_consent.py .                                             [ 21%]
+tests/auth/test_google_identity.py ................................      [ 27%]
+tests/auth/test_google_transport.py ....                                 [ 27%]
+tests/auth/test_logout.py ..                                             [ 28%]
+tests/auth/test_privacy.py .                                             [ 28%]
+tests/auth/test_w5_account_security.py ......                            [ 29%]
+tests/auth/test_w5_accounts.py ....                                      [ 29%]
+tests/auth/test_w5_consent.py ...                                        [ 30%]
+tests/billing/test_billing_repository.py ............................... [ 35%]
+......                                                                   [ 36%]
+tests/billing/test_billing_service.py ............................       [ 41%]
+tests/billing/test_gateways.py ...................                       [ 44%]
+tests/billing/test_licenses.py ............                              [ 46%]
+tests/billing/test_payment_tampering.py ..                               [ 46%]
+tests/billing/test_plans.py ....                                         [ 47%]
+tests/billing/test_quotes.py ...............                             [ 49%]
+tests/features/test_extractor.py ................                        [ 52%]
+tests/features/test_local.py ........                                    [ 53%]
+tests/features/test_text_pauses.py ...........                           [ 55%]
+tests/local/test_cli.py .                                                [ 55%]
+tests/local/test_consent_submission.py .                                 [ 56%]
+tests/local/test_consent_version_guard.py ...                            [ 56%]
+tests/local/test_durable_worker.py .....                                 [ 57%]
+tests/local/test_factory_integration.py ...                              [ 57%]
+tests/local/test_foundation_runtime.py ....                              [ 58%]
+tests/local/test_sessions.py ..                                          [ 58%]
+tests/local/test_templates_mobile.py .                                   [ 59%]
+tests/pipeline/test_coordinator.py ......................                [ 62%]
+tests/portal/test_portal.py ............................................ [ 70%]
+..............                                                           [ 72%]
+tests/portal/test_recordings.py ....                                     [ 73%]
+tests/portal/test_w5_data_recovery.py ......                             [ 74%]
+tests/portal/test_windows_worker.py .........                            [ 75%]
+tests/qc/test_measurements.py ..                                         [ 75%]
+tests/qc/test_policy.py ...                                              [ 76%]
+tests/report/test_report_service.py .....                                [ 77%]
+tests/report/test_sqlite_report.py ...                                   [ 77%]
+tests/review/test_review_service.py .......                              [ 78%]
+tests/scoring/test_artifact.py .............                             [ 81%]
+tests/scoring/test_integration_features.py ...                           [ 81%]
+tests/scoring/test_ridge.py ................                             [ 84%]
+tests/scoring/test_scorer.py .........................                   [ 88%]
+tests/scoring/test_w3_validation.py ............                         [ 90%]
+tests/storage/test_authorization.py .                                    [ 90%]
+tests/storage/test_identity_compatibility.py .                           [ 90%]
+tests/storage/test_identity_repository.py ..                             [ 91%]
+tests/storage/test_jobs.py ........                                      [ 92%]
+tests/storage/test_privacy.py .                                          [ 92%]
+tests/storage/test_privacy_migration.py ...                              [ 93%]
+tests/storage/test_report_migration.py ..                                [ 93%]
+tests/storage/test_sqlite_blob_store.py ...........                      [ 95%]
+tests/storage/test_sqlite_memory_migration.py ...                        [ 95%]
+tests/storage/test_w5_storage_foundation.py .................            [ 98%]
+tests/test_contracts.py .........                                        [100%]
+
+- generated xml file: /home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/scrum-67-2026-10-15/final-junit.xml -
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.12.3-final-0 ________________
+
+Coverage JSON written to file /home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/scrum-67-2026-10-15/final-coverage.json
+================ 600 passed, 2 deselected in 131.99s (0:02:11) =================
