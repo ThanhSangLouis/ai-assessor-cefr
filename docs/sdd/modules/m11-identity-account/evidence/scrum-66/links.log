@@ -1,0 +1,20 @@
+Đã kiểm tra 254 file Markdown.
+17 link trỏ ra ngoài repo (bỏ qua):
+  docs/evidence/local-setup-2026-10-08.md: ../../../ai-assessor-cefr-runtime/README.md
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/pyproject.toml
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/api/main.py
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/storage/repository.py
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/contracts.py
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/pipeline.py
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/scorer.py
+  docs/sources/code-survey.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/report/comments.py
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/scorer.py
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/pipeline.py
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_resp_v1.json
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_resp_v2.json
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/scoring/models/ridge_v3.json
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/tools/train_scorer.py
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/src/aicefr/contracts.py
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/docs/plan/QUYET_DINH.md
+  docs/sources/scoring-audit.md: ../../../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08/docs/plan/QUYET_DINH.md
+Không có link hỏng trong repo.

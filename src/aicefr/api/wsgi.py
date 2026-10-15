@@ -34,6 +34,7 @@ from aicefr.api.templates import (
     render_student_status,
     render_upload_form,
 )
+from aicefr.auth.errors import LockoutError
 from aicefr.auth.service import AuthorizationError, AuthService, ConsentService, ResourceNotFound
 from aicefr.contracts import ActorRole, ConsentState
 from aicefr.limits import RateLimiter
@@ -48,6 +49,18 @@ from aicefr.review.service import (
 from aicefr.storage.service import ResponseService
 
 StartResponse = Callable[[str, list[tuple[str, str]]], Any]
+
+
+def _coarse_device_category(user_agent: str) -> str:
+    """Reduce browser metadata to a small category; never retain the raw header."""
+    value = user_agent.lower()
+    if "ipad" in value or "tablet" in value or ("android" in value and "mobile" not in value):
+        return "tablet"
+    if "iphone" in value or "ipod" in value or ("android" in value and "mobile" in value):
+        return "mobile"
+    if any(marker in value for marker in ("windows", "macintosh", "mac os x", "x11", "linux")):
+        return "desktop"
+    return "unknown"
 
 
 class HttpInputError(ValueError):
@@ -126,8 +139,19 @@ class StudentTeacherApp:
             )
         except ResourceNotFound:
             response = self._controlled_error(environ, HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
-        except AuthorizationError:
-            response = self._controlled_error(environ, HTTPStatus.FORBIDDEN, "ACCESS_DENIED")
+        except LockoutError:
+            response = self._controlled_error(environ, HTTPStatus.TOO_MANY_REQUESTS, "LOGIN_LOCKED")
+        except AuthorizationError as error:
+            if error.code == "password_change_required":
+                response = self._controlled_error(
+                    environ, HTTPStatus.FORBIDDEN, "PASSWORD_CHANGE_REQUIRED"
+                )
+            elif error.code in {"access denied", "access_denied"}:
+                response = self._controlled_error(environ, HTTPStatus.FORBIDDEN, "ACCESS_DENIED")
+            else:
+                response = self._controlled_error(
+                    environ, HTTPStatus.UNAUTHORIZED, "SESSION_REQUIRED"
+                )
         except ReviewNotFound:
             response = self._controlled_error(environ, HTTPStatus.NOT_FOUND, "REVIEW_UNAVAILABLE")
         except (StaleReview, InvalidReviewTransition):
@@ -162,6 +186,7 @@ class StudentTeacherApp:
             return cls._json(status, {"error": code})
         messages = {
             "SESSION_REQUIRED": "Vui lòng đăng nhập để tiếp tục.",
+            "PASSWORD_CHANGE_REQUIRED": "Hãy đổi mật khẩu tạm thời trước khi tiếp tục.",
             "ACCESS_DENIED": "Tài khoản không được phép thực hiện thao tác này.",
             "CSRF_ORIGIN_REQUIRED": "Yêu cầu không hợp lệ. Hãy tải lại trang và thử lại.",
             "RESOURCE_UNAVAILABLE": "Không tìm thấy nội dung hoặc bạn không có quyền truy cập.",
@@ -226,7 +251,10 @@ class StudentTeacherApp:
                 b"",
                 (
                     ("Location", "/login"),
-                    ("Set-Cookie", "aicefr_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0"),
+                    (
+                        "Set-Cookie",
+                        self._clear_session_cookie(secure=self._request_secure(environ)),
+                    ),
                 ),
             )
         if path == "/student/consent" and method == "GET":
@@ -382,15 +410,29 @@ class StudentTeacherApp:
         ):
             raise HttpInputError(HTTPStatus.BAD_REQUEST, "INVALID_REQUEST")
         try:
-            token = self._auth.login(str(values["actor_id"]), str(values["password"]))
-            actor = self._auth.resolve(token)
+            device = _coarse_device_category(str(environ.get("HTTP_USER_AGENT", "")))
+            token = self._auth.login(
+                str(values["actor_id"]), str(values["password"]), device=device
+            )
+            actor = self._auth.resolve(token, allow_temporary=True)
+            temporary = bool(
+                self._auth.identity_repository is not None
+                and self._auth.identity_repository.has_temporary_password(actor.actor_id)
+            )
+        except LockoutError:
+            return self._html(
+                HTTPStatus.TOO_MANY_REQUESTS,
+                render_login("Tạm khóa đăng nhập. Hãy đợi rồi thử lại.", demo=self._demo),
+            )
         except AuthorizationError:
             return self._html(
                 HTTPStatus.UNAUTHORIZED,
                 render_login("Tài khoản hoặc mật khẩu không hợp lệ.", demo=self._demo),
             )
         landing = (
-            "/teacher/reviews"
+            "/password-change"
+            if temporary
+            else "/teacher/reviews"
             if actor.role is ActorRole.TEACHER
             else "/student/consent"
             if actor.role is ActorRole.STUDENT
@@ -402,7 +444,10 @@ class StudentTeacherApp:
             b"",
             (
                 ("Location", landing),
-                ("Set-Cookie", f"aicefr_session={token}; HttpOnly; SameSite=Lax; Path=/"),
+                (
+                    "Set-Cookie",
+                    self._session_cookie(token, secure=self._request_secure(environ)),
+                ),
             ),
         )
 
@@ -723,10 +768,12 @@ class StudentTeacherApp:
         authorization = str(environ.get("HTTP_AUTHORIZATION", ""))
         if authorization.startswith("Bearer ") and authorization[7:]:
             return authorization[7:]
+        secure = self._request_secure(environ)
+        cookie_name = "__Host-aicefr_session" if secure else "aicefr_session"
         cookies = str(environ.get("HTTP_COOKIE", ""))
         for value in cookies.split(";"):
             name, separator, token = value.strip().partition("=")
-            if name == "aicefr_session" and separator and token:
+            if name == cookie_name and separator and token:
                 if unsafe:
                     if self._auth is not None and self._consents is not None:
                         self._require_origin(environ)
@@ -738,6 +785,22 @@ class StudentTeacherApp:
                             raise HttpInputError(HTTPStatus.FORBIDDEN, "CSRF_ORIGIN_REQUIRED")
                 return token
         raise HttpInputError(HTTPStatus.UNAUTHORIZED, "SESSION_REQUIRED")
+
+    @staticmethod
+    def _request_secure(environ: dict[str, Any]) -> bool:
+        return str(environ.get("wsgi.url_scheme", "http")).lower() == "https"
+
+    @staticmethod
+    def _session_cookie(token: str, *, secure: bool) -> str:
+        name = "__Host-aicefr_session" if secure else "aicefr_session"
+        suffix = "; Secure" if secure else ""
+        return f"{name}={token}; HttpOnly; SameSite=Lax; Path=/{suffix}"
+
+    @staticmethod
+    def _clear_session_cookie(*, secure: bool) -> str:
+        name = "__Host-aicefr_session" if secure else "aicefr_session"
+        suffix = "; Secure" if secure else ""
+        return f"{name}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0{suffix}"
 
     @staticmethod
     def _student_path(path: str, prefix: str) -> tuple[str, str]:

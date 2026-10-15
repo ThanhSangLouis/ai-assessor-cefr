@@ -95,8 +95,9 @@ class DataControl:
             "responses": [
                 {"response_id": row[0], "revision": row[1], "status": row[2]} for row in rows
             ],
-            "note": "Xóa bài nộp, audio, báo cáo, session, consent và tài khoản fixture. "
-            "Audit chứa ID giả danh được giữ; backup đã tạo không bị sửa.",
+            "note": "Xóa dữ liệu cá nhân, thông tin đăng nhập, hồ sơ, liên kết và bài nộp. "
+            "Lịch sử consent và audit giả danh được giữ; tài khoản bị vô hiệu hóa nếu "
+            "cần giữ tham chiếu lịch sử. Backup đã tạo không bị sửa.",
         }
 
     def erase(self, token: str, actor_id: str, confirm_id: str, fingerprint: str) -> dict:
@@ -111,7 +112,56 @@ class DataControl:
                 self._delete(self.portal.store.get_response(item["response_id"]))
             connection.execute("DELETE FROM sessions WHERE actor_id=?", (actor_id,))
             connection.execute("DELETE FROM consents WHERE participant_id=?", (actor_id,))
-            connection.execute("DELETE FROM accounts WHERE actor_id=?", (actor_id,))
+            # New M11 side tables retain explicit ownership references. Remove mutable
+            # identity and activity rows before deleting the synthetic account. Consent
+            # events are append-only; when present, retain only a disabled credential
+            # stub so their FK and immutable evidence remain valid.
+            connection.execute("DELETE FROM account_identities WHERE account_id=?", (actor_id,))
+            connection.execute("DELETE FROM account_profiles WHERE account_id=?", (actor_id,))
+            connection.execute("DELETE FROM temporary_passwords WHERE account_id=?", (actor_id,))
+            connection.execute("DELETE FROM activity_events WHERE account_id=?", (actor_id,))
+            now = datetime.now(UTC).isoformat()
+            connection.execute(
+                "UPDATE study_enrollments SET withdrawn_at=COALESCE(withdrawn_at,?) "
+                "WHERE participant_id=?",
+                (now, actor_id),
+            )
+            # Leave a disabled, credential-scrubbed actor row only when retained
+            # append-only or deidentified research rows still have a foreign key to it.
+            has_references = False
+            for table_row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+            ).fetchall():
+                table = str(table_row[0])
+                if table == "accounts":
+                    continue
+                quoted_table = '"' + table.replace('"', '""') + '"'
+                foreign_keys = connection.execute(
+                    f"PRAGMA foreign_key_list({quoted_table})"
+                ).fetchall()
+                for foreign_key in foreign_keys:
+                    if foreign_key[2] != "accounts" or foreign_key[4] != "actor_id":
+                        continue
+                    # A table may refer to accounts(actor_id) through more than one
+                    # column; inspect each matching constraint before deleting the stub.
+                    column = foreign_key[3]
+                    column_name = column.replace('"', '""')
+                    exists = connection.execute(
+                        f'SELECT 1 FROM {quoted_table} WHERE "{column_name}"=? LIMIT 1',
+                        (actor_id,),
+                    ).fetchone()
+                    if exists:
+                        has_references = True
+                        break
+                if has_references:
+                    break
+            if has_references:
+                connection.execute(
+                    "UPDATE accounts SET disabled=1,password_hash='' WHERE actor_id=?",
+                    (actor_id,),
+                )
+            else:
+                connection.execute("DELETE FROM accounts WHERE actor_id=?", (actor_id,))
             self.portal.audit(
                 actor, "participant_erased", actor_id, reason=f"responses={preview['row_count']}"
             )

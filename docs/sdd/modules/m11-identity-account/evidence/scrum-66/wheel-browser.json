@@ -1,0 +1,15 @@
+{
+  "base_url": "http://127.0.0.1:47979",
+  "journey": [
+    "existing admin signed in through /login",
+    "admin created one temporary-password account",
+    "temporary account was gated and redirected to password guidance",
+    "password rotated through same-origin API and access resumed",
+    "cross-origin cookie mutation was denied"
+  ],
+  "external_requests_blocked": 0,
+  "core_without_google": "PASS core without optional cryptography",
+  "optional_cryptography_version": "50.0.2",
+  "access_log_redacted": true,
+  "clean_wheel": true
+}
