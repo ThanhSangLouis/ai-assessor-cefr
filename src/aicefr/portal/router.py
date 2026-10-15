@@ -57,9 +57,9 @@ class PortalRouter:
         raw_path = environ.get("PATH_INFO", "/")
         api = raw_path.startswith("/api/")
         path = raw_path[4:] if api else raw_path
-        if path in {"/health", "/healthz"} and method == "GET":
+        if path in {"/health", "/healthz", "/live"} and method == "GET":
             return app._json(HTTPStatus.OK, {"alive": True})
-        if path == "/readyz" and method == "GET":
+        if path in {"/ready", "/readyz"} and method == "GET":
             result = self.control.readiness()
             return app._json(
                 HTTPStatus.OK if result["ready"] else HTTPStatus.SERVICE_UNAVAILABLE, result

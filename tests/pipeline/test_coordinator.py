@@ -1,11 +1,13 @@
 import io
 import sqlite3
+import threading
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 import soundfile as sf
 
+import aicefr.pipeline.coordinator as coordinator_module
 from aicefr.audio.config import AudioFormat, QCConfig
 from aicefr.auth.service import AccountRecord, ConsentService
 from aicefr.contracts import (
@@ -41,6 +43,7 @@ from aicefr.report.sqlite import SQLiteReportRepository
 from aicefr.review.service import ReviewActionRequest, ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.storage.blob import BlobStore
+from aicefr.storage.jobs import SQLiteJobRepository
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import ConcurrentResponseUpdate, SQLiteStore
 
@@ -73,9 +76,7 @@ class _Asr:
             decode_config_version="fixture-decode-v1",
             audio_sha256=audio.audio_sha256,
             asr_model="small",
-            reasons=(ReasonCode.ASR_FAILED,)
-            if self.status is AsrStatus.ASR_FAILED
-            else (),
+            reasons=(ReasonCode.ASR_FAILED,) if self.status is AsrStatus.ASR_FAILED else (),
             test_only=self.test_only,
         )
 
@@ -149,12 +150,8 @@ class _Stack:
         self.responses = ResponseService(self.store, self.blobs, consent)
         self.review_repository = SQLiteReviewRepository(self.store)
         self.reports = SQLiteReportRepository(self.store)
-        self.report_service = ReportService(
-            self.reports, decision_verifier=self.review_repository
-        )
-        self.reviews = ReviewService(
-            self.review_repository, report_sink=self.report_service
-        )
+        self.report_service = ReportService(self.reports, decision_verifier=self.review_repository)
+        self.reviews = ReviewService(self.review_repository, report_sink=self.report_service)
         self.asr = asr or _Asr()
         self.pipeline = PipelineCoordinator(
             responses=self.responses,
@@ -220,9 +217,7 @@ def test_sqlite_final_write_failure_rolls_back_report_status_and_candidate(
 ):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.store.connection.execute(f"""
@@ -243,12 +238,10 @@ def test_sqlite_final_write_failure_rolls_back_report_status_and_candidate(
     assert "private database detail" not in caplog.text
 
 
-def test_failure_recovery_reloads_running_revision_after_stale_cas(tmp_path, monkeypatch):
+def test_failure_recovery_does_not_mutate_newer_running_revision(tmp_path, monkeypatch):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.store.connection.execute("""
@@ -277,10 +270,106 @@ def test_failure_recovery_reloads_running_revision_after_stale_cas(tmp_path, mon
     stack.pipeline.enqueue(record)
 
     current = stack.store.get_response(record.response_id)
-    assert current.status is ResponseStatus.FAILED
-    assert current.status_reason is ReasonCode.PIPELINE_ENQUEUE_FAILED
+    assert current.status is ResponseStatus.RUNNING
+    assert current.status_reason is None
     assert stack.reports.get(record.response_id) is None
     assert stack.review_repository.get(record.response_id) is None
+    actions = [event.action for event in stack.store.list_audit()]
+    assert actions.count("pipeline_started") == 1
+    assert "pipeline_failed" not in actions
+
+
+@pytest.mark.parametrize("stale_worker_raises", [False, True])
+def test_expired_pipeline_cannot_duplicate_report_or_terminal_audit(
+    tmp_path, monkeypatch, stale_worker_raises
+):
+    stack = _Stack(tmp_path)
+
+    class Clock:
+        now = 100.0
+
+        def __call__(self):
+            return self.now
+
+    clock = Clock()
+    jobs = SQLiteJobRepository(stack.store, clock=clock)
+    record = stack.submit()
+    jobs.enqueue(record.response_id)
+    old_job = jobs.claim("old-worker", lease_seconds=5)
+    assert old_job is not None
+
+    entered_pipeline = threading.Event()
+    release_old = threading.Event()
+    real_process = coordinator_module.process_audio
+
+    def pause_old_worker(**kwargs):
+        if threading.current_thread().name == "stale-worker":
+            entered_pipeline.set()
+            assert release_old.wait(5)
+            if stale_worker_raises:
+                raise RuntimeError("synthetic late pipeline failure")
+        return real_process(**kwargs)
+
+    monkeypatch.setattr(coordinator_module, "process_audio", pause_old_worker)
+
+    def run_stale_worker():
+        old_store = SQLiteStore(stack.data_dir)
+        old_review_repository = SQLiteReviewRepository(old_store)
+        old_report_repository = SQLiteReportRepository(old_store)
+        old_report_service = ReportService(
+            old_report_repository, decision_verifier=old_review_repository
+        )
+        old_pipeline = PipelineCoordinator(
+            responses=ResponseService(old_store, stack.blobs, ConsentService(old_store)),
+            reports=old_report_service,
+            reviews=ReviewService(old_review_repository, report_sink=old_report_service),
+            qc_config=stack.pipeline._qc_config,
+            asr=stack.asr,
+            extractor=stack.pipeline._extractor,
+            scorer=stack.pipeline._scorer,
+        )
+        old_jobs = SQLiteJobRepository(old_store, clock=clock)
+        old_pipeline.set_commit_guard(
+            lambda response_id, response_revision: old_jobs.assert_owned(
+                old_job.job_id,
+                "old-worker",
+                old_job.revision,
+                response_id,
+                response_revision,
+            )
+        )
+        old_pipeline.enqueue(record)
+        old_store.close()
+
+    stale_worker = threading.Thread(target=run_stale_worker, name="stale-worker")
+    stale_worker.start()
+    assert entered_pipeline.wait(5)
+
+    clock.now += 6
+    assert jobs.recover_expired() == 1
+    successor = jobs.claim("new-worker", lease_seconds=30)
+    assert successor is not None and successor.attempt == 2
+
+    def successor_guard(response_id: str, response_revision: int) -> None:
+        jobs.assert_owned(
+            successor.job_id,
+            "new-worker",
+            successor.revision,
+            response_id,
+            response_revision,
+        )
+
+    stack.pipeline.set_commit_guard(successor_guard)
+    stack.pipeline.enqueue(stack.store.get_response(record.response_id))
+    release_old.set()
+    stale_worker.join(timeout=5)
+
+    assert not stale_worker.is_alive()
+    assert stack.store.get_response(record.response_id).status is ResponseStatus.COMPLETED
+    assert stack.reports.get(record.response_id) is not None
+    actions = [event.action for event in stack.store.list_audit()]
+    assert actions.count("pipeline_completed") == 1
+    assert actions.count("pipeline_started") == 2
 
 
 def test_duplicate_and_nonqueued_sqlite_claims_never_repeat_asr(tmp_path):
@@ -315,9 +404,7 @@ def test_asr_refusal_survives_scorer_model_refusal_without_estimate(tmp_path):
     stack = _Stack(
         tmp_path,
         asr=_Asr(AsrStatus.ASR_FAILED),
-        scorer=_Scorer(
-            AssessmentStatus.NOT_EVALUATED, (ReasonCode.MODEL_VERSION_MISSING,)
-        ),
+        scorer=_Scorer(AssessmentStatus.NOT_EVALUATED, (ReasonCode.MODEL_VERSION_MISSING,)),
     )
     record = stack.submit()
 
@@ -367,9 +454,7 @@ def test_review_decision_report_callback_failure_rolls_back_decision_and_audit(t
 def test_scorer_near_boundary_creates_durable_candidate(tmp_path):
     stack = _Stack(
         tmp_path,
-        scorer=_Scorer(
-            AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)
-        ),
+        scorer=_Scorer(AssessmentStatus.REVIEW_REQUIRED, (ReasonCode.SCORE_NEAR_BOUNDARY,)),
     )
     record = stack.submit()
     stack.pipeline.enqueue(record)
@@ -382,9 +467,7 @@ def test_scorer_near_boundary_creates_durable_candidate(tmp_path):
 
 
 @pytest.mark.parametrize("audio_format", ["FLAC", "OGG", "MP3"])
-def test_pipeline_sniffs_supported_containers_from_generated_audio(
-    tmp_path, audio_format
-):
+def test_pipeline_sniffs_supported_containers_from_generated_audio(tmp_path, audio_format):
     if audio_format not in sf.available_formats():
         pytest.skip(f"libsndfile does not support {audio_format}")
     stack = _Stack(tmp_path)
@@ -473,7 +556,8 @@ def test_success_report_contains_only_valid_transcript_and_feature_evidence(tmp_
     assert report.source_versions["feature_set"] == "fixture-features-v1"
     assert report.source_versions["qc_config"] == "fixture-qc-v1"
     assert {comment.source for comment in report.comments} == {
-        EvidenceSource.TRANSCRIPT, EvidenceSource.FEATURE_SET
+        EvidenceSource.TRANSCRIPT,
+        EvidenceSource.FEATURE_SET,
     }
     assert len(report.comments) == 2
     assert report.evidence_issues == ()
@@ -505,67 +589,93 @@ def test_builder_drops_foreign_and_stale_evidence_refs():
             audio_sha256="0" * 64,
         ),
         Transcript(
-            response_id="local-response", status=AsrStatus.OK, text="hello",
-            words=(), engine="fixture", engine_version="1",
-            decode_config_version="decode-v1", audio_sha256="0" * 64,
+            response_id="local-response",
+            status=AsrStatus.OK,
+            text="hello",
+            words=(),
+            engine="fixture",
+            engine_version="1",
+            decode_config_version="decode-v1",
+            audio_sha256="0" * 64,
         ),
     )
     transcript = Transcript(
-        response_id="local-response", status=AsrStatus.OK, text="hello", words=(),
-        engine="fixture", engine_version="1", decode_config_version="decode-v1",
+        response_id="local-response",
+        status=AsrStatus.OK,
+        text="hello",
+        words=(),
+        engine="fixture",
+        engine_version="1",
+        decode_config_version="decode-v1",
         audio_sha256="0" * 64,
     )
     features = FeatureSet(
         response_id="local-response",
         values=(FeatureValue(name="words_per_minute", value=120.0, unit="words/min"),),
         feature_version="fixture-features-v1",
-        vad_name=None, vad_version=None, vad_threshold=None, vad_min_silence_ms=None,
-        asr_model=None, transcript_ref=None, audio_sha256="0" * 64,
+        vad_name=None,
+        vad_version=None,
+        vad_threshold=None,
+        vad_min_silence_ms=None,
+        asr_model=None,
+        transcript_ref=None,
+        audio_sha256="0" * 64,
     )
-    report = DiagnosticReportBuilder().build(ReportInput(
-        response_id="local-response", audio_duration_s=1, assessment=assessment,
-        transcript=transcript, features=features,
-        evidence_refs=(
-            EvidenceRef(
-                evidence_id="foreign", response_id="foreign-response",
-                source=EvidenceSource.TRANSCRIPT, source_version="decode-v1",
-                criterion=Criterion.FLUENCY,
+    report = DiagnosticReportBuilder().build(
+        ReportInput(
+            response_id="local-response",
+            audio_duration_s=1,
+            assessment=assessment,
+            transcript=transcript,
+            features=features,
+            evidence_refs=(
+                EvidenceRef(
+                    evidence_id="foreign",
+                    response_id="foreign-response",
+                    source=EvidenceSource.TRANSCRIPT,
+                    source_version="decode-v1",
+                    criterion=Criterion.FLUENCY,
+                ),
+                EvidenceRef(
+                    evidence_id="stale",
+                    response_id="local-response",
+                    source=EvidenceSource.FEATURE_SET,
+                    source_version="stale-features",
+                    criterion=Criterion.FLUENCY,
+                ),
+                EvidenceRef(
+                    evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
+                    response_id="local-response",
+                    source=EvidenceSource.FEATURE_SET,
+                    source_version="fixture-features-v1",
+                    criterion=Criterion.FLUENCY,
+                ),
             ),
-            EvidenceRef(
-                evidence_id="stale", response_id="local-response",
-                source=EvidenceSource.FEATURE_SET, source_version="stale-features",
-                criterion=Criterion.FLUENCY,
+            comment_requests=(
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.WORD_TIMING_OBSERVED,
+                    evidence_id="foreign",
+                ),
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
+                    evidence_id="stale",
+                ),
+                CommentRequest(
+                    criterion=Criterion.FLUENCY,
+                    template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
+                    evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
+                ),
             ),
-            EvidenceRef(
-                evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
-                response_id="local-response",
-                source=EvidenceSource.FEATURE_SET,
-                source_version="fixture-features-v1",
-                criterion=Criterion.FLUENCY,
-            ),
-        ),
-        comment_requests=(
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.WORD_TIMING_OBSERVED,
-                evidence_id="foreign",
-            ),
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
-                evidence_id="stale",
-            ),
-            CommentRequest(
-                criterion=Criterion.FLUENCY,
-                template=CommentTemplate.FEATURE_VALUE_AVAILABLE,
-                evidence_id="feature:words_per_minute:0x1.0000000000000p+0",
-            ),
-        ),
-    ))
+        )
+    )
     assert report.comments == ()
     assert {issue.reason for issue in report.evidence_issues} == {
-        "EVIDENCE_RESPONSE_MISMATCH", "EVIDENCE_SOURCE_VERSION_MISMATCH",
-        "EVIDENCE_FEATURE_VALUE_MISMATCH", "COMMENT_EVIDENCE_MISSING",
+        "EVIDENCE_RESPONSE_MISMATCH",
+        "EVIDENCE_SOURCE_VERSION_MISMATCH",
+        "EVIDENCE_FEATURE_VALUE_MISMATCH",
+        "COMMENT_EVIDENCE_MISSING",
     }
 
 
@@ -584,10 +694,14 @@ def test_invalid_timestamps_and_missing_features_produce_no_evidence(tmp_path):
     )
     features = FeatureSet(
         response_id=response_id,
-        values=(FeatureValue(
-            name="words_per_minute", value=None, unit="words/min",
-            missing_reason=ReasonCode.FEATURE_NOT_COMPUTABLE,
-        ),),
+        values=(
+            FeatureValue(
+                name="words_per_minute",
+                value=None,
+                unit="words/min",
+                missing_reason=ReasonCode.FEATURE_NOT_COMPUTABLE,
+            ),
+        ),
         feature_version="fixture-features-v1",
         vad_name=None,
         vad_version=None,
@@ -599,9 +713,7 @@ def test_invalid_timestamps_and_missing_features_produce_no_evidence(tmp_path):
     )
     assessment = _Scorer().score(features, transcript)
 
-    report_input = stack.pipeline._report_input(
-        response_id, 1.0, assessment, transcript, features
-    )
+    report_input = stack.pipeline._report_input(response_id, 1.0, assessment, transcript, features)
 
     assert report_input.evidence_refs == ()
     assert report_input.comment_requests == ()

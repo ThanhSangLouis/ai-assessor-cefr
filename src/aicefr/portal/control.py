@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import tempfile
 import uuid
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
@@ -158,15 +160,29 @@ class RuntimeControl:
         return self.models(token)
 
     def readiness(self) -> dict[str, Any]:
-        checks = {}
+        """Return a bounded public readiness view with no environment details."""
+        checks: dict[str, bool] = {"configuration": self._configuration_ready()}
         if self.worker is not None:
-            checks["worker"] = self.worker._thread.is_alive()
+            try:
+                health = self.worker.health()
+                checks["worker"] = bool(health)
+            except Exception:
+                checks["worker"] = False
         connection = self.portal.store.connection
         try:
+            version = int(connection.execute("PRAGMA user_version").fetchone()[0])
+            expected = int(self.portal.store.SCHEMA_VERSION)
+            if version != expected:
+                raise RuntimeError("schema version mismatch")
+            if version >= 5:
+                from aicefr.storage.migrations import verify_current_schema
+
+                verify_current_schema(connection)
             connection.execute("SAVEPOINT readiness_check")
             connection.execute("UPDATE runtime_settings SET revision=revision WHERE 0")
             connection.execute("ROLLBACK TO readiness_check")
             connection.execute("RELEASE readiness_check")
+            checks["schema"] = True
             checks["database"] = True
         except Exception:
             try:
@@ -174,16 +190,48 @@ class RuntimeControl:
                 connection.execute("RELEASE readiness_check")
             except Exception:
                 pass
+            checks["schema"] = False
             checks["database"] = False
+        try:
+            root = self.pipeline._responses.blobs.root
+            if root.is_symlink() or not root.is_dir():
+                raise OSError("blob directory unavailable")
+            descriptor, probe = tempfile.mkstemp(prefix=".ready-", dir=root)
+            os.close(descriptor)
+            os.unlink(probe)
+            checks["blobs"] = True
+        except Exception:
+            checks["blobs"] = False
         checks["scoring_model"] = getattr(self.pipeline._scorer, "artifact", None) is not None
-        try:
-            self.pipeline._asr._load_engine()._load()
-            checks["asr_model"] = True
-        except Exception:
-            checks["asr_model"] = False
-        try:
-            self.pipeline._extractor._vad._load()._load()
-            checks["vad_model"] = True
-        except Exception:
-            checks["vad_model"] = False
+        checks["asr_model"] = self._asr_available()
+        checks["vad_model"] = self._vad_available()
         return {"ready": all(checks.values()), "checks": checks}
+
+    def _configuration_ready(self) -> bool:
+        return isinstance(self.config, dict) and all(
+            key in self.config for key in ("qc", "allowed_media_types", "tasks")
+        )
+
+    def _asr_available(self) -> bool:
+        try:
+            if getattr(self, "_asr_injected", False):
+                return True
+            return self.pipeline._asr._load_engine()._load() is not None
+        except Exception:
+            return False
+
+    def _vad_available(self) -> bool:
+        try:
+            vad = self.pipeline._extractor._vad
+            if vad is None:
+                return False
+            if getattr(vad, "_engine", None) is not None:
+                return True
+            if hasattr(vad, "_load"):
+                engine = vad._load()
+                if hasattr(engine, "_load"):
+                    engine._load()
+                return True
+            return True  # Explicit injected VAD engine.
+        except Exception:
+            return False

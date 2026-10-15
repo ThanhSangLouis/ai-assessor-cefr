@@ -1,0 +1,20 @@
+{
+  "limitations": [
+    "Model inference NOT_RUN; model artifacts are intentionally absent."
+  ],
+  "passed": true,
+  "source_tree_import": false,
+  "steps": {
+    "authenticated_page": true,
+    "backup_restore_report": true,
+    "cli_boot": true,
+    "liveness": true,
+    "login": true,
+    "login_page": true,
+    "missing_model_readiness_503": true,
+    "recorder.js": true,
+    "report.js": true,
+    "report_created_without_models": true
+  },
+  "wheel": "aicefr-0.1.0-py3-none-any.whl"
+}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +30,7 @@ from aicefr.review.service import ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.blob import BlobStore
+from aicefr.storage.providers import RepositoryProviders, build_providers
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import SQLiteStore
 
@@ -44,6 +46,7 @@ class LocalRuntime:
     control: RuntimeControl
     data: DataControl
     worker: Any | None = None
+    providers: RepositoryProviders | None = None
 
     def close(self) -> None:
         if self.worker is not None:
@@ -101,6 +104,7 @@ def create_runtime(
     vad_engine: Any | None = None,
     scorer: Any | None = None,
     pipeline: Any | None = None,
+    repository_factory: Callable[[SQLiteStore], RepositoryProviders] | None = None,
 ) -> LocalRuntime:
     """Build persistent services; injected engines are for deterministic tests."""
     from aicefr.audio.config import AudioFormat, QCConfig
@@ -129,6 +133,7 @@ def create_runtime(
         ).fetchone()
         if stored_qc:
             qc = QCConfig(**json.loads(stored_qc[0]))
+        providers = (repository_factory or build_providers)(store)
         blobs = BlobStore(store.data_dir, max_bytes=qc.max_input_bytes)
         consents = ConsentService(store)
         auth = AuthService(store, SQLiteSessionRepository(store))
@@ -136,8 +141,17 @@ def create_runtime(
         if config.get("recover_interrupted", False):
             from aicefr.contracts import ReasonCode, ResponseStatus
 
+            durable_jobs_exists = store.connection.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='durable_jobs'"
+            ).fetchone()
+            recovery_query = "SELECT * FROM responses WHERE status=?"
+            if durable_jobs_exists:
+                recovery_query += (
+                    " AND NOT EXISTS (SELECT 1 FROM durable_jobs j "
+                    "WHERE j.response_id=responses.response_id)"
+                )
             for row in store.connection.execute(
-                "SELECT * FROM responses WHERE status=?", (ResponseStatus.RUNNING,)
+                recovery_query, (ResponseStatus.RUNNING,)
             ).fetchall():
                 interrupted = store._response_from_row(row)
                 responses.transition_status(
@@ -241,6 +255,7 @@ def create_runtime(
             tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
         portal = PortalService(auth, store, tasks)
         control = RuntimeControl(portal, pipeline, config)
+        control._asr_injected = asr_engine is not None
         data = DataControl(portal, blobs)
         metrics = Metrics()
         worker = None
@@ -283,7 +298,9 @@ def create_runtime(
             portal=PortalRouter(portal, control, data, metrics),
             metrics=metrics,
         )
-        return LocalRuntime(app, store, auth, consents, responses, portal, control, data, worker)
+        return LocalRuntime(
+            app, store, auth, consents, responses, portal, control, data, worker, providers
+        )
     except Exception:
         if worker is not None:
             worker.close()

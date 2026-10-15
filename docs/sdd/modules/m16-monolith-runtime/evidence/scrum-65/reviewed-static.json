@@ -1,0 +1,29 @@
+{
+  "code_revision": "61a535376f9720ebd4c00be2474cf77dd1fe9a7e",
+  "architecture_result": "PASS",
+  "forbidden_imports": [],
+  "forbidden_dependencies": [],
+  "forbidden_directories": [],
+  "secret_pattern_result": "PASS",
+  "secret_hit_files": [],
+  "secret_scan_limit": "Known high-confidence access-key/private-key patterns over changed text files; not a universal secret detector.",
+  "changed_format": "PASS",
+  "source_hashes": {
+    "pyproject.toml": "41e41f0584ab4965feea7d61c91555bc5355bcb48cccf5024d8cc917fed3f573",
+    "scripts/qa/w5_foundation_smoke.py": "e2cadba601a1e525f1b6ff2cd176963bd75b6e3da3a45076fc911350a2ddc347",
+    "src/aicefr/local/app.py": "80cede3f9404671eabbdc6c783e87d012873ab00905fb5b6878e4f3c7b74b51f",
+    "src/aicefr/local/worker.py": "89d7d65a94c64cd5fb308213117a73c757c328f8a4198b812910eec783703d46",
+    "src/aicefr/pipeline/coordinator.py": "fd09a23119c7a46db90ff6945eb0aa04bb147965278607e67394da6285b15db5",
+    "src/aicefr/portal/control.py": "5eb2159b7d896b53e54021345ec7633955f2fa79465265bcdf1c0d4aa584bee6",
+    "src/aicefr/portal/router.py": "1ba83ba0660a40e9568f23a526bb21e3b8482d2724e1c5c0478f60f19d1a90c2",
+    "src/aicefr/storage/jobs.py": "a9869ebb1e714d47c27bd2dc4574e17d006da483fad0a9f1527d5a4b878374de",
+    "src/aicefr/storage/migrations.py": "ceb6a3a119fd7156b3a2c3ed807e1bb47dc02950800735d3ff2bc36514cb61f7",
+    "src/aicefr/storage/migrations/005_identity.sql": "9fff3272b895a0f04f06ba85e0bb19fce7d0c4e57e553ae6c37d0f7eea56fbac",
+    "src/aicefr/storage/migrations/006_learning.sql": "e3de9f7d478b8212f9db8bbc73cdada7196a07e832c56e483356b0c8605b645d",
+    "src/aicefr/storage/migrations/007_research.sql": "9eae23c7f259d38ee7bfbda960cedb51824d44cc02a54a379298915b995431cc",
+    "src/aicefr/storage/migrations/008_billing.sql": "c0bc056964153fa4a6a6ca14e1ef9a4e4262059116109bc463b884318f2ca6f0",
+    "src/aicefr/storage/migrations/009_jobs.sql": "64e307f5785f19e3e4117dc8365ba0722612893ed3dbae874c0d6296aa428571",
+    "src/aicefr/storage/providers.py": "36730a2eb372defb18a0b6ad8b980069b74feca858bc7d9dda15a826a40e59e5",
+    "src/aicefr/storage/sqlite.py": "34fc69a585c4ce8f1952f85c182b99f68564198f18707c794ff7217001d14a83"
+  }
+}

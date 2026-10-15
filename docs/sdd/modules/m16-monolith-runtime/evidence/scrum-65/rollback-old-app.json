@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "baseline_import": "/tmp/aicefr-scrum65-baseline/src/aicefr/__init__.py",
+  "schema_version": 4,
+  "reports_found": 4,
+  "reports_readable": 4,
+  "app_factory_boot": true,
+  "notes": [
+    "Restored v4 copy opened with pre-migration code9968abc, models not inferred."
+  ]
+}
