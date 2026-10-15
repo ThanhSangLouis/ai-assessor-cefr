@@ -1,0 +1,7 @@
+# SCRUM-70 — API validation/security regression lane
+
+Historical target `3b2d2b78ba5bb35bd162b8f3e5de21ade946d237`; reference `40907cc35b3d04408f9a8713f16d9be99f4cd6c7`; actual base51eff1f. Domain source freeze; root chuyển owner test-only `tests/api/test_learning_validation.py` cho domain agent để tăng coverage các nhánh HTTP mới. Không sửa product source hoặc testfile API/storage của owner khác; nếu phát hiện lỗi thật, gửi root + integration owner sửa.
+
+Đọc M10 test plan và inventory/API service hiện hành. Tạo fixture thực SQLite/runtime với injectable ASR/VAD có label fixture rõ; auth thật, không fake quyền. Bổ sung regression các mutation boundaries chưa có trong tests/api/test_learning_api.py: malformed/duplicate multipart, field injection, unknown version/kind/step/round, oversized text/audio/JSON/depth, unsupported MIME, bool/float revision handling, invalid import checksum/schema/owner/publication injection, not-found và method contracts, student/staff role boundary và cookie CSRF. Dùng HTTP response/body + DB count/audit/blob unchanged để kiểm outcome, không chỉ mirror implementation. Không mask500 thành expected hoặc bỏ assertions khi code chưa đúng.
+
+Phối hợp integration owner trước để tránh test trùng; report rõ finding cần sửa, targeted commands/counts/coverage mới. Ruff/format file test; root review actual test và evidence. Không commit/push/main checkout/workbook.
