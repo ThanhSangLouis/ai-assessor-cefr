@@ -1,0 +1,151 @@
+{
+  "task_id": "M15-TASK-001A",
+  "prompt_id": "M15-W5-N01-001A-A2R1",
+  "base_revision": "6baf720f173b440eb961676b09ea290058a39b35",
+  "base_url": "http://127.0.0.1:61768",
+  "assertions": [
+    "PASS: /student/upload at desktop (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/upload at desktop (dark) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/upload at mobile (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/upload at mobile-narrow (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/report at desktop (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/report at desktop (dark) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/report at mobile (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /student/report at mobile-narrow (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /login at desktop (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /login at desktop (dark) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /login at mobile (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /login at mobile-narrow (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /password-change at desktop (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /password-change at desktop (dark) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /password-change at mobile (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: /password-change at mobile-narrow (light) - skip activation, bounding box, 1 H1, contrast >= 4.5, no clipping",
+    "PASS: reduced-motion media query active, btnTransition=1e-05s, bodyAnim=1e-05s <= 0.01",
+    "PASS: print media hides nav, skip link, action buttons, and forms"
+  ],
+  "screenshots": {
+    "student_upload_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_upload_desktop_light.png",
+      "sha256": "3a851e98575a718f0e7d27b2e06ee8b37814a6c954066ccf8617698a6987d9d1",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_upload_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_upload_desktop_dark.png",
+      "sha256": "997b644dbe67b7ac3d032c7d11a44b3883c0a3c704becbc537c2487ccd124088",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_upload_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_upload_mobile_light.png",
+      "sha256": "11bd596fe7a7d81721dc30d78afb721cc05cf3679dd25368c173fc851c68a09b",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_upload_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_upload_mobile-narrow_light.png",
+      "sha256": "22e899ae3f62666e5a59740d0fcc083ae15ef00950cacc59875f72dd852f2891",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_report_desktop_light.png",
+      "sha256": "f0bece41e08723e64b4b399ea54cea0ee185a052fee9a5cfdb185bf890cd2d23",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_report_desktop_dark.png",
+      "sha256": "deb24cc8884853b9cd4fd805924b41e21f337df123be0adb640d886c9321d55f",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_report_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_report_mobile_light.png",
+      "sha256": "769de3c52f47e449f8fe073eb46cba3b1aba312008a7b47ad0df0109059e1ad5",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_report_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/student_report_mobile-narrow_light.png",
+      "sha256": "c631ddf68d03b065e91d9d1de811a6ead6d2d3d4383c726a54017870c0823497",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "login_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/login_desktop_light.png",
+      "sha256": "972a67a775b05bc9a1407f4c9e2bc37d1af74a7158b4cd96ed736b5dbc33df45",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "login_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/login_desktop_dark.png",
+      "sha256": "c854249161779cdb63644ac278000cd20c72b7f58a3f83e6b64a6794901bcd57",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "login_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/login_mobile_light.png",
+      "sha256": "c2e4a08eeafdfc812a5fdc6598cd4f138f05797d501887df6712c6ccb9ff3937",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "login_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/login_mobile-narrow_light.png",
+      "sha256": "cd3926a00d8f1beb4159590fff063dc479395c1a8973b03ed265ea535f596214",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "password-change_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/password-change_desktop_light.png",
+      "sha256": "b873a314dfdefd361beccfba8270073edd398de8d8e853f3731002a17f2873d9",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "password-change_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/password-change_desktop_dark.png",
+      "sha256": "ee5e0b811fa10dd644fc67c81ebfc4aba3102b2f9ac5349b0ea49ac3ae321b2a",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "password-change_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/password-change_mobile_light.png",
+      "sha256": "c184fd0aa9dd28dace12da4e8f236d1348c6be1e150402a945858769b88a5565",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "password-change_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/password-change_mobile-narrow_light.png",
+      "sha256": "7cde8d1a6c9e3f2634d435b4dc74aa46a25ee2319a32a416f089d41f10c1ff4e",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "report_desktop_print.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2/screenshots/report_desktop_print.png",
+      "sha256": "864060f865640bf7cf0c4808441e57858bc9b8870695f57af646fe4e27b7f689",
+      "viewport": "1280x800",
+      "media": "print"
+    }
+  },
+  "viewports_tested": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "mobile-narrow",
+      "width": 360,
+      "height": 640
+    }
+  ],
+  "console_errors": [],
+  "failed_requests": [],
+  "external_requests_blocked": 0,
+  "mode": "fixture-server-local-loopback"
+}

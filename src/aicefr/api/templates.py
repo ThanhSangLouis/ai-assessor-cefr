@@ -28,8 +28,8 @@ LOCAL_CSS = """\
   --border-subtle: #e2e8f0;
   --border-strong: #94a3b8;
   --primary: #0369a1;
-  --primary-hover: #0284c7;
-  --primary-active: #075985;
+  --primary-hover: #075985;
+  --primary-active: #0c4a6e;
   --primary-subtle: #e0f2fe;
   --focus-ring: #0284c7;
   --focus-offset: 2px;
@@ -98,7 +98,12 @@ body {
 .skip-link {
   position: absolute;
   top: -9999px;
-  left: 1rem;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
   z-index: 1000;
   padding: 0.6rem 1.1rem;
   background: var(--surface-card);
@@ -111,7 +116,14 @@ body {
 }
 
 .skip-link:focus, .skip-link:focus-visible {
-  top: 1rem;
+  position: static;
+  display: inline-block;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  margin-bottom: 0.75rem;
   outline: 3px solid var(--focus-ring);
   outline-offset: var(--focus-offset);
 }
@@ -127,6 +139,11 @@ main {
   border: 1px solid var(--border-subtle);
   overflow-wrap: anywhere;
   word-break: break-word;
+}
+
+main:focus, main:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: var(--focus-offset);
 }
 
 h1, h2, h3 {
@@ -381,7 +398,7 @@ def _document(title: str, body: str, *, refresh: bool = False) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">{refresh_tag}
 <title>{escape(title)}</title><link rel="stylesheet" href="/local.css"></head>
 <body><a href="#main" class="skip-link">Chuyển đến nội dung chính</a>
-<main id="main"><h1>{escape(title)}</h1>{body}</main></body></html>"""
+<main id="main" tabindex="-1"><h1>{escape(title)}</h1>{body}</main></body></html>"""
 
 
 def _demo_note(demo: bool) -> str:

@@ -1,6 +1,6 @@
 # M15 — Plan & Task Readiness
 
-**Version:** v0.2 · **STATUS:** Phase 05 user verdict `APPROVED` ngày 15/10/2026 chỉ cho `M15-TASK-001A`; task khác vẫn `BLOCKED`.
+**Version:** v0.2 · **STATUS:** Phase 05 user verdict `APPROVED` ngày 15/10/2026 chỉ cho `M15-TASK-001A` và amendment F06. Ngày 15/10/2026, chủ dự án duyệt phạm vi W5-N01–N04; đây chưa phải Phase 05 readiness approval cho các task phụ thuộc contract.
 **Inputs:** Requirement v0.2, Research v0.3, Specification v0.3, Test Plan v0.2 và `docs/plan/week-05.md` W5-N01–N04. Phase 01/03/04 có user verdict `APPROVED`; Phase 03 Codex finding P03-01–05 vẫn cần xử lý theo phạm vi task.
 
 ## Implementation slices và dependency
@@ -8,13 +8,17 @@
 | Thứ tự | Task / W5 | Kết quả và vùng sở hữu | Gate trước khi giao |
 | --- | --- | --- | --- |
 | 1 | `M15-TASK-001A` / W5-N01.1 | Semantic shell và CSS token/state cho page hiện có; không đổi route, auth, payload hoặc asset packaging | Có thể giao riêng sau Phase 05 approval cho 001A; base/fingerprint và source lock phải đúng |
-| 2 | `M15-TASK-001B`, `002` / W5-N01 | Local font/assets/package, public/auth, account/consent/record/progress/report | M11/M09 và M01/M06/M08/M13 contract theo page; route/asset ownership với Thắng |
+| 2 | `M15-TASK-001B`, `002` / W5-N01 | Local font/assets/package, public/auth, account/consent/record/progress/report | Route/asset ownership; M02 QC handoff/review; M05 scoring semantics; M11/M09, M01/M06/M08/M13 contracts; M16 asset/runtime impact theo page |
 | 3 | `M15-TASK-003` / W5-N02 | Practice/lesson/review/progress/achievement/pronunciation | M10/M13 payload, enum và metric disclosure đã duyệt; W5-T01 persistence |
 | 4 | `M15-TASK-004` / W5-N03 | Teacher review/blind/authoring/insights | M07/M10/M12/M13 contract, blind allowlist và dual-role gate đã duyệt |
 | 5 | `M15-TASK-005`, `006` / W5-N04 | Admin/account/data/rating/study/billing, full cross-role browser QA | M11–M14/M16 approved handoff, temp-password/receipt policy, các page N01–N03 đã review |
 | 6 | `M15-TASK-007` / W5-T04 của Thắng | Final package/clean-wheel/integrated browser gate | Thắng sở hữu; không giao trong prompt của Nguyên |
 
 `M15-TASK-001A` chỉ là phần đầu của W5-N01.1, không chứng minh W5-N01 hoặc M15 hoàn thành. Các slice còn lại cần Phase 05 readiness bổ sung theo contract/revision mới; không dùng approval hẹp này làm quyền implement toàn M15.
+
+### Quyết định phạm vi của chủ dự án — W5-N01–N04
+
+Chủ dự án đã duyệt **phạm vi task W5-N01, W5-N02, W5-N03 và W5-N04** ngày 15/10/2026. Bản ghi: [W5-N01–N04 scope decision](reviews/w5-n01-n04-scope-approval-2026-10-15.md). Quyết định này xác nhận các đầu ra trong `docs/plan/week-05.md`; không đóng các dependency producer, không thay owner approval của M10–M16, và không phải verdict Phase 05 cho `M15-TASK-001B`/`002`–`006`. Chỉ tạo prompt implementation sau khi từng task có Phase 05 readiness review và contract/lock trực tiếp đã được freeze.
 
 ## Task 001A — ranh giới sẵn sàng xem xét
 
@@ -34,4 +38,4 @@
 
 ## Contract gate cho các task còn lại
 
-Trước prompt 001B/002–006, owner liên quan cung cấp version/revision + verdict, schema/example, error/enum/role, authorization và contract test. Đặc biệt: route canonical/alias theo method; M11 one-time temp-password/purge/no-log policy; M12 blind allowlist/dual-role/draft; M13 disclosure/source/n; M14 persisted order vs return/verify/receipt; M16 asset/wheel/runtime. Nếu khác Specification/Test Plan đã duyệt, re-review phase bị ảnh hưởng trước Phase 05 mới. UI component fixture không chứng minh integration.
+Trước prompt 001B/002–006, owner liên quan cung cấp version/revision + verdict, schema/example, error/enum/role, authorization và contract test. Đặc biệt: route canonical/alias theo method; M11 one-time temp-password/purge/no-log policy; M12 blind allowlist/dual-role/draft; M13 disclosure/source/n; M14 persisted order vs return/verify/receipt; M16 asset/wheel/runtime. Nếu khác Specification/Test Plan đã duyệt, re-review phase bị ảnh hưởng trước Phase 05 mới. UI component fixture không chứng minh integration. Xem [Phase 05 readiness precheck W5-N01–N04](reviews/phase-05-readiness-precheck-w5-n01-n04-2026-10-15.md) để biết blocker theo task.

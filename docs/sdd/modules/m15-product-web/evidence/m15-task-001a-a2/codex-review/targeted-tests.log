@@ -1,0 +1,4 @@
+.venv/Scripts/python.exe -m pytest -q tests/local/test_templates_mobile.py tests/local/test_templates_m15_shell.py tests/api/test_identity_api.py tests/api/test_student.py --basetemp C:\Users\PC\.codex\visualizations\2026\10\15\01a13ebe-183b-7af2-b95a-1637623e5a66\m15-targeted-44ab5076d93147a996daaec204ba2dd4\pytest-base
+...............................                                          [100%]
+31 passed in 6.41s
+EXIT_CODE: 0

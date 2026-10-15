@@ -1,0 +1,6 @@
+COMMAND: .venv/Scripts/ruff.exe check src/aicefr/api/templates.py src/aicefr/api/identity.py tests/local/test_templates_mobile.py tests/local/test_templates_m15_shell.py scripts/qa/m15_shell_browser.py
+All checks passed!
+EXIT_CODE_CHECK: 0
+COMMAND: .venv/Scripts/ruff.exe format --check src/aicefr/api/templates.py src/aicefr/api/identity.py tests/local/test_templates_mobile.py tests/local/test_templates_m15_shell.py scripts/qa/m15_shell_browser.py
+5 files already formatted
+EXIT_CODE_FORMAT: 0

@@ -1,0 +1,153 @@
+{
+  "task_id": "M15-TASK-001A",
+  "prompt_id": "M15-W5-N01-001A-A2R2",
+  "base_revision": "6baf720f173b440eb961676b09ea290058a39b35",
+  "head_revision": null,
+  "source_fingerprint": "6687a1a1d8f861d21a4b013a2738847812297fdcdd2fb6e0324764d449bbbb2d",
+  "base_url": "http://127.0.0.1:49313",
+  "assertions": [
+    "PASS: /student/upload at desktop (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (8 primary actions verified)",
+    "PASS: /student/upload at desktop (dark) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (8 primary actions verified)",
+    "PASS: /student/upload at mobile (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (8 primary actions verified)",
+    "PASS: /student/upload at mobile-narrow (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (8 primary actions verified)",
+    "PASS: /student/report at desktop (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (6 primary actions verified)",
+    "PASS: /student/report at desktop (dark) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (6 primary actions verified)",
+    "PASS: /student/report at mobile (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (6 primary actions verified)",
+    "PASS: /student/report at mobile-narrow (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (6 primary actions verified)",
+    "PASS: /login at desktop (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /login at desktop (dark) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /login at mobile (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /login at mobile-narrow (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /password-change at desktop (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /password-change at desktop (dark) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /password-change at mobile (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: /password-change at mobile-narrow (light) - skip activation, visible focus outline (3px solid), 1 H1, contrast >= 4.5, no clipping (1 primary actions verified)",
+    "PASS: reduced-motion media query active, btn=1e-05s, bodyAnim=1e-05s <= 0.01",
+    "PASS: print media hides nav, skip link, action buttons, and forms"
+  ],
+  "screenshots": {
+    "student_upload_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_upload_desktop_light.png",
+      "sha256": "90974cec38881c203164f5611adcaa31ad599c2e98ffcf9b50044873b9749ff8",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_upload_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_upload_desktop_dark.png",
+      "sha256": "021d979ecfe58d23e0f09a855e9cb50a2115770274915155e3d1c4972796e858",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_upload_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_upload_mobile_light.png",
+      "sha256": "6ef17b9830ca7849d9f60ea357ac6dac7f92db1e1eeec312004ac0dcce90036e",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_upload_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_upload_mobile-narrow_light.png",
+      "sha256": "d912f06c287c0c5350ccbf95cf3644152d6a848dc30e7bbab8db91e4ff2858c5",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_report_desktop_light.png",
+      "sha256": "146f4c22de310d6aaea7efc46c9d1b9146d8c75106be77f490e044a1041903ad",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_report_desktop_dark.png",
+      "sha256": "171b3641945039507b69507d0595929f531af4208ceaee7875b7d268c5c6a3d4",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_report_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_report_mobile_light.png",
+      "sha256": "cee7721ba021620ff6a860f5f82b64aaec1b5c5311fee9c0f77088bbc6b9356e",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_report_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/student_report_mobile-narrow_light.png",
+      "sha256": "4a0ce04643095a28590f39fa483334ddf6ea3fdf6e08033a17ed5215670e3182",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "login_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/login_desktop_light.png",
+      "sha256": "5eb5a41fcc68fb34114aae467869de6ba9cc712ea49efd31ee5e24b3f6287c00",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "login_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/login_desktop_dark.png",
+      "sha256": "f24782e9091e8b58e9665f15adecfbb41c2abcac8a6e0c1146112f0bde63a973",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "login_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/login_mobile_light.png",
+      "sha256": "0d2c81e72698d277684a009260dca4a2e42a08730abaaad1a9627d06d0fd2e9c",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "login_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/login_mobile-narrow_light.png",
+      "sha256": "e610496a10590f61068c8cab5677677274a7b94101ba59c3bf83494a33c4f4ef",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "password-change_desktop_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/password-change_desktop_light.png",
+      "sha256": "ac6d550ef7ac431052d759ded5eee39e8292af34f7620102817b295b9130492e",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "password-change_desktop_dark.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/password-change_desktop_dark.png",
+      "sha256": "7cc178cfe373b76a6a260ed115f6bb68848e8d3400486404d80e41ac3de622a5",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "password-change_mobile_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/password-change_mobile_light.png",
+      "sha256": "0e8ebe155881f3a029c5a08ac275953e8205e7eeca3634a0de8f43d360773074",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "password-change_mobile-narrow_light.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/password-change_mobile-narrow_light.png",
+      "sha256": "4e8fded5749c94477a8a25985c03aec6ba94b93d0154a58d0f06a96019f45ea1",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "report_desktop_print.png": {
+      "path": "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/screenshots/report_desktop_print.png",
+      "sha256": "864060f865640bf7cf0c4808441e57858bc9b8870695f57af646fe4e27b7f689",
+      "viewport": "1280x800",
+      "media": "print"
+    }
+  },
+  "viewports_tested": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "mobile-narrow",
+      "width": 360,
+      "height": 640
+    }
+  ],
+  "console_errors": [],
+  "failed_requests": [],
+  "external_requests_blocked": 0,
+  "mode": "fixture-server-local-loopback"
+}

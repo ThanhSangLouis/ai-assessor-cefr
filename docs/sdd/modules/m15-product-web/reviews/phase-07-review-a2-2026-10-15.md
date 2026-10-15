@@ -1,0 +1,60 @@
+# M15 — Phase 07 Implementation Review — M15-TASK-001A / A2R1
+
+**PHASE RECORD ID / REVIEW ID:** `M15-07-A2R1` / `07-M15-TASK-001A-A2R1`  
+**PHASE:** 07 — Implementation Review; **SCOPE ID/TYPE/ROOT:** `M15` / module / `docs/sdd/modules/m15-product-web/`  
+**SUBJECT:** `M15-TASK-001A` (W5-N01.1 một phần), correction prompt `M15-W5-N01-001A-A2R1`.  
+**BASE REVISION:** `6baf720f173b440eb961676b09ea290058a39b35`. **REVIEW BASIS:** working-tree diff against base; implementation changes remain uncommitted, therefore no immutable A2 head SHA exists.  
+**EVIDENCE:** `evidence/m15-task-001a-a2/`; report states 31 targeted tests passed, whole-project non-smoke suite 35 failed / 557 passed / 15 skipped / 2 deselected, browser QA 18 assertions passed.  
+**USER VERDICT:** `PENDING`. **CODEX CHECK RESULT:** `CHANGES_REQUIRED`. **CODEX RECOMMENDATION:** `CHANGES REQUIRED`; do not mark task verified or parent W5-N01.1/W5-N01 done.
+
+## Review summary
+
+The changed production/test files are within the approved A2R1 write scope. The diff includes the intended skip-link layout, stronger hover colors, local JavaScript fixture routes, and the scoped `_password_page` markup correction. The coverage JSON reports `templates.py` at 115/115 statements and 20/20 branches. The browser JSON reports 18 assertions, zero console errors and zero failed requests; all 17 recorded screenshot hashes match the files on disk.
+
+The initial evidence did not clear Phase 07. Codex has since rerun the targeted tests and non-smoke regression on the reviewed worktree, saved raw logs, and compared the regression with a clean export of base `6baf720`. The current run has 33 failures, 560 passes, 15 skips and 2 deselections; every current failing test ID is also present in the base run, which had 35 failures and 557 passes. Two base failures pass in the current run, and no new failing test ID appeared. This establishes no new whole-project regression in the current Windows sandbox; the required suite still exits 1 and remains `VERIFICATION_FAILED` until the owner accepts the baseline limitation or a supported environment produces a green run.
+
+The 31 targeted tests and changed-file lint/format checks pass. The browser checks still do not establish individual action clipping or visible focus on the skip destination. Original A2R1 browser evidence also lacks a final source fingerprint. Do not treat implementer status `COMPLETED` as verification or phase approval.
+
+## Review of A1 findings F01–F07
+
+| A1 finding | A2R1 disposition | Review evidence |
+| --- | --- | --- |
+| **F01 — skip link overlaps heading / target focus** | **PARTIALLY RESOLVED.** CSS moves the focused skip link into document flow; browser QA checks non-overlap and Enter activation into `main#main`. But `main:focus { outline: none; }` removes the visible focus indicator after activation, contrary to the Specification's visible-focus requirement. | `templates.py` `.skip-link:focus` and `main:focus`; QA checks active element but not visible focus. See `M15-A2R1-R04`. |
+| **F02 — hover contrast below WCAG AA** | **RESOLVED for tested button/link states.** The new hover colors are exercised using computed contrast in light and dark themes; report gives ratios above 4.5:1. | `templates.py` semantic tokens; QA computed-style checks; report §1.2 and browser results. |
+| **F03 — missing local JS and inconsistent console/network claim** | **RESOLVED for fixture browser run.** Fixture server serves both JS files and command gates console errors and failed requests; JSON reports zero for each. | `scripts/qa/m15_shell_browser.py`; browser JSON and report §1.3/§4.6. This is fixture QA, not integration QA. |
+| **F04 — superficial browser assertions** | **PARTIALLY RESOLVED.** Skip activation, computed contrast, reduced motion, and print assertions were added. The overflow/clipping assertion checks document width and `main#main` bounds, not individual content or primary actions under `overflow-x:hidden`; visible focus is also not checked. | `scripts/qa/m15_shell_browser.py` around skip/overflow assertions; see `M15-A2R1-R03` and `R04`. |
+| **F05 — branch coverage and regression evidence** | **PARTIALLY RESOLVED.** The module coverage JSON reports 115/115 statements and 20/20 branches for `templates.py`. Codex's non-smoke run has 33 failures, all a subset of the 35 failures reproduced on clean base `6baf720`; there is no new failing test ID. The required suite still exits 1. Whole-project coverage command output/exit is not retained. | `coverage.json`; `evidence/m15-task-001a-a2/codex-review/pytest-nonsmoke-writable-temp.log`; `pytest-baseline-nonsmoke.log`; `baseline-import-path.txt`; see `M15-A2R1-R01` and `R02`. |
+| **F06 — nested main/H1 on `/password-change`** | **RESOLVED in the scoped markup diff.** `_password_page` no longer emits a nested `<main>` or second `<h1>`; test asserts one `main#main`, one H1, and preserved form fields/action. No route/auth logic was changed. | `identity.py` `_password_page`; `test_identity_password_page_semantic_shell`; report §1.6. Change is limited to the M11-locked markup area covered by the user's Phase 05 amendment/source-lock authorization. |
+| **F07 — screenshot hashes / print details wording** | **RESOLVED.** All 17 screenshot hashes in report/JSON match the physical files. The report correctly says collapsed `<details>` remain collapsed in the print screenshot; it does not claim their contents were printed open. | `browser-qa-results.json`, screenshot files, report §1.7 and §4.6; independently verified 17/17 hashes. |
+
+## Scope and review limits
+
+Reviewed the five implementation files named in the prompt against base `6baf720f173b440eb961676b09ea290058a39b35`. Production scope is respected: `identity.py` changes only the `_password_page` markup, while `templates.py` applies the common shell change. No route, auth, form action, service/API, or M11 contract changes were found. The source-lock authorization was present in the approved amendment and A2R1 prompt; the report does not record an independent, time-of-run lock recheck. Codex reviewed the diff/evidence, rechecked screenshot hashes, reran targeted tests, changed-file lint/format and the whole-project non-smoke suite, then repeated the non-smoke suite from a clean archive of base `6baf720`. All raw outputs are under `evidence/m15-task-001a-a2/codex-review/`. The current suite's 33 failed test IDs are all in the 35-failure base set; two base failures passed on the current worktree. Browser evidence still does not include `head_revision` or a source fingerprint, and the working-tree changes are uncommitted, so the original browser/coverage evidence cannot be tied to an immutable final source state.
+
+## Supplementary verification after A2R1 review
+
+**Date:** 2026-10-15 · **Executor:** Codex reviewer · **Worktree:** current A2R1 diff, HEAD `6baf720f173b440eb961676b09ea290058a39b35`.
+
+| Check | Result | Raw evidence |
+| --- | --- | --- |
+| Targeted tests: mobile/shell, identity API and student API | **PASS — 31 passed** | `evidence/m15-task-001a-a2/codex-review/targeted-tests.log` |
+| Changed-file lint and format | **PASS — 5 files** | `evidence/m15-task-001a-a2/codex-review/ruff-targeted.log` |
+| Current non-smoke regression, temp redirected to writable task folder | **FAIL — 33 failed, 560 passed, 15 skipped, 2 deselected; exit 1** | `evidence/m15-task-001a-a2/codex-review/pytest-nonsmoke-writable-temp.log` |
+| Clean archive of base `6baf720` non-smoke regression | **FAIL — 35 failed, 557 passed, 15 skipped, 2 deselected; exit 1** | `evidence/m15-task-001a-a2/codex-review/pytest-baseline-nonsmoke.log`; import path verified in `baseline-import-path.txt` |
+
+The current run has no failing test ID outside the base failure set; `test_flow_reservation_is_consumed_once_across_sqlite_connections` and `test_w5_concurrent_fresh_initializers_serialize_migrations` fail on base and pass on the current worktree. The red non-smoke gate is therefore a baseline/platform limitation in this Windows sandbox, not a newly introduced A2R1 regression. It still must be reported as red; current and base evidence is not a green gate. The first Codex attempt without an explicit writable pytest temp directory failed during fixture setup and is retained in `pytest-nonsmoke.log` as environment diagnosis, not counted as the valid comparison run.
+
+## Findings
+
+| ID · Severity | Evidence | Required correction |
+| --- | --- | --- |
+| `M15-A2R1-R01` · **BLOCKER — verification evidence** | Codex has retained raw output for targeted tests, changed-file lint/format and non-smoke regression. A clean base archive reproduced 35 failures / 557 passes; the current worktree produced 33 failures / 560 passes, and all current failure IDs are in the base set. The whole-project coverage command still has no raw output/exit record. The required regression gate remains red, so final status must say `VERIFICATION_FAILED` unless a supported run passes or the owner accepts the recorded baseline risk. | For the corrected final source, retain exact command, exit code and raw output for targeted tests, regression, coverage and lint/format gates. Keep the baseline comparison and report any red required gate as `VERIFICATION_FAILED`; do not claim `COMPLETED` while it remains red. |
+| `M15-A2R1-R02` · **MAJOR — traceability** | `coverage.json` contains whole-project totals, but the report does not state the coverage command’s exit code or retain its raw output. `browser-qa-results.json` has `base_revision` only; no `head_revision` or source fingerprint is recorded, and the implementation diff is uncommitted. | Record the exact coverage result and exit status. Bind coverage/browser artifacts and report to the same immutable source state (head SHA or required fingerprint); regenerate evidence after any source correction. |
+| `M15-A2R1-R03` · **MAJOR — test coverage** | `scripts/qa/m15_shell_browser.py` checks document `scrollWidth` and the bounding box of `main#main` only. It does not inspect primary buttons/forms or verify their bounds/visibility while `overflow-x:hidden` is active, so a child action may be clipped while the current assertion passes. | Check representative content and primary actions individually at each required viewport, with clipping/overflow behavior exercised, and fail when any action is partly outside or hidden. Keep the assertion description aligned with what the code actually measures. |
+| `M15-A2R1-R04` · **MAJOR — accessibility** | `src/aicefr/api/templates.py` adds `main:focus { outline: none; }`. After keyboard activation, focus moves from the visible skip link to `main#main`, which suppresses the visible focus indicator. The browser assertion checks `activeElement` but not visible focus, despite Specification requiring visible focus. | Preserve or provide a visible focus indicator on the focused main landmark and assert it in browser QA after activating the skip link. |
+
+## Verdict and next action
+
+**RESULT:** `CHANGES_REQUIRED` / verification not complete.  
+**REASON:** required regression is red without auditable raw evidence; coverage/browser evidence is not tied to the reviewed final source; the F04 clipping check is incomplete; keyboard focus is not visibly indicated on the skip destination.  
+**NEXT ACTION:** correction prompt `M15-W5-N01-001A-A2R2` is prepared and fingerprinted for R02–R04 and the remaining raw coverage/report evidence under the existing Phase 05 scope. It has not been sent: `agy models` lists Gemini 3.8 Flash (High), while the invoked `antigravity-task-runner` requires Gemini 3.6 Flash (High) and forbids fallback. The model list and exit code are retained at `evidence/m15-task-001a-a2/codex-review/agy-models.log`. Resolve that runner/model blocker before implementation. Afterward, rerun final tests and browser QA with a source fingerprint; preserve `VERIFICATION_FAILED` if any required gate remains red, then repeat Phase 07 review. Keep user verdict pending and Phase 08 not started.

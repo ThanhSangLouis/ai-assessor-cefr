@@ -273,3 +273,83 @@ def test_template_branches_and_edge_cases() -> None:
     detail_done_html = render_review_detail(candidate_done, None, demo=False, audio_available=False)
     assert "Mở lại để hiệu chỉnh" in detail_done_html
     assert "Audio đã được xóa theo retention." in detail_done_html
+
+    # 6. Report with comment lacking start_s reference (branch coverage [524, 529])
+    from aicefr.report.contracts import EvidenceIssue, EvidenceRef, EvidenceSource
+
+    report_no_seek = DiagnosticReport(
+        response_id="d" * 32,
+        status=ReportStatus.PROVISIONAL,
+        assessment_status=AssessmentStatus.NOT_EVALUATED,
+        criteria=tuple(CriterionCoverage(criterion=c) for c in Criterion),
+        interaction=Interaction(),
+        reasons=(ReasonCode.ASR_FAILED,),
+        comments=(
+            DiagnosticComment(
+                criterion=Criterion.RANGE,
+                text="Nhận xét không seek",
+                evidence_id="ev-no-ref",
+                source=EvidenceSource.FEATURE_SET,
+            ),
+        ),
+    )
+    report_no_seek_html = render_report(report_no_seek, demo=False)
+    assert "Nhận xét không seek" in report_no_seek_html
+    assert "data-seek-second" not in report_no_seek_html
+
+    # 7. Review queue with IN_REVIEW and REJECTED states (branch coverage [649, 653], [653, 665])
+    candidate_in_review = ReviewCandidate(
+        response_id="e" * 32,
+        response_revision=2,
+        assessment_status=AssessmentStatus.NOT_EVALUATED,
+        reasons=(ReasonCode.ASR_FAILED,),
+        source_versions={"model": "fixture"},
+        state=ReviewState.IN_REVIEW,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    candidate_rejected = ReviewCandidate(
+        response_id="f" * 32,
+        response_revision=2,
+        assessment_status=AssessmentStatus.NOT_EVALUATED,
+        reasons=(ReasonCode.ASR_FAILED,),
+        source_versions={"model": "fixture"},
+        state=ReviewState.REJECTED,
+        created_at=datetime.now(UTC),
+        updated_at=datetime.now(UTC),
+    )
+    queue_html = render_review_queue((candidate_in_review, candidate_rejected), demo=False)
+    assert "Nhận xử lý" not in queue_html
+    assert "Lưu quyết định" in queue_html
+    assert f"{candidate_rejected.response_id} — REJECTED" in queue_html
+
+
+def test_identity_password_page_semantic_shell() -> None:
+    from aicefr.api.identity import IdentityApi
+
+    html = IdentityApi._password_page(message="Mật khẩu đã hết hạn")
+    parser = _LandmarkParser()
+    parser.feed(html)
+    parser.close()
+
+    assert len(parser.skip_links) == 1, "Password page missing skip link"
+    assert parser.skip_links[0].get("href") == "#main"
+    assert len(parser.mains) == 1, "Password page must have exactly one main landmark"
+    assert parser.mains[0].get("id") == "main"
+    assert parser.mains[0].get("tabindex") == "-1"
+    assert parser.h1_count == 1, "Password page must have exactly one H1"
+    assert "<h1>Đổi mật khẩu</h1>" in html
+    assert "<h2>Đổi mật khẩu tạm thời</h2>" in html
+    assert "Hãy đặt mật khẩu mới để tiếp tục sử dụng tài khoản." in html
+    assert '<p role="status">Mật khẩu đã hết hạn</p>' in html
+    assert '<form method="post" action="/password-change">' in html
+    assert 'name="current_password"' in html
+    assert 'name="new_password"' in html
+    assert 'name="confirm_password"' in html
+    assert '<button type="submit">Đổi mật khẩu</button>' in html
+
+
+def test_main_landmark_focus_indicator_defined() -> None:
+    assert "main:focus" in LOCAL_CSS
+    assert "outline: 3px solid var(--focus-ring)" in LOCAL_CSS
+    assert "outline: none" not in LOCAL_CSS
