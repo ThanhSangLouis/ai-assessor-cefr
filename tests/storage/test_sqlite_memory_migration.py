@@ -63,7 +63,7 @@ def test_m01_sqlite_schema_v2_persists_status_reason_with_optimistic_locking():
     )
 
     version = store.connection.execute("PRAGMA user_version").fetchone()[0]
-    assert version == SQLiteStore.SCHEMA_VERSION == 4
+    assert version == SQLiteStore.SCHEMA_VERSION == 9
     assert store.get_response(record.response_id) == updated
     assert updated.status is ResponseStatus.FAILED
     assert updated.status_reason is ReasonCode.ASR_FAILED
@@ -102,7 +102,7 @@ def test_m01_sqlite_migrates_legacy_submitted_status_to_queued_without_data_loss
     assert migrated.status is ResponseStatus.QUEUED
     assert migrated.status_reason is None
     version = store.connection.execute("PRAGMA user_version").fetchone()[0]
-    assert version == SQLiteStore.SCHEMA_VERSION == 4
+    assert version == SQLiteStore.SCHEMA_VERSION == 9
 
 
 def test_pipeline_claim_is_queued_only_and_revision_checked():
@@ -110,8 +110,10 @@ def test_pipeline_claim_is_queued_only_and_revision_checked():
     actor = Actor(actor_id="fixture-student", role=ActorRole.STUDENT)
     store.add_account(AccountRecord(actor, "fixture-hash"))
     record = ResponseRecord(
-        response_id="e" * 32, owner_id=actor.actor_id,
-        task_id="fixture-task", task_version="v1",
+        response_id="e" * 32,
+        owner_id=actor.actor_id,
+        task_id="fixture-task",
+        task_version="v1",
         blob=BlobRef(blob_id="f" * 32, sha256="1" * 64, size_bytes=1),
         created_at=datetime(2026, 9, 28, tzinfo=UTC),
     )

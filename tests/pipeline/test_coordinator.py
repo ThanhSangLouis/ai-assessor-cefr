@@ -1,11 +1,13 @@
 import io
 import sqlite3
+import threading
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 import soundfile as sf
 
+import aicefr.pipeline.coordinator as coordinator_module
 from aicefr.audio.config import AudioFormat, QCConfig
 from aicefr.auth.service import AccountRecord, ConsentService
 from aicefr.contracts import (
@@ -41,6 +43,7 @@ from aicefr.report.sqlite import SQLiteReportRepository
 from aicefr.review.service import ReviewActionRequest, ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.storage.blob import BlobStore
+from aicefr.storage.jobs import SQLiteJobRepository
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import ConcurrentResponseUpdate, SQLiteStore
 
@@ -243,7 +246,7 @@ def test_sqlite_final_write_failure_rolls_back_report_status_and_candidate(
     assert "private database detail" not in caplog.text
 
 
-def test_failure_recovery_reloads_running_revision_after_stale_cas(tmp_path, monkeypatch):
+def test_failure_recovery_does_not_mutate_newer_running_revision(tmp_path, monkeypatch):
     stack = _Stack(
         tmp_path,
         scorer=_Scorer(
@@ -277,10 +280,106 @@ def test_failure_recovery_reloads_running_revision_after_stale_cas(tmp_path, mon
     stack.pipeline.enqueue(record)
 
     current = stack.store.get_response(record.response_id)
-    assert current.status is ResponseStatus.FAILED
-    assert current.status_reason is ReasonCode.PIPELINE_ENQUEUE_FAILED
+    assert current.status is ResponseStatus.RUNNING
+    assert current.status_reason is None
     assert stack.reports.get(record.response_id) is None
     assert stack.review_repository.get(record.response_id) is None
+    actions = [event.action for event in stack.store.list_audit()]
+    assert actions.count("pipeline_started") == 1
+    assert "pipeline_failed" not in actions
+
+
+@pytest.mark.parametrize("stale_worker_raises", [False, True])
+def test_expired_pipeline_cannot_duplicate_report_or_terminal_audit(
+    tmp_path, monkeypatch, stale_worker_raises
+):
+    stack = _Stack(tmp_path)
+
+    class Clock:
+        now = 100.0
+
+        def __call__(self):
+            return self.now
+
+    clock = Clock()
+    jobs = SQLiteJobRepository(stack.store, clock=clock)
+    record = stack.submit()
+    jobs.enqueue(record.response_id)
+    old_job = jobs.claim("old-worker", lease_seconds=5)
+    assert old_job is not None
+
+    entered_pipeline = threading.Event()
+    release_old = threading.Event()
+    real_process = coordinator_module.process_audio
+
+    def pause_old_worker(**kwargs):
+        if threading.current_thread().name == "stale-worker":
+            entered_pipeline.set()
+            assert release_old.wait(5)
+            if stale_worker_raises:
+                raise RuntimeError("synthetic late pipeline failure")
+        return real_process(**kwargs)
+
+    monkeypatch.setattr(coordinator_module, "process_audio", pause_old_worker)
+
+    def run_stale_worker():
+        old_store = SQLiteStore(stack.data_dir)
+        old_review_repository = SQLiteReviewRepository(old_store)
+        old_report_repository = SQLiteReportRepository(old_store)
+        old_report_service = ReportService(
+            old_report_repository, decision_verifier=old_review_repository
+        )
+        old_pipeline = PipelineCoordinator(
+            responses=ResponseService(old_store, stack.blobs, ConsentService(old_store)),
+            reports=old_report_service,
+            reviews=ReviewService(old_review_repository, report_sink=old_report_service),
+            qc_config=stack.pipeline._qc_config,
+            asr=stack.asr,
+            extractor=stack.pipeline._extractor,
+            scorer=stack.pipeline._scorer,
+        )
+        old_jobs = SQLiteJobRepository(old_store, clock=clock)
+        old_pipeline.set_commit_guard(
+            lambda response_id, response_revision: old_jobs.assert_owned(
+                old_job.job_id,
+                "old-worker",
+                old_job.revision,
+                response_id,
+                response_revision,
+            )
+        )
+        old_pipeline.enqueue(record)
+        old_store.close()
+
+    stale_worker = threading.Thread(target=run_stale_worker, name="stale-worker")
+    stale_worker.start()
+    assert entered_pipeline.wait(5)
+
+    clock.now += 6
+    assert jobs.recover_expired() == 1
+    successor = jobs.claim("new-worker", lease_seconds=30)
+    assert successor is not None and successor.attempt == 2
+
+    def successor_guard(response_id: str, response_revision: int) -> None:
+        jobs.assert_owned(
+            successor.job_id,
+            "new-worker",
+            successor.revision,
+            response_id,
+            response_revision,
+        )
+
+    stack.pipeline.set_commit_guard(successor_guard)
+    stack.pipeline.enqueue(stack.store.get_response(record.response_id))
+    release_old.set()
+    stale_worker.join(timeout=5)
+
+    assert not stale_worker.is_alive()
+    assert stack.store.get_response(record.response_id).status is ResponseStatus.COMPLETED
+    assert stack.reports.get(record.response_id) is not None
+    actions = [event.action for event in stack.store.list_audit()]
+    assert actions.count("pipeline_completed") == 1
+    assert actions.count("pipeline_started") == 2
 
 
 def test_duplicate_and_nonqueued_sqlite_claims_never_repeat_asr(tmp_path):

@@ -18,15 +18,29 @@ def test_schema_v2_migrates_to_v3_without_losing_existing_response(tmp_path):
         response_id, owner_id, task_id, task_version, blob_id, sha256,
         size_bytes, status, status_reason, revision, created_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        ("a" * 32, "student", "task", "v1", "b" * 32, "c" * 64, 4,
-         "QUEUED", None, 1, datetime(2026, 10, 2, tzinfo=UTC).isoformat()),
+        (
+            "a" * 32,
+            "student",
+            "task",
+            "v1",
+            "b" * 32,
+            "c" * 64,
+            4,
+            "QUEUED",
+            None,
+            1,
+            datetime(2026, 10, 2, tzinfo=UTC).isoformat(),
+        ),
     )
     assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 2
     store._migrate()
-    assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 4
-    tables = {row[0] for row in store.connection.execute(
-        "SELECT name FROM sqlite_master WHERE type='table'"
-    )}
+    assert (
+        store.connection.execute("PRAGMA user_version").fetchone()[0] == SQLiteStore.SCHEMA_VERSION
+    )
+    tables = {
+        row[0]
+        for row in store.connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
     assert {"responses", "review_candidates", "review_decisions", "diagnostic_reports"} <= tables
     assert store.get_response("a" * 32).owner_id == "student"
     store.close()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 import logging
 import math
+from collections.abc import Callable
 from datetime import UTC, datetime
 
 import soundfile as sf
@@ -39,6 +40,7 @@ from aicefr.report.service import ReportInput, ReportService
 from aicefr.review.routing import review_candidate_from_assessment
 from aicefr.review.service import ReviewService
 from aicefr.scoring.scorer import RidgeScorer
+from aicefr.storage.jobs import LeaseLost
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import ConcurrentResponseUpdate
 
@@ -66,14 +68,23 @@ class PipelineCoordinator:
         self._extractor = extractor
         self._scorer = scorer
         self._long_response_windows = long_response_windows
+        self._commit_guard: Callable[[str, int], None] | None = None
+
+    def set_commit_guard(self, guard: Callable[[str, int], None] | None) -> None:
+        """Install a durable-worker fence, called inside each response write transaction."""
+        self._commit_guard = guard
 
     def enqueue(self, response: ResponseRecord) -> None:
         if response.status is not ResponseStatus.QUEUED:
             return
         try:
-            current = self._responses.metadata.claim_queued_response(response)
+            with self._responses.metadata.transaction():
+                self._guard(response.response_id, response.revision)
+                current = self._responses.metadata.claim_queued_response(response)
         except ConcurrentResponseUpdate:
             # Another worker or an earlier call already claimed this revision.
+            return
+        except LeaseLost:
             return
 
         failure_reason = ReasonCode.PIPELINE_ENQUEUE_FAILED
@@ -167,30 +178,42 @@ class PipelineCoordinator:
                 final_reason,
                 qc_candidate=False,
             )
+        except LeaseLost:
+            # Expired or replaced work must never alter the response owned by its successor.
+            return
         except Exception:
             log.error("pipeline failed response_id=%s", response.response_id)
+            if self._commit_guard is not None:
+                # Durable workers own retry policy and terminal failure. Check the fence before
+                # propagating so stale work cannot cause a retry/failure against a successor.
+                try:
+                    self._guard(response.response_id, current.revision)
+                except LeaseLost:
+                    return
+                raise
             # Report/status/candidate writes above share one transaction. If that
             # work failed, the row is still at current.revision and can be marked
             # FAILED with the actual pipeline boundary reason.
             try:
                 self._mark_failed(response, current.revision, failure_reason)
             except ConcurrentResponseUpdate:
-                latest = self._responses.metadata.get_response(response.response_id)
-                if latest is None or latest.status is not ResponseStatus.RUNNING:
-                    raise
-                self._mark_failed(response, latest.revision, failure_reason)
+                # A newer revision belongs to another operation. Never follow it and
+                # mutate a response that this invocation did not claim.
+                return
 
     def _mark_failed(
         self, response: ResponseRecord, expected_revision: int, reason: ReasonCode
     ) -> ResponseRecord:
-        return self._responses.transition_status(
-            response_id=response.response_id,
-            expected_revision=expected_revision,
-            status=ResponseStatus.FAILED,
-            actor_id="system-pipeline",
-            action="pipeline_failed",
-            reason=reason,
-        )
+        with self._responses.metadata.transaction():
+            self._guard(response.response_id, expected_revision)
+            return self._responses.transition_status(
+                response_id=response.response_id,
+                expected_revision=expected_revision,
+                status=ResponseStatus.FAILED,
+                actor_id="system-pipeline",
+                action="pipeline_failed",
+                reason=reason,
+            )
 
     def _persist_final(
         self,
@@ -205,6 +228,7 @@ class PipelineCoordinator:
         qc_candidate: bool,
     ) -> None:
         with self._responses.metadata.transaction():
+            self._guard(response.response_id, current.revision)
             self._reports.build_and_store(report_input)
             final = self._transition(response, current, status, action, reason)
             if status is ResponseStatus.REVIEW_REQUIRED:
@@ -225,14 +249,20 @@ class PipelineCoordinator:
         action: str,
         reason: ReasonCode | None,
     ) -> ResponseRecord:
-        return self._responses.transition_status(
-            response_id=response.response_id,
-            expected_revision=current.revision,
-            status=status,
-            actor_id="system-pipeline",
-            action=action,
-            reason=reason,
-        )
+        with self._responses.metadata.transaction():
+            self._guard(response.response_id, current.revision)
+            return self._responses.transition_status(
+                response_id=response.response_id,
+                expected_revision=current.revision,
+                status=status,
+                actor_id="system-pipeline",
+                action=action,
+                reason=reason,
+            )
+
+    def _guard(self, response_id: str, expected_revision: int) -> None:
+        if self._commit_guard is not None:
+            self._commit_guard(response_id, expected_revision)
 
     @staticmethod
     def _qc_candidate(assessment: Assessment, revision: int, qc_version: str) -> ReviewCandidate:
@@ -329,6 +359,7 @@ class PipelineCoordinator:
     @staticmethod
     def _container_extension(data: bytes) -> str:
         from aicefr.audio.recordings import recording_format
+
         recording = recording_format(data)
         if recording is not None:
             return recording

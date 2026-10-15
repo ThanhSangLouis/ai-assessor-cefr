@@ -79,7 +79,7 @@ def test_restart_restores_response_audit_session_and_checksum(tmp_path):
     assert restarted_responses.get_blob(owner, record.response_id) == b"synthetic fixture bytes"
     assert len(restarted.list_audit()) == 2
     version = restarted.connection.execute("PRAGMA user_version").fetchone()[0]
-    assert version == SQLiteStore.SCHEMA_VERSION == 4
+    assert version == SQLiteStore.SCHEMA_VERSION == 9
     assert restarted.connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     restarted.close()
 
@@ -195,9 +195,7 @@ def test_audit_is_append_only_and_schema_version_is_rejected(tmp_path):
     _, store, _, _, _, _, _, _ = setup_service(tmp_path)
     with pytest.raises(sqlite3.IntegrityError):
         store.connection.execute("DELETE FROM audit")
-    store.connection.execute(
-        f"PRAGMA user_version={SQLiteStore.SCHEMA_VERSION + 1}"
-    )
+    store.connection.execute(f"PRAGMA user_version={SQLiteStore.SCHEMA_VERSION + 1}")
     store.close()
     with pytest.raises(RuntimeError, match="unsupported"):
         SQLiteStore(tmp_path / "m08-data")

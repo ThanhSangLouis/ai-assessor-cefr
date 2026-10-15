@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
+import tempfile
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -22,15 +23,20 @@ from aicefr.contracts import (
     ResponseStatus,
     SessionRecord,
 )
+from aicefr.storage.migrations import SCHEMA_VERSION, migration_lock
+from aicefr.storage.migrations import migrate as migrate_w5
 from aicefr.storage.paths import external_data_dir
 
 
 class SQLiteStore:
-    SCHEMA_VERSION = 4
+    SCHEMA_VERSION = SCHEMA_VERSION
 
     def __init__(self, data_dir: Path | str) -> None:
         self.data_dir = external_data_dir(data_dir)
-        self.connection = sqlite3.connect(self.data_dir / "metadata.sqlite3", isolation_level=None)
+        self.connection = sqlite3.connect(
+            self.data_dir / "metadata.sqlite3", isolation_level=None, timeout=5.0
+        )
+        self.connection.execute("PRAGMA busy_timeout=5000")
         self.connection.execute("PRAGMA foreign_keys=ON")
         try:
             self._migrate()
@@ -57,24 +63,30 @@ class SQLiteStore:
             raise
 
     def _migrate(self) -> None:
-        version = self.connection.execute("PRAGMA user_version").fetchone()[0]
-        if version < 0 or version > self.SCHEMA_VERSION:
-            raise RuntimeError("unsupported SQLite schema version")
         try:
-            if version == 0:
-                self._create_v1_schema()
-                version = 1
-            if version == 1:
-                self._upgrade_v1_to_v2()
-                version = 2
-            if version == 2:
-                self._upgrade_v2_to_v3()
-                version = 3
-            if version == 3:
-                self._upgrade_v3_to_v4()
-                version = 4
-            if version != self.SCHEMA_VERSION:
-                raise RuntimeError("unsupported SQLite schema version")
+            data_dir = getattr(self, "data_dir", None)
+            if data_dir is None:
+                self._migration_test_directory = tempfile.TemporaryDirectory()
+                data_dir = Path(self._migration_test_directory.name)
+            with migration_lock(Path(data_dir)):
+                version = self.connection.execute("PRAGMA user_version").fetchone()[0]
+                if version < 0 or version > self.SCHEMA_VERSION:
+                    raise RuntimeError("unsupported SQLite schema version")
+                if version == 0:
+                    self._create_v1_schema()
+                    version = 1
+                if version == 1:
+                    self._upgrade_v1_to_v2()
+                    version = 2
+                if version == 2:
+                    self._upgrade_v2_to_v3()
+                    version = 3
+                if version == 3:
+                    self._upgrade_v3_to_v4()
+                    version = 4
+                if version != 4 and version != self.SCHEMA_VERSION:
+                    raise RuntimeError("unsupported SQLite schema version")
+                migrate_w5(self.connection, Path(data_dir), lock_held=True)
         except Exception:
             self.connection.rollback()
             raise

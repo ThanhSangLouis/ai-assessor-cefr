@@ -135,15 +135,24 @@ def test_worker_owns_connection_and_processes_durable_queue(portal_runtime):
     def factory():
         store = SQLiteStore(runtime.store.data_dir)
 
-        def enqueue(record):
-            threads.append(threading.current_thread().name)
-            store.claim_queued_response(record)
-            finished.set()
+        class Pipeline:
+            def set_commit_guard(self, guard):
+                self.guard = guard
+
+            def enqueue(self, record):
+                threads.append(threading.current_thread().name)
+                store.claim_queued_response(record)
+                store.connection.execute(
+                    "UPDATE responses SET status='COMPLETED',revision=revision+1 "
+                    "WHERE response_id=?",
+                    (record.response_id,),
+                )
+                finished.set()
 
         ready.set()
         return SimpleNamespace(
             store=store,
-            control=SimpleNamespace(reload=lambda: None, pipeline=SimpleNamespace(enqueue=enqueue)),
+            control=SimpleNamespace(reload=lambda: None, pipeline=Pipeline()),
             close=store.close,
         )
 
@@ -153,7 +162,20 @@ def test_worker_owns_connection_and_processes_durable_queue(portal_runtime):
         worker.enqueue(response)
         assert finished.wait(5)
         assert threads == ["aicefr-local-worker"]
-        assert runtime.store.get_response(response.response_id).status.value == "RUNNING"
+        assert runtime.store.get_response(response.response_id).status.value == "COMPLETED"
+        state = runtime.store.connection.execute(
+            "SELECT state FROM durable_jobs WHERE response_id=?", (response.response_id,)
+        ).fetchone()[0]
+        deadline = threading.Event()
+        # The pipeline signals its result before the worker records job completion.
+        for _ in range(100):
+            if state == "succeeded":
+                break
+            deadline.wait(0.01)
+            state = runtime.store.connection.execute(
+                "SELECT state FROM durable_jobs WHERE response_id=?", (response.response_id,)
+            ).fetchone()[0]
+        assert state == "succeeded"
     finally:
         worker.close()
     assert not worker._thread.is_alive()
@@ -169,12 +191,26 @@ def test_worker_capacity_rejects_extra_jobs_without_unbounded_memory(portal_runt
 
     def factory():
         store = SQLiteStore(runtime.store.data_dir)
-        return SimpleNamespace(store=store, close=store.close)
+
+        class Pipeline:
+            def set_commit_guard(self, guard):
+                self.guard = guard
+
+            def enqueue(self, _record):
+                return None
+
+        return SimpleNamespace(
+            store=store,
+            control=SimpleNamespace(reload=lambda: None, pipeline=Pipeline()),
+            close=store.close,
+        )
 
     worker = BackgroundPipeline(runtime.store, factory, capacity=1)
     try:
+        worker.enqueue(first)
+        worker.enqueue(first)  # same response is idempotent even at capacity
         with pytest.raises(ValueError, match="full"):
-            worker.enqueue(first)
+            worker.enqueue(second)
         assert second.response_id != first.response_id
     finally:
         worker.close()
