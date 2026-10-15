@@ -1,0 +1,69 @@
+{
+  "lint": {
+    "command": [
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/ruff",
+      "check",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+    "exit_code": 0,
+    "result": "PASS",
+    "seconds": 0.12,
+    "log": "lint.log"
+  },
+  "format": {
+    "command": [
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/ruff",
+      "format",
+      "--check",
+      "src",
+      "tests",
+      "scripts"
+    ],
+    "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+    "exit_code": 1,
+    "result": "FAIL",
+    "seconds": 0.04,
+    "log": "format.log"
+  },
+  "wheel": {
+    "command": [
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/python",
+      "-m",
+      "build",
+      "--wheel",
+      "--no-isolation",
+      "--outdir",
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr-runtime/evidence/w5-g0-2026-10-15/wheels"
+    ],
+    "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+    "exit_code": 0,
+    "result": "PASS",
+    "seconds": 0.91,
+    "log": "wheel.log"
+  },
+  "markdown-links": {
+    "command": [
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/python",
+      "scripts/ci/check_md_links.py"
+    ],
+    "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+    "exit_code": 0,
+    "result": "PASS",
+    "seconds": 0.08,
+    "log": "markdown-links.log"
+  },
+  "forbidden-files": {
+    "command": [
+      "/home/thanglvc/Documents/HCMUTE/TLCN/ai-assessor-cefr/.venv/bin/python",
+      "scripts/ci/check_forbidden_files.py"
+    ],
+    "revision": "3b2d2b78ba5bb35bd162b8f3e5de21ade946d237",
+    "exit_code": 0,
+    "result": "PASS",
+    "seconds": 0.06,
+    "log": "forbidden-files.log"
+  }
+}
