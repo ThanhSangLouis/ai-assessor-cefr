@@ -62,7 +62,7 @@ Week 5 không triển khai trực tiếp từ mô tả trong file kế hoạch n
 | [M12 — Blind Evaluation](../sdd/modules/m12-blind-evaluation/01-requirement.md) | Batch, blind sheet, adjudication, agreement | Sang | W5-S04; N03/N04 | Phase 01 DRAFT |
 | [M13 — Learning Evidence](../sdd/modules/m13-learning-evidence/01-requirement.md) | Pronunciation, feedback study, teacher-time, reliable change | Sang | W5-S03/S04; N01–N04 | Phase 01 DRAFT |
 | [M14 — Billing & Licensing](../sdd/modules/m14-billing-licensing/01-requirement.md) | Plan, sandbox payment, receipt, license | Thắng | W5-T03; N04 | Phase 01 DRAFT |
-| [M15 — Product Web](../sdd/modules/m15-product-web/01-requirement.md) | Design system và toàn bộ public/student/teacher/admin UI | Nguyên | W5-N01–N04 | Phase 01/03/04 APPROVED; Phase 05 APPROVED chỉ cho 001A theo [status](../sdd/modules/m15-product-web/07-status.md) |
+| [M15 — Product Web](../sdd/modules/m15-product-web/01-requirement.md) | Design system và toàn bộ public/student/teacher/admin UI | Nguyên | W5-N01–N04 | Phase 01/03/04 APPROVED; Phase 05 APPROVED cho 001A và SCRUM-74–76/M15-TASK-003–006 theo [status](../sdd/modules/m15-product-web/07-status.md) |
 | [M16 — Monolith Runtime](../sdd/modules/m16-monolith-runtime/01-requirement.md) | Migration, worker, package, CI, data ops, final integration | Thắng | W5-T01/T04 | Phase 01 DRAFT |
 
 Quy tắc áp dụng:
