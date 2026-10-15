@@ -5,7 +5,7 @@
 
 | Task | W5 | Deliverable / trace | Readiness |
 | --- | --- | --- | --- |
-| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — A2R1 Phase 07; A2R2 correction prompt chưa chạy do runner không có Gemini 3.6 Flash (High). Scope W5-N01 đã được duyệt; 001A chưa verified |
+| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — Phase 07 A2R2 còn R01–R03 mở; correction bundle đã dùng, cùng vấn đề traceability R02 tái diễn nên cần chủ dự án quyết định hướng tiếp theo. Runner hiện không liệt kê Gemini 3.6 Flash (High); Phase 08 chưa bắt đầu; 001A chưa verified |
 | `M15-TASK-001B` | W5-N01.1–N01.3 | assets/font/package, nav, landing/login/bands/consent/account; TEST-001/002/008–012 | `BLOCKED` — scope W5-N01 được duyệt; route/asset owner, M11/M09 contracts, M16 asset/runtime impact còn thiếu; M05 đã accepted, M08 review còn pending |
 | `M15-TASK-002` | W5-N01.4–N01.7 | record/upload/preparation/progress/report/history; TEST-002–004/008/012 | `BLOCKED` — scope W5-N01 được duyệt; M01/M02/M06/M08/M09/M13 consumer contracts, M02 owner review và Phase 05 readiness còn thiếu; M05 semantics đã accepted |
 | `M15-TASK-003` | W5-N02.1–N02.6 | practice/lesson/review/result/progress; TEST-005/008/012 | `BLOCKED` — scope W5-N02 được duyệt; M10/M13 payload, enum, disclosure và W5-T01 persistence chưa được freeze/duyệt |

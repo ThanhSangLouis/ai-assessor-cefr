@@ -3,14 +3,14 @@
 | Mục | Trạng thái |
 | --- | --- |
 | Lifecycle | proposed |
-| Phase | 07 — Implementation Review `M15-TASK-001A` A1, A2R1 và A2R2; Codex recommendation mới nhất `CHANGES_REQUIRED`, user verdict `PENDING`; producer contract/route vẫn là dependency cho integration task |
+| Phase | 07 — Implementation Review `M15-TASK-001A` A1, A2R1 và A2R2; Codex recommendation mới nhất `CHANGES_REQUIRED`, user verdict `PENDING`; correction budget đã dùng, chờ quyết định chủ dự án sau khi R02 tái diễn; Phase 08 `NOT_STARTED` |
 | Requirement | v0.2 · chủ dự án APPROVED ngày 15/10/2026; [Phase 01 record](reviews/phase-01-review-2026-10-15.md) |
 | Research mode | RUN · chủ dự án chọn cùng Phase 01 verdict |
 | Research | v0.3 DRAFT; hai read-only lane W5-N01/N02 và W5-N03/N04; source `40907cc` static, browser `NOT_RUN` |
 | Specification | v0.3; Phase 03 user verdict APPROVED ngày 15/10/2026; Codex check khi review vẫn BLOCKED |
 | Artifacts 04–06 | Test Plan v0.2 APPROVED, [Phase 04 review](reviews/phase-04-review-2026-10-15.md); Plan/Tasks v0.2 APPROVED chỉ cho 001A, [Phase 05 review](reviews/phase-05-review-2026-10-15.md); amendment v0.2a APPROVED chỉ cho F06 `identity.py`; W5-N01–N04 scope approved, readiness `BLOCKED` theo [Phase 05 precheck](reviews/phase-05-readiness-precheck-w5-n01-n04-2026-10-15.md) và [scope decision](reviews/w5-n01-n04-scope-approval-2026-10-15.md) |
-| Implementation | A2R1 đã bàn giao diff/evidence tại `evidence/m15-task-001a-a2/`; A2R2 handoff/evidence được chủ dự án báo đã hoàn thành. Review A2R2: targeted Codex rerun 32 PASS; browser evidence 18 assertions/17 screenshot hashes hợp lệ; non-smoke 36 failures và coverage command exit 1; R01–R03 còn mở, không Verified. Xem [Phase 07 A2R2 review](reviews/phase-07-review-a2r2-2026-10-15.md). |
-| Prompt | A1 đã bàn giao; A2 cũ `SUPERSEDED_BEFORE_EXECUTION`; [A2R1](prompts/M15-W5-N01-001A-A2R1.md) đã thực thi; [A2R2 correction](prompts/M15-W5-N01-001A-A2R2.md) được chuẩn bị trong trạng thái model-blocked, sau đó chủ dự án báo đã handoff/nhận triển khai. Review phát hiện provenance fingerprint không khớp; xem [prompt log](prompts/prompt-log.md) và Review Record A2R2. |
+| Implementation | A2R1 đã bàn giao diff/evidence tại `evidence/m15-task-001a-a2/`; A2R2 handoff/evidence được chủ dự án báo đã hoàn thành. Review A2R2: targeted Codex rerun 32 PASS; browser evidence 18 assertions/17 screenshot hashes hợp lệ; non-smoke 36 failures và coverage command exit 1; R01–R03 còn mở, không Verified. Correction bundle đã dùng; do R02 traceability lặp lại, bước sửa tiếp theo cần chủ dự án quyết định sau khi đánh giá lại task/Plan. Xem [Phase 07 A2R2 review](reviews/phase-07-review-a2r2-2026-10-15.md). |
+| Prompt | A1 đã bàn giao; A2 cũ `SUPERSEDED_BEFORE_EXECUTION`; [A2R1](prompts/M15-W5-N01-001A-A2R1.md) và [A2R2 correction](prompts/M15-W5-N01-001A-A2R2.md) đã được thực thi. Chưa tạo prompt correction mới: correction budget mặc định đã dùng, R02 tái diễn, và `agy models` hiện chỉ liệt kê Gemini 3.8 Flash (High), không có Gemini 3.6 Flash (High) bắt buộc theo runner skill. Xem [prompt log](prompts/prompt-log.md), [Review Record A2R2](reviews/phase-07-review-a2r2-2026-10-15.md) và phần tái đánh giá bên dưới. |
 
 UI work bắt đầu sau khi backend payload/error/authorization contract tương ứng freeze; mock có thể dùng cho component test nhưng không đủ để đánh dấu task DONE.
 
@@ -38,4 +38,10 @@ FINGERPRINT CONTEXT: Footer fingerprint is the Codex review workspace after Revi
 FINGERPRINT ALGORITHM: `sdd-workspace-v2`
 FINGERPRINT METADATA FILES: `docs/sdd/modules/m15-product-web/07-status.md`; `docs/sdd/modules/m15-product-web/prompts/M15-W5-N01-001A-A2R2.md`; `docs/sdd/modules/m15-product-web/prompts/prompt-log.md`
 FINGERPRINT EXCLUSIONS: `EDUZ/**`; `docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/**` (A2R2 preflight options)
-NEXT ACTION: A2R2 cần xử lý R01–R03 trong một correction bundle được chủ dự án điều phối, cung cấp fingerprint/preflight nhất quán và evidence tương ứng; Codex re-review trước khi user verdict Phase 07. W5-N01-N04 còn lại tiếp tục chờ contract/version/verdict và Phase 05 readiness riêng theo [precheck matrix](reviews/phase-05-readiness-precheck-w5-n01-n04-2026-10-15.md). Không phát prompt cho task dependency còn BLOCKED.
+NEXT ACTION: Không tự phát correction prompt khác. Chờ chủ dự án quyết định đánh giá lại task/Plan và cách xử lý blocker runner/model; sau quyết định, Codex cập nhật readiness rồi mới tiếp tục đúng gate. User verdict Phase 07 vẫn `PENDING`; Phase 08 `NOT_STARTED`. W5-N01.1/W5-N01 chưa DONE. W5-N01–N04 còn lại tiếp tục chờ contract/version/verdict và Phase 05 readiness riêng theo [precheck matrix](reviews/phase-05-readiness-precheck-w5-n01-n04-2026-10-15.md); không phát prompt cho task còn `BLOCKED`.
+
+## Tái đánh giá correction budget sau Review A2R2 — 15/10/2026
+
+A2R2 là bundled correction xử lý các finding từ review A2R1. Review hiện tại còn `M15-A2R2-R01` (MAJOR), `R02` (BLOCKER) và `R03` (MAJOR) mở. R02 tiếp tục là lỗi traceability/fingerprint qua các attempt; theo quy tắc ngân sách vòng lặp của skill SDD, mặc định chỉ có một bundled correction và khi cùng root cause tái diễn phải dừng để đánh giá lại task/Plan hoặc xin quyết định chủ dự án. Vì vậy chưa tạo hoặc gửi prompt A2R3.
+
+Kiểm tra `agy models` ngày 15/10/2026 chỉ trả về Gemini 3.8 Flash (High/Medium/Low), không có Gemini 3.6 Flash (High); raw output lưu tại `evidence/m15-task-001a-a2/codex-review/agy-models-recheck-2026-10-15.log`. Skill `antigravity-task-runner` yêu cầu đúng Gemini 3.6 Flash (High), dừng nếu model không có và cấm fallback. Không gọi Antigravity implementer trong lượt này. Codex giữ nguyên recommendation `CHANGES_REQUIRED`, user verdict `PENDING`, Phase 08 `NOT_STARTED`; quyết định tiếp tục correction hay quay lại đánh giá Plan thuộc chủ dự án.

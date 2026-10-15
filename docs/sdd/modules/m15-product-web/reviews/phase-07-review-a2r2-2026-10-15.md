@@ -74,3 +74,11 @@ Actual working-tree diff so với `HEAD` gồm `src/aicefr/api/templates.py`, `s
 **CODEX RECOMMENDATION:** `CHANGES REQUIRED`; không approve Phase 07.  
 **USER VERDICT:** `PENDING` — chủ dự án quyết định verdict cuối.  
 **NEXT ACTION:** Khắc phục R01–R03 trong phạm vi/quyền còn hiệu lực và trả evidence nhất quán; sau đó Codex re-review finding còn mở. Không đánh Task Verified/DONE và không vào Phase 08 trước user verdict Phase 07 `APPROVED`.
+
+## Follow-up: correction decision gate — 15/10/2026
+
+A2R2 đã là bundled correction cho các finding A2R1. Sau A2R2, R01 (MAJOR), R02 (BLOCKER) và R03 (MAJOR) vẫn mở; R02 tiếp tục lặp lại cùng nhóm nguyên nhân về fingerprint/evidence traceability. Theo quy tắc ngân sách vòng lặp SDD, correction bundle mặc định đã dùng; khi cùng root cause tái diễn phải đánh giá lại task/Plan hoặc hỏi quyết định chủ dự án. Vì vậy dòng `NEXT ACTION` ở trên được thay bằng decision gate này; Codex chưa tạo prompt A2R3.
+
+Đề xuất cho lần đánh giá lại nếu chủ dự án muốn tiếp tục: (1) buộc preflight fingerprint dùng `--expect` và lưu raw output; (2) bind toàn bộ test/coverage/browser evidence vào cùng final source snapshot, rồi Codex tính lại fingerprint độc lập; (3) đối chiếu chính xác fail-ID set giữa clean base và source cuối, giữ `VERIFICATION_FAILED` nếu required gate còn đỏ; (4) khai báo selector và required primary action theo route rồi assert tồn tại, hiển thị, bounds, clipping và hit-test. Đây là đề xuất để xem lại Plan, chưa phải approval hay prompt implementer.
+
+Runner check sau review: [`agy-models-recheck-2026-10-15.log`](../evidence/m15-task-001a-a2/codex-review/agy-models-recheck-2026-10-15.log) chỉ có Gemini 3.8 Flash (High/Medium/Low); skill Antigravity runner yêu cầu Gemini 3.6 Flash (High) và cấm fallback. Codex không gọi Antigravity. Recommendation vẫn `CHANGES_REQUIRED`, user verdict `PENDING`, Phase 08 `NOT_STARTED`.
