@@ -12,3 +12,11 @@
 | M14-TASK-006 | W5-T04 | full security/regression/evidence | all | BLOCKED |
 
 Không task nào được ghi DONE bằng giao dịch sandbox thủ công nếu tampering/replay/rollback tests chưa có.
+
+## Local execution SCRUM-67
+
+User giao trực tiếp W5-T03 và cho phép Luna implement/Codex review/tạo PR. Global packet vẫn DRAFT; không biến các dòng BLOCKED planning ở trên thành approval. Backend tương ứng TASK001–004 đã được triển khai trên base `bab5f25`, final local verification PASS, sẵn sàng PR review. Handoff cho TASK005/N04 nằm trong evidence; full UI và TASK006/T04 không được ghi hoàn thành từ task này. Historical target `3b2d2b7`; Sang `40907cc`.
+
+- [Authority](evidence/scrum-67/authority.md)
+- [Review record](evidence/scrum-67/review-record.md)
+- [Verification và mapping](evidence/scrum-67/verification.md)
