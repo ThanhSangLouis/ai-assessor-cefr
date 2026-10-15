@@ -3,10 +3,10 @@
 **PHASE:** 05 — Plan & Task Readiness
 **TASK:** `M15-TASK-001A` / W5-N01.1 một phần
 **AMENDMENT:** `M15-05-001A-A2R3`
-**PROPOSED PROMPT ID:** `M15-W5-N01-001A-A2R3` (not created or sent)
-**STATUS:** `DRAFT` — Codex recommendation `RECOMMEND APPROVAL`; user verdict `PENDING`
+**PROMPT ID:** `M15-W5-N01-001A-A2R3` (to be created and logged before handoff)
+**STATUS:** `APPROVED` — Phase 05 Amendment v0.3 approved by project owner on 15/10/2026
 **DATE:** 15/10/2026 (Asia/Bangkok)
-**CURRENT CODE BASE:** branch `feat/SCRUM-73-W5-N01-Design-system-public-pages-account-assessment-student-flow`; A2R2 implementation is committed through `059984a`. Current repository HEAD while drafting is `072d101dd8614ee0bd1c8c95fd5db347a16d74a9`. The exact base revision for the eventual prompt must be the full HEAD recorded after this amendment receives its Phase 05 verdict.
+**CURRENT CODE BASE:** branch `feat/SCRUM-73-W5-N01-Design-system-public-pages-account-assessment-student-flow`; A2R2 implementation is committed through `059984a`. Amendment v0.3 was drafted at `072d101dd8614ee0bd1c8c95fd5db347a16d74a9`; the project owner approved it while HEAD was `1236d151a225d9b9ce2bde95f4218cd69b40c98a`. The A2R3 prompt base will be the full HEAD after the approval-record commit.
 
 ## 1. Decision requested
 
@@ -101,4 +101,4 @@ No product requirement or behavior changes, so Phase 03 Specification and Phase 
 
 **CODEX CHECK:** `PASS` for bounded scope, finding trace, measurable checks, and stopping conditions.
 **CODEX RECOMMENDATION:** `RECOMMEND APPROVAL` for this amendment only.
-**USER VERDICT:** `PENDING` — no prompt or Antigravity implementation until explicit Phase 05 approval.
+**USER VERDICT:** `APPROVED` — “APPROVED Phase 05 Amendment v0.3” (15/10/2026, Asia/Bangkok). Approval authorizes only one A2R3 correction under this amendment. It does not approve Phase 07, Phase 08, task completion, or any additional correction attempt.

@@ -3,9 +3,9 @@
 **PHASE RECORD ID:** `M15-05-001A-A2R3`
 **SCOPE:** `M15-TASK-001A` / W5-N01.1 một phần
 **SUBJECT:** [Phase 05 Amendment v0.3](../05-001a-final-correction-amendment-v0.3.md)
-**BASE WHILE DRAFTING:** `072d101dd8614ee0bd1c8c95fd5db347a16d74a9`; actual prompt base is pending and must be captured after user verdict.
+**BASE WHILE DRAFTING:** `1236d151a225d9b9ce2bde95f4218cd69b40c98a`; the prompt base will be the full HEAD after this approval record is committed.
 **SOURCE REVIEWED:** Phase 07 A2R2 Review Record and current committed implementation/evidence on SCRUM-73 branch.
-**USER VERDICT:** `PENDING`. **CODEX RECOMMENDATION:** `RECOMMEND APPROVAL`.
+**USER VERDICT:** `APPROVED` — project owner response “APPROVED Phase 05 Amendment v0.3” on 15/10/2026 (Asia/Bangkok). **CODEX RECOMMENDATION:** `RECOMMEND APPROVAL`.
 
 ## Phase 05 checks
 
@@ -29,5 +29,5 @@ The report page currently renders no `[data-seek-second]` control for the A2R2 Q
 
 **CODEX CHECK RESULT:** `PASS` for amendment readiness.
 **CODEX RECOMMENDATION:** `RECOMMEND APPROVAL` for the Phase 05 amendment only.
-**USER VERDICT:** `PENDING`. No A2R3 prompt has been created or sent.
-**NEXT:** Project owner supplies Phase 05 verdict. If approved, Codex records it, captures the actual base SHA and workspace fingerprint, writes the A2R3 prompt/log, then hands the single attempt to Antigravity using Gemini 3.8 Flash (High). If not approved or if the model is unavailable, no implementation starts.
+**USER VERDICT:** `APPROVED` on 15/10/2026 (Asia/Bangkok), for this amendment and one A2R3 attempt only. This does not approve Phase 07/08 or complete `M15-TASK-001A`.
+**NEXT:** Codex records the final post-approval base SHA, creates and logs the A2R3 prompt, captures the starting workspace fingerprint with the specified options, then hands the single attempt to Antigravity using the explicitly authorized Gemini 3.8 Flash (High). No further correction attempt is authorized by this verdict.

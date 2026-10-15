@@ -5,7 +5,7 @@
 
 | Task | W5 | Deliverable / trace | Readiness |
 | --- | --- | --- | --- |
-| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — Phase 07 A2R2 còn R01–R03 mở. Phase 05 Amendment v0.3 đề xuất một lượt correction A2R3; user verdict `PENDING`. Gemini 3.8 Flash (High) được user cho phép riêng cho lượt này sau khi amendment được duyệt. Phase 08 chưa bắt đầu; 001A chưa verified |
+| `M15-TASK-001A` | W5-N01.1 một phần | semantic shell/tokens/states cho page hiện có; FR-001/008, AC-001/004 phần shell; TEST-001/008/009/012 | `CHANGES_REQUIRED` — Phase 07 A2R2 còn R01–R03 mở. Phase 05 Amendment v0.3 được user duyệt ngày 15/10/2026, cho phép đúng một correction A2R3 bằng Gemini 3.8 Flash (High); prompt/fingerprint chưa ghi tại lúc chốt verdict. Phase 08 chưa bắt đầu; 001A chưa verified |
 | `M15-TASK-001B` | W5-N01.1–N01.3 | assets/font/package, nav, landing/login/bands/consent/account; TEST-001/002/008–012 | `BLOCKED` — scope W5-N01 được duyệt; route/asset owner, M11/M09 contracts, M16 asset/runtime impact còn thiếu; M05 đã accepted, M08 review còn pending |
 | `M15-TASK-002` | W5-N01.4–N01.7 | record/upload/preparation/progress/report/history; TEST-002–004/008/012 | `BLOCKED` — scope W5-N01 được duyệt; M01/M02/M06/M08/M09/M13 consumer contracts, M02 owner review và Phase 05 readiness còn thiếu; M05 semantics đã accepted |
 | `M15-TASK-003` | W5-N02.1–N02.6 | practice/lesson/review/result/progress; TEST-005/008/012 | `BLOCKED` — scope W5-N02 được duyệt; M10/M13 payload, enum, disclosure và W5-T01 persistence chưa được freeze/duyệt |
@@ -25,6 +25,6 @@
 
 ### Phase 05 amendment candidate — A2R3 final correction
 
-- [Amendment v0.3](05-001a-final-correction-amendment-v0.3.md) and [Phase 05 review](reviews/phase-05-001a-final-correction-2026-10-15.md) define one final attempt for A2R2 findings R01–R03. Both are `DRAFT`/user verdict `PENDING`; no prompt has been created or sent.
-- If approved, base revision and fingerprint must be captured after the Phase 05 decision is recorded and before handoff. The only model override is Gemini 3.8 Flash (High) for this one attempt.
+- [Amendment v0.3](05-001a-final-correction-amendment-v0.3.md) and [Phase 05 review](reviews/phase-05-001a-final-correction-2026-10-15.md) define one final attempt for A2R2 findings R01–R03. User verdict `APPROVED` on 15/10/2026; prompt/fingerprint must be recorded before handoff.
+- Capture the actual post-approval base revision and starting fingerprint before sending. Gemini 3.8 Flash (High) is authorized for this one attempt only.
 - If R01–R03 are not resolved or required gates lack supported evidence, keep the task `CHANGES_REQUIRED`/`VERIFICATION_FAILED`; no additional correction attempt is authorized by this amendment.
