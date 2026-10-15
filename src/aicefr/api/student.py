@@ -19,6 +19,7 @@ from aicefr.contracts import (
     ResponseRecord,
     ResponseStatus,
 )
+from aicefr.trust.contracts import TrustAssessment, TrustDisposition
 
 
 class _Frozen(BaseModel):
@@ -137,9 +138,18 @@ class StudentStatus(_Frozen):
     reason: ReasonCode | None = None
 
 
+class StudentTrustSummary(_Frozen):
+    """Small recovery-focused Trust view for the response owner."""
+
+    disposition: TrustDisposition
+    reasons: tuple[ReasonCode, ...]
+    recovery: str | None = None
+
+
 class StudentReportView(_Frozen):
     status: StudentStatus
     report: object | None = None
+    trust: StudentTrustSummary | None = None
 
 
 class StudentService:
@@ -162,9 +172,7 @@ class StudentService:
         self._pipeline = pipeline
 
     def submit(self, session_token: str, request: SubmitRequest) -> StudentStatus:
-        actor = self._auth.resolve(
-            session_token, allowed_roles=frozenset({ActorRole.STUDENT})
-        )
+        actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
         self._task_access.require_open(request.task_id, request.task_version)
         self._validate_upload(request)
         response = self._responses.submit(
@@ -195,18 +203,21 @@ class StudentService:
         return self._status(response)
 
     def status(self, session_token: str, response_id: str) -> StudentStatus:
-        actor = self._auth.resolve(
-            session_token, allowed_roles=frozenset({ActorRole.STUDENT})
-        )
+        actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
         return self._status(self._responses.get_response(actor, response_id))
 
     def report(self, session_token: str, response_id: str) -> StudentReportView:
-        actor = self._auth.resolve(
-            session_token, allowed_roles=frozenset({ActorRole.STUDENT})
-        )
+        actor = self._auth.resolve(session_token, allowed_roles=frozenset({ActorRole.STUDENT}))
         response = self._responses.get_response(actor, response_id)
         report = self._reports.get(response_id)
-        return StudentReportView(status=self._status(response, report is not None), report=report)
+        trust = (
+            student_trust_summary(report.trust)
+            if report is not None and hasattr(report, "trust") and report.trust is not None
+            else None
+        )
+        return StudentReportView(
+            status=self._status(response, report is not None), report=report, trust=trust
+        )
 
     def _validate_upload(self, request: SubmitRequest) -> None:
         if request.content_type not in self._policy.allowed_media_types:
@@ -258,3 +269,21 @@ class StudentApi:
 
     def get_report(self, session_token: str, response_id: str) -> StudentReportView:
         return self._service.report(session_token, response_id)
+
+
+def student_trust_summary(trust: TrustAssessment) -> StudentTrustSummary:
+    values = {reason.value for reason in trust.reasons}
+    recovery = None
+    if values & {"CALIBRATION_MISSING", "CALIBRATION_INVALID", "CALIBRATION_HASH_MISMATCH"}:
+        recovery = "Kết quả đang chờ kiểm tra; hãy xem lại sau hoặc hỏi giảng viên."
+    elif "LANGUAGE_NOT_ENGLISH" in values:
+        recovery = "Hãy ghi lại câu trả lời bằng tiếng Anh."
+    elif "LANGUAGE_UNCERTAIN" in values:
+        recovery = "Hãy ghi lại câu trả lời rõ tiếng Anh hơn."
+    elif values & {"OFF_TOPIC_SUSPECTED", "PROMPT_READING_SUSPECTED", "SCORE_NEAR_BOUNDARY"}:
+        recovery = "Giảng viên cần xem lại kết quả trước khi sử dụng."
+    return StudentTrustSummary(
+        disposition=trust.disposition,
+        reasons=trust.reasons,
+        recovery=recovery,
+    )

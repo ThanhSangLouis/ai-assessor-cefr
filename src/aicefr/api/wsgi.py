@@ -22,7 +22,12 @@ from urllib.parse import parse_qs, urlsplit
 from pydantic import ValidationError
 
 from aicefr.api.review import ReviewApi
-from aicefr.api.student import StudentApi, SubmissionError, SubmitRequest
+from aicefr.api.student import (
+    StudentApi,
+    SubmissionError,
+    SubmitRequest,
+    student_trust_summary,
+)
 from aicefr.api.templates import (
     LOCAL_CSS,
     render_consent,
@@ -68,6 +73,34 @@ class HttpInputError(ValueError):
         super().__init__(code)
         self.status = status
         self.code = code
+
+
+def _trust_recovery(reasons: tuple[Any, ...]) -> str | None:
+    """Student-facing recovery text uses stable reasons only."""
+    values = {getattr(reason, "value", str(reason)) for reason in reasons}
+    if values & {"CALIBRATION_MISSING", "CALIBRATION_INVALID", "CALIBRATION_HASH_MISMATCH"}:
+        return "Kết quả đang chờ kiểm tra; hãy xem lại sau hoặc hỏi giảng viên."
+    if "LANGUAGE_NOT_ENGLISH" in values:
+        return "Hãy ghi lại câu trả lời bằng tiếng Anh."
+    if "LANGUAGE_UNCERTAIN" in values:
+        return "Hãy ghi lại câu trả lời rõ tiếng Anh hơn."
+    if values & {"OFF_TOPIC_SUSPECTED", "PROMPT_READING_SUSPECTED", "SCORE_NEAR_BOUNDARY"}:
+        return "Giảng viên cần xem lại kết quả trước khi sử dụng."
+    return None
+
+
+def _bounded_versions(values: dict[str, str], *, max_value: int = 160) -> dict[str, str]:
+    """Drop oversized values and path-like strings from external report payloads."""
+    return {
+        key: value
+        for key, value in values.items()
+        if isinstance(key, str)
+        and isinstance(value, str)
+        and len(key) <= 64
+        and len(value) <= max_value
+        and "/" not in value
+        and "\\" not in value
+    }
 
 
 @dataclass(frozen=True)
@@ -350,6 +383,8 @@ class StudentTeacherApp:
             )
         if method == "POST" and path == "/api/student/responses":
             return self._submit(environ, browser=False)
+        if method == "GET" and path.startswith("/api/v1/reports/"):
+            return self._safe_report_api(environ, path)
         if method == "POST" and path == "/student/responses":
             return self._submit(environ, browser=True)
         if path.startswith("/api/student/responses/"):
@@ -616,7 +651,7 @@ class StudentTeacherApp:
                     HTTPStatus.ACCEPTED,
                     {"status": view.status.model_dump(mode="json"), "report": None},
                 )
-            return self._json(HTTPStatus.OK, self._report_payload(view.report))
+            return self._json(HTTPStatus.OK, self._report_payload(view.report, teacher=False))
         raise HttpInputError(HTTPStatus.NOT_FOUND, "ROUTE_NOT_FOUND")
 
     def _student_page(self, method: str, path: str, environ: dict[str, Any]) -> WebResponse:
@@ -834,10 +869,58 @@ class StudentTeacherApp:
         return response_id, action
 
     @staticmethod
-    def _report_payload(report: object) -> dict[str, object]:
+    def _report_payload(report: object, *, teacher: bool = False) -> dict[str, object]:
         if not isinstance(report, DiagnosticReport):
             raise HttpInputError(HTTPStatus.NOT_FOUND, "REPORT_UNAVAILABLE")
-        return report.model_dump(mode="json")
+        payload = report.model_dump(mode="json")
+        payload["source_versions"] = _bounded_versions(report.source_versions, max_value=100_000)
+        if report.trust is not None and not teacher:
+            payload["trust"] = student_trust_summary(report.trust).model_dump(mode="json")
+            payload.pop("prediction_set", None)
+            payload.pop("provenance", None)
+            payload["criterion_indicators"] = [
+                {"name": item.name.value, "label": item.label, "coverage": item.coverage}
+                for item in report.criterion_indicators
+            ]
+        elif teacher:
+            payload["provenance"] = _bounded_versions(report.provenance)
+        return payload
+
+    def _safe_report_api(self, environ: dict[str, Any], path: str) -> WebResponse:
+        response_id = path.removeprefix("/api/v1/reports/")
+        if not response_id or "/" in response_id or self._auth is None or self._reports is None:
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+        token = self._session_token(environ)
+        actor = self._auth.resolve(
+            token,
+            allowed_roles=frozenset({ActorRole.STUDENT, ActorRole.TEACHER, ActorRole.ADMIN}),
+        )
+        teacher = actor.role in {ActorRole.TEACHER, ActorRole.ADMIN}
+        response = None
+        if teacher:
+            if self._responses is None:
+                raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+            response = self._responses.metadata.get_response(response_id)
+            if response is None:
+                raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+        else:
+            if self._responses is None:
+                raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+            response = self._responses.get_response(actor, response_id)
+        report = self._reports.get(response_id)
+        if report is None:
+            return self._json(
+                HTTPStatus.ACCEPTED,
+                {
+                    "response_id": response_id,
+                    "status": response.status.value if response is not None else "REVIEW_REQUIRED",
+                    "report": None,
+                },
+            )
+        return self._json(
+            HTTPStatus.OK,
+            {"response_id": response_id, "report": self._report_payload(report, teacher=teacher)},
+        )
 
     @classmethod
     def _html(cls, status: HTTPStatus, page: str) -> WebResponse:

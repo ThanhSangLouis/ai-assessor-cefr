@@ -168,6 +168,16 @@ def test_m07_test_001_reason_map_routes_uncertain_results_but_not_hard_upload_re
             band=None,
         )
     ) == (ReasonCode.OUT_OF_DISTRIBUTION,)
+    trust_reasons = (
+        ReasonCode.LANGUAGE_UNCERTAIN,
+        ReasonCode.OFF_TOPIC_SUSPECTED,
+        ReasonCode.PROMPT_READING_SUSPECTED,
+        ReasonCode.CALIBRATION_MISSING,
+    )
+    assert (
+        routed_reasons(_assessment(status=AssessmentStatus.REVIEW_REQUIRED, reasons=trust_reasons))
+        == trust_reasons
+    )
     with pytest.raises(NoReviewNeeded):
         review_candidate_from_assessment(
             _assessment(

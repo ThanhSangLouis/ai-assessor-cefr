@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import UTC, datetime
 
@@ -15,17 +16,50 @@ class TaskRepository:
     def __init__(self, store: SQLiteStore) -> None:
         self.store = store
 
-    @staticmethod
-    def _from_row(row: tuple) -> TaskRecord:
+    def _from_row(self, row: tuple) -> TaskRecord:
+        keywords = self.store.connection.execute(
+            "SELECT payload FROM runtime_settings WHERE key=?",
+            (self._keyword_key(row[0], row[1]),),
+        ).fetchone()
+        topic_keywords = tuple(json.loads(keywords[0])) if keywords else ()
         return TaskRecord(
             task_id=row[0],
             task_version=row[1],
             title=row[2],
             prompt_text=row[3],
+            topic_keywords=topic_keywords,
             min_seconds=row[4],
             max_seconds=row[5],
             active=bool(row[6]),
             revision=row[7],
+        )
+
+    @staticmethod
+    def _keyword_key(task_id: str, task_version: str) -> str:
+        return f"task_topic_keywords:{task_id}:{task_version}"
+
+    @classmethod
+    def _store_keywords(cls, connection, task: TaskRecord, actor_id: str, *, insert_only=False):
+        query = (
+            "INSERT OR IGNORE INTO runtime_settings "
+            "(key,payload,revision,version,updated_by,updated_at) VALUES (?,?,?,?,?,?)"
+            if insert_only
+            else "INSERT INTO runtime_settings "
+            "(key,payload,revision,version,updated_by,updated_at) "
+            "VALUES (?,?,?,?,?,?) ON CONFLICT(key) DO UPDATE SET "
+            "payload=excluded.payload,revision=runtime_settings.revision+1,"
+            "version=excluded.version,updated_by=excluded.updated_by,updated_at=excluded.updated_at"
+        )
+        connection.execute(
+            query,
+            (
+                cls._keyword_key(task.task_id, task.task_version),
+                json.dumps(task.topic_keywords, ensure_ascii=False),
+                1,
+                "task-topic-keywords-v1",
+                actor_id,
+                datetime.now(UTC).isoformat(),
+            ),
         )
 
     def list(self, *, active_only: bool = False) -> tuple[TaskRecord, ...]:
@@ -44,7 +78,7 @@ class TaskRepository:
 
     def seed(self, task: TaskRecord) -> None:
         with self.store.transaction() as connection:
-            connection.execute(
+            inserted = connection.execute(
                 "INSERT OR IGNORE INTO speaking_tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     task.task_id,
@@ -58,6 +92,11 @@ class TaskRepository:
                     datetime.now(UTC).isoformat(),
                 ),
             )
+            # Seed metadata belongs only to the task row inserted by this seed.
+            # A later configuration load must never rewrite a teacher-managed or
+            # already-used version whose keyword metadata predates this field.
+            if inserted.rowcount == 1:
+                self._store_keywords(connection, task, "system-seed", insert_only=True)
 
     def save(self, actor: Actor, task: TaskRecord, expected_revision: int) -> TaskRecord:
         with self.store.transaction() as connection:
@@ -65,7 +104,20 @@ class TaskRepository:
             if current is None:
                 if expected_revision != 0:
                     raise ConcurrentResponseUpdate("task revision is stale")
-                self.seed(task)
+                connection.execute(
+                    "INSERT INTO speaking_tasks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        task.task_id,
+                        task.task_version,
+                        task.title,
+                        task.prompt_text,
+                        task.min_seconds,
+                        task.max_seconds,
+                        int(task.active),
+                        1,
+                        datetime.now(UTC).isoformat(),
+                    ),
+                )
             else:
                 if current.revision != expected_revision:
                     raise ConcurrentResponseUpdate("task revision is stale")
@@ -76,9 +128,16 @@ class TaskRepository:
                 if used and (
                     current.title,
                     current.prompt_text,
+                    current.topic_keywords,
                     current.min_seconds,
                     current.max_seconds,
-                ) != (task.title, task.prompt_text, task.min_seconds, task.max_seconds):
+                ) != (
+                    task.title,
+                    task.prompt_text,
+                    task.topic_keywords,
+                    task.min_seconds,
+                    task.max_seconds,
+                ):
                     raise ConcurrentResponseUpdate("create a new task version for revised wording")
                 connection.execute(
                     "UPDATE speaking_tasks SET title=?, prompt_text=?, min_seconds=?, "
@@ -95,6 +154,7 @@ class TaskRepository:
                         expected_revision,
                     ),
                 )
+            self._store_keywords(connection, task, actor.actor_id, insert_only=current is None)
             self.store.record_audit(
                 connection,
                 AuditEvent(

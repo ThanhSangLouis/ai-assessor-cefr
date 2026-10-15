@@ -1,4 +1,5 @@
 import logging
+import math
 
 import pytest
 from tests.asr.fixtures import CountingLoader, FakeAsrEngine, audio, qc, raw_words
@@ -34,6 +35,48 @@ def test_missing_probability_stays_none():
     ws[1] = RawWord("b", ws[1].start_s, ws[1].end_s, None)
     t = service(FakeAsrEngine(result(ws))).transcribe("r1", audio(), qc())
     assert t.words[1].prob is None and t.words[0].prob == 0.9
+
+
+def test_independent_language_metadata_is_optional_and_propagated():
+    base = result(raw_words(["hello", "there"]))
+    t = service(FakeAsrEngine(base)).transcribe("r1", audio(), qc())
+    assert (t.language, t.language_probability) == (None, None)
+    assert t.language_method is None and t.language_version is None
+
+    detected = EngineResult(
+        text=base.text,
+        words=base.words,
+        engine=base.engine,
+        engine_version=base.engine_version,
+        weight_name=base.weight_name,
+        test_only=base.test_only,
+        language=" EN ",
+        language_probability=0.91,
+        language_method="fixture-lid",
+        language_version="1",
+    )
+    transcript = service(FakeAsrEngine(detected)).transcribe("r1", audio(), qc())
+    assert (transcript.language, transcript.language_probability) == ("en", 0.91)
+    assert (transcript.language_method, transcript.language_version) == ("fixture-lid", "1")
+
+
+def test_invalid_language_probability_becomes_missing_metadata():
+    base = result(raw_words(["hello", "there"]))
+    detected = EngineResult(
+        text=base.text,
+        words=base.words,
+        engine=base.engine,
+        engine_version=base.engine_version,
+        weight_name=base.weight_name,
+        language="vi",
+        language_probability=math.nan,
+        language_method="fixture-lid",
+        language_version="1",
+    )
+    transcript = service(FakeAsrEngine(detected)).transcribe("r1", audio(), qc())
+    assert transcript.status is AsrStatus.OK
+    assert transcript.language == "vi" and transcript.language_probability is None
+    assert (transcript.language_method, transcript.language_version) == ("fixture-lid", "1")
 
 
 @pytest.mark.parametrize("error", [RuntimeError("engine hỏng"), TimeoutError("quá hạn")])

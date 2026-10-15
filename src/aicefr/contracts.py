@@ -104,6 +104,15 @@ class ReasonCode(StrEnum):
     MANUAL_REVIEW_REQUESTED = "MANUAL_REVIEW_REQUESTED"
     MODEL_VERSION_MISSING = "MODEL_VERSION_MISSING"
     MODEL_ARTIFACT_INVALID = "MODEL_ARTIFACT_INVALID"
+    # M09 — Trust layer
+    LANGUAGE_NOT_ENGLISH = "LANGUAGE_NOT_ENGLISH"
+    LANGUAGE_UNCERTAIN = "LANGUAGE_UNCERTAIN"
+    OFF_TOPIC_SUSPECTED = "OFF_TOPIC_SUSPECTED"
+    PROMPT_READING_SUSPECTED = "PROMPT_READING_SUSPECTED"
+    CALIBRATION_MISSING = "CALIBRATION_MISSING"
+    CALIBRATION_HASH_MISMATCH = "CALIBRATION_HASH_MISMATCH"
+    CALIBRATION_INVALID = "CALIBRATION_INVALID"
+    LONG_RESPONSE_REVIEW = "LONG_RESPONSE_REVIEW"
 
 
 # --- M02 → M03/M04 -----------------------------------------------------------
@@ -239,6 +248,18 @@ class Transcript(_Frozen):
     audio_sha256: str
     reasons: tuple[ReasonCode, ...] = ()
     test_only: bool = False
+    # Independent audio language detection metadata; optional for old reports.
+    language: str | None = None
+    language_probability: float | None = Field(default=None, ge=0.0, le=1.0)
+    language_method: str | None = None
+    language_version: str | None = None
+
+    @field_validator("language_probability", mode="before")
+    @classmethod
+    def _language_probability_not_bool(cls, value: Any) -> Any:
+        if isinstance(value, bool):
+            raise ValueError("language probability must be numeric, not bool")
+        return value
 
 
 # --- M04 — Features ----------------------------------------------------------

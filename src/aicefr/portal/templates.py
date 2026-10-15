@@ -205,6 +205,7 @@ def tasks(items: list[dict], role: str) -> str:
                 "task_version": "1",
                 "title": "",
                 "prompt_text": "",
+                "topic_keywords": (),
                 "min_seconds": 40,
                 "max_seconds": 60,
                 "active": True,
@@ -224,6 +225,9 @@ def tasks(items: list[dict], role: str) -> str:
                 body += field(name, label, item[name])
             body += f"""<label>Nội dung đề
 <textarea name="prompt_text">{e(item["prompt_text"])}</textarea>
+</label>
+<label>Từ khóa chủ đề, phân cách bằng dấu phẩy
+<input name="topic_keywords" value="{e(", ".join(item.get("topic_keywords", ())))}">
 </label>
 <label>Mở đề<select name="active">
 <option value="true" {"selected" if item["active"] else ""}>Có</option>

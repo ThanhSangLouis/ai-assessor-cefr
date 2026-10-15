@@ -6,6 +6,7 @@ import os
 import shutil
 import sqlite3
 import time
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -122,9 +123,16 @@ def test_task_versions_and_closing_survive_restart(portal_runtime):
     runtime, tokens = portal_runtime
     record = submit_completed(runtime, tokens["a"])
     original = runtime.portal.tasks.get(record.task_id, record.task_version)
+    assert original.topic_keywords == ("learning", "education")
     changed = original.model_copy(update={"title": "Changed wording"})
     with pytest.raises(ConcurrentResponseUpdate):
         runtime.portal.save_task(tokens["admin"], changed, original.revision)
+    with pytest.raises(ConcurrentResponseUpdate):
+        runtime.portal.save_task(
+            tokens["admin"],
+            original.model_copy(update={"topic_keywords": ("science",)}),
+            original.revision,
+        )
     runtime.portal.save_task(tokens["admin"], original.model_copy(update={"active": False}), 1)
     assert runtime.portal.task_list(tokens["a"]) == []
     created = runtime.portal.save_task(
@@ -137,10 +145,33 @@ def test_task_versions_and_closing_survive_restart(portal_runtime):
         ),
         0,
     )
+    assert created["topic_keywords"] == []
+    second_version = runtime.portal.save_task(
+        tokens["admin"],
+        TaskRecord(
+            task_id="demo-speaking",
+            task_version="2",
+            title="Learning and science",
+            prompt_text="Talk about science and learning.",
+            topic_keywords=("science", "learning"),
+        ),
+        0,
+    )
+    assert second_version["topic_keywords"] == ["science", "learning"]
     assert created["revision"] == 1
-    reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+    changed_seed = deepcopy(runtime.control.config)
+    changed_seed["tasks"][0]["topic_keywords"] = ("weather",)
+    reopened = create_runtime(runtime.store.data_dir, config=changed_seed)
     try:
         assert reopened.portal.tasks.get("demo-speaking", "1").active is False
+        assert reopened.portal.tasks.get("demo-speaking", "1").topic_keywords == (
+            "learning",
+            "education",
+        )
+        assert reopened.portal.tasks.get("demo-speaking", "2").topic_keywords == (
+            "science",
+            "learning",
+        )
         assert reopened.portal.tasks.get("new", "v2").title == "<script>unsafe</script>"
     finally:
         reopened.close()
@@ -1124,8 +1155,11 @@ def test_model_activation_keeps_pin_cas_and_reports(portal_runtime, tmp_path):
     assert any(item["name"] == "incompatible" and not item["compatible"] for item in items)
     response = submit_completed(runtime, tokens["a"])
     before = runtime.app._reports.get(response.response_id)
+    pipeline = runtime.app._student_api._service._pipeline
+    assert pipeline._trust_evaluator.ready
     activated = runtime.control.activate_model(tokens["admin"], "ridge_resp_v2", 0)
     assert activated["revision"] == 1
+    assert pipeline._trust_evaluator.ready is False
     with pytest.raises(ModelArtifactError):
         runtime.control.activate_model(tokens["admin"], "incompatible", 1)
     with pytest.raises(ValueError):
