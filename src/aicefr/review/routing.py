@@ -31,6 +31,14 @@ REVIEW_REASONS = frozenset(
         ReasonCode.MANUAL_REVIEW_REQUESTED,
         ReasonCode.MODEL_VERSION_MISSING,
         ReasonCode.MODEL_ARTIFACT_INVALID,
+        ReasonCode.LANGUAGE_NOT_ENGLISH,
+        ReasonCode.LANGUAGE_UNCERTAIN,
+        ReasonCode.OFF_TOPIC_SUSPECTED,
+        ReasonCode.PROMPT_READING_SUSPECTED,
+        ReasonCode.CALIBRATION_MISSING,
+        ReasonCode.CALIBRATION_HASH_MISMATCH,
+        ReasonCode.CALIBRATION_INVALID,
+        ReasonCode.LONG_RESPONSE_REVIEW,
     }
 )
 

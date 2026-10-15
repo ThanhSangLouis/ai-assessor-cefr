@@ -1,3 +1,5 @@
+import json
+
 from aicefr.contracts import (
     Assessment,
     AssessmentStatus,
@@ -15,11 +17,13 @@ from aicefr.contracts import (
 from aicefr.report.contracts import (
     CommentRequest,
     CommentTemplate,
+    DiagnosticReport,
     EvidenceRef,
     EvidenceSource,
     ReportStatus,
 )
 from aicefr.report.service import DiagnosticReportBuilder, ReportInput
+from aicefr.trust.contracts import CriterionIndicator, TrustAssessment, TrustDisposition
 
 
 def _assessment(status=AssessmentStatus.REVIEW_REQUIRED) -> Assessment:
@@ -194,3 +198,77 @@ def test_m06_test_006_report_has_one_overall_and_five_coverage_rows_without_crit
     assert all("score" not in type(row).model_fields for row in report.criteria)
     assert report.interaction.level is None
     assert report.interaction.score_status == "insufficient_evidence"
+
+
+def test_old_long_window_results_source_version_round_trips_unchanged():
+    window_results = json.dumps(
+        [
+            {"start_s": index * 10, "end_s": (index + 1) * 10, "score": 3.4, "band": "B1"}
+            for index in range(20)
+        ],
+        separators=(",", ":"),
+    )
+    assert len(window_results) > 160
+    report = DiagnosticReportBuilder().build(
+        _input(source_versions={"window_results": window_results})
+    )
+
+    legacy_json = report.model_dump(mode="json")
+    legacy_json.pop("trust")
+    legacy_json.pop("prediction_set")
+    legacy_json.pop("criterion_indicators")
+    legacy_json.pop("provenance")
+    restored = DiagnosticReport.model_validate_json(json.dumps(legacy_json))
+
+    assert restored.source_versions["window_results"] == window_results
+
+
+def test_trust_indicators_reference_only_validated_matching_criterion_evidence():
+    valid_id = f"feature:n_words:{(2.0).hex()}"
+    invalid_id = "foreign-word"
+    trust = TrustAssessment(
+        criterion_indicators=tuple(
+            CriterionIndicator(name=criterion, coverage=0.5) for criterion in Criterion
+        ),
+        disposition=TrustDisposition.NOT_EVALUATED,
+    )
+    report = DiagnosticReportBuilder().build(
+        _input(
+            trust=trust,
+            evidence_refs=(
+                EvidenceRef(
+                    evidence_id=valid_id,
+                    response_id="fixture-response",
+                    source=EvidenceSource.FEATURE_SET,
+                    source_version="features-v3",
+                    criterion=Criterion.FLUENCY,
+                ),
+                EvidenceRef(
+                    evidence_id=invalid_id,
+                    response_id="another-response",
+                    source=EvidenceSource.TRANSCRIPT,
+                    source_version="decode-v1",
+                    criterion=Criterion.FLUENCY,
+                    word_index=0,
+                    start_s=0.1,
+                    end_s=0.3,
+                ),
+            ),
+        )
+    )
+
+    assert report.trust.criterion_indicators == report.criterion_indicators
+    references = {ref.evidence_id: ref for ref in report.evidence_refs}
+    fluency = next(item for item in report.criterion_indicators if item.name is Criterion.FLUENCY)
+    assert fluency.evidence_refs == (valid_id,)
+    for indicator in report.criterion_indicators:
+        assert all(
+            reference_id in references and references[reference_id].criterion is indicator.name
+            for reference_id in indicator.evidence_refs
+        )
+    assert invalid_id not in {
+        reference_id
+        for indicator in report.criterion_indicators
+        for reference_id in indicator.evidence_refs
+    }
+    assert any(issue.evidence_id == invalid_id for issue in report.evidence_issues)

@@ -216,6 +216,9 @@ def create_runtime(
         reports = ReportService(report_repository, decision_verifier=SQLiteReviewRepository(store))
         review_repository = SQLiteReviewRepository(store)
         reviews = ReviewService(review_repository, report_sink=reports)
+        tasks = TaskRepository(store)
+        for item in config["tasks"]:
+            tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
         if pipeline is None:
             stored_model = store.connection.execute(
                 "SELECT payload FROM runtime_settings WHERE key='active_model'"
@@ -289,6 +292,15 @@ def create_runtime(
                 else FeatureExtractor(feature_order, feature_version, trained_with, vad_engine)
             )
             from aicefr.pipeline.coordinator import PipelineCoordinator
+            from aicefr.trust.service import RuntimeTrustEvaluator
+
+            # The production composition root always wires Trust. Missing or
+            # unverified calibration remains a fail-closed evaluator state.
+            trust_evaluator = RuntimeTrustEvaluator(
+                scorer=scorer_instance,
+                config=config.get("trust", {}),
+                tasks=tasks,
+            )
 
             pipeline = PipelineCoordinator(
                 responses=responses,
@@ -299,10 +311,8 @@ def create_runtime(
                 extractor=extractor,
                 scorer=scorer_instance,
                 long_response_windows=bool(config.get("long_response_windows", False)),
+                trust_evaluator=trust_evaluator,
             )
-        tasks = TaskRepository(store)
-        for item in config["tasks"]:
-            tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
         portal = PortalService(auth, store, tasks, accounts)
         control = RuntimeControl(portal, pipeline, config)
         control._asr_injected = asr_engine is not None

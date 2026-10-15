@@ -1,4 +1,6 @@
+import hashlib
 import io
+import json
 import sqlite3
 import threading
 from types import SimpleNamespace
@@ -46,6 +48,7 @@ from aicefr.storage.blob import BlobStore
 from aicefr.storage.jobs import SQLiteJobRepository
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import ConcurrentResponseUpdate, SQLiteStore
+from aicefr.trust.service import RuntimeTrustEvaluator
 
 
 def _audio(*, silence_ratio: float = 0.0, format: str = "WAV") -> bytes:
@@ -137,7 +140,16 @@ class _Scorer:
 
 
 class _Stack:
-    def __init__(self, root, *, scorer=None, asr=None, extractor=None):
+    def __init__(
+        self,
+        root,
+        *,
+        scorer=None,
+        asr=None,
+        extractor=None,
+        trust_evaluator=None,
+        long_response_windows=False,
+    ):
         self.data_dir = root / "data"
         self.store = SQLiteStore(self.data_dir)
         self.student = Actor(actor_id="fixture-student", role=ActorRole.STUDENT)
@@ -174,6 +186,8 @@ class _Stack:
             asr=self.asr,
             extractor=extractor or _Extractor(),
             scorer=scorer or _Scorer(),
+            long_response_windows=long_response_windows,
+            trust_evaluator=trust_evaluator,
         )
 
     def submit(self, data=None):
@@ -488,6 +502,30 @@ def test_corrupt_container_is_rejected_without_calling_asr(tmp_path):
     assert stack.reports.get(record.response_id) is None
 
 
+def test_invalid_long_response_window_geometry_becomes_controlled_review(tmp_path):
+    scorer = _Scorer()
+    scorer.artifact = SimpleNamespace(
+        feature_order=("total_dur",),
+        feature_lo=(0.1,),
+        feature_hi=(0.5,),
+        band_thresholds={"A2_B1": 2.75, "B1_B2": 3.75},
+    )
+    stack = _Stack(tmp_path, scorer=scorer, long_response_windows=True)
+    record = stack.submit()
+
+    stack.pipeline.enqueue(record)
+
+    current = stack.store.get_response(record.response_id)
+    report = stack.reports.get(record.response_id)
+    candidate = stack.review_repository.get(record.response_id)
+    assert current.status is ResponseStatus.REVIEW_REQUIRED
+    assert current.status_reason is ReasonCode.LONG_RESPONSE_REVIEW
+    assert report.assessment_status is AssessmentStatus.NOT_EVALUATED
+    assert report.overall_score is None and report.overall_band is None
+    assert ReasonCode.LONG_RESPONSE_REVIEW in report.reasons
+    assert candidate is not None and candidate.reasons == (ReasonCode.LONG_RESPONSE_REVIEW,)
+
+
 def test_container_outside_m02_whitelist_is_rejected(tmp_path):
     stack = _Stack(tmp_path)
     record = stack.submit(_audio(format="AIFF"))
@@ -561,6 +599,132 @@ def test_success_report_contains_only_valid_transcript_and_feature_evidence(tmp_
     }
     assert len(report.comments) == 2
     assert report.evidence_issues == ()
+
+
+@pytest.mark.parametrize(
+    ("language", "language_confidence", "topic_keyword", "expected_reason", "expected_status"),
+    [
+        (
+            "en",
+            0.97,
+            "school",
+            ReasonCode.OFF_TOPIC_SUSPECTED,
+            ResponseStatus.REVIEW_REQUIRED,
+        ),
+        (
+            "en",
+            0.80,
+            "weather",
+            ReasonCode.LANGUAGE_UNCERTAIN,
+            ResponseStatus.REVIEW_REQUIRED,
+        ),
+        (
+            "fr",
+            0.97,
+            "weather",
+            ReasonCode.LANGUAGE_NOT_ENGLISH,
+            ResponseStatus.REJECTED,
+        ),
+    ],
+)
+def test_single_band_trust_routes_or_rejects_without_changing_score(
+    tmp_path, language, language_confidence, topic_keyword, expected_reason, expected_status
+):
+    calibration = tmp_path / "synthetic-cvplus.json"
+    model = SimpleNamespace(
+        sha256="c" * 64,
+        feature_order=("words_per_minute",),
+        band_thresholds={"A2_B1": 2.75, "B1_B2": 3.75},
+    )
+    scorer = _Scorer()
+    scorer.artifact = model
+    payload = {
+        "version": "cvplus-v1",
+        "calibration_id": "fixture-pipeline-cvplus",
+        "model_sha256": model.sha256,
+        "feature_order": list(model.feature_order),
+        "band_thresholds": model.band_thresholds,
+        "folds": [
+            {"fold_index": i, "mean": [0.0], "scale": [1.0], "coef": [0.0], "intercept": 3.2}
+            for i in range(2)
+        ],
+        "n_residuals": 10,
+        "residuals": [
+            {
+                "sample_id": f"{i:064x}",
+                "speaker_group": f"{i + 100:064x}",
+                "fold_index": i % 2,
+                "residual": 0.1,
+            }
+            for i in range(10)
+        ],
+        "provenance": {
+            "manifest_sha256": "d" * 64,
+            "model_sha256": model.sha256,
+            "config_sha256": "e" * 64,
+            "seed": 17,
+            "split_role": "calibration",
+            "training_recipe_version": "fixture-training-v1",
+            "alpha_default": 0.1,
+            "speaker_group_count": 10,
+        },
+    }
+    calibration.write_text(json.dumps(payload), encoding="utf-8")
+    evaluator = RuntimeTrustEvaluator(
+        scorer=scorer,
+        config={
+            "calibration_artifact": str(calibration),
+            "expected_sha256": hashlib.sha256(calibration.read_bytes()).hexdigest(),
+        },
+        tasks={
+            ("fixture-task", "v1"): {
+                "prompt_text": "Describe your school experiences",
+                "topic_keywords": (topic_keyword,),
+            }
+        },
+    )
+    assert evaluator.ready is True
+
+    class EnglishOffTopicAsr(_Asr):
+        def transcribe(self, response_id, audio, qc):
+            result = super().transcribe(response_id, audio, qc)
+            words = tuple(Word(text="weather", start_s=0.1, end_s=0.2) for _ in range(30))
+            return result.model_copy(
+                update={
+                    "text": " ".join(word.text for word in words),
+                    "words": words,
+                    "language": language,
+                    "language_probability": language_confidence,
+                    "language_method": "fixture-independent-lid",
+                    "language_version": "fixture-v1",
+                }
+            )
+
+    stack = _Stack(
+        tmp_path,
+        scorer=scorer,
+        asr=EnglishOffTopicAsr(),
+        trust_evaluator=evaluator,
+    )
+    record = stack.submit()
+    stack.pipeline.enqueue(record)
+
+    final = stack.store.get_response(record.response_id)
+    report = stack.reports.get(record.response_id)
+    candidate = stack.review_repository.get(record.response_id)
+    assert final.status is expected_status
+    assert expected_reason in report.reasons
+    if expected_status is ResponseStatus.REJECTED:
+        assert final.status_reason is ReasonCode.LANGUAGE_NOT_ENGLISH
+        assert report.overall_score is None and report.overall_band is None
+        assert report.assessment_status is AssessmentStatus.NOT_EVALUATED
+        assert report.prediction_set.bands == (Band.B1,)
+        assert candidate is None
+    else:
+        assert report.overall_score == 3.2 and report.overall_band is Band.B1
+        assert report.assessment_status is AssessmentStatus.REVIEW_REQUIRED
+        assert report.prediction_set.bands == (Band.B1,)
+        assert candidate is not None and expected_reason in candidate.reasons
 
 
 def test_test_only_transcript_does_not_generate_report_evidence(tmp_path):

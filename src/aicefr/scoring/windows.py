@@ -13,6 +13,10 @@ from aicefr.scoring.ridge import to_band
 WINDOW_POLICY = "median-windows-v1"
 
 
+class WindowGeometryError(ValueError):
+    """Configured duration bounds cannot cover a response with valid windows."""
+
+
 def window_ranges(duration: float, *, minimum: float = 30, maximum: float = 60):
     if not math.isfinite(duration) or not 0 < minimum <= maximum or duration > 300:
         raise ValueError("invalid window duration")
@@ -38,7 +42,11 @@ def score_windows(audio, transcript, extractor, scorer):
     minimum = max(30.0, artifact.feature_lo[position])
     maximum = min(60.0, artifact.feature_hi[position])
     rows, estimates = [], []
-    for start, end in window_ranges(audio.duration_s, minimum=minimum, maximum=maximum):
+    try:
+        ranges = window_ranges(audio.duration_s, minimum=minimum, maximum=maximum)
+    except ValueError as error:
+        raise WindowGeometryError("response cannot be covered by configured windows") from error
+    for start, end in ranges:
         left, right = round(start * 16000), round(end * 16000)
         samples = audio.samples[left:right].copy()
         digest = hashlib.sha256(samples.tobytes()).hexdigest()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 from pathlib import Path
@@ -9,6 +10,7 @@ from aicefr.audio.config import QCConfig
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
 from aicefr.storage.blob import BlobStore
+from aicefr.trust.service import RuntimeTrustEvaluator
 
 
 def _get(runtime, path):
@@ -81,9 +83,59 @@ def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_p
     config = _demo_config()
     config["model_artifact"] = str(tmp_path / "missing-model.json")
     blob_store = BlobStore(tmp_path / "data", max_bytes=config["qc"]["max_input_bytes"])
+    scorer = SimpleNamespace(
+        artifact=SimpleNamespace(
+            sha256="a" * 64,
+            feature_order=("x",),
+            band_thresholds={"A2_B1": 2.75, "B1_B2": 3.75},
+        )
+    )
+    # Synthetic calibration is test-only and provides a real verified loader path.
+    calibration = tmp_path / "synthetic-calibration.json"
+    payload = {
+        "version": "cvplus-v1",
+        "calibration_id": "fixture-local-readiness",
+        "model_sha256": "a" * 64,
+        "feature_order": ["x"],
+        "band_thresholds": {"A2_B1": 2.75, "B1_B2": 3.75},
+        "folds": [
+            {"fold_index": i, "mean": [0.0], "scale": [1.0], "coef": [0.0], "intercept": 3.0}
+            for i in range(2)
+        ],
+        "n_residuals": 10,
+        "residuals": [
+            {
+                "sample_id": f"{i:064x}",
+                "speaker_group": f"{i + 100:064x}",
+                "fold_index": i % 2,
+                "residual": 0.1,
+            }
+            for i in range(10)
+        ],
+        "provenance": {
+            "manifest_sha256": "b" * 64,
+            "model_sha256": "a" * 64,
+            "config_sha256": "c" * 64,
+            "seed": 17,
+            "split_role": "calibration",
+            "training_recipe_version": "fixture-readiness-v1",
+            "alpha_default": 0.1,
+            "speaker_group_count": 10,
+        },
+    }
+    calibration.write_text(json.dumps(payload), encoding="utf-8")
+    trust = RuntimeTrustEvaluator(
+        scorer=scorer,
+        config={
+            "calibration_artifact": str(calibration),
+            "expected_sha256": hashlib.sha256(calibration.read_bytes()).hexdigest(),
+            "alpha": 0.1,
+        },
+    )
     pipeline = SimpleNamespace(
         _qc_config=QCConfig(**config["qc"]),
-        _scorer=SimpleNamespace(artifact=object()),
+        _scorer=scorer,
+        _trust_evaluator=trust,
         _asr=SimpleNamespace(_engine=None),
         _extractor=SimpleNamespace(_vad=object()),
         _responses=SimpleNamespace(blobs=blob_store),

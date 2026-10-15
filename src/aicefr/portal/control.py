@@ -43,6 +43,12 @@ class RuntimeControl:
             "SELECT payload,revision,version FROM runtime_settings WHERE key=?", (key,)
         ).fetchone()
 
+    def _rebind_trust(self) -> None:
+        trust = getattr(self.pipeline, "_trust_evaluator", None)
+        rebind = getattr(trust, "rebind", None)
+        if callable(rebind):
+            self.pipeline._trust_evaluator = rebind(self.pipeline._scorer)
+
     def reload(self) -> None:
         """Workers adopt committed policy only between responses."""
         from aicefr.audio.config import QCConfig
@@ -60,6 +66,7 @@ class RuntimeControl:
                 self.pipeline._scorer = RidgeScorer(
                     artifact=load_artifact(self._model_dir() / f"{name}.json")
                 )
+                self._rebind_trust()
 
     def _save(self, token: str, key: str, payload: dict, version: str, expected: int) -> None:
         actor = self.portal.actor(token, frozenset({ActorRole.ADMIN}))
@@ -157,6 +164,7 @@ class RuntimeControl:
         artifact = load_artifact(self._model_dir() / f"{name}.json")
         self._save(token, "active_model", {"name": name}, artifact.model_version, expected_revision)
         self.pipeline._scorer = RidgeScorer(artifact=artifact)
+        self._rebind_trust()
         return self.models(token)
 
     def readiness(self) -> dict[str, Any]:
@@ -203,6 +211,8 @@ class RuntimeControl:
         except Exception:
             checks["blobs"] = False
         checks["scoring_model"] = getattr(self.pipeline._scorer, "artifact", None) is not None
+        trust = getattr(self.pipeline, "_trust_evaluator", None)
+        checks["trust_calibration"] = trust is not None and bool(getattr(trust, "ready", False))
         checks["asr_model"] = self._asr_available()
         checks["vad_model"] = self._vad_available()
         return {"ready": all(checks.values()), "checks": checks}
