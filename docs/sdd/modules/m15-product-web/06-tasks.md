@@ -14,6 +14,8 @@
 | `M15-TASK-006` | W5-N04.6–N04.7 | full cross-role browser/a11y/motion/evidence; TEST-001–012 | `IN_PROGRESS` — final integrated browser/E2E remains `NOT_RUN` pending all task branches |
 | `M15-TASK-007` | W5-T04 | final package/clean-wheel/integrated browser gate; TEST-010/011 + full | `BLOCKED`; owner Thắng, không nằm trong prompt Nguyên |
 
+The project owner’s Phase 05 approval unblocks SCRUM-74/75/76 (`M15-TASK-003`–`006`) for the scoped UI adaptation. Their current implementation states are `IN_PROGRESS`; remaining API/policy limitations are surfaced as gated UI and are not task blockers. Acceptance remains open until the integrated browser evidence is reviewed.
+
 ## `M15-TASK-001A` — Phase 05 readiness candidate
 
 - **Objective:** semantic shell/tokens/state styling cho các page hiện hữu, không đổi URL, auth, payload hoặc business copy. Kết quả xem được trên local HTML tại 1280×800 và 390×844; skip link/main landmark/focus/contrast/light-dark/reduced motion/print có assertion.
@@ -22,3 +24,10 @@
 - **Input:** Specification v0.3 §§Design tokens/components, Layout/navigation, Assets/motion; Test Plan v0.2 M15-TEST-001/008/009/012; hiện trạng `_document`/`LOCAL_CSS` ở `api/templates.py`. Không phụ thuộc producer contract mới vì không đổi route/role/nav.
 - **Expected output:** diff nhỏ có Task ID; targeted/related pytest + lint/format + non-smoke regression; coverage line/branch và critical uncovered branches; browser result JSON ở desktop/mobile với focus/overflow/theme/reduced-motion/print, screenshot SHA-256, console/network/external summary; raw report đúng prompt. Checks chưa chạy phải là `NOT_RUN`/`VERIFICATION_FAILED`, không suy từ code.
 - **Done boundary:** chỉ `M15-TASK-001A` có thể qua review/verification. Parent W5-N01.1/W5-N01/M15 chưa `DONE`: Roboto/assets/nav/API/journey và full browser matrix còn trong 001B/002–006. Không dùng prompt 001A để sửa các task khác.
+
+## `M15-TASK-005/006` — SCRUM-76 admin UI and cross-role browser run
+
+- **Owner:** Hoàng Nguyên. **Scope:** transfer/adapt the admin overview, M12 rating batches, M13 study management, and M14 billing presentation in `src/aicefr/api/`; preserve backend/domain APIs and existing role checks.
+- **Current contracts:** study create/start/close/report/export are available; there is no study-list endpoint, so the page stores known IDs in browser storage and supports opening a known ID. Billing is read-only. Temporary-password receipt and unsupported billing mutations stay gated. See the [SCRUM-76 transfer record](reviews/implementation-transfer-scrum-76-2026-10-16.md).
+- **Acceptance:** M15-TEST-007/008/012 for task 005 and the supported cross-role/regression matrix for task 006. Run the requested integrated E2E exactly once after SCRUM-74–76 are on the same revision; include the exact revision, role/route/viewport results, screenshot hashes, console/network summary, and synthetic fixture account scope.
+- **Status:** `IN_PROGRESS`, unblocked by the owner’s Phase 05 verdict. The integrated browser acceptance has not yet run; no task is `DONE` based on source inspection.
