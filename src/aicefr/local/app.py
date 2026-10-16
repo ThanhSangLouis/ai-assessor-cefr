@@ -12,6 +12,7 @@ from typing import Any
 from aicefr.api.billing import BillingApi
 from aicefr.api.data_operations import DataOperationsApi
 from aicefr.api.identity import IdentityApi
+from aicefr.api.learning import LearningApi
 from aicefr.api.review import ReviewApi
 from aicefr.api.student import (
     StudentApi,
@@ -30,10 +31,12 @@ from aicefr.portal.data import DataControl
 from aicefr.portal.router import PortalRouter
 from aicefr.portal.service import PortalService
 from aicefr.portal.tasks import TaskRepository
+from aicefr.practice.service import LearningService
 from aicefr.review.service import ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.blob import BlobStore
+from aicefr.storage.learning import LearningRepository
 from aicefr.storage.providers import RepositoryProviders, build_providers
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import SQLiteStore
@@ -54,6 +57,7 @@ class LocalRuntime:
     accounts: Any | None = None
     google: Any | None = None
     billing: Any | None = None
+    learning: LearningService | None = None
 
     def close(self) -> None:
         if self.worker is not None:
@@ -304,6 +308,8 @@ def create_runtime(
         for item in config["tasks"]:
             tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
         portal = PortalService(auth, store, tasks, accounts)
+        learning = LearningService(LearningRepository(store))
+        learning_api = LearningApi(auth, learning)
         control = RuntimeControl(portal, pipeline, config)
         control._asr_injected = asr_engine is not None
         data = DataControl(portal, blobs)
@@ -354,6 +360,7 @@ def create_runtime(
                 identity_api,
                 billing_api=billing_api,
                 data_api=data_api,
+                learning_api=learning_api,
             ),
             metrics=metrics,
         )
@@ -371,6 +378,7 @@ def create_runtime(
             accounts,
             google,
             billing,
+            learning,
         )
     except Exception:
         if worker is not None:

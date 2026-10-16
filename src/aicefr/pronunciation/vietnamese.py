@@ -23,7 +23,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 
 PRONUNCIATION_VERSION = "vi-pron-v1"
 MIN_OPPORTUNITIES = 8
@@ -40,12 +40,12 @@ CLUSTERS = (
 TH_REPLACEMENTS = ("t", "d", "s", "z", "f")
 
 
-class Pattern(str, Enum):
+class Pattern(StrEnum):
     ED_ENDING = "ed_ending"
-    S_ENDING = "s_ending"
+    S_ENDING = "s_es_ending"
     FINAL_CONSONANT = "final_consonant"
-    TH_SOUND = "th_sound"
-    CLUSTER = "cluster"
+    TH_SOUND = "th_substitution"
+    CLUSTER = "initial_cluster_reduction"
 
 
 PATTERN_NAMES = {
