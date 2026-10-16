@@ -385,7 +385,7 @@ function showStep(i) {
   layoutEl.hidden = false;
   feedbackEl.hidden = true;
   feedbackEl.innerHTML = "";
-  formEl.hidden = false;
+  formEl.hidden = MODE === "preview";
   bodyEl.innerHTML =
     `<div class="step-top">${stageChip(step)}<span class="muted">Bước ${index + 1}/${steps.length}</span></div>` +
     `<h2 id="step-h" tabindex="-1">${escapeHtml(step.display_title)}</h2>` +
@@ -830,7 +830,7 @@ async function load() {
 // Health: the fake recogniser warning and whether live recording works.
 simulated = document.body.dataset.asrIsReal !== "true";
 if (simulated) document.getElementById("fake-asr-warning").hidden = false;
-recorder.enable(document.body.dataset.recordingEnabled === "true");
+recorder.enable(MODE !== "preview" && document.body.dataset.recordingEnabled === "true");
 
 // Consent: a learner's recordings are personal data. A teacher previewing a
 // draft stores nothing, so the check is for learners only.
