@@ -596,7 +596,7 @@ def render_report_content(report: DiagnosticReport, *, teacher: bool = False) ->
                 f"{language_html}{guard_rows}{prediction_html}{trust_provenance}"
                 "</ul></details>"
             )
-    return f"""<section class="report-card" aria-labelledby="report-heading">
+    return f"""<section aria-labelledby="report-heading">
 <p class="eyebrow">Bài đánh giá</p><h2 id="report-heading">Báo cáo chẩn đoán</h2>
 <p role="status">{verification}</p><div class="report-overall"><span>{overall_label}</span>
 <strong>{escape(overall_display)}</strong></div>{teacher_result}
