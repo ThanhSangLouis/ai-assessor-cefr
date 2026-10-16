@@ -91,9 +91,11 @@ def dispatch_page(app, environ):
             content_type = "image/svg+xml"
         elif target.suffix == ".woff2":
             content_type = "font/woff2"
+        if content_type.startswith("text/") or content_type == "image/svg+xml":
+            content_type = f"{content_type}; charset=utf-8"
         return WebResponse(
             HTTPStatus.OK,
-            f"{content_type}; charset=utf-8" if content_type.startswith("text/") or content_type == "image/svg+xml" else content_type,
+            content_type,
             target.read_bytes(),
             (("Cache-Control", "public, max-age=86400"),),
         )
