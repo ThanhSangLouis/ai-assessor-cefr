@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 
-from aicefr.contracts import ActorRole
+from aicefr.contracts import ActorRole, Band
 from conftest import http
 
 
@@ -22,44 +22,136 @@ def add_step_attempt(
     evidence = {**(evidence or {})}
     if words is not None:
         evidence["words"] = words
+    from aicefr.lessons.model import (
+        FreePayload,
+        FreeRound,
+        KeywordsPayload,
+        Lesson,
+        LessonStage,
+        LessonStep,
+        LookUpPayload,
+        ReadAloudPayload,
+        StepKind,
+    )
+    from aicefr.lessons.model import PublishedLessonVersion
+    from aicefr.lessons.rules import LESSON_RULES_VERSION
+
+    lesson = Lesson(
+        lesson_id="lesson-1",
+        title="Fixture lesson",
+        summary="Synthetic fixture used by learning feature tests.",
+        band=Band.A2,
+        revision=1,
+        content_version="fixture-v1",
+        steps=(
+            LessonStep(
+                step_id="step-1",
+                ordinal=1,
+                stage=LessonStage.MODEL,
+                kind=StepKind.READ_ALOUD,
+                instruction="Read the sample aloud.",
+                payload=ReadAloudPayload(kind=StepKind.READ_ALOUD, text="Hello world.", max_seconds=30),
+                rules_version=LESSON_RULES_VERSION,
+            ),
+            LessonStep(
+                step_id="step-2",
+                ordinal=2,
+                stage=LessonStage.CONTROLLED,
+                kind=StepKind.LOOK_UP,
+                instruction="Read and repeat.",
+                payload=LookUpPayload(
+                    kind=StepKind.LOOK_UP, text="A short sample.", show_seconds=6, max_seconds=30
+                ),
+                rules_version=LESSON_RULES_VERSION,
+            ),
+            LessonStep(
+                step_id="step-3",
+                ordinal=3,
+                stage=LessonStage.GUIDED,
+                kind=StepKind.KEYWORDS,
+                instruction="Use the keywords.",
+                payload=KeywordsPayload(
+                    kind=StepKind.KEYWORDS, keywords=("hello",), min_words=1, max_seconds=30
+                ),
+                rules_version=LESSON_RULES_VERSION,
+            ),
+            LessonStep(
+                step_id="step-4",
+                ordinal=4,
+                stage=LessonStage.FREE,
+                kind=StepKind.FREE,
+                instruction="Speak freely.",
+                payload=FreePayload(
+                    kind=StepKind.FREE,
+                    rounds=(
+                        FreeRound(duration_seconds=30, prompt="Talk about your day."),
+                        FreeRound(duration_seconds=20, prompt="Talk about your day."),
+                    ),
+                    max_seconds=30,
+                ),
+                rules_version=LESSON_RULES_VERSION,
+            ),
+        ),
+    )
+    snapshot = PublishedLessonVersion.from_lesson(
+        lesson, version=1, published_at=datetime.fromisoformat(created_at)
+    )
     with runtime.store.transaction() as connection:
         connection.execute(
             "INSERT OR IGNORE INTO learning_paths "
-            "(path_id,title,description,state,revision,created_at,updated_at) "
-            "VALUES('path-1','Path','', 'published',1,?,?)",
-            (created_at, created_at),
+            "(path_id,title,description,state,revision,created_at,updated_at,band_from,band_to,content_version,content_hash) "
+            "VALUES('path-1','Fixture path','', 'published',1,?,?, 'A2','A2','fixture-v1',?)",
+            (created_at, created_at, "0" * 64),
         )
         connection.execute(
-            "INSERT OR IGNORE INTO learning_units(unit_id,path_id,title,ordinal) "
-            "VALUES('unit-1','path-1','Unit',1)"
+            "INSERT OR IGNORE INTO learning_units(unit_id,path_id,title,ordinal,band,revision) "
+            "VALUES('unit-1','path-1','Fixture unit',1,'A2',1)"
         )
         connection.execute(
             "INSERT OR IGNORE INTO learning_lessons "
-            "(lesson_id,unit_id,title,active_version,created_at) "
-            "VALUES('lesson-1','unit-1','Lesson',NULL,?)",
-            (created_at,),
+            "(lesson_id,unit_id,title,active_version,created_at,summary,band,revision,content_version,ordinal) "
+            "VALUES('lesson-1','unit-1','Fixture lesson',NULL,?,?, 'A2',1,'fixture-v1',1)",
+            (created_at, lesson.summary),
         )
-        connection.execute(
-            "INSERT OR IGNORE INTO lesson_versions "
-            "(lesson_id,version,state,rules_version,published_at,created_at) "
-            "VALUES('lesson-1',1,'draft','rules-v1',NULL,?)",
-            (created_at,),
-        )
-        step_exists = connection.execute(
-            "SELECT 1 FROM lesson_steps "
-            "WHERE lesson_id='lesson-1' AND version=1 AND step_id='step-1'"
+        version_exists = connection.execute(
+            "SELECT 1 FROM lesson_versions WHERE lesson_id='lesson-1' AND version=1 AND state='published'"
         ).fetchone()
-        if not step_exists:
+        if not version_exists:
             connection.execute(
-                "INSERT INTO lesson_steps "
-                "(lesson_id,version,step_id,kind,ordinal,payload) "
-                "VALUES('lesson-1',1,'step-1','read_aloud',1,'{}')"
+                "INSERT OR IGNORE INTO lesson_versions "
+                "(lesson_id,version,state,rules_version,published_at,created_at,title,summary,band,revision,content_hash) "
+                "VALUES('lesson-1',1,'draft',?,NULL,?, ?, ?, 'A2',1,NULL)",
+                (snapshot.rules_version, created_at, snapshot.title, snapshot.summary),
             )
-        connection.execute(
-            "UPDATE lesson_versions SET state='published',published_at=? "
-            "WHERE lesson_id='lesson-1' AND version=1 AND state='draft'",
-            (created_at,),
-        )
+            for step in snapshot.steps:
+                payload = json.dumps(step.payload.model_dump(mode="json"), ensure_ascii=False, sort_keys=True)
+                connection.execute(
+                    "INSERT OR IGNORE INTO lesson_steps "
+                    "(lesson_id,version,step_id,kind,ordinal,payload,stage,instruction,rules_version) "
+                    "VALUES('lesson-1',1,?,?,?,?,?,?,?)",
+                    (
+                        step.step_id,
+                        step.kind.value,
+                        step.ordinal,
+                        payload,
+                        step.stage.value,
+                        step.instruction,
+                        step.rules_version,
+                    ),
+                )
+            connection.execute(
+                "UPDATE lesson_versions SET state='published',published_at=?,title=?,summary=?,band=?,revision=?,content_hash=?,rules_version=? "
+                "WHERE lesson_id='lesson-1' AND version=1 AND state='draft'",
+                (
+                    created_at,
+                    snapshot.title,
+                    snapshot.summary,
+                    snapshot.band.value,
+                    snapshot.revision,
+                    snapshot.content_hash,
+                    snapshot.rules_version,
+                ),
+            )
         connection.execute(
             "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='lesson-1'"
         )
