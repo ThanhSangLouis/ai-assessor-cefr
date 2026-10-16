@@ -13,26 +13,31 @@ from aicefr.storage import migrations
 from aicefr.storage.sqlite import SQLiteStore
 
 
-def _demote_to_v9(store):
-    connection = store.connection
-    connection.execute("DROP TABLE privacy_erasure_links")
-    connection.execute("DROP TRIGGER audit_no_update")
-    connection.execute(
-        "CREATE TRIGGER audit_no_update BEFORE UPDATE ON audit "
-        "BEGIN SELECT RAISE(ABORT,'audit is append-only'); END"
+def _make_v9_store(data_dir):
+    """Build a real v9 fixture; don't downgrade a newer schema in place."""
+    data_dir.mkdir(parents=True, exist_ok=True)
+    store = SQLiteStore.__new__(SQLiteStore)
+    store.data_dir = data_dir
+    store.connection = sqlite3.connect(data_dir / "metadata.sqlite3", isolation_level=None)
+    store.connection.execute("PRAGMA foreign_keys=ON")
+    store._create_v1_schema()
+    store._upgrade_v1_to_v2()
+    store._upgrade_v2_to_v3()
+    store._upgrade_v3_to_v4()
+    store.connection.execute(
+        "CREATE TABLE schema_migrations("
+        "version INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE, checksum TEXT NOT NULL)"
     )
-    connection.execute("DROP TRIGGER consent_events_no_delete")
-    connection.execute(
-        "CREATE TRIGGER consent_events_no_delete BEFORE DELETE ON consent_events "
-        "BEGIN SELECT RAISE(ABORT,'consent events are append-only'); END"
-    )
-    connection.execute("DROP TRIGGER research_ratings_immutable_delete")
-    connection.execute(
-        "CREATE TRIGGER research_ratings_immutable_delete BEFORE DELETE ON research_ratings "
-        "BEGIN SELECT RAISE(ABORT,'research ratings are immutable'); END"
-    )
-    connection.execute("DELETE FROM schema_migrations WHERE version=10")
-    connection.execute("PRAGMA user_version=9")
+    for version, group in enumerate(migrations.GROUPS[:5], start=5):
+        path = migrations.MIGRATION_DIR / f"{version:03d}_{group}.sql"
+        migrations._run_sql(store.connection, path.read_text())
+        migrations._verify_group(store.connection, group)
+        store.connection.execute(
+            "INSERT INTO schema_migrations(version,name,checksum) VALUES(?,?,?)",
+            (version, group, migrations._sha256(path)),
+        )
+    store.connection.execute("PRAGMA user_version=9")
+    return store
 
 
 def _seed_v9_rows(store):
@@ -82,9 +87,8 @@ def _seed_v9_rows(store):
 
 def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_path, monkeypatch):
     data_dir = tmp_path / "v9-store"
-    store = SQLiteStore(data_dir)
+    store = _make_v9_store(data_dir)
     _seed_v9_rows(store)
-    _demote_to_v9(store)
     backup = migrations.create_pre_migration_backup(store.connection, data_dir, schema_version=9)
     manifest = migrations.json.loads((backup / "manifest.json").read_text())
     assert manifest["schema_version"] == 9
@@ -118,13 +122,13 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
 
     monkeypatch.setattr(migrations, "MIGRATION_DIR", original_migrations)
     migrations.migrate(store.connection, data_dir)
-    assert store.connection.execute("PRAGMA user_version").fetchone() == (10,)
+    assert store.connection.execute("PRAGMA user_version").fetchone() == (11,)
     migrations.migrate(store.connection, data_dir)
     store.close()
 
     reopened = SQLiteStore(data_dir)
     try:
-        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (10,)
+        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (11,)
         assert reopened.connection.execute("SELECT order_id FROM billing_orders").fetchone() == (
             "order-v9",
         )
@@ -137,9 +141,8 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
 
 def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_path):
     data_dir = tmp_path / "v9-symlink-store"
-    store = SQLiteStore(data_dir)
+    store = _make_v9_store(data_dir)
     _seed_v9_rows(store)
-    _demote_to_v9(store)
     key_path = data_dir / "google-flow-hmac.key"
     key_path.unlink(missing_ok=True)
     outside = tmp_path / "outside-key"
@@ -157,13 +160,12 @@ def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_p
 
 def test_v9_migration_with_protected_key_without_getuid_platform_api(tmp_path, monkeypatch):
     data_dir = tmp_path / "v9-no-getuid-store"
-    store = SQLiteStore(data_dir)
+    store = _make_v9_store(data_dir)
     _seed_v9_rows(store)
-    _demote_to_v9(store)
     monkeypatch.delattr(migrations.os, "getuid", raising=False)
 
     migrations.migrate(store.connection, data_dir)
 
-    assert store.connection.execute("PRAGMA user_version").fetchone() == (10,)
+    assert store.connection.execute("PRAGMA user_version").fetchone() == (11,)
     assert (data_dir / "billing-hmac.key").read_bytes() == b"K" * 32
     store.close()

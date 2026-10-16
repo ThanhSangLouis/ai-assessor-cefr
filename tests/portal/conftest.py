@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 from types import SimpleNamespace
@@ -24,14 +25,74 @@ from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
 from aicefr.report.service import ReportInput
 from aicefr.scoring.scorer import RidgeScorer
+from aicefr.trust.service import RuntimeTrustEvaluator
 
 
 @pytest.fixture
 def portal_runtime(tmp_path):
     config = _demo_config()
+    config["tasks"][0]["prompt_text"] = "Talk about learning and education."
+    config["tasks"][0]["topic_keywords"] = ("learning", "education")
+    # Synthetic test-only scorer/calibration pair for the custom portal pipeline.
+    trust_scorer = SimpleNamespace(
+        artifact=SimpleNamespace(
+            sha256="a" * 64,
+            feature_order=("words_per_minute",),
+            band_thresholds={"A2_B1": 2.75, "B1_B2": 3.75},
+        )
+    )
+    calibration = tmp_path / "synthetic-portal-calibration.json"
+    thresholds = trust_scorer.artifact.band_thresholds
+    payload = {
+        "version": "cvplus-v1",
+        "calibration_id": "fixture-portal",
+        "model_sha256": trust_scorer.artifact.sha256,
+        "feature_order": list(trust_scorer.artifact.feature_order),
+        "band_thresholds": thresholds,
+        "folds": [
+            {
+                "fold_index": fold,
+                "mean": [0.0] * len(trust_scorer.artifact.feature_order),
+                "scale": [1.0] * len(trust_scorer.artifact.feature_order),
+                "coef": [0.0] * len(trust_scorer.artifact.feature_order),
+                "intercept": 3.0,
+            }
+            for fold in range(2)
+        ],
+        "n_residuals": 10,
+        "residuals": [
+            {
+                "sample_id": f"{index:064x}",
+                "speaker_group": f"{index + 100:064x}",
+                "fold_index": index % 2,
+                "residual": 0.1,
+            }
+            for index in range(10)
+        ],
+        "provenance": {
+            "manifest_sha256": "b" * 64,
+            "model_sha256": trust_scorer.artifact.sha256,
+            "config_sha256": "c" * 64,
+            "seed": 17,
+            "split_role": "calibration",
+            "training_recipe_version": "fixture-portal-v1",
+            "alpha_default": 0.1,
+            "speaker_group_count": 10,
+        },
+    }
+    calibration.write_text(json.dumps(payload), encoding="utf-8")
+    trust = RuntimeTrustEvaluator(
+        scorer=trust_scorer,
+        config={
+            "calibration_artifact": str(calibration),
+            "expected_sha256": hashlib.sha256(calibration.read_bytes()).hexdigest(),
+            "alpha": 0.1,
+        },
+    )
     pipeline = SimpleNamespace(
         _qc_config=QCConfig(**config["qc"]),
         _scorer=RidgeScorer.load(),
+        _trust_evaluator=trust,
         enqueue=lambda response: None,
     )
     runtime = create_runtime(tmp_path / "data", config=config, pipeline=pipeline)

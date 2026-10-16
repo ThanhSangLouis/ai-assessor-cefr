@@ -14,6 +14,7 @@ dependencies = [
     "argon2-cffi==25.1.0",
     "soundfile==0.14.0",
     "soxr==1.1.0",
+    "simplemma==1.1.2",
 ]
 
 [project.optional-dependencies]

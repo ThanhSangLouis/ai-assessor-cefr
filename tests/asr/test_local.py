@@ -1,5 +1,6 @@
 from types import ModuleType, SimpleNamespace
 
+import numpy as np
 import pytest
 from tests.asr.fixtures import audio
 
@@ -63,6 +64,36 @@ def test_local_adapter_passes_offline_english_word_timestamp_options(monkeypatch
     assert (result.words[0].text, result.words[0].prob) == (" hello", 0.91)
 
 
+def test_language_detection_is_independent_and_does_not_decode_segments(monkeypatch, tmp_path):
+    calls = []
+    mock_small_hashes(monkeypatch)
+
+    class Model:
+        def transcribe(self, samples, **kwargs):
+            calls.append((samples.size, kwargs))
+            if kwargs["language"] is None:
+                return object(), SimpleNamespace(language="vi", language_probability=0.93)
+            word = SimpleNamespace(word=" hello", start=0.1, end=0.4, probability=0.91)
+            return iter([SimpleNamespace(text=" hello", words=[word])]), object()
+
+    module = ModuleType("faster_whisper")
+    module.WhisperModel = lambda *_args, **_kwargs: Model()
+    monkeypatch.setitem(__import__("sys").modules, "faster_whisper", module)
+    monkeypatch.setattr("importlib.metadata.version", lambda _: "1.2.3")
+    long_audio = audio()
+    samples = np.zeros(16_000 * 31, dtype=np.float32)
+    long_audio = long_audio.model_copy(update={"samples": samples, "duration_s": 31.0})
+
+    result = FasterWhisperEngine(model_dir(tmp_path)).transcribe(long_audio)
+
+    assert calls[0][0] == 16_000 * 30
+    assert calls[0][1]["language"] is None
+    assert calls[0][1]["word_timestamps"] is False
+    assert (result.language, result.language_probability) == ("vi", 0.93)
+    assert result.language_method == "faster-whisper-detect-v1"
+    assert calls[1][1]["language"] == "en"
+
+
 def test_unknown_weight_identity_is_preserved_for_refusal(monkeypatch, tmp_path):
     class Model:
         def transcribe(self, *_args, **_kwargs):
@@ -93,7 +124,7 @@ def test_small_weight_is_hashed_once_and_loaded_once(monkeypatch, tmp_path):
             return iter(()), object()
 
     module = ModuleType("faster_whisper")
-    module.WhisperModel = lambda *_args, **_kwargs: (loads.append(True) or Model())
+    module.WhisperModel = lambda *_args, **_kwargs: loads.append(True) or Model()
     monkeypatch.setitem(__import__("sys").modules, "faster_whisper", module)
     monkeypatch.setattr("importlib.metadata.version", lambda _: "1.2.3")
     engine = FasterWhisperEngine(model_dir(tmp_path))

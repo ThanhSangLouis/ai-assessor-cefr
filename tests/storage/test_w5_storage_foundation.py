@@ -96,7 +96,9 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
     legacy.close()
 
     store = SQLiteStore(data_dir)
-    assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
+    assert (
+        store.connection.execute("PRAGMA user_version").fetchone()[0] == SQLiteStore.SCHEMA_VERSION
+    )
     assert store.connection.execute("SELECT actor_id,password_hash FROM accounts").fetchall() == [
         ("student", "hash")
     ]
@@ -128,12 +130,15 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
         )
     assert (restored / "blobs" / ("b" * 32)).read_bytes() == b"fixture audio"
     migrated_again = SQLiteStore(data_dir)
-    assert migrated_again.connection.execute("PRAGMA user_version").fetchone()[0] == 10
+    assert (
+        migrated_again.connection.execute("PRAGMA user_version").fetchone()[0]
+        == SQLiteStore.SCHEMA_VERSION
+    )
     assert migrated_again.connection.execute("SELECT COUNT(*) FROM accounts").fetchone() == (1,)
     assert migrated_again.connection.execute("SELECT COUNT(*) FROM sessions").fetchone() == (1,)
     assert migrated_again.connection.execute(
         "SELECT COUNT(*) FROM schema_migrations"
-    ).fetchone() == (6,)
+    ).fetchone() == (len(migrations.GROUPS),)
     migrated_again.close()
 
 
@@ -212,7 +217,7 @@ def test_w5_concurrent_fresh_initializers_serialize_migrations(tmp_path):
         return version
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(lambda _: initialize(), range(2))) == [10, 10]
+        assert list(pool.map(lambda _: initialize(), range(2))) == [11, 11]
 
 
 def test_w5_restore_rejects_incomplete_or_escaping_manifests(tmp_path):
@@ -297,17 +302,25 @@ def test_w5_providers_offer_typed_bounded_save_get_contracts(tmp_path):
 
     path = providers.learning.save_path(LearningPathRecord("path-1", "A2 to B1"))
     assert providers.learning.get_path("path-1") == path
-    store.connection.execute("INSERT INTO learning_units VALUES('unit-1','path-1','Unit',1)")
     store.connection.execute(
-        "INSERT INTO learning_lessons VALUES('lesson-1','unit-1','Lesson',1,?)",
+        "INSERT INTO learning_units(unit_id,path_id,title,ordinal) "
+        "VALUES('unit-1','path-1','Unit',1)"
+    )
+    store.connection.execute(
+        "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
+        "VALUES('lesson-1','unit-1','Lesson',NULL,?)",
         (timestamp,),
     )
     store.connection.execute(
-        "INSERT INTO lesson_versions VALUES('lesson-1',1,'draft','rules-v1',NULL,?)",
-        (timestamp,),
+        """INSERT INTO lesson_versions(
+               lesson_id,version,state,rules_version,published_at,created_at,title,summary,band,
+               revision,content_hash
+           ) VALUES('lesson-1',1,'draft','rules-v1',NULL,?,'Lesson','', 'A2',1,?)""",
+        (timestamp, "a" * 64),
     )
     store.connection.execute(
-        "INSERT INTO lesson_steps VALUES('lesson-1',1,'step-1','retell',1,'{}')"
+        "INSERT INTO lesson_steps(lesson_id,version,step_id,kind,ordinal,payload) "
+        "VALUES('lesson-1',1,'step-1','retell',1,'{}')"
     )
     store.connection.execute(
         "UPDATE lesson_versions SET state='published',published_at=? WHERE lesson_id='lesson-1'",

@@ -165,7 +165,7 @@ def render_logout_form() -> str:
     return '<form method="post" action="/logout"><button type="submit">Đăng xuất</button></form>'
 
 
-def render_report_content(report: DiagnosticReport) -> str:
+def render_report_content(report: DiagnosticReport, *, teacher: bool = False) -> str:
     overall = "Chưa đủ điều kiện ước lượng"
     if report.overall_score is not None and report.overall_band is not None:
         overall = f"{report.overall_score:.2f} ({report.overall_band.value})"
@@ -202,21 +202,105 @@ def render_report_content(report: DiagnosticReport) -> str:
     reasons = ", ".join(escape(reason.value) for reason in report.reasons) or "Không có"
     provenance = "".join(
         f"<dt>{escape(key)}</dt><dd>{escape(str(value))}</dd>"
-        for key, value in sorted(report.source_versions.items())
+        for key, value in sorted(
+            _safe_report_versions(report.source_versions, max_value=100_000).items()
+        )
     )
     issues = "".join(
         f"<li>{escape(issue.evidence_id)}: {escape(issue.reason)}</li>"
         for issue in report.evidence_issues
     )
+    trust_html = ""
+    if report.trust is not None:
+        trust_reasons = ", ".join(escape(reason.value) for reason in report.trust.reasons)
+        recovery = _student_trust_recovery(report.trust.reasons)
+        indicator_rows = "".join(
+            _coverage_row(f"{item.name.value} ({item.label})", item.coverage)
+            for item in report.criterion_indicators
+        )
+        trust_html = (
+            f"<h3>Độ tin cậy và bước tiếp theo</h3><p>{trust_reasons or 'Chưa có cảnh báo.'}</p>"
+            f"<p>{escape(recovery or 'Có thể xem báo cáo như ước lượng tạm thời.')}</p>"
+            f"<h3>Chỉ báo theo tiêu chí</h3><ul>{indicator_rows}</ul>"
+        )
+        if teacher:
+            language = report.trust.language
+            language_html = ""
+            if language is not None:
+                confidence = language.confidence if language.confidence is not None else "—"
+                language_html = (
+                    f"<li>Ngôn ngữ: {escape(language.language or 'unknown')} · "
+                    f"{escape(language.method)} {escape(language.version)} · "
+                    f"confidence {confidence}</li>"
+                )
+            guard_rows = "".join(
+                "<li>"
+                f"{escape(item.kind.value)}: {item.decision.value} · {item.value:.3f} · "
+                f"{escape(item.threshold_version)} · spans "
+                f"{escape(_trust_spans(item.spans) or '—')}"
+                "</li>"
+                for item in report.trust.relevance
+            )
+            prediction = report.trust.prediction_set
+            prediction_html = ""
+            if prediction is not None:
+                bands = escape(", ".join(band.value for band in prediction.bands))
+                prediction_html = (
+                    f"<li>Prediction set: {bands}; "
+                    f"interval [{prediction.low:.3f}, {prediction.high:.3f}], "
+                    f"alpha {prediction.alpha:.3f}; calibration "
+                    f"{escape(prediction.calibration_id)} ({escape(prediction.checksum)})</li>"
+                )
+            trust_provenance = "".join(
+                f"<li>{escape(key)}: {escape(value)}</li>"
+                for key, value in sorted(_safe_report_versions(report.provenance).items())
+            )
+            trust_html += (
+                "<details><summary>Evidence Trust cho giảng viên</summary><ul>"
+                f"{language_html}{guard_rows}{prediction_html}{trust_provenance}"
+                "</ul></details>"
+            )
     return f"""<section aria-labelledby="report-heading">
 <h2 id="report-heading">Báo cáo chẩn đoán</h2>
 <p>{verification}</p><p>{overall_label}: {escape(overall)}</p>{teacher_result}
 <p>Interaction: insufficient_evidence</p><h3>Coverage</h3><ul>{coverage}</ul>
+{trust_html}
 <h3>Nhận xét có evidence</h3><details><summary>{len(report.comments)} nhận xét</summary>
 <ul>{comments}</ul></details><p>Lý do: {reasons}</p>
 <h3>Giới hạn kết quả</h3><ul>{limitations}</ul>
 <details><summary>Phiên bản và evidence</summary>
 <dl>{provenance}</dl><ul>{issues}</ul></details></section>"""
+
+
+def _student_trust_recovery(reasons: tuple[object, ...]) -> str | None:
+    values = {getattr(reason, "value", str(reason)) for reason in reasons}
+    if values & {"CALIBRATION_MISSING", "CALIBRATION_INVALID", "CALIBRATION_HASH_MISMATCH"}:
+        return "Kết quả đang chờ kiểm tra; hãy xem lại sau hoặc hỏi giảng viên."
+    if "LANGUAGE_NOT_ENGLISH" in values:
+        return "Hãy ghi lại câu trả lời bằng tiếng Anh."
+    if "LANGUAGE_UNCERTAIN" in values:
+        return "Hãy ghi lại câu trả lời rõ tiếng Anh hơn."
+    if values & {"OFF_TOPIC_SUSPECTED", "PROMPT_READING_SUSPECTED", "SCORE_NEAR_BOUNDARY"}:
+        return "Giảng viên cần xem lại kết quả trước khi sử dụng."
+    return None
+
+
+def _safe_report_versions(values: dict[str, str], *, max_value: int = 160) -> dict[str, str]:
+    """Keep version labels visible while excluding filesystem paths and huge values."""
+    return {
+        key: value
+        for key, value in values.items()
+        if isinstance(key, str)
+        and isinstance(value, str)
+        and len(key) <= 64
+        and len(value) <= max_value
+        and "/" not in value
+        and "\\" not in value
+    }
+
+
+def _trust_spans(spans: tuple[object, ...]) -> str:
+    return ", ".join(f"{span.start_word}:{span.end_word}" for span in spans)
 
 
 def render_report(report: DiagnosticReport, *, demo: bool = False) -> str:
@@ -251,7 +335,9 @@ def render_review_detail(
     from aicefr.portal.templates import nav
 
     report_html = (
-        render_report_content(report) if report is not None else "<p>Báo cáo chưa sẵn sàng.</p>"
+        render_report_content(report, teacher=True)
+        if report is not None
+        else "<p>Báo cáo chưa sẵn sàng.</p>"
     )
     action_form = ""
     if candidate.state.value in {"PENDING", "IN_REVIEW"}:

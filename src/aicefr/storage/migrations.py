@@ -13,9 +13,9 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from time import monotonic, sleep
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 MIGRATION_DIR = Path(__file__).with_name("migrations")
-GROUPS = ("identity", "learning", "research", "billing", "jobs", "privacy")
+GROUPS = ("identity", "learning", "research", "billing", "jobs", "privacy", "learning_runtime")
 
 
 @contextmanager
@@ -190,7 +190,12 @@ def restore_backup(source: Path | str, destination: Path | str) -> Path:
     manifest = json.loads(manifest_path.read_text())
     files = manifest.get("files")
     backup_schema = manifest.get("schema_version")
-    if backup_schema not in {4, 9, 10} or not isinstance(files, dict):
+    if (
+        isinstance(backup_schema, bool)
+        or not isinstance(backup_schema, int)
+        or not 4 <= backup_schema <= SCHEMA_VERSION
+        or not isinstance(files, dict)
+    ):
         raise ValueError("backup manifest is invalid")
     if "metadata.sqlite3" not in files:
         raise ValueError("backup manifest does not include database")
@@ -305,6 +310,12 @@ def _verify_group(connection: sqlite3.Connection, group: str) -> None:
         },
         "jobs": {"durable_jobs", "cleanup_intents"},
         "privacy": {"privacy_erasure_links"},
+        "learning_runtime": {
+            "learning_seed_manifest",
+            "learning_audio_artifacts",
+            "teacher_override_events",
+            "step_review_items",
+        },
     }[group]
     actual = {
         row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -442,10 +453,10 @@ def migrate(connection: sqlite3.Connection, data_dir: Path, *, lock_held: bool =
         if version == SCHEMA_VERSION:
             verify_current_schema(connection)
             return
-        if version not in {4, 9}:
-            raise RuntimeError("unsupported partial SQLite schema")
         if version == 4:
             _verify_v4_preflight(connection)
+        else:
+            _verify_migration_prefix(connection, version)
         create_pre_migration_backup(connection, data_dir, schema_version=version)
         connection.execute("BEGIN IMMEDIATE")
         try:
@@ -457,7 +468,11 @@ def migrate(connection: sqlite3.Connection, data_dir: Path, *, lock_held: bool =
                 )
                 pending = list(enumerate(GROUPS, start=5))
             else:
-                pending = [(10, "privacy")]
+                pending = [
+                    (migration_version, group)
+                    for migration_version, group in enumerate(GROUPS, start=5)
+                    if migration_version > version
+                ]
             for migration_version, group in pending:
                 path = MIGRATION_DIR / f"{migration_version:03d}_{group}.sql"
                 sql = path.read_text()
@@ -475,6 +490,30 @@ def migrate(connection: sqlite3.Connection, data_dir: Path, *, lock_held: bool =
         except Exception:
             connection.rollback()
             raise
+
+
+def _verify_migration_prefix(connection: sqlite3.Connection, version: int) -> None:
+    """Require an exact, checksum-valid ledger before extending a partial schema."""
+    if not 5 <= version < SCHEMA_VERSION:
+        raise RuntimeError("unsupported partial SQLite schema")
+    actual_tables = {
+        row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    if "schema_migrations" not in actual_tables:
+        raise RuntimeError("partial schema is missing its migration ledger")
+    ledger = connection.execute(
+        "SELECT version, name, checksum FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    if len(ledger) != version - 4:
+        raise RuntimeError("incomplete migration ledger")
+    for expected_version, group in enumerate(GROUPS, start=5):
+        if expected_version > version:
+            break
+        path = MIGRATION_DIR / f"{expected_version:03d}_{group}.sql"
+        expected = (expected_version, group, _sha256(path))
+        if ledger[expected_version - 5] != expected:
+            raise RuntimeError("migration ledger checksum mismatch")
+        _verify_group(connection, group)
 
 
 def _verify_v4_preflight(connection: sqlite3.Connection) -> None:

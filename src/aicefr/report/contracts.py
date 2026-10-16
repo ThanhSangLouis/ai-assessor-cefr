@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from aicefr.contracts import (
     AssessmentStatus,
@@ -15,6 +15,7 @@ from aicefr.contracts import (
     ReasonCode,
     ReviewAction,
 )
+from aicefr.trust.contracts import ConformalSet, CriterionIndicator, TrustAssessment
 
 
 class _Frozen(BaseModel):
@@ -102,6 +103,12 @@ class DiagnosticReport(_Frozen):
     evidence_issues: tuple[EvidenceIssue, ...] = ()
     limitations: tuple[str, ...] = ()
     source_versions: dict[str, str] = Field(default_factory=dict)
+    # Optional M09 extension. Defaults preserve read compatibility with reports
+    # written before Trust was introduced.
+    trust: TrustAssessment | None = None
+    prediction_set: ConformalSet | None = None
+    criterion_indicators: tuple[CriterionIndicator, ...] = ()
+    provenance: dict[str, str] = Field(default_factory=dict)
     teacher_verified: bool = False
     teacher_final: TeacherFinalResult | None = None
 
@@ -118,4 +125,27 @@ class DiagnosticReport(_Frozen):
             raise ValueError("teacher_verified requires exactly one teacher_final audit result")
         if self.teacher_verified and self.status is not ReportStatus.TEACHER_VERIFIED:
             raise ValueError("verified report must use TEACHER_VERIFIED status")
+        if self.trust is not None:
+            indicators = self.trust.criterion_indicators
+            if tuple(row.name for row in indicators) != tuple(Criterion):
+                raise ValueError("trust must provide exactly five canonical criterion indicators")
+            if any(row.label != "chỉ báo" for row in indicators):
+                raise ValueError("criterion indicator label must remain 'chỉ báo'")
+            if self.prediction_set != self.trust.prediction_set:
+                raise ValueError("report prediction_set must match trust assessment")
+            if self.criterion_indicators != self.trust.criterion_indicators:
+                raise ValueError("report criterion indicators must match trust assessment")
         return self
+
+    @field_validator("provenance")
+    @classmethod
+    def _bounded_metadata(cls, values: dict[str, str]) -> dict[str, str]:
+        if len(values) > 16 or any(
+            not isinstance(key, str)
+            or not isinstance(value, str)
+            or len(key) > 64
+            or len(value) > 160
+            for key, value in values.items()
+        ):
+            raise ValueError("report metadata is too large")
+        return values

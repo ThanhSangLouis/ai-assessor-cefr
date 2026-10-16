@@ -1,17 +1,26 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
+import wave
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
+import pytest
+
+from aicefr.asr.service import EngineResult, RawWord
 from aicefr.audio.config import QCConfig
+from aicefr.contracts import ActorRole
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
+from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.blob import BlobStore
+from aicefr.trust.service import RuntimeTrustEvaluator
 
 
-def _get(runtime, path):
+def _get(runtime, path, *, token=None):
     environ = {
         "REQUEST_METHOD": "GET",
         "PATH_INFO": path,
@@ -22,6 +31,8 @@ def _get(runtime, path):
         "CONTENT_LENGTH": "0",
         "HTTP_ORIGIN": "http://127.0.0.1:8000",
     }
+    if token is not None:
+        environ["HTTP_AUTHORIZATION"] = f"Bearer {token}"
     result = {}
     body = b"".join(
         runtime.app(environ, lambda status, headers: result.update(status=status, headers=headers))
@@ -47,6 +58,29 @@ def test_runtime_injects_repository_providers(tmp_path):
     try:
         assert runtime.providers is marker
         assert received == [runtime.store]
+    finally:
+        runtime.close()
+
+
+def test_runtime_seeds_learning_catalogue_and_unknown_mission_is_not_found(tmp_path):
+    config = _demo_config()
+    config["model_artifact"] = str(tmp_path / "missing-model.json")
+    runtime = create_runtime(tmp_path / "data", config=config)
+    try:
+        student = runtime.auth.bootstrap_fixture_account(
+            "fixture-learning-student", ActorRole.STUDENT, "fixture-password"
+        )
+        runtime.consents.activate(student, str(config.get("consent_version", "local-v1")))
+        token = runtime.auth.login(student.actor_id, "fixture-password")
+
+        catalogue = _get(runtime, "/api/v1/learn/path", token=token)
+        missing = _get(runtime, "/api/v1/practice/missions/not-a-mission", token=token)
+
+        assert catalogue["code"] == 200
+        assert catalogue["json"]["paths"]
+        assert len(catalogue["json"]["paths"][0]["units"]) == 18
+        assert missing["code"] == 404
+        assert missing["json"]["error"] == "RESOURCE_UNAVAILABLE"
     finally:
         runtime.close()
 
@@ -81,9 +115,59 @@ def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_p
     config = _demo_config()
     config["model_artifact"] = str(tmp_path / "missing-model.json")
     blob_store = BlobStore(tmp_path / "data", max_bytes=config["qc"]["max_input_bytes"])
+    scorer = SimpleNamespace(
+        artifact=SimpleNamespace(
+            sha256="a" * 64,
+            feature_order=("x",),
+            band_thresholds={"A2_B1": 2.75, "B1_B2": 3.75},
+        )
+    )
+    # Synthetic calibration is test-only and provides a real verified loader path.
+    calibration = tmp_path / "synthetic-calibration.json"
+    payload = {
+        "version": "cvplus-v1",
+        "calibration_id": "fixture-local-readiness",
+        "model_sha256": "a" * 64,
+        "feature_order": ["x"],
+        "band_thresholds": {"A2_B1": 2.75, "B1_B2": 3.75},
+        "folds": [
+            {"fold_index": i, "mean": [0.0], "scale": [1.0], "coef": [0.0], "intercept": 3.0}
+            for i in range(2)
+        ],
+        "n_residuals": 10,
+        "residuals": [
+            {
+                "sample_id": f"{i:064x}",
+                "speaker_group": f"{i + 100:064x}",
+                "fold_index": i % 2,
+                "residual": 0.1,
+            }
+            for i in range(10)
+        ],
+        "provenance": {
+            "manifest_sha256": "b" * 64,
+            "model_sha256": "a" * 64,
+            "config_sha256": "c" * 64,
+            "seed": 17,
+            "split_role": "calibration",
+            "training_recipe_version": "fixture-readiness-v1",
+            "alpha_default": 0.1,
+            "speaker_group_count": 10,
+        },
+    }
+    calibration.write_text(json.dumps(payload), encoding="utf-8")
+    trust = RuntimeTrustEvaluator(
+        scorer=scorer,
+        config={
+            "calibration_artifact": str(calibration),
+            "expected_sha256": hashlib.sha256(calibration.read_bytes()).hexdigest(),
+            "alpha": 0.1,
+        },
+    )
     pipeline = SimpleNamespace(
         _qc_config=QCConfig(**config["qc"]),
-        _scorer=SimpleNamespace(artifact=object()),
+        _scorer=scorer,
+        _trust_evaluator=trust,
         _asr=SimpleNamespace(_engine=None),
         _extractor=SimpleNamespace(_vad=object()),
         _responses=SimpleNamespace(blobs=blob_store),
@@ -142,6 +226,101 @@ def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_p
         finally:
             root.unlink(missing_ok=True)
             moved.rename(root)
+    finally:
+        runtime.close()
+
+
+def test_practice_runtime_runs_without_assessment_scorer_or_calibration(tmp_path):
+    class Engine:
+        transcribe_calls = 0
+
+        def detect_language(self, audio):
+            return "en", 0.99
+
+        def transcribe(self, audio):
+            type(self).transcribe_calls += 1
+            return EngineResult(
+                text="and",
+                words=(RawWord("and", 0.05, 0.25, 0.99),),
+                engine="fixture-asr",
+                engine_version="1",
+                weight_name="fixture",
+            )
+
+    class Vad:
+        def segments(self, samples, sample_rate_hz):
+            return ((0.4, 0.8),)
+
+    config = _demo_config()
+    config["model_artifact"] = str(tmp_path / "missing-score-model.json")
+    sample_rate = 16_000
+    samples = (np.sin(np.arange(3 * sample_rate) * 0.08) * 4000).astype("<i2")
+    stream = io.BytesIO()
+    with wave.open(stream, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sample_rate)
+        wav.writeframes(samples.tobytes())
+    runtime = create_runtime(
+        tmp_path / "learning-only",
+        config=config,
+        asr_engine=Engine(),
+        vad_engine=Vad(),
+        scorer=RidgeScorer.load(tmp_path / "missing-score-model.json"),
+    )
+    try:
+        runtime.auth.bootstrap_fixture_account(
+            "fixture-student", ActorRole.STUDENT, "fixture-password"
+        )
+        seeded_paths = runtime.lessons.paths()
+        assert seeded_paths and len(seeded_paths[0].units) == 18
+        mission = runtime.practice.catalogue()[0]
+        record = runtime.practice.submit(
+            "fixture-student",
+            mission.mission_id,
+            stream.getvalue(),
+            "wav",
+            "practice-no-scorer-1",
+            prompt_version=mission.prompt_version,
+            content_type="audio/wav",
+        )
+        assert record.state.value == "COMPLETED"
+        assert record.result is not None
+        assert runtime.control.pipeline._scorer.artifact is None
+        replay = runtime.practice.submit(
+            "fixture-student",
+            mission.mission_id,
+            stream.getvalue(),
+            "wav",
+            "practice-no-scorer-1",
+            prompt_version=mission.prompt_version,
+            content_type="audio/wav",
+        )
+        assert replay.attempt_id == record.attempt_id
+        assert Engine.transcribe_calls == 1
+        personal = runtime.portal.export_own(
+            runtime.auth.login("fixture-student", "fixture-password")
+        )
+        exported_attempt = personal["learning"]["practice_attempts"][0]
+        assert exported_attempt["mission_snapshot"]["mission_id"] == mission.mission_id
+        assert exported_attempt["result"]["status"] == record.result.status.value
+        assert "purpose" in exported_attempt and "attempt_state" in exported_attempt
+        assert "heard_text" not in json.dumps(exported_attempt)
+        exported_json = json.dumps(personal).lower()
+        assert "token_digest" not in exported_json
+        assert "password_hash" not in exported_json
+        from aicefr.storage.learning import LearningConflict
+
+        with pytest.raises(LearningConflict):
+            runtime.practice.submit(
+                "fixture-student",
+                mission.mission_id,
+                stream.getvalue() + b"changed",
+                "wav",
+                "practice-no-scorer-1",
+                prompt_version=mission.prompt_version,
+                content_type="audio/wav",
+            )
     finally:
         runtime.close()
 

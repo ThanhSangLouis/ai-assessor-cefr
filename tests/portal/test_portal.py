@@ -6,6 +6,7 @@ import os
 import shutil
 import sqlite3
 import time
+from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -122,9 +123,16 @@ def test_task_versions_and_closing_survive_restart(portal_runtime):
     runtime, tokens = portal_runtime
     record = submit_completed(runtime, tokens["a"])
     original = runtime.portal.tasks.get(record.task_id, record.task_version)
+    assert original.topic_keywords == ("learning", "education")
     changed = original.model_copy(update={"title": "Changed wording"})
     with pytest.raises(ConcurrentResponseUpdate):
         runtime.portal.save_task(tokens["admin"], changed, original.revision)
+    with pytest.raises(ConcurrentResponseUpdate):
+        runtime.portal.save_task(
+            tokens["admin"],
+            original.model_copy(update={"topic_keywords": ("science",)}),
+            original.revision,
+        )
     runtime.portal.save_task(tokens["admin"], original.model_copy(update={"active": False}), 1)
     assert runtime.portal.task_list(tokens["a"]) == []
     created = runtime.portal.save_task(
@@ -137,10 +145,33 @@ def test_task_versions_and_closing_survive_restart(portal_runtime):
         ),
         0,
     )
+    assert created["topic_keywords"] == []
+    second_version = runtime.portal.save_task(
+        tokens["admin"],
+        TaskRecord(
+            task_id="demo-speaking",
+            task_version="2",
+            title="Learning and science",
+            prompt_text="Talk about science and learning.",
+            topic_keywords=("science", "learning"),
+        ),
+        0,
+    )
+    assert second_version["topic_keywords"] == ["science", "learning"]
     assert created["revision"] == 1
-    reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+    changed_seed = deepcopy(runtime.control.config)
+    changed_seed["tasks"][0]["topic_keywords"] = ("weather",)
+    reopened = create_runtime(runtime.store.data_dir, config=changed_seed)
     try:
         assert reopened.portal.tasks.get("demo-speaking", "1").active is False
+        assert reopened.portal.tasks.get("demo-speaking", "1").topic_keywords == (
+            "learning",
+            "education",
+        )
+        assert reopened.portal.tasks.get("demo-speaking", "2").topic_keywords == (
+            "science",
+            "learning",
+        )
         assert reopened.portal.tasks.get("new", "v2").title == "<script>unsafe</script>"
     finally:
         reopened.close()
@@ -490,21 +521,33 @@ def test_backup_includes_verified_blobs_and_safe_orphan_preview(portal_runtime, 
     response = submit_completed(runtime, tokens["a"])
     now = datetime.now(UTC).isoformat()
     runtime.store.connection.execute(
-        "INSERT INTO learning_paths VALUES('path-1','Path','', 'published',1,?,?)",
+        "INSERT INTO learning_paths("
+        "path_id,title,description,state,revision,created_at,updated_at) "
+        "VALUES('path-1','Path','', 'published',1,?,?)",
         (now, now),
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_units VALUES('unit-1','path-1','Unit',1)"
+        "INSERT INTO learning_units(unit_id,path_id,title,ordinal) "
+        "VALUES('unit-1','path-1','Unit',1)"
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_lessons VALUES('lesson-1','unit-1','Lesson',1,?)", (now,)
+        "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
+        "VALUES('lesson-1','unit-1','Lesson',NULL,?)",
+        (now,),
     )
     runtime.store.connection.execute(
-        "INSERT INTO lesson_versions VALUES('lesson-1',1,'published','rules-v1',?,?)",
+        "INSERT INTO lesson_versions("
+        "lesson_id,version,state,rules_version,published_at,created_at) "
+        "VALUES('lesson-1',1,'published','rules-v1',?,?)",
         (now, now),
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_media VALUES('media-1','lesson-1','audio',?,?,?,?)",
+        "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='lesson-1'"
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO learning_media("
+        "media_id,lesson_id,media_kind,blob_id,sha256,size_bytes,created_at) "
+        "VALUES('media-1','lesson-1','audio',?,?,?,?)",
         (response.blob.blob_id, response.blob.sha256, response.blob.size_bytes, now),
     )
     orphan = runtime.responses.blobs.store(b"fixture orphan")
@@ -521,7 +564,11 @@ def test_backup_includes_verified_blobs_and_safe_orphan_preview(portal_runtime, 
     manifest = runtime.data.backup(tokens["admin"], destination)
     assert manifest["response_count"] == 1
     assert manifest["blob_count"] == 1
-    assert manifest["media_families"] == ["responses", "learning_media"]
+    assert manifest["media_families"] == [
+        "responses",
+        "learning_media",
+        "learning_audio_artifacts",
+    ]
     snapshot = sqlite3.connect(destination / "metadata.sqlite3")
     assert snapshot.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
     assert snapshot.execute("SELECT COUNT(*) FROM responses").fetchone()[0] == 1
@@ -598,18 +645,33 @@ def test_backup_rejects_conflicting_shared_media_metadata_and_fk_damage(portal_r
     response = submit_completed(runtime, tokens["a"])
     now = datetime.now(UTC).isoformat()
     runtime.store.connection.execute(
-        "INSERT INTO learning_paths VALUES('conflict-path','Path','', 'published',1,?,?)",
+        "INSERT INTO learning_paths("
+        "path_id,title,description,state,revision,created_at,updated_at) "
+        "VALUES('conflict-path','Path','', 'published',1,?,?)",
         (now, now),
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_units VALUES('conflict-unit','conflict-path','Unit',1)"
+        "INSERT INTO learning_units(unit_id,path_id,title,ordinal) "
+        "VALUES('conflict-unit','conflict-path','Unit',1)"
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_lessons VALUES('conflict-lesson','conflict-unit','Lesson',1,?)",
+        "INSERT INTO learning_lessons(lesson_id,unit_id,title,active_version,created_at) "
+        "VALUES('conflict-lesson','conflict-unit','Lesson',NULL,?)",
         (now,),
     )
     runtime.store.connection.execute(
-        "INSERT INTO learning_media VALUES('conflict-media','conflict-lesson','audio',?,?,?,?)",
+        "INSERT INTO lesson_versions("
+        "lesson_id,version,state,rules_version,published_at,created_at) "
+        "VALUES('conflict-lesson',1,'published','rules-v1',?,?)",
+        (now, now),
+    )
+    runtime.store.connection.execute(
+        "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='conflict-lesson'"
+    )
+    runtime.store.connection.execute(
+        "INSERT INTO learning_media("
+        "media_id,lesson_id,media_kind,blob_id,sha256,size_bytes,created_at) "
+        "VALUES('conflict-media','conflict-lesson','audio',?,?,?,?)",
         (response.blob.blob_id, "0" * 64, response.blob.size_bytes, now),
     )
     conflict_destination = tmp_path / "conflicting-media-backup"
@@ -617,7 +679,10 @@ def test_backup_rejects_conflicting_shared_media_metadata_and_fk_damage(portal_r
         runtime.data.backup(tokens["admin"], conflict_destination)
     assert not conflict_destination.exists()
 
-    runtime.store.connection.execute("DELETE FROM learning_media WHERE media_id='conflict-media'")
+    runtime.store.connection.execute(
+        "UPDATE learning_media SET sha256=? WHERE media_id='conflict-media'",
+        (response.blob.sha256,),
+    )
     runtime.store.connection.execute("PRAGMA foreign_keys=OFF")
     runtime.store.connection.execute(
         "INSERT INTO activity_events(event_id,account_id,kind,object_id,recorded_at,detail_code) "
@@ -663,6 +728,57 @@ def test_restore_rejects_database_schema_and_foreign_key_damage(portal_runtime, 
     with pytest.raises(ValueError, match=expected):
         runtime.data.restore_backup(source, destination, tokens["admin"])
     assert not destination.exists()
+
+
+def test_restore_migrates_verified_schema10_backup_to_current_schema(
+    portal_runtime, tmp_path, monkeypatch
+):
+    runtime, tokens = portal_runtime
+    from aicefr.storage import migrations
+    from aicefr.storage.sqlite import SQLiteStore
+
+    legacy_dir = tmp_path / "schema10-source-data"
+    with monkeypatch.context() as patch:
+        patch.setattr(migrations, "SCHEMA_VERSION", 10)
+        patch.setattr(migrations, "GROUPS", migrations.GROUPS[:-1])
+        patch.setattr(SQLiteStore, "SCHEMA_VERSION", 10)
+        legacy_store = SQLiteStore(legacy_dir)
+        assert legacy_store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
+        database_bytes = (legacy_dir / "metadata.sqlite3").read_bytes()
+        legacy_store.close()
+
+    source = tmp_path / "verified-schema10-backup"
+    source.mkdir()
+    (source / "metadata.sqlite3").write_bytes(database_bytes)
+    manifest = {
+        "schema_version": 10,
+        "blob_count": 0,
+        "response_count": 0,
+        "created_at": datetime.now(UTC).isoformat(),
+        "includes": ["metadata", "blobs"],
+        "media_families": ["responses", "learning_media"],
+        "sensitive_files": [],
+        "files": {"metadata.sqlite3": hashlib.sha256(database_bytes).hexdigest()},
+    }
+    (source / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+
+    destination = tmp_path / "schema10-restored"
+    restored = runtime.data.restore_backup(source, destination, tokens["admin"])
+
+    assert restored == {
+        "restored": True,
+        "schema_version": runtime.store.SCHEMA_VERSION,
+        "source_schema_version": 10,
+        "blob_count": 0,
+    }
+    restored_store = SQLiteStore(destination)
+    try:
+        assert restored_store.connection.execute("PRAGMA user_version").fetchone()[0] == 11
+        assert restored_store.connection.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
+        ).fetchone()
+    finally:
+        restored_store.close()
 
 
 def test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key(
@@ -808,6 +924,76 @@ def test_retention_rechecks_newly_active_response_inside_write_transaction(
     current = runtime.store.get_response(response.response_id)
     assert current is not None and current.status.value == "RUNNING"
     assert current.audio_available
+
+
+def test_retention_removes_teacher_override_feedback_with_its_source_attempt(portal_runtime):
+    from aicefr.lessons.model import StepKind, StepResult, StepResultStatus
+    from aicefr.storage.learning import LearningAttemptState
+
+    runtime, tokens = portal_runtime
+    owner_id = "fixture-a"
+    path = runtime.lessons.paths()[0]
+    lesson = runtime.lessons.lesson(path.units[0].lesson_ids[0])
+    step = next(item for item in lesson.steps if item.kind is not StepKind.FREE)
+    audio = runtime.responses.blobs.store(b"old practice audio")
+    attempt = runtime.learning_repository.create_step_attempt(
+        owner_id,
+        lesson_id=lesson.lesson_id,
+        lesson_version=lesson.version,
+        step_id=step.step_id,
+        rules_version=step.rules_version,
+        idempotency_key="retention-override-attempt",
+        blob_id=audio.blob_id,
+        sha256=audio.sha256,
+        size_bytes=audio.size_bytes,
+        audio_content_type="audio/wav",
+        round_index=None,
+        now=datetime.now(UTC),
+    )
+    result = StepResult(
+        step_id=step.step_id,
+        kind=step.kind,
+        status=StepResultStatus.PASS,
+        rules_version=step.rules_version,
+        matched_count=1,
+        target_count=1,
+        word_count=1,
+        feedback="Completed",
+    )
+    attempt = runtime.learning_repository.complete_step_attempt(
+        owner_id,
+        attempt.attempt_id,
+        result,
+        state=LearningAttemptState.COMPLETED,
+        expected_revision=attempt.revision,
+        now=datetime.now(UTC),
+    )
+    overridden = runtime.lessons.override_attempt(
+        runtime.auth.resolve(tokens["teacher"]).actor_id,
+        owner_id,
+        attempt.attempt_id,
+        new_value=StepResultStatus.PASS.value,
+        reason="Retention fixture",
+        expected_revision=attempt.revision,
+    )
+    assert overridden.teacher_override == StepResultStatus.PASS.value
+    old_date = (datetime.now(UTC) - timedelta(days=200)).isoformat()
+    runtime.store.connection.execute(
+        "UPDATE step_attempts SET created_at=? WHERE attempt_id=?",
+        (old_date, attempt.attempt_id),
+    )
+
+    preview = runtime.data.retention(tokens["admin"])
+    assert preview["teacher_override_event_count"] == 1
+    applied = runtime.data.retention(tokens["admin"], apply=True)
+    assert applied["teacher_override_event_count"] == 1
+    assert runtime.learning_repository.get_step_attempt(owner_id, attempt.attempt_id) is None
+    assert (
+        runtime.store.connection.execute(
+            "SELECT COUNT(*) FROM teacher_override_events WHERE attempt_id=?", (attempt.attempt_id,)
+        ).fetchone()[0]
+        == 0
+    )
 
 
 def test_erasure_removes_identity_and_consent_history(portal_runtime):
@@ -1124,8 +1310,11 @@ def test_model_activation_keeps_pin_cas_and_reports(portal_runtime, tmp_path):
     assert any(item["name"] == "incompatible" and not item["compatible"] for item in items)
     response = submit_completed(runtime, tokens["a"])
     before = runtime.app._reports.get(response.response_id)
+    pipeline = runtime.app._student_api._service._pipeline
+    assert pipeline._trust_evaluator.ready
     activated = runtime.control.activate_model(tokens["admin"], "ridge_resp_v2", 0)
     assert activated["revision"] == 1
+    assert pipeline._trust_evaluator.ready is False
     with pytest.raises(ModelArtifactError):
         runtime.control.activate_model(tokens["admin"], "incompatible", 1)
     with pytest.raises(ValueError):

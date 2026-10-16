@@ -1,0 +1,7 @@
+# SCRUM-70 — Authoring/API journey regression
+
+Historical target `3b2d2b78ba5bb35bd162b8f3e5de21ade946d237`; reference `40907cc35b3d04408f9a8713f16d9be99f4cd6c7`; actual base51eff1f. Domain source freeze; domain agent chỉ sở hữu test mới `tests/api/test_learning_journeys.py`. Không sửa product source hoặc test khác; finding gửi root/integration. Explicit workdir scrum-70, no commit/push/main edits.
+
+Viết outcome tests cho teacher/admin authoring hoàn chỉnh qua HTTP real SQLite: tạo draft path/unit/lesson, add/edit/reorder/delete step, lint/preview, sample upload/read, publish lesson+path, student đọc đúng bản đã publish, sửa draft/republish vẫn đọc được bản cũ, published media không thay đổi. Export/import lesson và whole-path bundle tạo draft IDs mới, ordered content roundtrip và một phần tử sai không tạo rows/audit. Test draft CRUD/delete và stale CAS409, role403/foreign404, resource notfound, version/payload types và không lộ path.
+
+Thêm insight + teacher override qua API sau fixture student attempt: actor/time/old/new audit, raw result/evidence unchanged, không score/band trong practice result, override không chặn learner. Dùng injected fixture ASR/VAD ghi rõ fixture; kiểm request/DB/blob outcomes, không fake endpoint responses. Phối hợp integration owner đang test review schedule/data operations để tránh trùng. Coverage full API hiện mới31% từ validation lane, cần cover mandatory happy paths; không bỏ failing assertion hoặc claim green khi omitted endpoints chưa kiểm. Gửi report actual commands/counts/finding/coverage và source freeze test cuối.

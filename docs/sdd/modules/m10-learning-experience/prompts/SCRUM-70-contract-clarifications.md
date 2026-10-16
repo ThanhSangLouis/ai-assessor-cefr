@@ -1,0 +1,20 @@
+# SCRUM-70 — Chỉ dẫn bổ sung từ early review
+
+Historical target `3b2d2b78ba5bb35bd162b8f3e5de21ade946d237`; Sang reference `40907cc35b3d04408f9a8713f16d9be99f4cd6c7`; actual base51eff1f. Các mục dưới đây đã gửi tới lane owner trong quá trình implement, không phải claim đã sửa/test PASS.
+
+- Migration11 chỉ thêm columns/tables/triggers; không rebuild learning_lessons chỉ để thêm composite FK. Trigger phải kiểm active_version thuộc đúng lesson và đã published. Root cho storage owner sửa hẹp upgrade gate trong storage/sqlite.py, runner registration/verification và test migration tương ứng; giữ bytes005–010, backup v10 trước write, rollback/fresh/upgrade preserve.
+- Recommendation lấy DTO RecommendationEvidence từ report đã lưu qua repository read-only owner-scoped; không dựng Assessment giả với provenance mới. Latest eligible scored assessment ESTIMATED/REVIEW_REQUIRED có score/band, tie timestamp/response ID; không đòi teacher_verified nếu spec không nêu, không lấy practice hoặc erased/rejected/missing.
+- Step alignment phải giữ trạng thái UNSURE cho lemma-equivalent substitution. Gap không được nhận một token của đáp án nhiều từ làm cả đáp án đúng. Per-word evidence giữ expected/heard/operation/confidence/source index/status để task pronunciation sau đọc bằng chứng thật.
+- FREE có round_index và actual elapsed_seconds theo budget; completion cần đủ hai/ba lượt riêng, retry không tăng count. StepCompletion chứa attempt_id, timestamp, round_index; latest per step/round deterministic và kind phải khớp step; đủ các FREE bắt buộc.
+- Practice runner dùng independent language evidence S01, không cần scorer/calibration. Non-English chắc chắn không thành measured pass/effort; uncertainty phản hồi phù hợp. Repetition guard, trim offset và timestamp phải giữ đúng; ASR không nhận expected transcript làm prompt.
+- New attempt blob/artifact phải vào personal export/erasure/retention/backup/restore/cleanup live-reference checks, không bị orphan sweep xóa nhầm. GET /api/v1/practice có alias catalogue; API và UI payload handoff vẫn cần owner/role/consent/CSRF.
+- Request fingerprint phải bind mission/prompt version hoặc lesson/version/step/round cùng audio hash/content type; khác payload cùng key trả conflict. Identical queued replay đọc stored snapshot/blob; API yêu cầu version người học đã nhận, không resolve active version mới âm thầm.
+- Legacy v10 attempts giữ nguyên raw status/measurements/evidence và projection LEGACY explicit; không coi thiếu typed result/audio là completed mới. Upgrade prefix được hỗ trợ phải có backup restore tương ứng.
+- Composition learning dùng VAD/ASR riêng khi scorer/calibration thiếu; không silently substitute no-speech detector. Public lazy ASR engine hook được root cho phép thêm hẹp để tránh truy cập state private.
+- Text/step count/token alignment phải bounded trước allocation O(n*m); API validation trả lỗi rõ, không truncate evidence âm thầm. Sample media cần scoped upload/preview/read, immutable linkage và hash/manifest theo version.
+
+## Điều chỉnh từ đối chiếu pinned source
+
+- Pinned `lessons/progress.py` giữ một step đã từng pass; retry sau đó chưa đạt không thu hồi completion. FREE được tính khi có speaking_s đo được, kể cả rule chưa đạt, để không khóa người học. Điều này **thay thế chỉ dẫn latest-only outcome ở trên**. Task vẫn yêu cầu đủ2–3 round riêng; silence/non-English không có speaking time. Domain thêm speaking_s vào StepCompletion, service/repository giữ bounded best-progress summary theo version thay vì bỏ lịch sử sau200rows. Teacher override không chặn learner hoặc sửa raw evidence.
+- Pinned authoring export/import bao phủ whole path hierarchy, không có media. Codec/domain, repository và API được yêu cầu hỗ trợ path/unit/lesson/step bundle với ID mới, validation toàn bộ trước transaction; malformed lesson làm rollback toàn bundle. Không mở rộng sang binary media archive.
+- Review queue hỗ trợ cả practice và step source qua FK đúng (step_review_items bổ sung); atomic completion có CAS của due occurrence. Same-key replay không tiến hộp lần nữa, stale competing attempt409. UNSURE/UNMEASURED không bị coi là confident failure để reset schedule.
