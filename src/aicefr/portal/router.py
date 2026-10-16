@@ -153,6 +153,11 @@ class PortalRouter:
             pieces = path.strip("/").split("/")
             if len(pieces) != 4:
                 raise ValueError("invalid review path")
+            research = getattr(app, "_research_api", None)
+            if research is not None and not research.service.may_view_machine(
+                actor.actor_id, pieces[2]
+            ):
+                raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
             candidate = self.service.reopen_review(
                 token, pieces[2], ReviewReopen(**app._request_values(environ)), app._reviews
             )
@@ -179,10 +184,24 @@ class PortalRouter:
         if path in {"/student/responses", "/teacher/responses"} and method == "GET":
             query = self.query(environ)
             data = self.service.responses(token, query, mine=path.startswith("/student"))
+            research = getattr(app, "_research_api", None)
+            if path == "/teacher/responses" and research is not None:
+                hidden = research.service.blinded_response_ids(actor.actor_id)
+                data["items"] = [
+                    item for item in data["items"] if item.get("response_id") not in hidden
+                ]
+                data["total"] = max(0, data["total"] - len(hidden))
             return result(data, lambda value: html.responses(value, role, query))
         if path in {"/student/progress", "/teacher/stats", "/admin/stats"} and method == "GET":
             if path == "/admin/stats":
                 self.service.actor(token, frozenset({ActorRole.ADMIN}))
+            research = getattr(app, "_research_api", None)
+            if (
+                path != "/student/progress"
+                and research is not None
+                and research.service.blinded_response_ids(actor.actor_id)
+            ):
+                raise HttpInputError(HTTPStatus.CONFLICT, "BLIND_ASSIGNMENTS_PENDING")
             query = self.query(environ)
             data = self.service.statistics(token, query, mine=path.startswith("/student"))
             return result(data, lambda value: html.statistics(value, role, query))
@@ -199,6 +218,13 @@ class PortalRouter:
         if len(parts) == 4 and parts[0] in {"student", "teacher"} and parts[1] == "responses":
             staff = parts[0] == "teacher"
             rid, action = parts[2:]
+            research = getattr(app, "_research_api", None)
+            if (
+                staff
+                and research is not None
+                and not research.service.may_view_machine(actor.actor_id, rid)
+            ):
+                raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
             _, response = self.service.response(token, rid, staff=staff)
             if action == "audio" and method == "GET":
                 if not response.audio_available:
@@ -226,16 +252,41 @@ class PortalRouter:
                         return None
                     report = view.report
                 else:
+                    if research is not None:
+                        if not research.service.may_view_machine(actor.actor_id, rid):
+                            raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
+                        research.service.mark_machine_seen(actor.actor_id, rid, "teacher_report")
                     report = app._reports.get(rid)
                     if report is None:
                         raise HttpInputError(HTTPStatus.CONFLICT, "REPORT_NOT_READY")
+                withheld = bool(
+                    not staff
+                    and research is not None
+                    and research.service.feedback_withheld(actor.actor_id)
+                )
+                if withheld:
+                    payload = {
+                        "overall_score": report.overall_score,
+                        "overall_band": report.overall_band,
+                    }
+                    return result(
+                        payload,
+                        lambda _: html.score_only_report_page(report, role),
+                    )
                 return result(
                     report.model_dump(mode="json"),
                     lambda _: html.report_page(
-                        report, response, role, candidate=app._reviews.get(rid) if staff else None
+                        report,
+                        response,
+                        role,
+                        candidate=app._reviews.get(rid) if staff else None,
                     ),
                 )
             if action == "history" and staff and method == "GET":
+                if research is not None:
+                    if not research.service.may_view_machine(actor.actor_id, rid):
+                        raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
+                    research.service.mark_machine_seen(actor.actor_id, rid, "teacher_history")
                 history = self.service.history(token, rid)
                 return result(
                     history, lambda value: html.json_page("Lịch sử xử lý bài", value, role)
@@ -353,6 +404,9 @@ class PortalRouter:
                 "/admin/models",
             )
         if path == "/admin/research.json" and method == "GET":
+            research = getattr(app, "_research_api", None)
+            if research is not None and research.service.blinded_response_ids(actor.actor_id):
+                raise HttpInputError(HTTPStatus.CONFLICT, "BLIND_ASSIGNMENTS_PENDING")
             return result(self.service.research_export(token, app._consent_version))
         if path == "/admin/erase" and method == "GET":
             return app._html(HTTPStatus.OK, html.erasure())

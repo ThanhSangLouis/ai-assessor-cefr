@@ -111,6 +111,7 @@ class StudentTeacherApp:
         max_request_bytes: int = 10 * 1024 * 1024,
         portal: Any | None = None,
         metrics: Any | None = None,
+        research_api: Any | None = None,
     ) -> None:
         if max_request_bytes <= 0:
             raise ValueError("max_request_bytes must be positive")
@@ -126,6 +127,7 @@ class StudentTeacherApp:
         self._max_request_bytes = max_request_bytes
         self._portal = portal
         self._metrics = metrics
+        self._research_api = research_api
         self._limiter = RateLimiter()
 
     def __call__(self, environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
@@ -213,6 +215,10 @@ class StudentTeacherApp:
     def _dispatch(self, environ: dict[str, Any]) -> WebResponse:
         method = str(environ.get("REQUEST_METHOD", "GET")).upper()
         path = str(environ.get("PATH_INFO", "/"))
+        if self._research_api is not None:
+            research_response = self._research_api.dispatch(self, environ)
+            if research_response is not None:
+                return research_response
         if self._portal is not None:
             portal_response = self._portal.dispatch(self, environ)
             if portal_response is not None:
@@ -379,10 +385,15 @@ class StudentTeacherApp:
             or self._reports is None
         ):
             raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
-        self._auth.resolve(
+        actor = self._auth.resolve(
             self._session_token(environ),
             allowed_roles=frozenset({ActorRole.TEACHER, ActorRole.ADMIN}),
         )
+        research = self._research_api
+        if research is not None:
+            if not research.service.may_view_machine(actor.actor_id, response_id):
+                raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
+            research.service.mark_machine_seen(actor.actor_id, response_id, "review_detail")
         candidate = self._reviews.get(response_id)
         if candidate is None:
             raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
@@ -494,10 +505,15 @@ class StudentTeacherApp:
             or self._auth is None
         ):
             raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
-        self._auth.resolve(
+        actor = self._auth.resolve(
             self._session_token(environ),
             allowed_roles=frozenset({ActorRole.TEACHER, ActorRole.ADMIN}),
         )
+        research = self._research_api
+        if research is not None and not research.service.may_view_machine(
+            actor.actor_id, response_id
+        ):
+            raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
         candidate = self._reviews.get(response_id)
         record = self._responses.metadata.get_response(response_id)
         if candidate is None or record is None or not record.audio_available:

@@ -314,6 +314,19 @@ def report_page(report, response, role: str, *, candidate=None) -> str:
     )
 
 
+def score_only_report_page(report, role: str) -> str:
+    """Render only the model estimate for a score-only study participant."""
+    body = (
+        '<section aria-labelledby="score-only-title">'
+        '<h1 id="score-only-title">Kết quả đánh giá</h1>'
+        "<p>Trong nghiên cứu này, phản hồi chi tiết đang được ẩn theo nhóm tham gia.</p>"
+        f"<p>Điểm ước lượng: <strong>{e(report.overall_score)}</strong></p>"
+        f"<p>Band CEFR ước lượng: <strong>{e(report.overall_band)}</strong></p>"
+        "</section>"
+    )
+    return page("Kết quả đánh giá", body, role)
+
+
 def delete_page(response) -> str:
     body = (
         f"<p>Xóa audio và toàn bộ báo cáo của bài {e(response.response_id)}. "
