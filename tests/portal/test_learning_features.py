@@ -36,7 +36,7 @@ def add_step_attempt(
         connection.execute(
             "INSERT OR IGNORE INTO learning_lessons "
             "(lesson_id,unit_id,title,active_version,created_at) "
-            "VALUES('lesson-1','unit-1','Lesson',1,?)",
+            "VALUES('lesson-1','unit-1','Lesson',NULL,?)",
             (created_at,),
         )
         connection.execute(
@@ -59,6 +59,9 @@ def add_step_attempt(
             "UPDATE lesson_versions SET state='published',published_at=? "
             "WHERE lesson_id='lesson-1' AND version=1 AND state='draft'",
             (created_at,),
+        )
+        connection.execute(
+            "UPDATE learning_lessons SET active_version=1 WHERE lesson_id='lesson-1'"
         )
         connection.execute(
             "INSERT INTO step_attempts "
