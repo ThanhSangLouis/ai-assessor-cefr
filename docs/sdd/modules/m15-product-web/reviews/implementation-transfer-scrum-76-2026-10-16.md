@@ -25,4 +25,4 @@ The archive's study-lifecycle screen was not wired: M13 currently exposes study 
 
 ## Base and fingerprint
 
-Implementation base: this task branch at commit `d6b617270fda91f5fae4dc96b155c65b40201c51` before the SCRUM-76 source transfer. UI transfer commit: `d2e9689`. The WSGI app uses Jinja templates and serves package-local static assets; page requests continue through the existing session and `ActorRole.ADMIN` resolver.
+Implementation base: this task branch at commit `c1baa31` before the SCRUM-76 source transfer. UI transfer commit: `79da8c1`. The WSGI app uses Jinja templates and serves package-local static assets; page requests continue through the existing session and `ActorRole.ADMIN` resolver.
