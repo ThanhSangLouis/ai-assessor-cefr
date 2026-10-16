@@ -234,6 +234,15 @@ async function save() {
   return null;
 }
 
+function markDirty() {
+  dirty = true;
+  if (meta && meta.published_version) meta.draft_changed = true;
+  setState("Có thay đổi chưa lưu", "pending");
+  renderHead();
+  clearTimeout(timer);
+  timer = window.setTimeout(() => save().catch(() => {}), 500);
+}
+
 // Before anything that reads the draft on the server: media, preview, publish.
 async function flush() {
   if (saving) await saving.catch(() => {});
