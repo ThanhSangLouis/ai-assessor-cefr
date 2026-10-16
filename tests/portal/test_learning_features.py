@@ -158,8 +158,8 @@ def add_step_attempt(
         connection.execute(
             "INSERT INTO step_attempts "
             "(attempt_id,owner_id,lesson_id,lesson_version,step_id,rules_version,status,"
-            "measurements,evidence,teacher_override,created_at) "
-            "VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+            "measurements,evidence,teacher_override,created_at,idempotency_key) "
+            "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
             (
                 attempt_id,
                 owner_id,
@@ -172,6 +172,7 @@ def add_step_attempt(
                 json.dumps(evidence),
                 json.dumps(teacher_override) if teacher_override is not None else None,
                 created_at,
+                "fixture:" + attempt_id,
             ),
         )
 
