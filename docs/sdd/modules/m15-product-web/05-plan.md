@@ -14,7 +14,7 @@
 | 5 | `M15-TASK-005`, `006` / W5-N04 | Admin/account/data/rating/study/billing, full cross-role browser QA | M11–M14/M16 approved handoff, temp-password/receipt policy, các page N01–N03 đã review |
 | 6 | `M15-TASK-007` / W5-T04 của Thắng | Final package/clean-wheel/integrated browser gate | Thắng sở hữu; không giao trong prompt của Nguyên |
 
-`M15-TASK-001A` chỉ là phần đầu của W5-N01.1, không chứng minh W5-N01 hoặc M15 hoàn thành. Các slice còn lại cần Phase 05 readiness bổ sung theo contract/revision mới; không dùng approval hẹp này làm quyền implement toàn M15.
+`M15-TASK-001A` chỉ là phần đầu của W5-N01.1, không chứng minh W5-N01 hoặc M15 hoàn thành. Ngày 16/10/2026, chủ dự án duyệt Phase 05 riêng cho SCRUM-74–76 (`M15-TASK-003`–`006`) và cho phép port/adapt UI theo contract đang có, giữ nguyên backend/domain APIs. Những phê duyệt này không duyệt thay module producer hoặc cho phép suy đoán API còn thiếu.
 
 ## Task 001A — ranh giới sẵn sàng xem xét
 
@@ -34,7 +34,7 @@
 
 ## Contract gate cho các task còn lại
 
-Trước prompt 001B/002–006, owner liên quan cung cấp version/revision + verdict, schema/example, error/enum/role, authorization và contract test. Đặc biệt: route canonical/alias theo method; M11 one-time temp-password/purge/no-log policy; M12 blind allowlist/dual-role/draft; M13 disclosure/source/n; M14 persisted order vs return/verify/receipt; M16 asset/wheel/runtime. Nếu khác Specification/Test Plan đã duyệt, re-review phase bị ảnh hưởng trước Phase 05 mới. UI component fixture không chứng minh integration.
+Task-specific Phase 05 authorization cho SCRUM-74–76 cho phép tiêu thụ contract hiện có và giữ control gated khi API/policy thiếu. Không tự thêm route hoặc suy diễn schema cho M11 one-time temp-password/purge/no-log, M12 blind allowlist/dual-role/draft, M13 disclosure/source/n, M14 persisted order vs return/verify/receipt hoặc M16 asset/wheel/runtime. Nếu thay đổi contract, re-review phase bị ảnh hưởng. UI component fixture không chứng minh integration.
 
 ## SCRUM-74 / `M15-TASK-003` — Phase 05 readiness candidate
 

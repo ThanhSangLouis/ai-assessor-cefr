@@ -2,15 +2,15 @@
 
 | Mục | Trạng thái |
 | --- | --- |
-| Lifecycle | proposed |
-| Phase | 06 — chuẩn bị handoff `M15-TASK-001A`; producer contract/route vẫn là dependency cho integration task |
+| Lifecycle | in_progress |
+| Phase | Phase 06 — implementation đang tiến hành cho SCRUM-74–76 theo task-specific Phase 05 approval; integrated E2E `NOT_RUN` |
 | Requirement | v0.2 · chủ dự án APPROVED ngày 15/10/2026; [Phase 01 record](reviews/phase-01-review-2026-10-15.md) |
 | Research mode | RUN · chủ dự án chọn cùng Phase 01 verdict |
 | Research | v0.3 DRAFT; hai read-only lane W5-N01/N02 và W5-N03/N04; source `40907cc` static, browser `NOT_RUN` |
 | Specification | v0.3; Phase 03 user verdict APPROVED ngày 15/10/2026; Codex check khi review vẫn BLOCKED |
-| Artifacts 04–06 | Test Plan v0.2 APPROVED, [Phase 04 review](reviews/phase-04-review-2026-10-15.md); Plan/Tasks v0.2 APPROVED chỉ cho 001A, [Phase 05 review](reviews/phase-05-review-2026-10-15.md) |
-| Implementation | NOT_STARTED |
-| Prompt | `M15-W5-N01-001A-A1` đang chuẩn bị; chưa giao Antigravity |
+| Artifacts 04–06 | Test Plan v0.2 APPROVED, [Phase 04 review](reviews/phase-04-review-2026-10-15.md); Phase 05 APPROVED cho 001A và SCRUM-74–76/M15-TASK-003–006 |
+| Implementation | IN_PROGRESS — M15-TASK-003–006; acceptance NOT_RUN |
+| Prompt | Không phát Antigravity prompt cho SCRUM-74–76; triển khai UI trực tiếp theo chỉ dẫn chủ dự án |
 
 UI work bắt đầu sau khi backend payload/error/authorization contract tương ứng freeze; mock có thể dùng cho component test nhưng không đủ để đánh dấu task DONE.
 
@@ -29,4 +29,6 @@ Chủ dự án chọn hướng giải quyết M15-P03-01–05, duyệt Phase 03/
 
 The project owner later confirmed in this conversation that Phase 05 is `APPROVED` for SCRUM-74, SCRUM-75 and SCRUM-76, superseding the earlier pending-user-verdict finding for this task. [Task-specific verdict and boundary](reviews/phase-05-implementation-authorization-scrum-74-2026-10-16.md) records the exact scope: port/adapt UI only and preserve backend/domain APIs. M10/M13 producer SDD statuses and acceptance remain owned by their modules. SCRUM-74 implementation is now `IN_PROGRESS`; acceptance and browser/E2E evidence remain `NOT_RUN` until the integrated revision is available.
 
-The completed source UI has been transferred into the WSGI presentation package and browser requests are being adapted to the existing M10/M13 contracts. See the [SCRUM-74 implementation transfer record](reviews/implementation-transfer-scrum-74-2026-10-16.md). PR #39 remains an upstream dependency; no producer code was copied or changed. The single integrated E2E is still `NOT_RUN` and is reserved until SCRUM-74–76 and the dependency are together.
+The completed UI has been transferred into the WSGI presentation package and browser requests consume the current M10/M13 contracts. See the [SCRUM-74 implementation transfer record](reviews/implementation-transfer-scrum-74-2026-10-16.md). PR #39 merged to `main` as `19b7ada`; no producer code was copied or changed. The single integrated E2E remains `NOT_RUN` until SCRUM-74–76 are together on `main`.
+
+The project owner also confirmed Phase 05 `APPROVED` for SCRUM-75 and SCRUM-76 and authorized UI-only port/adaptation with producer APIs preserved. SCRUM-75 uses available M07/M12 review/rating routes and the M10 authoring APIs from merged PR #39. Path discovery has no list endpoint, and insights expose no cohort aggregate; those UI views use known browser-local IDs and per-owner data. SCRUM-76 adapts current admin study, rating and read-only billing routes. Unsupported M11/billing mutations remain gated. `M15-TASK-004/005/006` are `IN_PROGRESS`; acceptance and integrated E2E remain `NOT_RUN`.

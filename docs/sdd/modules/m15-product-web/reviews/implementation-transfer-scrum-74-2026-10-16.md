@@ -1,7 +1,7 @@
 # SCRUM-74 — UI source transfer and contract adaptation
 
 **Task:** SCRUM-74 / `M15-TASK-003` / W5-N02
-**Owner:** Nguyên
+**Owner:** Hoàng Nguyên
 **Base revision:** `325d69d`; the adapter and this record follow in the next branch commit.
 **Status:** Implementation in progress; acceptance and E2E `NOT_RUN`.
 
@@ -15,4 +15,4 @@
 
 ## Dependency and verification
 
-PR #39 remains a required M10 dependency and has not been modified by this task. Until its APIs and the SCRUM-74–76 UI branches are present in one integrated revision, the requested E2E has not been run. Run that integrated E2E once at the end of SCRUM-74–76 and record actual results; do not mark this task `DONE` before review.
+PR #39 merged to `main` as `19b7ada` on 2026-10-16 and supplies the M10 routes used by this UI. SCRUM-74 did not change producer code. Until the SCRUM-74–76 UI branches are present on one integrated revision, the requested E2E remains `NOT_RUN`; run it once at the end and record actual results before marking this task `DONE`.
