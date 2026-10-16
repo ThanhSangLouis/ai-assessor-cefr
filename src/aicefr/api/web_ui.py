@@ -94,8 +94,12 @@ def dispatch_page(app, environ):
     method = str(environ.get("REQUEST_METHOD", "GET")).upper()
     path = str(environ.get("PATH_INFO", "/"))
 
-    if method == "GET" and path.startswith("/static/"):
-        relative = unquote(path.removeprefix("/static/"))
+    if method == "GET" and (path.startswith("/static/") or path == "/favicon.ico"):
+        relative = (
+            "favicon.svg"
+            if path == "/favicon.ico"
+            else unquote(path.removeprefix("/static/"))
+        )
         if not relative or "\\" in relative:
             raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
         target = (_STATIC / relative).resolve()
