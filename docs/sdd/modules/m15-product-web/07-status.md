@@ -28,3 +28,5 @@ Chủ dự án chọn hướng giải quyết M15-P03-01–05, duyệt Phase 03/
 ## SCRUM-74 — superseding project-owner verdict (16/10/2026)
 
 The project owner later confirmed in this conversation that Phase 05 is `APPROVED` for SCRUM-74, SCRUM-75 and SCRUM-76, superseding the earlier pending-user-verdict finding for this task. [Task-specific verdict and boundary](reviews/phase-05-implementation-authorization-scrum-74-2026-10-16.md) records the exact scope: port/adapt UI only and preserve backend/domain APIs. M10/M13 producer SDD statuses and acceptance remain owned by their modules. SCRUM-74 implementation is now `IN_PROGRESS`; acceptance and browser/E2E evidence remain `NOT_RUN` until the integrated revision is available.
+
+The completed source UI has been transferred into the WSGI presentation package and browser requests are being adapted to the existing M10/M13 contracts. See the [SCRUM-74 implementation transfer record](reviews/implementation-transfer-scrum-74-2026-10-16.md). PR #39 remains an upstream dependency; no producer code was copied or changed. The single integrated E2E is still `NOT_RUN` and is reserved until SCRUM-74–76 and the dependency are together.

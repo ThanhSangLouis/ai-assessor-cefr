@@ -26,8 +26,8 @@
     <h2 id="rec-h">Ghi âm, nghe lại, nộp</h2>
     <div id="practice-reference"></div>
     {% with submit_label="Nộp bài luyện",
-             floor_seconds=min_duration_s,
-             upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ max_size_mib ~ " MiB. Bản ghi ngắn hơn " ~ (min_duration_s | int) ~ " giây sẽ bị từ chối vì quá ngắn. Máy chủ chuyển mọi bản ghi về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+             floor_seconds=0,
+             upload_hint="Định dạng âm thanh được hỗ trợ, tối đa " ~ max_size_mib ~ " MiB." %}
       {% include "_recorder.html" %}
     {% endwith %}
     <div id="practice-wait" aria-live="polite"></div>

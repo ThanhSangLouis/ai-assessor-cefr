@@ -25,9 +25,24 @@ const KIND_ICON = {
   read_aloud: "◉",
 };
 
+function goalLabel(goal) {
+  const target = Number(goal.target);
+  const shown = Number.isFinite(target) ? String(target) : "";
+  const labels = {
+    speak_seconds: `Nói ít nhất ${shown} giây`,
+    max_pause: `Giữ khoảng dừng không quá ${shown} giây`,
+    use_words: "Dùng các từ gợi ý",
+    unique_words: `Dùng ít nhất ${shown} từ khác nhau`,
+    past_verbs: `Dùng ít nhất ${shown} động từ quá khứ`,
+    conditionals: `Dùng ít nhất ${shown} câu điều kiện`,
+    read_aloud: "Đọc to đoạn văn mẫu",
+  };
+  return labels[goal.kind] || "Hoàn thành mục tiêu luyện tập";
+}
+
 const recorder = window.setUpRecorder({
-  minSeconds: () => (task ? task.min_seconds : 30),
-  maxSeconds: () => (task ? task.max_seconds : 90),
+  minSeconds: () => (task ? task.min_seconds : 0),
+  maxSeconds: () => (task ? task.max_seconds : 300),
   onSubmit: submit,
 });
 
@@ -47,13 +62,13 @@ function historyCard(history) {
   if (!history.length) return "";
   const rows = history
     .map((a) => {
-      let state = "Đang xử lý";
-      if (a.status === "REJECTED" || a.status === "FAILED") state = "Bản ghi chưa dùng được";
-      else if (a.completed === true) state = `Hoàn thành · ${a.met_count}/${a.total} mục tiêu`;
-      else if (a.completed === false) state = `Chưa hoàn thành · ${a.met_count}/${a.total} mục tiêu`;
-      else if (a.status === "COMPLETED") state = "Chưa đo được đủ";
+      const state = a.result
+        ? `Đã xử lý · ${a.result.status}`
+        : ["NOT_EVALUATED", "LEGACY"].includes(a.status)
+          ? "Bản ghi chưa dùng được"
+          : "Đang xử lý";
       return (
-        `<li><a href="/practice/results/${encodeURIComponent(a.response_id)}">` +
+        `<li><a href="/practice/results/${encodeURIComponent(a.attempt_id)}">` +
         `${escapeHtml(window.ui.localTime(a.created_at))}</a>` +
         ` <span class="muted">· ${escapeHtml(state)}</span></li>`
       );
@@ -69,7 +84,6 @@ function render(t) {
       <p class="task-tags">
         <span class="badge">${escapeHtml(t.criterion_name)}</span>
         <span class="badge">Mức ${escapeHtml(t.band)}</span>
-        <span class="badge">${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span>
       </p>
       <h1>${escapeHtml(t.title)}</h1>
       <p class="lede">${escapeHtml(t.prompt_text)}</p>
@@ -98,16 +112,39 @@ function render(t) {
   recorder.repaint();
 }
 
-fetch(`/api/v1/practice/tasks/${encodeURIComponent(TASK_ID)}`)
-  .then((r) => {
-    if (window.redirectToLoginIfExpired(r)) return null;
-    if (r.status === 404) throw new Error("404");
+Promise.all([
+  fetch(`/api/v1/practice/missions/${encodeURIComponent(TASK_ID)}`).then((r) => {
+    if (window.redirectToLoginIfExpired(r)) throw new Error("SESSION_REQUIRED");
+    if (!r.ok) throw new Error(String(r.status));
     return r.json();
-  })
-  .then((t) => {
-    if (!t) return;
-    task = t;
-    render(t);
+  }),
+  fetch("/api/v1/practice/attempts?limit=100").then((r) => (r.ok ? r.json() : { attempts: [] })),
+])
+  .then(([mission, history]) => {
+    task = {
+      ...mission,
+      min_seconds: 0,
+      max_seconds: 300,
+      criterion_name: window.ui.practiceName(mission.criterion),
+      band: mission.target_band,
+      prompt_text: mission.prompt,
+      missions: (mission.goals || []).map((goal) => ({
+        kind: goal.kind,
+        label: goalLabel(goal),
+        words: goal.words || [],
+      })),
+      reference_text: (mission.goals || []).find((goal) => goal.reference_text)?.reference_text || "",
+      tips: [],
+      history: (history.attempts || [])
+        .filter((attempt) => attempt.mission && attempt.mission.mission_id === mission.mission_id)
+        .map((attempt) => ({
+          attempt_id: attempt.attempt_id,
+          status: attempt.state,
+          result: attempt.result,
+          created_at: attempt.created_at,
+        })),
+    };
+    render(task);
   })
   .catch(() => {
     window.clearBusy(root);
@@ -150,10 +187,10 @@ function waitFor(responseId) {
     '<div class="notice notice-info"><b>Đang xử lý bản ghi…</b> Nhận dạng giọng nói rồi đếm ' +
     "từng mục tiêu. Trang tự chuyển sang kết quả khi xong.</div>";
   (function poll() {
-    fetch(`/api/v1/responses/${encodeURIComponent(responseId)}/status`)
+    fetch(`/api/v1/practice/attempts/${encodeURIComponent(responseId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((s) => {
-        if (s && !s.is_pending) {
+        if (s && (s.result || ["NOT_EVALUATED", "LEGACY"].includes(s.state))) {
           location.href = result;
         } else if (Date.now() - started > POLL_LIMIT_MS) {
           waitEl.innerHTML =
@@ -170,9 +207,12 @@ function waitFor(responseId) {
 async function submit(audio, name) {
   const body = new FormData();
   body.append("audio", audio, name);
-  body.append("task_id", TASK_ID);
+  body.append("mission_id", task.mission_id);
+  body.append("prompt_version", task.prompt_version);
+  body.append("purpose", "PRACTICE");
+  body.append("idempotency_key", crypto.randomUUID());
   try {
-    const r = await fetch("/api/v1/responses", { method: "POST", body });
+    const r = await fetch("/api/v1/practice/attempts", { method: "POST", body });
     if (window.redirectToLoginIfExpired(r)) return;
     const d = await r.json();
     if (!r.ok) {
@@ -182,7 +222,7 @@ async function submit(audio, name) {
       return;
     }
     recorder.done();
-    waitFor(d.response_id);
+    waitFor(d.attempt_id);
   } catch (err) {
     window.toast("Mất kết nối khi nộp. Bản ghi vẫn còn, hãy thử lại.", "error", { sticky: true });
   }

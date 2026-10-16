@@ -54,6 +54,42 @@ const progressDone = Promise.all([
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
   });
 
+const effortPanel = document.getElementById("effort-progress");
+const effortBody = document.getElementById("effort-body");
+function effortView(d) {
+  const seconds = Math.round(Number(d.today_seconds) || 0);
+  const goal = Math.max(1, Number(d.goal_seconds) || 1);
+  const pct = Math.min(100, Math.round((seconds / goal) * 100));
+  const rest = new Set(d.rest_days || []);
+  const week = (d.week || []).map((item) => {
+    const day = new Date(`${item.date}T00:00:00`);
+    const label = Number.isNaN(day.getTime()) ? item.date : ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][day.getDay()];
+    const value = Math.round(Number(item.seconds) || 0);
+    const state = value > 0 ? "on" : rest.has(item.date) ? "rest" : "";
+    return `<li class="${state}" title="${window.escapeHtml(window.ui.dmy(item.date))}: ${value} giây"><span class="dot"></span>${label}</li>`;
+  }).join("");
+  return '<div class="stat-grid">' +
+    `<div class="stat"><b>${seconds}/${goal}</b><span>giây luyện nói hôm nay</span></div>` +
+    `<div class="stat"><b>${Number(d.streak_days) || 0}</b><span>ngày liên tiếp</span></div>` +
+    `<div class="stat"><b>${Number(d.record_days) || 0}</b><span>ngày là kỷ lục</span></div></div>` +
+    `<div class="bar" role="progressbar" aria-label="Mục tiêu luyện nói hôm nay" aria-valuemin="0" aria-valuemax="${goal}" aria-valuenow="${Math.min(seconds, goal)}"><span style="width:${pct}%"></span></div>` +
+    `<p>${d.goal_met ? "Đã đạt mục tiêu hôm nay." : `Còn ${Math.max(0, goal - seconds)} giây để đạt mục tiêu hôm nay.`}</p>` +
+    `<ol class="week-dots" aria-label="Thời lượng nói bảy ngày gần nhất">${week}</ol>` +
+    `<p class="muted">7 ngày qua: ${Math.round(Number(d.week_seconds) || 0)} giây · 7 ngày trước: ${Math.round(Number(d.previous_week_seconds) || 0)} giây</p>`;
+}
+
+fetch("/api/v1/me/learning/progress")
+  .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)))
+  .then((d) => {
+    if (!d) return;
+    window.clearBusy(effortPanel);
+    effortBody.innerHTML = effortView(d);
+  })
+  .catch(() => {
+    window.clearBusy(effortPanel);
+    effortBody.innerHTML = '<p class="error">Chưa tải được thời lượng luyện tập.</p>';
+  });
+
 // D042: "progress" only when the rise is larger than the measurement error.
 const RELIABLE_TEXT = {
   tien_bo: ["ok", "Tiến bộ đáng tin"],
@@ -247,7 +283,15 @@ function achievementList(d) {
   return h;
 }
 
-const achievementsDone = fetch("/api/v1/me/achievements")
+const ACHIEVEMENT_GROUPS = [
+  { key: "habit", name: "Đều đặn" },
+  { key: "voice", name: "Thời gian nói" },
+  { key: "path", name: "Lộ trình" },
+  { key: "persistence", name: "Kiên trì" },
+  { key: "assessment", name: "Đánh giá" },
+];
+
+const achievementsDone = fetch("/api/v1/me/learning/achievements")
   .then((r) => {
     if (window.redirectToLoginIfExpired(r)) return null;
     if (!r.ok) throw new Error(String(r.status));
@@ -255,11 +299,17 @@ const achievementsDone = fetch("/api/v1/me/achievements")
   })
   .then((d) => {
     if (!d) return;
+    d.groups = ACHIEVEMENT_GROUPS.filter((group) => d.items.some((item) => item.group === group.key));
+    d.items = d.items.map((item) => ({ ...item, unlocked: Boolean(item.unlocked_at), new: item.is_new }));
+    if (d.next) {
+      const item = d.items.find((row) => row.code === d.next.code);
+      if (item) d.next = { ...item, ...d.next };
+    }
     window.clearBusy(achPanel);
     achPanel.innerHTML = achievementList(d);
     const fresh = d.items.filter((i) => i.new).map((i) => i.code);
     if (fresh.length) {
-      fetch("/api/v1/me/achievements/seen", {
+      fetch("/api/v1/me/learning/achievements/seen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes: fresh }),
@@ -275,7 +325,7 @@ const achievementsDone = fetch("/api/v1/me/achievements")
 // D039: pronunciation patterns from the learner's own lesson steps.
 const pronPanel = document.getElementById("pronunciation");
 const pronBody = document.getElementById("pronunciation-body");
-fetch("/api/v1/me/pronunciation")
+fetch("/api/v1/me/learning/pronunciation")
   .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)))
   .then((d) => {
     if (!d) return;

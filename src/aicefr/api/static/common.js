@@ -483,13 +483,11 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
   };
   window.ui.setBadge = setBadge;
   if (document.querySelector(".nav-badge[data-badge]")) {
-    fetch("/api/v1/me/badges")
+    fetch("/api/v1/learn/reviews/due")
       .then((r) => (r.ok ? r.json() : null))
-      .then((counts) => {
-        if (!counts) return;
-        Object.keys(BADGE_WORDS).forEach((name) => {
-          if (name in counts) setBadge(name, counts[name]);
-        });
+      .then((value) => {
+        if (!value || !Array.isArray(value.reviews)) return;
+        setBadge("reviews_due", value.reviews.length);
       })
       // A badge is a convenience; a failed count must not disturb the page.
       .catch(() => {});

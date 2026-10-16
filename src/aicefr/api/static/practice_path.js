@@ -230,7 +230,7 @@ function openCard(coin) {
     (l.summary ? `<p class="card-summary">${escapeHtml(l.summary)}</p>` : "") +
     '<ul class="card-facts">' +
     `<li>${icon("layers")}${Number(l.steps)} bước</li>` +
-    (l.passed ? `<li>${icon("check-circle")}đạt ${Number(l.passed)}/${Number(l.steps)}</li>` : "") +
+    (l.passed ? `<li>${icon("check-circle")}hoàn thành ${Number(l.passed)}/${Number(l.steps)} bước</li>` : "") +
     (l.criterion ? `<li>${icon("target")}${escapeHtml(criterionName(l.criterion))}</li>` : "") +
     "</ul>" +
     `<a class="button" href="/practice/lessons/${encodeURIComponent(l.lesson_id)}">${icon("play")}${action}</a>`;
@@ -455,15 +455,105 @@ new ResizeObserver(() => {
   }, 150);
 }).observe(unitsEl);
 
-const chosen = new URLSearchParams(location.search).get("path");
-fetch(`/api/v1/learn${chosen ? `?path_id=${encodeURIComponent(chosen)}` : ""}`)
-  .then((r) => {
-    if (window.redirectToLoginIfExpired(r)) return null;
-    if (!r.ok) throw new Error(String(r.status));
-    return r.json();
-  })
+async function getJson(url) {
+  const response = await fetch(url);
+  if (window.redirectToLoginIfExpired(response)) throw new Error("SESSION_REQUIRED");
+  if (!response.ok) throw new Error(String(response.status));
+  return response.json();
+}
+
+async function lessonCard(lessonId, unit) {
+  const [lesson, progress] = await Promise.all([
+    getJson(`/api/v1/learn/lessons/${encodeURIComponent(lessonId)}`),
+    getJson(`/api/v1/learn/lessons/${encodeURIComponent(lessonId)}/progress`).catch(() => null),
+  ]);
+  const completed = new Set((progress && progress.completed_step_ids) || []);
+  const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
+  const done = steps.filter((step) => completed.has(step.step_id)).length;
+  return {
+    lesson_id: lesson.lesson_id,
+    title: lesson.title,
+    summary: lesson.summary || "",
+    band: lesson.band,
+    steps: steps.length,
+    passed: done,
+    status: progress && progress.complete ? "completed" : done ? "started" : "new",
+    kinds: steps.map((step) => step.kind),
+    criterion: "",
+    unit,
+  };
+}
+
+async function loadPathView() {
+  const chosen = new URLSearchParams(location.search).get("path");
+  const [catalogue, effort, achievements, due] = await Promise.all([
+    getJson("/api/v1/learn/path"),
+    getJson("/api/v1/me/learning/progress"),
+    getJson("/api/v1/me/learning/achievements"),
+    getJson("/api/v1/learn/reviews/due"),
+  ]);
+  const paths = catalogue.paths || [];
+  const selected = paths.find((path) => path.path_id === chosen) || paths[0] || null;
+  if (!selected) {
+    return { path: null, paths: [], next: null, today: mapEffort(effort), reviews_due: (due.reviews || []).length, achievements: mapAchievementSummary(achievements) };
+  }
+
+  const units = await Promise.all((selected.units || []).map(async (unit) => {
+    const lessons = await Promise.all((unit.lesson_ids || []).map((id) => lessonCard(id, unit)));
+    return {
+      unit_id: unit.unit_id,
+      title: unit.title,
+      band: unit.band,
+      topic: unit.topic || "",
+      function: unit.learning_function || "",
+      lessons,
+    };
+  }));
+  const flattened = units.flatMap((unit) => unit.lessons);
+  const nextLesson = flattened.find((lesson) => lesson.status !== "completed") || null;
+  const path = {
+    ...selected,
+    units,
+    lessons_total: flattened.length,
+    lessons_completed: flattened.filter((lesson) => lesson.status === "completed").length,
+  };
+  return {
+    path,
+    paths: paths.map(({ path_id, title }) => ({ path_id, title })),
+    next: nextLesson ? { ...nextLesson, basis: "path_order", reason: "Bài tiếp theo trong lộ trình của bạn." } : null,
+    today: mapEffort(effort),
+    reviews_due: (due.reviews || []).length,
+    achievements: mapAchievementSummary(achievements),
+  };
+}
+
+function mapEffort(value) {
+  return {
+    seconds: value.today_seconds,
+    goal_seconds: value.goal_seconds,
+    goal_met: value.goal_met,
+    streak: value.streak_days,
+    best_streak: value.record_days,
+    week: value.week || [],
+    last_week_seconds: value.previous_week_seconds,
+    rest_days: value.rest_days || [],
+  };
+}
+
+function mapAchievementSummary(value) {
+  const items = value.items || [];
+  const nextItem = items.find((item) => item.code === (value.next || {}).code);
+  return {
+    total: value.total,
+    unlocked: value.unlocked,
+    new: items.filter((item) => item.is_new).length,
+    recent: items.filter((item) => item.unlocked_at).slice(-5).reverse(),
+    next: nextItem && value.next ? { ...nextItem, ...value.next } : null,
+  };
+}
+
+loadPathView()
   .then((d) => {
-    if (!d) return;
     data = d;
     render();
   })

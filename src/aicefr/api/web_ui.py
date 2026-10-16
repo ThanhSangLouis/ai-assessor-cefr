@@ -39,8 +39,6 @@ def _render(template: str, **context: object) -> str:
 
 def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, object]] | None:
     student = frozenset({ActorRole.STUDENT})
-    staff = frozenset({ActorRole.TEACHER, ActorRole.ADMIN})
-    admin = frozenset({ActorRole.ADMIN})
 
     if path == "/practice":
         return "practice_path.html", "practice", student, {}
@@ -57,16 +55,11 @@ def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, obje
         return "practice_task.html", "practice", student, {"task_id": match[1]}
     if path == "/my-progress":
         return "my_progress.html", "progress", student, {}
-    if path == "/admin":
-        return "admin.html", "admin", admin, {}
-    if path == "/admin/study":
-        return "admin_study.html", "admin", admin, {}
-
     return None
 
 
 def dispatch_page(app, environ):
-    """Serve the student learning pages and their packaged assets.
+    """Serve SCRUM-74 student learning pages and their packaged assets.
 
     API calls continue through the existing WSGI API dispatchers. This adapter
     only authenticates page access and renders the transferred presentation.
@@ -124,9 +117,6 @@ def dispatch_page(app, environ):
     context: dict[str, object] = {
         "account": account,
         "nav_here": nav_here,
-        "sample_rate_hz": 16_000,
-        "min_duration_s": 0,
-        "max_duration_s": 300,
         "max_size_mib": max(1, app._max_request_bytes // (1024 * 1024)),
         **extra,
     }
