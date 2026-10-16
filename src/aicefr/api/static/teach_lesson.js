@@ -98,9 +98,6 @@ let again = false;
 let timer = null;
 let domainRevision = 0;
 let draftVersion = 1;
-// The simulated recogniser hears a fixed sentence, so a model-audio check made
-// with it says nothing about the recording.
-let simulated = false;
 
 function validationIssues(value) {
   return (value && value.errors || []).map((item) => ({ ...item, level: "error", field: "" }))
@@ -616,12 +613,6 @@ async function load() {
 }
 
 
-fetch("/api/v1/health")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
-    recorder.enable(!!(h && h.recording_enabled));
-  })
-  .catch(() => recorder.enable(false));
+recorder.enable(document.body.dataset.recordingEnabled === "true");
 
 load();

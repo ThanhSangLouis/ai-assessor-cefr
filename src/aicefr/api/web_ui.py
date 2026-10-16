@@ -37,6 +37,28 @@ def _render(template: str, **context: object) -> str:
     return _ENV.get_template(template).render(api_docs=False, **context)
 
 
+def _audio_capabilities(app) -> tuple[bool, bool]:
+    """Expose the current runtime's audio flags to presentation templates."""
+    portal = getattr(app, "_portal", None)
+    control = getattr(portal, "control", None)
+    pipeline = getattr(control, "pipeline", None)
+    qc = getattr(pipeline, "_qc_config", None)
+    from aicefr.audio.recordings import recording_available
+
+    recording_enabled = bool(
+        qc
+        and {"webm", "mp4"}.issubset(qc.accepted_formats)
+        and recording_available()
+    )
+    config = getattr(control, "config", {})
+    asr_is_real = bool(
+        isinstance(config, dict)
+        and config.get("asr_model_dir")
+        and not getattr(control, "_asr_injected", False)
+    )
+    return recording_enabled, asr_is_real
+
+
 def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, object]] | None:
     student = frozenset({ActorRole.STUDENT})
     teachers = frozenset({ActorRole.TEACHER, ActorRole.ADMIN})
@@ -204,4 +226,6 @@ def dispatch_page(app, environ):
         "max_size_mib": max(1, app._max_request_bytes // (1024 * 1024)),
         **extra,
     }
+    if template in {"lesson.html", "practice_task.html", "teach_lesson.html"}:
+        context["recording_enabled"], context["asr_is_real"] = _audio_capabilities(app)
     return app._html(HTTPStatus.OK, _render(template, **context))

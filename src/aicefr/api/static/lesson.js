@@ -825,14 +825,9 @@ async function load() {
 }
 
 // Health: the fake recogniser warning and whether live recording works.
-fetch("/api/v1/health")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
-    if (simulated) document.getElementById("fake-asr-warning").hidden = false;
-    recorder.enable(!!(h && h.recording_enabled));
-  })
-  .catch(() => recorder.enable(false));
+simulated = document.body.dataset.asrIsReal !== "true";
+if (simulated) document.getElementById("fake-asr-warning").hidden = false;
+recorder.enable(document.body.dataset.recordingEnabled === "true");
 
 // Consent: a learner's recordings are personal data. A teacher previewing a
 // draft stores nothing, so the check is for learners only.
