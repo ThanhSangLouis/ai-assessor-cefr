@@ -1616,14 +1616,27 @@ button.evidence:hover {
 .practice-today { display: grid; justify-items: center; text-align: center; gap: var(--sp-2); }
 .practice-today h2 { margin: 0; justify-self: start; }
 .goal-ring {
-  --pct: 0;
+  position: relative;
   width: 112px;
   height: 112px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: conic-gradient(var(--ok) calc(var(--pct) * 1%), var(--bg-sunken) 0);
 }
+.goal-ring-chart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.goal-ring-chart circle {
+  fill: none;
+  stroke-width: 8;
+}
+.goal-ring-track { stroke: var(--bg-sunken); }
+.goal-ring-progress { stroke: var(--ok); stroke-linecap: round; }
+.goal-ring span { position: relative; z-index: 1; }
 .goal-ring span {
   width: 84px;
   height: 84px;
@@ -3113,14 +3126,45 @@ button.window-chunk:hover { background: var(--bg-hover); }
 .sample-badge { background: var(--accent-soft); color: var(--accent); }
 
 .overall { display: flex; align-items: center; gap: var(--sp-3); max-width: 560px; }
-.overall-track, .lesson-progress-track {
+.native-progress {
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  padding: 0;
+  color: var(--ok);
+}
+.native-progress::-webkit-progress-bar {
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+}
+.native-progress::-webkit-progress-value {
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  transition: width var(--dur-slow) var(--ease);
+}
+.native-progress::-moz-progress-bar {
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  transition: width var(--dur-slow) var(--ease);
+}
+.overall-track {
+  flex: 1;
+  height: 6px;
+  min-width: 0;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.lesson-progress-track {
   flex: 1;
   height: 6px;
   border-radius: var(--r-pill);
   background: var(--bg-sunken);
   overflow: hidden;
 }
-.overall-track span, .lesson-progress-track span {
+.lesson-progress-track span {
   display: block;
   height: 100%;
   width: 0;
@@ -3129,6 +3173,7 @@ button.window-chunk:hover { background: var(--bg-hover); }
   transition: width var(--dur-slow) var(--ease);
 }
 .overall .muted, .lesson-progress .muted { white-space: nowrap; }
+.progress-results-title { margin-top: var(--sp-6); }
 
 .unit-tags { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
 .band-badge { background: var(--brand); color: var(--brand-fg); }
@@ -3451,6 +3496,12 @@ dialog.sheet[open]::backdrop { opacity: 1; }
 .inline-field { display: flex; gap: var(--sp-2); align-items: center; }
 .inline-field > select, .inline-field > input { flex: 1; min-width: 0; }
 .inline-field > button { margin-top: 0; flex: none; }
+@media (max-width: 640px) {
+  #study-open-form { flex-wrap: wrap; }
+  #study-open-form > label,
+  #study-open-form > input,
+  #study-open-form > button { flex: 1 1 100%; }
+}
 
 /* --- the lesson builder ---------------------------------------------------- */
 .builder-head { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); }
@@ -3985,22 +4036,37 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 .unit-trail {
   --row: 124px;
   --coin: 64px;
+  --swing: 64px;
   position: relative;
-  height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 48px);
   margin: var(--sp-5) 0 var(--sp-3);
 }
-.trail-line { position: absolute; top: 0; left: 50%; transform: translateX(-50%); overflow: visible; }
+.trail-line { position: absolute; z-index: 0; top: 0; left: 50%; transform: translateX(-50%); overflow: visible; }
 .trail-line path { fill: none; stroke-width: 6; stroke-linecap: round; }
 .trail-line path.ahead { stroke: var(--border-strong); stroke-dasharray: 1 12; }
 .trail-line path.done { stroke: color-mix(in srgb, var(--ok) 70%, var(--bg-elevated)); }
-.trail { list-style: none; margin: 0; padding: 0; }
+.trail {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-auto-rows: var(--coin);
+  row-gap: calc(var(--row) - var(--coin));
+  list-style: none;
+  margin: 0;
+  padding: 0 0 16px;
+}
 .lesson-node {
-  position: absolute;
-  top: calc(var(--i) * var(--row));
-  left: calc(50% + var(--x) - var(--coin) / 2);
+  position: relative;
+  justify-self: center;
   width: var(--coin);
   height: var(--coin);
+  transform: translateX(calc(var(--swing) * var(--swing-factor, 0)));
 }
+.lesson-node.position-0 { --swing-factor: 0; }
+.lesson-node.position-1, .lesson-node.position-3 { --swing-factor: 1; }
+.lesson-node.position-2 { --swing-factor: 1.45; }
+.lesson-node.position-4 { --swing-factor: 0; }
+.lesson-node.position-5, .lesson-node.position-7 { --swing-factor: -1; }
+.lesson-node.position-6 { --swing-factor: -1.45; }
 .node-coin {
   position: relative;
   width: var(--coin);
@@ -4020,6 +4086,7 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 .node-coin:active { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--topic) 30%, var(--border-strong)); }
 .node-coin[aria-expanded="true"] { outline: 3px solid color-mix(in srgb, var(--topic) 45%, transparent); outline-offset: 4px; }
 .coin-icon { width: 28px; height: 28px; }
+.node-coin .coin-icon { position: relative; z-index: 1; }
 .lesson-node.started .node-coin {
   background: var(--topic);
   border-color: var(--topic);
@@ -4027,14 +4094,21 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   box-shadow: 0 5px 0 color-mix(in srgb, var(--topic) 60%, #000);
 }
 /* Steps passed so far, as a ring around a coin in progress. */
-.lesson-node.started .node-coin::after {
-  content: "";
+.node-progress {
   position: absolute;
   inset: -9px;
-  border-radius: 50%;
-  background: conic-gradient(var(--ok) calc(var(--done) * 1%), transparent 0);
-  -webkit-mask: radial-gradient(circle, transparent 37px, #000 38px);
-  mask: radial-gradient(circle, transparent 37px, #000 38px);
+  z-index: 0;
+  width: calc(100% + 18px);
+  height: calc(100% + 18px);
+  overflow: visible;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+.node-progress circle {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 8;
+  stroke-linecap: round;
 }
 .lesson-node.completed .node-coin {
   background: var(--ok);
@@ -4051,7 +4125,7 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 }
 .node-flag {
   position: absolute;
-  bottom: calc(100% + 12px);
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
   padding: var(--sp-1) var(--sp-3);
@@ -4097,9 +4171,13 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 /* The card a coin opens. */
 .node-card {
   position: absolute;
+  top: calc(var(--coin) + 14px);
+  left: 50%;
   z-index: 5;
   display: grid;
   gap: var(--sp-2);
+  width: min(300px, calc(100vw - 2rem));
+  transform: translateX(-50%);
   padding: var(--sp-4);
   background: var(--bg-elevated);
   border: 2px solid var(--topic, var(--brand));
@@ -4110,7 +4188,8 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   content: "";
   position: absolute;
   bottom: 100%;
-  left: calc(var(--arrow) - 8px);
+  left: 50%;
+  transform: translateX(-50%);
   border: 8px solid transparent;
   border-bottom-color: var(--topic, var(--brand));
 }
@@ -4135,6 +4214,7 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   .path-side .next-card { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
+  .unit-trail { --swing: 36px; }
   .path-side { grid-template-columns: minmax(0, 1fr); }
   .unit-banner { padding: var(--sp-3) var(--sp-4); gap: var(--sp-3); }
   .unit-icon { width: 40px; height: 40px; border-radius: 12px; }
@@ -4204,7 +4284,7 @@ h1:has(> .head-icon) { display: flex; align-items: center; gap: var(--sp-3); }
 /* Trail refinements: the coin icon at full size (button .icon would shrink it),
    titles beside the coin on wide screens, under it with a ground on phones. */
 .node-coin .coin-icon { width: 28px; height: 28px; }
-.lesson-node .lesson-title { top: 50%; transform: translateY(-50%); width: var(--room, 176px); text-align: left; }
+.lesson-node .lesson-title { top: calc(var(--coin) / 2); transform: translateY(-50%); width: 176px; text-align: left; }
 .lesson-node.label-right .lesson-title { left: calc(var(--coin) + 14px); }
 .lesson-node.label-left .lesson-title { left: auto; right: calc(var(--coin) + 14px); text-align: right; }
 .lesson-node.label-below .lesson-title {
@@ -4218,8 +4298,7 @@ h1:has(> .head-icon) { display: flex; align-items: center; gap: var(--sp-3); }
   border-radius: var(--r-sm);
   background: var(--bg);
 }
-.unit-trail { height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 16px); }
-.unit-trail:has(.label-below) { height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 48px); }
+.unit-trail:has(.label-below) .trail { padding-bottom: 64px; }
 
 /* Phones: what to study next, then today and the reviews side by side, short. */
 @media (max-width: 640px) {
@@ -5486,3 +5565,35 @@ button:not(:disabled):hover,
 .survey-scale label { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .kpi-arms { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--sp-4); }
 .kpi-arm h3 { margin: 0; }
+.admin-link-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-link-list li {
+  display: grid;
+  gap: .2rem;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.admin-link-list a { font-weight: 700; }
+.admin-link-list span { color: var(--fg-muted); font-size: var(--t-sm); }
+.admin-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--sp-3);
+  margin: 0;
+}
+.admin-summary-list > div {
+  display: grid;
+  gap: .2rem;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.admin-summary-list strong { color: var(--fg-muted); font-size: var(--t-sm); }
+.admin-summary-list span { overflow-wrap: anywhere; }

@@ -50,8 +50,28 @@ async function fetchPath(pathId) {
   path.units = await Promise.all((path.units || []).map(async (unit) => {
     const lessons = await Promise.all((unit.lesson_ids || []).map(async (lessonId) => {
       try {
+        const publishedVersion = Number(localStorage.getItem("aicefr-published-lesson-" + lessonId)) || null;
+        const draftChanged = localStorage.getItem("aicefr-draft-changed-" + lessonId) === "1";
+        if (path.status === "draft" && publishedVersion && !draftChanged) {
+          return { lesson_id: lessonId, unit_id: unit.unit_id, title: "Bài học đã xuất bản",
+            band: unit.band, steps: [], revision: 0, published_version: publishedVersion,
+            read_only_content: true, pending_path_publication: true };
+        }
+        if (path.status === "unknown") {
+          return { lesson_id: lessonId, unit_id: unit.unit_id, title: "Nội dung chỉ xem",
+            band: unit.band, steps: [], revision: 0, read_only_content: true,
+            unavailable: true, status_unknown: true };
+        }
+        if (path.status === "published") {
+          const versionQuery = publishedVersion ? "?version=" + encodeURIComponent(publishedVersion) : "";
+          const exported = await api("GET", "/api/v1/teacher/learn/lessons/" +
+            encodeURIComponent(lessonId) + "/export" + versionQuery);
+          if (exported.format !== "aicefr-lesson" || !exported.lesson) throw new Error("lesson export is malformed");
+          return { ...exported.lesson, lesson_id: lessonId, unit_id: unit.unit_id,
+            published_version: publishedVersion, read_only_content: true };
+        }
         const lesson = await api("GET", "/api/v1/teacher/learn/lessons/" + encodeURIComponent(lessonId));
-        return { ...lesson, published_version: null, draft_changed: false };
+        return { ...lesson, unit_id: unit.unit_id, published_version: null, draft_changed: draftChanged };
       } catch (_) {
         return { lesson_id: lessonId, title: lessonId, band: unit.band, steps: [], unavailable: true };
       }
@@ -63,20 +83,37 @@ async function fetchPath(pathId) {
 function kinds(lesson) { return (lesson.steps || []).map((step) => step.kind); }
 function lessonRow(lesson) {
   const id = encodeURIComponent(lesson.lesson_id);
-  const state = lesson.unavailable
-    ? '<span class="badge state-warn">Bài không đọc được</span>'
-    : '<span class="badge state-off">Trạng thái xuất bản do API chưa trả về</span>';
-  return '<tr><td><a class="t-lesson-link" href="/teach/lessons/' + id + '?unit_id=' + encodeURIComponent(lesson.unit_id || "") + '">' +
-    escapeHtml(lesson.title) + '</a><div class="muted">' + escapeHtml(lesson.band || "") + '</div></td>' +
-    '<td>' + (lesson.steps || []).length + ' bước · ' + escapeHtml(kinds(lesson).join(", ")) + '</td>' +
-    '<td>' + state + '</td><td><div class="t-row-actions">' +
-    '<a class="button small" href="/teach/lessons/' + id + '?unit_id=' + encodeURIComponent(lesson.unit_id || "") + '">' + icon("pencil") + "Soạn</a>" +
-    '<a class="button small secondary" href="/practice/lessons/' + id + '?preview=1">' + icon("eye") + "Xem thử</a>" +
-    '<button type="button" class="small secondary" data-action="delete-lesson" data-id="' + escapeHtml(lesson.lesson_id) +
-    '" data-revision="' + Number(lesson.revision || 0) + '">Lưu trữ</button>' +
-    "</div></td></tr>";
+  const readOnly = Boolean(lesson.read_only_content || lesson.published_version);
+  const state = lesson.pending_path_publication
+    ? '<span class="badge state-on">Đã xuất bản v' + Number(lesson.published_version) + ' · chờ xuất bản lộ trình</span>'
+    : lesson.status_unknown
+      ? '<span class="badge state-warn">Chỉ xem · chưa xác định trạng thái lộ trình</span>'
+    : lesson.unavailable
+      ? '<span class="badge state-warn">Nội dung không khả dụng qua API hiện tại</span>'
+    : readOnly
+      ? '<span class="badge state-on">' + (lesson.published_version ? 'Đã xuất bản v' + Number(lesson.published_version) : 'Chỉ xem · trạng thái API chưa xác định') + '</span>'
+      : '<span class="badge state-off">Trạng thái xuất bản do API chưa trả về</span>';
+  const title = readOnly
+    ? '<span class="t-lesson-link">' + escapeHtml(lesson.title) + '</span>'
+    : '<a class="t-lesson-link" href="/teach/lessons/' + id + '?unit_id=' + encodeURIComponent(lesson.unit_id || "") + '">' +
+      escapeHtml(lesson.title) + '</a>';
+  const actions = readOnly
+    ? '<span class="muted">' + (lesson.pending_path_publication
+      ? 'Nội dung chi tiết hiển thị sau khi xuất bản lộ trình.'
+      : 'Nội dung đã xuất bản chỉ đọc theo API hiện có.') + '</span>'
+    : '<a class="button small" href="/teach/lessons/' + id + '?unit_id=' + encodeURIComponent(lesson.unit_id || "") + '">' + icon("pencil") + "Soạn</a>" +
+      '<a class="button small secondary" href="/practice/lessons/' + id + '?preview=1">' + icon("eye") + "Xem thử</a>" +
+      '<button type="button" class="small secondary" data-action="delete-lesson" data-id="' + escapeHtml(lesson.lesson_id) +
+      '" data-revision="' + Number(lesson.revision || 0) + '">Lưu trữ</button>';
+  return '<tr><td>' + title + '<div class="muted">' + escapeHtml(lesson.band || "") + '</div></td>' +
+    '<td>' + (lesson.pending_path_publication ? 'Nội dung đang chờ lộ trình xuất bản' :
+      lesson.status_unknown ? 'Không tải nội dung khi chưa rõ trạng thái lộ trình' :
+        (lesson.steps || []).length + ' bước · ' + escapeHtml(kinds(lesson).join(", "))) + '</td>' +
+    '<td>' + state + '</td><td><div class="t-row-actions">' + actions + "</div></td></tr>";
 }
 function unitBlock(unit) {
+  const owner = findPath(unit.path_id);
+  const pathReadOnly = !owner || owner.status !== "draft";
   const rows = unit.lessons.length
     ? '<table class="t-lessons"><thead><tr><th>Bài học</th><th>Các bước</th><th>Trạng thái</th><th></th></tr></thead><tbody>' +
       unit.lessons.map(lessonRow).join("") + "</tbody></table>"
@@ -87,23 +124,25 @@ function unitBlock(unit) {
     escapeHtml(unit.band) + "</span>" + (TOPICS[unit.topic] ? '<span class="badge topic-badge">' +
     escapeHtml(TOPICS[unit.topic][0]) + "</span>" : "") + "</div><h3>" + escapeHtml(unit.title) +
     "</h3>" + (unit.function ? '<p class="muted">' + escapeHtml(unit.function) + "</p>" : "") +
-    '</div><div class="t-actions"><button type="button" class="small secondary icon-only" data-action="unit-up" data-path="' +
-    escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" aria-label="Đưa chặng lên trên">↑</button>' +
-    '<button type="button" class="small secondary icon-only" data-action="unit-down" data-path="' +
-    escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" aria-label="Đưa chặng xuống dưới">↓</button>' +
-    '<button type="button" class="small secondary" data-action="edit-unit" data-path="' +
-    escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '">Sửa chặng</button>' +
-    (unit.lessons.length ? "" : '<button type="button" class="small secondary" data-action="delete-unit" data-path="' +
-      escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" data-revision="' + Number(unit.revision) + '">Xoá chặng</button>') +
-    '<button type="button" class="small" data-action="add-lesson" data-path="' + escapeHtml(unit.path_id) +
-    '" data-id="' + escapeHtml(unit.unit_id) + '" data-band="' + escapeHtml(unit.band) + '">Thêm bài học</button>' +
+    '</div><div class="t-actions">' + (pathReadOnly
+      ? '<span class="badge state-on">Chặng chỉ đọc</span>'
+      : '<button type="button" class="small secondary icon-only" data-action="unit-up" data-path="' +
+        escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" aria-label="Đưa chặng lên trên">↑</button>' +
+        '<button type="button" class="small secondary icon-only" data-action="unit-down" data-path="' +
+        escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" aria-label="Đưa chặng xuống dưới">↓</button>' +
+        '<button type="button" class="small secondary" data-action="edit-unit" data-path="' +
+        escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '">Sửa chặng</button>' +
+        (unit.lessons.length ? "" : '<button type="button" class="small secondary" data-action="delete-unit" data-path="' +
+          escapeHtml(unit.path_id) + '" data-id="' + escapeHtml(unit.unit_id) + '" data-revision="' + Number(unit.revision) + '">Xoá chặng</button>') +
+        '<button type="button" class="small" data-action="add-lesson" data-path="' + escapeHtml(unit.path_id) +
+        '" data-id="' + escapeHtml(unit.unit_id) + '" data-band="' + escapeHtml(unit.band) + '">Thêm bài học</button>') +
     "</div></div>" + rows + "</section>";
 }
 function pathCard(path, index) {
   const published = path.status === "published";
   const draft = path.status === "draft";
-  const buttons = published
-    ? '<span class="badge state-on">Đã xuất bản · metadata chỉ đọc</span>'
+  const buttons = published || (!published && !draft)
+    ? '<span class="badge state-on">' + (published ? 'Đã xuất bản · metadata chỉ đọc' : 'Chỉ xem · API chưa trả về trạng thái path') + '</span>'
     : '<button type="button" class="small secondary" data-action="edit-path" data-id="' + escapeHtml(path.path_id) + '">Sửa thông tin</button>' +
       '<button type="button" class="small" data-action="add-unit" data-id="' + escapeHtml(path.path_id) + '">Thêm chặng</button>' +
       '<button type="button" class="small secondary" data-action="publish-path" data-id="' + escapeHtml(path.path_id) + '">Xuất bản lộ trình</button>' +
@@ -114,11 +153,13 @@ function pathCard(path, index) {
     path.units.length + ' chặng</p><h2 id="path-h-' + index + '">' + escapeHtml(path.title) + '</h2>' +
     '<div class="unit-tags">' + (published ? '<span class="badge state-on">Sinh viên đang thấy lộ trình này</span>' :
       (draft ? '<span class="badge state-off">Nháp: sinh viên chưa thấy</span>' :
-        '<span class="badge state-warn">API chưa trả về trạng thái xuất bản</span>')) + "</div>" +
+        '<span class="badge state-warn">API chưa trả về trạng thái xuất bản; nội dung chỉ xem</span>')) + "</div>" +
     (path.description ? '<p class="muted">' + escapeHtml(path.description) + "</p>" : "") +
     '</div><div class="t-actions">' + buttons +
-    '<a class="button small secondary" href="/api/v1/teacher/learn/paths/' + encodeURIComponent(path.path_id) +
-    '/export" download>Xuất JSON</a></div></div>' +
+    (path.status === "published" || (path.status === "draft" &&
+      !path.units.some((unit) => unit.lessons.some((lesson) => lesson.pending_path_publication)))
+      ? '<a class="button small secondary" href="/api/v1/teacher/learn/paths/' + encodeURIComponent(path.path_id) +
+        '/export" download>Xuất JSON</a>' : "") + '</div></div>' +
     (path.units.length ? path.units.map(unitBlock).join("") : '<p class="muted t-empty">Lộ trình chưa có chặng nào.</p>') +
     "</section>";
 }

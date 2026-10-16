@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Quản trị · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
+  <p class="lede">Tài khoản, dữ liệu, cấu hình và tình trạng vận hành.</p>
+</div>
+
+<section class="card" aria-labelledby="admin-core-title">
+  <h2 id="admin-core-title">Công cụ hiện có</h2>
+  <p class="muted">Các liên kết mở trang quản trị đang được cung cấp bởi portal và giữ nguyên quyền truy cập hiện tại.</p>
+  <ul class="admin-link-list">
+    <li><a href="/admin/accounts">Tài khoản</a><span>Danh sách và thao tác tài khoản hiện có</span></li>
+    <li><a href="/admin/erase">Yêu cầu xóa dữ liệu</a><span>Xem trước và xác nhận theo luồng hiện hành</span></li>
+    <li><a href="/admin/maintenance">Lưu giữ và bản ghi mồ côi</a><span>Thao tác bảo trì cần xác nhận rõ ràng</span></li>
+    <li><a href="/admin/models">Mô hình</a><span>Kiểm tra và kích hoạt model hiện hành</span></li>
+    <li><a href="/admin/config">Cấu hình chất lượng</a><span>Cấu hình QC đang được portal hỗ trợ</span></li>
+    <li><a href="/admin/audit">Audit</a><span>Nhật ký thao tác quản trị</span></li>
+    <li><a href="/admin/health">Tình trạng vận hành</a><span>Readiness và số liệu runtime</span></li>
+    <li><a href="/rate">Bài chấm mù được giao</a><span>Chỉ hiển thị assignment mà tài khoản hiện tại được phép chấm</span></li>
+    <li><a href="/admin/ratings">Quản lý đợt chấm mù</a><span>Chọn giám khảo, theo dõi, phân xử, xem báo cáo và export theo M12</span></li>
+    <li><a href="/admin/studies">Thực nghiệm phản hồi</a><span>Tạo và quản lý study M13 qua các route hiện có</span></li>
+  </ul>
+</section>
+
+<section class="card" aria-labelledby="admin-billing-title">
+  <div class="card-head"><h2 id="admin-billing-title">Billing sandbox</h2></div>
+  <p class="muted">Trang này chỉ đọc overview, license và đơn hàng qua contract M14 hiện có. Không khởi tạo thanh toán từ giao diện này.</p>
+  <div id="admin-billing-summary" aria-live="polite" aria-busy="true">
+    <p class="muted">Đang tải trạng thái billing…</p>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="admin-pending-title">
+  <h2 id="admin-pending-title">Các luồng đang chờ contract</h2>
+  <ul>
+    <li>Danh sách study M13 được lưu trong trình duyệt hoặc mở bằng ID; contract hiện chưa có API liệt kê study.</li>
+    <li>One-time password receipt và batch account policy: cần contract M11 được duyệt.</li>
+    <li>Tạo quote/order, settlement và receipt trên giao diện: cần hoàn tất review policy M14 trước khi mở thao tác.</li>
+  </ul>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('admin_portal.js') }}"></script>{% endblock %}

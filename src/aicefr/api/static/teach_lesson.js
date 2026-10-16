@@ -11,6 +11,8 @@ const root = document.getElementById("builder");
 const icon = (name, cls) => window.ui.icon(name, cls);
 const KIND_ICON = window.ui.STEP_ICONS;
 const LESSON_ID = root.dataset.lessonId;
+const PUBLISHED_KEY = "aicefr-published-lesson-" + LESSON_ID;
+const DRAFT_CHANGED_KEY = "aicefr-draft-changed-" + LESSON_ID;
 const $ = (id) => document.getElementById(id);
 
 const KIND_NAMES = {
@@ -98,9 +100,6 @@ let again = false;
 let timer = null;
 let domainRevision = 0;
 let draftVersion = 1;
-// The simulated recogniser hears a fixed sentence, so a model-audio check made
-// with it says nothing about the recording.
-let simulated = false;
 
 function validationIssues(value) {
   return (value && value.errors || []).map((item) => ({ ...item, level: "error", field: "" }))
@@ -210,6 +209,40 @@ function errorText(d) {
 
 // ---------------------------------------------------------------- saving
 function setState(text, kind = "") { const el=$("save-state"); el.textContent=text; el.className="save-state "+kind; }
+function draftIssue() {
+  for (const item of lesson.steps || []) {
+    const label = KIND_NAMES[item.kind] || "Bước học";
+    const hasText = typeof item.text === "string" && item.text.trim().length > 0;
+    let missing = false;
+    switch (item.kind) {
+      case "read_aloud":
+      case "repeat":
+      case "look_up":
+        missing = !hasText;
+        break;
+      case "gap":
+        missing = !hasText || !(item.answers || []).some((value) => String(value).trim());
+        break;
+      case "keywords":
+        missing = !(item.keywords || []).some((value) => String(value).trim());
+        break;
+      case "starter":
+        missing = !hasText || !String(item.starter || "").trim();
+        break;
+      case "picture":
+        missing = !hasText || !(item.pictures || []).some((picture) => String(picture.description || "").trim());
+        break;
+      case "outline":
+        missing = !hasText || !(item.outline || []).some((value) => String(value).trim());
+        break;
+      case "free":
+        missing = !hasText;
+        break;
+    }
+    if (missing) return `Hoàn thiện nội dung bắt buộc của bước “${label}” trước khi lưu.`;
+  }
+  return "";
+}
 async function loadLint() {
   const result=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/lint",{
     method:"POST",headers:{"Content-Type":"application/json"},
@@ -220,6 +253,8 @@ async function save() {
   clearTimeout(timer);
   if (saving) { again=true; return saving; }
   if (!dirty) return null;
+  const issue = draftIssue();
+  if (issue) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return null; }
   if (!unit || !unit.unit_id) { window.toast("Không xác định được chặng. Hãy mở bài từ trang Soạn bài.","error"); throw new Error("unit unavailable"); }
   dirty=false; setState("Đang lưu…","pending");
   saving=(async()=>{
@@ -228,7 +263,10 @@ async function save() {
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({unit_id:unit.unit_id,expected_revision:domainRevision,lesson:toDomainLesson(lesson)})});
       domainRevision=saved.revision; lesson.revision=saved.revision; await loadLint();
-      if (meta.published_version) meta.draft_changed=true;
+      if (meta.published_version) {
+        meta.draft_changed = true;
+        localStorage.setItem(DRAFT_CHANGED_KEY, "1");
+      }
       setState("Đã lưu nháp lúc "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}),"ok");
       renderHead(); renderLint(); renderRail();
     } catch(error) { dirty=true; setState("Chưa lưu được","error"); if(error.message!=="expired") window.toast(error.message || "Không lưu được bản nháp.","error"); throw error; }
@@ -237,10 +275,30 @@ async function save() {
   return null;
 }
 
+function markDirty() {
+  dirty = true;
+  if (meta && meta.published_version) meta.draft_changed = true;
+  setState("Có thay đổi chưa lưu", "pending");
+  renderHead();
+  clearTimeout(timer);
+  timer = window.setTimeout(() => {
+    if (draftIssue()) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return; }
+    save().catch(() => {});
+  }, 500);
+}
+
 // Before anything that reads the draft on the server: media, preview, publish.
 async function flush() {
-  if (saving) await saving.catch(() => {});
-  if (dirty) await save();
+  if (saving) await saving;
+  if (!dirty) return;
+  const issue = draftIssue();
+  if (issue) {
+    setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending");
+    window.toast(issue, "warn");
+    throw new Error(issue);
+  }
+  await save();
+  if (dirty) await flush();
 }
 
 // ---------------------------------------------------------------- head + rail
@@ -536,7 +594,10 @@ const recorder = window.setUpRecorder({
     }
     s.model_audio = d.media_id;
     s.model_audio_url = d.url;
-    if (meta.published_version) meta.draft_changed = true;
+    if (meta.published_version) {
+      meta.draft_changed = true;
+      localStorage.setItem(DRAFT_CHANGED_KEY, "1");
+    }
     renderAudio();
     renderHead();
     window.toast("Đã lưu giọng mẫu.", "ok");
@@ -576,7 +637,8 @@ $("publish").addEventListener("click",async()=>{
     const published=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/publish",{
       method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expected_revision:domainRevision})});
     meta.published_version=published.version;meta.draft_changed=false;
-    localStorage.setItem("aicefr-published-lesson-"+LESSON_ID,String(published.version));
+    localStorage.setItem(PUBLISHED_KEY,String(published.version));
+    localStorage.removeItem(DRAFT_CHANGED_KEY);
     renderHead();window.toast("Đã xuất bản phiên bản "+published.version+".","ok");
   } catch(error){window.toast(error.message,"error");}
 });
@@ -605,7 +667,8 @@ async function load() {
   if(response.status===403){$("builder-head").innerHTML='<p class="error">Tài khoản này không có quyền soạn bài.</p>';$("builder-bar").hidden=true;return;}
   if(!response.ok){$("builder-head").innerHTML='<div class="empty-state"><h2>Không mở được bài học này</h2><p><a href="/teach">Quay lại lộ trình</a>.</p></div>';$("builder-bar").hidden=true;return;}
   const raw=await response.json();domainRevision=raw.revision || 0;draftVersion=raw.version || 1;
-  lesson=fromDomainLesson(raw);meta={published_version:Number(localStorage.getItem("aicefr-published-lesson-"+LESSON_ID))||null,draft_changed:false,updated_at:null};
+  lesson=fromDomainLesson(raw);meta={published_version:Number(localStorage.getItem(PUBLISHED_KEY))||null,
+    draft_changed:localStorage.getItem(DRAFT_CHANGED_KEY)==="1",updated_at:null};
   attachMedia(lesson,raw.sample_media);await resolveContext();
   if(!unit || !unit.unit_id){$("builder-bar").hidden=true;$("builder-head").innerHTML='<div class="empty-state"><h2>Chưa xác định được chặng</h2><p>Mở bài từ trang <a href="/teach">Soạn bài</a> để đồng bộ bản nháp.</p></div>';return;}
   $("f-title").value=lesson.title;$("f-summary").value=lesson.summary || "";$("f-band").value=lesson.band;
@@ -616,12 +679,6 @@ async function load() {
 }
 
 
-fetch("/api/v1/health")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
-    recorder.enable(!!(h && h.recording_enabled));
-  })
-  .catch(() => recorder.enable(false));
+recorder.enable(document.body.dataset.recordingEnabled === "true");
 
 load();

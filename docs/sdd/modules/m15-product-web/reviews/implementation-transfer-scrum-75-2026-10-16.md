@@ -6,6 +6,8 @@
 **UI transfer commit:** `6b66555`
 **Status:** UI transferred and adapted to current contracts; task implementation is in progress and integrated acceptance is pending.
 
+> Historical transfer status. The integrated browser result on revision `0827b37b4f560d5087e1c57e9011ed79acc837dc` supersedes the earlier E2E `NOT_RUN` statement; see [SCRUM-74–76 integration report](../evidence/scrum-74-76/integration-report.md). Owner acceptance remains pending.
+
 ## Source transferred
 
 Copied the seven teacher page templates and their seven page scripts from the read-only source archive:
@@ -28,4 +30,4 @@ The SCRUM-74 branch already supplies the shared shell, icons, styles, common bro
 
 PR #39 (`docs/SCRUM-63-W5-G1-parity-contract`) merged to `main` as `19b7ada` on 2026-10-16 and provides the M10 routes used by path and lesson authoring. Its contract still has no path-list or cohort-insights route; the UI uses browser-local known IDs and per-owner insights for those areas. No producer API, domain, storage or service module was modified in SCRUM-75.
 
-PR #46 CI passed on its original head before the latest base integration; CI must be checked again after rebase. M15-TEST-006/008/012, browser QA and the single integrated E2E remain `NOT_RUN`. The E2E is reserved for the final integrated SCRUM-74–76 revision. SCRUM-75 acceptance is not marked complete.
+PR #46 CI passed on its original head before the latest base integration. The integrated browser route/responsive run is now recorded in the superseding report; individual M15-TEST-006/008/012 cases outside that run remain `NOT_RUN`. SCRUM-75 acceptance is not marked complete.

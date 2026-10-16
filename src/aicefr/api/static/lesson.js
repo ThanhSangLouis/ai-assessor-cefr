@@ -385,7 +385,7 @@ function showStep(i) {
   layoutEl.hidden = false;
   feedbackEl.hidden = true;
   feedbackEl.innerHTML = "";
-  formEl.hidden = false;
+  formEl.hidden = MODE === "preview";
   bodyEl.innerHTML =
     `<div class="step-top">${stageChip(step)}<span class="muted">Bước ${index + 1}/${steps.length}</span></div>` +
     `<h2 id="step-h" tabindex="-1">${escapeHtml(step.display_title)}</h2>` +
@@ -776,8 +776,11 @@ async function load() {
         return;
       }
     } else {
-      const lesson = await getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`);
-      const [progress, attempts] = await Promise.all([
+      const lessonUrl = MODE === "preview"
+        ? `/api/v1/teacher/learn/lessons/${encodeURIComponent(LESSON_ID)}`
+        : `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`;
+      const lesson = await getJson(lessonUrl);
+      const [progress, attempts] = MODE === "preview" ? [null, { attempts: [] }] : await Promise.all([
         getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}/progress`).catch(() => null),
         getJson(`/api/v1/learn/step-attempts?limit=100&lesson_id=${encodeURIComponent(LESSON_ID)}`).catch(() => ({ attempts: [] })),
       ]);
@@ -825,14 +828,9 @@ async function load() {
 }
 
 // Health: the fake recogniser warning and whether live recording works.
-fetch("/api/v1/health")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
-    if (simulated) document.getElementById("fake-asr-warning").hidden = false;
-    recorder.enable(!!(h && h.recording_enabled));
-  })
-  .catch(() => recorder.enable(false));
+simulated = document.body.dataset.asrIsReal !== "true";
+if (simulated) document.getElementById("fake-asr-warning").hidden = false;
+recorder.enable(MODE !== "preview" && document.body.dataset.recordingEnabled === "true");
 
 // Consent: a learner's recordings are personal data. A teacher previewing a
 // draft stores nothing, so the check is for learners only.

@@ -168,13 +168,10 @@ fetch("/api/v1/me/consent")
   })
   .catch(() => {});
 
-fetch("/api/v1/health")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((h) => {
-    if (h && !h.asr_is_real) document.getElementById("fake-asr-warning").hidden = false;
-    recorder.enable(!!(h && h.recording_enabled));
-  })
-  .catch(() => recorder.enable(false));
+if (document.body.dataset.asrIsReal !== "true") {
+  document.getElementById("fake-asr-warning").hidden = false;
+}
+recorder.enable(document.body.dataset.recordingEnabled === "true");
 
 // ---------------------------------------------------------------- submit + wait
 const POLL_MS = 1500;
