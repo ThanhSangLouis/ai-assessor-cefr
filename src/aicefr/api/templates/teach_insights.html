@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Thống kê luyện tập · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- How the class moves through a path (D025, M18). Totals per lesson, never a
+    ranking of people. A teacher can listen to an attempt and correct what the
+    machine said about it: never blocking, never a score, always audited. -#}
+<div class="page-head teach-head">
+  <div>
+    <p class="eyebrow">Theo dõi lớp</p>
+    <h1><span class="head-icon">{{ icon("chart") }}</span>Thống kê luyện tập</h1>
+    <p class="lede">
+      Lớp đi qua lộ trình thế nào: bài nào hay dừng ở bước nào, từ nào cả lớp hay bỏ. Số liệu
+      tính theo bài học, không xếp hạng ai. Bạn nghe lại được từng lượt luyện và sửa nhận định
+      của máy; việc đó không chặn sinh viên và không tạo ra điểm.
+    </p>
+  </div>
+  <div class="path-switch" id="path-switch"></div>
+</div>
+
+<div id="insights" aria-busy="true" aria-live="polite">
+  <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
+</div>
+
+<dialog class="sheet wide" id="attempt-dialog" aria-labelledby="attempt-h">
+  <div id="attempt-body"></div>
+</dialog>
+
+<dialog class="sheet" id="words-dialog" aria-labelledby="words-h">
+  <form id="words-form" method="dialog">
+    <h2 id="words-h">Bài ôn từ cả lớp hay bỏ</h2>
+    <p class="muted">Bài mới gồm các bước ghép câu với những từ đã chọn, mỗi bước ba từ, rồi một
+      bước nói tự do dùng lại các từ đó. Bài được tạo ở dạng nháp để bạn sửa trước khi xuất bản.</p>
+    <p id="words-picked" class="word-chips-line"></p>
+    <label for="words-unit">Đặt vào chặng</label>
+    <select id="words-unit"></select>
+    <label for="words-title">Tên bài</label>
+    <input id="words-title" required maxlength="160" autocomplete="off" value="Ôn những từ cả lớp hay bỏ">
+    <label for="words-prompt">Đề nói tự do</label>
+    <textarea id="words-prompt" maxlength="600" rows="2"
+              placeholder="Ví dụ: Kể về một ngày học trên lớp của bạn."></textarea>
+    <div class="button-row">
+      <button type="submit">Tạo bài nháp</button>
+      <button type="button" class="secondary" data-close="words-dialog">Huỷ</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('teach_insights.js') }}"></script>{% endblock %}

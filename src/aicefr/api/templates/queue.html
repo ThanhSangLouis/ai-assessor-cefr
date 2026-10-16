@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Hàng đợi duyệt · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head page-head-row">
+  <div>
+    <h1><span class="head-icon">{{ icon("inbox") }}</span>Hàng đợi duyệt</h1>
+    <p class="lede">
+      Những bài hệ thống <b>không đủ chắc chắn</b>, bài cũ nhất ở trên. Nghe lại rồi giữ
+      nguyên hoặc sửa kết quả; mọi lần sửa được ghi nhật ký kèm lý do.
+    </p>
+  </div>
+  {#- Enabled by queue.js once it knows which response is free to take. -#}
+  <a class="button" id="next-review" href="/review" aria-disabled="true">Duyệt bài tiếp theo</a>
+</div>
+
+<section class="card" aria-labelledby="queue-h">
+  <div class="card-head">
+    <h2 id="queue-h">Hàng đợi chờ duyệt</h2>
+    <span class="muted" id="queue-count"></span>
+    <button type="button" class="secondary small" id="queue-refresh">Tải lại</button>
+  </div>
+
+  <div class="filter-bar" id="filters" hidden>
+    <div class="filter">
+      <label for="filter-reason">Lý do gắn cờ</label>
+      <select id="filter-reason">
+        <option value="">Tất cả lý do</option>
+      </select>
+    </div>
+    <div class="filter">
+      <label for="filter-lock">Người đang xem</label>
+      <select id="filter-lock">
+        <option value="">Cả bài đang có người xem</option>
+        <option value="free">Chỉ bài chưa ai xem</option>
+      </select>
+    </div>
+    <p class="result-count" id="filter-count"></p>
+  </div>
+
+  <div id="ds" aria-busy="true">
+    <div class="skeleton skeleton-row"></div>
+    <div class="skeleton skeleton-row"></div>
+    <div class="skeleton skeleton-row"></div>
+    <div class="skeleton skeleton-row"></div>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('queue.js') }}"></script>{% endblock %}
