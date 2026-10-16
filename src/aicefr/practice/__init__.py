@@ -17,3 +17,15 @@ from aicefr.practice.contracts import (
     PracticeResult,
     PracticeStatus,
 )
+
+__all__ = [
+    "PRACTICE_MISSIONS",
+    "get_mission",
+    "list_missions",
+    "MissionGoal",
+    "MissionKind",
+    "PracticeMission",
+    "PracticePurpose",
+    "PracticeResult",
+    "PracticeStatus",
+]

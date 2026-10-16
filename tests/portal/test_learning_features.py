@@ -30,10 +30,10 @@ def add_step_attempt(
         LessonStage,
         LessonStep,
         LookUpPayload,
+        PublishedLessonVersion,
         ReadAloudPayload,
         StepKind,
     )
-    from aicefr.lessons.model import PublishedLessonVersion
     from aicefr.lessons.rules import LESSON_RULES_VERSION
 
     lesson = Lesson(
@@ -50,7 +50,11 @@ def add_step_attempt(
                 stage=LessonStage.MODEL,
                 kind=StepKind.READ_ALOUD,
                 instruction="Read the sample aloud.",
-                payload=ReadAloudPayload(kind=StepKind.READ_ALOUD, text="Hello world.", max_seconds=30),
+                payload=ReadAloudPayload(
+                    kind=StepKind.READ_ALOUD,
+                    text="Hello world.",
+                    max_seconds=30,
+                ),
                 rules_version=LESSON_RULES_VERSION,
             ),
             LessonStep(
@@ -99,7 +103,8 @@ def add_step_attempt(
     with runtime.store.transaction() as connection:
         connection.execute(
             "INSERT OR IGNORE INTO learning_paths "
-            "(path_id,title,description,state,revision,created_at,updated_at,band_from,band_to,content_version,content_hash) "
+            "(path_id,title,description,state,revision,created_at,updated_at,"
+            "band_from,band_to,content_version,content_hash) "
             "VALUES('path-1','Fixture path','', 'published',1,?,?, 'A2','A2','fixture-v1',?)",
             (created_at, created_at, "0" * 64),
         )
@@ -109,25 +114,33 @@ def add_step_attempt(
         )
         connection.execute(
             "INSERT OR IGNORE INTO learning_lessons "
-            "(lesson_id,unit_id,title,active_version,created_at,summary,band,revision,content_version,ordinal) "
+            "(lesson_id,unit_id,title,active_version,created_at,summary,band,revision,"
+            "content_version,ordinal) "
             "VALUES('lesson-1','unit-1','Fixture lesson',NULL,?,?, 'A2',1,'fixture-v1',1)",
             (created_at, lesson.summary),
         )
         version_exists = connection.execute(
-            "SELECT 1 FROM lesson_versions WHERE lesson_id='lesson-1' AND version=1 AND state='published'"
+            "SELECT 1 FROM lesson_versions WHERE lesson_id='lesson-1' "
+            "AND version=1 AND state='published'"
         ).fetchone()
         if not version_exists:
             connection.execute(
                 "INSERT OR IGNORE INTO lesson_versions "
-                "(lesson_id,version,state,rules_version,published_at,created_at,title,summary,band,revision,content_hash) "
+                "(lesson_id,version,state,rules_version,published_at,created_at,"
+                "title,summary,band,revision,content_hash) "
                 "VALUES('lesson-1',1,'draft',?,NULL,?, ?, ?, 'A2',1,NULL)",
                 (snapshot.rules_version, created_at, snapshot.title, snapshot.summary),
             )
             for step in snapshot.steps:
-                payload = json.dumps(step.payload.model_dump(mode="json"), ensure_ascii=False, sort_keys=True)
+                payload = json.dumps(
+                    step.payload.model_dump(mode="json"),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
                 connection.execute(
                     "INSERT OR IGNORE INTO lesson_steps "
-                    "(lesson_id,version,step_id,kind,ordinal,payload,stage,instruction,rules_version) "
+                    "(lesson_id,version,step_id,kind,ordinal,payload,stage,instruction,"
+                    "rules_version) "
                     "VALUES('lesson-1',1,?,?,?,?,?,?,?)",
                     (
                         step.step_id,
@@ -140,7 +153,8 @@ def add_step_attempt(
                     ),
                 )
             connection.execute(
-                "UPDATE lesson_versions SET state='published',published_at=?,title=?,summary=?,band=?,revision=?,content_hash=?,rules_version=? "
+                "UPDATE lesson_versions SET state='published',published_at=?,title=?,"
+                "summary=?,band=?,revision=?,content_hash=?,rules_version=? "
                 "WHERE lesson_id='lesson-1' AND version=1 AND state='draft'",
                 (
                     created_at,

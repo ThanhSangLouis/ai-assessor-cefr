@@ -16,6 +16,7 @@ from aicefr.contracts import ActorRole
 from aicefr.lessons.model import LearningPath, LearningUnit, Lesson
 from aicefr.practice.contracts import PracticePurpose
 
+
 class LearningApi:
     def __init__(self, auth, learning_service) -> None:
         self.auth = auth

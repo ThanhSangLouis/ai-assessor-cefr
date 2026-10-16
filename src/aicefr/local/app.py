@@ -26,19 +26,19 @@ from aicefr.auth.service import AuthService, ConsentService
 from aicefr.contracts import ActorRole
 from aicefr.features.extractor import FeatureExtractor
 from aicefr.observability import Metrics
-from aicefr.practice.service import LearningService
 from aicefr.portal.contracts import TaskRecord
 from aicefr.portal.control import RuntimeControl
 from aicefr.portal.data import DataControl
 from aicefr.portal.router import PortalRouter
 from aicefr.portal.service import PortalService
 from aicefr.portal.tasks import TaskRepository
+from aicefr.practice.service import LearningService
 from aicefr.research.service import ResearchService
 from aicefr.review.service import ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.blob import BlobStore
-from aicefr.storage.learning import LearningProgressRepository, LearningRepository
+from aicefr.storage.learning import LearningProgressRepository
 from aicefr.storage.providers import RepositoryProviders, build_providers
 from aicefr.storage.service import ResponseService
 from aicefr.storage.sqlite import SQLiteStore

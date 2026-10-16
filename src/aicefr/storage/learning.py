@@ -13,11 +13,11 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from aicefr.contracts import ActorRole, Band
 from aicefr.lessons.model import (
+    MAX_STEP_SPEAKING_SECONDS,
     LearningPath,
     LearningUnit,
     Lesson,
     LessonStep,
-    MAX_STEP_SPEAKING_SECONDS,
     PublishedLessonVersion,
     StepAttemptStatus,
     StepCompletion,
