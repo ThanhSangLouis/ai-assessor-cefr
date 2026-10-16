@@ -30,3 +30,7 @@ The integrated cross-role review found that the shared navigation requested the 
 ## Base and fingerprint
 
 Implementation base: this task branch at commit `c1baa31` before the SCRUM-76 source transfer. UI transfer commit: `79da8c1`. The WSGI app uses Jinja templates and serves package-local static assets; page requests continue through the existing session and `ActorRole.ADMIN` resolver.
+
+## Superseding integrated browser result — 16/10/2026
+
+The current SCRUM-74–76 browser result is recorded at revision `0827b37b4f560d5087e1c57e9011ed79acc837dc` in the [integration report](../evidence/scrum-74-76/integration-report.md). Admin, rating, study, account/data, model, QC, audit and health routes returned 200 across the tested 360/390/768/1280px widths without document overflow; the final admin session had zero console errors. A synthetic local study draft was opened with zero participants and left unstarted. No rating batch, account/data mutation or billing operation was performed. The earlier `NOT_RUN` entries above are historical snapshots; detailed uncovered M15-TEST cases and pending owner acceptance are listed in the report.

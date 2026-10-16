@@ -5,6 +5,8 @@
 **Base revision:** `325d69d`; the adapter and this record follow in the next branch commit.
 **Status:** Implementation in progress; acceptance and E2E `NOT_RUN`.
 
+> Historical transfer status. The integrated browser result on revision `0827b37b4f560d5087e1c57e9011ed79acc837dc` supersedes the `NOT_RUN` statement; see [SCRUM-74–76 integration report](../evidence/scrum-74-76/integration-report.md). Owner acceptance remains pending.
+
 ## Transferred and adapted
 
 - Moved the completed practice, lesson, review, result, progress, achievement and pronunciation templates/assets into the WSGI presentation package.
@@ -15,4 +17,4 @@
 
 ## Dependency and verification
 
-PR #39 merged to `main` as `19b7ada` on 2026-10-16 and supplies the M10 routes used by this UI. SCRUM-74 did not change producer code. Until the SCRUM-74–76 UI branches are present on one integrated revision, the requested E2E remains `NOT_RUN`; run it once at the end and record actual results before marking this task `DONE`.
+PR #39 merged to `main` as `19b7ada` on 2026-10-16 and supplies the M10 routes used by this UI. SCRUM-74 did not change producer code. See the superseding integrated browser report linked above for actual route, viewport, console and network outcomes. Phase 09 acceptance is still pending.

@@ -10,7 +10,7 @@ AI Usage Log, prompt gốc, mục đích dùng AI, file sinh ra, phần người
 
 | Artifact | Vai trò | Tình trạng |
 | --- | --- | --- |
-| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 hiện có 28 Thắng, 73 Nguyên, 28 Sang (129 tổng); W06 chưa có bản ghi |
+| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 hiện có 28 Thắng, 74 Nguyên, 28 Sang (130 tổng); W06 chưa có bản ghi |
 | [Kiểm tra task và tạo PR W4 của Nguyên](nguyen/pr-W4-20261012.md) | Ba yêu cầu thực tế ngày 12/10; phạm vi commit và ánh xạ workbook | W05 trong PR: 3 dòng Nguyên/Codex; không khép lịch sử W04 còn thiếu |
 | [Chuyển log Nguyên sang W04](nguyen/chuyen-log-sang-W04-20261012.md) | Ánh xạ 7 dòng từ W05 sang W04 và yêu cầu chuyển file | Ngoại lệ nơi lưu theo chỉ dẫn Nguyên; giữ ngày thực tế 12/10/2026 |
 | [Biên tập prompt của Nguyên](nguyen/prompt-log-bien-tap-20261012.md) | Đối chiếu nội dung gốc và phiên bản diễn đạt chuyên nghiệp của W05, hàng 6–12 | Biên tập theo yêu cầu ngày 12/10; bản gốc được giữ để kiểm tra |
@@ -33,10 +33,12 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
 | [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
-| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 73 | 28 | 129 |
+| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 74 | 28 | 130 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
 
-Khi đồng bộ nhánh SCRUM-73 với main và các workbook SCRUM-74–76 ngày 16/10/2026, các dòng được ghép theo nội dung đầy đủ để tránh trùng: sáu bản ghi SCRUM-71/72 của Sang đã có ở cả hai workbook nên chỉ giữ một bản; thêm 22 bản ghi Sang, một bản ghi tích hợp từ main (Nguyên, hàng 72), lượt tiếp tục sau xác nhận của chủ dự án (Nguyên, hàng 73) và năm bản ghi riêng của các nhánh SCRUM-74–76 (Nguyên, hàng 74–78). W05 hiện có 28 bản ghi Thắng, 73 Nguyên, 28 Sang, tổng 129; không phục hồi hoặc suy đoán bản ghi lịch sử ngoài các workbook nguồn.
+Khi đồng bộ nhánh SCRUM-73 với main và các workbook SCRUM-74–76 ngày 16/10/2026, các dòng được ghép theo nội dung đầy đủ để tránh trùng: sáu bản ghi SCRUM-71/72 của Sang đã có ở cả hai workbook nên chỉ giữ một bản; thêm 22 bản ghi Sang, một bản ghi tích hợp từ main (Nguyên, hàng 72), lượt tiếp tục sau xác nhận của chủ dự án (Nguyên, hàng 73) và năm bản ghi riêng của các nhánh SCRUM-74–76 (Nguyên, hàng 74–78). Tại thời điểm đồng bộ, W05 có 28 bản ghi Thắng, 73 Nguyên, 28 Sang, tổng 129; không phục hồi hoặc suy đoán bản ghi lịch sử ngoài các workbook nguồn.
+
+Ngày 16/10/2026, lượt hoàn thiện SCRUM-74–76 và chạy browser E2E của Codex được ghi ở W05, sheet Nguyên, hàng 79. W05 hiện có 28 bản ghi Thắng, 74 Nguyên, 28 Sang, tổng 130; xem [AI usage record M15](nguyen/m15-w5-20261016.md) và [browser evidence](../../sdd/modules/m15-product-web/evidence/scrum-74-76/integration-report.md).
 
 W05 của Nguyên đã được [phục hồi sau pull](nguyen/w05-nguyen-log-recovery-20261015.md): 34 dòng từ bản trước pull được giữ lại. [Record M15](nguyen/m15-w5-20261015.md) nối các dòng 33–67 với SDD, gồm bốn lần rà read-only riêng cho SCRUM-73–76, review/rework Phase 07 A2R1/A2R2, scope approval, Phase 05 precheck, bốn brief subagent và quyết định tiếp tục/dừng correction A2R2. Một số tệp minh chứng lịch sử trong cột F vẫn thiếu; số dòng trong workbook không đồng nghĩa evidence đã được xác minh.
 
