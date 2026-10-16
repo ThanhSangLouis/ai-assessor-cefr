@@ -207,6 +207,40 @@ function errorText(d) {
 
 // ---------------------------------------------------------------- saving
 function setState(text, kind = "") { const el=$("save-state"); el.textContent=text; el.className="save-state "+kind; }
+function draftIssue() {
+  for (const item of lesson.steps || []) {
+    const label = KIND_NAMES[item.kind] || "Bước học";
+    const hasText = typeof item.text === "string" && item.text.trim().length > 0;
+    let missing = false;
+    switch (item.kind) {
+      case "read_aloud":
+      case "repeat":
+      case "look_up":
+        missing = !hasText;
+        break;
+      case "gap":
+        missing = !hasText || !(item.answers || []).some((value) => String(value).trim());
+        break;
+      case "keywords":
+        missing = !(item.keywords || []).some((value) => String(value).trim());
+        break;
+      case "starter":
+        missing = !hasText || !String(item.starter || "").trim();
+        break;
+      case "picture":
+        missing = !hasText || !(item.pictures || []).some((picture) => String(picture.description || "").trim());
+        break;
+      case "outline":
+        missing = !hasText || !(item.outline || []).some((value) => String(value).trim());
+        break;
+      case "free":
+        missing = !hasText;
+        break;
+    }
+    if (missing) return `Hoàn thiện nội dung bắt buộc của bước “${label}” trước khi lưu.`;
+  }
+  return "";
+}
 async function loadLint() {
   const result=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/lint",{
     method:"POST",headers:{"Content-Type":"application/json"},
@@ -217,6 +251,8 @@ async function save() {
   clearTimeout(timer);
   if (saving) { again=true; return saving; }
   if (!dirty) return null;
+  const issue = draftIssue();
+  if (issue) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return null; }
   if (!unit || !unit.unit_id) { window.toast("Không xác định được chặng. Hãy mở bài từ trang Soạn bài.","error"); throw new Error("unit unavailable"); }
   dirty=false; setState("Đang lưu…","pending");
   saving=(async()=>{
@@ -240,13 +276,24 @@ function markDirty() {
   setState("Có thay đổi chưa lưu", "pending");
   renderHead();
   clearTimeout(timer);
-  timer = window.setTimeout(() => save().catch(() => {}), 500);
+  timer = window.setTimeout(() => {
+    if (draftIssue()) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return; }
+    save().catch(() => {});
+  }, 500);
 }
 
 // Before anything that reads the draft on the server: media, preview, publish.
 async function flush() {
-  if (saving) await saving.catch(() => {});
-  if (dirty) await save();
+  if (saving) await saving;
+  if (!dirty) return;
+  const issue = draftIssue();
+  if (issue) {
+    setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending");
+    window.toast(issue, "warn");
+    throw new Error(issue);
+  }
+  await save();
+  if (dirty) await flush();
 }
 
 // ---------------------------------------------------------------- head + rail
