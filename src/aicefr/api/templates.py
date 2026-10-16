@@ -1,5 +1,7 @@
 """Small semantic HTML renderers for the student and teacher browser flow."""
 
+# ruff: noqa: E501 -- embedded CSS/HTML literals intentionally contain long lines.
+
 from __future__ import annotations
 
 from html import escape

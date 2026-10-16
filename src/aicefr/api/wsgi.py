@@ -30,8 +30,8 @@ from aicefr.api.student import (
 )
 from aicefr.api.templates import (
     LOCAL_CSS,
-    render_consent,
     render_bands_page,
+    render_consent,
     render_login,
     render_notice,
     render_public_home,
@@ -700,7 +700,11 @@ class StudentTeacherApp:
             if isinstance(view.report, DiagnosticReport):
                 return self._html(
                     HTTPStatus.OK,
-                    render_report(view.report, demo=self._demo, response_id=view.status.response_id),
+                    render_report(
+                        view.report,
+                        demo=self._demo,
+                        response_id=view.status.response_id,
+                    ),
                 )
             return self._html(
                 HTTPStatus.ACCEPTED,

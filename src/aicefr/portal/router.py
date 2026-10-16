@@ -68,7 +68,14 @@ class PortalRouter:
         if self.identity_api is None:
             return app._html(
                 HTTPStatus.SERVICE_UNAVAILABLE,
-                html.page("Tài khoản chưa khả dụng", '<p role="status">Không thể tải dịch vụ tài khoản. Hãy thử lại sau.</p>', "student"),
+                html.page(
+                    "Tài khoản chưa khả dụng",
+                    (
+                        '<p role="status">Không thể tải dịch vụ tài khoản. '
+                        'Hãy thử lại sau.</p>'
+                    ),
+                    "student",
+                ),
             )
         token = app._session_token(environ)
         self.identity_api.auth.resolve(
@@ -100,14 +107,20 @@ class PortalRouter:
         }
         notice = notices.get(notice_key, "")
         sessions = self.identity_api.accounts.list_sessions(token) if tab == "security" else ()
-        activity = self.identity_api.accounts.activity(token, limit=50, offset=0) if tab == "activity" else ()
+        activity = (
+            self.identity_api.accounts.activity(token, limit=50, offset=0)
+            if tab == "activity"
+            else ()
+        )
         consent = self.identity_api.accounts.consent(token) if tab == "data" else None
         google_state = {"enabled": False, "linked": False}
         if tab == "security" and self.identity_api.google is not None:
             status = self.identity_api.google.status()
             google_state["enabled"] = bool(status.get("ready"))
             google_state["linked"] = (
-                bool(self.identity_api.google.is_linked(token)) if google_state["enabled"] else False
+                bool(self.identity_api.google.is_linked(token))
+                if google_state["enabled"]
+                else False
             )
         return app._html(
             HTTPStatus.OK,

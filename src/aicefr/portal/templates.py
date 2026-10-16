@@ -1,5 +1,7 @@
 """Native, escaped portal pages without a frontend build or external requests."""
 
+# ruff: noqa: E501 -- embedded HTML literals intentionally contain long lines.
+
 from __future__ import annotations
 
 import json
