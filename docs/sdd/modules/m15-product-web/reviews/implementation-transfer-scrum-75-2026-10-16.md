@@ -2,8 +2,8 @@
 
 **Task:** SCRUM-75 / `M15-TASK-004` / W5-N03
 **Owner:** Nguyên
-**Base revision:** `77af5c8` on `feat/SCRUM-75-W5-N03-Teacher-review-blind-rating-authoring-insights-UI`
-**UI transfer commit:** `64991ee`
+**Base revision:** `e5fab50` on `feat/SCRUM-74-W5-N02-Practice-lesson-progress-achievement-pronunciation-UI`
+**UI transfer commit:** `6b66555`
 **Status:** UI source transferred; M10 authoring/insights and acceptance remain blocked/pending.
 
 ## Source transferred
