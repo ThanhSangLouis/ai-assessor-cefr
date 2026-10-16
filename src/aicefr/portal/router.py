@@ -31,11 +31,20 @@ from aicefr.storage.sqlite import ConcurrentResponseUpdate
 
 class PortalRouter:
     def __init__(
-        self, service, control, data, metrics, identity_api=None, billing_api=None, data_api=None
+        self,
+        service,
+        control,
+        data,
+        metrics,
+        identity_api=None,
+        billing_api=None,
+        data_api=None,
+        learning_api=None,
     ) -> None:
         self.service, self.control, self.data, self.metrics = service, control, data, metrics
         self.identity_api = identity_api
         self.billing_api, self.data_api = billing_api, data_api
+        self.learning_api = learning_api
 
     @staticmethod
     def query(environ) -> PageQuery:
@@ -47,6 +56,10 @@ class PortalRouter:
         return PageQuery(**{key: value[0] for key, value in parsed.items() if value[0]})
 
     def dispatch(self, app, environ):
+        if self.learning_api is not None:
+            learning_response = self.learning_api.dispatch(app, environ)
+            if learning_response is not None:
+                return learning_response
         if self.billing_api is not None:
             billing_response = self.billing_api.dispatch(app, environ)
             if billing_response is not None:
