@@ -80,7 +80,7 @@ body::before {
   box-shadow: 0 0 0 2.5rem rgba(18, 102, 91, .025), 0 0 0 5rem rgba(18, 102, 91, .018);
 }
 .app-shell { width: min(100%, var(--shell-max-width)); margin: 0 auto; }
-.app-shell > h1.page-title { margin: 1.5rem 0; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: -.045em; line-height: 1.08; }
+.app-shell > h1 { margin: 1.5rem 0; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: -.045em; line-height: 1.08; }
 h1, h2, h3, h4 { line-height: 1.16; letter-spacing: -.025em; }
 h2 { font-size: clamp(1.25rem, 2.4vw, 1.75rem); }
 p, dd, li { overflow-wrap: anywhere; word-break: break-word; }
@@ -105,7 +105,7 @@ main:focus { outline: 3px solid var(--focus-ring); outline-offset: var(--focus-o
 .nav-links a[aria-current="page"] { color: var(--brand-strong); background: var(--brand-soft); }
 main { width: 100%; }
 main > h1:first-child { max-width: 19ch; }
-.card, .panel, .account-card, .report-card, .task-card, .response-card {
+.card, .panel, .account-card, .report-card, section[aria-labelledby="report-heading"], .task-card, .response-card {
   padding: clamp(1rem, 2.4vw, 1.65rem); border: 1px solid var(--line); border-radius: 1.1rem;
   background: var(--surface); box-shadow: 0 12px 34px rgba(25, 62, 51, .055);
 }
@@ -132,7 +132,7 @@ input:not([type=file]), select, textarea {
   display: block; width: 100%; min-height: 2.75rem; padding: .68rem .8rem;
   border: 1px solid var(--line); border-radius: .7rem; color: var(--ink); background: var(--surface); font: inherit;
 }
-input:not([type=file]):focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); outline: none; }
+input:not([type=file]):focus, select:focus, textarea:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
 input[type=file] { display: block; max-width: 100%; padding: .6rem 0; color: var(--muted); font: inherit; }
 textarea { min-height: 7rem; }
 input[type=checkbox], input[type=radio] { width: 1.1rem; height: 1.1rem; accent-color: var(--brand); vertical-align: middle; }
@@ -223,7 +223,7 @@ section, li { margin-bottom: 1rem; }
   body { padding: 0; color: #111; background: white; }
   .site-nav, .public-nav, .hero-actions, button, input[type=submit], .site-footer, .skip-link { display: none !important; }
   .app-shell { max-width: none; }
-  .card, .panel, .account-card, .report-card { box-shadow: none; break-inside: avoid; }
+  .card, .panel, .account-card, .report-card, section[aria-labelledby="report-heading"] { box-shadow: none; break-inside: avoid; }
 }
 """
 
@@ -232,7 +232,7 @@ def _document(
     title: str, body: str, *, refresh: bool = False, show_heading: bool = True, page_class: str = ""
 ) -> str:
     refresh_tag = '<meta http-equiv="refresh" content="5">' if refresh else ""
-    heading = f'<h1 class="page-title">{escape(title)}</h1>' if show_heading else ""
+    heading = f'<h1>{escape(title)}</h1>' if show_heading else ""
     class_name = f' class="app-shell {escape(page_class, quote=True)}"'
     return f"""<!doctype html><html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark">{refresh_tag}
@@ -416,7 +416,7 @@ data-max-seconds="{max_seconds}" data-max-bytes="{max_bytes}">
 def render_login(error: str | None = None, *, demo: bool = False) -> str:
     message = f'<p role="alert">{escape(error)}</p>' if error else ""
     body = f"""{_public_nav("/login")}<section class="account-card auth-card">
-<p class="eyebrow">Chào mừng bạn quay lại</p><h2>Đăng nhập vào tài khoản</h2>
+<p class="eyebrow">Chào mừng bạn quay lại</p><h1>Đăng nhập vào tài khoản</h1>
 {_demo_note(demo)}{message}<form method="post" action="/login">
 <label for="actor-id">Tài khoản</label>
 <input id="actor-id" name="actor_id" required autocomplete="username">
