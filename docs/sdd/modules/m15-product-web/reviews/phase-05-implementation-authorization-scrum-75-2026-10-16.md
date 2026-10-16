@@ -1,8 +1,8 @@
 # SCRUM-75 — Phase 05 verdict and implementation boundary
 
-**Task:** SCRUM-75 / `M15-TASK-004` / W5-N03  
-**Date:** 2026-10-16 (Asia/Bangkok)  
-**Owner:** Nguyên  
+**Task:** SCRUM-75 / `M15-TASK-004` / W5-N03
+**Date:** 2026-10-16 (Asia/Bangkok)
+**Owner:** Nguyên
 **Decision source:** project owner's direct confirmation in this Codex conversation that Phase 05 is `APPROVED` for SCRUM-74, SCRUM-75 and SCRUM-76. The same conversation authorized porting/adapting the source UI to this repository while preserving backend/domain APIs.
 
 ## Approved UI scope

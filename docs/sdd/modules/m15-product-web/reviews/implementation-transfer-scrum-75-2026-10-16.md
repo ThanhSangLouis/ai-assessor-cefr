@@ -1,9 +1,9 @@
 # SCRUM-75 — teacher UI source transfer and contract adaptation
 
-**Task:** SCRUM-75 / `M15-TASK-004` / W5-N03  
-**Owner:** Nguyên  
-**Base revision:** `77af5c8` on `feat/SCRUM-75-W5-N03-Teacher-review-blind-rating-authoring-insights-UI`  
-**UI transfer commit:** `64991ee`  
+**Task:** SCRUM-75 / `M15-TASK-004` / W5-N03
+**Owner:** Nguyên
+**Base revision:** `77af5c8` on `feat/SCRUM-75-W5-N03-Teacher-review-blind-rating-authoring-insights-UI`
+**UI transfer commit:** `64991ee`
 **Status:** UI source transferred; M10 authoring/insights and acceptance remain blocked/pending.
 
 ## Source transferred
