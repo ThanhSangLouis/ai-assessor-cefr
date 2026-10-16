@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Duyệt {{ response_id }} · AI Assessor CEFR{% endblock %}
+{% block content %}
+<p class="crumb"><a href="/review">← Hàng đợi duyệt</a></p>
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("headphones") }}</span>Duyệt bài nói</h1>
+  <p class="lede">Mã bài <code>{{ response_id }}</code>. Nghe lại, đối chiếu evidence trong báo cáo,
+    rồi giữ nguyên hoặc sửa kết quả. Mọi quyết định đều được ghi nhật ký kèm lý do.</p>
+</div>
+
+<div class="player-bar">
+  {% if audio_available %}
+  <audio id="phat" controls preload="metadata" aria-label="Bản ghi của bài đang duyệt"
+         src="/teacher/reviews/{{ response_path }}/audio"></audio>
+  {% else %}
+  <p class="notice notice-warn">Audio đã được xóa theo retention.</p>
+  {% endif %}
+  <a class="button small secondary jump-decision" href="#decision">Tới phần quyết định</a>
+</div>
+
+<div class="two-col">
+  <section class="card" aria-labelledby="evidence-h">
+    <h2 id="evidence-h">Bản ghi và evidence</h2>
+    <p class="muted">Bản chép lời chưa có trong báo cáo này. Dùng audio và các mốc evidence bên dưới.</p>
+    {% if report_html %}{{ report_html }}{% else %}<p class="notice notice-info">Báo cáo chưa sẵn sàng.</p>{% endif %}
+  </section>
+
+  <div class="stack">
+    <section class="card" id="machine-score" aria-labelledby="machine-h">
+      <h2 id="machine-h">Trạng thái review</h2>
+      <p>Trạng thái: <b>{{ candidate.state.value }}</b></p>
+      <p>Band máy đề xuất: <b>{{ candidate.proposed_band.value if candidate.proposed_band else "Chưa có" }}</b></p>
+      <p>Revision: {{ candidate.revision }}</p>
+      {% if candidate.claimed_by %}<p>Người nhận: {{ candidate.claimed_by }}</p>{% endif %}
+    </section>
+
+    <section class="card anchor-target" id="decision" aria-labelledby="decision-h">
+      <h2 id="decision-h">Quyết định</h2>
+      {% if claim_action %}
+      <form method="post" action="/teacher/reviews/{{ response_path }}/{{ claim_action }}">
+        <input type="hidden" name="expected_revision" value="{{ candidate.revision }}">
+        <button class="secondary" type="submit">{{ "Nhận xử lý" if claim_action == "claim" else "Trả lại hàng đợi" }}</button>
+      </form>
+      {% endif %}
+      {% if can_review %}
+      <form method="post" action="/teacher/reviews/{{ response_path }}/decision" id="decision-form">
+        <input type="hidden" name="expected_revision" value="{{ candidate.revision }}">
+        <label for="decision-action">Quyết định</label>
+        <select id="decision-action" name="action" required>
+          <option value="APPROVE"{% if not candidate.proposed_band %} disabled{% endif %}>Duyệt</option>
+          <option value="OVERRIDE">Sửa band</option>
+          <option value="REJECT">Từ chối</option>
+        </select>
+        <label for="final-band">Band cuối khi duyệt hoặc sửa</label>
+        <select id="final-band" name="final_band">
+          <option value="">Chọn band</option><option value="A2">A2</option>
+          <option value="B1">B1</option><option value="B2">B2</option>
+        </select>
+        <label for="reason">Lý do</label>
+        <textarea id="reason" name="reason" maxlength="1000"></textarea>
+        <button type="submit">Lưu quyết định</button>
+      </form>
+      {% elif candidate.state.value in ["APPROVED", "OVERRIDDEN", "REJECTED"] %}
+      <p class="muted">Review đã kết thúc; quyết định hiện tại được lưu trong audit.</p>
+      {% else %}
+      <p class="muted">Review đang được giảng viên khác nhận xử lý. Bạn có thể quay lại hàng đợi.</p>
+      {% endif %}
+    </section>
+    <section class="card" id="history" aria-labelledby="history-h">
+      <h2 id="history-h">Lịch sử</h2>
+      {% if candidate.state.value in ["APPROVED", "OVERRIDDEN", "REJECTED"] %}
+      <p>Đã có quyết định cuối. Chi tiết audit được đính kèm trong báo cáo.</p>
+      {% else %}<p class="muted">Chưa có quyết định cuối.</p>{% endif %}
+    </section>
+  </div>
+</div>
+<div id="td" data-response-id="{{ response_id }}" hidden></div>
+{% endblock %}
+{% block scripts %}<script src="/report.js"></script><script src="{{ asset('review_one.js') }}"></script>{% endblock %}

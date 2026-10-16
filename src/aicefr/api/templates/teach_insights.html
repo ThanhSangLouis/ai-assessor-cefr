@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Thống kê luyện tập · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head teach-head">
+  <div>
+    <p class="eyebrow">Theo dõi hoạt động</p>
+    <h1><span class="head-icon">{{ icon("chart") }}</span>Thống kê luyện tập</h1>
+    <p class="lede">Tổng hợp lượt luyện và bước bài học gần đây của tài khoản giáo viên đang đăng nhập. Dữ liệu không tạo thêm điểm CEFR.</p>
+  </div>
+</div>
+<div id="insights" aria-busy="true" aria-live="polite">
+  <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('teach_insights.js') }}"></script>{% endblock %}

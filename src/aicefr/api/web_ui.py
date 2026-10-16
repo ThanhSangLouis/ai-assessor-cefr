@@ -6,7 +6,7 @@ import mimetypes
 import re
 from pathlib import Path
 from types import SimpleNamespace
-from urllib.parse import unquote
+from urllib.parse import quote, unquote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -39,6 +39,7 @@ def _render(template: str, **context: object) -> str:
 
 def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, object]] | None:
     student = frozenset({ActorRole.STUDENT})
+    teachers = frozenset({ActorRole.TEACHER, ActorRole.ADMIN})
 
     if path == "/practice":
         return "practice_path.html", "practice", student, {}
@@ -55,11 +56,27 @@ def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, obje
         return "practice_task.html", "practice", student, {"task_id": match[1]}
     if path == "/my-progress":
         return "my_progress.html", "progress", student, {}
+    if path in {"/review", "/teacher/reviews"}:
+        return "queue.html", "queue", teachers, {}
+    if re.fullmatch(r"/(?:review|teacher/reviews)/[^/]+", path):
+        return "review_one.html", "queue", teachers, {}
+    if path == "/rate":
+        return "rate_list.html", "rate", teachers, {}
+    match = re.fullmatch(r"/rate/([^/]+)", path)
+    if match:
+        return "rate_one.html", "rate", teachers, {"assignment_id": match[1]}
+    if path == "/teach":
+        return "teach_paths.html", "teach", teachers, {}
+    match = re.fullmatch(r"/teach/lessons/([^/]+)", path)
+    if match:
+        return "teach_lesson.html", "teach", teachers, {"lesson_id": match[1]}
+    if path == "/teach/insights":
+        return "teach_insights.html", "teach", teachers, {}
     return None
 
 
 def dispatch_page(app, environ):
-    """Serve SCRUM-74 student learning pages and their packaged assets.
+    """Serve transferred student and teacher pages plus packaged assets.
 
     API calls continue through the existing WSGI API dispatchers. This adapter
     only authenticates page access and renders the transferred presentation.
@@ -103,12 +120,67 @@ def dispatch_page(app, environ):
     if method != "GET":
         return None
     route = _page_for(path)
-    if route is None:
+    if route is None or app._auth is None:
+        # Preserve existing WSGI/API routes for apps constructed without the
+        # page-level AuthService (for example, ReviewApi-owned test fixtures).
         return None
-    if app._auth is None:
-        raise HttpInputError(HTTPStatus.UNAUTHORIZED, "SESSION_REQUIRED")
     template, nav_here, roles, extra = route
     actor = app._auth.resolve(app._session_token(environ), allowed_roles=roles)
+    if template == "rate_one.html":
+        extra = {
+            **extra,
+            "criteria": ("range", "accuracy", "fluency", "coherence", "phonology"),
+            "bands": ("A2", "B1", "B2"),
+            "unscorable_reasons": {
+                "broken": "Bản ghi bị lỗi",
+                "inaudible": "Không nghe rõ",
+                "off_task": "Không đúng nội dung đề bài",
+            },
+        }
+    review_match = re.fullmatch(r"/(?:review|teacher/reviews)/([^/]+)", path)
+    if review_match:
+        from datetime import UTC, datetime
+
+        from markupsafe import Markup
+
+        from aicefr.api.templates import render_report_content
+        from aicefr.contracts import ReviewState
+        from aicefr.review.service import claim_expired
+
+        response_id = review_match[1]
+        if app._reviews is None or app._reports is None:
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+        research = app._research_api
+        if research is not None:
+            if not research.service.may_view_machine(actor.actor_id, response_id):
+                raise HttpInputError(HTTPStatus.FORBIDDEN, "BLIND_RATING_ACTIVE")
+            research.service.mark_machine_seen(actor.actor_id, response_id, "review_detail")
+        candidate = app._reviews.get(response_id)
+        if candidate is None:
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+        report = app._reports.get(response_id)
+        record = app._responses.metadata.get_response(response_id) if app._responses else None
+        expired_claim = claim_expired(candidate, datetime.now(UTC))
+        can_review = candidate.state in {ReviewState.PENDING, ReviewState.IN_REVIEW} and (
+            candidate.claimed_by in {None, actor.actor_id} or expired_claim
+        )
+        claim_action = None
+        if can_review:
+            if candidate.state is ReviewState.PENDING or expired_claim:
+                claim_action = "claim"
+            elif candidate.claimed_by == actor.actor_id:
+                claim_action = "release"
+        extra = {
+            **extra,
+            "response_id": response_id,
+            "response_path": quote(response_id, safe=""),
+            "candidate": candidate,
+            "report_html": Markup(render_report_content(report)) if report else None,
+            "audio_available": record.audio_available if record else app._responses is None,
+            "claim_action": claim_action,
+            "can_review": can_review,
+        }
+        template = "review_one.html"
     account = SimpleNamespace(
         role=actor.role,
         pseudonym=actor.actor_id,

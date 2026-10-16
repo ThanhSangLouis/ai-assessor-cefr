@@ -39,3 +39,7 @@ Task-specific Phase 05 authorization cho SCRUM-74–76 cho phép tiêu thụ con
 ## SCRUM-74 / `M15-TASK-003` — Phase 05 readiness candidate
 
 Codex revalidated readiness at branch HEAD `818fcbc46e62ee057fcbe980800e01f934d72179`; the review's Codex findings remain historical. The project owner subsequently confirmed Phase 05 approval for SCRUM-74–76. The scoped authorization and file boundary are recorded in [SCRUM-74's task-specific verdict](reviews/phase-05-implementation-authorization-scrum-74-2026-10-16.md). Producer SDD and acceptance remain unchanged; this task consumes their existing contracts and does not modify backend/domain APIs.
+
+## SCRUM-75 / `M15-TASK-004` — project-owner verdict and dependency gate (16/10/2026)
+
+The project owner confirmed Phase 05 `APPROVED` for SCRUM-75 and authorized transferring/adapting the teacher UI while preserving producer APIs. The [task-specific authorization](reviews/phase-05-implementation-authorization-scrum-75-2026-10-16.md) records the allowed files and API boundary. Review queue/detail and blind rating use current M07/M12 contracts. PR #39 merged to `main` as `19b7ada` and supplies the M10 authoring routes. The API still has no path-list or cohort-insights route; the UI uses known browser-local IDs and reports only per-owner insight data. Do not mark M15-TEST-006/008/012 or acceptance complete from the transferred UI alone; the single requested E2E remains reserved for the integrated revision.

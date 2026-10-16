@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Lộ trình luyện · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- Teachers author paths, units and lessons (D025, M16). Students see a path
+    only once it is published, and a lesson only in its last published version. -#}
+<div class="page-head teach-head">
+  <div>
+    <p class="eyebrow">Soạn bài</p>
+    <h1><span class="head-icon">{{ icon("layers") }}</span>Lộ trình luyện nói</h1>
+    <p class="lede">
+      Mỗi lộ trình gồm các chặng; mỗi chặng là một chức năng giao tiếp ở một band và gồm các
+      bài học. Sửa bài thoải mái: sinh viên chỉ thấy bản đã xuất bản, cho tới khi bạn xuất bản
+      lại.
+    </p>
+  </div>
+  <div class="button-row teach-tools">
+    <button type="button" id="new-path">{{ icon("plus") }}<span>Tạo lộ trình</span></button>
+    <button type="button" class="secondary" id="import-path">{{ icon("upload") }}<span>Nhập từ tệp JSON</span></button>
+    <input type="file" id="import-file" accept="application/json,.json" hidden>
+    <a class="button secondary" href="/teach/insights">{{ icon("chart") }}<span>Thống kê luyện tập</span></a>
+  </div>
+</div>
+
+{#- D034: on a plan without lesson writing, said here before anyone types. -#}
+<div id="plan-note" class="notice notice-info" hidden></div>
+
+<div id="teach-paths" aria-busy="true" aria-live="polite">
+  <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
+</div>
+
+<dialog class="sheet" id="path-dialog" aria-labelledby="path-dialog-h">
+  <form id="path-form" method="dialog">
+    <h2 id="path-dialog-h">Lộ trình mới</h2>
+    <label for="path-title">Tên lộ trình</label>
+    <input id="path-title" name="title" required maxlength="160" autocomplete="off">
+    <label for="path-description">Mô tả cho sinh viên</label>
+    <textarea id="path-description" name="description" maxlength="1000"
+              placeholder="Lộ trình này dành cho ai, đi từ đâu tới đâu."></textarea>
+    <div class="field-row">
+      <div>
+        <label for="path-band-from">Từ band</label>
+        <select id="path-band-from" name="band_from">
+          <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+        </select>
+      </div>
+      <div>
+        <label for="path-band-to">Đến band</label>
+        <select id="path-band-to" name="band_to">
+          <option value="A2">A2</option><option value="B1">B1</option><option value="B2" selected>B2</option>
+        </select>
+      </div>
+    </div>
+    <div class="button-row">
+      <button type="submit">Lưu</button>
+      <button type="button" class="secondary" data-close="path-dialog">Huỷ</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet" id="unit-dialog" aria-labelledby="unit-dialog-h">
+  <form id="unit-form" method="dialog">
+    <h2 id="unit-dialog-h">Chặng mới</h2>
+    <label for="unit-title">Tên chặng</label>
+    <input id="unit-title" name="title" required maxlength="160" autocomplete="off"
+           placeholder="Ví dụ: Kể chuyện và nêu ý kiến">
+    <label for="unit-function">Chức năng giao tiếp</label>
+    <input id="unit-function" name="function" maxlength="300" autocomplete="off"
+           placeholder="Ví dụ: Kể một trải nghiệm theo trình tự, có cảm xúc">
+    <div class="field-row">
+      <div>
+        <label for="unit-band">Band</label>
+        <select id="unit-band" name="band">
+          <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+        </select>
+      </div>
+      <div>
+        <label for="unit-topic">Chủ đề</label>
+        <select id="unit-topic" name="topic">
+          <option value="">Không gắn chủ đề</option>
+          <option value="daily_life">Đời sống hằng ngày</option>
+          <option value="education">Giáo dục</option>
+          <option value="travel">Du lịch</option>
+          <option value="career">Nghề nghiệp</option>
+          <option value="food">Ẩm thực</option>
+          <option value="health">Sức khoẻ</option>
+          <option value="technology">Công nghệ</option>
+          <option value="environment">Môi trường</option>
+          <option value="people">Con người</option>
+          <option value="society">Xã hội</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div>
+        <label for="unit-criterion">Tiêu chí luyện (không bắt buộc)</label>
+        <select id="unit-criterion" name="criterion">
+          <option value="">Không gắn tiêu chí</option>
+          <option value="fluency">Độ trôi chảy (Fluency)</option>
+          <option value="coherence">Mạch lạc (Coherence)</option>
+          <option value="range">Vốn từ (Range)</option>
+          <option value="accuracy">Ngữ pháp (Accuracy)</option>
+          <option value="phonology">Phát âm dễ nghe (Phonology)</option>
+        </select>
+      </div>
+    </div>
+    <p class="field-hint">Chặng gắn tiêu chí được gợi ý cho sinh viên có tiêu chí đó yếu nhất
+      trong bài đánh giá gần nhất, ở đúng band.</p>
+    <div class="button-row">
+      <button type="submit">Lưu</button>
+      <button type="button" class="secondary" data-close="unit-dialog">Huỷ</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog class="sheet wide" id="lesson-dialog" aria-labelledby="lesson-dialog-h">
+  <form id="lesson-form" method="dialog">
+    <h2 id="lesson-dialog-h">Bài học mới</h2>
+    <p class="muted">Viết một đoạn văn mẫu và chọn vài từ khóa: hệ thống dựng sẵn các bước theo
+      luật cố định (đọc to, nhắc lại, chỗ trống, đọc rồi nói lại, từ khóa, dàn ý, nói tự do). Bạn
+      sửa từng bước trước khi xuất bản. Để trống đoạn văn thì bài chỉ có bước từ khóa và nói tự do.</p>
+    <label for="lesson-title">Tên bài học</label>
+    <input id="lesson-title" name="title" required maxlength="160" autocomplete="off">
+    <div class="field-row">
+      <div>
+        <label for="lesson-band">Band</label>
+        <select id="lesson-band" name="band">
+          <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+        </select>
+      </div>
+      <div>
+        <label for="lesson-criterion">Tiêu chí luyện (không bắt buộc)</label>
+        <select id="lesson-criterion" name="criterion">
+          <option value="">Theo chặng</option>
+          <option value="fluency">Độ trôi chảy (Fluency)</option>
+          <option value="coherence">Mạch lạc (Coherence)</option>
+          <option value="range">Vốn từ (Range)</option>
+          <option value="accuracy">Ngữ pháp (Accuracy)</option>
+          <option value="phonology">Phát âm dễ nghe (Phonology)</option>
+        </select>
+      </div>
+    </div>
+    <label for="lesson-summary">Tóm tắt cho sinh viên</label>
+    <input id="lesson-summary" name="summary" maxlength="600" autocomplete="off"
+           placeholder="Một câu: bài này luyện nói về điều gì.">
+    <label for="lesson-text">Đoạn văn mẫu (tiếng Anh)</label>
+    <textarea id="lesson-text" name="model_text" maxlength="3000" lang="en" rows="6"
+              placeholder="I live in a small apartment near the city center..."></textarea>
+    <p class="field-hint">Viết số bằng chữ (twenty, không viết 20) và dùng cách viết Mỹ: máy
+      nghe khớp tốt hơn. Bộ soát lỗi sẽ nhắc khi bạn mở bài.</p>
+    <label for="lesson-keywords">Từ khóa, cách nhau bằng dấu phẩy</label>
+    <input id="lesson-keywords" name="keywords" maxlength="600" lang="en" autocomplete="off"
+           placeholder="apartment, quiet, nearby, friendly">
+    <label for="lesson-prompt">Đề nói tự do (bước cuối)</label>
+    <textarea id="lesson-prompt" name="free_prompt" maxlength="600" rows="2"
+              placeholder="Tả một nơi bạn hay đến. Nó ở đâu, có gì, vì sao bạn thích?"></textarea>
+    <div class="button-row">
+      <button type="submit">Tạo và mở trình soạn</button>
+      <button type="button" class="secondary" data-close="lesson-dialog">Huỷ</button>
+    </div>
+  </form>
+</dialog>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('teach_paths.js') }}"></script>{% endblock %}

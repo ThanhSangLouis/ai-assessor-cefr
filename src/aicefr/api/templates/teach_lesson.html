@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Soạn bài học · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- The lesson builder (D025, M17). Edits go to a working draft, saved as the
+    teacher types; students keep the last published version until "Xuất bản".
+    One recorder on the page, for the model audio of the step being edited. -#}
+<div id="builder" class="builder" data-lesson-id="{{ lesson_id }}" aria-busy="true">
+  <p class="crumb"><a href="/teach">← Lộ trình luyện</a></p>
+
+  <header class="builder-head" id="builder-head">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-line"></div>
+  </header>
+
+  <div class="builder-bar" id="builder-bar">
+    <span class="save-state" id="save-state" role="status" aria-live="polite"></span>
+    <div class="button-row">
+      <button type="button" class="secondary" id="save-draft">{{ icon("check") }}<span>Lưu nháp</span></button>
+      <button type="button" class="secondary" id="preview">{{ icon("eye") }}<span>Xem như sinh viên</span></button>
+      <button type="button" id="publish">{{ icon("upload") }}<span>Xuất bản</span></button>
+    </div>
+  </div>
+
+  <div class="builder-layout" id="builder-layout" hidden>
+    <aside class="builder-side">
+      <nav class="card builder-steps" aria-labelledby="steps-h">
+        <h2 id="steps-h">{{ icon("layers") }}Các bước</h2>
+        <ol class="builder-rail" id="step-list"></ol>
+        <div class="add-step">
+          <label for="add-kind">Thêm một bước</label>
+          <div class="inline-field">
+            <select id="add-kind">
+              <option value="read_aloud">Mẫu · Đọc to có từ gợi ý</option>
+              <option value="repeat">Mẫu · Nghe và nhắc lại</option>
+              <option value="look_up">Có kiểm soát · Đọc rồi nói lại</option>
+              <option value="gap">Có kiểm soát · Đọc đoạn có chỗ trống</option>
+              <option value="keywords">Có hướng dẫn · Ghép câu từ từ khóa</option>
+              <option value="starter">Có hướng dẫn · Trả lời có khung câu</option>
+              <option value="picture" disabled>Có hướng dẫn · Mô tả tranh (M10 chưa có route tải ảnh)</option>
+              <option value="outline">Có hướng dẫn · Nói theo dàn ý</option>
+              <option value="free">Tự do · Nói tự do</option>
+            </select>
+            <button type="button" class="small" id="add-step">{{ icon("plus") }}<span>Thêm</span></button>
+          </div>
+        </div>
+      </nav>
+
+      <section class="card lint-panel" aria-labelledby="lint-h">
+        <h2 id="lint-h">{{ icon("alert") }}Soát lỗi</h2>
+        <p class="muted">Những chỗ dễ làm máy nghe nhầm. Không chặn việc xuất bản.</p>
+        <ul class="lint-list" id="lint-list"></ul>
+      </section>
+    </aside>
+
+    <div class="builder-main">
+      <section class="card builder-meta" aria-labelledby="meta-h">
+        <h2 id="meta-h">Thông tin bài học</h2>
+        <label for="f-title">Tên bài học</label>
+        <input id="f-title" data-lesson-field="title" maxlength="160" autocomplete="off">
+        <label for="f-summary">Tóm tắt cho sinh viên</label>
+        <input id="f-summary" data-lesson-field="summary" maxlength="600" autocomplete="off">
+        <div class="field-row three">
+          <div>
+            <label for="f-band">Band</label>
+            <select id="f-band" data-lesson-field="band">
+              <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-criterion">Tiêu chí luyện</label>
+            <select id="f-criterion" data-lesson-field="criterion">
+              <option value="">Theo chặng</option>
+              <option value="fluency">Độ trôi chảy (Fluency)</option>
+              <option value="coherence">Mạch lạc (Coherence)</option>
+              <option value="range">Vốn từ (Range)</option>
+              <option value="accuracy">Ngữ pháp (Accuracy)</option>
+              <option value="phonology">Phát âm dễ nghe (Phonology)</option>
+            </select>
+          </div>
+          <div>
+            <label for="f-pass">Hoàn thành khi đạt</label>
+            <select id="f-pass" data-lesson-field="pass_ratio">
+              <option value="0.6">60% số bước</option>
+              <option value="0.7">70% số bước</option>
+              <option value="0.8">80% số bước</option>
+              <option value="0.9">90% số bước</option>
+              <option value="1">Mọi bước</option>
+            </select>
+          </div>
+        </div>
+        <p class="field-hint">Bài chỉ hoàn thành khi sinh viên đã làm bước nói tự do, dù đạt bao nhiêu bước.</p>
+        <details class="meta-more">
+          <summary>Đoạn văn mẫu và từ khóa của cả bài</summary>
+          <label for="f-model-text">Đoạn văn mẫu</label>
+          <textarea id="f-model-text" data-lesson-field="model_text" maxlength="3000" lang="en" rows="5"></textarea>
+          <label for="f-keywords">Từ khóa, cách nhau bằng dấu phẩy</label>
+          <input id="f-keywords" data-lesson-field="keywords" lang="en" autocomplete="off">
+          <p class="field-hint">Để tham khảo khi soạn: mỗi bước có văn bản và từ của riêng nó.</p>
+        </details>
+      </section>
+
+      <section class="card step-editor" id="step-editor" aria-labelledby="editor-h">
+        <div class="editor-top" id="editor-top"></div>
+        <div id="editor-fields"></div>
+
+        <div class="media-panel" id="audio-panel" hidden>
+          <h3>{{ icon("volume") }}Giọng mẫu</h3>
+          <p class="muted">Ghi giọng của bạn đọc đúng văn bản của bước này. Máy chép lại để kiểm tra
+            giọng mẫu khớp văn bản; sinh viên nghe được trước khi đọc.</p>
+          <div id="audio-current"></div>
+          <p class="notice" id="audio-check" hidden></p>
+          <form id="model-form" class="model-recorder">
+            {% with submit_label="Lưu giọng mẫu",
+                     floor_seconds=1,
+                     upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ (max_size_mib or 25) ~ " MiB." %}
+              {% include "_recorder.html" %}
+            {% endwith %}
+          </form>
+        </div>
+
+        <div class="media-panel" id="image-panel" hidden>
+          <h3>{{ icon("image") }}Ảnh</h3>
+          <div id="image-current"></div>
+          <label for="image-file">Ảnh png, jpg hoặc webp, tối đa 3 MiB</label>
+          <div class="inline-field">
+            <input type="file" id="image-file" accept="image/png,image/jpeg,image/webp">
+            <button type="button" class="small" id="image-upload">{{ icon("upload") }}<span>Tải ảnh lên</span></button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('teach_lesson.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Phiếu chấm mù · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D030. One blind rating sheet (KE_HOACH_KHAO_SAT.md appendix B): the task,
+    the recording and the form. The page never receives a pseudonym, a
+    response id or any score but the rater's own. -#}
+{%- set criterion_names = {"range": "Vốn từ (Range)", "accuracy": "Ngữ pháp (Accuracy)",
+    "fluency": "Độ trôi chảy (Fluency)", "coherence": "Mạch lạc (Coherence)",
+    "phonology": "Phát âm dễ nghe (Phonology)"} -%}
+<div class="page-head">
+  <p class="eyebrow" id="sheet-batch">Phiếu chấm mù</p>
+  <h1 id="sheet-h"><span class="head-icon">{{ icon("clipboard") }}</span>Phiếu chấm</h1>
+  <p class="lede">Nghe hết bài trước khi chấm. Bạn không thấy bút danh, điểm của máy hay điểm của
+    giám khảo khác: điểm của bạn phải là của riêng bạn.</p>
+</div>
+<div class="notice" id="sheet-adjudication" hidden>
+  <b>Bài phân xử.</b> Hai giám khảo trước chấm lệch nhau nhiều. Hãy chấm độc lập như mọi bài khác.
+</div>
+<div id="sheet-error" role="alert"></div>
+
+<div class="work-split" id="sheet" data-assignment="{{ assignment_id }}" hidden>
+  <section class="card" aria-labelledby="task-h">
+    <h2 id="task-h">{{ icon("message") }} Đề bài</h2>
+    <p class="eyebrow" id="task-title"></p>
+    <p class="prompt-text" id="task-prompt"></p>
+    <p class="muted" id="task-time"></p>
+    <h2>{{ icon("headphones") }} Bản ghi</h2>
+    <audio id="sheet-audio" controls preload="metadata"></audio>
+    <p class="muted small-note">Tua lại bao nhiêu lần cũng được. Mỗi lần nghe được ghi vào nhật ký truy cập bản ghi.</p>
+    <p class="small-note"><a href="/bands" target="_blank" rel="noopener">Mô tả band A2, B1, B2</a></p>
+  </section>
+
+  <section class="card" aria-labelledby="form-h">
+    <h2 id="form-h">{{ icon("clipboard") }} Chấm</h2>
+    <form id="sheet-form" novalidate>
+      <label class="check-row"><input type="checkbox" id="unscorable"> Không chấm được bài này</label>
+      <fieldset class="unscorable-reasons" id="unscorable-box" hidden>
+        <legend>Lý do</legend>
+        {% for key, name in unscorable_reasons.items() %}
+        <label class="check-row"><input type="radio" name="unscorable-reason" value="{{ key }}"> {{ name }}</label>
+        {% endfor %}
+      </fieldset>
+
+      <div id="score-box">
+        <fieldset class="criteria-scores">
+          <legend>Năm tiêu chí, thang 0–6, bước 0,5</legend>
+          {% for key in criteria %}
+          <div class="score-row">
+            <label for="score-{{ key }}">{{ criterion_names.get(key, key) }}</label>
+            <input id="score-{{ key }}" type="number" min="0" max="6" step="0.5" inputmode="decimal" data-criterion="{{ key }}" required>
+          </div>
+          {% endfor %}
+        </fieldset>
+        <div class="score-row overall-row">
+          <label for="score-overall">Điểm tổng (0–6)</label>
+          <input id="score-overall" type="number" min="0" max="6" step="0.5" inputmode="decimal" required>
+        </div>
+        <fieldset class="band-choice">
+          <legend>Band</legend>
+          <div class="chips">
+            {% for band in bands %}
+            <label class="chip-radio"><input type="radio" name="band" value="{{ band }}"><span>{{ band }}</span></label>
+            {% endfor %}
+          </div>
+        </fieldset>
+      </div>
+
+      <label for="sheet-reason">Lý do, một dòng</label>
+      <input id="sheet-reason" type="text" maxlength="300" autocomplete="off"
+             placeholder="Ví dụ: ý rõ, ngập ngừng nhiều ở nửa sau">
+
+      <div class="button-row">
+        <button type="submit" id="sheet-submit">{{ icon("check") }} Nộp phiếu</button>
+        <a class="button secondary" href="/rate">Về danh sách</a>
+      </div>
+      <p class="muted small-note">Phiếu đã nộp không sửa được.</p>
+      <div id="sheet-message" aria-live="polite"></div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('rate_one.js') }}"></script>{% endblock %}
