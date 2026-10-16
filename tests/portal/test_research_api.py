@@ -228,8 +228,10 @@ def test_feedback_study_balances_consented_members_and_hides_full_feedback(
         token,
     )
     assert page["code"] == 200
-    assert "đang được ẩn theo nhóm tham gia" in page["body"].decode("utf-8")
-    assert "coverage" not in page["body"].decode("utf-8").lower()
+    page_html = page["body"].decode("utf-8")
+    assert "đang được ẩn theo nhóm tham gia" in page_html
+    assert page_html.count("<h1") == 1
+    assert "coverage" not in page_html.lower()
 
     answers = {
         "knew_what_to_practise": 4,
