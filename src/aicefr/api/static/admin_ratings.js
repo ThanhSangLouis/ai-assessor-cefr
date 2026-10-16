@@ -28,6 +28,16 @@
       body: body ? JSON.stringify(body) : undefined,
     });
 
+  async function whileDisabled(button, action) {
+    if (button.disabled) return null;
+    button.disabled = true;
+    try {
+      return await action();
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   // ---------------------------------------------------------------- setup
   async function loadSetup() {
     const d = await call("/api/v1/admin/ratings/setup");
@@ -66,9 +76,14 @@
     if (limit > 0) body.limit = limit;
     const seed = $("batch-seed").value.trim();
     if (seed !== "") body.seed = Number(seed);
-    $("batch-create").disabled = true;
-    const d = await post("/api/v1/admin/ratings/batches", body);
-    $("batch-create").disabled = false;
+    if ($("batch-form").dataset.submitting === "true") return;
+    $("batch-form").dataset.submitting = "true";
+    let d;
+    try {
+      d = await whileDisabled($("batch-create"), () => post("/api/v1/admin/ratings/batches", body));
+    } finally {
+      $("batch-form").dataset.submitting = "false";
+    }
     if (!d) return;
     window.toast(
       `Đã tạo đợt: ${d.responses} bài, ${chosen.length} giám khảo, ${d.assignments} phiếu, hạt giống ${d.seed}.` +
@@ -173,6 +188,7 @@
     }
     const status = e.target.closest("[data-status]");
     if (status) {
+      if (status.disabled) return;
       const action = status.dataset.status;
       if (
         action === "close" &&
@@ -182,10 +198,12 @@
         )
       )
         return;
-      const d = await post(
-        `/api/v1/admin/ratings/batches/${encodeURIComponent(status.dataset.batch)}/${action}`
-      );
-      if (d) loadBatches();
+      await whileDisabled(status, async () => {
+        const d = await post(
+          `/api/v1/admin/ratings/batches/${encodeURIComponent(status.dataset.batch)}/${action}`
+        );
+        if (d) loadBatches();
+      });
     }
   });
 

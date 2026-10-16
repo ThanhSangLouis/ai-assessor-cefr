@@ -541,6 +541,22 @@
     "M15-TEST-011": "PARTIAL — screenshot SHA-256 values recorded below; QA evidence rejection/negative tooling test not run",
     "M15-TEST-012": "PARTIAL — rendered route review only; full static/DOM/network forbidden-field scan not run"
   },
+  "duplicateMutationGuardFollowUp": {
+    "runDate": "2026-10-16",
+    "browser": "Headless Chromium 155.0.0.0",
+    "harness": "Isolated local page using the branch JavaScript and delayed mock API responses; no backend mutation was sent",
+    "sourceSha256": {
+      "src/aicefr/api/static/admin_study.js": "E7068D6D528DEA6056F70A923C06554DCF484E51BCC16BDEDD6EBD245059ED24",
+      "src/aicefr/api/static/admin_ratings.js": "5DF69F6CEB4C26D8F965356E4FF905BAC71923BA2A603A43F8E6301CA30F4108"
+    },
+    "doubleClickMockPostCount": {
+      "studyCreate": 1,
+      "studyStart": 1,
+      "ratingBatchClose": 1
+    },
+    "consoleErrors": 0,
+    "scope": "Client-side duplicate-submit guard only; M15-TEST-007 remains PARTIAL"
+  },
   "screenshots": [
     {
       "file": "admin-dashboard-desktop.png",

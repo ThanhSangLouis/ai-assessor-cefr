@@ -29,6 +29,10 @@ The `/admin/studies` run exposed an inline-form overflow at 390px. The form now 
 - Admin rating setup/batches and billing overview/order reads returned 200. No eligible assessment response existed, so no rating batch was created. One synthetic M13 study draft was created with HTTP 201 and reopened; report returned 200, participant count was 0, and it was left unstarted.
 - Observed app requests stayed on loopback. No external service was called.
 
+## Duplicate-mutation guard follow-up
+
+After static review, the committed `admin_study.js` and `admin_ratings.js` were loaded into an isolated local Chromium harness with delayed mock API responses. Double-clicking study creation, study start, and rating-batch close each produced exactly one mock POST. The harness reported zero console errors. This verifies the client-side duplicate-submit guard only; it does not exercise backend mutation/error cases, so `M15-TEST-007` remains `PARTIAL`.
+
 ## Explicitly not run
 
 No audio was uploaded or submitted, so the run does not claim recorder permission, upload validation, preview/re-record/double-submit, scoring, report-state, or CEFR-result coverage. It also does not claim reviewer contention/blind submit/authoring conflict coverage, sensitive admin mutations, keyboard/focus, 200% zoom, reduced-motion, print, screen-reader tree, complete forbidden-field scans, or the clean-wheel gate. M15-TEST-001–012 coverage is itemized in `integration-report.json`; these cases are not marked as passed. The fixture contains no assessment score, and no score was fabricated.

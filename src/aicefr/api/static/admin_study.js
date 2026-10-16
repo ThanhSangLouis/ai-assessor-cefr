@@ -19,6 +19,15 @@ function saveStudy(id, title) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 50)));
 }
 function fmt(value) { return value == null || Number.isNaN(Number(value)) ? "—" : Number(value).toFixed(3); }
+async function whileDisabled(button, action) {
+  if (button.disabled) return null;
+  button.disabled = true;
+  try {
+    return await action();
+  } finally {
+    button.disabled = false;
+  }
+}
 function nextState(state) {
   if (state === "DRAFT") return ["start", "Bắt đầu"];
   if (state === "RUNNING") return ["survey", "Chuyển sang khảo sát"];
@@ -87,19 +96,26 @@ async function showReport(id) {
 }
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  if (form.dataset.submitting === "true") return;
+  form.dataset.submitting = "true";
+  const submitButton = event.submitter || form.querySelector('button[type="submit"]');
   const values = new FormData(form);
   const title = String(values.get("title") || "").trim();
   const minDays = Number(values.get("min_days"));
-  const result = await window.apiJson("/api/v1/admin/studies", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, min_days: minDays }),
-  });
-  if (!result) return;
-  saveStudy(result.study_id, title);
-  window.toast("Đã tạo study dạng nháp. Bắt đầu sau khi đã kiểm tra điều kiện tham gia.");
-  form.reset();
-  await loadList();
-  await showReport(result.study_id);
+  try {
+    const result = await whileDisabled(submitButton, () => window.apiJson("/api/v1/admin/studies", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, min_days: minDays }),
+    }));
+    if (!result) return;
+    saveStudy(result.study_id, title);
+    window.toast("Đã tạo study dạng nháp. Bắt đầu sau khi đã kiểm tra điều kiện tham gia.");
+    form.reset();
+    await loadList();
+    await showReport(result.study_id);
+  } finally {
+    form.dataset.submitting = "false";
+  }
 });
 document.getElementById("study-open-form").addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -130,14 +146,16 @@ listBody.addEventListener("click", async (event) => {
       ? "Chuyển sang khảo sát sau khi đã đủ dữ liệu cần thiết?"
       : "Đóng study? Sau khi đóng, survey không còn nhận câu trả lời.");
   if (!window.confirm(question)) return;
-  const result = await window.apiJson("/api/v1/admin/studies/" + encodeURIComponent(id) + "/" + state, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+  await whileDisabled(move, async () => {
+    const result = await window.apiJson("/api/v1/admin/studies/" + encodeURIComponent(id) + "/" + state, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    });
+    if (result) {
+      window.toast("Đã cập nhật trạng thái study.");
+      await loadList();
+      await showReport(id);
+    }
   });
-  if (result) {
-    window.toast("Đã cập nhật trạng thái study.");
-    await loadList();
-    await showReport(id);
-  }
 });
 function saveStudyList(items) { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }
 loadList();
