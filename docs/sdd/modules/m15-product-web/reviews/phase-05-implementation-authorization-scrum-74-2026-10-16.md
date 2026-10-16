@@ -1,8 +1,8 @@
 # SCRUM-74 — Phase 05 verdict and implementation boundary
 
-**Task:** SCRUM-74 / `M15-TASK-003` / W5-N02  
-**Date:** 2026-10-16 (Asia/Bangkok)  
-**Owner:** Nguyên  
+**Task:** SCRUM-74 / `M15-TASK-003` / W5-N02
+**Date:** 2026-10-16 (Asia/Bangkok)
+**Owner:** Nguyên
 **Decision source:** project owner's direct reply in this Codex conversation: “Đã APPROVED cho cả 3 task”, answering whether Phase 05 had been approved separately for SCRUM-74, SCRUM-75 and SCRUM-76.
 
 ## Verdict and scope

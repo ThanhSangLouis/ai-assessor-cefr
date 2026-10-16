@@ -1,8 +1,8 @@
 # SCRUM-74 / W5-N02 — Kết quả nghiên cứu đọc-only của Codex
 
-**Ngày:** 15/10/2026  
-**Record type:** Đối chiếu implementation và dependency phục vụ Phase 05; không phải Phase 05 verdict hay quyền implement.  
-**Baseline:** HEAD `6baf720f173b440eb961676b09ea290058a39b35` cùng working-tree diff A2R1 M15.  
+**Ngày:** 15/10/2026
+**Record type:** Đối chiếu implementation và dependency phục vụ Phase 05; không phải Phase 05 verdict hay quyền implement.
+**Baseline:** HEAD `6baf720f173b440eb961676b09ea290058a39b35` cùng working-tree diff A2R1 M15.
 **Phạm vi:** `M15-TASK-003` / `W5-N02.1–N02.6`. Không sửa source, không chạy test/browser QA, không phát prompt.
 
 ## Kết luận readiness
