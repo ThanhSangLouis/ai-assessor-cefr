@@ -5486,3 +5486,35 @@ button:not(:disabled):hover,
 .survey-scale label { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .kpi-arms { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--sp-4); }
 .kpi-arm h3 { margin: 0; }
+.admin-link-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--sp-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-link-list li {
+  display: grid;
+  gap: .2rem;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.admin-link-list a { font-weight: 700; }
+.admin-link-list span { color: var(--fg-muted); font-size: var(--t-sm); }
+.admin-summary-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  gap: var(--sp-3);
+  margin: 0;
+}
+.admin-summary-list > div {
+  display: grid;
+  gap: .2rem;
+  padding: var(--sp-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.admin-summary-list strong { color: var(--fg-muted); font-size: var(--t-sm); }
+.admin-summary-list span { overflow-wrap: anywhere; }
