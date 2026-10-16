@@ -16,9 +16,9 @@
 | M15-TASK-002 | W5-N01 | Assessment input/status/report/history/audio consumer flow | Nguyên | M15-TEST-002–004/008/009/012 | IN_PROGRESS — flow present; producer/browser acceptance NOT_RUN |
 | M13-TASK-005 | W5-N01 | Student progress/pronunciation/study evidence blocks | Nguyên, per Week 05 task assignment | M15-TEST-004/012; M13-TEST-004/011 | IN_PROGRESS — progress shell and unavailable state present; runtime has no student M13 payload; acceptance NOT_RUN |
 | M15-TASK-007 | W5-T04 | Package and final integrated browser gate | Thắng | M15-TEST-010/011 + required integrated regression | TODO — separate W5-T04 owner handoff after N01 implementation |
-| M15-TASK-003 | W5-N02 | Practice/lesson/review/result/progress UI | Future task owner | M15-TEST-005 | BLOCKED — outside W5-N01; no Phase 05 review here |
-| M15-TASK-004 | W5-N03 | Teacher/review/blind/authoring UI | Future task owner | M15-TEST-006 | BLOCKED — outside W5-N01; no Phase 05 review here |
-| M15-TASK-005/006 | W5-N04 | Admin UI and full cross-role regression | Future task owner | M15-TEST-007 and later full matrix | BLOCKED — outside W5-N01; no Phase 05 review here |
+| M15-TASK-003 | W5-N02 | Practice/lesson/review/result/progress UI | Hoàng Nguyên (SCRUM-74) | M15-TEST-005 | IN_PROGRESS — UI adaptation underway; M10 dependency PR #39 merged; integrated E2E NOT_RUN |
+| M15-TASK-004 | W5-N03 | Teacher/review/blind/authoring UI | Hoàng Nguyên (SCRUM-75) | M15-TEST-006 | IN_PROGRESS — UI adaptation underway against available APIs; integrated E2E NOT_RUN |
+| M15-TASK-005/006 | W5-N04 | Admin UI and full cross-role regression | Hoàng Nguyên (SCRUM-76) | M15-TEST-007 and later full matrix | IN_PROGRESS — admin UI and integration preparation underway; final integrated E2E NOT_RUN |
 
 ## 2. Task contracts
 
@@ -75,4 +75,4 @@
 4. Hand off N01 to W5-T04/M15-TASK-007 for clean-wheel/browser regression after producer task integration.
 5. A task is `DONE` only with scoped actual diff, required tests/evidence, producer integration where applicable, no unresolved `BLOCKER/MAJOR`, and its Test Plan assertions met. A mock/fixture-only task cannot close a server boundary.
 
-Phase 05 is approved based on the project owner's oral-meeting confirmation recorded in the Plan/review. Source implementation is in progress across N01 tasks 001, M11-006, 002 and M13-005, following the approved order. Their acceptance checks are `NOT_RUN`; no implementation task is marked `DONE`. The approval confirms dependency contracts/file ownership and does not change other modules' formal SDD phases. Deferred N02–N04 tasks remain outside W5-N01.
+Phase 05 is approved based on the project owner's oral-meeting confirmation recorded in the Plan/review. On 2026-10-16 the project owner also confirmed Phase 05 approval for SCRUM-74, SCRUM-75 and SCRUM-76 and authorized their scoped UI adaptation. Source implementation is in progress across N01–N04 tasks. Their integrated acceptance checks remain `NOT_RUN`; no implementation task is marked `DONE`. The approval confirms dependency contracts/file ownership and does not change other modules' formal SDD phases. PR #39, which supplies the M10 APIs needed by SCRUM-75, has merged to `main`.
