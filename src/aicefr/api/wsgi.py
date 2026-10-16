@@ -197,16 +197,20 @@ class StudentTeacherApp:
         except (ReportNotFound, UnverifiedReviewDecision):
             response = self._controlled_error(environ, HTTPStatus.CONFLICT, "REPORT_NOT_READY")
         except ValidationError:
-            learning_request = str(environ.get("PATH_INFO", "")).startswith(
-                ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
+            path = str(environ.get("PATH_INFO", ""))
+            learning_request = any(
+                path == prefix or path.startswith(prefix + "/")
+                for prefix in ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
             )
             status = HTTPStatus.UNPROCESSABLE_ENTITY if learning_request else HTTPStatus.BAD_REQUEST
             response = self._controlled_error(environ, status, "INVALID_REQUEST")
         except LearningConflict:
             response = self._controlled_error(environ, HTTPStatus.CONFLICT, "IDEMPOTENCY_CONFLICT")
         except ValueError:
-            learning_request = str(environ.get("PATH_INFO", "")).startswith(
-                ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
+            path = str(environ.get("PATH_INFO", ""))
+            learning_request = any(
+                path == prefix or path.startswith(prefix + "/")
+                for prefix in ("/api/v1/learn", "/api/v1/practice", "/api/v1/teacher/learn")
             )
             status = HTTPStatus.UNPROCESSABLE_ENTITY if learning_request else HTTPStatus.BAD_REQUEST
             response = self._controlled_error(environ, status, "INVALID_REQUEST")

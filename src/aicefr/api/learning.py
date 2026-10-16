@@ -91,7 +91,7 @@ class LearningExperienceApi:
         path = str(environ.get("PATH_INFO", ""))
         method = str(environ.get("REQUEST_METHOD", "GET")).upper()
         if not any(
-            path.startswith(prefix)
+            path == prefix or path.startswith(prefix + "/")
             for prefix in (
                 "/api/v1/practice",
                 "/api/v1/learn",
