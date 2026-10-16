@@ -33,8 +33,10 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
 | [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
-| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 0 | 3 | 0 | 3 |
+| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 3 | 6 | 37 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
+
+Ngày 16/10/2026, thêm sáu bản ghi thực tế của Sang cho SCRUM-71/72. Tổng hợp được tính lại theo các dòng hiện có trong workbook tại base của PR: Thắng 28, Nguyên 3, Sang 6, tổng 37. Không phục hồi hoặc suy đoán các bản ghi lịch sử không có trong file này.
 
 Số lượng tại thời điểm tách ngày 08/10/2026: giữ đủ **46 bản ghi gốc**, thêm một
 bản ghi cho yêu cầu tách file, tổng cộng **47**. Sheet `Tổng hợp` có công thức và

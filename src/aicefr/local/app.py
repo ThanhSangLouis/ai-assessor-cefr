@@ -13,6 +13,7 @@ from aicefr.api.billing import BillingApi
 from aicefr.api.data_operations import DataOperationsApi
 from aicefr.api.identity import IdentityApi
 from aicefr.api.learning import LearningApi
+from aicefr.api.research import ResearchApi
 from aicefr.api.review import ReviewApi
 from aicefr.api.student import (
     StudentApi,
@@ -32,6 +33,7 @@ from aicefr.portal.router import PortalRouter
 from aicefr.portal.service import PortalService
 from aicefr.portal.tasks import TaskRepository
 from aicefr.practice.service import LearningService
+from aicefr.research.service import ResearchService
 from aicefr.review.service import ReviewService
 from aicefr.review.sqlite import SQLiteReviewRepository
 from aicefr.scoring.scorer import RidgeScorer
@@ -308,6 +310,8 @@ def create_runtime(
         for item in config["tasks"]:
             tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
         portal = PortalService(auth, store, tasks, accounts)
+        research_service = ResearchService(store, tasks)
+        research_api = ResearchApi(auth, research_service, blobs)
         learning = LearningService(LearningRepository(store))
         learning_api = LearningApi(auth, learning)
         control = RuntimeControl(portal, pipeline, config)
@@ -343,7 +347,7 @@ def create_runtime(
         )
         app = StudentTeacherApp(
             StudentApi(student),
-            review_api=ReviewApi(auth, reviews),
+            review_api=ReviewApi(auth, reviews, research=research_service),
             auth=auth,
             consents=consents,
             responses=responses,
@@ -363,6 +367,7 @@ def create_runtime(
                 learning_api=learning_api,
             ),
             metrics=metrics,
+            research_api=research_api,
         )
         return LocalRuntime(
             app,
