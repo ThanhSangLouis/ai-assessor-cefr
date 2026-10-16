@@ -43,6 +43,8 @@ def _page_for(path: str) -> tuple[str, str, frozenset[ActorRole], dict[str, obje
 
     if path == "/admin":
         return "admin.html", "admin", frozenset({ActorRole.ADMIN}), {}
+    if path == "/admin/studies":
+        return "admin_study.html", "admin", frozenset({ActorRole.ADMIN}), {}
     if path == "/admin/ratings":
         return "admin_ratings.html", "admin", frozenset({ActorRole.ADMIN}), {}
     if path == "/practice":
