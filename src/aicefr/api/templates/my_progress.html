@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Tiến độ của tôi · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head page-head-row">
+  <div>
+    <h1><span class="head-icon">{{ icon("trend") }}</span>Tiến độ của tôi</h1>
+    <p class="lede">
+      Kết quả các bài đánh giá theo thứ tự thời gian, để trả lời câu hỏi
+      <b>“mình có tiến bộ không”</b>. Bài luyện tập không có điểm nên không vào biểu đồ;
+      công sức luyện tập được ghi ở mục <a href="#achievements">Thành tựu</a> bên dưới.
+    </p>
+  </div>
+  <div class="button-row page-tools">
+    <button type="button" class="button secondary small" id="print-progress">In hoặc lưu PDF</button>
+    <a class="button secondary small" href="/api/v1/me/profile.json">Tải hồ sơ năng lực (JSON)</a>
+  </div>
+</div>
+
+<section class="card" id="effort-progress" aria-labelledby="effort-title" aria-busy="true">
+  <div class="card-head"><h2 id="effort-title">Nhịp luyện tập</h2></div>
+  <div id="effort-body"><div class="skeleton skeleton-block"></div></div>
+</section>
+
+<div class="card" id="progress-panel" aria-busy="true" aria-live="polite">
+  <div class="skeleton skeleton-title"></div>
+  <div class="skeleton skeleton-block"></div>
+  <div class="skeleton skeleton-line"></div>
+</div>
+
+{#- D040. Shown only to a learner enrolled in the feedback study. -#}
+<section class="card" id="study" aria-labelledby="study-title" hidden>
+  <div class="card-head"><h2 id="study-title">Thực nghiệm phản hồi</h2></div>
+  <div id="study-body"></div>
+</section>
+
+<section class="card" id="pronunciation" aria-labelledby="pron-title" aria-busy="true">
+  <div class="card-head"><h2 id="pron-title">Phát âm cần chú ý</h2></div>
+  <p class="muted">Đọc từ các bài đọc to, nhắc lại và điền từ của bạn: những lỗi người Việt hay gặp, mỗi lỗi kèm số lần mắc trên số lần gặp.</p>
+  <div id="pronunciation-body"><div class="skeleton skeleton-block"></div></div>
+</section>
+
+<section class="card ach-panel" id="achievements" aria-labelledby="ach-title" aria-busy="true">
+  <h2 id="ach-title" class="visually-hidden">Thành tựu</h2>
+  <div class="skeleton skeleton-title"></div>
+  <div class="skeleton skeleton-block"></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('my_progress.js') }}"></script>{% endblock %}

@@ -170,7 +170,9 @@ class StudentTeacherApp:
 
     def __call__(self, environ: dict[str, Any], start_response: StartResponse) -> list[bytes]:
         try:
-            response = self._dispatch(environ)
+            from aicefr.api.web_ui import dispatch_page
+
+            response = dispatch_page(self, environ) or self._dispatch(environ)
         except HttpInputError as error:
             response = self._controlled_error(environ, error.status, error.code)
         except SubmissionError as error:

@@ -1,0 +1,20 @@
+{#- Icons from the sprite static/icons.svg (D027). An icon is decorative and
+    hidden from screen readers unless it is given a label; the text next to it
+    carries the meaning. Scripts draw the same markup with window.ui.icon(). -#}
+{% macro icon(name, cls="icon", label=None) -%}
+<svg class="{{ cls }}"{% if label %} role="img" aria-label="{{ label }}"{% else %} aria-hidden="true"{% endif %} focusable="false"><use href="{{ asset('icons.svg') }}#i-{{ name }}"></use></svg>
+{%- endmacro %}
+
+{#- The product mark (D031): a speech bubble holding three bars that climb like
+    the levels the product reports, A2, B1, B2. Decorative -- the link around it
+    carries the name. Colours come from the theme tokens (style.css, .brand-mark);
+    static/favicon.svg is the same drawing in fixed colours. -#}
+{% macro logo(cls="brand-mark") -%}
+<svg class="{{ cls }}" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path class="logo-bubble" d="M9 3h14a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7h-9l-5.4 4.4c-.5.4-1.2.1-1.2-.6v-4a7 7 0 0 1-5.4-6.8v-8a7 7 0 0 1 7-7z"/><rect class="logo-bar logo-bar-1" x="6.9" y="13.5" width="4.6" height="7" rx="2.3"/><rect class="logo-bar logo-bar-2" x="13.7" y="10" width="4.6" height="10.5" rx="2.3"/><rect class="logo-bar" x="20.5" y="6.5" width="4.6" height="14" rx="2.3"/></svg>
+{%- endmacro %}
+
+{#- One 3D block (D031); ui.cubes() in common.js draws the same markup. The row
+    around it (.cube-stage > .cube-row) gives it its perspective. -#}
+{% macro cube(label, cls="", h=80) -%}
+<span class="cube {{ cls }}" style="--h:{{ h }}px"><span class="f-front">{{ label }}</span><span class="f-side"></span><span class="f-top"></span></span>
+{%- endmacro %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == "review" %}Ôn tập hôm nay{% else %}Bài học{% endif %} · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- One lesson, one step at a time (D025, M14). The same page runs today's review
+    (M15, mode "review") and a teacher's look at a draft (mode "preview"), so a
+    teacher previews exactly what a learner will get. -#}
+<div id="lesson" class="lesson-page" data-lesson-id="{{ lesson_id }}" data-mode="{{ mode }}" aria-busy="true">
+  <p class="crumb">
+    {% if mode == "preview" %}
+      <a href="/teach/lessons/{{ lesson_id }}">← Quay lại soạn bài</a>
+    {% else %}
+      <a href="/practice">← Lộ trình của tôi</a>
+    {% endif %}
+  </p>
+
+  <header class="lesson-head" id="lesson-head">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-line"></div>
+  </header>
+
+  {% if mode == "preview" %}
+  <div class="notice notice-info" id="preview-note">
+    <b>Xem thử bản nháp.</b> Bạn đang thấy bài học đúng như sinh viên sẽ thấy. Bản ghi của bạn
+    được đo rồi bỏ đi, không lưu và không tính vào thống kê.
+  </div>
+  {% endif %}
+  <div class="notice notice-danger" id="consent-gate" hidden></div>
+  <div class="notice notice-danger" id="fake-asr-warning" hidden>
+    <b>Chế độ thử nghiệm.</b> Hệ thống đang dùng bộ nhận dạng giả lập nên phản hồi
+    <b>không phản ánh</b> bản ghi của bạn.
+  </div>
+
+  <div class="lesson-layout" id="lesson-layout" hidden>
+    <nav class="step-rail" id="step-rail" aria-label="Các bước của bài học"></nav>
+
+    <section class="card step-card" id="step-card" aria-labelledby="step-h">
+      <div id="step-body"></div>
+      <form id="step-form" class="step-recorder">
+        {% with submit_label="Nộp lượt này",
+                 floor_seconds=1,
+                 upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ (max_size_mib or 25) ~ " MiB." %}
+          {% include "_recorder.html" %}
+        {% endwith %}
+      </form>
+      <div class="step-feedback" id="step-feedback" hidden tabindex="-1" aria-live="polite"></div>
+    </section>
+  </div>
+
+  <section class="card lesson-summary" id="lesson-summary" hidden tabindex="-1" aria-live="polite"></section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset('learning_recorder.js') }}"></script>
+<script src="{{ asset('lesson.js') }}"></script>
+{% endblock %}
