@@ -482,7 +482,7 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     });
   };
   window.ui.setBadge = setBadge;
-  if (document.querySelector(".nav-badge[data-badge]")) {
+  if (document.querySelector('.nav-badge[data-badge="reviews_due"]')) {
     fetch("/api/v1/learn/reviews/due")
       .then((r) => (r.ok ? r.json() : null))
       .then((value) => {

@@ -15,9 +15,11 @@ The `/admin/studies` page is now role-gated in `web_ui.py`. `admin_study.js` con
 
 The billing panel reads the current M14 billing overview and order list. It does not create quotes/orders or settle payments while the required policy contract is absent. M11 OTP/temporary-password receipt and batch-account behavior remain unavailable through the current UI/API contract. These controls stay gated and are reported as compatibility limits; no producer endpoint or domain behavior was added.
 
+The integrated cross-role review found that the shared navigation requested the student-only `/api/v1/learn/reviews/due` endpoint on teacher/admin pages, producing a 403 console entry. `src/aicefr/api/static/common.js` now makes that request only when the student `reviews_due` badge is present; no endpoint or authorization behavior changed.
+
 ## Scope and checks
 
-- Changed implementation files: `web_ui.py`, `templates/admin.html`, `templates/admin_ratings.html`, `templates/admin_study.html`, `static/admin_portal.js`, `static/admin_ratings.js`, `static/admin_study.js`, `static/style.css`.
+- Changed implementation files: `web_ui.py`, `templates/admin.html`, `templates/admin_ratings.html`, `templates/admin_study.html`, `static/admin_portal.js`, `static/admin_ratings.js`, `static/admin_study.js`, `static/style.css`, `static/common.js` (student-only badge request guard).
 - Backend/domain API files: unchanged.
 - SCRUM-76 UI adaptation: in progress; current-contract screens are implemented and unsupported mutations remain gated as listed above.
 - `git diff --check`: passed for the transferred implementation and task records; no whitespace errors.
