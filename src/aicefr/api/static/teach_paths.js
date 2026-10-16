@@ -352,4 +352,3 @@ load().catch((error) => {
   window.clearBusy(root);
   root.innerHTML = '<section class="card"><p class="error">' + escapeHtml(errorMessage(error)) + "</p></section>";
 });
-
