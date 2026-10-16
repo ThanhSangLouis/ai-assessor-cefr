@@ -10,7 +10,7 @@ AI Usage Log, prompt gốc, mục đích dùng AI, file sinh ra, phần người
 
 | Artifact | Vai trò | Tình trạng |
 | --- | --- | --- |
-| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 có 3 bản ghi Nguyên trong PR này; W06 chưa có bản ghi |
+| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 có 10 bản ghi Nguyên tính đến 16/10/2026; W06 chưa có bản ghi |
 | [Kiểm tra task và tạo PR W4 của Nguyên](nguyen/pr-W4-20261012.md) | Ba yêu cầu thực tế ngày 12/10; phạm vi commit và ánh xạ workbook | W05 trong PR: 3 dòng Nguyên/Codex; không khép lịch sử W04 còn thiếu |
 | [Chuyển log Nguyên sang W04](nguyen/chuyen-log-sang-W04-20261012.md) | Ánh xạ 7 dòng từ W05 sang W04 và yêu cầu chuyển file | Ngoại lệ nơi lưu theo chỉ dẫn Nguyên; giữ ngày thực tế 12/10/2026 |
 | [Biên tập prompt của Nguyên](nguyen/prompt-log-bien-tap-20261012.md) | Đối chiếu nội dung gốc và phiên bản diễn đạt chuyên nghiệp của W05, hàng 6–12 | Biên tập theo yêu cầu ngày 12/10; bản gốc được giữ để kiểm tra |
@@ -33,7 +33,7 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
 | [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
-| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 0 | 3 | 0 | 3 |
+| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 10 | 0 | 38 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
 
 Số lượng tại thời điểm tách ngày 08/10/2026: giữ đủ **46 bản ghi gốc**, thêm một
@@ -84,3 +84,5 @@ Tiếp theo trong ngày 12/10, Nguyên yêu cầu sửa lời văn prompt theo p
 Sau đó Nguyên yêu cầu **chuyển nội dung vào file W04**. Bảy dòng được chuyển sang W04, hàng 6–12; yêu cầu chuyển được ghi ở hàng 13. Tại thời điểm chuyển, W04 có 8 dòng Nguyên, tổng workbook 45; W05 còn 0 dòng. Đây là ngoại lệ nơi lưu theo chỉ dẫn mới nhất của Nguyên. Ngày dùng AI vẫn **12/10/2026**, thuộc W05 theo lịch; phụ đề và minh chứng W04 ghi rõ phần bổ sung sau tuần. Bảng trên đếm nội dung đang lưu trong từng file. Khoảng lịch sử 05–11/10 của Nguyên vẫn thiếu nguồn, không được coi là đã khôi phục từ các dòng ngày 12/10.
 
 Lượt kiểm tra task/tạo PR ngày 12/10 của Nguyên ghi **3 bản ghi mới** tại W05. [Record PR](nguyen/pr-W4-20261012.md) và [checks](nguyen/pr-W4-20261012-checks.json) giữ prompt gốc, ánh xạ hàng và phạm vi bảo toàn workbook. Bản local đầy đủ có 10 dòng (ba dòng mới ở hàng 13–15); bản đưa vào PR của Nguyên có ba dòng mới ở hàng 6–8, giữ bảy bản ghi ngoài phạm vi trong workspace. Ngày dùng AI thực tế vẫn 12/10, các công thức Tổng hợp và sheet của người khác được bảo toàn.
+
+Ngày 16/10/2026, Nguyên yêu cầu khởi động W5-N01 trong worktree sạch từ main. Hàng 9–15 của sheet Nguyên W05 ghi yêu cầu và các lượt làm việc, trên branch `codex/W5-N01-from-main`, base `d60e8a4`. Chủ dự án đã duyệt Requirement v0.2 (Phase 01), Research/Specification v0.2 (Phase 03), Test Plan v0.2 (Phase 04), chọn Research `RUN`, accessibility theo tiêu chí hành vi, giữ full scope và xác nhận các contract/file gates đã được duyệt trong cuộc họp miệng; Plan/Tasks Phase 05 được ghi `APPROVED`. Mapping teacher-verified thuộc M06/M07 và M08 giữ auth/consent/owner boundary được ghi lại. Source implementation đang diễn ra; test/browser/package chưa chạy. Chi tiết tại [AI usage record](nguyen/m15-w5-20261016.md).
