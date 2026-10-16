@@ -27,7 +27,7 @@ time zone is a bug nobody can understand.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 
 LOCAL_TZ = timezone(timedelta(hours=7))
 DAILY_GOAL = 2
@@ -38,7 +38,7 @@ def local_day(iso: str) -> date:
     """The Vietnam calendar day of an ISO-8601 moment (the database stores UTC)."""
     moment = datetime.fromisoformat(iso)
     if moment.tzinfo is None:
-        moment = moment.replace(tzinfo=timezone.utc)
+        moment = moment.replace(tzinfo=UTC)
     return moment.astimezone(LOCAL_TZ).date()
 
 
