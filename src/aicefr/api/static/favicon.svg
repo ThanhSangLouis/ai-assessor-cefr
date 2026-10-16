@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="AI Assessor CEFR">
+  <!-- The product mark (D031), drawn as in templates/_icons.html logo(). A tab
+       strip has no page tokens, so the two themes are spelled out here. -->
+  <style>
+    .logo-bubble { fill: #1e3a5f; }
+    .logo-bar { fill: #ffffff; }
+    @media (prefers-color-scheme: dark) {
+      .logo-bubble { fill: #a9c3e6; }
+      .logo-bar { fill: #0e1724; }
+    }
+  </style>
+  <path class="logo-bubble" d="M9 3h14a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7h-9l-5.4 4.4c-.5.4-1.2.1-1.2-.6v-4a7 7 0 0 1-5.4-6.8v-8a7 7 0 0 1 7-7z"/>
+  <rect class="logo-bar" opacity="0.6" x="6.9" y="13.5" width="4.6" height="7" rx="2.3"/>
+  <rect class="logo-bar" opacity="0.8" x="13.7" y="10" width="4.6" height="10.5" rx="2.3"/>
+  <rect class="logo-bar" x="20.5" y="6.5" width="4.6" height="14" rx="2.3"/>
+</svg>

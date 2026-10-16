@@ -1,0 +1,62 @@
+{#- Shared recorder markup for every screen that takes a spoken answer.
+    Behaviour lives in static/recorder.js; the ids are the contract between the
+    two, so keep them in step.
+
+    Variables: submit_label (button text), upload_hint (formats and limits),
+    floor_seconds (the QC floor in force: a recording shorter than this is
+    rejected, whatever the task asks for). -#}
+<div class="rec" id="rec" data-state="idle" data-floor-seconds="{{ floor_seconds | default(0) | int }}">
+  {#- First in the reading order, but only shown once there is something to hear. -#}
+  <div class="rec-review" id="rec-review" hidden>
+    <p class="rec-take" id="rec-take"></p>
+    <audio id="rec-preview" controls preload="metadata"></audio>
+    <p class="rec-verdict" id="rec-verdict"></p>
+    <p class="rec-note" id="rec-note" hidden></p>
+    <div class="button-row">
+      <button type="submit" id="rec-submit">{{ submit_label | default("Nộp bài") }}</button>
+      <button type="button" class="secondary" id="rec-redo">Ghi lại</button>
+    </div>
+  </div>
+
+  <div id="rec-live" class="rec-live" hidden>
+    <div class="rec-stage">
+      <button type="button" class="rec-button" id="rec-button" aria-describedby="rec-hint">
+        <span class="rec-dot" aria-hidden="true"></span>
+        <span id="rec-button-label">Bắt đầu ghi âm</span>
+      </button>
+      <div class="rec-readout">
+        <p class="rec-time">
+          <span class="rec-clock" id="rec-clock" aria-hidden="true">0:00</span>
+          <span class="rec-window muted" id="rec-window"></span>
+        </p>
+        {#- Where the length stands against the task window: grey under the
+            minimum, green inside it, red past the maximum. -#}
+        <div class="duration-guide" id="duration-guide" aria-hidden="true">
+          <div class="duration-track">
+            <span class="duration-fill" id="duration-fill"></span>
+            <span class="duration-window" id="duration-window"></span>
+          </div>
+        </div>
+        <span class="meter" role="img" aria-label="Vạch mức âm thanh vào micro">
+          <span class="meter-bar" id="rec-level"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <p class="rec-hint" id="rec-hint">Bấm nút ghi âm hoặc nhấn phím cách để bắt đầu.</p>
+  <div id="recorder-off" class="notice" hidden></div>
+
+  <details class="rec-upload" id="rec-upload">
+    <summary>Hoặc chọn file ghi âm có sẵn</summary>
+    <div class="dropzone-wrap">
+      <label for="audio" class="dropzone" id="dropzone">
+        <span class="drop-mark" aria-hidden="true">⇪</span>
+        <span class="drop-title">Kéo thả file vào đây</span>
+        <span class="muted">hoặc bấm để chọn file từ máy</span>
+        <input id="audio" type="file" name="audio" accept="audio/*">
+      </label>
+    </div>
+    <p class="field-hint">{{ upload_hint }}</p>
+  </details>
+  <p class="visually-hidden" id="rec-status" role="status" aria-live="polite"></p>
+</div>

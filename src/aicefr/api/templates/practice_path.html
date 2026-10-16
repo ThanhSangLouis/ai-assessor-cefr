@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Lộ trình luyện nói · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- The learner's lesson path (D025, M13; drawn as a trail in D027): three
+    levels, each through units on different topics, each unit a winding trail of
+    lessons. Beside it: what to study next, today's speaking time, reviews due.
+    No score, no band and no ranking anywhere on this page. -#}
+<div id="path-page" class="path-page" aria-busy="true">
+  <header class="path-head" id="path-head">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-line"></div>
+  </header>
+
+  <div class="notice notice-danger" id="consent-gate" hidden></div>
+
+  <div class="path-grid">
+    <div class="path-trail" id="path-units" aria-live="polite">
+      <div class="skeleton skeleton-block"></div>
+    </div>
+    <aside class="path-side" id="path-side" aria-label="Hôm nay">
+      <div class="card"><div class="skeleton skeleton-block"></div></div>
+    </aside>
+  </div>
+
+  <details class="card practice-rules">
+    <summary>{{ icon("info") }}<b>Lộ trình được sắp xếp và gợi ý thế nào?</b></summary>
+    <ol>
+      <li>Ba phần Cơ bản (A2), Trung cấp (B1), Nâng cao (B2); mỗi phần đi qua nhiều chủ đề.</li>
+      <li>Mỗi bài đi bốn bậc: Mẫu, Có kiểm soát, Có hướng dẫn, Tự do. Gợi ý giảm dần qua từng
+        bậc, bậc cuối luôn là nói tự do.</li>
+      <li>Bài hoàn thành khi bạn đạt phần lớn các bước và đã nói ở bước tự do.</li>
+      <li>Bài nên học tiếp: bài chưa xong đầu tiên của tiêu chí bạn cần luyện nhất (theo bài đánh
+        giá gần nhất), không có thì theo thứ tự lộ trình. Bài nào cũng mở được.</li>
+      <li>Từ máy chưa nghe ra quay lại phần Ôn tập sau 1, 3 rồi 7 ngày.</li>
+    </ol>
+  </details>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('practice_path.js') }}"></script>{% endblock %}

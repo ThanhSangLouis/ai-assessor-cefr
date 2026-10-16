@@ -1,6 +1,6 @@
 # M15 — Plan & Task Readiness
 
-**Version:** v0.2 · **STATUS:** Phase 05 user verdict `APPROVED` ngày 15/10/2026 chỉ cho `M15-TASK-001A`; task khác vẫn `BLOCKED`.
+**Version:** v0.2 · **STATUS:** Phase 05 user verdict `APPROVED` ngày 15/10/2026 cho `M15-TASK-001A`; ngày 16/10/2026 chủ dự án xác nhận riêng `M15-TASK-003`–`006` cho SCRUM-74–76. Mỗi task có boundary/evidence addendum riêng; producer SDD approval và acceptance vẫn theo owner module.
 **Inputs:** Requirement v0.2, Research v0.3, Specification v0.3, Test Plan v0.2 và `docs/plan/week-05.md` W5-N01–N04. Phase 01/03/04 có user verdict `APPROVED`; Phase 03 Codex finding P03-01–05 vẫn cần xử lý theo phạm vi task.
 
 ## Implementation slices và dependency
@@ -35,3 +35,7 @@
 ## Contract gate cho các task còn lại
 
 Trước prompt 001B/002–006, owner liên quan cung cấp version/revision + verdict, schema/example, error/enum/role, authorization và contract test. Đặc biệt: route canonical/alias theo method; M11 one-time temp-password/purge/no-log policy; M12 blind allowlist/dual-role/draft; M13 disclosure/source/n; M14 persisted order vs return/verify/receipt; M16 asset/wheel/runtime. Nếu khác Specification/Test Plan đã duyệt, re-review phase bị ảnh hưởng trước Phase 05 mới. UI component fixture không chứng minh integration.
+
+## SCRUM-74 / `M15-TASK-003` — Phase 05 readiness candidate
+
+Codex revalidated readiness at branch HEAD `818fcbc46e62ee057fcbe980800e01f934d72179`; the review's Codex findings remain historical. The project owner subsequently confirmed Phase 05 approval for SCRUM-74–76. The scoped authorization and file boundary are recorded in [SCRUM-74's task-specific verdict](reviews/phase-05-implementation-authorization-scrum-74-2026-10-16.md). Producer SDD and acceptance remain unchanged; this task consumes their existing contracts and does not modify backend/domain APIs.

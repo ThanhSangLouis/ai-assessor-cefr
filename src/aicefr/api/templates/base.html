@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}AI Assessor CEFR{% endblock %}</title>
+  {#- D031: the two Roboto subsets every Vietnamese page needs, asked for before
+      the stylesheet would discover them. The URLs are the ones in the
+      @font-face rules, without a version query, or each file is fetched twice. -#}
+  <link rel="preload" href="/static/fonts/roboto-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/fonts/roboto-vietnamese-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ asset('style.css') }}">
+  <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+  {#- D028: an account still on the temporary password an administrator handed
+      out can only choose a new one; every page sends it there. The API refuses
+      everything else too (deps.PASSWORD_CHANGE_PATHS), this only saves a click. -#}
+  {% if account and account.must_change_password and (nav_here | default("")) != "account" %}
+  <meta http-equiv="refresh" content="0;url=/account?first=1">
+  {% endif %}
+</head>
+{#- Navigation follows the signed-in role: each role sees only its own work, and
+    the brand goes to that role's home page. `aria-current="page"` marks the
+    current item for screen readers; `nav_here` is set by each page.
+
+    D027: a signed-in user steers from a sidebar on the left, an icon and a
+    short label per item; on a narrow screen it becomes a slim bar on top
+    (brand, account) and a tab bar at the bottom, where the thumb reaches. A
+    visitor who is not signed in keeps the plain top bar of the product page. -#}
+{%- from "_icons.html" import icon, logo -%}
+{%- set role = account.role.value if account else "guest" -%}
+{%- set role_names = {"student": "Sinh viên", "teacher": "Giảng viên", "admin": "Quản trị"} -%}
+{%- set homes = {"student": "/practice", "teacher": "/review", "admin": "/admin"} -%}
+{%- set here = nav_here | default("") -%}
+<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}" data-icons="{{ asset('icons.svg') }}">
+<a class="skip-link" href="#main">Bỏ qua điều hướng, tới nội dung chính</a>
+{#- D037: the ground behind every page -- contour lines high on the right,
+    terraced hills low on the right whose ridges are spoken phrases. Decoration
+    only, drawn by tools/make_art.py; the product and sign-in pages keep the
+    lines and draw the hills as a scene of their own. -#}
+{% block ground %}
+<div class="ground" aria-hidden="true"><i class="ground-lines"></i><i class="ground-hills"></i></div>
+{% endblock %}
+
+{% if account %}
+<aside class="app-sidebar" aria-label="Thanh điều khiển">
+  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="AI Assessor CEFR, về trang chính">
+    {{ logo() }}
+    <span class="brand-text">
+      <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+      <span class="brand-sub">Luyện nói A2–B2</span>
+    </span>
+  </a>
+
+  <nav class="site-nav" aria-label="Điều hướng chính">
+    {#- A `nav-badge` shows how many things wait behind an item (D028); filled
+        by common.js from /api/v1/me/badges and hidden while it is zero. None
+        while a temporary password is in use: the counts would be refused. -#}
+    {%- macro badge(name) -%}
+      {%- if not account.must_change_password %}<span class="nav-badge" data-badge="{{ name }}" hidden></span>{% endif -%}
+    {%- endmacro %}
+    {% if role == "student" %}
+      <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("path") }}<span class="nav-label">Luyện tập</span>{{ badge("reviews_due") }}</a>
+      <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
+      <a href="/my-responses"{% if here == "mine" %} aria-current="page"{% endif %}>{{ icon("folder") }}<span class="nav-label">Bài của tôi</span>{{ badge("results") }}</a>
+      <a href="/my-progress"{% if here == "progress" %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Tiến độ</span></a>
+    {% else %}
+      <a href="/review"{% if here == "queue" %} aria-current="page"{% endif %}>{{ icon("inbox") }}<span class="nav-label">Hàng đợi duyệt</span>{{ badge("queue") }}</a>
+      <a href="/teach"{% if here == "teach" %} aria-current="page"{% endif %}>{{ icon("layers") }}<span class="nav-label">Lộ trình luyện</span></a>
+      <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê lớp</span></a>
+      <a href="/rate"{% if here == "rate" %} aria-current="page"{% endif %}>{{ icon("eye-off") }}<span class="nav-label">Chấm mù</span>{{ badge("ratings") }}</a>
+      {% if role == "admin" %}
+        <a href="/admin"{% if here == "admin" %} aria-current="page"{% endif %}>{{ icon("shield") }}<span class="nav-label">Quản trị</span></a>
+      {% endif %}
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-foot">
+    {#- The account folds into one menu at the foot of the sidebar: who is signed
+        in, consent, theme, sign out. -#}
+    <details class="account-menu">
+      <summary class="account-button" aria-label="Tài khoản {{ account.pseudonym }}, {{ role_names.get(role, role) }}">
+        <span class="avatar avatar-{{ account.avatar_color or 'none' }}" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
+        <span class="who">
+          <span class="who-name">{{ account.pseudonym }}</span>
+          <span class="who-role">{{ role_names.get(role, role) }}</span>
+        </span>
+        {{ icon("chevron-down", "icon chevron") }}
+      </summary>
+      <div class="account-panel">
+        <p class="account-head">Đang đăng nhập là <b>{{ account.pseudonym }}</b><br>{{ role_names.get(role, role) }}</p>
+        <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
+        {% if role == "student" %}
+          <a href="/consent"{% if here == "consent" %} aria-current="page"{% endif %}>{{ icon("file-check") }}<span>Đồng thuận dữ liệu</span></a>
+        {% endif %}
+        {% if role == "admin" and api_docs %}
+          <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
+        {% endif %}
+        <button type="button" id="theme-toggle" aria-pressed="false">
+          {{ icon("moon", "icon theme-dark") }}{{ icon("sun", "icon theme-light") }}<span id="theme-toggle-label">Giao diện tối</span>
+        </button>
+        <button type="button" id="logout-link">{{ icon("logout") }}<span>Đăng xuất</span></button>
+      </div>
+    </details>
+  </div>
+</aside>
+{% else %}
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+      {{ logo() }}
+      <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+      <span class="brand-sub">Luyện nói A2–B2</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Điều hướng chính">
+      <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>Giới thiệu</a>
+      <a href="/#how-it-works">Cách hoạt động</a>
+      <a href="/#for-teachers">Cho giảng viên</a>
+    </nav>
+
+    <div class="header-actions">
+      {% if here != "login" %}<a class="header-button primary" href="/login">Đăng nhập</a>{% endif %}
+      <button type="button" class="header-button" id="theme-toggle" aria-pressed="false">
+        {{ icon("moon", "icon theme-dark") }}{{ icon("sun", "icon theme-light") }}<span id="theme-toggle-label">Giao diện tối</span>
+      </button>
+    </div>
+  </div>
+</header>
+{% endif %}
+
+<main id="main" tabindex="-1">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <p><b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
+      của mô hình, dùng để luyện tập và tham khảo.</p>
+    <p><b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
+      có giảng viên duyệt.</p>
+    <p>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</p>
+    <p><a href="/bands">Band A2, B1, B2 nghĩa là gì, và máy đo được những gì</a></p>
+  </div>
+</footer>
+
+<!-- Toasts are announced politely so a screen reader hears the outcome of an
+     action without the focus being stolen. -->
+<div class="toast-region" id="toast-region" role="status" aria-live="polite" aria-atomic="false"></div>
+
+<script src="{{ asset('common.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

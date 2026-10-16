@@ -46,3 +46,11 @@ M15-TEST-005 đòi success/failure/retry/continue, đủ-thiếu data, 409/422, 
 4. **Nguyên/M15:** sau khi producer contract freeze, chốt route-method-role-consent, API→view-model→DOM matrix, allowed files/source locks, fixtures và exact browser/API commands cho `003`.
 
 **Codex readiness recommendation:** `BLOCKED` cho Phase 05 của `M15-TASK-003`. Chưa phát prompt; chưa tuyên bố API, UI, persistence hoặc metric đã được owner nghiệm thu.
+
+## Revalidation on the SCRUM-74 branch — 16/10/2026
+
+The prior read-only report used `6baf720`, which is not an ancestor of the SCRUM-74 branch. I rechecked the relevant routes, storage, M10/M13 statuses and W5-T01 records at HEAD `818fcbc46e62ee057fcbe980800e01f934d72179` on `feat/SCRUM-74-W5-N02-Practice-lesson-progress-achievement-pronunciation-UI`. The worktree was clean at review entry. The source comparison showed `src/aicefr/api/templates.py` as the only difference in the inspected `portal/`, `storage/` and template paths; `portal/router.py` and learning storage findings were also inspected directly at the current HEAD.
+
+Findings remain unchanged: student tasks/progress routes exist, but there is no student practice/lesson/review-due route or learning UI; schema version 10 and migration 006 provide partial learning persistence, while repository support is limited to saving/getting paths and practice attempts; M10/M13 remain Phase 01 `DRAFT/PENDING`; M16 T01 acceptance/G1 and G2 remain pending. The task-specific readiness review is [Phase 05 SCRUM-74 review, 16/10/2026](phase-05-readiness-scrum-74-2026-10-16.md).
+
+**Revalidation checks:** read-only source and SDD inspection only. Tests/browser QA `NOT_RUN`; no code changed; no implementation prompt issued. Current Codex recommendation remains `BLOCKED` for `M15-TASK-003`.
