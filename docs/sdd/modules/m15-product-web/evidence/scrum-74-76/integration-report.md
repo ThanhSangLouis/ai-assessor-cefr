@@ -1,8 +1,8 @@
 # M15 integrated browser evidence — SCRUM-74–76
 
-**Run date:** 2026-10-16  
-**Revision:** `0827b37b4f560d5087e1c57e9011ed79acc837dc`  
-**Branch:** `feat/SCRUM-76-W5-N04-Admin-UI-full-browser-regression-va-UI-handoff`  
+**Run date:** 2026-10-16
+**Revision:** `0827b37b4f560d5087e1c57e9011ed79acc837dc`
+**Branch:** `feat/SCRUM-76-W5-N04-Admin-UI-full-browser-regression-va-UI-handoff`
 **Readiness:** `READY_FOR_REVIEW`; Phase 09 owner acceptance `PENDING`.
 
 ## Environment and fixture boundary
