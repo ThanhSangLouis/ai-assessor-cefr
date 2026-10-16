@@ -2,7 +2,7 @@
 
 **Record ID:** `M15-W5-SCOPE-2026-10-15`  
 **Scope:** `W5-N01`, `W5-N02`, `W5-N03`, `W5-N04` / SCRUM-73–76  
-**Source plan:** [`docs/plan/week-05.md`](../../../plan/week-05.md), §§9.3–9.5  
+**Source plan:** [`docs/plan/week-05.md`](../../../../plan/week-05.md), §§9.3–9.5
 **Related SDD:** [M15 Plan](../05-plan.md), [M15 Tasks](../06-tasks.md), [M15 Status](../07-status.md)  
 **Decision date:** 15/10/2026 (Asia/Bangkok)
 
@@ -23,7 +23,7 @@ Quyết định này không tự duyệt contract do module producer sở hữu,
 
 ## Evidence kiểm tra
 
-- [`week-05.md` §§9.3–9.5](../../../plan/week-05.md): scope, owner, dependencies, required work packages và Done Gate.
+- [`week-05.md` §§9.3–9.5](../../../../plan/week-05.md): scope, owner, dependencies, required work packages và Done Gate.
 - [M15 Plan v0.2](../05-plan.md): Phase 05 hiện chỉ duyệt `M15-TASK-001A`; các slice còn lại đòi contract freeze và Phase 05 readiness riêng.
 - [M15 Tasks v0.2](../06-tasks.md): `M15-TASK-001A` có actual diff/review `CHANGES_REQUIRED`; `001B`–`006` chưa sẵn sàng.
 - Producer status: [M10](../../m10-learning-experience/07-status.md), [M11](../../m11-identity-account/07-status.md), [M12](../../m12-blind-evaluation/07-status.md), [M13](../../m13-learning-evidence/07-status.md), [M14](../../m14-billing-licensing/07-status.md), [M16](../../m16-monolith-runtime/07-status.md).

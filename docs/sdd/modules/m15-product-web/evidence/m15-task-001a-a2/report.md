@@ -18,7 +18,7 @@ FINGERPRINT METADATA FILES:
 - `docs/sdd/modules/m15-product-web/prompts/M15-W5-N01-001A-A2R1.md`  
 - `docs/sdd/modules/m15-product-web/prompts/prompt-log.md`  
 FINGERPRINT EXCLUSIONS: KHÔNG CÓ  
-APPROVED ARTIFACT VERSIONS USED: M15 Requirement v0.2; Research v0.3 (`RUN`); Specification v0.3; Test Plan v0.2; Plan v0.2 và Tasks v0.2 cho 001A; [Phase 05 amendment v0.2a](../05-001a-identity-amendment.md) chỉ cho F06  
+APPROVED ARTIFACT VERSIONS USED: M15 Requirement v0.2; Research v0.3 (`RUN`); Specification v0.3; Test Plan v0.2; Plan v0.2 và Tasks v0.2 cho 001A; [Phase 05 amendment v0.2a](../../05-001a-identity-amendment.md) chỉ cho F06
 APPROVED PHASE RECORDS USED: M15 01/03/04/05; Phase 05 F06 APPROVED ngày 15/10/2026. Phase 07 A1 `CHANGES_REQUIRED` (record `reviews/phase-07-review-2026-10-15.md`)  
 DIRECT DEPENDENCY/IMPACT SCOPES: M11 Identity & Account (Thắng giữ source lock riêng `identity.py`; vùng `_password_page`). Không thay đổi M11 contract hay business logic.
 
