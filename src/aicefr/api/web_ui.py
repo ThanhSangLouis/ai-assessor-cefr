@@ -120,10 +120,10 @@ def dispatch_page(app, environ):
     if method != "GET":
         return None
     route = _page_for(path)
-    if route is None:
+    if route is None or app._auth is None:
+        # Preserve existing WSGI/API routes for apps constructed without the
+        # page-level AuthService (for example, ReviewApi-owned test fixtures).
         return None
-    if app._auth is None:
-        raise HttpInputError(HTTPStatus.UNAUTHORIZED, "SESSION_REQUIRED")
     template, nav_here, roles, extra = route
     actor = app._auth.resolve(app._session_token(environ), allowed_roles=roles)
     if template == "rate_one.html":
