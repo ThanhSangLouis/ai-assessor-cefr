@@ -599,7 +599,7 @@ class IdentityApi:
 
         notice = f'<p role="status">{escape(message)}</p>' if message else ""
         body = (
-            "<main><h1>Đổi mật khẩu tạm thời</h1>"
+            "<h2>Đổi mật khẩu tạm thời</h2>"
             "<p>Hãy đặt mật khẩu mới để tiếp tục sử dụng tài khoản.</p>"
             f'{notice}<form method="post" action="/password-change">'
             '<label>Mật khẩu hiện tại<input name="current_password" '
@@ -608,7 +608,7 @@ class IdentityApi:
             'autocomplete="new-password" minlength="8" required></label>'
             '<label>Nhập lại mật khẩu mới<input name="confirm_password" '
             'type="password" autocomplete="new-password" minlength="8" required></label>'
-            '<button type="submit">Đổi mật khẩu</button></form></main>'
+            '<button type="submit">Đổi mật khẩu</button></form>'
         )
         return _document("Đổi mật khẩu", body)
 

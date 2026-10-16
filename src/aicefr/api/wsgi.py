@@ -30,9 +30,11 @@ from aicefr.api.student import (
 )
 from aicefr.api.templates import (
     LOCAL_CSS,
+    render_bands_page,
     render_consent,
     render_login,
     render_notice,
+    render_public_home,
     render_report,
     render_review_detail,
     render_review_queue,
@@ -280,9 +282,9 @@ class StudentTeacherApp:
             if portal_response is not None:
                 return portal_response
         if path == "/" and method == "GET":
-            return WebResponse(
-                HTTPStatus.SEE_OTHER, "text/plain; charset=utf-8", b"", (("Location", "/login"),)
-            )
+            return self._html(HTTPStatus.OK, render_public_home())
+        if path == "/bands" and method == "GET":
+            return self._html(HTTPStatus.OK, render_bands_page())
         if path == "/login":
             if method == "GET":
                 return self._html(HTTPStatus.OK, render_login(demo=self._demo))
@@ -294,6 +296,14 @@ class StudentTeacherApp:
                 "text/css; charset=utf-8",
                 LOCAL_CSS.encode("utf-8"),
                 (("Cache-Control", "public, max-age=300"),),
+            )
+        if path == "/static/fonts/Roboto-Variable.ttf" and method == "GET":
+            font_path = Path(__file__).parent / "static" / "fonts" / "Roboto-Variable.ttf"
+            return WebResponse(
+                HTTPStatus.OK,
+                "font/ttf",
+                font_path.read_bytes(),
+                (("Cache-Control", "public, max-age=86400"),),
             )
         if path in {"/recorder.js", "/report.js"} and method == "GET":
             return WebResponse(
@@ -688,7 +698,14 @@ class StudentTeacherApp:
         if suffix == "/report":
             view = self._student_api.get_report(token, response_id)
             if isinstance(view.report, DiagnosticReport):
-                return self._html(HTTPStatus.OK, render_report(view.report, demo=self._demo))
+                return self._html(
+                    HTTPStatus.OK,
+                    render_report(
+                        view.report,
+                        demo=self._demo,
+                        response_id=view.status.response_id,
+                    ),
+                )
             return self._html(
                 HTTPStatus.ACCEPTED,
                 render_student_status(view.status, demo=self._demo),

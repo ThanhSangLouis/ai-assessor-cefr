@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 from http import HTTPStatus
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, unquote
 
 import soundfile as sf
 
@@ -54,6 +54,165 @@ class PortalRouter:
         if any(len(value) != 1 for value in parsed.values()):
             raise ValueError("duplicate query parameter")
         return PageQuery(**{key: value[0] for key, value in parsed.items() if value[0]})
+
+    @staticmethod
+    def _redirect(location: str, headers=()) -> WebResponse:
+        return WebResponse(
+            HTTPStatus.SEE_OTHER,
+            "text/plain; charset=utf-8",
+            b"",
+            (("Location", location), *tuple(headers)),
+        )
+
+    def _student_account_page(self, app, environ) -> WebResponse:
+        if self.identity_api is None:
+            return app._html(
+                HTTPStatus.SERVICE_UNAVAILABLE,
+                html.page(
+                    "Tài khoản chưa khả dụng",
+                    (
+                        '<p role="status">Không thể tải dịch vụ tài khoản. '
+                        'Hãy thử lại sau.</p>'
+                    ),
+                    "student",
+                ),
+            )
+        token = app._session_token(environ)
+        self.identity_api.auth.resolve(
+            token, allowed_roles=frozenset({ActorRole.STUDENT}), allow_temporary=True
+        )
+        profile = self.identity_api.accounts.get_profile(token)
+        if profile.temporary_password_required:
+            return self._redirect("/password-change")
+        query = parse_qs(
+            str(environ.get("QUERY_STRING", "")),
+            keep_blank_values=True,
+            max_num_fields=5,
+        )
+        if any(len(values) != 1 for values in query.values()):
+            raise HttpInputError(HTTPStatus.BAD_REQUEST, "INVALID_REQUEST")
+        tab = query.get("tab", ["profile"])[0]
+        if tab not in {"profile", "security", "activity", "data"}:
+            tab = "profile"
+        notice_key = query.get("saved", [""])[0]
+        notices = {
+            "profile": "Hồ sơ đã được cập nhật.",
+            "password": "Mật khẩu đã được cập nhật.",
+            "sessions": "Các phiên đăng nhập khác đã được thu hồi.",
+            "session": "Phiên đăng nhập đã được thu hồi.",
+            "consent": "Lựa chọn đồng ý đã được cập nhật.",
+            "google": "Trạng thái kết nối Google đã được cập nhật.",
+            "google-disabled": "Google chưa được cấu hình cho môi trường này.",
+            "password-mismatch": "Mật khẩu mới và phần xác nhận chưa khớp.",
+        }
+        notice = notices.get(notice_key, "")
+        sessions = self.identity_api.accounts.list_sessions(token) if tab == "security" else ()
+        activity = (
+            self.identity_api.accounts.activity(token, limit=50, offset=0)
+            if tab == "activity"
+            else ()
+        )
+        consent = self.identity_api.accounts.consent(token) if tab == "data" else None
+        google_state = {"enabled": False, "linked": False}
+        if tab == "security" and self.identity_api.google is not None:
+            status = self.identity_api.google.status()
+            google_state["enabled"] = bool(status.get("ready"))
+            google_state["linked"] = (
+                bool(self.identity_api.google.is_linked(token))
+                if google_state["enabled"]
+                else False
+            )
+        return app._html(
+            HTTPStatus.OK,
+            html.account_page(
+                profile,
+                tab,
+                sessions=sessions,
+                activity=activity,
+                consent=consent,
+                google=google_state,
+                notice=notice,
+            ),
+        )
+
+    def _student_account_action(self, app, environ, path: str) -> WebResponse:
+        if self.identity_api is None:
+            raise HttpInputError(HTTPStatus.SERVICE_UNAVAILABLE, "ACCOUNT_SERVICE_UNAVAILABLE")
+        if environ.get("REQUEST_METHOD", "GET").upper() != "POST":
+            raise HttpInputError(HTTPStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED")
+        app._require_origin(environ)
+        token = app._session_token(environ, unsafe=True)
+        self.identity_api.auth.resolve(token, allowed_roles=frozenset({ActorRole.STUDENT}))
+
+        if path == "/student/account/profile":
+            values = app._request_values(environ)
+            if set(values) != {"goal", "icon", "color"}:
+                raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
+            goal = int(values["goal"]) if values["goal"] else None
+            icon = values["icon"] or None
+            color = values["color"] or None
+            self.identity_api.accounts.update_profile(
+                token, goal=goal, icon=icon, color=color
+            )
+            return self._redirect("/student/account?tab=profile&saved=profile")
+
+        if path == "/student/account/password":
+            values = app._request_values(environ)
+            if set(values) != {"current_password", "new_password", "confirm_password"}:
+                raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
+            if values["new_password"] != values["confirm_password"]:
+                return self._redirect("/student/account?tab=security&saved=password-mismatch")
+            rotated = self.identity_api.accounts.change_password(
+                token, values["current_password"], values["new_password"]
+            )
+            cookie = self.identity_api._session_cookie(
+                rotated, secure=app._request_secure(environ)
+            )
+            return self._redirect(
+                "/student/account?tab=security&saved=password",
+                (("Set-Cookie", cookie),),
+            )
+
+        if path == "/student/account/sessions/revoke-others":
+            self.identity_api.accounts.revoke_other_sessions(token)
+            return self._redirect("/student/account?tab=security&saved=sessions")
+
+        prefix = "/student/account/sessions/"
+        if path.startswith(prefix) and path.endswith("/revoke"):
+            session_id = unquote(path[len(prefix) : -len("/revoke")].strip("/"))
+            if not session_id or "/" in session_id:
+                raise HttpInputError(HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE")
+            current = self.identity_api.accounts.revoke_session(token, session_id)
+            if current:
+                clear = self.identity_api._clear_session_cookie(
+                    secure=app._request_secure(environ)
+                )
+                return self._redirect("/login", (("Set-Cookie", clear),))
+            return self._redirect("/student/account?tab=security&saved=session")
+
+        if path == "/student/account/consent":
+            values = app._request_values(environ)
+            if set(values) - {"action", "version", "research_allowed"}:
+                raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
+            action = values.get("action", "accept")
+            if action not in {"accept", "withdraw"} or not values.get("version"):
+                raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
+            research_allowed = values.get("research_allowed", "false") in {"true", "on"}
+            self.identity_api.accounts.set_consent(
+                token,
+                values["version"],
+                research_allowed if action == "accept" else False,
+                active=action == "accept",
+            )
+            return self._redirect("/student/account?tab=data&saved=consent")
+
+        if path == "/student/account/google/unlink":
+            if self.identity_api.google is None:
+                return self._redirect("/student/account?tab=security&saved=google-disabled")
+            self.identity_api.google.unlink(token)
+            return self._redirect("/student/account?tab=security&saved=google")
+
+        raise HttpInputError(HTTPStatus.NOT_FOUND, "ROUTE_NOT_FOUND")
 
     def dispatch(self, app, environ):
         if self.learning_api is not None:
@@ -131,6 +290,14 @@ class PortalRouter:
         )
         if not known:
             return None
+        if api and (path == "/student/account" or path.startswith("/student/account/")):
+            raise HttpInputError(HTTPStatus.NOT_FOUND, "ROUTE_NOT_FOUND")
+        if path == "/student/account":
+            if method != "GET":
+                raise HttpInputError(HTTPStatus.METHOD_NOT_ALLOWED, "METHOD_NOT_ALLOWED")
+            return self._student_account_page(app, environ)
+        if path.startswith("/student/account/"):
+            return self._student_account_action(app, environ, path)
         # Existing upload, consent and status endpoints retain their original handler.
         if path in {
             "/student/upload",

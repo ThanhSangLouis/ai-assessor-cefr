@@ -43,6 +43,8 @@ def _assert_one_mobile_document(document: str) -> None:
     assert parser.counts == {"html": 1, "head": 1, "body": 1}
     assert parser.viewport
     assert 'href="/local.css"' in document
+    assert '<a href="#main" class="skip-link">Chuyển đến nội dung chính</a>' in document
+    assert '<main id="main" tabindex="-1">' in document
 
 
 def _report() -> DiagnosticReport:

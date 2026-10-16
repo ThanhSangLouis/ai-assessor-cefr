@@ -1,0 +1,1626 @@
+.venv/Scripts/python.exe -m pytest -q -m "not smoke" --basetemp C:\Users\PC\.codex\visualizations\2026\10\15\01a13ebe-183b-7af2-b95a-1637623e5a66\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\pytest-base | TEMP/TMP/TMPDIR=C:\Users\PC\.codex\visualizations\2026\10\15\01a13ebe-183b-7af2-b95a-1637623e5a66\m15-pytest-cb5aba02fef6454bb1620835e1e1213d
+......................FFFFF............................................. [ 11%]
+........................................................................ [ 23%]
+..............FF........................................................ [ 35%]
+...............................FFF.F.................................... [ 47%]
+...............s.........................................s...F.......... [ 59%]
+....................................F......F..F.FF.FFFFFFFF.....F..sF..F [ 71%]
+..................................................s........s..s..ss..... [ 82%]
+........sssss..............................................FFF......s... [ 94%]
+......F.............Fs..........                                         [100%]
+================================== FAILURES ===================================
+____ test_admin_backup_and_restore_include_protected_key_and_audit_restore ____
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_admin_backup_and_restore_0')
+
+    def test_admin_backup_and_restore_include_protected_key_and_audit_restore(tmp_path):
+        runtime, student, admin = _runtime(tmp_path)
+        try:
+            now = "2026-10-15T00:00:00+00:00"
+            media = runtime.responses.blobs.store(b"published lesson media")
+            runtime.store.connection.execute(
+                "INSERT INTO learning_paths VALUES('backup-path','Path','', 'published',1,?,?)",
+                (now, now),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_units VALUES('backup-unit','backup-path','Unit',1)"
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_lessons VALUES('backup-lesson','backup-unit','Lesson',1,?)",
+                (now,),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO lesson_versions VALUES('backup-lesson',1,'published','rules-v1',?,?)",
+                (now, now),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_media VALUES('backup-media','backup-lesson','audio',?,?,?,?)",
+                (media.blob_id, media.sha256, media.size_bytes, now),
+            )
+            runtime.accounts.set_consent(student, "backup-consent-v1", True)
+            runtime.store.connection.execute(
+                "INSERT INTO practice_attempts(attempt_id,owner_id,mission_id,prompt_version,status,"
+                "measurements,evidence,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                (
+                    "backup-attempt",
+                    "fixture-student",
+                    "mission-1",
+                    "v1",
+                    "completed",
+                    '{"words":3}',
+                    '{"pattern":"final_consonant"}',
+                    now,
+                    now,
+                ),
+            )
+            family_tables = (
+                "accounts",
+                "sessions",
+                "responses",
+                "account_profiles",
+                "consents",
+                "consent_events",
+                "activity_events",
+                "billing_quotes",
+                "billing_orders",
+                "billing_receipts",
+                "licenses",
+                "entitlements",
+                "cleanup_intents",
+                "learning_media",
+                "study_enrollments",
+                "study_surveys",
+                "practice_attempts",
+                "step_attempts",
+                "research_ratings",
+                "audit",
+            )
+            before_counts = {
+                table: runtime.store.connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+                for table in family_tables
+            }
+            assert before_counts["accounts"] >= 2
+            assert before_counts["sessions"] >= 2
+            assert before_counts["consent_events"] >= 1
+            assert before_counts["practice_attempts"] == 1
+            assert before_counts["learning_media"] == 1
+            backup = _call(
+                runtime.app, "/api/v1/admin/data/backups", token=admin, method="POST", payload={}
+            )
+>           assert backup["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x000001F64E3F4300>('201')
+E            +    where <built-in method startswith of str object at 0x000001F64E3F4300> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:450: AssertionError
+________ test_restore_malformed_manifest_returns_controlled_error[[]] _________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_malformed_manifes0')
+manifest_bytes = b'[]'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x000001F64DD89C50>('201')
+E            +    where <built-in method startswith of str object at 0x000001F64DD89C50> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+______ test_restore_malformed_manifest_returns_controlled_error[{broken] ______
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_malformed_manifes1')
+manifest_bytes = b'{broken'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x000001F64E087B90>('201')
+E            +    where <built-in method startswith of str object at 0x000001F64E087B90> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+_ test_restore_malformed_manifest_returns_controlled_error[{"schema_version":10}] _
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_malformed_manifes2')
+manifest_bytes = b'{"schema_version":10}'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x000001F64E084AD0>('201')
+E            +    where <built-in method startswith of str object at 0x000001F64E084AD0> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+________ test_restore_rejects_missing_key_symlinks_and_client_path_ids ________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_missing_k0')
+
+    def test_restore_rejects_missing_key_symlinks_and_client_path_ids(tmp_path):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x000001F64E0843F0>('201')
+E            +    where <built-in method startswith of str object at 0x000001F64E0843F0> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:541: AssertionError
+______ test_runtime_key_is_private_and_unsafe_key_file_disables_service _______
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_runtime_key_is_private_an0')
+
+    def test_runtime_key_is_private_and_unsafe_key_file_disables_service(tmp_path):
+        store = SQLiteStore(tmp_path / "key-data")
+        store.connection.execute(
+            "INSERT INTO accounts(actor_id,role,password_hash) VALUES(?,?,?)",
+            ("fixture-student", "student", "synthetic-password-hash"),
+        )
+        config = GoogleConfig(
+            enabled=True,
+            client_id="fixture-client.apps.googleusercontent.com",
+            client_secret="fixture-secret",
+            redirect_uri="http://localhost:8000/auth/google/callback",
+            data_dir=tmp_path / "key-data",
+        )
+        service = GoogleIdentityService(FakeAuth(), GoogleIdentityRepository(store), config)
+        key_path = tmp_path / "key-data" / "google-flow-hmac.key"
+>       assert key_path.stat().st_mode & 0o777 == 0o600
+E       AssertionError: assert (33206 & 511) == 384
+E        +  where 33206 = os.stat_result(st_mode=33206, st_ino=2814749767161748, st_dev=10107338524416721678, st_nlink=1, st_uid=0, st_gid=0, st_size=32, st_atime=1792076408, st_mtime=1792076408, st_ctime=1792076408).st_mode
+E        +    where os.stat_result(st_mode=33206, st_ino=2814749767161748, st_dev=10107338524416721678, st_nlink=1, st_uid=0, st_gid=0, st_size=32, st_atime=1792076408, st_mtime=1792076408, st_ctime=1792076408) = stat()
+E        +      where stat = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_runtime_key_is_private_an0/key-data/google-flow-hmac.key').stat
+
+tests\auth\test_google_identity.py:586: AssertionError
+______________________ test_runtime_key_refuses_symlink _______________________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_runtime_key_refuses_symli0')
+
+    def test_runtime_key_refuses_symlink(tmp_path):
+        data_dir = tmp_path / "symlink-data"
+        initial = SQLiteStore(data_dir)
+        initial.close()
+        target = tmp_path / "unprotected-key"
+        target.write_bytes(b"k" * 32)
+>       (data_dir / "google-flow-hmac.key").symlink_to(target)
+
+tests\auth\test_google_identity.py:600: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_runtime_key_refuses_symli0/symlink-data/google-flow-hmac.key')
+target = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_runtime_key_refuses_symli0/unprotected-key')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_runtime_key_refuses_symli0\\unprotected-key' -> 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_runtime_key_refuses_symli0\\symlink-data\\google-flow-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+___________ test_keyring_is_private_persistent_and_domain_separated ___________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x000001F64E437650>
+data_dir = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_is_private_persis0')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_keyring_is_private_persis0\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_is_private_persis0')
+
+    def test_keyring_is_private_persistent_and_domain_separated(tmp_path):
+        first = KeyRing(tmp_path)
+>       second = KeyRing(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+tests\billing\test_gateways.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_is_private_persis0/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+_________ test_keyring_rejects_symlink_hardlink_and_open_permissions __________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_rejects_symlink_h0')
+
+    def test_keyring_rejects_symlink_hardlink_and_open_permissions(tmp_path):
+        target = tmp_path / "target"
+        target.write_bytes(b"do not follow")
+        linkdir = tmp_path / "linkdir"
+        linkdir.mkdir()
+>       (linkdir / "billing-hmac.key").symlink_to(target)
+
+tests\billing\test_gateways.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_rejects_symlink_h0/linkdir/billing-hmac.key')
+target = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_rejects_symlink_h0/target')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_keyring_rejects_symlink_h0\\target' -> 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_keyring_rejects_symlink_h0\\linkdir\\billing-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+_ test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures _
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_keyring_rejects_bad_injec0')
+
+    def test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures(tmp_path):
+        with pytest.raises(KeyStoreError, match="invalid key material"):
+            KeyRing(tmp_path / "injected", key=b"short")
+        bad_version = tmp_path / "bad-version"
+        bad_version.mkdir()
+        (bad_version / "billing-hmac.key").write_bytes(b"wrong-format")
+        (bad_version / "billing-hmac.key").chmod(0o600)
+>       with pytest.raises(KeyStoreError, match="invalid billing key version"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'invalid billing key version'
+E         Actual message: 'unsafe billing key permissions'
+
+tests\billing\test_gateways.py:70: AssertionError
+_____ test_internal_sandbox_event_signature_timestamp_and_duplicate_json ______
+
+self = <aicefr.billing.secrets.KeyRing object at 0x000001F64E4EFE90>
+data_dir = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_internal_sandbox_event_si0')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_internal_sandbox_event_si0\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_internal_sandbox_event_si0')
+
+    def test_internal_sandbox_event_signature_timestamp_and_duplicate_json(tmp_path):
+        registry = GatewayRegistry(data_dir=tmp_path, clock=lambda: NOW)
+        event = {
+            "event_id": "evt_1",
+            "order_id": "ord_1",
+            "checkout_id": "sbx_1",
+            "amount": 123,
+            "currency": "VND",
+            "status": "paid",
+        }
+        raw, headers = registry.sign_sandbox_event(event)
+        result = registry.verify_event("sandbox", raw, headers)
+        assert result["status"] == "paid"
+        assert result["signature_valid"] is True
+        assert result["occurred_at"] == NOW
+    
+        bad_headers = {"X-Sandbox-Signature": "0" * 64}
+        with pytest.raises(GatewayError, match="gateway_invalid_signature"):
+            registry.verify_event("sandbox", raw, bad_headers)
+    
+        duplicate = b'{"event_id":"a","event_id":"b"}'
+>       duplicate_signature = KeyRing(tmp_path).sign_gateway_event(duplicate)
+                              ^^^^^^^^^^^^^^^^^
+
+tests\billing\test_gateways.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_internal_sandbox_event_si0/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+___ test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker ____
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_readiness_accepts_explici0')
+
+    def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_path):
+        config = _demo_config()
+        config["model_artifact"] = str(tmp_path / "missing-model.json")
+        blob_store = BlobStore(tmp_path / "data", max_bytes=config["qc"]["max_input_bytes"])
+        pipeline = SimpleNamespace(
+            _qc_config=QCConfig(**config["qc"]),
+            _scorer=SimpleNamespace(artifact=object()),
+            _asr=SimpleNamespace(_engine=None),
+            _extractor=SimpleNamespace(_vad=object()),
+            _responses=SimpleNamespace(blobs=blob_store),
+            enqueue=lambda _response: None,
+        )
+        runtime = create_runtime(
+            tmp_path / "data", config=config, pipeline=pipeline, asr_engine=object()
+        )
+        try:
+            assert runtime.control.readiness()["ready"] is True
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "INSERT INTO runtime_settings VALUES (?,?,?,?,?,?)",
+                    ("readiness-tx", "{}", 0, "test", "fixture", "2026-10-15T00:00:00+00:00"),
+                )
+                assert runtime.control.readiness()["checks"]["database"] is True
+                assert connection.in_transaction
+                assert connection.execute(
+                    "SELECT 1 FROM runtime_settings WHERE key='readiness-tx'"
+                ).fetchone()
+    
+            checksum = runtime.store.connection.execute(
+                "SELECT checksum FROM schema_migrations WHERE version=5"
+            ).fetchone()[0]
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "UPDATE schema_migrations SET checksum=? WHERE version=5", ("0" * 64,)
+                )
+            tampered = runtime.control.readiness()
+            assert tampered["checks"]["schema"] is False
+            assert str(tmp_path) not in json.dumps(tampered)
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "UPDATE schema_migrations SET checksum=? WHERE version=5", (checksum,)
+                )
+    
+            runtime.store.connection.execute("PRAGMA query_only=ON")
+            try:
+                read_only = runtime.control.readiness()
+            finally:
+                runtime.store.connection.execute("PRAGMA query_only=OFF")
+            assert read_only["checks"]["database"] is False
+            assert str(tmp_path) not in json.dumps(read_only)
+    
+            runtime.control.worker = SimpleNamespace(health=lambda: False)
+            readiness = runtime.control.readiness()
+            assert readiness["ready"] is False
+            assert readiness["checks"]["worker"] is False
+            root = blob_store.root
+            moved = tmp_path / "blob-store-original"
+            root.rename(moved)
+            try:
+                assert runtime.control.readiness()["checks"]["blobs"] is False
+>               root.symlink_to(tmp_path / "external-blobs", target_is_directory=True)
+
+tests\local\test_foundation_runtime.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_readiness_accepts_explici0/data/blobs')
+target = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_readiness_accepts_explici0/external-blobs')
+target_is_directory = True
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_readiness_accepts_explici0\\external-blobs' -> 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_readiness_accepts_explici0\\data\\blobs'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+_______________ test_task_versions_and_closing_survive_restart ________________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x000001F64E6C44A0>
+data_dir = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_task_versions_and_closing0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_task_versions_and_closing0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D15B0>, store=<aicefr.storage.sqlite.SQLit...': 'VnWMUhWSnlQpy6g8xbB_ppS1brHkfxJLntesbaH4fo4', 'other-teacher': 'xfOX3vLE1WhobKgO1s0_iU4IocwuGAFC1NFocU1Wf4Q', ...})
+
+    def test_task_versions_and_closing_survive_restart(portal_runtime):
+        runtime, tokens = portal_runtime
+        record = submit_completed(runtime, tokens["a"])
+        original = runtime.portal.tasks.get(record.task_id, record.task_version)
+        changed = original.model_copy(update={"title": "Changed wording"})
+        with pytest.raises(ConcurrentResponseUpdate):
+            runtime.portal.save_task(tokens["admin"], changed, original.revision)
+        runtime.portal.save_task(tokens["admin"], original.model_copy(update={"active": False}), 1)
+        assert runtime.portal.task_list(tokens["a"]) == []
+        created = runtime.portal.save_task(
+            tokens["admin"],
+            TaskRecord(
+                task_id="new",
+                task_version="v2",
+                title="<script>unsafe</script>",
+                prompt_text="Speak about learning",
+            ),
+            0,
+        )
+        assert created["revision"] == 1
+>       reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_task_versions_and_closing0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+___________ test_data_control_paths_and_protected_files_fail_closed ___________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_data_control_paths_and_pr0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E4371A0>
+
+    def test_data_control_paths_and_protected_files_fail_closed(tmp_path, monkeypatch):
+        from aicefr.portal.data import DataControl
+    
+        valid_path = tmp_path / "valid.key"
+        valid_path.write_bytes(b"protected fixture")
+        valid_path.chmod(0o600)
+>       assert DataControl._read_protected_file(valid_path) == b"protected fixture"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:359: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_data_control_paths_and_pr0/valid.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_________ test_backup_includes_verified_blobs_and_safe_orphan_preview _________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E3F2A50>, store=<aicefr.storage.sqlite.SQLit...': 'o5mYfYcriCYnXsipKL2NRtj8BUwfquhMM5zO1KMBFqs', 'other-teacher': 'sR3neMDnUh_Xt7bdZWc7QG2XG9RtGx849V0De2YhFTQ', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_includes_verified_0')
+
+    def test_backup_includes_verified_blobs_and_safe_orphan_preview(portal_runtime, tmp_path):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        now = datetime.now(UTC).isoformat()
+        runtime.store.connection.execute(
+            "INSERT INTO learning_paths VALUES('path-1','Path','', 'published',1,?,?)",
+            (now, now),
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_units VALUES('unit-1','path-1','Unit',1)"
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_lessons VALUES('lesson-1','unit-1','Lesson',1,?)", (now,)
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO lesson_versions VALUES('lesson-1',1,'published','rules-v1',?,?)",
+            (now, now),
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_media VALUES('media-1','lesson-1','audio',?,?,?,?)",
+            (response.blob.blob_id, response.blob.sha256, response.blob.size_bytes, now),
+        )
+        orphan = runtime.responses.blobs.store(b"fixture orphan")
+        import os
+        import time
+    
+        os.utime(
+            runtime.responses.blobs._path(orphan.blob_id), (time.time() - 7200, time.time() - 7200)
+        )
+        preview = runtime.data.orphans(tokens["admin"])
+        assert preview["blob_ids"] == [orphan.blob_id]
+        assert runtime.responses.blobs._path(orphan.blob_id).exists()
+        destination = tmp_path / "backup"
+>       manifest = runtime.data.backup(tokens["admin"], destination)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:521: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_includes_verified_0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__ test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[audit] ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D2810>, store=<aicefr.storage.sqlite.SQLit...': '3MbtG7JvwH_d7eIx7aqg5E5THDC00y2b9euchEJw3n0', 'other-teacher': 'hZ7AefJnamWAs11V_8gPvUF7EtSuRGWCzUGGEYGZ9aY', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_final_audit_failur0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E6D3DD0>
+failure = 'audit'
+
+    @pytest.mark.parametrize("failure", ["audit", "revoked_admin"])
+    def test_backup_final_audit_failure_or_revoked_admin_removes_snapshot(
+        portal_runtime, tmp_path, monkeypatch, failure
+    ):
+        runtime, tokens = portal_runtime
+        submit_completed(runtime, tokens["a"])
+        destination = tmp_path / f"backup-{failure}"
+        if failure == "audit":
+    
+            def fail_audit(*args, **kwargs):
+                raise sqlite3.OperationalError("audit unavailable")
+    
+            monkeypatch.setattr(runtime.store, "record_audit", fail_audit)
+            expected = sqlite3.OperationalError
+        else:
+            original_read = runtime.data.blobs.read
+    
+            def revoke_during_snapshot(blob):
+                result = original_read(blob)
+                runtime.auth.logout(tokens["admin"])
+                return result
+    
+            monkeypatch.setattr(runtime.data.blobs, "read", revoke_during_snapshot)
+            expected = AuthorizationError
+    
+        with pytest.raises(expected):
+>           runtime.data.backup(tokens["admin"], destination)
+
+tests\portal\test_portal.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_final_audit_failur0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[revoked_admin] _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E4EF140>, store=<aicefr.storage.sqlite.SQLit...': '00N_esJcxtDd7twSRohupUbDMqLRQcgraCcYN71xtnk', 'other-teacher': 'oM3nesBEr7TnVSUzjcG0__sefzdcgDjIX6hbs3SvAX8', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_final_audit_failur1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E4EC890>
+failure = 'revoked_admin'
+
+    @pytest.mark.parametrize("failure", ["audit", "revoked_admin"])
+    def test_backup_final_audit_failure_or_revoked_admin_removes_snapshot(
+        portal_runtime, tmp_path, monkeypatch, failure
+    ):
+        runtime, tokens = portal_runtime
+        submit_completed(runtime, tokens["a"])
+        destination = tmp_path / f"backup-{failure}"
+        if failure == "audit":
+    
+            def fail_audit(*args, **kwargs):
+                raise sqlite3.OperationalError("audit unavailable")
+    
+            monkeypatch.setattr(runtime.store, "record_audit", fail_audit)
+            expected = sqlite3.OperationalError
+        else:
+            original_read = runtime.data.blobs.read
+    
+            def revoke_during_snapshot(blob):
+                result = original_read(blob)
+                runtime.auth.logout(tokens["admin"])
+                return result
+    
+            monkeypatch.setattr(runtime.data.blobs, "read", revoke_during_snapshot)
+            expected = AuthorizationError
+    
+        with pytest.raises(expected):
+>           runtime.data.backup(tokens["admin"], destination)
+
+tests\portal\test_portal.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_backup_final_audit_failur1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_____ test_restore_rejects_database_schema_and_foreign_key_damage[schema] _____
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6BEF30>, store=<aicefr.storage.sqlite.SQLit...': 'SRR8UzUnD6t_Ov0ZDOhAQ5iIQHLgW2LohAJF5PXQr2c', 'other-teacher': 'ZpB6dSpPj2XcPvLCVGCuT29hD9gzBJon1LbBWqRSpnc', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_database_0')
+damage = 'schema'
+
+    @pytest.mark.parametrize("damage", ["schema", "foreign_key"])
+    def test_restore_rejects_database_schema_and_foreign_key_damage(portal_runtime, tmp_path, damage):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"damaged-{damage}-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:649: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_database_0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__ test_restore_rejects_database_schema_and_foreign_key_damage[foreign_key] ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E5F41A0>, store=<aicefr.storage.sqlite.SQLit...': 'lATjxFumqhirb94vj8y2MOYLdIZ9a4Z44HzaC37akMc', 'other-teacher': 'hi2GbOQ_j1vF_5DsCANepnz9Yw7pmv59e77GefI-nNI', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_database_1')
+damage = 'foreign_key'
+
+    @pytest.mark.parametrize("damage", ["schema", "foreign_key"])
+    def test_restore_rejects_database_schema_and_foreign_key_damage(portal_runtime, tmp_path, damage):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"damaged-{damage}-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:649: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_database_1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+___ test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E3F28A0>, store=<aicefr.storage.sqlite.SQLit...': 'nK7HYf37-2DyZ6OY92-j41X4U78tBTftGkwgd-rQ4Uk', 'other-teacher': 't1n-drUtqkQm72CgAsnRV8mR_ORAiy5FAtntRkFUK_o', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_invalid_m0')
+
+    def test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key(
+        portal_runtime, tmp_path
+    ):
+        runtime, tokens = portal_runtime
+        source = tmp_path / "valid-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:673: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_invalid_m0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D3770>, store=<aicefr.storage.sqlite.SQLit...': '-5ymWoNaZMWAGAfCaBA4Ds5uZmOOx6r0hRFdnCbaxwE', 'other-teacher': 'V7bSNz7m660tg-ndC1aK1ukXL4f7UkRZsJSC5EsTI_I', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_media_has0')
+
+    def test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated(
+        portal_runtime, tmp_path
+    ):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        source = tmp_path / "media-mismatch-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:709: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_media_has0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+______ test_restore_rejects_oversized_or_nonregular_manifest[oversized] _______
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E4377A0>, store=<aicefr.storage.sqlite.SQLit...': 'MIx2nRfsbkI_Fi7qTv9LBjJN_wxrZeJdleVQD6CkzwU', 'other-teacher': 'ddovMX89-nNtiFF9zB_9wlGpkHXmuAMQeOYZlbaIBbw', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_oversized0')
+manifest_kind = 'oversized'
+
+    @pytest.mark.parametrize("manifest_kind", ["oversized", "directory"])
+    def test_restore_rejects_oversized_or_nonregular_manifest(portal_runtime, tmp_path, manifest_kind):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"bad-manifest-{manifest_kind}"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_oversized0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+______ test_restore_rejects_oversized_or_nonregular_manifest[directory] _______
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D0EC0>, store=<aicefr.storage.sqlite.SQLit...': 'bYBfBsENn3CNHrm91V7gPwN1VL3urhl0cJcm1Rry2Fo', 'other-teacher': 'AOL8R5OcmSLNn_wgJKnLVpu7DuWwm4RsBd_dMgEPaZI', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_oversized1')
+manifest_kind = 'directory'
+
+    @pytest.mark.parametrize("manifest_kind", ["oversized", "directory"])
+    def test_restore_rejects_oversized_or_nonregular_manifest(portal_runtime, tmp_path, manifest_kind):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"bad-manifest-{manifest_kind}"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_oversized1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+________ test_restore_rejects_symlink_overlap_and_existing_destination ________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E5F4C80>, store=<aicefr.storage.sqlite.SQLit...': 'SH7-vJ9DivGbwpR_1ttXgiFg-IXnOGBq9kVc0lVdlQc', 'other-teacher': 'JtlNmDWYFNSdNiwj1D0sK1XEGxQXv9dOx3ss6Ddj1vs', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_symlink_o0')
+
+    def test_restore_rejects_symlink_overlap_and_existing_destination(portal_runtime, tmp_path):
+        runtime, tokens = portal_runtime
+        source = tmp_path / "safe-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_rejects_symlink_o0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_restore_missing_referenced_media_and_audit_failure_leave_no_destination _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E58CB60>, store=<aicefr.storage.sqlite.SQLit...': 'Zqm9rYJpGnYYOcTL60lshE-z4oxJ_Y5QEg0HAJzks2s', 'other-teacher': 'MR_CgFeKRbCvBokeXdie6QTdfpjWIT5hweLXlRNs2V0', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_missing_reference0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E58C7A0>
+
+    def test_restore_missing_referenced_media_and_audit_failure_leave_no_destination(
+        portal_runtime, tmp_path, monkeypatch
+    ):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        source = tmp_path / "source-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:755: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_restore_missing_reference0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__________ test_qc_cas_validation_restart_and_old_report_provenance ___________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x000001F64E3F2B70>
+data_dir = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_qc_cas_validation_restart0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_qc_cas_validation_restart0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E4EF500>, store=<aicefr.storage.sqlite.SQLit...': 'D-VMg2m336CHkbBEBeFSTQkp2mmr8SujM0359SaUCok', 'other-teacher': 'nvcIeQviY70Z9mVE4oya_3MXQ9CmaHcq8xhkLv1EWPE', ...})
+
+    def test_qc_cas_validation_restart_and_old_report_provenance(portal_runtime):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        previous = runtime.app._reports.get(response.response_id)
+        updated = runtime.control.change_qc(
+            tokens["admin"], QCChange(expected_revision=0, changes={"max_duration_s": 250})
+        )
+        assert updated["revision"] == 1
+        with pytest.raises(ConcurrentResponseUpdate):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=0, changes={"max_duration_s": 200})
+            )
+        with pytest.raises(ValueError):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=1, changes={"max_duration_s": 301})
+            )
+        with pytest.raises(ValueError):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=1, changes={"review_silence_ratio": 0.99})
+            )
+        assert runtime.app._reports.get(response.response_id) == previous
+>       reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:1043: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_qc_cas_validation_restart0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+_____________ test_local_server_lock_and_interrupted_job_recovery _____________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x000001F64E58EB10>
+data_dir = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_local_server_lock_and_int0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_local_server_lock_and_int0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D2E70>, store=<aicefr.storage.sqlite.SQLit...': '79ZvApIuDYsyrCT-fjLDQxhK0N89tB07xEhD7C6Z-9s', 'other-teacher': 'Di2s6nOyTKzRlnX0uVQE98VbdkxRci2P0bIc_RkW7i0', ...})
+
+    def test_local_server_lock_and_interrupted_job_recovery(portal_runtime):
+        from aicefr.local.lock import acquire_server_lock
+    
+        runtime, tokens = portal_runtime
+        lease = acquire_server_lock(runtime.store.data_dir)
+        try:
+            with pytest.raises(OSError):
+                acquire_server_lock(runtime.store.data_dir)
+        finally:
+            lease.close()
+        acquire_server_lock(runtime.store.data_dir).close()
+        response = submit_completed(runtime, tokens["a"])
+        runtime.store.connection.execute(
+            "UPDATE responses SET status=? WHERE response_id=?", ("RUNNING", response.response_id)
+        )
+>       restarted = create_runtime(
+            runtime.store.data_dir, config={**runtime.control.config, "recover_interrupted": True}
+        )
+
+tests\portal\test_portal.py:1153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_local_server_lock_and_int0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+________________ test_new_cli_account_backup_and_qc_score_flow ________________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x000001F64E6D3DD0>, store=<aicefr.storage.sqlite.SQLit...': 'fc5q3ZQzsS_KnjrhfRVGCfBh3T0GT7Um0iGkiXiyEgM', 'other-teacher': 'jAmw_ZJo1LhDj3ZLUT06bUkGhGRdxYWAiRdgdvi4r1o', ...})
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_new_cli_account_backup_an0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E6D2660>
+capsys = <_pytest.capture.CaptureFixture object at 0x000001F64E6D3290>
+
+    def test_new_cli_account_backup_and_qc_score_flow(portal_runtime, tmp_path, monkeypatch, capsys):
+        import io
+    
+        import numpy as np
+        import soundfile as sf
+    
+        from aicefr.local.__main__ import main
+    
+        runtime, _ = portal_runtime
+        config = tmp_path / "config.json"
+        config.write_text(json.dumps(runtime.control.config))
+        common = [
+            "--data-dir",
+            str(runtime.store.data_dir),
+            "--config",
+            str(config),
+            "--password-stdin",
+        ]
+        monkeypatch.setattr("sys.stdin", io.StringIO("fixture-password\n"))
+>       assert main(["accounts", "list", "--actor-id", "fixture-admin", *common]) == 0
+E       AssertionError: assert 2 == 0
+E        +  where 2 = <function main at 0x000001F64CA6EE80>(['accounts', 'list', '--actor-id', 'fixture-admin', '--data-dir', 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15...5a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_new_cli_account_backup_an0\\data', ...])
+
+tests\portal\test_portal.py:1230: AssertionError
+---------------------------- Captured stderr call -----------------------------
+Kh\xf4ng th\u1ec3 th\u1ef1c hi\u1ec7n l\u1ec7nh; ki\u1ec3m tra t\xe0i kho\u1ea3n, tham s\u1ed1 v\xe0 c\u1ea5u h\xecnh local.
+____ test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key _____
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_backup_and_privacy_mig0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E437470>
+
+    def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_path, monkeypatch):
+        data_dir = tmp_path / "v9-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+>       backup = migrations.create_pre_migration_backup(store.connection, data_dir, schema_version=9)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\storage\test_privacy_migration.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\storage\migrations.py:145: in create_pre_migration_backup
+    data = _read_protected_key(source_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_backup_and_privacy_mig0/v9-store/billing-hmac.key')
+
+    def _read_protected_key(path: Path) -> bytes:
+        import stat
+    
+        info = path.lstat()
+        expected_uid = os.getuid() if hasattr(os, "getuid") else None
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or (expected_uid is not None and info.st_uid != expected_uid)
+            or info.st_mode & 0o077
+        ):
+>           raise ValueError("protected key file is unsafe")
+E           ValueError: protected key file is unsafe
+
+src\aicefr\storage\migrations.py:93: ValueError
+___ test_v9_migration_refuses_protected_key_symlink_without_copying_target ____
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_migration_refuses_prot0')
+
+    def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_path):
+        data_dir = tmp_path / "v9-symlink-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+        key_path = data_dir / "google-flow-hmac.key"
+        key_path.unlink(missing_ok=True)
+        outside = tmp_path / "outside-key"
+        outside.write_bytes(b"do-not-copy-this-key")
+>       key_path.symlink_to(outside)
+
+tests\storage\test_privacy_migration.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_migration_refuses_prot0/v9-symlink-store/google-flow-hmac.key')
+target = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_migration_refuses_prot0/outside-key')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_v9_migration_refuses_prot0\\outside-key' -> 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_v9_migration_refuses_prot0\\v9-symlink-store\\google-flow-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+______ test_v9_migration_with_protected_key_without_getuid_platform_api _______
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_migration_with_protect0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000001F64E58CA40>
+
+    def test_v9_migration_with_protected_key_without_getuid_platform_api(tmp_path, monkeypatch):
+        data_dir = tmp_path / "v9-no-getuid-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+        monkeypatch.delattr(migrations.os, "getuid", raising=False)
+    
+>       migrations.migrate(store.connection, data_dir)
+
+tests\storage\test_privacy_migration.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\storage\migrations.py:449: in migrate
+    create_pre_migration_backup(connection, data_dir, schema_version=version)
+src\aicefr\storage\migrations.py:145: in create_pre_migration_backup
+    data = _read_protected_key(source_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_v9_migration_with_protect0/v9-no-getuid-store/billing-hmac.key')
+
+    def _read_protected_key(path: Path) -> bytes:
+        import stat
+    
+        info = path.lstat()
+        expected_uid = os.getuid() if hasattr(os, "getuid") else None
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or (expected_uid is not None and info.st_uid != expected_uid)
+            or info.st_mode & 0o077
+        ):
+>           raise ValueError("protected key file is unsafe")
+E           ValueError: protected key file is unsafe
+
+src\aicefr\storage\migrations.py:93: ValueError
+_______ test_w5_v4_migration_preserves_legacy_rows_and_restores_backup ________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_w5_v4_migration_preserves0')
+
+    def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
+        data_dir = tmp_path / "existing-data"
+        legacy = _make_v4(data_dir)
+        legacy.close()
+    
+        store = SQLiteStore(data_dir)
+        assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
+        assert store.connection.execute("SELECT actor_id,password_hash FROM accounts").fetchall() == [
+            ("student", "hash")
+        ]
+        assert store.connection.execute("SELECT report_json FROM diagnostic_reports").fetchone() == (
+            '{"report":"preserve"}',
+        )
+        assert store.connection.execute("SELECT state,research_allowed FROM consents").fetchone() == (
+            "active",
+            1,
+        )
+        assert store.connection.execute("SELECT token_digest,actor_id FROM sessions").fetchone() == (
+            "f" * 64,
+            "student",
+        )
+        assert store.connection.execute("SELECT event_id,action FROM audit").fetchone() == (
+            "audit-1",
+            "fixture_action",
+        )
+        backup_path = next((data_dir / "backups").iterdir())
+        manifest = json.loads((backup_path / "manifest.json").read_text())
+>       assert manifest["files"]["blobs/" + "b" * 32] == hashlib.sha256(b"fixture audio").hexdigest()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'blobs/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+
+tests\storage\test_w5_storage_foundation.py:120: KeyError
+__________ test_w5_restore_rejects_incomplete_or_escaping_manifests ___________
+
+tmp_path = WindowsPath('C:/Users/PC/.codex/visualizations/2026/10/15/01a13ebe-183b-7af2-b95a-1637623e5a66/m15-pytest-cb5aba02fef6454bb1620835e1e1213d/pytest-base/test_w5_restore_rejects_incomp0')
+
+    def test_w5_restore_rejects_incomplete_or_escaping_manifests(tmp_path):
+        data_dir = tmp_path / "backup-source"
+        legacy = _make_v4(data_dir)
+        legacy.close()
+        store = SQLiteStore(data_dir)
+        store.close()
+        backup = next((data_dir / "backups").iterdir())
+    
+        no_database = tmp_path / "no-database-backup"
+        shutil.copytree(backup, no_database)
+        manifest_path = no_database / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        del manifest["files"]["metadata.sqlite3"]
+        manifest_path.write_text(json.dumps(manifest))
+        with pytest.raises(ValueError, match="does not include database"):
+>           restore_backup(no_database, tmp_path / "restore-no-database")
+
+tests\storage\test_w5_storage_foundation.py:233: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\storage\migrations.py:177: in restore_backup
+    source_path = source_input.resolve(strict=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1240: in resolve
+    s = self._flavour.realpath(self, strict=strict)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_w5_restore_rejects_incomp0\\no-database-backup'
+strict = True
+
+>   ???
+E   PermissionError: [WinError 5] Access is denied: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\pytest-base\\test_w5_restore_rejects_incomp0\\no-database-backup'
+
+<frozen ntpath>:727: PermissionError
+============================== warnings summary ===============================
+tests/storage/test_report_migration.py::test_schema_v2_migrates_to_v3_without_losing_existing_response
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x1f64e7cdc40; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmps_0gzgef\\backups\\schema-v4-1792076523480512000\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmps_0gzgef\\backups\\schema-v4-1792076523480512000\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_m01_sqlite_schema_v2_persists_status_reason_with_optimistic_locking
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x1f64e7cf1e0; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmp7e_qub90\\backups\\schema-v4-1792076525530522000\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmp7e_qub90\\backups\\schema-v4-1792076525530522000\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_pipeline_claim_is_queued_only_and_revision_checked
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x1f64e7cd420; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmpzkk_zv2l\\backups\\schema-v4-1792076525711272000\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.codex\\visualizations\\2026\\10\\15\\01a13ebe-183b-7af2-b95a-1637623e5a66\\m15-pytest-cb5aba02fef6454bb1620835e1e1213d\\tmpzkk_zv2l\\backups\\schema-v4-1792076525711272000\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [1] tests\\features\\test_extractor.py:68: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\local\test_factory_integration.py:117: artifact path unavailable
+SKIPPED [1] tests\portal\test_portal.py:1117: pinned external model artifact unavailable
+SKIPPED [1] tests\\scoring\\test_artifact.py:22: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_artifact.py:89: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_integration_features.py:34: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:23: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:29: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:79: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [3] tests\\scoring\\test_scorer.py:79: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_scorer.py:104: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\storage\test_sqlite_blob_store.py:165: symlink creation is unavailable on this Windows host: 1314
+SKIPPED [1] tests\storage\test_w5_storage_foundation.py:248: symlink creation needs extra Windows privileges
+FAILED tests/api/test_data_operations_api.py::test_admin_backup_and_restore_include_protected_key_and_audit_restore
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[[]]
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[{broken]
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[{"schema_version":10}]
+FAILED tests/api/test_data_operations_api.py::test_restore_rejects_missing_key_symlinks_and_client_path_ids
+FAILED tests/auth/test_google_identity.py::test_runtime_key_is_private_and_unsafe_key_file_disables_service
+FAILED tests/auth/test_google_identity.py::test_runtime_key_refuses_symlink
+FAILED tests/billing/test_gateways.py::test_keyring_is_private_persistent_and_domain_separated
+FAILED tests/billing/test_gateways.py::test_keyring_rejects_symlink_hardlink_and_open_permissions
+FAILED tests/billing/test_gateways.py::test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures
+FAILED tests/billing/test_gateways.py::test_internal_sandbox_event_signature_timestamp_and_duplicate_json
+FAILED tests/local/test_foundation_runtime.py::test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker
+FAILED tests/portal/test_portal.py::test_task_versions_and_closing_survive_restart
+FAILED tests/portal/test_portal.py::test_data_control_paths_and_protected_files_fail_closed
+FAILED tests/portal/test_portal.py::test_backup_includes_verified_blobs_and_safe_orphan_preview
+FAILED tests/portal/test_portal.py::test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[audit]
+FAILED tests/portal/test_portal.py::test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[revoked_admin]
+FAILED tests/portal/test_portal.py::test_restore_rejects_database_schema_and_foreign_key_damage[schema]
+FAILED tests/portal/test_portal.py::test_restore_rejects_database_schema_and_foreign_key_damage[foreign_key]
+FAILED tests/portal/test_portal.py::test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key
+FAILED tests/portal/test_portal.py::test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated
+FAILED tests/portal/test_portal.py::test_restore_rejects_oversized_or_nonregular_manifest[oversized]
+FAILED tests/portal/test_portal.py::test_restore_rejects_oversized_or_nonregular_manifest[directory]
+FAILED tests/portal/test_portal.py::test_restore_rejects_symlink_overlap_and_existing_destination
+FAILED tests/portal/test_portal.py::test_restore_missing_referenced_media_and_audit_failure_leave_no_destination
+FAILED tests/portal/test_portal.py::test_qc_cas_validation_restart_and_old_report_provenance
+FAILED tests/portal/test_portal.py::test_local_server_lock_and_interrupted_job_recovery
+FAILED tests/portal/test_portal.py::test_new_cli_account_backup_and_qc_score_flow
+FAILED tests/storage/test_privacy_migration.py::test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key
+FAILED tests/storage/test_privacy_migration.py::test_v9_migration_refuses_protected_key_symlink_without_copying_target
+FAILED tests/storage/test_privacy_migration.py::test_v9_migration_with_protected_key_without_getuid_platform_api
+FAILED tests/storage/test_w5_storage_foundation.py::test_w5_v4_migration_preserves_legacy_rows_and_restores_backup
+FAILED tests/storage/test_w5_storage_foundation.py::test_w5_restore_rejects_incomplete_or_escaping_manifests
+33 failed, 560 passed, 15 skipped, 2 deselected, 3 warnings in 162.90s (0:02:42)
+EXIT_CODE: 1

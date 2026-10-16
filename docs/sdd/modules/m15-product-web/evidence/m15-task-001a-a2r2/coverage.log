@@ -1,0 +1,2023 @@
+COMMAND:
+.venv\Scripts\python.exe -m pytest -q -m "not smoke" --cov=aicefr --cov-branch --cov-report=term-missing --cov-report=json:docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/coverage.json --basetemp "C:\Users\PC\.gemini\antigravity\brain\22578151-fd4e-4499-8edf-e19204d7a0b9\scratch\pytest-temp\base"
+
+EXIT CODE: 1
+
+OUTPUT:
+......................FFFFF............................................. [ 11%]
+........................................................................ [ 23%]
+..............FFF....................................................... [ 35%]
+..F............................FFF.F.................................... [ 47%]
+...............s.........................................s...F.......... [ 59%]
+.....................................F......F..F.FF.FFFFFFFF.....F..sF.. [ 70%]
+F..................................................s........s..s..ss.... [ 82%]
+.........sssss............................................F.FFF......s.. [ 94%]
+.......F............F.s..........                                        [100%]
+================================== FAILURES ===================================
+____ test_admin_backup_and_restore_include_protected_key_and_audit_restore ____
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_admin_backup_and_restore_0')
+
+    def test_admin_backup_and_restore_include_protected_key_and_audit_restore(tmp_path):
+        runtime, student, admin = _runtime(tmp_path)
+        try:
+            now = "2026-10-15T00:00:00+00:00"
+            media = runtime.responses.blobs.store(b"published lesson media")
+            runtime.store.connection.execute(
+                "INSERT INTO learning_paths VALUES('backup-path','Path','', 'published',1,?,?)",
+                (now, now),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_units VALUES('backup-unit','backup-path','Unit',1)"
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_lessons VALUES('backup-lesson','backup-unit','Lesson',1,?)",
+                (now,),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO lesson_versions VALUES('backup-lesson',1,'published','rules-v1',?,?)",
+                (now, now),
+            )
+            runtime.store.connection.execute(
+                "INSERT INTO learning_media VALUES('backup-media','backup-lesson','audio',?,?,?,?)",
+                (media.blob_id, media.sha256, media.size_bytes, now),
+            )
+            runtime.accounts.set_consent(student, "backup-consent-v1", True)
+            runtime.store.connection.execute(
+                "INSERT INTO practice_attempts(attempt_id,owner_id,mission_id,prompt_version,status,"
+                "measurements,evidence,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)",
+                (
+                    "backup-attempt",
+                    "fixture-student",
+                    "mission-1",
+                    "v1",
+                    "completed",
+                    '{"words":3}',
+                    '{"pattern":"final_consonant"}',
+                    now,
+                    now,
+                ),
+            )
+            family_tables = (
+                "accounts",
+                "sessions",
+                "responses",
+                "account_profiles",
+                "consents",
+                "consent_events",
+                "activity_events",
+                "billing_quotes",
+                "billing_orders",
+                "billing_receipts",
+                "licenses",
+                "entitlements",
+                "cleanup_intents",
+                "learning_media",
+                "study_enrollments",
+                "study_surveys",
+                "practice_attempts",
+                "step_attempts",
+                "research_ratings",
+                "audit",
+            )
+            before_counts = {
+                table: runtime.store.connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
+                for table in family_tables
+            }
+            assert before_counts["accounts"] >= 2
+            assert before_counts["sessions"] >= 2
+            assert before_counts["consent_events"] >= 1
+            assert before_counts["practice_attempts"] == 1
+            assert before_counts["learning_media"] == 1
+            backup = _call(
+                runtime.app, "/api/v1/admin/data/backups", token=admin, method="POST", payload={}
+            )
+>           assert backup["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x00000269D1D26380>('201')
+E            +    where <built-in method startswith of str object at 0x00000269D1D26380> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:450: AssertionError
+________ test_restore_malformed_manifest_returns_controlled_error[[]] _________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_malformed_manifes0')
+manifest_bytes = b'[]'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x00000269D1C81D90>('201')
+E            +    where <built-in method startswith of str object at 0x00000269D1C81D90> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+______ test_restore_malformed_manifest_returns_controlled_error[{broken] ______
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_malformed_manifes1')
+manifest_bytes = b'{broken'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x00000269D1C83000>('201')
+E            +    where <built-in method startswith of str object at 0x00000269D1C83000> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+_ test_restore_malformed_manifest_returns_controlled_error[{"schema_version":10}] _
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_malformed_manifes2')
+manifest_bytes = b'{"schema_version":10}'
+
+    @pytest.mark.parametrize("manifest_bytes", [b"[]", b"{broken", b'{"schema_version":10}'])
+    def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_bytes):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x00000269D1CA3780>('201')
+E            +    where <built-in method startswith of str object at 0x00000269D1CA3780> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:515: AssertionError
+________ test_restore_rejects_missing_key_symlinks_and_client_path_ids ________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_missing_k0')
+
+    def test_restore_rejects_missing_key_symlinks_and_client_path_ids(tmp_path):
+        runtime, _, admin = _runtime(tmp_path)
+        try:
+            created = _call(
+                runtime.app,
+                "/api/v1/admin/data/backups",
+                token=admin,
+                method="POST",
+                payload={},
+            )
+>           assert created["status"].startswith("201")
+E           AssertionError: assert False
+E            +  where False = <built-in method startswith of str object at 0x00000269D1D39BB0>('201')
+E            +    where <built-in method startswith of str object at 0x00000269D1D39BB0> = '500 Internal Server Error'.startswith
+
+tests\api\test_data_operations_api.py:541: AssertionError
+______ test_runtime_key_is_private_and_unsafe_key_file_disables_service _______
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_runtime_key_is_private_an0')
+
+    def test_runtime_key_is_private_and_unsafe_key_file_disables_service(tmp_path):
+        store = SQLiteStore(tmp_path / "key-data")
+        store.connection.execute(
+            "INSERT INTO accounts(actor_id,role,password_hash) VALUES(?,?,?)",
+            ("fixture-student", "student", "synthetic-password-hash"),
+        )
+        config = GoogleConfig(
+            enabled=True,
+            client_id="fixture-client.apps.googleusercontent.com",
+            client_secret="fixture-secret",
+            redirect_uri="http://localhost:8000/auth/google/callback",
+            data_dir=tmp_path / "key-data",
+        )
+        service = GoogleIdentityService(FakeAuth(), GoogleIdentityRepository(store), config)
+        key_path = tmp_path / "key-data" / "google-flow-hmac.key"
+>       assert key_path.stat().st_mode & 0o777 == 0o600
+E       AssertionError: assert (33206 & 511) == 384
+E        +  where 33206 = os.stat_result(st_mode=33206, st_ino=4785074605564438, st_dev=10107338524416721678, st_nlink=1, st_uid=0, st_gid=0, st_size=32, st_atime=1792078723, st_mtime=1792078723, st_ctime=1792078723).st_mode
+E        +    where os.stat_result(st_mode=33206, st_ino=4785074605564438, st_dev=10107338524416721678, st_nlink=1, st_uid=0, st_gid=0, st_size=32, st_atime=1792078723, st_mtime=1792078723, st_ctime=1792078723) = stat()
+E        +      where stat = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_runtime_key_is_private_an0/key-data/google-flow-hmac.key').stat
+
+tests\auth\test_google_identity.py:586: AssertionError
+______________________ test_runtime_key_refuses_symlink _______________________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_runtime_key_refuses_symli0')
+
+    def test_runtime_key_refuses_symlink(tmp_path):
+        data_dir = tmp_path / "symlink-data"
+        initial = SQLiteStore(data_dir)
+        initial.close()
+        target = tmp_path / "unprotected-key"
+        target.write_bytes(b"k" * 32)
+>       (data_dir / "google-flow-hmac.key").symlink_to(target)
+
+tests\auth\test_google_identity.py:600: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_runtime_key_refuses_symli0/symlink-data/google-flow-hmac.key')
+target = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_runtime_key_refuses_symli0/unprotected-key')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_runtime_key_refuses_symli0\\unprotected-key' -> 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_runtime_key_refuses_symli0\\symlink-data\\google-flow-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+______ test_flow_reservation_is_consumed_once_across_sqlite_connections _______
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_flow_reservation_is_consu0')
+
+    def test_flow_reservation_is_consumed_once_across_sqlite_connections(tmp_path):
+        data_dir = tmp_path / "concurrent-data"
+        first = SQLiteStore(data_dir)
+        repository = GoogleIdentityRepository(first)
+        now = datetime(2026, 10, 15, tzinfo=UTC)
+        repository.reserve_flow("a" * 64, now + timedelta(minutes=10), now=now)
+        first.close()
+    
+        def consume() -> bool:
+            store = SQLiteStore(data_dir)
+            try:
+                return GoogleIdentityRepository(store).consume_flow("a" * 64, now)
+            finally:
+                store.close()
+    
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+>           outcomes = list(executor.map(lambda _index: consume(), range(2)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\auth\test_google_identity.py:634: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:449: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\auth\test_google_identity.py:634: in <lambda>
+    outcomes = list(executor.map(lambda _index: consume(), range(2)))
+                                                ^^^^^^^^^
+tests\auth\test_google_identity.py:627: in consume
+    store = SQLiteStore(data_dir)
+            ^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\storage\sqlite.py:42: in __init__
+    self._migrate()
+src\aicefr\storage\sqlite.py:71: in _migrate
+    with migration_lock(Path(data_dir)):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_flow_reservation_is_consu0/concurrent-data')
+
+    @contextmanager
+    def migration_lock(data_dir: Path) -> Iterator[None]:
+        """Hold an OS lock across preflight, snapshot, apply and verification."""
+        path = data_dir / ".migration.lock"
+        handle = path.open("a+b")
+        descriptor = handle.fileno()
+        os.chmod(path, 0o600)
+        deadline = monotonic() + 5.0
+        locked = False
+        try:
+            if os.name == "nt":
+                import msvcrt
+    
+                handle.seek(0)
+>               if handle.read(1) == b"":
+                   ^^^^^^^^^^^^^^
+E               PermissionError: [Errno 13] Permission denied
+
+src\aicefr\storage\migrations.py:35: PermissionError
+_______________ test_distinct_connections_settle_one_event_once _______________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_distinct_connections_sett0')
+
+    def test_distinct_connections_settle_one_event_once(tmp_path):
+        store, _, token, _, event = _setup(tmp_path)
+        data_dir = store.data_dir
+        store.close()
+        start = Barrier(2)
+    
+        def settle_in_own_connection():
+            local_store = SQLiteStore(data_dir)
+            try:
+                local_repo = BillingRepository(local_store)
+                start.wait(timeout=5)
+                return local_repo.settle(
+                    event,
+                    now=NOW,
+                    apply_entitlement=_apply,
+                    organization_id="local-demo",
+                    admin_token=token,
+                    admin_actor_id="fixture-admin",
+                )
+            finally:
+                local_store.close()
+    
+        with ThreadPoolExecutor(max_workers=2) as pool:
+>           results = list(pool.map(lambda _: settle_in_own_connection(), range(2)))
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\billing\test_billing_repository.py:706: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\billing\test_billing_repository.py:706: in <lambda>
+    results = list(pool.map(lambda _: settle_in_own_connection(), range(2)))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\billing\test_billing_repository.py:693: in settle_in_own_connection
+    start.wait(timeout=5)
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py:725: in wait
+    self._wait(timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <threading.Barrier at 0x269d2118050: broken>, timeout = 5
+
+    def _wait(self, timeout):
+        if not self._cond.wait_for(lambda : self._state != 0, timeout):
+            #timed out.  Break the barrier
+            self._break()
+>           raise BrokenBarrierError
+E           threading.BrokenBarrierError
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py:763: BrokenBarrierError
+___________ test_keyring_is_private_persistent_and_domain_separated ___________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x00000269D2272DE0>
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_is_private_persis0')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_keyring_is_private_persis0\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_is_private_persis0')
+
+    def test_keyring_is_private_persistent_and_domain_separated(tmp_path):
+        first = KeyRing(tmp_path)
+>       second = KeyRing(tmp_path)
+                 ^^^^^^^^^^^^^^^^^
+
+tests\billing\test_gateways.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_is_private_persis0/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+_________ test_keyring_rejects_symlink_hardlink_and_open_permissions __________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_rejects_symlink_h0')
+
+    def test_keyring_rejects_symlink_hardlink_and_open_permissions(tmp_path):
+        target = tmp_path / "target"
+        target.write_bytes(b"do not follow")
+        linkdir = tmp_path / "linkdir"
+        linkdir.mkdir()
+>       (linkdir / "billing-hmac.key").symlink_to(target)
+
+tests\billing\test_gateways.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_rejects_symlink_h0/linkdir/billing-hmac.key')
+target = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_rejects_symlink_h0/target')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_keyring_rejects_symlink_h0\\target' -> 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_keyring_rejects_symlink_h0\\linkdir\\billing-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+_ test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures _
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_keyring_rejects_bad_injec0')
+
+    def test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures(tmp_path):
+        with pytest.raises(KeyStoreError, match="invalid key material"):
+            KeyRing(tmp_path / "injected", key=b"short")
+        bad_version = tmp_path / "bad-version"
+        bad_version.mkdir()
+        (bad_version / "billing-hmac.key").write_bytes(b"wrong-format")
+        (bad_version / "billing-hmac.key").chmod(0o600)
+>       with pytest.raises(KeyStoreError, match="invalid billing key version"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'invalid billing key version'
+E         Actual message: 'unsafe billing key permissions'
+
+tests\billing\test_gateways.py:70: AssertionError
+_____ test_internal_sandbox_event_signature_timestamp_and_duplicate_json ______
+
+self = <aicefr.billing.secrets.KeyRing object at 0x00000269D2271610>
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_internal_sandbox_event_si0')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_internal_sandbox_event_si0\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_internal_sandbox_event_si0')
+
+    def test_internal_sandbox_event_signature_timestamp_and_duplicate_json(tmp_path):
+        registry = GatewayRegistry(data_dir=tmp_path, clock=lambda: NOW)
+        event = {
+            "event_id": "evt_1",
+            "order_id": "ord_1",
+            "checkout_id": "sbx_1",
+            "amount": 123,
+            "currency": "VND",
+            "status": "paid",
+        }
+        raw, headers = registry.sign_sandbox_event(event)
+        result = registry.verify_event("sandbox", raw, headers)
+        assert result["status"] == "paid"
+        assert result["signature_valid"] is True
+        assert result["occurred_at"] == NOW
+    
+        bad_headers = {"X-Sandbox-Signature": "0" * 64}
+        with pytest.raises(GatewayError, match="gateway_invalid_signature"):
+            registry.verify_event("sandbox", raw, bad_headers)
+    
+        duplicate = b'{"event_id":"a","event_id":"b"}'
+>       duplicate_signature = KeyRing(tmp_path).sign_gateway_event(duplicate)
+                              ^^^^^^^^^^^^^^^^^
+
+tests\billing\test_gateways.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_internal_sandbox_event_si0/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+___ test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker ____
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_readiness_accepts_explici0')
+
+    def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_path):
+        config = _demo_config()
+        config["model_artifact"] = str(tmp_path / "missing-model.json")
+        blob_store = BlobStore(tmp_path / "data", max_bytes=config["qc"]["max_input_bytes"])
+        pipeline = SimpleNamespace(
+            _qc_config=QCConfig(**config["qc"]),
+            _scorer=SimpleNamespace(artifact=object()),
+            _asr=SimpleNamespace(_engine=None),
+            _extractor=SimpleNamespace(_vad=object()),
+            _responses=SimpleNamespace(blobs=blob_store),
+            enqueue=lambda _response: None,
+        )
+        runtime = create_runtime(
+            tmp_path / "data", config=config, pipeline=pipeline, asr_engine=object()
+        )
+        try:
+            assert runtime.control.readiness()["ready"] is True
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "INSERT INTO runtime_settings VALUES (?,?,?,?,?,?)",
+                    ("readiness-tx", "{}", 0, "test", "fixture", "2026-10-15T00:00:00+00:00"),
+                )
+                assert runtime.control.readiness()["checks"]["database"] is True
+                assert connection.in_transaction
+                assert connection.execute(
+                    "SELECT 1 FROM runtime_settings WHERE key='readiness-tx'"
+                ).fetchone()
+    
+            checksum = runtime.store.connection.execute(
+                "SELECT checksum FROM schema_migrations WHERE version=5"
+            ).fetchone()[0]
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "UPDATE schema_migrations SET checksum=? WHERE version=5", ("0" * 64,)
+                )
+            tampered = runtime.control.readiness()
+            assert tampered["checks"]["schema"] is False
+            assert str(tmp_path) not in json.dumps(tampered)
+            with runtime.store.transaction() as connection:
+                connection.execute(
+                    "UPDATE schema_migrations SET checksum=? WHERE version=5", (checksum,)
+                )
+    
+            runtime.store.connection.execute("PRAGMA query_only=ON")
+            try:
+                read_only = runtime.control.readiness()
+            finally:
+                runtime.store.connection.execute("PRAGMA query_only=OFF")
+            assert read_only["checks"]["database"] is False
+            assert str(tmp_path) not in json.dumps(read_only)
+    
+            runtime.control.worker = SimpleNamespace(health=lambda: False)
+            readiness = runtime.control.readiness()
+            assert readiness["ready"] is False
+            assert readiness["checks"]["worker"] is False
+            root = blob_store.root
+            moved = tmp_path / "blob-store-original"
+            root.rename(moved)
+            try:
+                assert runtime.control.readiness()["checks"]["blobs"] is False
+>               root.symlink_to(tmp_path / "external-blobs", target_is_directory=True)
+
+tests\local\test_foundation_runtime.py:140: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_readiness_accepts_explici0/data/blobs')
+target = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_readiness_accepts_explici0/external-blobs')
+target_is_directory = True
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_readiness_accepts_explici0\\external-blobs' -> 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_readiness_accepts_explici0\\data\\blobs'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+_______________ test_task_versions_and_closing_survive_restart ________________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x00000269D237D7F0>
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_task_versions_and_closing0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_task_versions_and_closing0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D237F1D0>, store=<aicefr.storage.sqlite.SQLit...': 'vPa_hwbyHZyfzH7zBZ_N1SO9bcw88OzbKlpg_163Paw', 'other-teacher': 'x_nu8TqbG_ZSLqLJ1-tiA3NjNCGYcbb7mpV9HV4pKU8', ...})
+
+    def test_task_versions_and_closing_survive_restart(portal_runtime):
+        runtime, tokens = portal_runtime
+        record = submit_completed(runtime, tokens["a"])
+        original = runtime.portal.tasks.get(record.task_id, record.task_version)
+        changed = original.model_copy(update={"title": "Changed wording"})
+        with pytest.raises(ConcurrentResponseUpdate):
+            runtime.portal.save_task(tokens["admin"], changed, original.revision)
+        runtime.portal.save_task(tokens["admin"], original.model_copy(update={"active": False}), 1)
+        assert runtime.portal.task_list(tokens["a"]) == []
+        created = runtime.portal.save_task(
+            tokens["admin"],
+            TaskRecord(
+                task_id="new",
+                task_version="v2",
+                title="<script>unsafe</script>",
+                prompt_text="Speak about learning",
+            ),
+            0,
+        )
+        assert created["revision"] == 1
+>       reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_task_versions_and_closing0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+___________ test_data_control_paths_and_protected_files_fail_closed ___________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_data_control_paths_and_pr0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D24A4F50>
+
+    def test_data_control_paths_and_protected_files_fail_closed(tmp_path, monkeypatch):
+        from aicefr.portal.data import DataControl
+    
+        valid_path = tmp_path / "valid.key"
+        valid_path.write_bytes(b"protected fixture")
+        valid_path.chmod(0o600)
+>       assert DataControl._read_protected_file(valid_path) == b"protected fixture"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:359: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_data_control_paths_and_pr0/valid.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_________ test_backup_includes_verified_blobs_and_safe_orphan_preview _________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D22804A0>, store=<aicefr.storage.sqlite.SQLit...': 'PgN_zfd_zj6F0G3AcVcB_6Kr47YByi_73_frZ8pWebk', 'other-teacher': 'I0tXaOyiv93y3pxd_79QoV-NAotD5j8laxUgiCX9PPg', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_includes_verified_0')
+
+    def test_backup_includes_verified_blobs_and_safe_orphan_preview(portal_runtime, tmp_path):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        now = datetime.now(UTC).isoformat()
+        runtime.store.connection.execute(
+            "INSERT INTO learning_paths VALUES('path-1','Path','', 'published',1,?,?)",
+            (now, now),
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_units VALUES('unit-1','path-1','Unit',1)"
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_lessons VALUES('lesson-1','unit-1','Lesson',1,?)", (now,)
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO lesson_versions VALUES('lesson-1',1,'published','rules-v1',?,?)",
+            (now, now),
+        )
+        runtime.store.connection.execute(
+            "INSERT INTO learning_media VALUES('media-1','lesson-1','audio',?,?,?,?)",
+            (response.blob.blob_id, response.blob.sha256, response.blob.size_bytes, now),
+        )
+        orphan = runtime.responses.blobs.store(b"fixture orphan")
+        import os
+        import time
+    
+        os.utime(
+            runtime.responses.blobs._path(orphan.blob_id), (time.time() - 7200, time.time() - 7200)
+        )
+        preview = runtime.data.orphans(tokens["admin"])
+        assert preview["blob_ids"] == [orphan.blob_id]
+        assert runtime.responses.blobs._path(orphan.blob_id).exists()
+        destination = tmp_path / "backup"
+>       manifest = runtime.data.backup(tokens["admin"], destination)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:521: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_includes_verified_0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__ test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[audit] ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D255BF80>, store=<aicefr.storage.sqlite.SQLit...': '0kp6HMRU2gXrIQpzmP0V39b9TO2Lj04T-OQ4WmZ7faw', 'other-teacher': 'MSjklfUA0Z3dIF_A5jtxjdST_5Q6h5zdS6bbUnavPAw', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_final_audit_failur0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D2559C70>
+failure = 'audit'
+
+    @pytest.mark.parametrize("failure", ["audit", "revoked_admin"])
+    def test_backup_final_audit_failure_or_revoked_admin_removes_snapshot(
+        portal_runtime, tmp_path, monkeypatch, failure
+    ):
+        runtime, tokens = portal_runtime
+        submit_completed(runtime, tokens["a"])
+        destination = tmp_path / f"backup-{failure}"
+        if failure == "audit":
+    
+            def fail_audit(*args, **kwargs):
+                raise sqlite3.OperationalError("audit unavailable")
+    
+            monkeypatch.setattr(runtime.store, "record_audit", fail_audit)
+            expected = sqlite3.OperationalError
+        else:
+            original_read = runtime.data.blobs.read
+    
+            def revoke_during_snapshot(blob):
+                result = original_read(blob)
+                runtime.auth.logout(tokens["admin"])
+                return result
+    
+            monkeypatch.setattr(runtime.data.blobs, "read", revoke_during_snapshot)
+            expected = AuthorizationError
+    
+        with pytest.raises(expected):
+>           runtime.data.backup(tokens["admin"], destination)
+
+tests\portal\test_portal.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_final_audit_failur0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[revoked_admin] _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D24A5490>, store=<aicefr.storage.sqlite.SQLit...': 'm2NCtrr-VjiskFenSWnApf3c89-75rAV6YXenn-72e0', 'other-teacher': 'tSXNPNSsVC-iMHVQuzJV64tV2NvODcAdlA4FjwMOQNg', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_final_audit_failur1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D24A6CC0>
+failure = 'revoked_admin'
+
+    @pytest.mark.parametrize("failure", ["audit", "revoked_admin"])
+    def test_backup_final_audit_failure_or_revoked_admin_removes_snapshot(
+        portal_runtime, tmp_path, monkeypatch, failure
+    ):
+        runtime, tokens = portal_runtime
+        submit_completed(runtime, tokens["a"])
+        destination = tmp_path / f"backup-{failure}"
+        if failure == "audit":
+    
+            def fail_audit(*args, **kwargs):
+                raise sqlite3.OperationalError("audit unavailable")
+    
+            monkeypatch.setattr(runtime.store, "record_audit", fail_audit)
+            expected = sqlite3.OperationalError
+        else:
+            original_read = runtime.data.blobs.read
+    
+            def revoke_during_snapshot(blob):
+                result = original_read(blob)
+                runtime.auth.logout(tokens["admin"])
+                return result
+    
+            monkeypatch.setattr(runtime.data.blobs, "read", revoke_during_snapshot)
+            expected = AuthorizationError
+    
+        with pytest.raises(expected):
+>           runtime.data.backup(tokens["admin"], destination)
+
+tests\portal\test_portal.py:591: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_backup_final_audit_failur1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_____ test_restore_rejects_database_schema_and_foreign_key_damage[schema] _____
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D24A5C40>, store=<aicefr.storage.sqlite.SQLit...': 'JD4hW1ldooH8TZVUalRPOiltkADQesv8GI--DYR4h8U', 'other-teacher': 'qkio7EITexvDdoaArFJe0Wab-dquejNEAdzaWGbiY_s', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_database_0')
+damage = 'schema'
+
+    @pytest.mark.parametrize("damage", ["schema", "foreign_key"])
+    def test_restore_rejects_database_schema_and_foreign_key_damage(portal_runtime, tmp_path, damage):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"damaged-{damage}-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:649: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_database_0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__ test_restore_rejects_database_schema_and_foreign_key_damage[foreign_key] ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2281880>, store=<aicefr.storage.sqlite.SQLit...': 'IpUGYcEi_yuM9DHH5aEHRYLNZGV7SMA5r7Q7-WN6jYM', 'other-teacher': 'qujR0Le-Z53uD0qrJvOFa1aHbEpfa0jcBayvu4EFO7k', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_database_1')
+damage = 'foreign_key'
+
+    @pytest.mark.parametrize("damage", ["schema", "foreign_key"])
+    def test_restore_rejects_database_schema_and_foreign_key_damage(portal_runtime, tmp_path, damage):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"damaged-{damage}-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:649: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_database_1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+___ test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key ___
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2282A20>, store=<aicefr.storage.sqlite.SQLit...': '4CORUiFm9J1XwvoHuz7eAnMetfMCIC0D0gHdyy_mSMk', 'other-teacher': '5yGbiwBR-HHhq2esQVtEh7trrpWKxsNpT9WMXflGfpk', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_invalid_m0')
+
+    def test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key(
+        portal_runtime, tmp_path
+    ):
+        runtime, tokens = portal_runtime
+        source = tmp_path / "valid-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:673: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_invalid_m0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D22F4170>, store=<aicefr.storage.sqlite.SQLit...': 'RGogHlgdsckZbg7JxcIHYQZV8slt1pLowi3SzJ_919Q', 'other-teacher': 'C1hiwk_MWWNOrmeSgBF2mnx6BP55fdvDS6ggsqN9JcA', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_media_has0')
+
+    def test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated(
+        portal_runtime, tmp_path
+    ):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        source = tmp_path / "media-mismatch-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:709: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_media_has0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+______ test_restore_rejects_oversized_or_nonregular_manifest[oversized] _______
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2281220>, store=<aicefr.storage.sqlite.SQLit...': 'r18pFlVldDg9cgsT5KE0zQyDluGiOJZM19R4lGcZtMw', 'other-teacher': 'RZUkF_k_sIDT-CBj4ryJzvqpyc9aUpJ6ioaleEF5ZhY', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_oversized0')
+manifest_kind = 'oversized'
+
+    @pytest.mark.parametrize("manifest_kind", ["oversized", "directory"])
+    def test_restore_rejects_oversized_or_nonregular_manifest(portal_runtime, tmp_path, manifest_kind):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"bad-manifest-{manifest_kind}"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_oversized0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+______ test_restore_rejects_oversized_or_nonregular_manifest[directory] _______
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D24A5D90>, store=<aicefr.storage.sqlite.SQLit...': 'TSG8X2s6kb1aiNArHBdbevr6TyLEqlWQnOeUNuosz0U', 'other-teacher': 'imijEmlSdyVsg34xYuDOtZ55BD-OtyxFWVejTgwjpe4', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_oversized1')
+manifest_kind = 'directory'
+
+    @pytest.mark.parametrize("manifest_kind", ["oversized", "directory"])
+    def test_restore_rejects_oversized_or_nonregular_manifest(portal_runtime, tmp_path, manifest_kind):
+        runtime, tokens = portal_runtime
+        source = tmp_path / f"bad-manifest-{manifest_kind}"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:721: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_oversized1/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+________ test_restore_rejects_symlink_overlap_and_existing_destination ________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2521550>, store=<aicefr.storage.sqlite.SQLit...': 'Si7NpYklFI7Hy4QNLB0O4n6iYfnrikCGdy1JDgd1C3I', 'other-teacher': '6lcMSm7Sc56H1VxEg7xTt8Q9MIcWXNXFlZtkSHYD9ng', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_symlink_o0')
+
+    def test_restore_rejects_symlink_overlap_and_existing_destination(portal_runtime, tmp_path):
+        runtime, tokens = portal_runtime
+        source = tmp_path / "safe-source"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:736: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_rejects_symlink_o0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+_ test_restore_missing_referenced_media_and_audit_failure_leave_no_destination _
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2523EC0>, store=<aicefr.storage.sqlite.SQLit...': 'cdM7cV6kEoFkAKlSfHGy4jaOMicj-E-Dfdzyi0zSxUk', 'other-teacher': 'NW-IOJ5pRb3TljrgnvnmxYbr2EThj2NpZXPAAkjAbCw', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_missing_reference0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D2522BA0>
+
+    def test_restore_missing_referenced_media_and_audit_failure_leave_no_destination(
+        portal_runtime, tmp_path, monkeypatch
+    ):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        source = tmp_path / "source-backup"
+>       runtime.data.backup(tokens["admin"], source)
+
+tests\portal\test_portal.py:755: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\portal\data.py:897: in backup
+    data = self._read_protected_file(key_file)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_restore_missing_reference0/data/billing-hmac.key')
+
+    @staticmethod
+    def _read_protected_file(path: Path) -> bytes:
+        import stat
+    
+        try:
+            info = path.lstat()
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_nlink != 1
+>               or info.st_uid != os.getuid()
+                                  ^^^^^^^^^
+                or info.st_mode & 0o077
+            ):
+E           AttributeError: module 'os' has no attribute 'getuid'. Did you mean: 'getpid'?
+
+src\aicefr\portal\data.py:1145: AttributeError
+__________ test_qc_cas_validation_restart_and_old_report_provenance ___________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x00000269D2521F40>
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_qc_cas_validation_restart0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_qc_cas_validation_restart0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D2521010>, store=<aicefr.storage.sqlite.SQLit...': 'ZX4mfAUlDHsieEqT3In7-XXS4GJ5VOoYVFUMEXan8zw', 'other-teacher': '-x750VLJc_8twiGoaceGWe4xDeJL9nncmQONumMzrPQ', ...})
+
+    def test_qc_cas_validation_restart_and_old_report_provenance(portal_runtime):
+        runtime, tokens = portal_runtime
+        response = submit_completed(runtime, tokens["a"])
+        previous = runtime.app._reports.get(response.response_id)
+        updated = runtime.control.change_qc(
+            tokens["admin"], QCChange(expected_revision=0, changes={"max_duration_s": 250})
+        )
+        assert updated["revision"] == 1
+        with pytest.raises(ConcurrentResponseUpdate):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=0, changes={"max_duration_s": 200})
+            )
+        with pytest.raises(ValueError):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=1, changes={"max_duration_s": 301})
+            )
+        with pytest.raises(ValueError):
+            runtime.control.change_qc(
+                tokens["admin"], QCChange(expected_revision=1, changes={"review_silence_ratio": 0.99})
+            )
+        assert runtime.app._reports.get(response.response_id) == previous
+>       reopened = create_runtime(runtime.store.data_dir, config=runtime.control.config)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\portal\test_portal.py:1043: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_qc_cas_validation_restart0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+_____________ test_local_server_lock_and_interrupted_job_recovery _____________
+
+self = <aicefr.billing.secrets.KeyRing object at 0x00000269D21D4C80>
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_local_server_lock_and_int0/data')
+key = None
+
+    def __init__(self, data_dir: Path | str, *, key: bytes | None = None) -> None:
+        self._key: bytes
+        if key is not None:
+            if not isinstance(key, bytes) or len(key) < 32:
+                raise KeyStoreError("invalid key material")
+            self._key = key
+            return
+        try:
+            directory = external_data_dir(data_dir)
+        except (OSError, TypeError, ValueError):
+            raise KeyStoreError("billing key storage unavailable") from None
+        try:
+            directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path = directory / self.filename
+            try:
+>               fd = os.open(
+                    path,
+                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+E               FileExistsError: [Errno 17] File exists: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_local_server_lock_and_int0\\data\\billing-hmac.key'
+
+src\aicefr\billing\secrets.py:47: FileExistsError
+
+During handling of the above exception, another exception occurred:
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D237E960>, store=<aicefr.storage.sqlite.SQLit...': '0z943cdfAuIyRKuDsWdw6m_BBOfmbDfyj7uBFbp0JAU', 'other-teacher': 'vPlVwdq5nYy3ojh9e6o2EQEy8Sq0siemA6n0NiTN1Ik', ...})
+
+    def test_local_server_lock_and_interrupted_job_recovery(portal_runtime):
+        from aicefr.local.lock import acquire_server_lock
+    
+        runtime, tokens = portal_runtime
+        lease = acquire_server_lock(runtime.store.data_dir)
+        try:
+            with pytest.raises(OSError):
+                acquire_server_lock(runtime.store.data_dir)
+        finally:
+            lease.close()
+        acquire_server_lock(runtime.store.data_dir).close()
+        response = submit_completed(runtime, tokens["a"])
+        runtime.store.connection.execute(
+            "UPDATE responses SET status=? WHERE response_id=?", ("RUNNING", response.response_id)
+        )
+>       restarted = create_runtime(
+            runtime.store.data_dir, config={**runtime.control.config, "recover_interrupted": True}
+        )
+
+tests\portal\test_portal.py:1153: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\local\app.py:166: in create_runtime
+    keyring = KeyRing(store.data_dir)
+              ^^^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\billing\secrets.py:53: in __init__
+    self._key = self._read_existing(path)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cls = <class 'aicefr.billing.secrets.KeyRing'>
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_local_server_lock_and_int0/data/billing-hmac.key')
+
+    @classmethod
+    def _read_existing(cls, path: Path) -> bytes:
+        try:
+            info = path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+                raise KeyStoreError("unsafe billing key file")
+            if info.st_mode & 0o077:
+>               raise KeyStoreError("unsafe billing key permissions")
+E               aicefr.billing.secrets.KeyStoreError: unsafe billing key permissions
+
+src\aicefr\billing\secrets.py:89: KeyStoreError
+________________ test_new_cli_account_backup_and_qc_score_flow ________________
+
+portal_runtime = (LocalRuntime(app=<aicefr.api.wsgi.StudentTeacherApp object at 0x00000269D22F60F0>, store=<aicefr.storage.sqlite.SQLit...': 'd9_r1YienvZb3IEZCCesAde_Uto2CKk6QXZm-wIsfW4', 'other-teacher': 'BYkfLEGi-M2MH_In0J8atHh0Mj8YHJy4MfcuY7p90II', ...})
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_new_cli_account_backup_an0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D22F7EF0>
+capsys = <_pytest.capture.CaptureFixture object at 0x00000269D22F7BC0>
+
+    def test_new_cli_account_backup_and_qc_score_flow(portal_runtime, tmp_path, monkeypatch, capsys):
+        import io
+    
+        import numpy as np
+        import soundfile as sf
+    
+        from aicefr.local.__main__ import main
+    
+        runtime, _ = portal_runtime
+        config = tmp_path / "config.json"
+        config.write_text(json.dumps(runtime.control.config))
+        common = [
+            "--data-dir",
+            str(runtime.store.data_dir),
+            "--config",
+            str(config),
+            "--password-stdin",
+        ]
+        monkeypatch.setattr("sys.stdin", io.StringIO("fixture-password\n"))
+>       assert main(["accounts", "list", "--actor-id", "fixture-admin", *common]) == 0
+E       AssertionError: assert 2 == 0
+E        +  where 2 = <function main at 0x00000269D161CF40>(['accounts', 'list', '--actor-id', 'fixture-admin', '--data-dir', 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_new_cli_account_backup_an0\\data', ...])
+
+tests\portal\test_portal.py:1230: AssertionError
+---------------------------- Captured stderr call -----------------------------
+Kh\xf4ng th\u1ec3 th\u1ef1c hi\u1ec7n l\u1ec7nh; ki\u1ec3m tra t\xe0i kho\u1ea3n, tham s\u1ed1 v\xe0 c\u1ea5u h\xecnh local.
+_________________ test_two_connections_cannot_claim_same_job __________________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_two_connections_cannot_cl0')
+
+    def test_two_connections_cannot_claim_same_job(tmp_path):
+        store, response = submitted(tmp_path)
+        jobs = SQLiteJobRepository(store)
+        jobs.enqueue(response.response_id)
+        barrier = threading.Barrier(3)
+        claimed = []
+    
+        def run_claim(owner):
+            worker_store = SQLiteStore(store.data_dir)
+            try:
+                barrier.wait(timeout=5)
+                claimed.append(SQLiteJobRepository(worker_store).claim(owner))
+            finally:
+                worker_store.close()
+    
+        workers = [threading.Thread(target=run_claim, args=(owner,)) for owner in ("a", "b")]
+        for worker in workers:
+            worker.start()
+>       barrier.wait(timeout=5)
+
+tests\storage\test_jobs.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py:725: in wait
+    self._wait(timeout)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <threading.Barrier at 0x269d24a6d50: broken>, timeout = 5
+
+    def _wait(self, timeout):
+        if not self._cond.wait_for(lambda : self._state != 0, timeout):
+            #timed out.  Break the barrier
+            self._break()
+>           raise BrokenBarrierError
+E           threading.BrokenBarrierError
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py:763: BrokenBarrierError
+____ test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key _____
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_backup_and_privacy_mig0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D2522F30>
+
+    def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_path, monkeypatch):
+        data_dir = tmp_path / "v9-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+>       backup = migrations.create_pre_migration_backup(store.connection, data_dir, schema_version=9)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\storage\test_privacy_migration.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\storage\migrations.py:145: in create_pre_migration_backup
+    data = _read_protected_key(source_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_backup_and_privacy_mig0/v9-store/billing-hmac.key')
+
+    def _read_protected_key(path: Path) -> bytes:
+        import stat
+    
+        info = path.lstat()
+        expected_uid = os.getuid() if hasattr(os, "getuid") else None
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or (expected_uid is not None and info.st_uid != expected_uid)
+            or info.st_mode & 0o077
+        ):
+>           raise ValueError("protected key file is unsafe")
+E           ValueError: protected key file is unsafe
+
+src\aicefr\storage\migrations.py:93: ValueError
+___ test_v9_migration_refuses_protected_key_symlink_without_copying_target ____
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_migration_refuses_prot0')
+
+    def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_path):
+        data_dir = tmp_path / "v9-symlink-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+        key_path = data_dir / "google-flow-hmac.key"
+        key_path.unlink(missing_ok=True)
+        outside = tmp_path / "outside-key"
+        outside.write_bytes(b"do-not-copy-this-key")
+>       key_path.symlink_to(outside)
+
+tests\storage\test_privacy_migration.py:147: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_migration_refuses_prot0/v9-symlink-store/google-flow-hmac.key')
+target = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_migration_refuses_prot0/outside-key')
+target_is_directory = False
+
+    def symlink_to(self, target, target_is_directory=False):
+        """
+        Make this path a symlink pointing to the target path.
+        Note the order of arguments (link, target) is the reverse of os.symlink.
+        """
+        if not hasattr(os, "symlink"):
+            raise NotImplementedError("os.symlink() not available on this system")
+>       os.symlink(target, self, target_is_directory)
+E       OSError: [WinError 1314] A required privilege is not held by the client: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_v9_migration_refuses_prot0\\outside-key' -> 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\base\\test_v9_migration_refuses_prot0\\v9-symlink-store\\google-flow-hmac.key'
+
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\pathlib.py:1386: OSError
+______ test_v9_migration_with_protected_key_without_getuid_platform_api _______
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_migration_with_protect0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000269D25224B0>
+
+    def test_v9_migration_with_protected_key_without_getuid_platform_api(tmp_path, monkeypatch):
+        data_dir = tmp_path / "v9-no-getuid-store"
+        store = SQLiteStore(data_dir)
+        _seed_v9_rows(store)
+        _demote_to_v9(store)
+        monkeypatch.delattr(migrations.os, "getuid", raising=False)
+    
+>       migrations.migrate(store.connection, data_dir)
+
+tests\storage\test_privacy_migration.py:165: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+src\aicefr\storage\migrations.py:449: in migrate
+    create_pre_migration_backup(connection, data_dir, schema_version=version)
+src\aicefr\storage\migrations.py:145: in create_pre_migration_backup
+    data = _read_protected_key(source_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_v9_migration_with_protect0/v9-no-getuid-store/billing-hmac.key')
+
+    def _read_protected_key(path: Path) -> bytes:
+        import stat
+    
+        info = path.lstat()
+        expected_uid = os.getuid() if hasattr(os, "getuid") else None
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_nlink != 1
+            or (expected_uid is not None and info.st_uid != expected_uid)
+            or info.st_mode & 0o077
+        ):
+>           raise ValueError("protected key file is unsafe")
+E           ValueError: protected key file is unsafe
+
+src\aicefr\storage\migrations.py:93: ValueError
+_______ test_w5_v4_migration_preserves_legacy_rows_and_restores_backup ________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_w5_v4_migration_preserves0')
+
+    def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
+        data_dir = tmp_path / "existing-data"
+        legacy = _make_v4(data_dir)
+        legacy.close()
+    
+        store = SQLiteStore(data_dir)
+        assert store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
+        assert store.connection.execute("SELECT actor_id,password_hash FROM accounts").fetchall() == [
+            ("student", "hash")
+        ]
+        assert store.connection.execute("SELECT report_json FROM diagnostic_reports").fetchone() == (
+            '{"report":"preserve"}',
+        )
+        assert store.connection.execute("SELECT state,research_allowed FROM consents").fetchone() == (
+            "active",
+            1,
+        )
+        assert store.connection.execute("SELECT token_digest,actor_id FROM sessions").fetchone() == (
+            "f" * 64,
+            "student",
+        )
+        assert store.connection.execute("SELECT event_id,action FROM audit").fetchone() == (
+            "audit-1",
+            "fixture_action",
+        )
+        backup_path = next((data_dir / "backups").iterdir())
+        manifest = json.loads((backup_path / "manifest.json").read_text())
+>       assert manifest["files"]["blobs/" + "b" * 32] == hashlib.sha256(b"fixture audio").hexdigest()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'blobs/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+
+tests\storage\test_w5_storage_foundation.py:120: KeyError
+_________ test_w5_concurrent_fresh_initializers_serialize_migrations __________
+
+tmp_path = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_w5_concurrent_fresh_initi0')
+
+    def test_w5_concurrent_fresh_initializers_serialize_migrations(tmp_path):
+        data_dir = tmp_path / "concurrent"
+    
+        def initialize() -> int:
+            store = SQLiteStore(data_dir)
+            version = store.connection.execute("PRAGMA user_version").fetchone()[0]
+            store.close()
+            return version
+    
+        with ThreadPoolExecutor(max_workers=2) as pool:
+>           assert list(pool.map(lambda _: initialize(), range(2))) == [10, 10]
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\storage\test_w5_storage_foundation.py:215: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\_base.py:401: in __get_result
+    raise self._exception
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\concurrent\futures\thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\storage\test_w5_storage_foundation.py:215: in <lambda>
+    assert list(pool.map(lambda _: initialize(), range(2))) == [10, 10]
+                                   ^^^^^^^^^^^^
+tests\storage\test_w5_storage_foundation.py:209: in initialize
+    store = SQLiteStore(data_dir)
+            ^^^^^^^^^^^^^^^^^^^^^
+src\aicefr\storage\sqlite.py:42: in __init__
+    self._migrate()
+src\aicefr\storage\sqlite.py:71: in _migrate
+    with migration_lock(Path(data_dir)):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+data_dir = WindowsPath('C:/Users/PC/.gemini/antigravity/brain/22578151-fd4e-4499-8edf-e19204d7a0b9/scratch/pytest-temp/base/test_w5_concurrent_fresh_initi0/concurrent')
+
+    @contextmanager
+    def migration_lock(data_dir: Path) -> Iterator[None]:
+        """Hold an OS lock across preflight, snapshot, apply and verification."""
+        path = data_dir / ".migration.lock"
+        handle = path.open("a+b")
+        descriptor = handle.fileno()
+        os.chmod(path, 0o600)
+        deadline = monotonic() + 5.0
+        locked = False
+        try:
+            if os.name == "nt":
+                import msvcrt
+    
+                handle.seek(0)
+>               if handle.read(1) == b"":
+                   ^^^^^^^^^^^^^^
+E               PermissionError: [Errno 13] Permission denied
+
+src\aicefr\storage\migrations.py:35: PermissionError
+============================== warnings summary ===============================
+tests/storage/test_jobs.py::test_two_connections_cannot_claim_same_job
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread Thread-24 (run_claim)
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+      self.run()
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+      self._target(*self._args, **self._kwargs)
+    File "D:\LAPTRINH\TLCN\ai-assessor-cefr\tests\storage\test_jobs.py", line 213, in run_claim
+      barrier.wait(timeout=5)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 725, in wait
+      self._wait(timeout)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 765, in _wait
+      raise BrokenBarrierError
+  threading.BrokenBarrierError
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+tests/storage/test_jobs.py::test_two_connections_cannot_claim_same_job
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\threadexception.py:58: PytestUnhandledThreadExceptionWarning: Exception in thread Thread-23 (run_claim)
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+      self.run()
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+      self._target(*self._args, **self._kwargs)
+    File "D:\LAPTRINH\TLCN\ai-assessor-cefr\tests\storage\test_jobs.py", line 211, in run_claim
+      worker_store = SQLiteStore(store.data_dir)
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "D:\LAPTRINH\TLCN\ai-assessor-cefr\src\aicefr\storage\sqlite.py", line 42, in __init__
+      self._migrate()
+    File "D:\LAPTRINH\TLCN\ai-assessor-cefr\src\aicefr\storage\sqlite.py", line 71, in _migrate
+      with migration_lock(Path(data_dir)):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\contextlib.py", line 137, in __enter__
+      return next(self.gen)
+             ^^^^^^^^^^^^^^
+    File "D:\LAPTRINH\TLCN\ai-assessor-cefr\src\aicefr\storage\migrations.py", line 35, in migration_lock
+      if handle.read(1) == b"":
+         ^^^^^^^^^^^^^^
+  PermissionError: [Errno 13] Permission denied
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnhandledThreadExceptionWarning(msg))
+
+tests/storage/test_report_migration.py::test_schema_v2_migrates_to_v3_without_losing_existing_response
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x269d3704c20; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp2zuhoozj\\backups\\schema-v4-1792078837126077500\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp2zuhoozj\\backups\\schema-v4-1792078837126077500\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_m01_sqlite_schema_v2_persists_status_reason_with_optimistic_locking
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x269d3706c80; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp5nbbopx4\\backups\\schema-v4-1792078839442711200\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp5nbbopx4\\backups\\schema-v4-1792078839442711200\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_m01_sqlite_migrates_legacy_submitted_status_to_queued_without_data_loss
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x269d3706440; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp07fwlv0r\\backups\\schema-v4-1792078839543948600\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmp07fwlv0r\\backups\\schema-v4-1792078839543948600\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_pipeline_claim_is_queued_only_and_revision_checked
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x269d37045a0; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmpxkr0qq1o\\backups\\schema-v4-1792078839639441600\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\.gemini\\antigravity\\brain\\22578151-fd4e-4499-8edf-e19204d7a0b9\\scratch\\pytest-temp\\tmpxkr0qq1o\\backups\\schema-v4-1792078839639441600\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.12.10-final-0 _______________
+
+Name                                    Stmts   Miss Branch BrPart  Cover   Missing
+-----------------------------------------------------------------------------------
+src\aicefr\__init__.py                      1      0      0      0   100%
+src\aicefr\api\__init__.py                  0      0      0      0   100%
+src\aicefr\api\billing.py                 123      9     52      6    91%   31, 80->93, 102, 123, 125, 140-141, 172, 182, 238
+src\aicefr\api\data_operations.py         122     21     46      6    80%   22, 28, 31, 93, 102-116, 122, 145
+src\aicefr\api\identity.py                381    100    150     33    72%   91, 99, 120-130, 146, 170, 194, 206, 212-218, 222-252, 265, 279, 287-293, 297, 320, 322, 325-326, 330, 338, 357, 361, 363-373, 378-383, 387-395, 402, 404, 422, 427, 429, 435, 440-441, 449, 454, 459-462, 468, 472, 478, 494, 509-510, 514, 521->519, 523, 543, 549, 553->exit, 568-570
+src\aicefr\api\review.py                   21      0      0      0   100%
+src\aicefr\api\student.py                 116      5     22      4    93%   44, 60, 92, 181-182, 193->195
+src\aicefr\api\templates.py               115      0     20      0   100%
+src\aicefr\api\wsgi.py                    488     83    192     48    79%   116, 137, 143, 146, 152, 156, 160, 162, 221, 226, 227->229, 230, 246, 285, 293, 303, 319, 325-326, 370, 381, 388, 404, 407, 411, 457, 496, 510, 520-521, 529, 567, 573->580, 582, 595-604, 608, 614-622, 632, 640, 642-651, 656, 672-673, 684-685, 687, 692-693, 695, 697, 703, 707, 714-715, 717, 720, 723, 729, 734-735, 737, 742, 747, 751, 754-757, 759, 810, 817, 822-824
+src\aicefr\asr\__init__.py                  0      0      0      0   100%
+src\aicefr\asr\hallucination.py            69      0     26      1    99%   84->88
+src\aicefr\asr\identity.py                 12      0      4      0   100%
+src\aicefr\asr\local.py                    55      5     14      0    93%   61, 66-67, 74-76
+src\aicefr\asr\service.py                  72      0     10      0   100%
+src\aicefr\asr\validation.py               16      0     10      0   100%
+src\aicefr\audio\__init__.py                4      0      0      0   100%
+src\aicefr\audio\config.py                 54      6     24      4    87%   41-42, 49, 57, 67, 71
+src\aicefr\audio\decoder.py               105      5     48      5    93%   72, 75, 90, 133, 143
+src\aicefr\audio\pipeline.py               23      0      2      0   100%
+src\aicefr\audio\recordings.py             41      5     14      4    84%   55, 58, 63, 100, 103
+src\aicefr\auth\__init__.py                 0      0      0      0   100%
+src\aicefr\auth\accounts.py               146      4     36      3    96%   26, 109, 200, 216
+src\aicefr\auth\contracts.py               67      0      0      0   100%
+src\aicefr\auth\errors.py                  25      0      0      0   100%
+src\aicefr\auth\google.py                 407     38    138     20    89%   94, 162, 167-171, 233, 244-245, 251, 285, 303, 340, 342, 397, 405, 408, 438, 440->436, 461, 469, 481->exit, 486, 500-501, 518, 521-523, 535, 538, 544-545, 552-553, 565-566, 583, 596
+src\aicefr\auth\google_transport.py        58      1     18      1    97%   86
+src\aicefr\auth\memory.py                  38      1      6      1    95%   58
+src\aicefr\auth\service.py                170     10     60      6    93%   136-137, 155-156, 162, 179, 182, 187, 191, 255
+src\aicefr\billing\__init__.py              7      1      2      1    78%   13
+src\aicefr\billing\contracts.py            63      0      0      0   100%
+src\aicefr\billing\errors.py                5      0      0      0   100%
+src\aicefr\billing\gateways.py            421     26    180     20    92%   81, 151, 268, 279, 288-289, 291, 328, 333, 439-440, 450, 475, 573, 581, 589, 593, 616, 623, 626-627, 639, 641, 645, 661, 675
+src\aicefr\billing\licenses.py            284     21    102     13    91%   184, 244, 279-280, 313, 380, 403, 409, 418, 453, 468-469, 482, 486-487, 563, 567, 575, 603, 611-612
+src\aicefr\billing\plans.py                19      0      6      0   100%
+src\aicefr\billing\quotes.py               18      0      8      0   100%
+src\aicefr\billing\secrets.py             111     33     28      6    65%   62, 70-73, 79-80, 87, 90-116, 119-120, 125, 127, 135, 138-139
+src\aicefr\billing\service.py             272     11    114     11    94%   35->37, 37->30, 39-40, 160, 175->177, 185-186, 197, 235, 254-255, 274, 439
+src\aicefr\contracts.py                   285      8     30      6    94%   131, 160, 394, 418, 425-428
+src\aicefr\features\__init__.py             0      0      0      0   100%
+src\aicefr\features\extractor.py           79      0     20      0   100%
+src\aicefr\features\local.py               45      3     14      3    90%   34, 50, 52
+src\aicefr\features\pauses.py              24      0      4      0   100%
+src\aicefr\features\text.py                24      0      2      0   100%
+src\aicefr\limits.py                       24      0      6      0   100%
+src\aicefr\local\__init__.py                2      0      0      0   100%
+src\aicefr\local\__main__.py               95     27     22      5    68%   31-32, 36, 89-90, 108-110, 119, 121, 126, 129, 132-148, 152
+src\aicefr\local\app.py                   198     41     36      8    75%   60, 88-90, 94, 97-103, 106, 192-207, 224-236, 263, 270-272, 315-326, 377, 385-386, 391, 396
+src\aicefr\local\commands.py               69     32     22      0    47%   48-112, 121
+src\aicefr\local\lock.py                   20      2      4      1    88%   23-25
+src\aicefr\local\worker.py                114     11     24      8    86%   38, 40, 54, 113-114, 120, 128-130, 152->154, 155->exit, 172, 175-176
+src\aicefr\observability.py                15      0      0      0   100%
+src\aicefr\pipeline\__init__.py             2      0      0      0   100%
+src\aicefr\pipeline\coordinator.py        160      7     40      3    95%   87-88, 142-144, 168, 193, 365
+src\aicefr\portal\__init__.py               0      0      0      0   100%
+src\aicefr\portal\contracts.py             58      5     10      5    85%   30, 62, 77, 79, 81
+src\aicefr\portal\control.py              154     38     36      5    70%   48-60, 99, 119-146, 154-160, 169-170, 176, 177->181, 229, 231-234
+src\aicefr\portal\data.py                 521    157    246     29    66%   35->exit, 67->78, 139, 191->190, 200->211, 228->246, 252->246, 310->299, 421, 430->428, 456, 484->477, 518, 618-619, 621, 623, 790->799, 823, 838, 840, 861, 862->872, 883, 896->894, 898-920, 924-941, 945-1120, 1131, 1133, 1148-1167, 1169
+src\aicefr\portal\router.py               246     93    136     29    59%   46, 58->62, 69, 71, 73, 75, 77, 79, 85, 128, 130, 133, 135, 148, 155, 159, 162-163, 177-178, 185, 190, 192-193, 204-221, 224-227, 232-256, 258, 261-275, 283->310, 286, 298-299, 311, 323-326, 335-342, 346-349, 356, 360-363, 365-368, 375-381
+src\aicefr\portal\service.py              244     31     80     18    84%   68-69, 72-73, 146->145, 219, 222, 227, 250, 254, 259, 265, 310->313, 395-396, 398, 414-415, 417, 435->419, 450-456, 465, 484->494, 570-578, 586, 589
+src\aicefr\portal\tasks.py                 44      3     10      3    89%   67, 71, 115
+src\aicefr\portal\templates.py            114     34     42      8    67%   90-107, 123-124, 126-127, 129, 166, 188-190, 270-280, 293-310, 318-326, 336
+src\aicefr\qc\__init__.py                   3      0      0      0   100%
+src\aicefr\qc\measurements.py              16      1      2      1    89%   29
+src\aicefr\qc\policy.py                    38      0     24      0   100%
+src\aicefr\report\__init__.py               0      0      0      0   100%
+src\aicefr\report\contracts.py             78      6     12      6    87%   55, 57, 112, 116, 118, 120
+src\aicefr\report\service.py              173     17     66     13    87%   55, 84, 90, 92, 96, 98, 101, 105, 108-109, 188, 210, 244-250, 252-258, 331
+src\aicefr\report\sqlite.py                17      0      2      0   100%
+src\aicefr\review\__init__.py               0      0      0      0   100%
+src\aicefr\review\routing.py               16      1      4      1    90%   64
+src\aicefr\review\service.py              148     31     30      9    75%   40, 42, 44, 112, 117, 137, 179-200, 205-231, 245, 247, 280-286, 292
+src\aicefr\review\sqlite.py               102      8     24      8    87%   124, 154, 222, 289, 312, 314, 323, 348
+src\aicefr\scoring\__init__.py              0      0      0      0   100%
+src\aicefr\scoring\artifact.py             86      1     26      1    98%   108
+src\aicefr\scoring\coverage.py             19      0      4      0   100%
+src\aicefr\scoring\ridge.py                43      0     14      0   100%
+src\aicefr\scoring\scorer.py               81      2     28      2    96%   137, 163
+src\aicefr\scoring\windows.py              40      3      8      3    88%   18, 21, 36
+src\aicefr\storage\__init__.py              0      0      0      0   100%
+src\aicefr\storage\billing.py             332      9    126      6    97%   243, 486, 595, 597, 612, 673, 751, 770-771
+src\aicefr\storage\blob.py                 60      5     10      2    90%   50-54, 74
+src\aicefr\storage\google_identity.py      61      0     10      0   100%
+src\aicefr\storage\identity.py            321     40    146     35    83%   52, 79, 81, 112, 124, 176, 197, 204, 206, 221, 281->283, 287, 312-313, 328, 332, 335->337, 340, 364, 373, 406-409, 421, 502, 504, 537->exit, 559, 566, 605, 607, 611, 612->625, 632->637, 652, 656->658, 663->665, 694, 717-725, 752, 784
+src\aicefr\storage\jobs.py                148     11     46     11    89%   66, 92, 97, 115, 205-211, 214, 237->264, 251->264, 345, 383, 394, 401
+src\aicefr\storage\migrations.py          303     80    140     27    70%   39->57, 45-56, 58, 68-70, 94-112, 121, 134, 137, 146-149, 176, 186, 189, 194, 204, 211, 213-247, 255->257, 259, 334, 343, 371-372, 434, 439, 441, 446, 460, 473, 499
+src\aicefr\storage\paths.py                11      0      4      0   100%
+src\aicefr\storage\providers.py           152      2      4      2    97%   184, 317
+src\aicefr\storage\service.py              39      0      0      0   100%
+src\aicefr\storage\sqlite.py              164      8     34      4    94%   88, 277, 363-386, 437, 445
+-----------------------------------------------------------------------------------
+TOTAL                                    8917   1102   2880    455    85%
+Coverage JSON written to file docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/coverage.json
+=========================== short test summary info ===========================
+SKIPPED [1] tests\\features\\test_extractor.py:68: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\local\test_factory_integration.py:117: artifact path unavailable
+SKIPPED [1] tests\portal\test_portal.py:1117: pinned external model artifact unavailable
+SKIPPED [1] tests\\scoring\\test_artifact.py:22: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_artifact.py:89: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_integration_features.py:34: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:23: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:29: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_ridge.py:79: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [3] tests\\scoring\\test_scorer.py:79: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\\scoring\\test_scorer.py:104: c\u1ea7n ridge_resp_v2.json trong $AICEFR_MODEL_DIR
+SKIPPED [1] tests\storage\test_sqlite_blob_store.py:165: symlink creation is unavailable on this Windows host: 1314
+SKIPPED [1] tests\storage\test_w5_storage_foundation.py:248: symlink creation needs extra Windows privileges
+FAILED tests/api/test_data_operations_api.py::test_admin_backup_and_restore_include_protected_key_and_audit_restore
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[[]]
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[{broken]
+FAILED tests/api/test_data_operations_api.py::test_restore_malformed_manifest_returns_controlled_error[{"schema_version":10}]
+FAILED tests/api/test_data_operations_api.py::test_restore_rejects_missing_key_symlinks_and_client_path_ids
+FAILED tests/auth/test_google_identity.py::test_runtime_key_is_private_and_unsafe_key_file_disables_service
+FAILED tests/auth/test_google_identity.py::test_runtime_key_refuses_symlink
+FAILED tests/auth/test_google_identity.py::test_flow_reservation_is_consumed_once_across_sqlite_connections
+FAILED tests/billing/test_billing_repository.py::test_distinct_connections_settle_one_event_once
+FAILED tests/billing/test_gateways.py::test_keyring_is_private_persistent_and_domain_separated
+FAILED tests/billing/test_gateways.py::test_keyring_rejects_symlink_hardlink_and_open_permissions
+FAILED tests/billing/test_gateways.py::test_keyring_rejects_bad_injected_or_persisted_material_and_bounds_signatures
+FAILED tests/billing/test_gateways.py::test_internal_sandbox_event_signature_timestamp_and_duplicate_json
+FAILED tests/local/test_foundation_runtime.py::test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker
+FAILED tests/portal/test_portal.py::test_task_versions_and_closing_survive_restart
+FAILED tests/portal/test_portal.py::test_data_control_paths_and_protected_files_fail_closed
+FAILED tests/portal/test_portal.py::test_backup_includes_verified_blobs_and_safe_orphan_preview
+FAILED tests/portal/test_portal.py::test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[audit]
+FAILED tests/portal/test_portal.py::test_backup_final_audit_failure_or_revoked_admin_removes_snapshot[revoked_admin]
+FAILED tests/portal/test_portal.py::test_restore_rejects_database_schema_and_foreign_key_damage[schema]
+FAILED tests/portal/test_portal.py::test_restore_rejects_database_schema_and_foreign_key_damage[foreign_key]
+FAILED tests/portal/test_portal.py::test_restore_rejects_invalid_manifest_entries_and_corrupt_protected_key
+FAILED tests/portal/test_portal.py::test_restore_rejects_media_hash_mismatch_after_manifest_checksum_is_updated
+FAILED tests/portal/test_portal.py::test_restore_rejects_oversized_or_nonregular_manifest[oversized]
+FAILED tests/portal/test_portal.py::test_restore_rejects_oversized_or_nonregular_manifest[directory]
+FAILED tests/portal/test_portal.py::test_restore_rejects_symlink_overlap_and_existing_destination
+FAILED tests/portal/test_portal.py::test_restore_missing_referenced_media_and_audit_failure_leave_no_destination
+FAILED tests/portal/test_portal.py::test_qc_cas_validation_restart_and_old_report_provenance
+FAILED tests/portal/test_portal.py::test_local_server_lock_and_interrupted_job_recovery
+FAILED tests/portal/test_portal.py::test_new_cli_account_backup_and_qc_score_flow
+FAILED tests/storage/test_jobs.py::test_two_connections_cannot_claim_same_job
+FAILED tests/storage/test_privacy_migration.py::test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key
+FAILED tests/storage/test_privacy_migration.py::test_v9_migration_refuses_protected_key_symlink_without_copying_target
+FAILED tests/storage/test_privacy_migration.py::test_v9_migration_with_protected_key_without_getuid_platform_api
+FAILED tests/storage/test_w5_storage_foundation.py::test_w5_v4_migration_preserves_legacy_rows_and_restores_backup
+FAILED tests/storage/test_w5_storage_foundation.py::test_w5_concurrent_fresh_initializers_serialize_migrations
+36 failed, 558 passed, 15 skipped, 2 deselected, 6 warnings in 153.07s (0:02:33)
+

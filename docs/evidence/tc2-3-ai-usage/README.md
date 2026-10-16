@@ -10,7 +10,7 @@ AI Usage Log, prompt gốc, mục đích dùng AI, file sinh ra, phần người
 
 | Artifact | Vai trò | Tình trạng |
 | --- | --- | --- |
-| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 có 3 bản ghi Nguyên trong PR này; W06 chưa có bản ghi |
+| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Sáu workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 hiện có 28 Thắng, 73 Nguyên, 28 Sang (129 tổng); W06 chưa có bản ghi |
 | [Kiểm tra task và tạo PR W4 của Nguyên](nguyen/pr-W4-20261012.md) | Ba yêu cầu thực tế ngày 12/10; phạm vi commit và ánh xạ workbook | W05 trong PR: 3 dòng Nguyên/Codex; không khép lịch sử W04 còn thiếu |
 | [Chuyển log Nguyên sang W04](nguyen/chuyen-log-sang-W04-20261012.md) | Ánh xạ 7 dòng từ W05 sang W04 và yêu cầu chuyển file | Ngoại lệ nơi lưu theo chỉ dẫn Nguyên; giữ ngày thực tế 12/10/2026 |
 | [Biên tập prompt của Nguyên](nguyen/prompt-log-bien-tap-20261012.md) | Đối chiếu nội dung gốc và phiên bản diễn đạt chuyên nghiệp của W05, hàng 6–12 | Biên tập theo yêu cầu ngày 12/10; bản gốc được giữ để kiểm tra |
@@ -33,10 +33,12 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W02](AI%20Prompt%20Log%20-%20W02%20-%202026-09-21_2026-09-27.xlsx) | 21–27/09/2026 | 4 | 0 | 17 | 21 |
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
 | [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
-| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 3 | 6 | 37 |
+| [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 73 | 28 | 129 |
 | [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 0 | 0 | 0 | 0 |
 
-Ngày 16/10/2026, thêm sáu bản ghi thực tế của Sang cho SCRUM-71/72. Tổng hợp được tính lại theo các dòng hiện có trong workbook tại base của PR: Thắng 28, Nguyên 3, Sang 6, tổng 37. Không phục hồi hoặc suy đoán các bản ghi lịch sử không có trong file này.
+Khi đồng bộ nhánh SCRUM-73 với main và các workbook SCRUM-74–76 ngày 16/10/2026, các dòng được ghép theo nội dung đầy đủ để tránh trùng: sáu bản ghi SCRUM-71/72 của Sang đã có ở cả hai workbook nên chỉ giữ một bản; thêm 22 bản ghi Sang, một bản ghi tích hợp từ main (Nguyên, hàng 72), lượt tiếp tục sau xác nhận của chủ dự án (Nguyên, hàng 73) và năm bản ghi riêng của các nhánh SCRUM-74–76 (Nguyên, hàng 74–78). W05 hiện có 28 bản ghi Thắng, 73 Nguyên, 28 Sang, tổng 129; không phục hồi hoặc suy đoán bản ghi lịch sử ngoài các workbook nguồn.
+
+W05 của Nguyên đã được [phục hồi sau pull](nguyen/w05-nguyen-log-recovery-20261015.md): 34 dòng từ bản trước pull được giữ lại. [Record M15](nguyen/m15-w5-20261015.md) nối các dòng 33–67 với SDD, gồm bốn lần rà read-only riêng cho SCRUM-73–76, review/rework Phase 07 A2R1/A2R2, scope approval, Phase 05 precheck, bốn brief subagent và quyết định tiếp tục/dừng correction A2R2. Một số tệp minh chứng lịch sử trong cột F vẫn thiếu; số dòng trong workbook không đồng nghĩa evidence đã được xác minh.
 
 Số lượng tại thời điểm tách ngày 08/10/2026: giữ đủ **46 bản ghi gốc**, thêm một
 bản ghi cho yêu cầu tách file, tổng cộng **47**. Sheet `Tổng hợp` có công thức và
@@ -86,3 +88,8 @@ Tiếp theo trong ngày 12/10, Nguyên yêu cầu sửa lời văn prompt theo p
 Sau đó Nguyên yêu cầu **chuyển nội dung vào file W04**. Bảy dòng được chuyển sang W04, hàng 6–12; yêu cầu chuyển được ghi ở hàng 13. Tại thời điểm chuyển, W04 có 8 dòng Nguyên, tổng workbook 45; W05 còn 0 dòng. Đây là ngoại lệ nơi lưu theo chỉ dẫn mới nhất của Nguyên. Ngày dùng AI vẫn **12/10/2026**, thuộc W05 theo lịch; phụ đề và minh chứng W04 ghi rõ phần bổ sung sau tuần. Bảng trên đếm nội dung đang lưu trong từng file. Khoảng lịch sử 05–11/10 của Nguyên vẫn thiếu nguồn, không được coi là đã khôi phục từ các dòng ngày 12/10.
 
 Lượt kiểm tra task/tạo PR ngày 12/10 của Nguyên ghi **3 bản ghi mới** tại W05. [Record PR](nguyen/pr-W4-20261012.md) và [checks](nguyen/pr-W4-20261012-checks.json) giữ prompt gốc, ánh xạ hàng và phạm vi bảo toàn workbook. Bản local đầy đủ có 10 dòng (ba dòng mới ở hàng 13–15); bản đưa vào PR của Nguyên có ba dòng mới ở hàng 6–8, giữ bảy bản ghi ngoài phạm vi trong workspace. Ngày dùng AI thực tế vẫn 12/10, các công thức Tổng hợp và sheet của người khác được bảo toàn.
+
+
+Ngày 15/10/2026, lượt Codex chuẩn bị Phase 05 Amendment v0.3 của A2R3 được ghi ở W05, sheet Nguyên, hàng 68. Sau đó chủ dự án duyệt amendment; verdict được ghi ở hàng 69 và [Phase 05 review](../../sdd/modules/m15-product-web/reviews/phase-05-001a-final-correction-2026-10-15.md). Hàng 69 không tuyên bố Phase 07/08 đã đạt hoặc task đã xong. Nhật ký chi tiết tại [AI usage record của Nguyên](nguyen/m15-w5-20261015.md).
+
+Ngày 16/10/2026, công việc W5-N01 được ghi ở W05, sheet Nguyên, hàng 70. Nhật ký chi tiết và scope/approval/NOT_RUN state được lưu tại [AI usage record của Nguyên](nguyen/m15-w5-20261016.md). Sau khi giữ các dòng hiện có và thêm bản ghi này, workbook có 65 dòng Nguyên và tổng 93 prompt.

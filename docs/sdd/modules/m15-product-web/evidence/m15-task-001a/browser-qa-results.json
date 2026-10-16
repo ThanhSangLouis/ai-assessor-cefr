@@ -1,0 +1,141 @@
+{
+  "task_id": "M15-TASK-001A",
+  "prompt_id": "M15-W5-N01-001A-A1",
+  "base_revision": "61455024f1544a92e4313030067f72c29cf80d49",
+  "base_url": "http://127.0.0.1:52326",
+  "assertions": [
+    "PASS: /student/upload at desktop (light) - shell integrity",
+    "PASS: /student/upload at desktop (dark) - shell integrity",
+    "PASS: /student/upload at mobile (light) - shell integrity",
+    "PASS: /student/upload at mobile-narrow (light) - shell integrity",
+    "PASS: /student/report at desktop (light) - shell integrity",
+    "PASS: /student/report at desktop (dark) - shell integrity",
+    "PASS: /student/report at mobile (light) - shell integrity",
+    "PASS: /student/report at mobile-narrow (light) - shell integrity",
+    "PASS: /login at desktop (light) - shell integrity",
+    "PASS: /login at desktop (dark) - shell integrity",
+    "PASS: /login at mobile (light) - shell integrity",
+    "PASS: /login at mobile-narrow (light) - shell integrity",
+    "PASS: reduced-motion media query active, animation-duration=1e-05s",
+    "PASS: print media hides nav, skip link, and action elements"
+  ],
+  "screenshots": {
+    "student_upload_desktop_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_upload_desktop_light.png",
+      "sha256": "674cf8ddc25888998f7d081535ff1056ce22151d269f4ad0232d42d64c02dc5f",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_upload_desktop_dark.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_upload_desktop_dark.png",
+      "sha256": "6fe322f22d767e015f859587b85b4be7c86b7096fc789b5794ba2bd59b2af07b",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_upload_mobile_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_upload_mobile_light.png",
+      "sha256": "38fa5a184489e9e69fc23dc9058610d47df71a18ce11dbe4ad67cfd994b37650",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_upload_mobile-narrow_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_upload_mobile-narrow_light.png",
+      "sha256": "9d9b7f0bf1742cc99ade6199f857f909e0fdec56a7ba18704e7c73fac7c4e136",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_report_desktop_light.png",
+      "sha256": "38e96b98d228db3e1390eb4269eb4f8e879014d4d397360a166fcaa242b3a339",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "student_report_desktop_dark.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_report_desktop_dark.png",
+      "sha256": "f3fba941154ab3522be670f34679f5076df53912b977b81315d42f8c62148e42",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "student_report_mobile_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_report_mobile_light.png",
+      "sha256": "3909ad1dff5c89d418d672ebba6a374067a10e5f88266e5ced685d2918f7e828",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "student_report_mobile-narrow_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\student_report_mobile-narrow_light.png",
+      "sha256": "ee78ac62c92ac21ddcd28f85191668c499966c1297aeeca5f5739097bf1a4c12",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "login_desktop_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\login_desktop_light.png",
+      "sha256": "8e60257073ca8f6d2346b1e005ea428c8cb63191e063106725874b3e60dffd24",
+      "viewport": "1280x800",
+      "color_scheme": "light"
+    },
+    "login_desktop_dark.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\login_desktop_dark.png",
+      "sha256": "43bd583396604d159177311ad54f4e09933175f814b26161615d6c6fdf98aa3a",
+      "viewport": "1280x800",
+      "color_scheme": "dark"
+    },
+    "login_mobile_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\login_mobile_light.png",
+      "sha256": "92535980f20f34aa546a10b8a7724f3251c2053a86aba7ff1743ce0d918a4b0b",
+      "viewport": "390x844",
+      "color_scheme": "light"
+    },
+    "login_mobile-narrow_light.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\login_mobile-narrow_light.png",
+      "sha256": "7c37c912e003c20ca6069710c3eb119abf73bee32223db5a6b3fd7d7bc933ce4",
+      "viewport": "360x640",
+      "color_scheme": "light"
+    },
+    "report_desktop_print.png": {
+      "path": "docs\\sdd\\modules\\m15-product-web\\evidence\\m15-task-001a\\screenshots\\report_desktop_print.png",
+      "sha256": "864060f865640bf7cf0c4808441e57858bc9b8870695f57af646fe4e27b7f689",
+      "viewport": "1280x800",
+      "media": "print"
+    }
+  },
+  "viewports_tested": [
+    {
+      "name": "desktop",
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "mobile-narrow",
+      "width": 360,
+      "height": 640
+    }
+  ],
+  "console_errors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ],
+  "failed_requests": [
+    "http://127.0.0.1:52326/recorder.js",
+    "http://127.0.0.1:52326/recorder.js",
+    "http://127.0.0.1:52326/recorder.js",
+    "http://127.0.0.1:52326/recorder.js",
+    "http://127.0.0.1:52326/report.js",
+    "http://127.0.0.1:52326/report.js",
+    "http://127.0.0.1:52326/report.js",
+    "http://127.0.0.1:52326/report.js"
+  ],
+  "external_requests_blocked": 0,
+  "mode": "fixture-server-local-loopback"
+}

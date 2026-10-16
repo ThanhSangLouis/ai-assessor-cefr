@@ -1,0 +1,20 @@
+COMMAND:
+.venv\Scripts\python.exe .agents/skills/sdd-antigravity-orchestrator/scripts/workspace_fingerprint.py --root . --exclude "EDUZ/**" --exclude "docs/sdd/modules/m15-product-web/evidence/m15-task-001a-a2r2/**" --metadata-file "docs/sdd/modules/m15-product-web/07-status.md" --metadata-file "docs/sdd/modules/m15-product-web/prompts/prompt-log.md" --metadata-file "docs/sdd/modules/m15-product-web/prompts/M15-W5-N01-001A-A2R2.md"
+
+EXIT CODE: 0
+
+OUTPUT:
+{
+  "algorithm": "sdd-workspace-v2",
+  "base_revision": "6baf720f173b440eb961676b09ea290058a39b35",
+  "file_count": 689,
+  "fingerprint": "6687a1a1d8f861d21a4b013a2738847812297fdcdd2fb6e0324764d449bbbb2d",
+  "index_digest": "0b3fc1733cacbc63d7a568af25f323ad7bb532346f0fb71d5dc7f42da593a784",
+  "metadata_files": [
+    "docs/sdd/modules/m15-product-web/07-status.md",
+    "docs/sdd/modules/m15-product-web/prompts/M15-W5-N01-001A-A2R2.md",
+    "docs/sdd/modules/m15-product-web/prompts/prompt-log.md"
+  ],
+  "mode": "git",
+  "root": "D:\\LAPTRINH\\TLCN\\ai-assessor-cefr"
+}
