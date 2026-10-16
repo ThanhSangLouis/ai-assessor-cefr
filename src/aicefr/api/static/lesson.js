@@ -776,8 +776,11 @@ async function load() {
         return;
       }
     } else {
-      const lesson = await getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`);
-      const [progress, attempts] = await Promise.all([
+      const lessonUrl = MODE === "preview"
+        ? `/api/v1/teacher/learn/lessons/${encodeURIComponent(LESSON_ID)}`
+        : `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`;
+      const lesson = await getJson(lessonUrl);
+      const [progress, attempts] = MODE === "preview" ? [null, { attempts: [] }] : await Promise.all([
         getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}/progress`).catch(() => null),
         getJson(`/api/v1/learn/step-attempts?limit=100&lesson_id=${encodeURIComponent(LESSON_ID)}`).catch(() => ({ attempts: [] })),
       ]);

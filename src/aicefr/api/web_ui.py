@@ -6,7 +6,7 @@ import mimetypes
 import re
 from pathlib import Path
 from types import SimpleNamespace
-from urllib.parse import quote, unquote
+from urllib.parse import parse_qs, quote, unquote
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -152,6 +152,15 @@ def dispatch_page(app, environ):
     if method != "GET":
         return None
     route = _page_for(path)
+    lesson_match = re.fullmatch(r"/practice/lessons/([^/]+)", path)
+    query = parse_qs(str(environ.get("QUERY_STRING", "")), max_num_fields=10)
+    if lesson_match and query.get("preview") == ["1"]:
+        route = (
+            "lesson.html",
+            "practice",
+            frozenset({ActorRole.TEACHER, ActorRole.ADMIN}),
+            {"mode": "preview", "lesson_id": lesson_match[1]},
+        )
     if route is None or app._auth is None:
         # Preserve existing WSGI/API routes for apps constructed without the
         # page-level AuthService (for example, ReviewApi-owned test fixtures).

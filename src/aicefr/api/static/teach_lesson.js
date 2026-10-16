@@ -11,6 +11,8 @@ const root = document.getElementById("builder");
 const icon = (name, cls) => window.ui.icon(name, cls);
 const KIND_ICON = window.ui.STEP_ICONS;
 const LESSON_ID = root.dataset.lessonId;
+const PUBLISHED_KEY = "aicefr-published-lesson-" + LESSON_ID;
+const DRAFT_CHANGED_KEY = "aicefr-draft-changed-" + LESSON_ID;
 const $ = (id) => document.getElementById(id);
 
 const KIND_NAMES = {
@@ -261,7 +263,10 @@ async function save() {
         method:"POST",headers:{"Content-Type":"application/json"},
         body:JSON.stringify({unit_id:unit.unit_id,expected_revision:domainRevision,lesson:toDomainLesson(lesson)})});
       domainRevision=saved.revision; lesson.revision=saved.revision; await loadLint();
-      if (meta.published_version) meta.draft_changed=true;
+      if (meta.published_version) {
+        meta.draft_changed = true;
+        localStorage.setItem(DRAFT_CHANGED_KEY, "1");
+      }
       setState("Đã lưu nháp lúc "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}),"ok");
       renderHead(); renderLint(); renderRail();
     } catch(error) { dirty=true; setState("Chưa lưu được","error"); if(error.message!=="expired") window.toast(error.message || "Không lưu được bản nháp.","error"); throw error; }
@@ -589,7 +594,10 @@ const recorder = window.setUpRecorder({
     }
     s.model_audio = d.media_id;
     s.model_audio_url = d.url;
-    if (meta.published_version) meta.draft_changed = true;
+    if (meta.published_version) {
+      meta.draft_changed = true;
+      localStorage.setItem(DRAFT_CHANGED_KEY, "1");
+    }
     renderAudio();
     renderHead();
     window.toast("Đã lưu giọng mẫu.", "ok");
@@ -629,7 +637,8 @@ $("publish").addEventListener("click",async()=>{
     const published=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/publish",{
       method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expected_revision:domainRevision})});
     meta.published_version=published.version;meta.draft_changed=false;
-    localStorage.setItem("aicefr-published-lesson-"+LESSON_ID,String(published.version));
+    localStorage.setItem(PUBLISHED_KEY,String(published.version));
+    localStorage.removeItem(DRAFT_CHANGED_KEY);
     renderHead();window.toast("Đã xuất bản phiên bản "+published.version+".","ok");
   } catch(error){window.toast(error.message,"error");}
 });
@@ -658,7 +667,8 @@ async function load() {
   if(response.status===403){$("builder-head").innerHTML='<p class="error">Tài khoản này không có quyền soạn bài.</p>';$("builder-bar").hidden=true;return;}
   if(!response.ok){$("builder-head").innerHTML='<div class="empty-state"><h2>Không mở được bài học này</h2><p><a href="/teach">Quay lại lộ trình</a>.</p></div>';$("builder-bar").hidden=true;return;}
   const raw=await response.json();domainRevision=raw.revision || 0;draftVersion=raw.version || 1;
-  lesson=fromDomainLesson(raw);meta={published_version:Number(localStorage.getItem("aicefr-published-lesson-"+LESSON_ID))||null,draft_changed:false,updated_at:null};
+  lesson=fromDomainLesson(raw);meta={published_version:Number(localStorage.getItem(PUBLISHED_KEY))||null,
+    draft_changed:localStorage.getItem(DRAFT_CHANGED_KEY)==="1",updated_at:null};
   attachMedia(lesson,raw.sample_media);await resolveContext();
   if(!unit || !unit.unit_id){$("builder-bar").hidden=true;$("builder-head").innerHTML='<div class="empty-state"><h2>Chưa xác định được chặng</h2><p>Mở bài từ trang <a href="/teach">Soạn bài</a> để đồng bộ bản nháp.</p></div>';return;}
   $("f-title").value=lesson.title;$("f-summary").value=lesson.summary || "";$("f-band").value=lesson.band;
