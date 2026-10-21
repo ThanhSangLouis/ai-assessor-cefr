@@ -7,7 +7,7 @@
 | Requirement | v0.1 DRAFT · PENDING |
 | Research mode | RUN đề xuất · PENDING |
 | Artifacts 02–06 | planning packet v0.1 DRAFT; chưa có hiệu lực phase |
-| Implementation | NOT_STARTED |
+| Implementation | CODE_MERGED trên `main` (PR #41, #42, theo chỉ dẫn trực tiếp của user; đồng bộ 21/10/2026) · review/acceptance PENDING |
 | Prompt | NONE ISSUED |
 
 Task chỉ được chuyển khỏi `BLOCKED/TODO` sau approval tuần tự Phase 01, 03, 04, 05 và dependency contract tương ứng đã freeze.
@@ -21,3 +21,7 @@ User chỉ định thực thi S02 sau S01, với Luna implement/root review và 
 Final source/test e792ae6; full889PASS, pure coverage96,091%statement/88,821%branch; clean wheel129/129bytes và browser API handoff107/107PASS. [Final verification](evidence/scrum-70/final-verification.md), [review](reviews/SCRUM-70-review.md). Task-local implementation READY_FOR_REVIEW; reviewer/user acceptance vẫn PENDING, không đổi global DRAFT. Tạo PR riêng rồi dừng; chưa thực thi SCRUM-71/72.
 
 PR đã tạo: [#41 — SCRUM-70](https://github.com/thanglb2005/ai-assessor-cefr/pull/41), base nhánh G1. Dừng tại đây sau kiểm tra publication/CI; không bắt đầu S03/S04. Jira/reviewer acceptance PENDING.
+
+## Đồng bộ W6-S02 / SCRUM-79 — 21/10/2026
+
+Code của module đã merge vào `main` qua PR #41 (SCRUM-70, merge `425bb4f`), #42 (SCRUM-71, merge `3a0dba1`) theo chỉ dẫn trực tiếp của user, trong khi verdict Phase 01–05 vẫn PENDING. Bảng task đã cập nhật trạng thái code ([06-tasks](06-tasks.md)); chạy lại test trên `main` `cabcc44`: 121 passed ([bằng chứng](evidence/w6-s02-sync.md)). Lần đồng bộ này không đổi phase, không ghi APPROVED/DONE; review, verification và acceptance chờ reviewer/user.
