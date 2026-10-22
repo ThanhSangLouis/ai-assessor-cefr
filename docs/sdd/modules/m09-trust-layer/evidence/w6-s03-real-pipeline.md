@@ -43,7 +43,7 @@ Script chạy và cấu hình nằm ngoài repo (`aicefr-runtime/w6-s03-2026-10-
 ## Giới hạn và việc còn lại
 
 - **Đây là smoke kỹ thuật, không đo độ chính xác CEFR.** Giọng tổng hợp không đại diện người học Việt Nam; một bài không nói gì về chất lượng chấm. Độ chính xác: `NOT_MEASURED`; độ phủ thực nghiệm của CV+: `NOT_EVALUATED`.
-- `source_versions.calibration_version` vẫn ghi `chua-hieu-chuan` dù Trust Layer đã dùng artifact hiệu chuẩn (`provenance.calibration_id` có giá trị). Hai nơi chưa thống nhất; ghi nhận cho M05/M09, chưa sửa trong lần chạy này.
+- `source_versions.calibration_version = chua-hieu-chuan` **không mâu thuẫn** với việc Trust Layer đã dùng artifact hiệu chuẩn. Trường này lấy từ artifact Ridge (`scoring/scorer.py` `_provenance`, `ridge_resp_v2.json`) và nói về việc hiệu chuẩn **điểm số** của mô hình, mà điểm số đúng là chưa được hiệu chuẩn. Khoảng dự đoán CV+ của Trust Layer được ghi riêng ở `provenance.calibration_id` và `calibration_sha256`. Đã kiểm lại mã ngày 22/10/2026; không cần sửa.
 - Lá chắn lạc đề và đọc đề chưa được thử trên đề thật có từ khoá; cần chạy lại với đề P3/P4 khi cấu hình đề thật có trong runtime cục bộ.
 - Không có số liệu Speak & Improve nào trong tệp này.
 
