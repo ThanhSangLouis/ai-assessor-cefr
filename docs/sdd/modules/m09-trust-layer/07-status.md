@@ -7,7 +7,8 @@
 | Requirement | v0.1 DRAFT · user verdict PENDING |
 | Research mode | RUN đề xuất · user decision PENDING |
 | Research/Specification/Test Plan/Plan/Tasks | v0.1 planning packet DRAFT; chưa có hiệu lực phase |
-| Implementation/Review/Verification/Acceptance | NOT_STARTED |
+| Implementation | CODE_MERGED trên `main` (PR #40, theo chỉ dẫn trực tiếp của user; đồng bộ 21/10/2026) |
+| Review/Verification/Acceptance | PENDING — reviewer/user chưa ghi verdict |
 | Prompt hiện hành | NONE ISSUED |
 
 Các artifact 02–06 được chuẩn bị đồng thời theo yêu cầu lập kế hoạch chi tiết, nhưng không thay thứ tự phê duyệt. Chỉ phát prompt/implement sau khi Phase 01, 03, 04 và 05 lần lượt được user `APPROVED`.
@@ -25,3 +26,7 @@ Ba Luna lane domain/conformal/integration đã nhận [prompt A1](prompts/SCRUM-
 ### SCRUM-69 — Task-local verification 15/10/2026
 
 Code `34da102`: full780PASS, no skips,2smoke deselected; statement90.8241%,branch80.1893%; Ruff/changed-format/build đạt. Wheel sạch byte-match104/104, browser65checksPASS desktop/mobile, real ASR/VAD/model2audioPASS và restart đọc reportPASS. Xem [final verification](evidence/scrum-69/final-verification.md) và [root review](reviews/SCRUM-69-review.md). User đã yêu cầu thực thi và tạo PR từng task; không thay global phase DRAFT hoặc tự ghi acceptance/JiraDone. Reviewer/user verdict PENDING.
+
+## Đồng bộ W6-S02 / SCRUM-79 — 21/10/2026
+
+Code của module đã merge vào `main` qua PR #40 (SCRUM-69, merge `a4c119f`) theo chỉ dẫn trực tiếp của user, trong khi verdict Phase 01–05 vẫn PENDING. Bảng task đã cập nhật trạng thái code ([06-tasks](06-tasks.md)); chạy lại test trên `main` `cabcc44`: 171 passed ([bằng chứng](evidence/w6-s02-sync.md)). Lần đồng bộ này không đổi phase, không ghi APPROVED/DONE; review, verification và acceptance chờ reviewer/user.
