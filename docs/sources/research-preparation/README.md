@@ -14,6 +14,8 @@ Nguồn được sao chép byte-for-byte từ `D:\LAPTRINH\TLCN\AI\ai-assessor-c
 
 ## Kết quả đối chiếu và phần còn thiếu
 
+Bản dự thảo phiếu và bảng ánh xạ đã được chuẩn bị tại [SCRUM-87-consent-form-draft.md](SCRUM-87-consent-form-draft.md). Trạng thái vẫn `DRAFT / REFERENCE_ONLY`; cần chốt các mục mở và review mẫu trường/GVHD/ethics trước khi phát hành.
+
 - Không tìm thấy phiếu giấy hoàn chỉnh hoặc dấu vết chữ ký/duyệt GVHD/ethics. Appendix A trong kế hoạch chỉ là bản rút gọn.
 - Checklist consent và DMP đều `DRAFT`. DMP nói retention phải được ethics/GVHD chốt; mốc 12 tháng trong kế hoạch khảo sát chỉ là đề xuất, chưa phải chính sách có hiệu lực.
 - Runbook yêu cầu chốt nơi lưu, encryption/key owner, role access, retention, withdrawal cutoff, contact và cloud/external API. Hoạt động W1 trong runbook vẫn `NOT STARTED`.
