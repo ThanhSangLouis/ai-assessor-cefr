@@ -28,3 +28,12 @@ Trang chấm mù trên revision `82fe708` hiển thị “Chưa có phiếu ch�
 QA cục bộ trên revision `82fe708` cho thấy chưa có phiếu được phân công; chưa thể kiểm thử hai người chấm.
 
 Repo nguồn có một thay đổi local không liên quan tại `src/aicefr/scoring/models/ridge_resp_v2.json`; file đó không được mở hay chuyển.
+
+## Draft deliverables cho task
+
+| Artifact | Trạng thái | Mục đích |
+|---|---|---|
+| [SCRUM-89-training-packet-draft.md](SCRUM-89-training-packet-draft.md) | `DRAFT — NOT APPROVED — NOT RUN` | Gate, agenda facilitator, tách dry run 4–6 mẫu khỏi calibration 10 mẫu và danh sách quyết định cần owner/GVHD chốt. |
+| [SCRUM-89-calibration-evidence-template.md](SCRUM-89-calibration-evidence-template.md) | Mẫu trống · `NOT_RUN` | Ghi preflight, dry run, calibration, chỉ số sau khi tính thực tế và sign-off; không chứa dữ liệu cá nhân/audio. |
+
+Các draft này chưa đóng task: rubric/version, bộ audio có quyền dùng, answer key, rater thật, blind workflow và metric/threshold vẫn `PENDING`/`NOT_VERIFIED`. M07/M12 status không được thay đổi.
