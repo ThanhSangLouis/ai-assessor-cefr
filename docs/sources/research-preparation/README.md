@@ -17,6 +17,8 @@ Nguồn được sao chép byte-for-byte từ `D:\LAPTRINH\TLCN\AI\ai-assessor-c
 
 ## Kết quả đối chiếu và phần còn thiếu
 
+Bản nháp gom prompt, form rating người chấm và kế hoạch thu nằm tại [SCRUM-88-draft-deliverables.md](SCRUM-88-draft-deliverables.md). Trạng thái `DRAFT`; các mâu thuẫn timing/criteria/scale và chốt của owner/GVHD vẫn mở.
+
 - Có hai câu prompt cụ thể trong Appendix C của kế hoạch khảo sát, nhưng chưa có prompt ID/version, form được duyệt, blueprint equivalence hay bằng chứng usability/pilot.
 - Có xung đột nội bộ về thời lượng: kế hoạch khảo sát/Appendix C đặt 40–60 giây; ALTE grid draft đề xuất Task A 90–120 giây và Task B khoảng 120 giây. Cần chốt một protocol trước khi cấu hình `demo-speaking` hoặc thu dữ liệu.
 - Rubric cũng chưa thống nhất: Appendix B dùng 5 tiêu chí cho hai bài độc thoại; descriptor map/ALTE grid mô tả 6 tiêu chí gồm Interaction và đề xuất Task C. Repo dự án M05 hiện dùng 5 tiêu chí, Interaction null cho độc thoại. Cần chốt rubric, task coverage và version với owner/GVHD; không chuyển các ngưỡng từ tài liệu nguồn thành requirement tự động.
