@@ -2,6 +2,8 @@
 
 **Nguồn:** `D:\LAPTRINH\TLCN\AI\ai-assessor-cefr`, HEAD `7614f3d9eec3b2673614b3ca6c4de8d3097221d3` (24/10/2026). **Disposition:** `REFERENCE_ONLY`; chưa có phiếu đã duyệt.
 
+Đã đối chiếu thêm `origin/main` `09b4e8d` (nhánh nguồn đi trước 7 commit): các file consent liên quan không đổi và không có đầu ra consent mới.
+
 | File được chuyển nguyên trạng | SHA-256 | Phần liên quan |
 |---|---|---|
 | `KE_HOACH_KHAO_SAT.md` ← `docs/plan/KE_HOACH_KHAO_SAT.md` | `AF4787121BC0228C69D8FB4BF7CBB63D4DF8D3DBBEB85ACBAC955C896BB66964` | Phụ lục A là nội dung consent rút gọn; §11 ghi phiếu ký duyệt là đầu ra dự kiến. |
