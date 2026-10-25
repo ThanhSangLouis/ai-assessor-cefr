@@ -1,0 +1,91 @@
+# Production on one server (D047): Caddy in front for HTTPS, nothing else public.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# (or set COMPOSE_FILE=docker-compose.yml:docker-compose.prod.yml in .env, as
+# .env.production.example does, and plain `docker compose` uses both.)
+# Step by step: docs/plan/TRIEN_KHAI_VPS.md.
+#
+# What changes against docker-compose.yml:
+#   - caddy publishes 80 and 443 (TCP, and UDP for HTTP/3) and gets the
+#     certificate for AICEFR_DOMAIN; the gateway publishes nothing.
+#   - core and web mark cookies Secure and know their public https address.
+#   - the gateway takes the client address from Caddy's X-Forwarded-For, so the
+#     login rate limit counts per visitor, not per proxy.
+#   - every container's log is rotated (3 x 10 MB), so a busy week cannot fill the disk.
+# Needs Docker Compose 2.24 or newer for `!reset`.
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-public: &public
+  AICEFR_HTTPS_ONLY: "1"
+  AICEFR_PUBLIC_URL: https://${AICEFR_DOMAIN:?set AICEFR_DOMAIN in .env (the site's domain name)}
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      AICEFR_DOMAIN: ${AICEFR_DOMAIN:?set AICEFR_DOMAIN in .env (the site's domain name)}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account: lose this volume and Let's Encrypt
+      # has to issue again (it rate-limits repeated issues for one domain).
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - gateway
+    logging: *logging
+
+  gateway:
+    # Reachable only from Caddy, over the compose network.
+    ports: !reset []
+    configs:
+      - source: gateway_realip
+        target: /etc/nginx/conf.d/00-realip.conf
+    logging: *logging
+
+  core:
+    environment:
+      <<: *public
+    logging: *logging
+
+  web:
+    environment:
+      <<: *public
+    logging: *logging
+
+  speech:
+    logging: *logging
+
+  mongo:
+    logging: *logging
+
+  redis:
+    logging: *logging
+
+configs:
+  # The gateway overwrites X-Forwarded-For with the address it saw ($remote_addr),
+  # which behind Caddy is Caddy's. Trust X-Forwarded-For from the private
+  # ranges Docker gives compose networks only: the gateway publishes no port, so
+  # nothing outside the network reaches it, and Caddy sets the header itself
+  # from the connection, never from what the client sent.
+  gateway_realip:
+    content: |
+      set_real_ip_from 10.0.0.0/8;
+      set_real_ip_from 172.16.0.0/12;
+      set_real_ip_from 192.168.0.0/16;
+      real_ip_header X-Forwarded-For;
+      real_ip_recursive on;
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,41 @@
+# The public edge (D047): TLS, compression and a few headers, in front of the
+# nginx gateway. Used by docker-compose.prod.yml; the gateway itself publishes
+# no port in production, so every request comes through here.
+#
+# AICEFR_DOMAIN is the site address. A real domain gets a Let's Encrypt
+# certificate automatically (ports 80 and 443 must reach this machine);
+# AICEFR_DOMAIN=localhost gets one from Caddy's own internal CA, for a local
+# check with `curl -k`.
+
+{$AICEFR_DOMAIN} {
+	# The gateway accepts 30 MiB (a 25 MiB recording, AICEFR_MAX_UPLOAD, plus
+	# the form around it); refuse anything larger here, before it is buffered.
+	request_body {
+		max_size 30MiB
+	}
+
+	encode zstd gzip
+
+	# The services already set CSP (with frame-ancestors 'none'),
+	# X-Content-Type-Options, X-Frame-Options, Referrer-Policy and, with
+	# AICEFR_HTTPS_ONLY=1, HSTS. "?" writes a header only when the response does
+	# not carry it yet, so these never override or duplicate the application's
+	# values; they cover what nginx answers itself (404 for /internal/, 502).
+	header {
+		?Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		?X-Content-Type-Options "nosniff"
+		?Referrer-Policy "same-origin"
+		?Content-Security-Policy "frame-ancestors 'none'"
+		-Server
+	}
+
+	# Caddy sets X-Forwarded-For to the address it saw and ignores what the
+	# client sent (no trusted_proxies); the gateway takes the client address
+	# from it (realip, see docker-compose.prod.yml).
+	reverse_proxy gateway:80
+
+	log {
+		output stdout
+		format json
+	}
+}

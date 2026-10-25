@@ -1,0 +1,6 @@
+# Bao nham cua gitleaks (generic-api-key): mat khau THU trong test, viet thang
+# vao JSON o commit da push. Commit sau da chuyen sang hang so PASSWORD; khong
+# viet lai lich su nen ghi dau van tay o day. Chi them dong moi khi da xac minh
+# la bao nham.
+97ed74ad52bb914a57f8c56926a1038952b7aa34:tests/test_review_fixes.py:generic-api-key:254
+df711965876ed15a683558999daa7438ac5481b9:tests/test_review_medium.py:generic-api-key:246
