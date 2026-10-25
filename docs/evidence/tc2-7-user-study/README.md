@@ -8,7 +8,7 @@ Protocol/consent, kịch bản tác vụ, danh sách người tham gia ẩn danh
 
 ## Minh chứng hiện có
 
-Chưa có dữ liệu hoặc kết quả thực nghiệm người dùng. [SCRUM-85 W7 data readiness](scrum-85-w7-data-readiness.md) hoàn tất checklist và browser evidence bằng fixture; consent UI vẫn ghi retention chưa chốt. Đây không phải pilot data hay user-study result.
+Chủ dự án xác nhận dữ liệu thu thử đã có và chấp nhận SCRUM-85 hoàn tất. [SCRUM-85 W7 data readiness](scrum-85-w7-data-readiness.md) lưu checklist và browser evidence bằng fixture; dataset chưa được kiểm kê trong evidence này, retention policy vẫn chưa chốt, và kết quả CEFR thực nghiệm chưa được đánh giá.
 
 ## Còn thiếu / cần xác minh
 

@@ -3,11 +3,11 @@
 **Evidence ID:** `SCRUM-85-W7-DATA-READINESS`  
 **Ngày kiểm tra:** 25/10/2026 · **Owner:** Thắng
 **Integrated baseline:** `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`
-**Task acceptance:** `CHECKLIST COMPLETE` · **Thu dữ liệu người học:** `NOT_RUN`
+**Task acceptance:** `OWNER ACCEPTED DONE` (25/10/2026) · **Data availability:** `OWNER CONFIRMED` · **Collection/inspection in this verification:** `NOT_RUN`
 
 ## Kết quả rà soát
 
-Checklist dưới đây được đối chiếu với code hiện hành và chạy bằng tài khoản fixture trên server loopback. Không tạo participant, audio, dataset hay số liệu pilot. Task hoàn tất ở mức checklist vận hành; đây không phải xác nhận có thể bắt đầu thu người học.
+Checklist dưới đây được đối chiếu với code hiện hành và chạy bằng tài khoản fixture trên server loopback. Chủ dự án xác nhận dữ liệu thu thử đã có và chấp nhận SCRUM-85 hoàn tất. Lượt kiểm chứng này không truy cập, kiểm kê hay sao chép dataset; xác nhận owner không phải phép kiểm tra nội dung, provenance, consent hoặc retention.
 
 | Hạng mục | Kết quả kiểm chứng | Bằng chứng |
 | --- | --- | --- |
@@ -34,9 +34,9 @@ Các ảnh được chụp từ UI local với fixture tổng hợp; không ch�
 
 ## Điều kiện chưa được kiểm chứng
 
-- Chưa có người tham gia, roster, dữ liệu pilot, audio thật hoặc metric thu thử; tất cả là `NOT_RUN`/`NOT_EVALUATED`.
+- Chủ dự án xác nhận dữ liệu thu thử đã có; dataset, roster, provenance, consent records và audio không được mở hoặc kiểm kê trong lượt này. Kết quả thực nghiệm/CEFR vẫn `NOT_EVALUATED`.
 - Retention policy trên giao diện chưa được chốt. Vì vậy report chỉ xác nhận checklist và thao tác fixture, không tuyên bố buổi thu người học đã sẵn sàng.
 - UI chưa có batch-account flow; batch/temp-password là API contract được test, không phải thao tác trên giao diện.
 - Model inference không chạy; clean-wheel smoke xác nhận đúng trạng thái thiếu model và report `NOT_EVALUATED`, không có band giả.
 
-Không cần biên bản họp riêng theo chỉ dẫn chủ dự án; report này ghi checklist, bằng chứng giao diện và giới hạn thực tế.
+Owner acceptance xác nhận task #85 hoàn tất; phần policy và điều kiện sử dụng dữ liệu thật tiếp tục được theo dõi riêng ở SCRUM-34.
