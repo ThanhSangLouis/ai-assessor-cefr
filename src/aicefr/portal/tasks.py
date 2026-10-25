@@ -7,7 +7,7 @@ import uuid
 from datetime import UTC, datetime
 
 from aicefr.api.student import SubmissionError
-from aicefr.contracts import Actor, AuditEvent, ReasonCode
+from aicefr.contracts import Actor, ActorRole, AuditEvent, ReasonCode
 from aicefr.portal.contracts import TaskRecord
 from aicefr.storage.sqlite import ConcurrentResponseUpdate, SQLiteStore
 
@@ -97,6 +97,35 @@ class TaskRepository:
             # already-used version whose keyword metadata predates this field.
             if inserted.rowcount == 1:
                 self._store_keywords(connection, task, "system-seed", insert_only=True)
+
+    def seed_demo_task(self, task: TaskRecord) -> None:
+        """Upgrade the untouched W3 demo placeholder without rewriting used prompts."""
+        current = self.get(task.task_id, task.task_version)
+        if (
+            task.task_id != "demo-speaking"
+            or task.task_version != "1"
+            or current is None
+            or not current.active
+            or current.title != task.task_id
+            or current.prompt_text
+        ):
+            self.seed(task)
+            return
+
+        used = self.store.connection.execute(
+            "SELECT 1 FROM responses WHERE task_id=? AND task_version=? LIMIT 1",
+            (task.task_id, task.task_version),
+        ).fetchone()
+        system_actor = Actor(actor_id="system-demo-seed", role=ActorRole.ADMIN)
+        if used:
+            self.save(
+                system_actor,
+                current.model_copy(update={"active": False}),
+                current.revision,
+            )
+            self.seed(task.model_copy(update={"task_version": "2"}))
+            return
+        self.save(system_actor, task, current.revision)
 
     def save(self, actor: Actor, task: TaskRecord, expected_revision: int) -> TaskRecord:
         with self.store.transaction() as connection:

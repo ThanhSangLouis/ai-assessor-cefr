@@ -62,7 +62,7 @@ def test_teacher_audio_requires_teacher_session_and_review_candidate(tmp_path):
     auth.bootstrap_fixture_account("fixture-teacher", ActorRole.TEACHER, "teacher-password")
     consent = ConsentService(store)
     student = auth.resolve(auth.login("fixture-student", "student-password"))
-    consent.activate(student, "v1")
+    consent.activate(student, "v1", audio_storage_allowed=True)
     buffer = BytesIO()
     sf.write(buffer, np.ones(16_000, dtype=np.float32) * 0.1, 16_000, format="WAV")
     response_service = ResponseService(store, BlobStore(store.data_dir, max_bytes=100_000), consent)

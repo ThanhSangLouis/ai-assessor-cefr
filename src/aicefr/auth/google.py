@@ -9,7 +9,6 @@ import json
 import os
 import re
 import secrets
-import stat
 import time
 import urllib.parse
 from collections.abc import Callable, Mapping
@@ -27,6 +26,7 @@ from aicefr.auth.google_transport import (
 )
 from aicefr.storage.google_identity import GoogleIdentityRepository, google_subject_hash
 from aicefr.storage.paths import external_data_dir
+from aicefr.storage.private_files import is_private_file
 
 AUTHORIZATION_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 FLOW_TTL = timedelta(minutes=10)
@@ -487,33 +487,33 @@ class GoogleIdentityService:
         try:
             root = external_data_dir(self.config.data_dir)
             path = root / "google-flow-hmac.key"
-            flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+            flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
             try:
                 fd = os.open(path, flags)
             except FileNotFoundError:
                 try:
                     fd = os.open(
                         path,
-                        os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                        os.O_WRONLY
+                        | os.O_CREAT
+                        | os.O_EXCL
+                        | getattr(os, "O_BINARY", 0)
+                        | getattr(os, "O_NOFOLLOW", 0),
                         0o600,
                     )
                 except FileExistsError:
                     fd = os.open(path, flags)
                 else:
                     try:
+                        if not is_private_file(path, descriptor=fd):
+                            raise ValueError("Google flow key file is unsafe")
                         os.write(fd, self._random_bytes(32))
                         os.fsync(fd)
                     finally:
                         os.close(fd)
                     fd = os.open(path, flags)
             try:
-                info = os.fstat(fd)
-                if (
-                    not stat.S_ISREG(info.st_mode)
-                    or stat.S_IMODE(info.st_mode) != 0o600
-                    or info.st_nlink != 1
-                    or info.st_uid != os.geteuid()
-                ):
+                if not is_private_file(path, descriptor=fd):
                     return None
                 key = os.read(fd, 33)
             finally:

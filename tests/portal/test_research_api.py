@@ -5,13 +5,18 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime, timedelta
 
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from conftest import http, submit_completed
 
 
 def _research_consent(runtime, token):
     actor = runtime.auth.resolve(token)
-    runtime.consents.activate(actor, "demo-v1", research_allowed=True)
+    runtime.consents.activate(
+        actor,
+        CURRENT_CONSENT_VERSION,
+        research_allowed=True,
+        audio_storage_allowed=True,
+    )
     return actor.actor_id
 
 
@@ -186,7 +191,12 @@ def test_feedback_study_balances_consented_members_and_hides_full_feedback(
             "fixture-password",
         )
         token = runtime.auth.login(actor.actor_id, "fixture-password")
-        runtime.consents.activate(actor, "demo-v1", research_allowed=True)
+        runtime.consents.activate(
+            actor,
+            CURRENT_CONSENT_VERSION,
+            research_allowed=True,
+            audio_storage_allowed=True,
+        )
         student_tokens[token] = actor.actor_id
 
     created = http(
