@@ -6,18 +6,18 @@
 
 ## Phạm vi xác minh
 
-Hai ảnh người dùng cung cấp hiển thị tiêu đề và `To Do` cho SCRUM-81, SCRUM-83–89. Không có mô tả, Acceptance Criteria, project URL, workflow transitions hoặc lịch sử issue. Repo có kế hoạch W06 `DRAFT`; mapping `W6-T02` trong plan (`Backend task closeout`) khác tiêu đề SCRUM-83 trong ảnh (`Bằng chứng nền tảng của DoD W5`), còn `W6-T03–T05` không có trong plan đó. Do đó không coi tiêu đề ảnh là đủ căn cứ để đóng, xóa, đổi assignee hoặc đổi status issue.
+Hai ảnh người dùng cung cấp hiển thị tiêu đề và `To Do` cho SCRUM-81, SCRUM-83–89. Không có mô tả, Acceptance Criteria, project URL, workflow transitions hoặc lịch sử issue. Primary checkout có file local chưa được Git theo dõi `docs/plan/week-06.md` ở trạng thái `DRAFT`; file này không có trong baseline `82fe708` hoặc task branch. Draft đó gán W6-T02 là backend task closeout, khác tiêu đề SCRUM-83 trong ảnh (`Bằng chứng nền tảng của DoD W5`); W6-T03–T05 cũng chưa được ghi trong draft. Do đó không coi tiêu đề ảnh là đủ căn cứ để đóng, xóa, đổi assignee hoặc đổi status issue.
 
 ## Disposition theo bằng chứng hiện có
 
 | Issue | Trạng thái thấy trong ảnh | Bằng chứng trong repo/task branch | Đề xuất disposition; chưa áp dụng Jira |
 | --- | --- | --- | --- |
 | SCRUM-81 — W6-S04 chấm mù phục vụ tập huấn | `To Do` · avatar ST | M12 còn `DRAFT/PENDING`, implementation một phần; chưa có roster, buổi tập huấn hoặc calibration người thật. | Giữ owner Sang; không đóng. Chốt AC và dependency với SCRUM-88/89 trước khi chuyển trạng thái. |
-| SCRUM-83 — W6-T02 evidence DoD W5 | `To Do` · avatar LT | Evidence index local commit `f6a8ef0`; W5 DoD có điều kiện mở, W5 vẫn `PENDING`. Branch chưa push/merge. | Có thể đề nghị `In Review` sau khi push/PR và xác nhận Jira AC; tuyệt đối chưa `Done`. |
+| SCRUM-83 — W6-T02 evidence DoD W5 | `To Do` · avatar LT | Evidence index ở branch local; W5 DoD có điều kiện mở, W5 vẫn `PENDING`. Branch chưa push/merge. | Có thể đề nghị `In Review` sau khi push/PR và xác nhận Jira AC; tuyệt đối chưa `Done`. |
 | SCRUM-84 — W6-T03 sync SDD M11/M14/M16 | `To Do` · avatar LT | SDD/task evidence local commit `2126039`; global phases/acceptance vẫn pending. Branch chưa push/merge. | Có thể đề nghị `In Review` sau khi push/PR; chưa `Done` hoặc `Approved`. |
 | SCRUM-85 — W6-T04 data cho pilot W7 | `To Do` · avatar LT | Readiness report local commit `c159fd8`; protocol/consent chưa duyệt, dataset không có. | Đề nghị dùng transition `Blocked` nếu workflow có; nếu không, ghi blocker sau khi xem AC. Không tạo dữ liệu người thật. |
 | SCRUM-86 — W6-T05 dọn backlog Jira | `To Do` · avatar LT | Chỉ có task title trong ảnh và disposition trong file này; chưa có Jira read/write. | Chưa thể đóng task dọn backlog khi chưa truy cập và đối chiếu các issue thật. |
-| SCRUM-87–89 — W6-N02–N04 | `To Do` trong ảnh trước · avatar HN | Ba branch local ahead 6 commit, chưa push; phiếu/protocol/tập huấn đều còn khoảng trống theo audit. | Không đổi status thay Nguyên; giữ làm dependency của SCRUM-81/85, chờ review/owner verdict. |
+| SCRUM-87–89 — W6-N02–N04 | `To Do` trong ảnh trước · avatar HN | SCRUM-87 và SCRUM-89 local ahead 6 commit, chưa push. SCRUM-88 đã push lên origin tại `0998deb` nhưng chưa merge vào `main` (`82fe708`). Consent target mapping và hoạt động/calibration hai rater vẫn còn khoảng trống theo các branch audit. | Không đổi status thay Nguyên; review evidence mới nhất từng branch và giữ làm dependency của SCRUM-81/85. |
 
 ## Hành động Jira chưa thực hiện
 
