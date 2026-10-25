@@ -1,7 +1,7 @@
 # SCRUM-88 — đề bài, rubric và kế hoạch thu
 
 **Task:** SCRUM-88 / W6-N03 · **Owner:** Nguyên  
-**Status:** Materials implemented; final task acceptance awaits owner review.  
+**Status:** Bộ prompt, rubric và kế hoạch thu đã chuẩn bị; acceptance cuối của task chờ owner xác nhận.
 **Authority:** Theo xác nhận của chủ dự án ngày 25/10/2026, GVHD đã đồng ý duyệt và chủ dự án được ủy quyền chốt. Không yêu cầu biên bản riêng.
 
 ## 1. Prompt bank
@@ -36,7 +36,7 @@ Hai prompt là độc thoại nên `Interaction` không được chấm và hệ
 - **Đối tượng:** sinh viên đại học Việt Nam, từ 18 tuổi, trình độ ước lượng A2–B2.
 - **Quy mô:** mục tiêu 60–90 người, sàn 60; pilot usability 6–8 người trước, không nhập pilot vào tập chính.
 - **Rater gate:** SCRUM-89 tập huấn hai giám khảo trước khi chấm; dùng mẫu chuẩn và kiểm agreement theo kế hoạch nguồn. Không bắt đầu chấm chính thức khi chưa đạt gate đã thống nhất.
-- **Consent/data:** dùng hai lựa chọn tách biệt cho lưu audio và dùng cho nghiên cứu; cấp pseudonym; bảng ánh xạ danh tính giữ ngoài hệ thống; công bố quyền rút lui và thời hạn lưu 12 tháng. Không commit audio, PII hay dữ liệu người tham gia.
+- **Consent/data:** dùng hai lựa chọn tách biệt cho lưu audio và dùng cho nghiên cứu; cấp pseudonym; bảng ánh xạ danh tính giữ ngoài hệ thống. Thời hạn lưu/xóa chưa chốt; 12 tháng chỉ là đề xuất và ứng dụng chưa tự động xóa audio. Trước thu thật, GVHD phải chốt thời hạn/cách xóa và nhóm điền kênh liên hệ xóa dữ liệu vào bản đồng thuận. Không commit audio, PII hay dữ liệu người tham gia.
 - **Kiểm tra bài lỗi:** nghe lại tại buổi thu; cho ghi lại nếu file hỏng hoặc dưới ngưỡng theo quy trình. Ghi thiết bị/môi trường khi không đồng nhất.
 - **Giới hạn phân tích:** kế hoạch này chỉ báo các RQ1–RQ4 trong `KE_HOACH_KHAO_SAT.md`. Không tuyên bố Task C/Interaction hoặc parallel-form reliability/RQ6.
 - **Trạng thái chạy:** chưa tuyển người, chưa thu audio, chưa tạo dữ liệu nghiên cứu; mọi metric thực nghiệm giữ `NOT_EVALUATED`.
@@ -46,3 +46,4 @@ Hai prompt là độc thoại nên `Interaction` không được chấm và hệ
 - Local demo seed hai prompt trên với version và thời lượng được lưu cùng task.
 - Phiếu chấm mù hiển thị rubric A2/B1/B2, hướng dẫn chấm độc lập và `Interaction=null/insufficient_evidence` cho độc thoại.
 - Browser evidence được lưu tại [SCRUM-88 browser report](../../sdd/modules/m13-learning-evidence/evidence/scrum-88/report.md).
+- Phụ lục A/B trong [kế hoạch khảo sát](KE_HOACH_KHAO_SAT.md) được đối chiếu với consent-v2 và anchor rubric ở đây; không ghi nhận đã gửi tài liệu hoặc thay verdict của owner.
