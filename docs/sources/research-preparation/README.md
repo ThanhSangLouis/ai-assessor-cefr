@@ -37,3 +37,17 @@ Repo nguồn hiện đồng bộ với `origin/main`; working tree chỉ còn th
 Test plan nguồn ghi 58 unit/statistical, 23 integration và 2 E2E test đã qua ở revision của nó. Đây là kết quả test phần mềm theo tài liệu nguồn, không phải attendance/calibration của người thật. Không có roster xác nhận, buổi tập huấn, anchor/audio được cấp quyền, raw ratings, agreement measurement hoặc sign-off.
 
 Target M12 có implementation/UI một phần nhưng status review/acceptance còn pending; màn hình không có assignment vì chưa có batch/bài đủ điều kiện. Source code chạy theo API/runtime khác nên không chuyển thẳng file; việc tập huấn offline và kết quả thực tế vẫn cần bằng chứng riêng.
+
+## SCRUM-89 — điều kiện chạy buổi tập huấn
+
+Task chưa thể ghi nhận hoàn tất: chưa có hai giảng viên được phân công, 10 audio mẫu có quyền sử dụng cho mục đích tập huấn, hoặc batch chấm mù trên target. SCRUM-81 đang `To Do` và là phụ thuộc trực tiếp để tạo batch, nhận hai lượt chấm độc lập, rồi xuất agreement report.
+
+Khi đủ điều kiện, thực hiện ngay trên chức năng M12 của target:
+
+1. Chốt với owner bộ rubric/task version và ngưỡng gate trước buổi chấm. Dùng 10 bài mẫu; mỗi bài có hai lượt chấm độc lập.
+2. Chỉ chọn audio đã được phép lưu và dùng cho tập huấn; cấp ID giả danh, không đưa tên, audio, transcript hoặc dữ liệu liên hệ vào Git.
+3. Tạo batch qua SCRUM-81; xáo thứ tự riêng cho từng người chấm. Hai giảng viên không xem điểm AI, danh tính/trình độ người nói, hoặc bài chấm của người còn lại trước khi nộp.
+4. Xuất agreement report từ hệ thống và đối chiếu với gate đã chốt (task đặt mục tiêu weighted kappa `≥ 0.70`). Nếu chưa đạt, ghi rõ tiêu chí bất đồng và huấn luyện lại trước khi bắt đầu chấm chính thức; không sửa điểm để ép đạt ngưỡng.
+5. Lưu report đã giả danh ở nơi evidence được duyệt; repository chỉ nhận số lượng mẫu, rubric/version, metric thực đo, kết luận gate và reference không chứa PII/audio. Không lập biên bản họp riêng theo chỉ dẫn của chủ dự án.
+
+**Trạng thái hiện tại:** `BLOCKED` chờ SCRUM-81 tạo luồng/batch, hai giảng viên thật và 10 audio mẫu được phép dùng. Chưa có rating hoặc agreement metric; không tạo điểm giả và không tuyên bố buổi tập huấn đã diễn ra.
