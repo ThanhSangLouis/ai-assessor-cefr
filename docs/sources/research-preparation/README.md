@@ -15,7 +15,7 @@
 
 Không tìm thấy training manual/slide đã duyệt, audio/anchor có quyền dùng, roster hai rater thật, attendance, phiếu điểm, agreement result, remediation hay sign-off. Readiness record này không chứng minh hoạt động đã diễn ra.
 
-Các candidate calibration còn khác nhau: kế hoạch khảo sát đề xuất 10 bài và ngưỡng weighted kappa/ICC; đề cương v3.1 đề xuất 12–15 bài tập, QWK < 0,60 là stop gate. Dry run 4–6 bài để kiểm tải vận hành là một mục đích khác. Owner/GVHD cần chọn protocol, rubric/version, anchor và ngưỡng trước khi tập huấn thật.
+Các tài liệu tham khảo có đề xuất calibration khác nhau: kế hoạch khảo sát nêu 10 bài cùng weighted kappa/ICC; đề cương v3.1 nêu 12–15 bài tập và QWK < 0,60 làm stop gate; dry run 4–6 bài là kiểm tải vận hành riêng. Với SCRUM-89, acceptance criteria hiện hành là 10 mẫu được phép dùng, hai lượt chấm độc lập trên mỗi mẫu và weighted kappa mục tiêu ≥ 0,70. Không thay số lượng mẫu hoặc gate của task bằng đề xuất ở tài liệu tham khảo. Rubric/version và quyền sử dụng audio vẫn phải được xác nhận trước khi chạy thật.
 
 Trang chấm mù trên target ở revision `82fe708` không có phiếu được phân công nên chưa kiểm được quy trình hai rater trên web. Đây là dependency UI riêng; không chứng minh hoạt động tập huấn offline đã/không diễn ra. Không tuyên bố đạt reliability khi chưa có phép đo thực tế.
 
@@ -40,7 +40,7 @@ Task chưa thể ghi nhận hoàn tất: chưa có hai giảng viên được ph
 
 Khi đủ điều kiện, thực hiện ngay trên chức năng M12 của target:
 
-1. Chốt với owner bộ rubric/task version và ngưỡng gate trước buổi chấm. Dùng 10 bài mẫu; mỗi bài có hai lượt chấm độc lập.
+1. Dùng gate theo SCRUM-89: 10 bài mẫu được phép dùng, hai lượt chấm độc lập mỗi bài và weighted kappa mục tiêu ≥ 0,70. Xác nhận rubric/task version áp dụng trước buổi chấm.
 2. Chỉ chọn audio đã được phép lưu và dùng cho tập huấn; cấp ID giả danh, không đưa tên, audio, transcript hoặc dữ liệu liên hệ vào Git.
 3. Tạo batch qua SCRUM-81; xáo thứ tự riêng cho từng người chấm. Hai giảng viên không xem điểm AI, danh tính/trình độ người nói, hoặc bài chấm của người còn lại trước khi nộp.
 4. Xuất agreement report từ hệ thống và đối chiếu với gate đã chốt (task đặt mục tiêu weighted kappa `≥ 0.70`). Nếu chưa đạt, ghi rõ tiêu chí bất đồng và huấn luyện lại trước khi bắt đầu chấm chính thức; không sửa điểm để ép đạt ngưỡng.

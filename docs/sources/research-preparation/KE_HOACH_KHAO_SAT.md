@@ -225,8 +225,14 @@ quả.
   không cần nêu lý do.
 - Giọng nói là **dữ liệu cá nhân** theo Luật 91/2025/QH15 và Nghị định
   356/2025/NĐ-CP. Không đẩy audio, bản chép lời hay `aicefr.db` lên git.
-- Lưu trữ: bản ghi giữ tối đa **12 tháng** kể từ ngày thu, sau đó xoá tự động
-  theo `src/aicefr/retention.py`. Rút đồng thuận thì xoá sớm hơn.
+- Lưu trữ/xóa: thời hạn chưa được chốt trong chính sách dữ liệu hiện hành; mốc
+  tối đa **12 tháng mới là đề xuất**, không phải cam kết đã duyệt. Ứng dụng hiện
+  chưa tự động xóa audio theo lịch. Trước khi thu dữ liệu thật, GVHD cần chốt
+  thời hạn và cách xóa. Khi người tham gia tắt lưu audio hoặc rút đồng ý, hệ
+  thống chặn các lần nộp mới nhưng **không tự xóa audio đã lưu**; yêu cầu xóa
+  bản đã lưu được gửi tới GVHD hoặc người phụ trách dự án. Không bắt đầu thu
+  thật trước khi chính sách này được chốt và thông tin liên hệ được điền vào
+  bản đồng thuận.
 - Chỉ ba thành viên nhóm truy cập dữ liệu thô. Bảng ánh xạ danh tính do **một**
   người giữ, ngoài hệ thống.
 - Tập Speak & Improve có giấy phép **phi thương mại, không phát tán lại**: mỗi
@@ -274,9 +280,13 @@ Ghi đúng những điều này, bằng tiếng Việt, một trang:
    đây là **công cụ hỗ trợ học tập, không phải chứng chỉ**.
 3. Tôi chọn riêng: ☐ cho phép lưu bản ghi ☐ cho phép dùng cho nghiên cứu.
 4. Bản ghi gắn với **bút danh**, không gắn tên tôi trong hệ thống.
-5. Tôi rút lại lúc nào cũng được; dữ liệu của tôi sẽ bị xoá, và **không ảnh
-   hưởng gì tới điểm học phần**.
-6. Dữ liệu lưu tối đa **12 tháng**, chỉ nhóm nghiên cứu truy cập.
+5. Tôi có thể rút đồng ý bất cứ lúc nào mà **không ảnh hưởng tới điểm học
+   phần**. Việc rút đồng ý chặn các lần nộp mới nhưng không tự xóa bản ghi đã
+   lưu; đầu mối yêu cầu xóa phải được ghi trong phiếu sau khi chính sách được
+   chốt.
+6. Thời hạn lưu/xóa và đầu mối yêu cầu xóa phải được chốt, ghi đúng trong bản
+   đồng thuận trước khi mời người tham gia; ứng dụng hiện chưa tự động xóa
+   audio theo lịch.
 7. Tôi được xem kết quả chấm của chính mình.
 
 ## Phụ lục B — Phiếu chấm của giám khảo
