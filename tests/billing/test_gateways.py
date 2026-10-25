@@ -4,7 +4,6 @@ import hashlib
 import hmac
 import json
 import os
-import stat
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -21,6 +20,7 @@ from aicefr.billing.gateways import (
     _vnpay_signature,
 )
 from aicefr.billing.secrets import KeyRing, KeyStoreError
+from aicefr.storage.private_files import is_private_file
 
 NOW = datetime(2026, 10, 15, 4, 0, tzinfo=UTC)
 
@@ -29,21 +29,23 @@ def test_keyring_is_private_persistent_and_domain_separated(tmp_path):
     first = KeyRing(tmp_path)
     second = KeyRing(tmp_path)
     path = tmp_path / "billing-hmac.key"
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert is_private_file(path)
     assert first.sign_license(b"payload") == second.sign_license(b"payload")
     assert first.verify_license(b"payload", second.sign_license(b"payload"))
     assert not first.verify_gateway_event(b"payload", second.sign_license(b"payload"))
 
 
-def test_keyring_rejects_symlink_hardlink_and_open_permissions(tmp_path):
+def test_keyring_rejects_symlink(tmp_path, make_symlink_or_skip):
     target = tmp_path / "target"
     target.write_bytes(b"do not follow")
     linkdir = tmp_path / "linkdir"
     linkdir.mkdir()
-    (linkdir / "billing-hmac.key").symlink_to(target)
+    make_symlink_or_skip(linkdir / "billing-hmac.key", target)
     with pytest.raises(KeyStoreError):
         KeyRing(linkdir)
 
+
+def test_keyring_rejects_hardlink(tmp_path):
     linkfile_dir = tmp_path / "hardlinkdir"
     linkfile_dir.mkdir()
     key_path = linkfile_dir / "billing-hmac.key"
@@ -52,10 +54,15 @@ def test_keyring_rejects_symlink_hardlink_and_open_permissions(tmp_path):
     with pytest.raises(KeyStoreError):
         KeyRing(linkfile_dir)
 
+def test_keyring_rejects_broad_permissions(tmp_path, grant_everyone_read_access):
     loose = tmp_path / "loose"
     loose.mkdir()
     KeyRing(loose)
-    (loose / "billing-hmac.key").chmod(0o640)
+    key_path = loose / "billing-hmac.key"
+    if os.name == "nt":
+        grant_everyone_read_access(key_path)
+    else:
+        key_path.chmod(0o640)
     with pytest.raises(KeyStoreError):
         KeyRing(loose)
 

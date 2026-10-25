@@ -82,3 +82,42 @@ def test_local_submit_rejects_stale_or_missing_configured_consent_without_dispat
     assert captured["status"].startswith("403")
     assert "đã thay đổi" in response
     assert submit_spy.requests == []
+
+
+def test_local_submit_rejects_audio_without_storage_choice_before_reading_body():
+    identities = MemoryIdentityRepository()
+    auth = AuthService(identities, identities)
+    actor = auth.bootstrap_fixture_account("fixture-student", ActorRole.STUDENT, "fixture-password")
+    token = auth.login(actor.actor_id, "fixture-password")
+    consents = ConsentService(identities)
+    consents.activate(actor, "current-v2", research_allowed=True)
+    submit_spy = _StudentSubmitSpy()
+    app = StudentTeacherApp(
+        StudentApi(submit_spy),
+        auth=auth,
+        consents=consents,
+        consent_version="current-v2",
+    )
+    content_type, body = _multipart("current-v2")
+    stream = BytesIO(body)
+    captured = {}
+    environ = {
+        "REQUEST_METHOD": "POST",
+        "PATH_INFO": "/student/responses",
+        "CONTENT_LENGTH": str(len(body)),
+        "CONTENT_TYPE": content_type,
+        "HTTP_COOKIE": f"aicefr_session={token}",
+        "HTTP_HOST": "127.0.0.1:8000",
+        "HTTP_ORIGIN": "http://127.0.0.1:8000",
+        "wsgi.url_scheme": "http",
+        "wsgi.input": stream,
+    }
+
+    def start_response(status, headers):
+        captured["status"] = status
+
+    b"".join(app(environ, start_response))
+
+    assert captured["status"].startswith("403")
+    assert stream.tell() == 0
+    assert submit_spy.requests == []

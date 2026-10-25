@@ -4,7 +4,7 @@ import threading
 import time
 from types import SimpleNamespace
 
-from aicefr.contracts import ActorRole, ResponseStatus
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole, ResponseStatus
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
 from aicefr.local.worker import BackgroundPipeline
@@ -17,12 +17,14 @@ def _submitted_runtime(tmp_path):
     actor = runtime.auth.bootstrap_fixture_account(
         "fixture-worker", ActorRole.STUDENT, "fixture-password"
     )
-    runtime.consents.activate(actor, "demo-v1")
+    runtime.consents.activate(
+        actor, CURRENT_CONSENT_VERSION, audio_storage_allowed=True
+    )
     response = runtime.responses.submit(
         actor,
         task_id="fixture-task",
         task_version="v1",
-        consent_version="demo-v1",
+        consent_version=CURRENT_CONSENT_VERSION,
         audio_bytes=b"synthetic worker test data",
     )
     return runtime, response

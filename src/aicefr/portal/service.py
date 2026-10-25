@@ -370,7 +370,8 @@ class PortalService:
             (actor.actor_id,),
         ).fetchall()
         consent_events = connection.execute(
-            "SELECT consent_version,state,research_allowed,recorded_at,source "
+            "SELECT consent_version,state,research_allowed,audio_storage_allowed,"
+            "recorded_at,source "
             "FROM consent_events WHERE account_id=? ORDER BY recorded_at,event_id",
             (actor.actor_id,),
         ).fetchall()
@@ -384,8 +385,9 @@ class PortalService:
                     "consent_version": row[0],
                     "state": row[1],
                     "research_allowed": bool(row[2]),
-                    "recorded_at": row[3],
-                    "source": row[4] if row[4] in {"self_service", "admin"} else "other",
+                    "audio_storage_allowed": bool(row[3]),
+                    "recorded_at": row[4],
+                    "source": row[5] if row[5] in {"self_service", "admin"} else "other",
                 }
                 for row in consent_events
             ],

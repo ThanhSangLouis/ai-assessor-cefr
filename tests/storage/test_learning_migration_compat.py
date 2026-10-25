@@ -152,7 +152,7 @@ def test_v10_attempts_and_published_lesson_survive_v11_as_explicit_legacy(tmp_pa
     )
     migrations.migrate(db, data_dir)
 
-    assert db.execute("PRAGMA user_version").fetchone() == (11,)
+    assert db.execute("PRAGMA user_version").fetchone() == (12,)
     assert db.execute("PRAGMA foreign_key_check").fetchall() == []
     assert db.execute(
         "SELECT status,measurements,evidence,attempt_state,result_json,reasons_json "

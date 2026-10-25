@@ -26,7 +26,7 @@ def submitted(tmp_path):
     auth = AuthService(store, store)
     owner = auth.bootstrap_fixture_account("fixture-jobs-owner", ActorRole.STUDENT, "password")
     consent = ConsentService(store)
-    consent.activate(owner, "v1")
+    consent.activate(owner, "v1", audio_storage_allowed=True)
     responses = ResponseService(store, BlobStore(tmp_path / "jobs-data", max_bytes=1024), consent)
     response = responses.submit(
         owner,

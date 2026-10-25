@@ -11,6 +11,7 @@ import soundfile as sf
 
 from aicefr.audio.config import QCConfig
 from aicefr.contracts import (
+    CURRENT_CONSENT_VERSION,
     ActorRole,
     Assessment,
     AssessmentStatus,
@@ -107,7 +108,11 @@ def portal_runtime(tmp_path):
         actor = runtime.auth.bootstrap_fixture_account("fixture-" + name, role, "fixture-password")
         tokens[name] = runtime.auth.login(actor.actor_id, "fixture-password")
         if role is ActorRole.STUDENT:
-            runtime.consents.activate(actor, "demo-v1")
+            runtime.consents.activate(
+                actor,
+                CURRENT_CONSENT_VERSION,
+                audio_storage_allowed=True,
+            )
     yield runtime, tokens
     runtime.close()
 
@@ -122,7 +127,7 @@ def submit_completed(runtime, token, *, score=4.3, band=Band.B2):
         SubmitRequest(
             task_id="demo-speaking",
             task_version="1",
-            consent_version="demo-v1",
+            consent_version=runtime.app._consent_version,
             filename="fixture.wav",
             content_type="audio/wav",
             audio_bytes=stream.getvalue(),

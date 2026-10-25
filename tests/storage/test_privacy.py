@@ -21,7 +21,7 @@ def test_data_dir_is_explicit_and_outside_repository(tmp_path, caplog):
     actor = auth.bootstrap_fixture_account("fixture-private", ActorRole.STUDENT, "secret")
     token = auth.login(actor.actor_id, "secret")
     consent = ConsentService(store, clock=lambda: datetime(2026, 9, 28, tzinfo=UTC))
-    consent.activate(actor, "v1")
+    consent.activate(actor, "v1", audio_storage_allowed=True)
     responses = ResponseService(
         store,
         BlobStore(data_dir, max_bytes=32),

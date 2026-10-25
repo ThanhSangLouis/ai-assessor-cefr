@@ -70,7 +70,11 @@ def test_runtime_seeds_learning_catalogue_and_unknown_mission_is_not_found(tmp_p
         student = runtime.auth.bootstrap_fixture_account(
             "fixture-learning-student", ActorRole.STUDENT, "fixture-password"
         )
-        runtime.consents.activate(student, str(config.get("consent_version", "local-v1")))
+        runtime.consents.activate(
+            student,
+            str(config.get("consent_version", "consent-v2")),
+            audio_storage_allowed=True,
+        )
         token = runtime.auth.login(student.actor_id, "fixture-password")
 
         catalogue = _get(runtime, "/api/v1/learn/path", token=token)
@@ -111,7 +115,9 @@ def test_readiness_aliases_are_sanitized_and_static_assets_are_served(tmp_path):
         runtime.close()
 
 
-def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_path):
+def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(
+    tmp_path, make_symlink_or_skip
+):
     config = _demo_config()
     config["model_artifact"] = str(tmp_path / "missing-model.json")
     blob_store = BlobStore(tmp_path / "data", max_bytes=config["qc"]["max_input_bytes"])
@@ -221,7 +227,9 @@ def test_readiness_accepts_explicit_test_engines_but_rejects_failed_worker(tmp_p
         root.rename(moved)
         try:
             assert runtime.control.readiness()["checks"]["blobs"] is False
-            root.symlink_to(tmp_path / "external-blobs", target_is_directory=True)
+            make_symlink_or_skip(
+                root, tmp_path / "external-blobs", target_is_directory=True
+            )
             assert runtime.control.readiness()["checks"]["blobs"] is False
         finally:
             root.unlink(missing_ok=True)

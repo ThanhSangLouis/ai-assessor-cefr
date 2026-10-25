@@ -40,7 +40,7 @@ def test_withdrawn_consent_blocks_new_submission_before_blob_write(tmp_path):
         content_type="audio/wav",
         audio_bytes=b"generated fixture bytes",
     )
-    consent.activate(actor, "v1")
+    consent.activate(actor, "v1", audio_storage_allowed=True)
     submitted = student.submit(token, request)
     assert store.get_response(submitted.response_id) is not None
     blobs_before = set(responses.metadata.referenced_blob_ids())

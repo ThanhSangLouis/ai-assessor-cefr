@@ -13,9 +13,20 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from time import monotonic, sleep
 
-SCHEMA_VERSION = 11
+from aicefr.storage.private_files import is_private_file
+
+SCHEMA_VERSION = 12
 MIGRATION_DIR = Path(__file__).with_name("migrations")
-GROUPS = ("identity", "learning", "research", "billing", "jobs", "privacy", "learning_runtime")
+GROUPS = (
+    "identity",
+    "learning",
+    "research",
+    "billing",
+    "jobs",
+    "privacy",
+    "learning_runtime",
+    "consent_audio_storage",
+)
 
 
 @contextmanager
@@ -31,8 +42,8 @@ def migration_lock(data_dir: Path) -> Iterator[None]:
         if os.name == "nt":
             import msvcrt
 
-            handle.seek(0)
-            if handle.read(1) == b"":
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
                 handle.write(b"0")
                 handle.flush()
             handle.seek(0)
@@ -80,29 +91,14 @@ def _sha256(path: Path) -> str:
 
 
 def _read_protected_key(path: Path) -> bytes:
-    import stat
-
-    info = path.lstat()
-    expected_uid = os.getuid() if hasattr(os, "getuid") else None
-    if (
-        not stat.S_ISREG(info.st_mode)
-        or info.st_nlink != 1
-        or (expected_uid is not None and info.st_uid != expected_uid)
-        or info.st_mode & 0o077
-    ):
+    if not is_private_file(path):
         raise ValueError("protected key file is unsafe")
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    descriptor = os.open(
+        path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    )
     try:
         opened = os.fstat(descriptor)
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
-            or (expected_uid is not None and opened.st_uid != expected_uid)
-            or opened.st_ino != info.st_ino
-            or opened.st_dev != info.st_dev
-            or opened.st_mode & 0o077
-            or opened.st_size > 4096
-        ):
+        if not is_private_file(path, descriptor=descriptor) or opened.st_size > 4096:
             raise ValueError("protected key file is unsafe")
         data = os.read(descriptor, 4097)
         if len(data) != opened.st_size or len(data) > 4096:
@@ -151,7 +147,7 @@ def create_pre_migration_backup(
         manifest = {
             "schema_version": schema_version,
             "sensitive_files": sensitive_files,
-            "files": {str(p.relative_to(target)): _sha256(p) for p in files},
+            "files": {p.relative_to(target).as_posix(): _sha256(p) for p in files},
         }
         manifest_path = target / "manifest.json"
         manifest_path.write_text(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
@@ -316,6 +312,7 @@ def _verify_group(connection: sqlite3.Connection, group: str) -> None:
             "teacher_override_events",
             "step_review_items",
         },
+        "consent_audio_storage": {"consents", "consent_events"},
     }[group]
     actual = {
         row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -343,6 +340,11 @@ def _verify_group(connection: sqlite3.Connection, group: str) -> None:
         }
         if columns != required:
             raise RuntimeError("durable_jobs schema verification failed")
+    if group == "consent_audio_storage":
+        for table in ("consents", "consent_events"):
+            columns = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+            if "audio_storage_allowed" not in columns:
+                raise RuntimeError(f"{table} audio consent schema verification failed")
 
 
 def verify_current_schema(connection: sqlite3.Connection) -> None:
@@ -407,6 +409,9 @@ def _expected_objects() -> dict[str, tuple[str, str]]:
         expected_connection.executescript(
             "CREATE TABLE accounts(actor_id TEXT PRIMARY KEY);"
             "CREATE TABLE sessions(token_digest TEXT PRIMARY KEY);"
+            "CREATE TABLE consents(participant_id TEXT PRIMARY KEY, "
+            "consent_version TEXT NOT NULL, state TEXT NOT NULL, "
+            "recorded_at TEXT NOT NULL, research_allowed INTEGER NOT NULL DEFAULT 0);"
             "CREATE TABLE responses(response_id TEXT PRIMARY KEY);"
             "CREATE TABLE audit (\n"
             "                event_id TEXT PRIMARY KEY, actor_id TEXT NOT NULL, "
@@ -431,7 +436,7 @@ def _expected_objects() -> dict[str, tuple[str, str]]:
         return {
             name: (object_type, sql)
             for name, object_type, sql in rows
-            if name not in {"accounts", "sessions", "responses"}
+            if name not in {"accounts", "sessions", "consents", "responses"}
         }
     finally:
         expected_connection.close()
