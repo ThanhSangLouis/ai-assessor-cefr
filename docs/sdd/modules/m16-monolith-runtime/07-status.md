@@ -7,7 +7,7 @@
 | Requirement | DRAFT v0.1 · PENDING |
 | Research mode | RUN đề xuất · PENDING |
 | Artifacts 02–06 | DRAFT planning packet |
-| Implementation | SCRUM-65 technical review PASS; còn chờ Sang/G1; các task M16 khác chưa triển khai |
+| Implementation | TASK-001–003: SCRUM-65 technical review PASS, Sang/G1 PENDING; TASK-004: SCRUM-67 data-ops code/evidence merged, review pending; TASK-005/006: BLOCKED |
 | Baselines | target `3b2d2b7`; reference `40907cc`; D043 excluded |
 | Prompt | SCRUM-65 migrations/jobs/integration A1 — Luna, theo direct user authority |
 
@@ -32,3 +32,9 @@ M16 là integration gate, không thay acceptance từng module. Full PASS trên 
 - Code/tests reviewed: 61a5353 (implementation 514fb02). [Review/evidence](evidence/scrum-65/review.md).
 - Full non-smoke: 358 passed, 0 failed/skip, 2 smoke deselected; combined/line/branch coverage đều không regression. Lint/changed-file format, clean-wheel real CLI/HTTP, browser 11 checks, v4→v9 preserve/restore và D043 scan PASS.
 - Global formatter còn 23 legacy files ngoài scope; ASR/VAD audio inference NOT_RUN; Windows native NOT_RUN. Sang/user verdict PENDING, Jira không tự đổi Done, G1 To Do theo lần đọc cuối.
+
+## SCRUM-84 / W6-T03 — Đồng bộ với code đã merge (25/10/2026)
+
+Trên `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`, PR #35 (SCRUM-65, merge `9968abc`) đưa M16-TASK-001–003 vào `main`; evidence SCRUM-65 ghi 358 passed, 2 smoke deselected, changed-file lint/format, clean-wheel/browser và migration/restore checks. PR #50 tiếp tục đổi consent/storage migration và data-operation compatibility; #51/#52 bổ sung task docs/materials. G1/Sang review vẫn `PENDING`; global formatter legacy, ASR/VAD và Windows native có các giới hạn được nêu trong review.
+
+M16-TASK-004 có data-operations code/test trong SCRUM-67 PR #38 (`d60e8a4`); [M14 verification](../m14-billing-licensing/evidence/scrum-67/verification.md) ghi kiểm tra erase/export/retention/restore cùng synthetic fixture. PR #50 cập nhật privacy/migration paths; SCRUM-67 results vẫn gắn historical reviewed SHA, không phải regression mới trên `f540cb8`. TASK-005/006 chưa có final route/package/CI/browser gate trên một revision và vẫn `BLOCKED`. Xem [SCRUM-84 sync evidence](evidence/w6-t03-sync.md). Không chạy test lại và không thay verdict Phase 01–05, G1, user acceptance hay Jira status.
