@@ -25,3 +25,8 @@ PR đã tạo: [#41 — SCRUM-70](https://github.com/thanglb2005/ai-assessor-cef
 ## Đồng bộ W6-S02 / SCRUM-79 — 21/10/2026
 
 Code của module đã merge vào `main` qua PR #41 (SCRUM-70, merge `425bb4f`), #42 (SCRUM-71, merge `3a0dba1`) theo chỉ dẫn trực tiếp của user, trong khi verdict Phase 01–05 vẫn PENDING. Bảng task đã cập nhật trạng thái code ([06-tasks](06-tasks.md)); chạy lại test trên `main` `cabcc44`: 121 passed ([bằng chứng](evidence/w6-s02-sync.md)). Lần đồng bộ này không đổi phase, không ghi APPROVED/DONE; review, verification và acceptance chờ reviewer/user.
+
+## W7-S03 — Chuyển M10 sang kiến trúc ba dịch vụ (25/10/2026)
+
+- PR `port/m10-m12-m13-hoc-tap` vào `migrate/w7-repo-goc`, xếp trên `port/m03-m05-m09-cham` (W7-S02). Người làm: Sang. Chưa có verdict.
+- Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.

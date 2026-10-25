@@ -42,6 +42,7 @@
 | `storage/learning.py`: kho học tập, chấm mù, nghiên cứu trên SQLite | đã có tương đương | `storage/lesson_repository.py`, `plan_repository.py`, `rating_repository.py`, `study_repository.py`, `replay_repository.py` (MongoDB, D048) |
 | `api/learning.py`, `api/research.py` | đã có tương đương | `services/core/learning/{lessons_api,plans_api}.py`, `services/core/assessment/{rating_api,study_api,replay_api}.py` |
 | `tools/agreement_report.py` bản SQLite | đã có tương đương | `tools/agreement_report.py` của repo gốc; test `test_agreement.py` |
+| `tests/test_pronunciation_unit.py`: 21 test thuần cho `pronunciation/vietnamese.py` | **giữ** | Chạy trên module mới: 21/21 qua sau khi đổi phép kiểm mã mẫu theo mã đang chạy (`s_ending`, `th_sound`, `cluster`); spec M13 03 đổi theo, chờ review |
 | Test `tests/lessons`, `tests/practice`, `tests/api/test_learning_*.py`, `tests/storage/test_learning_*.py` | bỏ | Viết cho API và kho cũ đã gỡ; hành vi tương ứng trong `test_lessons_*`, `test_practice_*`, `test_learning_*`, `test_achievements*`, `test_agreement.py`, `test_assign_unit.py`, `test_ratings.py`, `test_replay.py` |
 
 Không có mục "chưa rõ" trong phần của Sang.
