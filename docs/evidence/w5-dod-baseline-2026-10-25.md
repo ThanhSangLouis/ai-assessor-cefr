@@ -3,14 +3,15 @@
 **Evidence ID:** `SCRUM-83-W5-DOD-BASELINE`  
 **Ngày rà:** 25/10/2026  
 **Owner theo nhánh:** Thắng  
-**Revision task branch:** `82fe708af80f0b50eb540c65b5c583f64868d2c8`  
+**Code baseline reviewed:** `82fe708af80f0b50eb540c65b5c583f64868d2c8`
+**Evidence introduced in:** `f6a8ef0934af09bed36b7e36530137a2372d0049`
 **Kết luận:** đã lập baseline evidence; W5 vẫn `PENDING`, chưa có verdict nghiệm thu của chủ dự án.
 
 ## Phạm vi và cách đọc
 
 Ảnh Jira chỉ cung cấp tiêu đề SCRUM-83, không có mô tả/Acceptance Criteria đầy đủ. Bảng dưới dùng 12 điều kiện tại [Definition of Done W5](../plan/week-05.md#11-definition-of-done-w5) làm checklist evidence. Đây là inventory liên kết tới hồ sơ gốc, không phải lần chạy lại kiểm thử hay verdict Phase 09. Các kết quả cũ được gắn với revision/ngày chạy riêng; không ghép chúng thành một lần verification trên cùng SHA.
 
-Revision `82fe708` hiện tại của nhánh task có chứa baseline W5 `cabcc44` và các PR tiếp theo tới #49. Một số evidence dưới đây được tạo trước `82fe708`; bảng giữ rõ giới hạn đó. Không có final W5 DoD package hoặc owner acceptance trên revision này.
+Code baseline `82fe708` là parent của commit evidence `f6a8ef0`; baseline này có source tích hợp tới PR #49. Một số evidence dưới đây được tạo trước `82fe708`; bảng giữ rõ giới hạn đó. Không có final W5 DoD package hoặc owner acceptance trên code baseline này.
 
 ## Đối chiếu 12 điều kiện DoD W5
 
@@ -31,7 +32,7 @@ Revision `82fe708` hiện tại của nhánh task có chứa baseline W5 `cabcc4
 
 ## Blocker traceability
 
-Ảnh ghi SCRUM-83 là `W6-T02 — Bằng chứng nền tảng của DoD W5`. Bản plan W06 trong checkout làm việc khác lại gán `W6-T02` cho backend task closeout và đang ở trạng thái `DRAFT`; file đó không có trong baseline branch này. Cần đối chiếu mô tả/AC Jira với plan W06 được chủ dự án chốt trước khi dùng report này để đóng Jira hoặc tuyên bố SCRUM-83 hoàn tất.
+Ảnh chủ dự án cung cấp ghi SCRUM-83 là `W6-T02 — Bằng chứng nền tảng của DoD W5`. Primary checkout có file local chưa được Git theo dõi `docs/plan/week-06.md` ở trạng thái `DRAFT`, trong đó W6-T02 được mô tả là backend task closeout; file này không thuộc code baseline `82fe708` hay task branch này. Nội dung Acceptance Criteria Jira chưa có trong tài liệu được cung cấp và chưa truy cập được từ phiên này. Vì vậy report này chỉ là inventory 12 điều kiện DoD theo tiêu đề trong ảnh; không dùng nó để đóng một backend task khác hoặc tuyên bố W5 đạt DoD. Cần chốt mapping SCRUM-83 ↔ W6-T02 trước verdict task.
 
 ## Kết luận task-local
 
