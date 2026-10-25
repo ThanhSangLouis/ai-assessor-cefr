@@ -9,6 +9,12 @@
 3. File quy tắc này và skill SDD. `AI_CONTEXT.md` là bản đồ ngắn, không thay Specification.
 4. `docs/sources/` lưu tài liệu gốc, model provenance và hồ sơ kỹ thuật nội bộ do chính nhóm tạo. Requirement và evidence của dự án được xác định theo SDD đã duyệt và revision hiện hành.
 
+### Phê duyệt trong phạm vi dự án
+
+- Theo chỉ dẫn của chủ dự án ngày 25/10/2026, với các task nghiên cứu/thu thập dữ liệu của nhóm, GVHD là đầu mối duyệt; không yêu cầu thêm phê duyệt riêng từ GV Ngoại ngữ. Chủ dự án đã được GVHD ủy quyền chốt và nghiệm thu các task này.
+- Không bắt buộc biên bản hoặc hồ sơ họp riêng. Xác nhận trực tiếp của chủ dự án trong chat là căn cứ cho verdict; cập nhật người duyệt, ngày và quyết định vào `07-status.md` khi phase/task có status tương ứng.
+- Quy tắc này thay đổi thẩm quyền và hình thức ghi nhận, không tự chọn thay nội dung chuyên môn còn mâu thuẫn. Chỉ ghi `APPROVED` khi chủ dự án đã chốt đúng artifact/version/phạm vi cụ thể.
+
 W1 (14–18/09/2026) **DONE theo chủ dự án**; minh chứng lịch sử vẫn có mục cần bổ sung. Các SDD W2 hiện là **DRAFT, Phase 01 PENDING**. Việc chia người đọc/review tài liệu được thực hiện ngay; prompt triển khai cho Antigravity chỉ phát khi module có Phase 01, 03, 04 và 05 `APPROVED` theo đúng thứ tự. Không ghi `APPROVED`, `PASS`, `DONE` thay chủ dự án hoặc từ kết quả dự kiến.
 
 ## Một quy trình SDD cho cả ba người

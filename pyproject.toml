@@ -40,6 +40,7 @@ aicefr = [
     "api/static/*.js",
     "api/static/*.css",
     "api/static/*.svg",
+    "api/static/*.pdf",
     "api/static/art/*.svg",
     "api/static/fonts/*.woff2",
     "api/static/fonts/*.txt",

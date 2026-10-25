@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 # M02 xuất 16 kHz mono cho M03/M04; Sang review shared contract còn pending.
 EXPECTED_SAMPLE_RATE_HZ = 16_000
+CURRENT_CONSENT_VERSION = "consent-v2"
 
 
 class _Frozen(BaseModel):
@@ -51,6 +52,7 @@ class ConsentRecord(_Frozen):
     state: ConsentState
     recorded_at: datetime
     research_allowed: bool = False
+    audio_storage_allowed: bool = False
 
 
 class SessionRecord(_Frozen):

@@ -20,6 +20,8 @@ def test_versioned_consent_withdrawal_blocks_new_submission():
     assert consent.require_active(student, "v1") == active
     with pytest.raises(AuthorizationError):
         consent.require_active(student, "v2")
+    with pytest.raises(AuthorizationError, match="audio storage consent"):
+        consent.require_audio_storage(student, "v1")
     withdrawn = consent.withdraw(student)
     assert withdrawn.state == ConsentState.WITHDRAWN
     assert repository.get_consent(student.actor_id) == withdrawn
@@ -27,5 +29,6 @@ def test_versioned_consent_withdrawal_blocks_new_submission():
         consent.require_active(student, "v1")
     with pytest.raises(AuthorizationError):
         consent.withdraw(teacher)
-    consent.activate(student, "v2")
+    consent.activate(student, "v2", audio_storage_allowed=True)
     assert consent.require_active(student, "v2").consent_version == "v2"
+    assert consent.require_audio_storage(student, "v2").audio_storage_allowed

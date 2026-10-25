@@ -200,11 +200,25 @@ class AccountService:
             raise AuthorizationError("access_denied")
         return self.repository.consent(actor.actor_id)
 
-    def set_consent(self, token: str, version: str, research_allowed: bool, active: bool = True):
+    def set_consent(
+        self,
+        token: str,
+        version: str,
+        research_allowed: bool,
+        active: bool = True,
+        audio_storage_allowed: bool = False,
+    ):
         actor = self.auth.resolve(token)
         if actor.role is not ActorRole.STUDENT:
             raise AuthorizationError("access_denied")
-        result = self.repository.set_consent(actor, version, research_allowed, active, self._now())
+        result = self.repository.set_consent(
+            actor,
+            version,
+            research_allowed,
+            active,
+            self._now(),
+            audio_storage_allowed=audio_storage_allowed,
+        )
         return result
 
     def _require_admin(self, token: str) -> Actor:

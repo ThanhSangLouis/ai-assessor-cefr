@@ -20,6 +20,24 @@ def test_blob_read_preserves_binary_newlines_and_control_bytes(tmp_path):
     assert (blobs.root / blob.blob_id).read_bytes() == payload
 
 
+def test_audio_storage_opt_out_blocks_persistent_submission(tmp_path):
+    _, store, blobs, _, owner, _, consent, responses = setup_service(tmp_path)
+    consent.activate(owner, "v2", research_allowed=True, audio_storage_allowed=False)
+
+    with pytest.raises(AuthorizationError, match="audio storage consent required"):
+        responses.submit(
+            owner,
+            task_id="fixture-task",
+            task_version="v1",
+            consent_version="v2",
+            audio_bytes=b"synthetic test audio",
+        )
+
+    assert store.connection.execute("SELECT COUNT(*) FROM responses").fetchone() == (0,)
+    assert not list(blobs.root.glob("*"))
+    store.close()
+
+
 class Clock:
     def __init__(self):
         self.now = datetime(2026, 9, 28, tzinfo=UTC)
@@ -36,7 +54,7 @@ def setup_service(tmp_path):
     owner = auth.bootstrap_fixture_account("fixture-owner", ActorRole.STUDENT, "password")
     other = auth.bootstrap_fixture_account("fixture-other", ActorRole.STUDENT, "password")
     consent = ConsentService(store, clock=clock)
-    consent.activate(owner, "v1")
+    consent.activate(owner, "v1", audio_storage_allowed=True)
     return (
         clock,
         store,
@@ -79,7 +97,7 @@ def test_restart_restores_response_audit_session_and_checksum(tmp_path):
     assert restarted_responses.get_blob(owner, record.response_id) == b"synthetic fixture bytes"
     assert len(restarted.list_audit()) == 2
     version = restarted.connection.execute("PRAGMA user_version").fetchone()[0]
-    assert version == SQLiteStore.SCHEMA_VERSION == 11
+    assert version == SQLiteStore.SCHEMA_VERSION == 12
     assert restarted.connection.execute("PRAGMA foreign_keys").fetchone()[0] == 1
     restarted.close()
 
@@ -104,7 +122,10 @@ def test_owner_denied_before_blob_read_and_withdrawal_blocks_submit(tmp_path, mo
         responses.get_blob(owner, "0" * 32)
     assert str(foreign.value) == str(missing.value)
     consent.withdraw(owner)
-    assert store.get_consent(owner.actor_id).state == ConsentState.WITHDRAWN
+    withdrawn = store.get_consent(owner.actor_id)
+    assert withdrawn.state == ConsentState.WITHDRAWN
+    assert withdrawn.research_allowed is False
+    assert withdrawn.audio_storage_allowed is False
     with pytest.raises(AuthorizationError):
         responses.submit(
             owner,
@@ -115,6 +136,12 @@ def test_owner_denied_before_blob_read_and_withdrawal_blocks_submit(tmp_path, mo
         )
     assert store.get_response(record.response_id) == record
     assert "consent_withdrawn" in [event.action for event in store.list_audit()]
+    events = store.connection.execute(
+        "SELECT state,research_allowed,audio_storage_allowed FROM consent_events "
+        "WHERE account_id=?",
+        (owner.actor_id,),
+    ).fetchall()
+    assert ("withdrawn", 0, 0) in events
     store.close()
 
 
