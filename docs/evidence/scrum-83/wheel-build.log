@@ -1,0 +1,14 @@
+COMMAND: python -m pip wheel --no-deps --no-build-isolation --wheel-dir D:/codex-temp/w06-scrum83-fa61076/wheel .
+Processing d:\laptrinh\tlcn\ai-assessor-cefr\build\worktrees\w06-scrum-83
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: aicefr
+  Building wheel for aicefr (pyproject.toml): started
+  Building wheel for aicefr (pyproject.toml): finished with status 'done'
+  Created wheel for aicefr: filename=aicefr-0.1.0-py3-none-any.whl size=835120 sha256=0cccde9db20b612f123f97b96a77f4f9cde6c0340b12531fc76ef763eecfa1d8
+  Stored in directory: c:\users\pc\appdata\local\pip\cache\wheels\77\f2\d9\b11c4ee5b0792e940452aa4a198e170d9b1ebe9d851e0be59c
+Successfully built aicefr
+
+[notice] A new release of pip is available: 25.0.1 -> 26.2.2
+[notice] To update, run: D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Scripts\python.exe -m pip install --upgrade pip
+EXIT_CODE=0

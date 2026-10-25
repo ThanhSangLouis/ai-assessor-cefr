@@ -1,0 +1,25 @@
+COMMAND: python scripts/qa/w5_foundation_smoke.py --wheel D:/codex-temp/w06-scrum83-fa61076/wheel/aicefr-0.1.0-py3-none-any.whl --python-dependency-cache D:/codex-temp/w6-scrum83-f540/wheelhouse --evidence-dir D:/codex-temp/w06-scrum83-fa61076/smoke
+{
+  "limitations": [
+    "Model inference NOT_RUN; model artifacts are intentionally absent."
+  ],
+  "passed": true,
+  "source_tree_import": false,
+  "steps": {
+    "audio_storage_opt_in": true,
+    "authenticated_page": true,
+    "backup_restore_report": true,
+    "cli_boot": true,
+    "current_consent_version": true,
+    "liveness": true,
+    "login": true,
+    "login_page": true,
+    "missing_model_readiness_503": true,
+    "recorder.js": true,
+    "report.js": true,
+    "report_created_without_models": true,
+    "student_login": true
+  },
+  "wheel": "aicefr-0.1.0-py3-none-any.whl"
+}
+EXIT_CODE=0
