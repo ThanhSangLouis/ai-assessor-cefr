@@ -1,0 +1,4 @@
+COMMAND: PYTHONPATH=build/worktrees/w06-scrum-85/src python -m pytest -q tests/api/test_identity_api.py tests/auth/test_consent.py tests/local/test_consent_submission.py tests/local/test_consent_version_guard.py tests/local/test_sessions.py
+................                                                         [100%]
+16 passed in 5.55s
+EXIT_CODE=0

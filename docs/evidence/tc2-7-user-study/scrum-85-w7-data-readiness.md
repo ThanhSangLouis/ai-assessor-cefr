@@ -1,34 +1,42 @@
-# SCRUM-85 — Readiness dữ liệu pilot W7
+# SCRUM-85 — Checklist vận hành cho buổi thu thử W7
 
 **Evidence ID:** `SCRUM-85-W7-DATA-READINESS`  
-**Ngày rà:** 25/10/2026 · **Owner theo nhánh:** Thắng  
-**Baseline:** `82fe708af80f0b50eb540c65b5c583f64868d2c8`  
-**Trạng thái:** `BLOCKED` — chưa chuẩn bị hoặc thu dữ liệu người học; chỉ lập readiness record.
+**Ngày kiểm tra:** 25/10/2026 · **Owner:** Thắng
+**Integrated baseline:** `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`
+**Task acceptance:** `CHECKLIST COMPLETE` · **Thu dữ liệu người học:** `NOT_RUN`
 
-## Phạm vi
+## Kết quả rà soát
 
-Ảnh Jira chỉ có tiêu đề SCRUM-85, không có Acceptance Criteria hoặc định nghĩa loại dữ liệu. Repo không có kế hoạch `week-07`, protocol pilot đã duyệt, participant manifest hay dữ liệu tại hồ sơ TC2.7. Vì vậy record này chỉ xác định readiness và điều kiện mở; không tạo dataset, audio, participant giả hoặc số liệu pilot.
+Checklist dưới đây được đối chiếu với code hiện hành và chạy bằng tài khoản fixture trên server loopback. Không tạo participant, audio, dataset hay số liệu pilot. Task hoàn tất ở mức checklist vận hành; đây không phải xác nhận có thể bắt đầu thu người học.
 
-## Evidence hiện có
-
-| Nguồn | Trạng thái thực tế | Ý nghĩa đối với SCRUM-85 |
+| Hạng mục | Kết quả kiểm chứng | Bằng chứng |
 | --- | --- | --- |
-| [M13 Requirement](../../sdd/modules/m13-learning-evidence/01-requirement.md), [Research](../../sdd/modules/m13-learning-evidence/02-research.md), [Specification](../../sdd/modules/m13-learning-evidence/03-specification.md), [Test Plan](../../sdd/modules/m13-learning-evidence/04-test-plan.md), [Plan](../../sdd/modules/m13-learning-evidence/05-plan.md) | Các artifact trên baseline `82fe708` là `DRAFT`; Phase 01 và Research decision `PENDING`. SCRUM-88 có protocol/prompt/rubric trên branch đã push `0998deb`, chưa merge vào baseline và task acceptance còn chờ review. | Không lấy M13-FR-003 (tối thiểu 4 trong bản nháp) làm cỡ mẫu được duyệt. Trước collection cần review protocol SCRUM-88 theo quyền duyệt đã xác nhận và chốt mapping vào revision sẽ chạy. |
-| [M13 Status](../../sdd/modules/m13-learning-evidence/07-status.md) | Phase 01 `PENDING`; implementation `CODE_MERGED` một phần; review/acceptance `PENDING`; study outcomes `NOT_EVALUATED` | Code/test evidence không chứng minh đã có pilot data hoặc được phép thu dữ liệu. |
-| [M12 Status](../../sdd/modules/m12-blind-evaluation/07-status.md) | Requirement/Research `DRAFT/PENDING`; implementation một phần; review/acceptance `PENDING`. Branch SCRUM-89 local `5901e04` có tài liệu training reference, chưa push. | Chưa có roster hai rater, lượt tập huấn/calibration thực tế hoặc assignment đủ điều kiện trên target để tạo bộ bài chấm thật. |
-| [TC2.7 hồ sơ](README.md) | Ghi chưa có thực nghiệm người dùng; fixture không thay thế user-study evidence | Chưa có artifact participant, dataset, metric hoặc thay đổi sau phản hồi. |
-| [W6-S03 technical smoke](../../sdd/modules/m09-trust-layer/evidence/w6-s03-real-pipeline.md) | Một audio TTS được dùng cho pipeline smoke; không phải giọng người học | Chỉ chứng minh một đường chạy kỹ thuật; không phải dữ liệu pilot, rater calibration hay CEFR validation. |
+| Consent hiện hành | Trang sinh viên hiển thị `consent-v2` và link PDF cùng version. Checkbox lưu audio hoạt động độc lập với checkbox research; fixture lưu audio `true`, research `false`. | [Consent screenshot](../../../output/playwright/SCRUM-85-consent.png) |
+| Batch account/temp password | M11 API và luồng temporary-password được kiểm qua identity tests. Admin UI hiện chỉ tạo từng account và nhập password thủ công; không có màn hình batch hoặc receipt mật khẩu tạm. | [Identity/consent test log](evidence/scrum-85/identity-consent-tests.log), [admin accounts screenshot](../../../output/playwright/SCRUM-85-admin-accounts.png) |
+| Xóa dữ liệu | Admin UI chạy erasure preview cho fixture: 0 bài, 0 bytes audio; không xác nhận xóa trong lượt browser này. Erasure apply được bao phủ bởi fixture tests của data-operations. | [Erasure preview screenshot](../../../output/playwright/SCRUM-85-erasure-preview.png), [scoped tests](https://github.com/thanglb2005/ai-assessor-cefr/blob/7febd5bb099c12d0c3c62862e2ef61f37cb25f56/docs/evidence/scrum-83/selected-tests.log) |
+| Retention/orphan | Admin UI hiện preview retention 180 ngày và orphan; fixture trả 0 bài, 0 blob. Không chạy apply trên dữ liệu pilot. | [Maintenance screenshot](../../../output/playwright/SCRUM-85-maintenance.png) |
+| Backup/restore | Clean-wheel smoke đã backup database, restore sang thư mục mới và đọc lại report fixture thành công. UI nói rõ backup thao tác qua CLI `maintenance backup`, không có nút backup/restore. | [Clean-wheel result](https://github.com/thanglb2005/ai-assessor-cefr/blob/7febd5bb099c12d0c3c62862e2ef61f37cb25f56/docs/evidence/scrum-83/clean-wheel-smoke.log), [report JSON](https://github.com/thanglb2005/ai-assessor-cefr/blob/7febd5bb099c12d0c3c62862e2ef61f37cb25f56/docs/evidence/scrum-83/w5-foundation-smoke.json) |
+| Browser | Login, consent, admin accounts, erasure preview và maintenance render/operate được. Chromium ghi `Transition was aborted because of invalid state. ViewTransition opt-in disabled` lúc điều hướng; trang vẫn render. Có thêm verbose notice thiếu `autocomplete` trên password field. | [Admin data screenshot](../../../output/playwright/SCRUM-85-admin-data-before.png), [browser console log](evidence/scrum-85/browser-console.log) |
 
-## Điều kiện cần chốt trước khi tạo dữ liệu pilot
+Các ảnh được chụp từ UI local với fixture tổng hợp; không chứa dữ liệu người học thật. Python browser runner riêng không chạy vì máy chưa cài Chromium headless-shell cho Python Playwright; các hành trình UI ở trên đã được thao tác bằng Playwright CLI trên Chromium thật.
 
-1. SCRUM-88/M13: review protocol đã push tại `0998deb`, xác nhận prompt ID/version, rubric theo M05, population/eligibility, phương pháp/cỡ mẫu, lịch W7, metric và xử lý bài thiếu/lỗi trên revision sẽ chạy.
-2. SCRUM-87: hoàn tất nội dung phiếu consent và mapping với target, gồm mục đích, lựa chọn lưu audio riêng, tái sử dụng nghiên cứu, withdrawal, retention/xóa, quyền truy cập và người giữ mapping pseudonym. Theo xác nhận của chủ dự án, không cần GV ngoại ngữ hoặc biên bản họp riêng.
-3. SCRUM-81/SCRUM-89: chốt quy trình chấm mù, roster hai rater, anchor/bài tập, version rubric, tập huấn và calibration thực tế. Tài liệu training reference trên branch chưa thay cho hoạt động này.
-4. M13 owner/project owner: verdict các phase SDD áp dụng và quyền bắt đầu thu dữ liệu thật; xác nhận nơi lưu được kiểm soát ngoài Git và người được cấp quyền.
-5. Sau khi được phép: manifest dữ liệu phải ghi protocol/version, consent version, pseudonymous record ID, eligibility, source/collection date, custodian, secure storage reference, checksum và withdrawal/erasure state. Không ghi tên, email, audio hoặc mapping nhận dạng vào Git.
+## Checklist trước buổi thu
 
-## Blocker và next action
+1. Dùng revision triển khai đã chốt; xác nhận `/student/consent` và PDF cùng là `consent-v2` trước khi tạo tài khoản.
+2. Tạo tài khoản sinh viên qua M11 batch API `/api/v1/admin/accounts`; kiểm tra temporary-password gate. Admin UI chỉ hỗ trợ tạo từng tài khoản. Không đưa password tạm vào Git, workbook, ảnh chụp hoặc log; chuyển cho người nhận qua kênh riêng đã thống nhất.
+3. Mỗi người tham gia tự xem nội dung consent và chọn riêng lưu audio; research opt-in mặc định không bật. Ghi lại đúng `consent_version` và hai giá trị lựa chọn trong manifest giả danh.
+4. Trước khi ghi dữ liệu thật, GVHD/chủ dự án cần chốt retention và cách xóa. Consent UI hiện ghi thời hạn chưa được chốt, mốc 12 tháng chỉ là đề xuất và ứng dụng chưa tự xóa audio theo lịch.
+5. Cấp quyền cho người vận hành vào storage được kiểm soát ngoài repo. Manifest chỉ ghi pseudonymous ID, consent version/state, thời điểm, checksum và storage reference; không ghi tên, email, audio, password hoặc mapping nhận dạng vào Git.
+6. Trước/sau buổi thu, chạy retention/orphan preview và kiểm tra số liệu trước khi xác nhận thao tác apply. Dùng erasure preview với đúng actor ID và xác nhận lại ID; không xóa từ preview nếu chưa có yêu cầu hợp lệ.
+7. Tạo backup ngoài data-dir bằng CLI `maintenance backup`, kiểm manifest/checksum và restore sang thư mục mới trước khi thu. Không ghi đè backup hoặc đưa backup vào Git.
+8. Chỉ export nghiên cứu cho account đã opt-in. Kiểm soát access và xóa theo chính sách được chốt; backup không tự thay đổi khi chạy erasure.
+9. Lưu biên nhận vận hành bằng evidence đã khử định danh. Không coi fixture/test data, TTS hoặc số liệu kỹ thuật là kết quả pilot hay CEFR validation.
 
-`SCRUM-85` giữ `BLOCKED`. SCRUM-88 đã push protocol/prompt/rubric nhưng chưa merge vào baseline; SCRUM-87 chưa có phiếu consent khớp target; SCRUM-89 chưa có hoạt động hai rater/calibration ghi nhận. Chốt các artifact và blind-rating readiness SCRUM-81 trước khi lập collection batch. Sau khi owner review/cho phép trên revision sẽ chạy, có thể tạo manifest và thu theo protocol; đến lúc đó pilot vẫn `NOT_RUN`/`NOT_EVALUATED`. Fixture tổng hợp chỉ được tạo theo task kiểm thử riêng và phải được ghi là fixture, không thay cho pilot data.
+## Điều kiện chưa được kiểm chứng
 
-Không chỉnh M12/M13 SDD trong task này vì đây là scope do Sang sở hữu và chưa có verdict Phase 01–05. Không thay Jira status; report này là readiness finding, không phải task acceptance.
+- Chưa có người tham gia, roster, dữ liệu pilot, audio thật hoặc metric thu thử; tất cả là `NOT_RUN`/`NOT_EVALUATED`.
+- Retention policy trên giao diện chưa được chốt. Vì vậy report chỉ xác nhận checklist và thao tác fixture, không tuyên bố buổi thu người học đã sẵn sàng.
+- UI chưa có batch-account flow; batch/temp-password là API contract được test, không phải thao tác trên giao diện.
+- Model inference không chạy; clean-wheel smoke xác nhận đúng trạng thái thiếu model và report `NOT_EVALUATED`, không có band giả.
+
+Không cần biên bản họp riêng theo chỉ dẫn chủ dự án; report này ghi checklist, bằng chứng giao diện và giới hạn thực tế.
