@@ -1,7 +1,7 @@
 # SCRUM-84 — M11 sync với code đã merge
 
-**Scope:** M11 · **Task:** SCRUM-84 / W6-T03 · **Ngày rà:** 25/10/2026  
-**Baseline:** `main` / task branch `82fe708af80f0b50eb540c65b5c583f64868d2c8`  
+**Scope:** M11 · **Task:** SCRUM-84 / W6-T03 · **Ngày rà:** 25/10/2026
+**Baseline:** `main` / task branch `82fe708af80f0b50eb540c65b5c583f64868d2c8`
 **Result:** task/evidence mapping đã cập nhật; module approval và owner acceptance vẫn `PENDING`.
 
 ## Code merge và evidence

@@ -1,7 +1,7 @@
 # SCRUM-84 — M16 sync với code đã merge
 
-**Scope:** M16 · **Task:** SCRUM-84 / W6-T03 · **Ngày rà:** 25/10/2026  
-**Baseline:** `main` / task branch `82fe708af80f0b50eb540c65b5c583f64868d2c8`  
+**Scope:** M16 · **Task:** SCRUM-84 / W6-T03 · **Ngày rà:** 25/10/2026
+**Baseline:** `main` / task branch `82fe708af80f0b50eb540c65b5c583f64868d2c8`
 **Result:** TASK-001–004 có mapping code/evidence; final gate TASK-005/006 còn `BLOCKED`.
 
 ## Code merge và evidence
