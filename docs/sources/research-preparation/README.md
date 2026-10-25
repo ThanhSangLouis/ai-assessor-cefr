@@ -22,3 +22,18 @@ Không tìm thấy training manual/slide đã duyệt, audio/anchor có quyền 
 Các candidate calibration còn khác nhau: kế hoạch khảo sát đề xuất 10 bài và ngưỡng weighted kappa/ICC; đề cương v3.1 đề xuất 12–15 bài tập, QWK < 0,60 là stop gate. Dry run 4–6 bài để kiểm tải vận hành là một mục đích khác. Owner/GVHD cần chọn protocol, rubric/version, anchor và ngưỡng trước khi tập huấn thật.
 
 Trang chấm mù trên target ở revision `82fe708` không có phiếu được phân công nên chưa kiểm được quy trình hai rater trên web. Đây là dependency UI riêng; không chứng minh hoạt động tập huấn offline đã/không diễn ra. Không tuyên bố đạt reliability khi chưa có phép đo thực tế.
+
+## Recheck code-level source (HEAD `09b4e8d68d46b87a7219bfb009118d29b515c6c7`)
+
+Repo nguồn hiện đồng bộ với `origin/main`; working tree chỉ còn thay đổi local ở file model không liên quan. Source code có quy trình chấm mù kép và UI quản trị:
+
+| File nguồn được kiểm tra | SHA-256 | Vai trò |
+|---|---|---|
+| `src/aicefr/research/assign.py` | `7D6347A3D6AE08FBE45D5703F8754ECE580A516267221C5289CF8AF4FB417E25` | Phân hai rater/response, thứ tự riêng và assignment. |
+| `src/aicefr/research/agreement.py` | `232523F50B0177AC0AFB571225BDCA1A0D9FC57064BAE4D45ECD59845E06EA58` | Agreement, đối chiếu và phân xử. |
+| `docs/test/TEST_PLAN_D030.md` | `4571E86FFFC80D4B75845037FB18F9E9FEA7A54D2B3B4FA87F3FEBCFBFA42781` | Test plan ghi test E2E cho rater/admin UI; dữ liệu test được nêu là synthetic. |
+| `tests/e2e/test_ratings_e2e.py` | `11BA84869DC7D1A38BE0B3F9711FCE5A9600761324E66FB7F958D50B8386AB43` | Browser flow với tài khoản và fixture test. |
+
+Test plan nguồn ghi 58 unit/statistical, 23 integration và 2 E2E test đã qua ở revision của nó. Đây là kết quả test phần mềm theo tài liệu nguồn, không phải attendance/calibration của người thật. Không có roster xác nhận, buổi tập huấn, anchor/audio được cấp quyền, raw ratings, agreement measurement hoặc sign-off.
+
+Target M12 có implementation/UI một phần nhưng status review/acceptance còn pending; màn hình không có assignment vì chưa có batch/bài đủ điều kiện. Source code chạy theo API/runtime khác nên không chuyển thẳng file; việc tập huấn offline và kết quả thực tế vẫn cần bằng chứng riêng.
