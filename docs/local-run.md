@@ -15,7 +15,7 @@ python -m aicefr.local init-demo --data-dir /tmp/aicefr-local-data --actor-id fi
 python -m aicefr.local serve --data-dir /tmp/aicefr-local-data --demo --port 8000
 ```
 
-CLI hỏi mật khẩu bằng `getpass`; không có mật khẩu mặc định. ID phải bắt đầu `fixture-`. Có thể dùng `--password-stdin` trong automation local, không đặt mật khẩu trong command argument hay Git. Mở `http://127.0.0.1:8000/login`. Student đồng ý phiên bản `demo-v1`, rồi chọn một trong hai đề fixture `demo-speaking` hoặc `demo-speaking-opinion` (đều phiên bản `1`, nói 40–60 giây). Nếu không cấu hình ASR/model, report không đưa band AI. Teacher đăng nhập tài khoản riêng, mở hàng đợi, xem report/nghe audio và ghi quyết định; overall AI giữ nguyên.
+CLI hỏi mật khẩu bằng `getpass`; không có mật khẩu mặc định. ID phải bắt đầu `fixture-`. Có thể dùng `--password-stdin` trong automation local, không đặt mật khẩu trong command argument hay Git. Mở `http://127.0.0.1:8000/login`. Student đồng ý phiên bản `consent-v2`, gồm lựa chọn riêng lưu audio và dùng cho nghiên cứu, rồi chọn một trong hai đề fixture `demo-speaking` hoặc `demo-speaking-opinion` (đều phiên bản `1`, nói 40–60 giây). Nếu không cấu hình ASR/model, report không đưa band AI. Teacher đăng nhập tài khoản riêng, mở hàng đợi, xem report/nghe audio và ghi quyết định; overall AI giữ nguyên.
 
 Khi mở data-dir cũ còn placeholder `demo-speaking` v1 chưa có bài nộp, demo cập nhật prompt trên chính version đó. Nếu version placeholder đã có bài nộp, hệ thống giữ nguyên lịch sử v1, ngừng mở đề cũ và seed wording mới thành v2.
 
@@ -55,7 +55,7 @@ Tạo `/tmp/aicefr-local-config.json` theo mẫu dưới đây và thay hai đư
 ```json
 {
   "demo": true,
-  "consent_version": "demo-v1",
+  "consent_version": "consent-v2",
   "model_artifact": "/absolute/path/ridge_resp_v2.json",
   "asr_model_dir": "/absolute/path/faster-whisper-small",
   "asr_weight_name": "small",

@@ -12,7 +12,7 @@ import pytest
 
 from aicefr.asr.service import EngineResult, RawWord
 from aicefr.audio.config import QCConfig
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
 from aicefr.portal.contracts import TaskRecord
@@ -69,12 +69,14 @@ def test_demo_seed_versions_used_legacy_speaking_placeholder(tmp_path):
         actor = runtime.auth.bootstrap_fixture_account(
             "fixture-demo-seed-student", ActorRole.STUDENT, "fixture-password"
         )
-        runtime.consents.activate(actor, "demo-v1")
+        runtime.consents.activate(
+            actor, CURRENT_CONSENT_VERSION, audio_storage_allowed=True
+        )
         runtime.responses.submit(
             actor,
             task_id="demo-speaking",
             task_version="1",
-            consent_version="demo-v1",
+            consent_version=CURRENT_CONSENT_VERSION,
             audio_bytes=b"synthetic task-version fixture",
         )
         with runtime.store.transaction() as connection:
