@@ -1,0 +1,74 @@
+COMMAND: PYTHONPATH=build/worktrees/w06-scrum-83/src python -m pytest -q tests/storage tests/local/test_durable_worker.py tests/portal/test_w5_data_recovery.py tests/api/test_data_operations_api.py tests/asr/test_service.py tests/audio/test_decoder.py tests/test_contracts.py
+...................................s........s..........................s [ 48%]
+..............................s......................................... [ 96%]
+.....                                                                    [100%]
+============================== warnings summary ===============================
+tests/storage/test_report_migration.py::test_schema_v2_migrates_to_v3_without_losing_existing_response
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x24305b94ca0; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\AppData\\Local\\Temp\\tmpzak5saxr\\backups\\schema-v4-1792939953859537000\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\AppData\\Local\\Temp\\tmpzak5saxr\\backups\\schema-v4-1792939953859537000\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+tests/storage/test_sqlite_memory_migration.py::test_m01_sqlite_migrates_legacy_submitted_status_to_queued_without_data_loss
+  D:\LAPTRINH\TLCN\ai-assessor-cefr\.venv\Lib\site-packages\_pytest\unraisableexception.py:67: PytestUnraisableExceptionWarning: Exception ignored in: <finalize object at 0x24305b96440; dead>
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 633, in _rmtree_unsafe
+      os.unlink(fullname)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\AppData\\Local\\Temp\\tmpxb0ixu9l\\backups\\schema-v4-1792939957109127400\\metadata.sqlite3'
+  
+  During handling of the above exception, another exception occurred:
+  
+  Traceback (most recent call last):
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\weakref.py", line 590, in __call__
+      return info.func(*info.args, **(info.kwargs or {}))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 939, in _cleanup
+      cls._rmtree(name, ignore_errors=ignore_errors)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 934, in _rmtree
+      _shutil.rmtree(name, onexc=onexc)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 781, in rmtree
+      return _rmtree_unsafe(path, onexc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\shutil.py", line 635, in _rmtree_unsafe
+      onexc(os.unlink, fullname, err)
+    File "C:\Users\PC\AppData\Local\Programs\Python\Python312\Lib\tempfile.py", line 909, in onexc
+      _os.unlink(path)
+  PermissionError: [WinError 32] The process cannot access the file because it is being used by another process: 'C:\\Users\\PC\\AppData\\Local\\Temp\\tmpxb0ixu9l\\backups\\schema-v4-1792939957109127400\\metadata.sqlite3'
+  
+  Enable tracemalloc to get traceback where the object was allocated.
+  See https://docs.pytest.org/en/stable/how-to/capture-warnings.html#resource-warnings for more info.
+    warnings.warn(pytest.PytestUnraisableExceptionWarning(msg))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+SKIPPED [2] tests\conftest.py:19: symlink creation requires Windows Developer Mode or privilege
+SKIPPED [1] tests\storage\test_sqlite_blob_store.py:192: symlink creation is unavailable on this Windows host: 1314
+SKIPPED [1] tests\storage\test_w5_storage_foundation.py:256: symlink creation needs extra Windows privileges
+145 passed, 4 skipped, 2 warnings in 42.04s
+EXIT_CODE=0
