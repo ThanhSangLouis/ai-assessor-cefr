@@ -18,6 +18,7 @@ from aicefr.contracts import ActorRole, AuditEvent, BlobRef, ResponseStatus
 from aicefr.portal.contracts import DeleteRequest
 from aicefr.portal.service import PortalService
 from aicefr.storage.blob import BlobStore
+from aicefr.storage.private_files import is_private_file
 from aicefr.storage.sqlite import ConcurrentResponseUpdate
 
 
@@ -1058,7 +1059,9 @@ class DataControl:
                     target.chmod(0o600)
                     sensitive_files.append(filename)
             files = {
-                str(item.relative_to(destination)): hashlib.sha256(item.read_bytes()).hexdigest()
+                item.relative_to(destination).as_posix(): hashlib.sha256(
+                    item.read_bytes()
+                ).hexdigest()
                 for item in sorted(destination.rglob("*"))
                 if item.is_file()
             }
@@ -1131,7 +1134,10 @@ class DataControl:
 
         descriptor = None
         try:
-            descriptor = os.open(manifest_path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            descriptor = os.open(
+                manifest_path,
+                os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0),
+            )
             manifest_info = os.fstat(descriptor)
             if not stat.S_ISREG(manifest_info.st_mode) or manifest_info.st_size > 1_048_576:
                 raise ValueError("backup manifest is unsafe")
@@ -1329,27 +1335,20 @@ class DataControl:
 
     @staticmethod
     def _read_protected_file(path: Path) -> bytes:
-        import stat
-
         try:
-            info = path.lstat()
-            if (
-                not stat.S_ISREG(info.st_mode)
-                or info.st_nlink != 1
-                or info.st_uid != os.getuid()
-                or info.st_mode & 0o077
-            ):
+            try:
+                path.lstat()
+            except FileNotFoundError:
+                raise ValueError("protected key file is unavailable") from None
+            if not is_private_file(path):
                 raise ValueError("protected key file is unsafe")
-            descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            descriptor = os.open(
+                path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            )
             try:
                 opened = os.fstat(descriptor)
                 if (
-                    not stat.S_ISREG(opened.st_mode)
-                    or opened.st_nlink != 1
-                    or opened.st_uid != os.getuid()
-                    or opened.st_ino != info.st_ino
-                    or opened.st_dev != info.st_dev
-                    or opened.st_mode & 0o077
+                    not is_private_file(path, descriptor=descriptor)
                     or opened.st_size > 4096
                 ):
                     raise ValueError("protected key file is unsafe")

@@ -8,6 +8,14 @@ from html import escape
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
+from aicefr.api.consent_copy import (
+    AUDIO_STORAGE_CHOICE,
+    CONSENT_PURPOSE,
+    CONSENT_RETENTION,
+    CONSENT_VERSION,
+    CONSENT_WITHDRAWAL,
+    RESEARCH_USE_CHOICE,
+)
 from aicefr.api.student import StudentStatus
 
 if TYPE_CHECKING:
@@ -343,6 +351,7 @@ def render_upload_form(
     tasks: list[dict] | None = None,
     selected: dict | None = None,
     consent_version: str = "",
+    audio_storage_allowed: bool = False,
     recording_enabled: bool = False,
     max_seconds: float = 180,
     max_bytes: int = 20_000_000,
@@ -375,7 +384,14 @@ def render_upload_form(
     task_version = escape(selected_task["task_version"], quote=True) if selected_task else ""
     no_tasks = not task_items
     select_disabled = " disabled" if no_tasks else ""
-    ready_disabled = " disabled" if no_tasks else ""
+    ready_disabled = " disabled" if no_tasks or not audio_storage_allowed else ""
+    audio_consent_notice = (
+        '<p class="status-banner" role="status">'
+        'Bật lựa chọn lưu audio trong <a href="/student/consent">đồng ý xử lý dữ liệu</a> '
+        "trước khi nộp bài nói.</p>"
+        if not audio_storage_allowed
+        else ""
+    )
     body = f'''{nav("student", "/student/upload")}{_demo_note(demo)}{message}
 <section class="card task-card"><p class="eyebrow">Bài đánh giá</p>
 <h2>Chọn đề bài</h2><p>Đọc đề và chuẩn bị câu trả lời trước khi ghi âm hoặc chọn tệp.</p>
@@ -385,6 +401,7 @@ def render_upload_form(
 <p id="task-prompt" class="task-prompt">{task_prompt or "Khi có đề bài, nội dung sẽ hiện ở đây."}</p>
 <p class="help">Kết quả là ước lượng hỗ trợ học tập. Báo cáo có thể ghi rõ khi chưa đủ bằng chứng.</p>
 <p><a href="/student/consent">Xem hoặc thay đổi đồng ý xử lý dữ liệu</a></p></section>
+{audio_consent_notice}
 <form method="post" action="/student/responses" enctype="multipart/form-data" data-recorder
 data-recording-enabled="{str(recording_enabled).lower()}"
 data-max-seconds="{max_seconds}" data-max-bytes="{max_bytes}">
@@ -431,21 +448,40 @@ def render_login(error: str | None = None, *, demo: bool = False) -> str:
 
 
 def render_consent(
-    version: str, active: bool, demo: bool, *, research_allowed: bool = False
+    version: str,
+    active: bool,
+    demo: bool,
+    *,
+    research_allowed: bool = False,
+    audio_storage_allowed: bool = False,
 ) -> str:
     from aicefr.portal.templates import nav
 
-    state = "Bạn đã đồng ý phiên bản hiện tại." if active else "Bạn chưa đồng ý phiên bản hiện tại."
+    state = (
+        "Lựa chọn của bạn đã được lưu cho phiên bản hiện tại."
+        if active
+        else "Bạn chưa lưu lựa chọn cho phiên bản hiện tại."
+    )
+    print_link = (
+        f'Mẫu in: <a href="/static/{escape(version)}.pdf">Tải phiếu đồng thuận PDF</a>.'
+        if version == CONSENT_VERSION
+        else "Chưa có phiếu in cho phiên bản nội dung này."
+    )
     body = f"""{nav("student", "/student/consent")}{_demo_note(demo)}<section class="account-card">
 <p class="eyebrow">Quyền dữ liệu</p><h2>{state}</h2>
-<p>Phiên bản nội dung: {escape(version)}. Bạn có thể rút lại đồng ý bất cứ lúc nào.</p>
+<p>Phiên bản nội dung: {escape(version)}. {print_link}</p>
+<p>{CONSENT_PURPOSE}</p>
 <form method="post" action="/student/consent/accept">
+<label><input type="checkbox" name="audio_storage_allowed" value="true"
+{"checked" if audio_storage_allowed else ""}>
+{AUDIO_STORAGE_CHOICE}</label>
 <label><input type="checkbox" name="research_allowed" value="true"
 {"checked" if research_allowed else ""}>
-Cho phép dùng số liệu tổng hợp đã bỏ ID tài khoản cho nghiên cứu (tùy chọn).</label>
-<button type="submit">Đồng ý</button></form>
+{RESEARCH_USE_CHOICE}</label>
+<button type="submit">Lưu lựa chọn</button></form>
 <form method="post" action="/student/consent/withdraw">
 <button type="submit">Rút lại đồng ý</button></form>
+<h3>Thời hạn lưu và rút đồng ý</h3><p>{CONSENT_RETENTION}</p><p>{CONSENT_WITHDRAWAL}</p>
 <p><a href="/student/upload">Quay lại nộp bài</a> · <a href="/student/account?tab=data">Quản lý tài khoản và dữ liệu</a></p>
 </section>{render_logout_form()}"""
     return _document("Đồng ý xử lý dữ liệu", body)

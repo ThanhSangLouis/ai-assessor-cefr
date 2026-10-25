@@ -5,6 +5,7 @@ import concurrent.futures
 import hashlib
 import hmac
 import json
+import os
 import urllib.parse
 from datetime import UTC, datetime, timedelta
 
@@ -20,6 +21,7 @@ from aicefr.auth.google import (
 )
 from aicefr.contracts import Actor, ActorRole
 from aicefr.storage.google_identity import GoogleIdentityRepository, google_subject_hash
+from aicefr.storage.private_files import is_private_file
 from aicefr.storage.sqlite import SQLiteStore
 
 
@@ -568,7 +570,9 @@ def test_link_session_is_rechecked_after_provider_exchange(setup):
         service.callback(started.flow_cookie, params["state"], "code", "valid-session")
 
 
-def test_runtime_key_is_private_and_unsafe_key_file_disables_service(tmp_path):
+def test_runtime_key_is_private_and_unsafe_key_file_disables_service(
+    tmp_path, grant_everyone_read_access
+):
     store = SQLiteStore(tmp_path / "key-data")
     store.connection.execute(
         "INSERT INTO accounts(actor_id,role,password_hash) VALUES(?,?,?)",
@@ -583,21 +587,24 @@ def test_runtime_key_is_private_and_unsafe_key_file_disables_service(tmp_path):
     )
     service = GoogleIdentityService(FakeAuth(), GoogleIdentityRepository(store), config)
     key_path = tmp_path / "key-data" / "google-flow-hmac.key"
-    assert key_path.stat().st_mode & 0o777 == 0o600
+    assert is_private_file(key_path)
     assert service.status()["ready"] is True
-    key_path.chmod(0o644)
+    if os.name == "nt":
+        grant_everyone_read_access(key_path)
+    else:
+        key_path.chmod(0o644)
     unsafe = GoogleIdentityService(FakeAuth(), GoogleIdentityRepository(store), config)
     assert unsafe.status()["ready"] is False
     store.close()
 
 
-def test_runtime_key_refuses_symlink(tmp_path):
+def test_runtime_key_refuses_symlink(tmp_path, make_symlink_or_skip):
     data_dir = tmp_path / "symlink-data"
     initial = SQLiteStore(data_dir)
     initial.close()
     target = tmp_path / "unprotected-key"
     target.write_bytes(b"k" * 32)
-    (data_dir / "google-flow-hmac.key").symlink_to(target)
+    make_symlink_or_skip(data_dir / "google-flow-hmac.key", target)
     store = SQLiteStore(data_dir)
     store.connection.execute(
         "INSERT INTO accounts(actor_id,role,password_hash) VALUES(?,?,?)",
