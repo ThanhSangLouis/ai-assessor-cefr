@@ -10,7 +10,7 @@ from pathlib import Path
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 from aicefr.auth.service import AuthService
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.local.app import SQLiteSessionRepository, create_runtime, load_config
 from aicefr.storage.sqlite import SQLiteStore
 
@@ -40,7 +40,7 @@ def _demo_config() -> dict[str, object]:
     """Explicitly permissive QC configuration for synthetic demonstration only."""
     return {
         "demo": True,
-        "consent_version": "demo-v1",
+        "consent_version": CURRENT_CONSENT_VERSION,
         "allowed_media_types": ["audio/wav", "audio/flac", "audio/ogg", "audio/mpeg"],
         "tasks": [
             {

@@ -23,7 +23,7 @@ from aicefr.api.student import (
 from aicefr.api.wsgi import StudentTeacherApp
 from aicefr.asr.service import AsrService, ModelUnavailableError
 from aicefr.auth.service import AuthService, ConsentService
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.features.extractor import FeatureExtractor
 from aicefr.observability import Metrics
 from aicefr.portal.contracts import TaskRecord
@@ -395,7 +395,7 @@ def create_runtime(
             practice,
             lessons,
             consents=consents,
-            consent_version=str(config.get("consent_version", "local-v1")),
+            consent_version=str(config.get("consent_version", CURRENT_CONSENT_VERSION)),
         )
         worker = None
         starter = pipeline
@@ -432,7 +432,7 @@ def create_runtime(
             reviews=review_repository,
             reports=reports,
             demo=bool(config.get("demo", False)),
-            consent_version=str(config.get("consent_version", "local-v1")),
+            consent_version=str(config.get("consent_version", CURRENT_CONSENT_VERSION)),
             max_request_bytes=qc.max_input_bytes + 1024 * 1024,
             portal=PortalRouter(
                 portal,

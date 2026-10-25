@@ -105,10 +105,9 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
     assert store.connection.execute("SELECT report_json FROM diagnostic_reports").fetchone() == (
         '{"report":"preserve"}',
     )
-    assert store.connection.execute("SELECT state,research_allowed FROM consents").fetchone() == (
-        "active",
-        1,
-    )
+    assert store.connection.execute(
+        "SELECT state,research_allowed,audio_storage_allowed FROM consents"
+    ).fetchone() == ("active", 1, 0)
     assert store.connection.execute("SELECT token_digest,actor_id FROM sessions").fetchone() == (
         "f" * 64,
         "student",
@@ -117,7 +116,11 @@ def test_w5_v4_migration_preserves_legacy_rows_and_restores_backup(tmp_path):
         "audit-1",
         "fixture_action",
     )
-    backup_path = next((data_dir / "backups").iterdir())
+    backup_path = next(
+        candidate
+        for candidate in (data_dir / "backups").iterdir()
+        if json.loads((candidate / "manifest.json").read_text())["schema_version"] == 4
+    )
     manifest = json.loads((backup_path / "manifest.json").read_text())
     assert manifest["files"]["blobs/" + "b" * 32] == hashlib.sha256(b"fixture audio").hexdigest()
     store.close()
@@ -217,7 +220,7 @@ def test_w5_concurrent_fresh_initializers_serialize_migrations(tmp_path):
         return version
 
     with ThreadPoolExecutor(max_workers=2) as pool:
-        assert list(pool.map(lambda _: initialize(), range(2))) == [11, 11]
+        assert list(pool.map(lambda _: initialize(), range(2))) == [12, 12]
 
 
 def test_w5_restore_rejects_incomplete_or_escaping_manifests(tmp_path):
@@ -294,7 +297,9 @@ def test_w5_providers_offer_typed_bounded_save_get_contracts(tmp_path):
             (timestamp,),
         )
     store.connection.execute(
-        "INSERT INTO consent_events VALUES('consent-1','student','v1','accepted',1,?,'web')",
+        "INSERT INTO consent_events "
+        "(event_id,account_id,consent_version,state,research_allowed,audio_storage_allowed,"
+        "recorded_at,source) VALUES('consent-1','student','v1','accepted',1,0,?,'web')",
         (timestamp,),
     )
     with pytest.raises(sqlite3.IntegrityError, match="authorized privacy erasure"):

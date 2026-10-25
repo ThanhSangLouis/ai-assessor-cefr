@@ -382,7 +382,9 @@ def test_blob_cleanup_preserves_live_blob_and_retries_failed_unlink(portal_runti
     )
 
 
-def test_data_control_paths_and_protected_files_fail_closed(tmp_path, monkeypatch):
+def test_data_control_paths_and_protected_files_fail_closed(
+    tmp_path, monkeypatch, grant_everyone_read_access
+):
     from aicefr.portal.data import DataControl
 
     valid_path = tmp_path / "valid.key"
@@ -393,20 +395,12 @@ def test_data_control_paths_and_protected_files_fail_closed(tmp_path, monkeypatc
     with pytest.raises(FileNotFoundError):
         DataControl._safe_path(tmp_path / "missing", must_exist=True)
 
-    linked_file = tmp_path / "linked.key"
-    linked_file.symlink_to(valid_path)
-    with pytest.raises(ValueError, match="protected key file is unsafe"):
-        DataControl._read_protected_file(linked_file)
-    with pytest.raises(ValueError, match="filesystem path cannot contain symlinks"):
-        DataControl._safe_path(linked_file)
-    dangling = tmp_path / "dangling"
-    dangling.symlink_to(tmp_path / "absent")
-    with pytest.raises(ValueError, match="filesystem path cannot contain symlinks"):
-        DataControl._safe_path(dangling)
-
     broad = tmp_path / "broad.key"
     broad.write_bytes(b"protected fixture")
-    broad.chmod(0o644)
+    if os.name == "nt":
+        grant_everyone_read_access(broad)
+    else:
+        broad.chmod(0o644)
     with pytest.raises(ValueError, match="protected key file is unsafe"):
         DataControl._read_protected_file(broad)
     linked = tmp_path / "hardlinked.key"
@@ -422,9 +416,27 @@ def test_data_control_paths_and_protected_files_fail_closed(tmp_path, monkeypatc
     with pytest.raises(ValueError, match="protected key file is unavailable"):
         DataControl._read_protected_file(tmp_path / "absent.key")
 
-    monkeypatch.setattr(os, "getuid", lambda: valid_path.stat().st_uid + 1)
+    if hasattr(os, "getuid"):
+        monkeypatch.setattr(os, "getuid", lambda: valid_path.stat().st_uid + 1)
+        with pytest.raises(ValueError, match="protected key file is unsafe"):
+            DataControl._read_protected_file(valid_path)
+
+
+def test_data_control_rejects_symlink_paths(tmp_path, make_symlink_or_skip):
+    from aicefr.portal.data import DataControl
+
+    valid_path = tmp_path / "valid.key"
+    valid_path.write_bytes(b"protected fixture")
+    linked_file = tmp_path / "linked.key"
+    make_symlink_or_skip(linked_file, valid_path)
     with pytest.raises(ValueError, match="protected key file is unsafe"):
-        DataControl._read_protected_file(valid_path)
+        DataControl._read_protected_file(linked_file)
+    with pytest.raises(ValueError, match="filesystem path cannot contain symlinks"):
+        DataControl._safe_path(linked_file)
+    dangling = tmp_path / "dangling"
+    make_symlink_or_skip(dangling, tmp_path / "absent")
+    with pytest.raises(ValueError, match="filesystem path cannot contain symlinks"):
+        DataControl._safe_path(dangling)
 
 
 def test_orphan_scan_requires_age_and_rechecks_published_media(portal_runtime):
@@ -741,7 +753,7 @@ def test_restore_migrates_verified_schema10_backup_to_current_schema(
     legacy_dir = tmp_path / "schema10-source-data"
     with monkeypatch.context() as patch:
         patch.setattr(migrations, "SCHEMA_VERSION", 10)
-        patch.setattr(migrations, "GROUPS", migrations.GROUPS[:-1])
+        patch.setattr(migrations, "GROUPS", migrations.GROUPS[:6])
         patch.setattr(SQLiteStore, "SCHEMA_VERSION", 10)
         legacy_store = SQLiteStore(legacy_dir)
         assert legacy_store.connection.execute("PRAGMA user_version").fetchone()[0] == 10
@@ -774,7 +786,7 @@ def test_restore_migrates_verified_schema10_backup_to_current_schema(
     }
     restored_store = SQLiteStore(destination)
     try:
-        assert restored_store.connection.execute("PRAGMA user_version").fetchone()[0] == 11
+        assert restored_store.connection.execute("PRAGMA user_version").fetchone()[0] == 12
         assert restored_store.connection.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
         ).fetchone()
@@ -847,12 +859,14 @@ def test_restore_rejects_oversized_or_nonregular_manifest(portal_runtime, tmp_pa
         runtime.data.restore_backup(source, tmp_path / f"restore-{manifest_kind}", tokens["admin"])
 
 
-def test_restore_rejects_symlink_overlap_and_existing_destination(portal_runtime, tmp_path):
+def test_restore_rejects_symlink_overlap_and_existing_destination(
+    portal_runtime, tmp_path, make_symlink_or_skip
+):
     runtime, tokens = portal_runtime
     source = tmp_path / "safe-source"
     runtime.data.backup(tokens["admin"], source)
     linked_source = tmp_path / "source-link"
-    linked_source.symlink_to(source, target_is_directory=True)
+    make_symlink_or_skip(linked_source, source, target_is_directory=True)
     with pytest.raises(ValueError, match="backup source cannot be a symlink"):
         runtime.data.restore_backup(linked_source, tmp_path / "restore-link", tokens["admin"])
     with pytest.raises(ValueError, match="overlap protected data"):

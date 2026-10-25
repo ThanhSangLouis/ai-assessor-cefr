@@ -171,9 +171,12 @@ def account_page(
         version = getattr(consent, "consent_version", "—") if consent else "—"
         research = bool(consent and getattr(consent, "research_allowed", False))
         research_state = "Đang cho phép" if research else "Không cho phép"
+        audio_storage = bool(consent and getattr(consent, "audio_storage_allowed", False))
+        audio_state = "Đang cho phép" if audio_storage else "Không cho phép"
         data_panel = f'''<section class="account-card"><p class="eyebrow">Quyền dữ liệu</p>
 <h2>Đồng ý xử lý dữ liệu</h2><dl class="data-list"><dt>Trạng thái</dt><dd>{e(state)}</dd>
-<dt>Phiên bản</dt><dd>{e(version)}</dd><dt>Đồng ý nghiên cứu</dt><dd>{research_state}</dd></dl>
+<dt>Phiên bản</dt><dd>{e(version)}</dd><dt>Lưu audio</dt><dd>{audio_state}</dd>
+<dt>Dùng cho nghiên cứu</dt><dd>{research_state}</dd></dl>
 <p>Đọc lại nội dung đồng ý trước khi thay đổi lựa chọn. Việc rút đồng ý được ghi nhận bởi server.</p>
 <a class="button button-secondary" href="/student/consent">Xem hoặc thay đổi đồng ý</a>
 <h2>Bản sao dữ liệu của bạn</h2><p>Tải xuống bản xuất hoặc xem danh sách bài nộp của tài khoản này.</p>

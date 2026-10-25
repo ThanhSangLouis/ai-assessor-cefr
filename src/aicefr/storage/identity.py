@@ -385,7 +385,8 @@ class IdentityRepository:
 
     def consent(self, actor_id: str) -> ConsentRecord | None:
         row = self.connection.execute(
-            "SELECT participant_id,consent_version,state,recorded_at,research_allowed "
+            "SELECT participant_id,consent_version,state,recorded_at,research_allowed,"
+            "audio_storage_allowed "
             "FROM consents WHERE participant_id=?",
             (actor_id,),
         ).fetchone()
@@ -397,6 +398,7 @@ class IdentityRepository:
             state=ConsentState(row[2]),
             recorded_at=datetime.fromisoformat(row[3]),
             research_allowed=bool(row[4]),
+            audio_storage_allowed=bool(row[5]),
         )
 
     def get_consent(self, participant_id: str) -> ConsentRecord | None:
@@ -412,16 +414,28 @@ class IdentityRepository:
             consent.research_allowed,
             consent.state is ConsentState.ACTIVE,
             consent.recorded_at,
+            audio_storage_allowed=consent.audio_storage_allowed,
         )
 
     def set_consent(
-        self, actor: Actor, version: str, research_allowed: bool, active: bool, now: datetime
+        self,
+        actor: Actor,
+        version: str,
+        research_allowed: bool,
+        active: bool,
+        now: datetime,
+        *,
+        audio_storage_allowed: bool = False,
     ) -> ConsentRecord:
         if actor.role is not ActorRole.STUDENT:
             raise AuthorizationError("access denied")
         if not isinstance(version, str) or not version.strip() or len(version) > 64:
             raise ValidationError("invalid_consent_version")
-        if not isinstance(research_allowed, bool) or not isinstance(active, bool):
+        if (
+            not isinstance(research_allowed, bool)
+            or not isinstance(audio_storage_allowed, bool)
+            or not isinstance(active, bool)
+        ):
             raise ValidationError("invalid_consent")
         state = ConsentState.ACTIVE if active else ConsentState.WITHDRAWN
         record = ConsentRecord(
@@ -430,31 +444,39 @@ class IdentityRepository:
             state=state,
             recorded_at=now,
             research_allowed=research_allowed if active else False,
+            audio_storage_allowed=audio_storage_allowed if active else False,
         )
         with self.storage.transaction() as connection:
             self._require_active_student(connection, actor)
             connection.execute(
                 "INSERT INTO consents "
-                "(participant_id,consent_version,state,recorded_at,research_allowed) "
-                "VALUES(?,?,?,?,?) ON CONFLICT(participant_id) DO UPDATE SET "
+                "(participant_id,consent_version,state,recorded_at,research_allowed,"
+                "audio_storage_allowed) "
+                "VALUES(?,?,?,?,?,?) ON CONFLICT(participant_id) DO UPDATE SET "
                 "consent_version=excluded.consent_version,state=excluded.state,"
-                "recorded_at=excluded.recorded_at,research_allowed=excluded.research_allowed",
+                "recorded_at=excluded.recorded_at,research_allowed=excluded.research_allowed,"
+                "audio_storage_allowed=excluded.audio_storage_allowed",
                 (
                     actor.actor_id,
                     version,
                     state.value,
                     now.isoformat(),
                     int(record.research_allowed),
+                    int(record.audio_storage_allowed),
                 ),
             )
             connection.execute(
-                "INSERT INTO consent_events VALUES(?,?,?,?,?,?,'self_service')",
+                "INSERT INTO consent_events "
+                "(event_id,account_id,consent_version,state,research_allowed,"
+                "audio_storage_allowed,recorded_at,source) "
+                "VALUES(?,?,?,?,?,?,?,'self_service')",
                 (
                     uuid.uuid4().hex,
                     actor.actor_id,
                     version,
                     state.value,
                     int(record.research_allowed),
+                    int(record.audio_storage_allowed),
                     now.isoformat(),
                 ),
             )
