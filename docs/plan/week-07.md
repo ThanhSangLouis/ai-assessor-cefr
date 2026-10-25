@@ -244,3 +244,62 @@ Test đi cùng module. Tệp dùng chung mà bảng chưa nhắc tên: người 
 | W7-N03 Thu thử 6–8 sinh viên | Nguyên | P0 |
 
 Việc còn mở từ W6 mang sang: SCRUM-52 (email CUP&A), SCRUM-81 (chấm mù tập huấn), SCRUM-54 (góp ý GVHD về "Đánh giá để học").
+
+---
+
+## 10. Hướng dẫn chép code (đưa nguyên mục này cho AI của mình làm theo)
+
+**Nguồn:** repo gốc `ThanhSangLouis/ai-assessor-cefr` tại commit `0853c95`. Cả nhóm đã có quyền đọc. **Đích:** repo nộp bài `thanglb2005/ai-assessor-cefr`, nhánh tích hợp `migrate/w7-repo-goc`.
+
+Chép **đúng phần của mình** theo bảng mục 4. Không chép phần của người khác, kể cả khi thấy thiếu: ghi lại rồi báo người đó.
+
+**Một lần, khi bắt đầu:**
+
+```bash
+git clone git@github.com:ThanhSangLouis/ai-assessor-cefr.git ../repo-goc   # chỉ để đọc
+cd ../repo-goc && git checkout 0853c95 && cd -
+git fetch origin && git checkout migrate/w7-repo-goc && git pull
+git checkout -b port/<mã-module>-<tên-ngắn>                                 # vd port/m15-trang
+```
+
+**Chép một thư mục của mình** (vd Nguyên, M15):
+
+```bash
+rsync -a --delete ../repo-goc/src/aicefr/api/templates/ src/aicefr/api/templates/
+rsync -a --delete ../repo-goc/src/aicefr/api/static/    src/aicefr/api/static/
+rsync -a          ../repo-goc/src/aicefr/services/web/  src/aicefr/services/web/
+```
+
+- **Test đi cùng:** chép các tệp `tests/test_*.py` của module mình, và với M15 thì cả `tests/e2e/`.
+- **Không bao giờ chép:**
+  - `src/aicefr/scoring/models/*.json`: artifact Speak & Improve, để ngoài Git (W7-S01);
+  - `.env`, `*.db`, audio, ảnh chụp có dữ liệu thật;
+  - thư mục `.git` của repo gốc.
+- **Mã cũ cùng module** trong repo nhóm, nếu repo gốc đã có bản thay thế: xoá trong cùng PR, liệt kê trong mô tả PR.
+
+**Kiểm trước khi commit:**
+
+```bash
+ruff check src tests && ruff format --check src tests
+pytest -m "not e2e" -q                     # phần nền chưa có thì test của module có thể chưa chạy được: ghi rõ trong PR
+git status                                 # chỉ có tệp trong vùng của mình
+```
+
+**Commit và PR vào `migrate/w7-repo-goc`** (không vào `main`):
+
+```bash
+git commit -m "port(M15): trang và test E2E từ repo gốc
+
+Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95:
+src/aicefr/api/templates, src/aicefr/api/static, src/aicefr/services/web, tests/e2e."
+git push -u origin HEAD
+gh pr create --base migrate/w7-repo-goc --title "port(M15): ..." --body "Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95 ..."
+```
+
+- **Mô tả PR ghi đủ:** các đường dẫn đã chép; mã cũ đã xoá; test đã chạy và kết quả; việc còn chờ người khác (vd "chờ nền của Thắng để chạy được test API").
+- **Nhật ký và Jira:** ghi một dòng AI Prompt Log W07, cập nhật `06-tasks.md` và `07-status.md` của module.
+
+**Thứ tự để khỏi kẹt:**
+1. Thắng tạo nhánh `migrate/w7-repo-goc` và chép phần nền (W7-T01) trước.
+2. Sang gỡ artifact S&I (W7-S01).
+3. Sau hai việc trên, mọi người chép module của mình; test chạy được đầy đủ khi nền đã vào nhánh.
