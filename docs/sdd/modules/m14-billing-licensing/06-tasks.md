@@ -13,6 +13,8 @@
 
 Không task nào được ghi DONE bằng giao dịch sandbox thủ công nếu tampering/replay/rollback tests chưa có.
 
+W6-T03 baseline: `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`. PR #50 chạm billing-key/private-file paths sau SCRUM-67; giữ TASK-001–004 `IN_REVIEW` cho tới khi evidence/reviewer scope đó được đối chiếu. TASK-005/006 vẫn `BLOCKED`; không suy ra billing mutation/live payment đã được nghiệm thu.
+
 Trạng thái task-local phản ánh code/evidence đã merge; module vẫn `DRAFT/PENDING`. Các dòng này không phê duyệt phase SDD hoặc đóng Jira.
 
 ## Local execution SCRUM-67

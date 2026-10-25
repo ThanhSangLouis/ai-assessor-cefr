@@ -21,6 +21,6 @@ Final reviewed code `5c6397ffaf804a3cb08c17aef1017fa3884737ca`; [Verification](e
 
 ## SCRUM-84 / W6-T03 — Đồng bộ với code đã merge (25/10/2026)
 
-Trên `main` `82fe708af80f0b50eb540c65b5c583f64868d2c8`, PR #38 (SCRUM-67, merge `d60e8a4`) chứa implementation backend M14-TASK-001–004 và data-operations handoff. Verification lịch sử gắn final reviewed code `5c6397f`, ghi 600 passed, clean-wheel/browser và giới hạn riêng cho global format, Windows native, model inference, live payment. Không chạy lại test trong lượt đồng bộ này.
+Trên `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`, PR #38 (SCRUM-67, merge `d60e8a4`) chứa implementation backend M14-TASK-001–004 và data-operations handoff. Verification lịch sử gắn final reviewed code `5c6397f`, ghi 600 passed, clean-wheel/browser và giới hạn riêng cho global format, Windows native, model inference, live payment. PR #50 sau đó đổi billing-key/private-file và data-operation compatibility cùng consent migration; SCRUM-67 evidence vẫn là task-local historical result, chưa rerun M14-specific gate trên `f540cb8`.
 
 PR #47 (SCRUM-76, merge `cabcc44`) có billing overview/order read surfaces; không chứng minh billing UI mutation/receipt journey hoàn chỉnh. Mapping chi tiết nằm trong [SCRUM-84 sync evidence](evidence/w6-t03-sync.md). TASK-005 giữ `BLOCKED`, TASK-006 giữ `BLOCKED`; global Phase 01–05 và user/Sang/Nguyên acceptance vẫn `DRAFT/PENDING`/`PENDING`.

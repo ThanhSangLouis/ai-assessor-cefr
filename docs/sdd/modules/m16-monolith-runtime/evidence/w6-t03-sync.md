@@ -1,7 +1,7 @@
 # SCRUM-84 — M16 sync với code đã merge
 
 **Scope:** M16 · **Task:** SCRUM-84 / W6-T03 · **Ngày rà:** 25/10/2026
-**Baseline:** `main` / task branch `82fe708af80f0b50eb540c65b5c583f64868d2c8`
+**Baseline:** `main` / task branch `f540cb88643214cd1d4444f2dd0d81f4463119fa`
 **Result:** TASK-001–004 có mapping code/evidence; final gate TASK-005/006 còn `BLOCKED`.
 
 ## Code merge và evidence
@@ -12,6 +12,10 @@
 | TASK-004 | Data operations trong SCRUM-67, PR #38 merge `d60e8a4` | [SCRUM-67 verification](../../m14-billing-licensing/evidence/scrum-67/verification.md), gồm M16-TEST-006/007 và roundtrip với fixture tổng hợp | `IN_REVIEW`; review liên module và tích hợp cuối còn chờ |
 | TASK-005 | Tích hợp route/package/CI/docs cho W5-T04 | Baseline chưa có evidence W5-T04 tích hợp cuối | `BLOCKED` |
 | TASK-006 | Smoke/browser/evidence cuối cho W5-T04 + N04 | M15 report chạy trên revision `0827b37`, không phải package W5-T04 cuối | `BLOCKED` |
+
+## Current-base delta
+
+PR #50 (`bfd1206`) updates consent/storage migration and data-operation compatibility after SCRUM-65/67. PR #51 (`7b56013`) and #52 (`f540cb8`) add W6 protocol and rater-training materials but do not run the integrated W5-T04 gate. Historical SCRUM-65/67 test numbers remain attached to their recorded revisions; SCRUM-84 did not relabel them as current-head results.
 
 ## Historical checks và giới hạn
 
