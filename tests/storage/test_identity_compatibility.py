@@ -40,7 +40,7 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
 
     now = datetime(2026, 10, 15, 12, 0, tzinfo=UTC)
     migrated = SQLiteStore(data_dir)
-    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (11,)
+    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (12,)
     legacy_account = migrated.connection.execute(
         "SELECT actor_id,role,password_hash FROM accounts WHERE actor_id='student'"
     ).fetchone()
@@ -98,9 +98,11 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
         version="consent-v2",
         research_allowed=False,
         active=True,
+        audio_storage_allowed=True,
     )
     assert changed_consent.consent_version == "consent-v2"
     assert changed_consent.research_allowed is False
+    assert changed_consent.audio_storage_allowed is True
 
     subject = "synthetic-legacy-link-subject"
     google_repository = GoogleIdentityRepository(migrated)
@@ -120,16 +122,17 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
     ).fetchone()
     assert profile_row == (3, "book", "blue")
     assert migrated.connection.execute(
-        "SELECT consent_version,state,research_allowed,source FROM consent_events "
+        "SELECT consent_version,state,research_allowed,audio_storage_allowed,source "
+        "FROM consent_events "
         "WHERE account_id='student'"
-    ).fetchall() == [("consent-v2", "active", 0, "self_service")]
+    ).fetchall() == [("consent-v2", "active", 0, 1, "self_service")]
     assert migrated.connection.execute(
         "SELECT event_id,actor_id,action,object_id FROM audit WHERE action='google_linked'"
     ).fetchone()[1:] == ("student", "google_linked", "student")
     assert migrated.connection.execute(
         "SELECT token_digest FROM sessions WHERE actor_id='student'"
     ).fetchone() == (session_digest,)
-    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (11,)
+    assert migrated.connection.execute("PRAGMA user_version").fetchone() == (12,)
     assert raw_session not in repr(migrated.connection.execute("SELECT * FROM accounts").fetchall())
     assert subject not in repr(
         migrated.connection.execute("SELECT * FROM account_identities").fetchall()
@@ -139,7 +142,7 @@ def test_v4_identity_rows_survive_v9_upgrade_and_reopen(tmp_path):
     migrated.close()
     reopened = SQLiteStore(data_dir)
     try:
-        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (11,)
+        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (12,)
         reopened_repository = IdentityRepository(reopened)
         reopened_auth = AuthService(
             reopened,

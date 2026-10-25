@@ -89,7 +89,7 @@ def _provision_student(runtime) -> None:
     actor = runtime.auth.bootstrap_fixture_account(
         "fixture-student", ActorRole.STUDENT, "fixture-password"
     )
-    runtime.consents.activate(actor, "consent-current")
+    runtime.consents.activate(actor, "consent-current", audio_storage_allowed=True)
 
 
 def test_factory_missing_model_is_not_evaluated_and_persists_report_and_review(tmp_path):

@@ -4,7 +4,6 @@ import json
 import math
 import shutil
 import sqlite3
-import stat
 import struct
 import wave
 from datetime import UTC, datetime
@@ -21,6 +20,7 @@ from aicefr.contracts import ActorRole
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
 from aicefr.scoring.scorer import RidgeScorer
+from aicefr.storage.private_files import is_private_file
 
 
 def _runtime(tmp_path):
@@ -79,7 +79,9 @@ def _submit_fixture_response(runtime, student_token):
             for index in range(16000)
         )
         stream.writeframes(frames)
-    runtime.accounts.set_consent(student_token, "privacy-job-v1", True)
+    runtime.accounts.set_consent(
+        student_token, "privacy-job-v1", True, audio_storage_allowed=True
+    )
     return runtime.app._student_api.submit(
         student_token,
         SubmitRequest(
@@ -462,7 +464,7 @@ def test_admin_backup_and_restore_include_protected_key_and_audit_restore(tmp_pa
         assert backup["json"]["manifest"]["blob_count"] == 1
         assert "billing-hmac.key" in backup["json"]["manifest"]["sensitive_files"]
         key_copy = backup_dir / "billing-hmac.key"
-        assert key_copy.is_file() and stat.S_IMODE(key_copy.stat().st_mode) == 0o600
+        assert is_private_file(key_copy)
 
         restored = _call(
             runtime.app,
@@ -484,7 +486,7 @@ def test_admin_backup_and_restore_include_protected_key_and_audit_restore(tmp_pa
         ).fetchone() == (media.blob_id,)
         restored_db.close()
         assert (restore_dir / "billing-hmac.key").is_file()
-        assert stat.S_IMODE((restore_dir / "billing-hmac.key").stat().st_mode) == 0o600
+        assert is_private_file(restore_dir / "billing-hmac.key")
         restored_keys = KeyRing(restore_dir)
         assert restored_keys.verify_gateway_event(
             b"restore-check", restored_keys.sign_gateway_event(b"restore-check")
@@ -537,7 +539,9 @@ def test_restore_malformed_manifest_returns_controlled_error(tmp_path, manifest_
         runtime.close()
 
 
-def test_restore_rejects_missing_key_symlinks_and_client_path_ids(tmp_path):
+def test_restore_rejects_missing_key_symlinks_and_client_path_ids(
+    tmp_path, make_symlink_or_skip
+):
     runtime, _, admin = _runtime(tmp_path)
     try:
         created = _call(
@@ -584,7 +588,7 @@ def test_restore_rejects_missing_key_symlinks_and_client_path_ids(tmp_path):
         symlink_id = "b" * 32
         linked_backup = runtime.app._portal.data_api.backups / symlink_id
         linked_backup.mkdir()
-        (linked_backup / "manifest.json").symlink_to(backup_path / "manifest.json")
+        make_symlink_or_skip(linked_backup / "manifest.json", backup_path / "manifest.json")
         symlink_result = _call(
             runtime.app,
             "/api/v1/admin/data/restore",
@@ -595,8 +599,10 @@ def test_restore_rejects_missing_key_symlinks_and_client_path_ids(tmp_path):
         assert symlink_result["status"].startswith("409")
 
         directory_symlink_id = "c" * 32
-        (runtime.app._portal.data_api.backups / directory_symlink_id).symlink_to(
-            backup_path, target_is_directory=True
+        make_symlink_or_skip(
+            runtime.app._portal.data_api.backups / directory_symlink_id,
+            backup_path,
+            target_is_directory=True,
         )
         directory_symlink = _call(
             runtime.app,

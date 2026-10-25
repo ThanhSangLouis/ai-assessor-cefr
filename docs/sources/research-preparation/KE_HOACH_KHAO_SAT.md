@@ -271,33 +271,65 @@ quả.
 
 ---
 
-## Phụ lục A — Nội dung bản đồng thuận (rút gọn)
+## Phụ lục A — Nội dung phiếu đồng thuận `consent-v2`
 
-Ghi đúng những điều này, bằng tiếng Việt, một trang:
+Nội dung dưới đây phải được giữ nguyên với trang `/student/consent` và PDF
+`consent-v2.pdf`. Hai checkbox là lựa chọn độc lập; khi in, để trống cả hai ô.
+Phiếu dùng cùng các câu trong `src/aicefr/api/consent_copy.py`.
 
-1. Tôi được mời ghi âm **2 bài nói tiếng Anh, mỗi bài 40–60 giây**.
-2. Bản ghi được dùng để **kiểm định một hệ thống chấm điểm tự động**; tôi hiểu
-   đây là **công cụ hỗ trợ học tập, không phải chứng chỉ**.
-3. Tôi chọn riêng: ☐ cho phép lưu bản ghi ☐ cho phép dùng cho nghiên cứu.
-4. Bản ghi gắn với **bút danh**, không gắn tên tôi trong hệ thống.
-5. Tôi có thể rút đồng ý bất cứ lúc nào mà **không ảnh hưởng tới điểm học
-   phần**. Việc rút đồng ý chặn các lần nộp mới nhưng không tự xóa bản ghi đã
-   lưu; đầu mối yêu cầu xóa phải được ghi trong phiếu sau khi chính sách được
-   chốt.
-6. Thời hạn lưu/xóa và đầu mối yêu cầu xóa phải được chốt, ghi đúng trong bản
-   đồng thuận trước khi mời người tham gia; ứng dụng hiện chưa tự động xóa
-   audio theo lịch.
-7. Tôi được xem kết quả chấm của chính mình.
+**Phiên bản nội dung:** `consent-v2`
+
+**Mục đích:** Bản ghi âm được dùng để xử lý và chấm bài nói trong hệ thống. Nếu
+bạn chọn riêng mục nghiên cứu, nhóm có thể dùng audio và dữ liệu đánh giá đã
+gắn mã giả danh cho nghiên cứu. Kết quả AI chỉ hỗ trợ tham khảo, không phải
+chứng chỉ CEFR hay quyết định điểm môn học.
+
+- ☐ Cho phép hệ thống lưu bản ghi âm để xử lý và chấm bài nói. Nếu không bật
+  lựa chọn này, bạn sẽ không thể nộp audio speaking.
+- ☐ Cho phép dùng audio và dữ liệu đánh giá đã gắn mã giả danh cho nghiên cứu
+  của nhóm (tùy chọn, tách biệt với việc lưu audio).
+
+**Thời hạn lưu và xóa:** Thời hạn lưu/xóa chưa được chốt trong chính sách dữ
+liệu hiện hành; mốc tối đa 12 tháng mới là đề xuất. Ứng dụng hiện chưa tự động
+xóa audio theo lịch. Trước khi thu dữ liệu thật, GVHD cần chốt thời hạn và cách
+xóa; nhóm sẽ thực hiện xóa theo chính sách đã chốt.
+
+**Thay đổi lựa chọn và rút đồng ý:** Bạn có thể thay đổi riêng từng lựa chọn.
+Tắt lựa chọn nghiên cứu không ảnh hưởng quyền nộp bài nếu bạn vẫn bật lưu
+audio. Tắt lưu audio hoặc rút đồng ý sẽ chặn các lần nộp mới. Việc rút đồng ý
+không tự xóa audio đã lưu. Muốn yêu cầu xóa dữ liệu đã lưu, hãy liên hệ GVHD
+hoặc người phụ trách dự án. Việc từ chối nghiên cứu không ảnh hưởng đến quyền
+lợi học tập.
+
+**Người tham gia:** ____________________  **Chữ ký:** ____________________
+
+**Ngày:** ____ / ____ / ______
 
 ## Phụ lục B — Phiếu chấm của giám khảo
 
-Mỗi bài, mỗi giám khảo ghi: mã bài (đã xáo), 5 tiêu chí × thang 0–6
-(Range, Accuracy, Fluency, Coherence, Phonology), điểm tổng 0–6, band
-A2/B1/B2, một dòng lý do, và ô "không chấm được" kèm lý do (bản ghi hỏng, không
-nghe rõ, nói sai đề).
+Chấm độc lập từng bài theo năm tiêu chí `Range`, `Accuracy`, `Fluency`,
+`Coherence`, `Phonology`. Mỗi tiêu chí dùng thang **0–6, bước 0,5**; chọn nửa
+điểm khi bài nằm giữa hai mốc và ghi một dòng dẫn chứng/lý do. Các mô tả dưới
+đây là anchor cho A2/B1/B2, không phải quy tắc quy đổi điểm cứng.
 
-**Giám khảo không được thấy:** bút danh, trình độ ước lượng ban đầu, điểm của
-máy, điểm của giám khảo còn lại.
+| Tiêu chí | A2 | B1 | B2 |
+| --- | --- | --- | --- |
+| Range | Dùng mẫu câu và cụm từ quen thuộc; thường phải đơn giản hóa thông điệp. | Đủ ngôn ngữ cho chủ đề quen thuộc; còn do dự hoặc vòng diễn đạt. | Diễn đạt rõ, phát triển quan điểm và dùng được một số cấu trúc phức. |
+| Accuracy | Dùng được một số cấu trúc đơn giản; lỗi cơ bản còn thường xuyên nhưng ý thường hiểu được. | Kiểm soát tương đối mẫu thường dùng; lỗi tăng khi nói phức tạp nhưng ý định rõ. | Kiểm soát ngữ pháp khá cao; lỗi hiếm khi gây hiểu nhầm và thường tự sửa được. |
+| Fluency | Lượt nói ngắn; có khoảng dừng, bắt đầu lại hoặc diễn đạt lại rõ. | Duy trì được lời nói; vẫn có khoảng dừng để lên kế hoạch trong đoạn dài. | Nhịp tương đối đều ở đoạn dài; ít khoảng dừng dài nổi bật. |
+| Coherence | Nối từ/câu bằng từ nối phổ biến; trình bày như các ý đơn giản. | Nối các ý ngắn thành chuỗi tuyến tính dễ theo dõi. | Dùng phương tiện liên kết để phát triển và hỗ trợ ý rõ ràng. |
+| Phonology | Nhìn chung hiểu được; đôi lúc cần lặp, ảnh hưởng stress/rhythm/intonation có thể tăng effort. | Nhìn chung intelligible; ảnh hưởng L1 còn nghe thấy nhưng không cản trở thông điệp. | Âm rõ; stress/intonation hỗ trợ thông điệp; accent ít ảnh hưởng intelligibility. |
+
+Ghi riêng điểm tổng thể `0–6` và band `A2/B1/B2` theo nhận định CEFR của cả
+bài; **không lấy trung bình số học của năm tiêu chí và không tự suy band từ
+điểm tổng**. Ghi một dòng lý do cho điểm tổng. Với bài độc thoại, không chấm
+`Interaction`: để `null` với `insufficient_evidence`. Nếu không thể chấm toàn
+bài, chọn `Không chấm được` và ghi lý do.
+
+Mỗi phiếu ghi mã bài đã xáo, task/version, năm điểm tiêu chí và lý do, điểm
+tổng và lý do, band, trạng thái `Interaction`, cùng trạng thái `Không chấm
+được` nếu cần. **Không hiển thị cho giám khảo:** tên/bút danh, trình độ ước
+lượng ban đầu, điểm AI, điểm hoặc ghi chú của giám khảo còn lại.
 
 ## Phụ lục C — Hai đề bài
 

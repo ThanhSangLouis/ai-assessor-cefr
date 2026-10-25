@@ -24,6 +24,14 @@ Hai DOCX được lưu byte-for-byte từ kho kỹ thuật nội bộ `../ai-ass
 3. Báo cáo kết quả ASR, chấm CEFR, hiệu năng, kiểm thử hoặc nghiên cứu người dùng chỉ xuất hiện sau khi có evidence thực tế tại `docs/sdd/modules/<module>/evidence/` và được dẫn sang `docs/evidence/` theo rubric.
 4. Tài liệu và hình W1 được lưu nguyên bản hoặc kèm checksum để bảo toàn provenance và phục vụ báo cáo.
 
+## SCRUM-87 — source tham khảo
+
+Xem [gói handoff SCRUM-87](research-preparation/README.md). Chỉ phục vụ đối chiếu consent; chưa là requirement được duyệt hoặc phiếu consent hoàn chỉnh.
+
+## SCRUM-88 — source tham khảo
+
+Xem [gói handoff SCRUM-88](research-preparation/README.md). Chứa kế hoạch/đề xuất đề bài, rubric và prompt; chưa phải protocol hoặc rubric đã duyệt.
+
 ## SCRUM-89 — source tham khảo
 
-Xem [gói handoff SCRUM-89](research-preparation/README.md). Chứa đề xuất tập huấn, chưa phải tài liệu hoặc bằng chứng hiệu chuẩn được duyệt.
+Xem [gói handoff SCRUM-89](research-preparation/README.md). Ghi nhận điều kiện chạy tập huấn và blocker hiện tại; chưa có dữ liệu chấm của hai người thật hoặc agreement report.

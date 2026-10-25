@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import UTC, datetime
 
-from aicefr.contracts import ActorRole, Band
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole, Band
 from conftest import http
 
 
@@ -359,11 +359,15 @@ def test_cohort_pronunciation_is_staff_only_consent_gated_and_anonymous(portal_r
         actor = runtime.auth.bootstrap_fixture_account(
             actor_id, ActorRole.STUDENT, "fixture-password"
         )
-        runtime.consents.activate(actor, "demo-v1", research_allowed=True)
+        runtime.consents.activate(
+            actor, CURRENT_CONSENT_VERSION, research_allowed=True
+        )
         student_ids.append(actor_id)
     for actor_id in student_ids[:2]:
         actor = runtime.auth.resolve(tokens["a"] if actor_id == "fixture-a" else tokens["b"])
-        runtime.consents.activate(actor, "demo-v1", research_allowed=True)
+        runtime.consents.activate(
+            actor, CURRENT_CONSENT_VERSION, research_allowed=True
+        )
     for index, owner_id in enumerate(student_ids):
         for attempt in range(8):
             add_step_attempt(

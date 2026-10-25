@@ -10,7 +10,7 @@ from pathlib import Path
 from wsgiref.simple_server import WSGIRequestHandler, make_server
 
 from aicefr.auth.service import AuthService
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.local.app import SQLiteSessionRepository, create_runtime, load_config
 from aicefr.storage.sqlite import SQLiteStore
 
@@ -40,9 +40,36 @@ def _demo_config() -> dict[str, object]:
     """Explicitly permissive QC configuration for synthetic demonstration only."""
     return {
         "demo": True,
-        "consent_version": "demo-v1",
+        "consent_version": CURRENT_CONSENT_VERSION,
         "allowed_media_types": ["audio/wav", "audio/flac", "audio/ogg", "audio/mpeg"],
-        "tasks": [{"task_id": "demo-speaking", "task_version": "1"}],
+        "tasks": [
+            {
+                "task_id": "demo-speaking",
+                "task_version": "1",
+                "title": "Trải nghiệm học được điều mới",
+                "prompt_text": (
+                    "Bạn có 30 giây chuẩn bị. Sau đó hãy nói bằng tiếng Anh trong "
+                    "40–60 giây; không đọc văn bản viết sẵn. Kể về một lần bạn học "
+                    "được điều gì đó mới ngoài trường lớp. Bạn đã học gì, học như "
+                    "thế nào, và vì sao nó đáng nhớ?"
+                ),
+                "min_seconds": 40,
+                "max_seconds": 60,
+            },
+            {
+                "task_id": "demo-speaking-opinion",
+                "task_version": "1",
+                "title": "Ý kiến về việc sinh viên làm thêm",
+                "prompt_text": (
+                    "Bạn có 30 giây chuẩn bị. Sau đó hãy nói bằng tiếng Anh trong "
+                    "40–60 giây; không đọc văn bản viết sẵn. Có ý kiến cho rằng "
+                    "sinh viên nên đi làm thêm trong lúc học. Bạn đồng ý hay không, "
+                    "và vì sao?"
+                ),
+                "min_seconds": 40,
+                "max_seconds": 60,
+            },
+        ],
         "qc": {
             "version": "demo-qc-v1",
             "accepted_formats": ["wav", "flac", "ogg", "mp3"],

@@ -192,17 +192,29 @@ class PortalRouter:
 
         if path == "/student/account/consent":
             values = app._request_values(environ)
-            if set(values) - {"action", "version", "research_allowed"}:
+            if set(values) - {
+                "action",
+                "version",
+                "research_allowed",
+                "audio_storage_allowed",
+            }:
                 raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
             action = values.get("action", "accept")
             if action not in {"accept", "withdraw"} or not values.get("version"):
                 raise HttpInputError(HTTPStatus.UNPROCESSABLE_ENTITY, "INVALID_REQUEST")
             research_allowed = values.get("research_allowed", "false") in {"true", "on"}
+            audio_storage_allowed = values.get("audio_storage_allowed", "false") in {
+                "true",
+                "on",
+            }
             self.identity_api.accounts.set_consent(
                 token,
                 values["version"],
                 research_allowed if action == "accept" else False,
                 active=action == "accept",
+                audio_storage_allowed=(
+                    audio_storage_allowed if action == "accept" else False
+                ),
             )
             return self._redirect("/student/account?tab=data&saved=consent")
 

@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from aicefr.api.templates import render_report_content
 from aicefr.audio.config import QCConfig
 from aicefr.contracts import (
+    CURRENT_CONSENT_VERSION,
     ActorRole,
     Assessment,
     AssessmentStatus,
@@ -78,13 +79,15 @@ def test_safe_report_api_filters_student_trust_and_bounds_teacher_evidence(tmp_p
             actor.actor_id, "fixture-password"
         )
         if role is ActorRole.STUDENT:
-            runtime.consents.activate(actor, "demo-v1")
+            runtime.consents.activate(
+                actor, CURRENT_CONSENT_VERSION, audio_storage_allowed=True
+            )
     owner = runtime.auth.resolve(tokens["a"], allowed_roles=frozenset({ActorRole.STUDENT}))
     response = runtime.responses.submit(
         owner,
         task_id="demo-speaking",
         task_version="1",
-        consent_version="demo-v1",
+        consent_version=CURRENT_CONSENT_VERSION,
         audio_bytes=b"synthetic fixture bytes",
     )
     trust = TrustAssessment(
@@ -189,7 +192,7 @@ def test_safe_report_api_filters_student_trust_and_bounds_teacher_evidence(tmp_p
         owner,
         task_id="demo-speaking",
         task_version="1",
-        consent_version="demo-v1",
+        consent_version=CURRENT_CONSENT_VERSION,
         audio_bytes=b"synthetic completed fixture bytes",
     )
     runtime.responses.transition_status(
@@ -231,7 +234,7 @@ def test_safe_report_api_filters_student_trust_and_bounds_teacher_evidence(tmp_p
         owner,
         task_id="demo-speaking",
         task_version="1",
-        consent_version="demo-v1",
+        consent_version=CURRENT_CONSENT_VERSION,
         audio_bytes=b"synthetic rejected fixture bytes",
     )
     runtime.responses.transition_status(

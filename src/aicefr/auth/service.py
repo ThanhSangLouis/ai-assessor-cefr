@@ -231,14 +231,24 @@ class ConsentService:
         self._clock = clock
 
     def activate(
-        self, actor: Actor, consent_version: str, *, research_allowed: bool = False
+        self,
+        actor: Actor,
+        consent_version: str,
+        *,
+        research_allowed: bool = False,
+        audio_storage_allowed: bool = False,
     ) -> ConsentRecord:
         if actor.role != ActorRole.STUDENT:
             raise AuthorizationError("access denied")
         identity = self._identity_repository()
         if identity is not None:
             return identity.set_consent(
-                actor, consent_version, research_allowed, True, self._clock()
+                actor,
+                consent_version,
+                research_allowed,
+                True,
+                self._clock(),
+                audio_storage_allowed=audio_storage_allowed,
             )
         record = ConsentRecord(
             participant_id=actor.actor_id,
@@ -246,6 +256,7 @@ class ConsentService:
             state=ConsentState.ACTIVE,
             recorded_at=self._clock(),
             research_allowed=research_allowed,
+            audio_storage_allowed=audio_storage_allowed,
         )
         self._consents.put_consent(record)
         return record
@@ -270,12 +281,20 @@ class ConsentService:
         if actor.role != ActorRole.STUDENT or current is None:
             raise AuthorizationError("consent unavailable")
         if identity is not None:
-            return identity.set_consent(actor, current.consent_version, False, False, self._clock())
+            return identity.set_consent(
+                actor,
+                current.consent_version,
+                False,
+                False,
+                self._clock(),
+                audio_storage_allowed=False,
+            )
         record = current.model_copy(
             update={
                 "state": ConsentState.WITHDRAWN,
                 "recorded_at": self._clock(),
                 "research_allowed": False,
+                "audio_storage_allowed": False,
             }
         )
         self._consents.put_consent(record)
@@ -301,4 +320,10 @@ class ConsentService:
             or current.consent_version != consent_version
         ):
             raise AuthorizationError("active consent required")
+        return current
+
+    def require_audio_storage(self, actor: Actor, consent_version: str) -> ConsentRecord:
+        current = self.require_active(actor, consent_version)
+        if not current.audio_storage_allowed:
+            raise AuthorizationError("audio storage consent required")
         return current
