@@ -234,7 +234,11 @@ def create_runtime(
         reviews = ReviewService(review_repository, report_sink=reports)
         tasks = TaskRepository(store)
         for item in config["tasks"]:
-            tasks.seed(TaskRecord(**{"title": str(item["task_id"]), **item}))
+            task = TaskRecord(**{"title": str(item["task_id"]), **item})
+            if config.get("demo"):
+                tasks.seed_demo_task(task)
+            else:
+                tasks.seed(task)
         if pipeline is None:
             stored_model = store.connection.execute(
                 "SELECT payload FROM runtime_settings WHERE key='active_model'"

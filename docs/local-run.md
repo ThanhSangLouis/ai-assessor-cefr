@@ -15,7 +15,9 @@ python -m aicefr.local init-demo --data-dir /tmp/aicefr-local-data --actor-id fi
 python -m aicefr.local serve --data-dir /tmp/aicefr-local-data --demo --port 8000
 ```
 
-CLI hỏi mật khẩu bằng `getpass`; không có mật khẩu mặc định. ID phải bắt đầu `fixture-`. Có thể dùng `--password-stdin` trong automation local, không đặt mật khẩu trong command argument hay Git. Mở `http://127.0.0.1:8000/login`. Student đồng ý phiên bản `demo-v1`, rồi nộp bài `demo-speaking`, phiên bản `1`. Nếu không cấu hình ASR/model, report không đưa band AI. Teacher đăng nhập tài khoản riêng, mở hàng đợi, xem report/nghe audio và ghi quyết định; overall AI giữ nguyên.
+CLI hỏi mật khẩu bằng `getpass`; không có mật khẩu mặc định. ID phải bắt đầu `fixture-`. Có thể dùng `--password-stdin` trong automation local, không đặt mật khẩu trong command argument hay Git. Mở `http://127.0.0.1:8000/login`. Student đồng ý phiên bản `demo-v1`, rồi chọn một trong hai đề fixture `demo-speaking` hoặc `demo-speaking-opinion` (đều phiên bản `1`, nói 40–60 giây). Nếu không cấu hình ASR/model, report không đưa band AI. Teacher đăng nhập tài khoản riêng, mở hàng đợi, xem report/nghe audio và ghi quyết định; overall AI giữ nguyên.
+
+Khi mở data-dir cũ còn placeholder `demo-speaking` v1 chưa có bài nộp, demo cập nhật prompt trên chính version đó. Nếu version placeholder đã có bài nộp, hệ thống giữ nguyên lịch sử v1, ngừng mở đề cũ và seed wording mới thành v2.
 
 Tạo một WAV kiểm thử 3 giây, có khoảng lặng để đi nhánh QC REVIEW mà không cần ASR:
 
@@ -63,7 +65,24 @@ Tạo `/tmp/aicefr-local-config.json` theo mẫu dưới đây và thay hai đư
   "vad_threshold": 0.5,
   "vad_min_silence_ms": 150,
   "allowed_media_types": ["audio/wav", "audio/flac", "audio/ogg", "audio/mpeg"],
-  "tasks": [{"task_id": "demo-speaking", "task_version": "1"}],
+  "tasks": [
+    {
+      "task_id": "demo-speaking",
+      "task_version": "1",
+      "title": "Trải nghiệm học được điều mới",
+      "prompt_text": "Bạn có 30 giây chuẩn bị. Sau đó hãy nói bằng tiếng Anh trong 40–60 giây; không đọc văn bản viết sẵn. Kể về một lần bạn học được điều gì đó mới ngoài trường lớp. Bạn đã học gì, học như thế nào, và vì sao nó đáng nhớ?",
+      "min_seconds": 40,
+      "max_seconds": 60
+    },
+    {
+      "task_id": "demo-speaking-opinion",
+      "task_version": "1",
+      "title": "Ý kiến về việc sinh viên làm thêm",
+      "prompt_text": "Bạn có 30 giây chuẩn bị. Sau đó hãy nói bằng tiếng Anh trong 40–60 giây; không đọc văn bản viết sẵn. Có ý kiến cho rằng sinh viên nên đi làm thêm trong lúc học. Bạn đồng ý hay không, và vì sao?",
+      "min_seconds": 40,
+      "max_seconds": 60
+    }
+  ],
   "qc": {
     "version": "demo-qc-v1",
     "accepted_formats": ["wav", "flac", "ogg", "mp3"],
