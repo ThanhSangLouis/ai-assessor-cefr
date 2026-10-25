@@ -16,3 +16,11 @@ Chú giải: `CODE_MERGED` = code + test đã có trên `main`, review/acceptanc
 Mỗi task phải ghi file được phép sửa, base/fingerprint, actual commands, coverage, changed-behavior matrix và evidence path khi Phase 05 được duyệt. Không gộp M09-TASK-001..004 thành một commit không review được.
 
 Bằng chứng chạy lại test trên `main` `cabcc44`: [evidence/w6-s02-sync.md](evidence/w6-s02-sync.md).
+
+## W7 — Chuyển sang kiến trúc ba dịch vụ (W7-S02)
+
+| Task | Deliverable | Tests | Trạng thái |
+| --- | --- | --- | --- |
+| M09-W7-S02 | `scoring/conformal.py` (CV+, D022), `features/relevance.py`, `tools/{calibrate_conformal,refusal_benchmark}.py` | `test_conformal`, `test_validity_shield`, `test_refusal_benchmark` | IN_REVIEW: PR `port/m03-m05-m09-cham` vào `migrate/w7-repo-goc` |
+
+Chuyển từ `ThanhSangLouis/ai-assessor-cefr@059fa28`. Artifact Speak & Improve vẫn ngoài Git (`AICEFR_MODEL_DIR`, SHA-256 ghim trong `scoring/artifacts.py`), test dùng bộ tổng hợp. Code cũ của module được gỡ cùng PR; quyết định từng phần ở [kiểm kê W7-G1](../../../evidence/w7-migration/kiem-ke.md).

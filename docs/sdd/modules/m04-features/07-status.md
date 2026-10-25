@@ -199,3 +199,9 @@ CODEX CHECK RESULT: PASS — đủ evidence cho mọi AC; không còn task BLOCK
 CODEX RECOMMENDATION: RECOMMEND APPROVAL
 USER VERDICT: PENDING
 ```
+
+## W7-S02 — Chuyển M04 sang kiến trúc ba dịch vụ (25/10/2026)
+
+- PR `port/m03-m05-m09-cham` vào nhánh tích hợp `migrate/w7-repo-goc`, xếp trên PR nền `port/m16-nen-w7` (W7-T01). Người làm: Sang. Chưa có verdict.
+- Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.
+- Không có số đo Speak & Improve trong code, test hay tài liệu của PR.
