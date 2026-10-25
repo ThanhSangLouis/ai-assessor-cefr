@@ -17,3 +17,18 @@ Không tìm thấy biểu mẫu giấy hoàn chỉnh, chữ ký hay phê duyệt
 Target UI hiện có consent bắt buộc và lựa chọn nghiên cứu tùy chọn, nhưng chưa có lựa chọn lưu audio riêng. Browser QA trước đó trên revision `82fe708` ghi nhận trạng thái này; đây là đối chiếu giao diện, không phải phê duyệt consent.
 
 Còn thiếu mẫu được trường/GVHD/ethics duyệt; câu chữ và phiên bản ánh xạ với UI; mục đích lưu/xử lý audio cho bài hiện tại so với tái sử dụng nghiên cứu; retention/xóa, chủ sở hữu và quyền truy cập; contact/khiếu nại; và bằng chứng sign-off. Không dùng tài liệu này để bắt đầu thu dữ liệu hoặc ghi nhận consent thật.
+
+## Recheck code-level source (HEAD `09b4e8d68d46b87a7219bfb009118d29b515c6c7`)
+
+Repo nguồn hiện đồng bộ với `origin/main`; working tree chỉ còn thay đổi local ở file model không liên quan. Nguồn có code consent tách hai lựa chọn, ngoài các tài liệu reference ở trên:
+
+| File nguồn được kiểm tra | SHA-256 | Chức năng |
+|---|---|---|
+| `src/aicefr/api/templates/consent.html` | `3AA6EEBEE1EC0AC0EE7E4C774E96B1DBBF1EE5133F438BA28176974C48F02E97` | Hiển thị checkbox riêng cho lưu audio và tái sử dụng nghiên cứu. |
+| `src/aicefr/api/static/consent.js` | `BE32F3947BD82CBDBB7EAED67E1102FBFC5FA70F00FFF987DF2839BF162DD686` | Gửi hai lựa chọn riêng lên API. |
+| `src/aicefr/storage/consent_repository.py` | `185B423277B0FD021AF970E473DBFE0101AA33198F1A9E504046AC05F770ABFB` | Lưu/version hóa hai consent; `may_submit` phụ thuộc audio consent còn hiệu lực. |
+| `tests/test_consent.py` | `9713A1B5B92F0E940BF57C93356EC0E2397B5A5E4EABEDBEBAF06666844A2369` | Test consent bằng test data. |
+
+Đối chiếu target hiện tại: M08/M11 và WSGI consent chỉ có `research_allowed`, chưa có `audio_storage_allowed`. Source consent dùng FastAPI/Mongo; target dùng WSGI/SQLite và contract khác. Chưa chuyển code vì ticket hiện là phiếu giấy khớp implementation target, còn thêm lựa chọn audio vào target sẽ đổi consent contract/schema/API và cần scope/SDD owner review. Source UI là bằng chứng về lựa chọn ở **repo nguồn**, không phải trạng thái giao diện target.
+
+Kết luận về biểu mẫu giữ nguyên: source code có hai lựa chọn, nhưng source vẫn không có phiếu giấy đã ký/được duyệt; phụ lục consent trong kế hoạch còn là đề xuất.
