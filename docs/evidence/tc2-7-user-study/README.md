@@ -8,7 +8,7 @@ Protocol/consent, kịch bản tác vụ, danh sách người tham gia ẩn danh
 
 ## Minh chứng hiện có
 
-Chưa có artifact tại chỗ.
+Chưa có dữ liệu hoặc kết quả thực nghiệm người dùng. [SCRUM-85 W7 data readiness](scrum-85-w7-data-readiness.md) ghi blocker và điều kiện cần chốt trước khi thu; đây không phải pilot data hay user-study result.
 
 ## Còn thiếu / cần xác minh
 
