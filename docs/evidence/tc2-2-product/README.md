@@ -17,6 +17,7 @@ Source, commit/diff, danh sách chức năng đã cam kết, demo/build trên re
 | Demo/local entrypoint | [Local run guide](../../local-run.md) | CLI, fixture accounts, consent, upload/report và teacher review; model/data ngoài Git |
 | Inference smoke | [Actual ASR/VAD](../../sdd/features/w3-local-integration/evidence/real-speech-smoke.md) | Codex đo 02/10; Whisper/Silero/Ridge local, không là validation CEFR |
 | Revision/test/review | [W3 Evidence](../../sdd/features/w3-local-integration/evidence/evidence-manifest.md) | Dẫn source commits, raw reports và kiểm tra độc lập |
+| W5 DoD baseline — SCRUM-83 | [Evidence index](../w5-dod-baseline-2026-10-25.md) | Inventory theo 12 điều kiện; W5 vẫn `PENDING`, chưa có owner verdict |
 
 ## Còn thiếu / cần xác minh
 
