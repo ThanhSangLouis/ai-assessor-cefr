@@ -1,1 +1,1 @@
-"""Synthetic W2 local persistence and immutable BlobStore."""
+"""Xem docs/sdd/SDD.md muc 4."""

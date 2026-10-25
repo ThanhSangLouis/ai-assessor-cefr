@@ -38,3 +38,9 @@ M16 là integration gate, không thay acceptance từng module. Full PASS trên 
 Trên `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`, PR #35 (SCRUM-65, merge `9968abc`) đưa M16-TASK-001–003 vào `main`; evidence SCRUM-65 ghi 358 passed, 2 smoke deselected, changed-file lint/format, clean-wheel/browser và migration/restore checks. PR #50 tiếp tục đổi consent/storage migration và data-operation compatibility; #51/#52 bổ sung task docs/materials. G1/Sang review vẫn `PENDING`; global formatter legacy, ASR/VAD và Windows native có các giới hạn được nêu trong review.
 
 M16-TASK-004 có data-operations code/test trong SCRUM-67 PR #38 (`d60e8a4`); [M14 verification](../m14-billing-licensing/evidence/scrum-67/verification.md) ghi kiểm tra erase/export/retention/restore cùng synthetic fixture. PR #50 cập nhật privacy/migration paths; SCRUM-67 results vẫn gắn historical reviewed SHA, không phải regression mới trên `f540cb8`. TASK-005/006 chưa có final route/package/CI/browser gate trên một revision và vẫn `BLOCKED`. Xem [SCRUM-84 sync evidence](evidence/w6-t03-sync.md). Không chạy test lại và không thay verdict Phase 01–05, G1, user acceptance hay Jira status.
+
+## W7-T01 / SCRUM-98 — Nền kiến trúc ba dịch vụ (25/10/2026)
+
+- Nhánh tích hợp `migrate/w7-repo-goc` tạo từ `main` `5a170db`. PR nền `port/m16-nen-w7` chép phần nền từ `ThanhSangLouis/ai-assessor-cefr@059fa28`; danh sách tệp ở [06-tasks](06-tasks.md#w7--nền-kiến-trúc-ba-dịch-vụ-w7-t01-scrum-98).
+- Người làm: Sang, theo chỉ dẫn của chủ dự án (gỡ chặn W7-S02/S03). Người review: Thắng. Chưa có verdict.
+- Trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển (kho MongoDB `storage/migrations.py` và `services/core/app.py` cần kho và dịch vụ của cả ba người). Kết quả kiểm bằng cách phủ tạm phần còn thiếu từ repo gốc ghi trong mô tả PR.

@@ -1,0 +1,55 @@
+# D051: recordings in S3-compatible object storage instead of the uploads volume,
+# so a second instance of core or speech reads the same recordings.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.objectstore.yml up -d --build
+#
+# SeaweedFS (Apache-2.0) serves the S3 API inside the network only; set
+# S3_ACCESS_KEY and S3_SECRET_KEY in .env. Any S3 service works the same way:
+# point AICEFR_S3_ENDPOINT at it and drop the `s3` service. (MinIO no longer
+# publishes community images on Docker Hub.)
+
+x-s3: &s3
+  AICEFR_BLOBS: s3://aicefr-audio
+  AICEFR_S3_ENDPOINT: s3:8333
+  AICEFR_S3_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
+  AICEFR_S3_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+  AICEFR_S3_SECURE: "0"
+
+services:
+  core:
+    environment: *s3
+    depends_on:
+      s3:
+        condition: service_healthy
+
+  speech:
+    environment: *s3
+    depends_on:
+      s3:
+        condition: service_healthy
+
+  s3:
+    image: chrislusf/seaweedfs:4.48
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY in .env}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?set S3_SECRET_KEY in .env}
+    # One identity, the application's, written from the environment at start:
+    # no anonymous access to anybody's recordings.
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        printf '{"identities":[{"name":"aicefr","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json &&
+        exec weed server -dir=/data -s3 -s3.config=/tmp/s3.json
+    volumes:
+      - objects:/data
+    healthcheck:
+      test: ["CMD", "nc", "-z", "127.0.0.1", "8333"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+
+volumes:
+  objects:

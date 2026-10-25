@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: aicefr
+    folder: AI Assessor CEFR
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

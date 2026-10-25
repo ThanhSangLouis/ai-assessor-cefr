@@ -5,12 +5,28 @@ import subprocess
 import sys
 
 FORBIDDEN = [
-    "*.wav", "*.mp3", "*.m4a", "*.flac", "*.ogg", "*.webm",
-    "*.bin", "*.pt", "*.pth", "*.onnx", "*.safetensors", "*.ckpt",
-    "*.db", "*.sqlite", "*.sqlite3",
-    ".env", ".env.*", "*.pem", "*.key", "*.p12",
+    "*.wav",
+    "*.mp3",
+    "*.m4a",
+    "*.flac",
+    "*.ogg",
+    "*.webm",
+    "*.bin",
+    "*.pt",
+    "*.pth",
+    "*.onnx",
+    "*.safetensors",
+    "*.ckpt",
+    "*.db",
+    "*.sqlite",
+    "*.sqlite3",
+    ".env",
+    ".env.*",
+    "*.pem",
+    "*.key",
+    "*.p12",
 ]
-ALLOWED = [".env.example"]
+ALLOWED = [".env.example", ".env.production.example"]
 
 
 def main() -> int:
@@ -18,8 +34,10 @@ def main() -> int:
         ["git", "ls-files"], capture_output=True, text=True, check=True
     ).stdout.split("\n")
     hits = [
-        f for f in files
-        if f and f.split("/")[-1] not in ALLOWED
+        f
+        for f in files
+        if f
+        and f.split("/")[-1] not in ALLOWED
         and any(fnmatch.fnmatch(f.split("/")[-1], p) for p in FORBIDDEN)
     ]
     if hits:
