@@ -359,6 +359,7 @@ class SQLiteStore:
             state=ConsentState(row[2]),
             recorded_at=datetime.fromisoformat(row[3]),
             research_allowed=bool(row[4]),
+            audio_storage_allowed=bool(row[5]) if len(row) > 5 else False,
         )
 
     def put_consent(self, consent: ConsentRecord) -> None:
@@ -372,17 +373,20 @@ class SQLiteStore:
         with self.transaction() as connection:
             connection.execute(
                 """INSERT INTO consents (
-                participant_id, consent_version, state, recorded_at, research_allowed
-                ) VALUES (?, ?, ?, ?, ?)
+                participant_id, consent_version, state, recorded_at, research_allowed,
+                audio_storage_allowed
+                ) VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT(participant_id) DO UPDATE SET
                 consent_version=excluded.consent_version, state=excluded.state,
-                recorded_at=excluded.recorded_at, research_allowed=excluded.research_allowed""",
+                recorded_at=excluded.recorded_at, research_allowed=excluded.research_allowed,
+                audio_storage_allowed=excluded.audio_storage_allowed""",
                 (
                     consent.participant_id,
                     consent.consent_version,
                     consent.state,
                     consent.recorded_at.isoformat(),
                     int(consent.research_allowed),
+                    int(consent.audio_storage_allowed),
                 ),
             )
             self._audit(connection, event)

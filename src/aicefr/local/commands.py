@@ -7,7 +7,7 @@ import json
 import sys
 
 from aicefr.api.student import SubmitRequest
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.local.app import create_runtime, load_config
 from aicefr.portal.contracts import AccountChange
 
@@ -79,7 +79,9 @@ def run_command(args) -> int:
                 )
         else:
             actor = runtime.portal.actor(token, frozenset({ActorRole.STUDENT}))
-            runtime.consents.activate(actor, config.get("consent_version", "local-v1"))
+            runtime.consents.require_audio_storage(
+                actor, config.get("consent_version", CURRENT_CONSENT_VERSION)
+            )
             with args.audio.open("rb") as handle:
                 data = handle.read(runtime.responses.blobs.max_bytes + 1)
             mime = {
@@ -96,7 +98,7 @@ def run_command(args) -> int:
                 SubmitRequest(
                     task_id=args.task_id,
                     task_version=args.task_version,
-                    consent_version=config.get("consent_version", "local-v1"),
+                    consent_version=config.get("consent_version", CURRENT_CONSENT_VERSION),
                     filename=args.audio.name,
                     content_type=mime,
                     audio_bytes=data,

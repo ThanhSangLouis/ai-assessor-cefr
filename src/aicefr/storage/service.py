@@ -40,7 +40,7 @@ class ResponseService:
         audio_bytes: bytes,
         initial_status: ResponseStatus = ResponseStatus.QUEUED,
     ) -> ResponseRecord:
-        self.consents.require_active(actor, consent_version)
+        self.consents.require_audio_storage(actor, consent_version)
         blob = self.blobs.store(audio_bytes)
         try:
             now = self.clock()

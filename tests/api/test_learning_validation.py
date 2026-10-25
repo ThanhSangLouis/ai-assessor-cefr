@@ -52,7 +52,11 @@ def api_runtime(tmp_path):
         )
         actors[name] = actor
         if role is ActorRole.STUDENT:
-            runtime.consents.activate(actor, str(config.get("consent_version", "local-v1")))
+            runtime.consents.activate(
+                actor,
+                str(config.get("consent_version", "consent-v2")),
+                audio_storage_allowed=True,
+            )
     tokens = {
         name: runtime.auth.login(actor.actor_id, "fixture-password")
         for name, actor in actors.items()
