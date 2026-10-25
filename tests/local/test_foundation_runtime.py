@@ -12,12 +12,89 @@ import pytest
 
 from aicefr.asr.service import EngineResult, RawWord
 from aicefr.audio.config import QCConfig
-from aicefr.contracts import ActorRole
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole
 from aicefr.local.__main__ import _demo_config
 from aicefr.local.app import create_runtime
+from aicefr.portal.contracts import TaskRecord
+from aicefr.portal.tasks import TaskRepository
 from aicefr.scoring.scorer import RidgeScorer
 from aicefr.storage.blob import BlobStore
 from aicefr.trust.service import RuntimeTrustEvaluator
+
+
+def test_demo_config_seeds_two_w6_speaking_prompts():
+    tasks = {item["task_id"]: item for item in _demo_config()["tasks"]}
+
+    assert set(tasks) == {"demo-speaking", "demo-speaking-opinion"}
+    for task in tasks.values():
+        assert task["task_version"] == "1"
+        assert task["min_seconds"] == 40
+        assert task["max_seconds"] == 60
+        assert "30 giây chuẩn bị" in task["prompt_text"]
+        assert "nói bằng tiếng Anh" in task["prompt_text"]
+
+
+def test_demo_seed_repairs_unused_legacy_speaking_placeholder(tmp_path):
+    config = _demo_config()
+    config["model_artifact"] = str(tmp_path / "missing-model.json")
+    runtime = create_runtime(tmp_path / "data", config=config)
+    try:
+        item = config["tasks"][0]
+        task = TaskRecord(**{"title": str(item["task_id"]), **item})
+        with runtime.store.transaction() as connection:
+            connection.execute(
+                "UPDATE speaking_tasks SET title='demo-speaking',prompt_text='' "
+                "WHERE task_id='demo-speaking' AND task_version='1'"
+            )
+
+        repository = TaskRepository(runtime.store)
+        repository.seed_demo_task(task)
+
+        upgraded = repository.get("demo-speaking", "1")
+        assert upgraded is not None
+        assert upgraded.title == task.title
+        assert upgraded.prompt_text == task.prompt_text
+        assert repository.get("demo-speaking", "2") is None
+    finally:
+        runtime.close()
+
+
+def test_demo_seed_versions_used_legacy_speaking_placeholder(tmp_path):
+    config = _demo_config()
+    config["model_artifact"] = str(tmp_path / "missing-model.json")
+    runtime = create_runtime(tmp_path / "data", config=config)
+    try:
+        item = config["tasks"][0]
+        task = TaskRecord(**{"title": str(item["task_id"]), **item})
+        actor = runtime.auth.bootstrap_fixture_account(
+            "fixture-demo-seed-student", ActorRole.STUDENT, "fixture-password"
+        )
+        runtime.consents.activate(
+            actor, CURRENT_CONSENT_VERSION, audio_storage_allowed=True
+        )
+        runtime.responses.submit(
+            actor,
+            task_id="demo-speaking",
+            task_version="1",
+            consent_version=CURRENT_CONSENT_VERSION,
+            audio_bytes=b"synthetic task-version fixture",
+        )
+        with runtime.store.transaction() as connection:
+            connection.execute(
+                "UPDATE speaking_tasks SET title='demo-speaking',prompt_text='' "
+                "WHERE task_id='demo-speaking' AND task_version='1'"
+            )
+
+        repository = TaskRepository(runtime.store)
+        repository.seed_demo_task(task)
+
+        legacy = repository.get("demo-speaking", "1")
+        current = repository.get("demo-speaking", "2")
+        assert legacy is not None and legacy.active is False and legacy.prompt_text == ""
+        assert current is not None and current.active is True
+        assert current.prompt_text == task.prompt_text
+    finally:
+        runtime.close()
 
 
 def _get(runtime, path, *, token=None):

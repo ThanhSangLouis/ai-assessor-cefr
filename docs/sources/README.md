@@ -27,3 +27,7 @@ Hai DOCX được lưu byte-for-byte từ kho kỹ thuật nội bộ `../ai-ass
 ## SCRUM-87 — source tham khảo
 
 Xem [gói handoff SCRUM-87](research-preparation/README.md). Chỉ phục vụ đối chiếu consent; chưa là requirement được duyệt hoặc phiếu consent hoàn chỉnh.
+
+## SCRUM-88 — source tham khảo
+
+Xem [gói handoff SCRUM-88](research-preparation/README.md). Chứa kế hoạch/đề xuất đề bài, rubric và prompt; chưa phải protocol hoặc rubric đã duyệt.
