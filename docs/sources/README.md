@@ -31,3 +31,7 @@ Xem [gói handoff SCRUM-87](research-preparation/README.md). Chỉ phục vụ �
 ## SCRUM-88 — source tham khảo
 
 Xem [gói handoff SCRUM-88](research-preparation/README.md). Chứa kế hoạch/đề xuất đề bài, rubric và prompt; chưa phải protocol hoặc rubric đã duyệt.
+
+## SCRUM-89 — source tham khảo
+
+Xem [gói handoff SCRUM-89](research-preparation/README.md). Ghi nhận điều kiện chạy tập huấn và blocker hiện tại; chưa có dữ liệu chấm của hai người thật hoặc agreement report.
