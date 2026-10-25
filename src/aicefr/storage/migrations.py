@@ -13,6 +13,8 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from time import monotonic, sleep
 
+from aicefr.storage.private_files import is_private_file
+
 SCHEMA_VERSION = 12
 MIGRATION_DIR = Path(__file__).with_name("migrations")
 GROUPS = (
@@ -89,29 +91,14 @@ def _sha256(path: Path) -> str:
 
 
 def _read_protected_key(path: Path) -> bytes:
-    import stat
-
-    info = path.lstat()
-    expected_uid = os.getuid() if hasattr(os, "getuid") else None
-    if (
-        not stat.S_ISREG(info.st_mode)
-        or info.st_nlink != 1
-        or (expected_uid is not None and info.st_uid != expected_uid)
-        or info.st_mode & 0o077
-    ):
+    if not is_private_file(path):
         raise ValueError("protected key file is unsafe")
-    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    descriptor = os.open(
+        path, os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    )
     try:
         opened = os.fstat(descriptor)
-        if (
-            not stat.S_ISREG(opened.st_mode)
-            or opened.st_nlink != 1
-            or (expected_uid is not None and opened.st_uid != expected_uid)
-            or opened.st_ino != info.st_ino
-            or opened.st_dev != info.st_dev
-            or opened.st_mode & 0o077
-            or opened.st_size > 4096
-        ):
+        if not is_private_file(path, descriptor=descriptor) or opened.st_size > 4096:
             raise ValueError("protected key file is unsafe")
         data = os.read(descriptor, 4097)
         if len(data) != opened.st_size or len(data) > 4096:

@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import shutil
 import sqlite3
-import stat
 
 import pytest
 
 from aicefr.auth.service import AccountRecord
 from aicefr.contracts import Actor, ActorRole
 from aicefr.storage import migrations
+from aicefr.storage.private_files import is_private_file
 from aicefr.storage.sqlite import SQLiteStore
 
 
@@ -94,7 +94,7 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
     assert manifest["schema_version"] == 9
     assert manifest["sensitive_files"] == ["billing-hmac.key"]
     assert "billing-hmac.key" in manifest["files"]
-    assert stat.S_IMODE((backup / "billing-hmac.key").stat().st_mode) == 0o600
+    assert is_private_file(backup / "billing-hmac.key")
 
     restored = migrations.restore_backup(backup, tmp_path / "restored-v9")
     with sqlite3.connect(restored / "metadata.sqlite3") as connection:
@@ -106,7 +106,7 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
             '{"report":"preserve"}',
         )
     assert (restored / "billing-hmac.key").read_bytes() == b"K" * 32
-    assert stat.S_IMODE((restored / "billing-hmac.key").stat().st_mode) == 0o600
+    assert is_private_file(restored / "billing-hmac.key")
 
     broken_migrations = tmp_path / "broken-migrations"
     shutil.copytree(migrations.MIGRATION_DIR, broken_migrations)
@@ -139,7 +139,9 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
         reopened.close()
 
 
-def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_path):
+def test_v9_migration_refuses_protected_key_symlink_without_copying_target(
+    tmp_path, make_symlink_or_skip
+):
     data_dir = tmp_path / "v9-symlink-store"
     store = _make_v9_store(data_dir)
     _seed_v9_rows(store)
@@ -147,7 +149,7 @@ def test_v9_migration_refuses_protected_key_symlink_without_copying_target(tmp_p
     key_path.unlink(missing_ok=True)
     outside = tmp_path / "outside-key"
     outside.write_bytes(b"do-not-copy-this-key")
-    key_path.symlink_to(outside)
+    make_symlink_or_skip(key_path, outside)
 
     with pytest.raises(ValueError, match="protected key file is unsafe"):
         migrations.migrate(store.connection, data_dir)

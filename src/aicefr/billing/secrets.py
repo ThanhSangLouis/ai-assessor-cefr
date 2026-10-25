@@ -7,10 +7,10 @@ import hashlib
 import hmac
 import os
 import secrets
-import stat
 from pathlib import Path
 
 from aicefr.storage.paths import external_data_dir
+from aicefr.storage.private_files import is_private_file
 
 
 class KeyStoreError(RuntimeError):
@@ -46,13 +46,19 @@ class KeyRing:
             try:
                 fd = os.open(
                     path,
-                    os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+                    os.O_WRONLY
+                    | os.O_CREAT
+                    | os.O_EXCL
+                    | getattr(os, "O_BINARY", 0)
+                    | getattr(os, "O_NOFOLLOW", 0),
                     0o600,
                 )
             except FileExistsError:
                 self._key = self._read_existing(path)
             else:
                 try:
+                    if not is_private_file(path, descriptor=fd):
+                        raise KeyStoreError("unsafe billing key permissions")
                     raw = secrets.token_bytes(32)
                     data = self._prefix + base64.urlsafe_b64encode(raw) + b"\n"
                     view = memoryview(data)
@@ -82,24 +88,14 @@ class KeyRing:
     @classmethod
     def _read_existing(cls, path: Path) -> bytes:
         try:
-            info = path.lstat()
-            if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
-                raise KeyStoreError("unsafe billing key file")
-            if info.st_mode & 0o077:
+            if not is_private_file(path):
                 raise KeyStoreError("unsafe billing key permissions")
-            if hasattr(os, "getuid") and info.st_uid != os.getuid():
-                raise KeyStoreError("unsafe billing key owner")
-            fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+            fd = os.open(
+                path,
+                os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0),
+            )
             try:
-                opened = os.fstat(fd)
-                if (
-                    not stat.S_ISREG(opened.st_mode)
-                    or opened.st_nlink != 1
-                    or opened.st_ino != info.st_ino
-                    or opened.st_dev != info.st_dev
-                    or opened.st_mode & 0o077
-                    or (hasattr(os, "getuid") and opened.st_uid != os.getuid())
-                ):
+                if not is_private_file(path, descriptor=fd):
                     raise KeyStoreError("unsafe billing key file")
                 data = os.read(fd, 512)
                 if os.read(fd, 1):

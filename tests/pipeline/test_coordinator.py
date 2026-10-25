@@ -157,7 +157,7 @@ class _Stack:
         self.store.add_account(AccountRecord(self.student, "fixture-hash"))
         self.store.add_account(AccountRecord(self.teacher, "fixture-hash"))
         consent = ConsentService(self.store)
-        consent.activate(self.student, "consent-v1")
+        consent.activate(self.student, "consent-v1", audio_storage_allowed=True)
         self.blobs = BlobStore(self.data_dir, max_bytes=100_000)
         self.responses = ResponseService(self.store, self.blobs, consent)
         self.review_repository = SQLiteReviewRepository(self.store)
