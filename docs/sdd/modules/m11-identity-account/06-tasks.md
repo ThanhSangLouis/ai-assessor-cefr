@@ -4,16 +4,18 @@
 
 | Task | W5 | Deliverable | Tests | Status |
 | --- | --- | --- | --- | --- |
-| M11-TASK-001 | W5-T01/T02 | migration + profile/session repositories | 001/003/010 | BLOCKED |
-| M11-TASK-002 | W5-T02 | password/temp/lockout/session services | 002/003 | BLOCKED |
-| M11-TASK-003 | W5-T02 | admin account atomic operations/audit | 004/005 | BLOCKED |
-| M11-TASK-004 | W5-T02 | Google PKCE/signed flow/config | 006/007 | BLOCKED |
-| M11-TASK-005 | W5-T02 | consent propagation/data contract | 008 | BLOCKED |
-| M11-TASK-006 | W5-N01 | account/public auth UI | 007/009 | BLOCKED |
-| M11-TASK-007 | W5-N04 | admin account/config UI | 004–007/009 | BLOCKED |
-| M11-TASK-008 | W5-T04 | auth full regression/evidence | full module | BLOCKED |
+| M11-TASK-001 | W5-T01/T02 | migration + profile/session repositories | 001/003/010 | IN_REVIEW — PR #36/#37; SCRUM-66 backend evidence; module verdict PENDING |
+| M11-TASK-002 | W5-T02 | password/temp/lockout/session services | 002/003 | IN_REVIEW — PR #37; SCRUM-66 backend evidence; module verdict PENDING |
+| M11-TASK-003 | W5-T02 | admin account atomic operations/audit | 004/005 | IN_REVIEW — PR #37; SCRUM-66 backend evidence; module verdict PENDING |
+| M11-TASK-004 | W5-T02 | Google PKCE/signed flow/config | 006/007 | IN_REVIEW — PR #37; live OAuth NOT_RUN; module verdict PENDING |
+| M11-TASK-005 | W5-T02 | consent propagation/data contract | 008 | IN_REVIEW — PR #37; SCRUM-66 backend evidence; module verdict PENDING |
+| M11-TASK-006 | W5-N01 | account/public auth UI | 007/009 | IN_REVIEW — consumer code in PR #44; M11 owner review/acceptance PENDING |
+| M11-TASK-007 | W5-N04 | admin account/config UI | 004–007/009 | IN_REVIEW — consumer surfaces in PR #47; action/security review PENDING |
+| M11-TASK-008 | W5-T04 | auth full regression/evidence | full module | BLOCKED — final integrated W5-T04 gate not complete |
 
 Mỗi task phải bàn giao request/response examples, reason codes, authorization matrix và audit/redaction evidence; không chỉ screenshot happy path.
+
+Trạng thái task-local phản ánh code/evidence đã merge; module vẫn `DRAFT/PENDING`. Các dòng này không phê duyệt phase SDD hoặc đóng Jira.
 
 ## Tiến độ backend theo giao việc SCRUM-66
 
