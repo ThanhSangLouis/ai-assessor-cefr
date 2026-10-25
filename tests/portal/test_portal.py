@@ -134,7 +134,8 @@ def test_task_versions_and_closing_survive_restart(portal_runtime):
             original.revision,
         )
     runtime.portal.save_task(tokens["admin"], original.model_copy(update={"active": False}), 1)
-    assert runtime.portal.task_list(tokens["a"]) == []
+    remaining_tasks = runtime.portal.task_list(tokens["a"])
+    assert [task["task_id"] for task in remaining_tasks] == ["demo-speaking-opinion"]
     created = runtime.portal.save_task(
         tokens["admin"],
         TaskRecord(
