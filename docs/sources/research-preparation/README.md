@@ -2,6 +2,8 @@
 
 **Nguồn:** `D:\LAPTRINH\TLCN\AI\ai-assessor-cefr`, HEAD `7614f3d9eec3b2673614b3ca6c4de8d3097221d3` (24/10/2026). **Disposition:** `REFERENCE_ONLY`; chưa có bằng chứng tập huấn/calibration hoàn tất.
 
+Đã đối chiếu thêm `origin/main` `09b4e8d`: chỉ có dòng D057 về giá, không liên quan; D007 và các tài liệu task không đổi. Bản sao ghim theo local source HEAD `7614f3d`.
+
 | File được chuyển nguyên trạng | SHA-256 | Phần liên quan |
 |---|---|---|
 | `KE_HOACH_KHAO_SAT.md` ← `docs/plan/KE_HOACH_KHAO_SAT.md` | `AF4787121BC0228C69D8FB4BF7CBB63D4DF8D3DBBEB85ACBAC955C896BB66964` | Đề xuất 10 bài chuẩn; weighted kappa ≥ 0,70 và ICC(2,1) ≥ 0,75. |
