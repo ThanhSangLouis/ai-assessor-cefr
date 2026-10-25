@@ -70,7 +70,11 @@ def test_runtime_seeds_learning_catalogue_and_unknown_mission_is_not_found(tmp_p
         student = runtime.auth.bootstrap_fixture_account(
             "fixture-learning-student", ActorRole.STUDENT, "fixture-password"
         )
-        runtime.consents.activate(student, str(config.get("consent_version", "local-v1")))
+        runtime.consents.activate(
+            student,
+            str(config.get("consent_version", "consent-v2")),
+            audio_storage_allowed=True,
+        )
         token = runtime.auth.login(student.actor_id, "fixture-password")
 
         catalogue = _get(runtime, "/api/v1/learn/path", token=token)

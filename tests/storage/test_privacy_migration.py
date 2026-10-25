@@ -122,13 +122,13 @@ def test_v9_backup_and_privacy_migration_preserve_rows_and_protected_key(tmp_pat
 
     monkeypatch.setattr(migrations, "MIGRATION_DIR", original_migrations)
     migrations.migrate(store.connection, data_dir)
-    assert store.connection.execute("PRAGMA user_version").fetchone() == (11,)
+    assert store.connection.execute("PRAGMA user_version").fetchone() == (12,)
     migrations.migrate(store.connection, data_dir)
     store.close()
 
     reopened = SQLiteStore(data_dir)
     try:
-        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (11,)
+        assert reopened.connection.execute("PRAGMA user_version").fetchone() == (12,)
         assert reopened.connection.execute("SELECT order_id FROM billing_orders").fetchone() == (
             "order-v9",
         )
@@ -166,6 +166,6 @@ def test_v9_migration_with_protected_key_without_getuid_platform_api(tmp_path, m
 
     migrations.migrate(store.connection, data_dir)
 
-    assert store.connection.execute("PRAGMA user_version").fetchone() == (11,)
+    assert store.connection.execute("PRAGMA user_version").fetchone() == (12,)
     assert (data_dir / "billing-hmac.key").read_bytes() == b"K" * 32
     store.close()

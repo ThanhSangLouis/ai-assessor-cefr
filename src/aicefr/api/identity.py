@@ -403,12 +403,17 @@ class IdentityApi:
             if method != "POST":
                 return app._json(HTTPStatus.METHOD_NOT_ALLOWED, {"error": "METHOD_NOT_ALLOWED"})
             self._write_origin(app, environ)
-            body = self._body(app, environ, {"version", "research_allowed", "active"})
+            body = self._body(
+                app,
+                environ,
+                {"version", "research_allowed", "audio_storage_allowed", "active"},
+            )
             consent = self.accounts.set_consent(
                 token,
                 body.get("version"),
                 body.get("research_allowed"),
                 body.get("active", True),
+                body.get("audio_storage_allowed", False),
             )
             return app._json(HTTPStatus.OK, _plain(consent))
 

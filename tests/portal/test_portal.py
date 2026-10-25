@@ -773,7 +773,7 @@ def test_restore_migrates_verified_schema10_backup_to_current_schema(
     }
     restored_store = SQLiteStore(destination)
     try:
-        assert restored_store.connection.execute("PRAGMA user_version").fetchone()[0] == 11
+        assert restored_store.connection.execute("PRAGMA user_version").fetchone()[0] == 12
         assert restored_store.connection.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='learning_audio_artifacts'"
         ).fetchone()

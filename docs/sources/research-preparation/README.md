@@ -32,3 +32,17 @@ Repo nguồn hiện đồng bộ với `origin/main`; working tree chỉ còn th
 Đối chiếu target hiện tại: M08/M11 và WSGI consent chỉ có `research_allowed`, chưa có `audio_storage_allowed`. Source consent dùng FastAPI/Mongo; target dùng WSGI/SQLite và contract khác. Chưa chuyển code vì ticket hiện là phiếu giấy khớp implementation target, còn thêm lựa chọn audio vào target sẽ đổi consent contract/schema/API và cần scope/SDD owner review. Source UI là bằng chứng về lựa chọn ở **repo nguồn**, không phải trạng thái giao diện target.
 
 Kết luận về biểu mẫu giữ nguyên: source code có hai lựa chọn, nhưng source vẫn không có phiếu giấy đã ký/được duyệt; phụ lục consent trong kế hoạch còn là đề xuất.
+
+## Target branch follow-up — SCRUM-87 (25/10/2026)
+
+The comparison above records the target state at its audit revision. The SCRUM-87
+task branch subsequently added a target-side `audio_storage_allowed` consent
+choice and linked a printable `consent-v2` form. No source-repository code was
+copied into the target; the target contract and SQLite migration were implemented
+for its WSGI/storage architecture. The current implementation and test/browser
+evidence are recorded at
+`docs/sdd/modules/m08-identity-storage-admin/evidence/scrum-87-implementation.md`.
+
+The retention section remains explicit: the tracked data-management plan calls
+12 months a proposal, and the app does not automatically erase stored audio.
+This branch does not claim an approved retention policy or real-data collection.

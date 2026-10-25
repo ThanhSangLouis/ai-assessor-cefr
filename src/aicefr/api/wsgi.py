@@ -43,7 +43,7 @@ from aicefr.api.templates import (
 )
 from aicefr.auth.errors import LockoutError
 from aicefr.auth.service import AuthorizationError, AuthService, ConsentService, ResourceNotFound
-from aicefr.contracts import ActorRole, ConsentState
+from aicefr.contracts import CURRENT_CONSENT_VERSION, ActorRole, ConsentState
 from aicefr.limits import RateLimiter
 from aicefr.report.contracts import DiagnosticReport
 from aicefr.report.service import ReportNotFound, UnverifiedReviewDecision
@@ -142,7 +142,7 @@ class StudentTeacherApp:
         responses: ResponseService | None = None,
         reviews: Any | None = None,
         reports: Any | None = None,
-        consent_version: str = "local-v1",
+        consent_version: str = CURRENT_CONSENT_VERSION,
         demo: bool = False,
         max_request_bytes: int = 10 * 1024 * 1024,
         portal: Any | None = None,
@@ -254,6 +254,9 @@ class StudentTeacherApp:
             "CONSENT_VERSION_STALE": (
                 "Nội dung đồng ý đã thay đổi. Hãy đọc và xác nhận phiên bản hiện tại."
             ),
+            "AUDIO_STORAGE_CONSENT_REQUIRED": (
+                "Bạn cần bật lựa chọn lưu audio trước khi nộp bài nói."
+            ),
             "RATE_LIMITED": "Bạn thao tác quá nhiều lần. Hãy đợi một phút rồi thử lại.",
             "STALE_REVISION": "Dữ liệu đã thay đổi. Hãy tải lại trang trước khi lưu.",
             "REPORT_NOT_READY": "Báo cáo chưa sẵn sàng. Hãy đợi xử lý bài và tải lại trang.",
@@ -307,6 +310,18 @@ class StudentTeacherApp:
                 font_path.read_bytes(),
                 (("Cache-Control", "public, max-age=86400"),),
             )
+        if path == f"/static/{CURRENT_CONSENT_VERSION}.pdf" and method == "GET":
+            pdf_path = Path(__file__).parent / "static" / f"{CURRENT_CONSENT_VERSION}.pdf"
+            if not pdf_path.is_file():
+                return self._controlled_error(
+                    environ, HTTPStatus.NOT_FOUND, "RESOURCE_UNAVAILABLE"
+                )
+            return WebResponse(
+                HTTPStatus.OK,
+                "application/pdf",
+                pdf_path.read_bytes(),
+                (("Content-Disposition", "inline; filename=consent-v2.pdf"),),
+            )
         if path in {"/recorder.js", "/report.js"} and method == "GET":
             return WebResponse(
                 HTTPStatus.OK,
@@ -345,7 +360,8 @@ class StudentTeacherApp:
                     self._consent_version,
                     active,
                     self._demo,
-                    research_allowed=bool(record and record.research_allowed),
+                    research_allowed=bool(active and record and record.research_allowed),
+                    audio_storage_allowed=bool(active and record and record.audio_storage_allowed),
                 ),
             )
         if path in {"/student/consent/accept", "/student/consent/withdraw"} and method == "POST":
@@ -363,22 +379,24 @@ class StudentTeacherApp:
                     if environ.get("CONTENT_LENGTH") not in {None, "", "0"}
                     else {}
                 )
-                if set(values) - {"research_allowed"}:
+                if set(values) - {"research_allowed", "audio_storage_allowed"}:
                     raise HttpInputError(HTTPStatus.BAD_REQUEST, "INVALID_REQUEST")
-                research = values.get("research_allowed", False)
-                if not isinstance(research, (bool, str)) or research not in (
-                    False,
-                    True,
-                    "true",
-                    "false",
-                    "on",
-                    "off",
+                choices = {
+                    name: values.get(name, False)
+                    for name in ("research_allowed", "audio_storage_allowed")
+                }
+                if any(
+                    not isinstance(value, (bool, str))
+                    or value not in (False, True, "true", "false", "on", "off")
+                    for value in choices.values()
                 ):
                     raise HttpInputError(HTTPStatus.BAD_REQUEST, "INVALID_REQUEST")
                 self._consents.activate(
                     actor,
                     self._consent_version,
-                    research_allowed=research in (True, "true", "on"),
+                    research_allowed=choices["research_allowed"] in (True, "true", "on"),
+                    audio_storage_allowed=choices["audio_storage_allowed"]
+                    in (True, "true", "on"),
                 )
             else:
                 self._consents.withdraw(actor)
@@ -389,8 +407,20 @@ class StudentTeacherApp:
                 (("Location", "/student/consent"),),
             )
         if method == "GET" and path == "/student/upload":
+            actor = None
             if self._auth is not None:
-                self._resolve_cookie_actor(environ, ActorRole.STUDENT)
+                actor = self._resolve_cookie_actor(environ, ActorRole.STUDENT)
+            consent = (
+                self._consents.current(actor)
+                if actor is not None and self._consents
+                else None
+            )
+            audio_storage_allowed = bool(
+                consent
+                and consent.state is ConsentState.ACTIVE
+                and consent.consent_version == self._consent_version
+                and consent.audio_storage_allowed
+            )
             tasks = (
                 self._portal.service.task_list(self._session_token(environ)) if self._portal else []
             )
@@ -411,7 +441,8 @@ class StudentTeacherApp:
                     tasks=tasks,
                     selected={key: values[0] for key, values in selected.items()},
                     consent_version=self._consent_version,
-                    recording_enabled=enabled,
+                    audio_storage_allowed=audio_storage_allowed,
+                    recording_enabled=enabled and audio_storage_allowed,
                     max_seconds=qc.max_duration_s if qc else 180,
                     max_bytes=qc.max_input_bytes if qc else self._max_request_bytes,
                 ),
@@ -647,21 +678,27 @@ class StudentTeacherApp:
 
     def _submit(self, environ: dict[str, Any], *, browser: bool) -> WebResponse:
         token = self._session_token(environ, unsafe=True)
+        consent = None
         if self._auth is not None:
             actor = self._auth.resolve(token, allowed_roles=frozenset({ActorRole.STUDENT}))
             if not self._limiter.allow("upload", actor.actor_id, limit=10):
                 raise HttpInputError(HTTPStatus.TOO_MANY_REQUESTS, "RATE_LIMITED")
+            if self._consents is not None:
+                consent = self._consents.current(actor)
+                if (
+                    consent is None
+                    or consent.state is not ConsentState.ACTIVE
+                    or consent.consent_version != self._consent_version
+                ):
+                    raise HttpInputError(HTTPStatus.FORBIDDEN, "CONSENT_VERSION_STALE")
+                if not consent.audio_storage_allowed:
+                    raise HttpInputError(
+                        HTTPStatus.FORBIDDEN, "AUDIO_STORAGE_CONSENT_REQUIRED"
+                    )
         body = self._read_body(environ)
         request = self._multipart_submit_request(str(environ.get("CONTENT_TYPE", "")), body)
         if self._auth is not None and self._consents is not None:
-            actor = self._auth.resolve(token, allowed_roles=frozenset({ActorRole.STUDENT}))
-            consent = self._consents.current(actor)
-            if (
-                request.consent_version != self._consent_version
-                or consent is None
-                or consent.state is not ConsentState.ACTIVE
-                or consent.consent_version != self._consent_version
-            ):
+            if request.consent_version != self._consent_version:
                 raise HttpInputError(HTTPStatus.FORBIDDEN, "CONSENT_VERSION_STALE")
         status = self._student_api.submit(token, request)
         if browser:
