@@ -2,6 +2,8 @@
 
 Ứng dụng WSGI chạy một process trên loopback với tài khoản fixture do người chạy tạo. SQLite, audio và model nằm ngoài repository. Cấu hình demo dành cho dữ liệu kiểm thử do nhóm tạo; chưa có nghiệm thu vận hành dữ liệu người học thật hay validation độ chính xác CEFR.
 
+`.env.example` ghi biến môi trường tùy chọn mà code hiện đọc trực tiếp: `AICEFR_MODEL_DIR`. Ứng dụng không tự nạp file `.env`; cấu hình runtime dùng JSON, còn biến này cần được export trong shell nếu muốn dùng model qua môi trường. Không commit model hoặc dữ liệu local.
+
 ## Cài đặt và chạy demo
 
 Từ thư mục repository, dùng Python >=3.11:

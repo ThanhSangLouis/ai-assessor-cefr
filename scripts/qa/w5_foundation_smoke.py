@@ -20,13 +20,21 @@ import venv
 import wave
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 
 def run(
     command: list[str], *, env: dict[str, str], input_text: str | None = None, cwd: Path
 ) -> str:
     result = subprocess.run(
-        command, check=False, capture_output=True, text=True, env=env, input=input_text, cwd=cwd
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=env,
+        input=input_text,
+        cwd=cwd,
     )
     if result.returncode:
         raise RuntimeError(
@@ -40,6 +48,8 @@ def clean_environment() -> dict[str, str]:
     environment = os.environ.copy()
     for name in ("PYTHONPATH", "PYTHONHOME", "PYTHONUSERBASE", "VIRTUAL_ENV"):
         environment.pop(name, None)
+    if os.name == "nt":
+        environment.setdefault("PYTHONUTF8", "1")
     return environment
 
 
@@ -56,6 +66,24 @@ def request(base: str, path: str, *, payload: dict | None = None, cookie: str | 
     if cookie:
         headers["Cookie"] = cookie
     req = urllib.request.Request(base + path, data=data, headers=headers)
+    opener = urllib.request.build_opener(NoRedirect)
+    try:
+        return opener.open(req, timeout=3)
+    except urllib.error.HTTPError as error:
+        return error
+
+
+def form_request(base: str, path: str, *, payload: dict[str, str], cookie: str) -> Any:
+    data = urlencode(payload).encode()
+    req = urllib.request.Request(
+        base + path,
+        data=data,
+        headers={
+            "Origin": base,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Cookie": cookie,
+        },
+    )
     opener = urllib.request.build_opener(NoRedirect)
     try:
         return opener.open(req, timeout=3)
@@ -113,7 +141,7 @@ def main() -> int:
         config_path.write_text(
             json.dumps(
                 {
-                    "consent_version": "wheel-smoke-v1",
+                    "consent_version": "consent-v2",
                     "allowed_media_types": ["audio/wav"],
                     "tasks": [{"task_id": "smoke", "task_version": "1"}],
                     "asr_model_dir": str(root / "missing-asr-model"),
@@ -202,6 +230,36 @@ def main() -> int:
             report["steps"]["login"] = login.status == 303 and cookie.startswith("aicefr_session=")
             report["steps"]["authenticated_page"] = (
                 request(base, "/admin", cookie=cookie).status == 200
+            )
+            student_login = request(
+                base,
+                "/login",
+                payload={"actor_id": "fixture-student", "password": password},
+            )
+            student_cookie = student_login.headers.get("Set-Cookie", "").split(";", 1)[0]
+            report["steps"]["student_login"] = (
+                student_login.status == 303
+                and student_cookie.startswith("aicefr_session=")
+            )
+            accepted = form_request(
+                base,
+                "/student/consent/accept",
+                payload={"audio_storage_allowed": "true", "research_allowed": "false"},
+                cookie=student_cookie,
+            )
+            consent_page = request(base, "/student/consent", cookie=student_cookie)
+            consent_html = consent_page.read().decode("utf-8")
+            consent_response = request(base, "/api/v1/me/consent", cookie=student_cookie)
+            consent_record = (
+                json.loads(consent_response.read()) if consent_response.status == 200 else {}
+            )
+            report["steps"]["current_consent_version"] = (
+                accepted.status == 303
+                and "/static/consent-v2.pdf" in consent_html
+                and consent_record.get("consent_version") == "consent-v2"
+            )
+            report["steps"]["audio_storage_opt_in"] = (
+                consent_record.get("audio_storage_allowed") is True
             )
             for asset in ("/recorder.js", "/report.js"):
                 response = request(base, asset)
