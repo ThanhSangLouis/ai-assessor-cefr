@@ -1,18 +1,25 @@
+# CI of the project (W7): the submission repository's own guards (Markdown
+# links, forbidden files) plus the four jobs of the service architecture --
+# format, lint and tests; MongoDB and Redis; images and compose; secret scan.
+# Ported from ThanhSangLouis/ai-assessor-cefr@059fa28 (.github/workflows/ci.yml).
+#
+# Only ".[dev]" for the main job: the `asr` and `vad` extras pull Whisper and
+# torch, which no test needs (`default_vad()` falls back to EnergyVad).
 name: CI
 
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   push:
-    branches: [main]
+    branches: [main, migrate/w7-repo-goc]
   workflow_dispatch:
-
-permissions:
-  contents: read
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   docs-and-guards:
@@ -22,25 +29,150 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Kiểm tra link Markdown
         run: python scripts/ci/check_md_links.py
       - name: Chặn audio, model, DB, bí mật
         run: python scripts/ci/check_forbidden_files.py
 
-  tests:
-    name: Unit test + coverage
+  kiem-tra:
+    name: Dinh dang, lint, kiem thu
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Lay ma nguon
+        uses: actions/checkout@v4
+
+      - name: Cai Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Cai phu thuoc
+        run: |
+          python -m pip install -U pip
+          pip install -e ".[dev]"
+
+      - name: Kiem dinh dang
+        run: ruff format --check src tests tools
+
+      - name: Lint
+        run: ruff check src tests tools scripts
+
+      # Nguong 70% la muc 5 cua rubric TC2.5. Hien tai dang 89%, tuc con 19
+      # diem du dia — de o day de biet khi nao tut, khong phai de chan duong.
+      - name: Kiem thu va do phu
+        run: pytest --cov-report=xml --cov-report=term --cov-fail-under=70
+
+      - name: Luu bao cao do phu
+        if: always()          # bao cao van huu ich khi test do, nhat la luc do
+        uses: actions/upload-artifact@v4
+        with:
+          name: bao-cao-do-phu
+          path: coverage.xml
+          if-no-files-found: warn
+
+  mongo-redis:
+    name: Kiem thu tren MongoDB va Redis (D048, D050)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Cung bo kiem thu, nhung moi test mot database rieng tren MongoDB that
+    # thay vi kho trong bo nho (mongomock), va bus that tren Redis/BullMQ cho
+    # test_bus_redis.py va ba dich vu noi qua Redis (test_services_split.py).
+    # Bat cho mongomock va may chu khac nhau truoc khi
+    # chung len docker compose.
+    # No health check on the mongo service: quoting a mongosh command inside
+    # `options` is fragile, and a failed check stops the job before any step.
+    # A step below waits for the server instead.
+    services:
+      mongo:
+        image: mongo:7.0  # 8.x cannot start on the runners' kernel (SERVER-121912)
+        ports: ["27017:27017"]
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 5s --health-retries 20
+    env:
+      AICEFR_TEST_MONGO: mongodb://localhost:27017
+      AICEFR_TEST_REDIS: redis://localhost:6379/0
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Cài đặt
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Cai phu thuoc
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-      - name: Chạy test (không gồm smoke)
-        run: python -m pytest -q -m "not smoke" --cov=aicefr --cov-branch --cov-report=term-missing --cov-report=json:coverage.json
-      - name: Ruff
-        run: ruff check src tests scripts
+          python -m pip install -U pip
+          pip install -e ".[dev,services]"
+      - name: Cho MongoDB san sang
+        run: |
+          python - <<'PY'
+          import time
+          from pymongo import MongoClient
+          for _ in range(60):
+              try:
+                  MongoClient("mongodb://localhost:27017", serverSelectionTimeoutMS=1000).admin.command("ping")
+                  break
+              except Exception:
+                  time.sleep(1)
+          else:
+              raise SystemExit("MongoDB khong san sang sau 60 giay")
+          PY
+      # SeaweedFS needs a command, which a service container cannot be given.
+      - name: Object storage S3 (SeaweedFS, D051)
+        run: |
+          docker run -d --name s3 -p 8333:8333 chrislusf/seaweedfs:4.48 server -s3
+          for i in $(seq 1 60); do nc -z localhost 8333 && break; sleep 1; done
+          echo "AICEFR_TEST_S3=http://ci:ci@localhost:8333" >> "$GITHUB_ENV"
+      - name: Bus Redis va BullMQ
+        run: pytest --no-cov tests/test_bus_redis.py
+      - name: Bo kiem thu tren MongoDB
+        run: pytest --no-cov -m "not e2e and not slow"
+
+  anh-docker:
+    name: Dung anh va kiem docker compose (D043, D044)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cau hinh compose hop le
+        run: |
+          for k in AICEFR_INTERNAL_TOKEN AICEFR_GATEWAY_TOKEN MONGO_ROOT_PASSWORD CORE_DB_PASSWORD \
+                   REDIS_PASSWORD; do
+            echo "$k=ci-$(openssl rand -hex 8)" >> .env
+          done
+          docker compose config -q
+      - name: Anh dich vu
+        run: docker build --target service -t aicefr-service:ci .
+      - name: Anh speech
+        run: docker build --target speech -t aicefr-speech:ci .
+
+  quet-bi-mat:
+    name: Quet lo khoa bi mat
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Tren su kien pull_request, gitleaks goi GET /repos/.../pulls/{n}/commits
+    # de chi quet dung cac commit cua PR. Token mac dinh cua repo khong co
+    # quyen do, nen job nay do 403 "Resource not accessible by integration"
+    # tren PR trong khi van xanh tren push. Cap dung mot quyen doc, khong hon.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      # Tach thanh job rieng chu khong ghep vao job tren: mot truc trac cua
+      # gitleaks khong duoc che mat ket qua kiem thu, va nguoc lai.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # gitleaks can toan bo lich su de quet
+
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # GITLEAKS_LICENSE chi bat buoc voi repository thuoc to chuc.
+          # Repo nay thuoc tai khoan ca nhan nen khong can.

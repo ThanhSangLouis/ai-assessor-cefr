@@ -1,73 +1,141 @@
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "aicefr"
 version = "0.1.0"
-description = "AI Assessor CEFR — chấm nói tiếng Anh theo CEFR, có bằng chứng và giảng viên duyệt"
-readme = "README.md"
-requires-python = ">=3.11"
+description = "He thong AI ho tro danh gia nang luc noi tieng Anh theo CEFR (A2-B2)"
+requires-python = ">=3.10"
 dependencies = [
-    "numpy>=1.26",
-    "pydantic>=2.6",
-    "argon2-cffi==25.1.0",
-    "soundfile==0.14.0",
-    "soxr==1.1.0",
-    "simplemma==1.1.2",
-    "Jinja2>=3.1,<4",
-    "tzdata>=2024.1",
+  "numpy>=1.26",
+  "scipy>=1.11",
+  "scikit-learn>=1.4",
+  "soundfile>=0.12",
+  "pydantic>=2.6",
+  "fastapi>=0.110",
+  "uvicorn[standard]>=0.29",
+  "python-multipart>=0.0.9",
+  # Template engine cua tang trinh bay. Truoc day HTML nam trong chuoi Python
+  # nen khong can khai bao; tu QD-05 thi can. Bai hoc tu loi L2: goi nao ma
+  # can thi phai khai bao, chay duoc tren may minh khong phai bang chung.
+  "jinja2>=3.1",
+  # Bam mat khau. NFR-07 quy dinh bcrypt cost >= 12, tieu chi kiem thu la hash
+  # mang tien to $2b$12$.
+  "bcrypt>=4.1",
+  # Lesson steps (D025) count any form of a key word: "went" for "go",
+  # "studies" for "study". Pure Python, no dependencies, data bundled in the
+  # wheel, runs offline; MIT licence. Approved by the project owner with D025.
+  "simplemma>=2.0,<3",
+  # D048: the store is MongoDB. pymongo is the official driver, Apache-2.0,
+  # pure Python with an optional C extension; it ships bson for Extended JSON.
+  "pymongo>=4.8,<5",
 ]
 
 [project.optional-dependencies]
-# ASR local (M03): faster-whisper chạy weight whisper-small dạng CTranslate2.
-asr = ["faster-whisper>=1.0"]
-# VAD (M04): Silero, trọng số đi kèm gói, không tải mạng lúc chạy.
-vad = ["silero-vad==6.2.1"]
-google = ["cryptography>=46"]
+# D050, the services apart: Redis carries their work (BullMQ, MIT), events
+# (Streams) and calls, through redis-py (MIT). D051: recordings in S3-compatible
+# object storage through the minio client (Apache-2.0). Not needed on one
+# machine, where the bus is in-process and recordings are files.
+services = ["bullmq>=3.4,<4", "redis>=6.2,<9", "minio>=7.2,<8"]
+asr = ["mlx-whisper>=0.4; sys_platform == 'darwin'", "faster-whisper>=1.0; sys_platform != 'darwin'"]
+vad = ["silero-vad>=5.1", "torch>=2.2"]
 dev = [
-    "pytest>=8",
-    "pytest-cov>=5",
-    "ruff>=0.6",
-    "cryptography>=46",
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.4",
+  # TestClient cua Starlette doi httpx2. Thieu goi nay thi pytest khong thu thap
+  # duoc tests/test_api.py va CI hong ngay o buoc thu thap, khong phai o buoc chay.
+  "httpx2>=0.1",
+  # D048: an in-memory MongoDB for the tests and quick local runs, ISC licence.
+  "mongomock>=4.3,<5",
 ]
+# E2E layer (D023): runs on developer machines only; CI does not install it,
+# so those tests skip themselves there.
+# Install: pip install -e ".[dev,e2e]" && playwright install chromium
+e2e = ["playwright>=1.62"]
+
+[project.scripts]
+aicefr = "aicefr.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# Files that are NOT Python but are required at runtime. Without this the wheel
+# contains only .py files: templates and static assets go missing, and the app
+# dies on startup with "Directory ... does not exist". The scoring artifact
+# would go missing too, which fails later and more quietly -- at the first
+# submission rather than at boot.
+#
+# Editable installs never show this, because they point at the source tree.
+# It only appears once the package is really built, which is to say in the
+# container, which is to say in production.
 [tool.setuptools.package-data]
 aicefr = [
-    "api/templates/*.html",
-    "api/static/*.js",
-    "api/static/*.css",
-    "api/static/*.svg",
-    "api/static/*.pdf",
-    "api/static/art/*.svg",
-    "api/static/fonts/*.woff2",
-    "api/static/fonts/*.txt",
-    "storage/migrations/*.sql",
+  "api/templates/*.html",
+  "api/static/*.css",
+  "api/static/*.js",
+  # The icon sprite (D027) and the favicon.
+  "api/static/*.svg",
+  # The ground's art (D037), drawn by tools/make_art.py.
+  "api/static/art/*.svg",
+  # Roboto, served by the app itself (D031), and its licence.
+  "api/static/fonts/*.woff2",
+  "api/static/fonts/*.txt",
 ]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-# Cho phép test import helper dùng chung (tests.features.fixtures, tests.asr.fixtures)
-# khi chạy `pytest` trơn, không chỉ `python -m pytest`.
-pythonpath = ["."]
-addopts = "-ra"
-markers = [
-    "smoke: cần model hoặc audio thật; không chạy mặc định (dùng -m smoke)",
-]
-
-[tool.coverage.run]
-source = ["aicefr"]
-branch = true
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
-src = ["src", "tests"]
-# Script của skill SDD dùng chung, không thuộc code sản phẩm.
-extend-exclude = [".agents"]
-
+target-version = "py310"
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP"]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+# Pinned so every ruff version sorts the package the same way: without it,
+# 0.16.7 on a laptop and 0.16.10 in CI disagreed about one import.
+known-first-party = ["aicefr"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI dung Depends/Form/File/Query ngay trong tham so mac dinh, day la cach
+# dung dung cua framework chu khong phai loi B008. Khai bao o day thay vi rai
+# noqa khap noi: tat mot canh bao dung cach thi van con tac dung o cho khac.
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Form",
+  "fastapi.File",
+  "fastapi.Query",
+  "fastapi.Header",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The UI and lesson E2E modules import their fixtures from test_practice_e2e.py
+# (a conftest.py there would shadow tests/conftest.py, see that module's
+# docstring); pytest then passes them in as parameters of the same name, which
+# F811 reads as redefinition.
+"tests/e2e/test_ui_e2e.py" = ["F811"]
+"tests/e2e/test_lessons_e2e.py" = ["F811"]
+"tests/e2e/test_accounts_e2e.py" = ["F811"]
+"tests/e2e/test_profile_e2e.py" = ["F811"]
+"tests/e2e/test_ratings_e2e.py" = ["F811"]
+"tests/e2e/test_ui_depth_e2e.py" = ["F811"]
+"tests/e2e/test_achievements_e2e.py" = ["F811"]
+"tests/e2e/test_billing_e2e.py" = ["F811"]
+"tests/e2e/test_gateways_e2e.py" = ["F811"]
+"tests/e2e/test_google_setup_e2e.py" = ["F811"]
+"tests/e2e/test_art_e2e.py" = ["F811"]
+"tests/e2e/test_learning_evidence_e2e.py" = ["F811"]
+"tests/e2e/test_learning_plans_e2e.py" = ["F811"]
+# The achievement tests reuse the lesson tests' app fixture `m` the same way.
+"tests/test_achievements.py" = ["F811"]
+"tests/test_learning_evidence.py" = ["F811"]
+"tests/test_learning_plans.py" = ["F811"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --cov=aicefr --cov-report=term-missing"
+markers = [
+  "slow: can model that hoac audio that, khong chay trong CI",
+  "unit: layer 1, pure logic, no database, no HTTP, no audio",
+  "integration: layer 2, real pipeline + MongoDB (in memory, or AICEFR_TEST_MONGO) + API through TestClient",
+  "e2e: layer 3, real browser (Playwright) against a local uvicorn server; needs extra e2e",
+]

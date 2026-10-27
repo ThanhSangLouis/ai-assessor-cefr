@@ -1,40 +1,114 @@
-# Local configuration and secrets
+# Secrets and local configuration
 .env
 .env.*
 !.env.example
-*.pem
+!.env.production.example
 *.key
-*.p12
+*.migrate.lock
+*.pem
+.secrets/
+credentials.json
+secrets.json
+*.token
 
-# Python build and test outputs
+# Real participant identity and consent records
+secure_identity/
+**/identity_map*
+**/signed_consent/
+**/consent_filled/
+**/contact_list*
+**/withdrawal_requests/
+
+# Real research data and participant-level reports
+external_data/
+research_data/
+research_data/raw_audio/
+research_data/asr/
+research_data/manual_transcripts/
+research_data/ratings_raw/
+research_data/adjudication/
+artifacts/reports/
+*.wav
+*.flac
+*.mp3
+*.m4a
+*.aac
+*.ogg
+
+# Local logs/caches/databases that may contain identifiers
+*.log
+*.sqlite
+*.sqlite3
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.pytest-run/
 .mypy_cache/
 .ruff_cache/
+.tmp/
+tools/.tmp/
+
+# Local vendored tools and generated helper environments
+.docx-tools/
+.cache/
+
+# Office temporary files
+~$*
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# moi truong ao
+.venv/
+
+# du lieu nghien cuu, khong commit theo giay phep corpus
+sandi-work/
+sandi-corpus-2025*/
+
+# Khong chay CI tu dong o giai doan nay. Cau hinh cat tai docs/ci/ci.yml.tat
+# .github/ tung bi chan o day khi CI duoc gat xuong ngay 13/09/2026.
+# Bat lai ngay 19/09/2026 — cau hinh nam o .github/workflows/ci.yml.
+
+# Bao cao do phu sinh ra khi chay test, khong phai ma nguon.
 .coverage
 htmlcov/
+
+# Generated report artifacts; keep report source Markdown under version control.
+artifacts/derived/report_diagrams/
+docs/reports/*.docx
+markdown/weekly_reports/*.docx
+Bao_cao_tieu_luan_chuyen_nganh_AI_Assessor_CEFR.docx
+
+# Co so du lieu va ban ghi sinh ra khi chay. Khong bao gio commit: chi can chay
+# that mot lan la chung chua but danh, duong dan ban ghi giong noi va nhat ky
+# kiem toan. Giong noi la du lieu ca nhan theo Luat 91/2025/QH15.
+aicefr.db
+aicefr.db-journal
+aicefr.db-wal
+uploads/
+.claude/launch.json
+
+# Sieu du lieu do setuptools sinh ra khi cai editable, khong phai ma nguon
+src/*.egg-info/
+
+# Bao cao do phu do CI sinh ra, khong commit — CI tu tai len lam artifact.
+coverage.xml
+
+# Agent worktrees created by Claude Code; never part of the repository
+.claude/worktrees/
+
+# Kept from the submission repository (W7 merge)
+*.p12
 *.egg-info/
 dist/
 build/
-.venv/
-
-# Local data, models and generated media
-data/
-models/
-checkpoints/
-*.sqlite
-*.sqlite3
+/data/
+/models/
+/checkpoints/
 *.db
-*.wav
-*.mp3
-*.m4a
-*.flac
 *.safetensors
 *.pt
 *.pth
-
-# Editor and OS files
-.DS_Store
 .idea/
 .vscode/

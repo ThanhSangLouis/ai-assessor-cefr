@@ -1,194 +1,24 @@
-"""Hợp đồng dữ liệu dùng chung giữa các module.
+"""Shared data contracts. Cross-reference SDD section 4 and SRS section 3.
 
-Hợp đồng M02/M03/M04/M05/M08: M02 giao PCM float32 mono 16 kHz cùng QC
-measurement/reason; M08 bổ sung actor, consent và session. Owner M01/M06/M07
-bổ sung kiểu và reason code của module mình vào đây.
-
-Nguyên tắc: thiếu dữ liệu là `None` kèm reason, không bao giờ là 0 hay giá trị
-trung bình.
+Guiding rule: no module is allowed to invent a value. When data is missing,
+return None together with a reason code, never 0.
 """
 
 from __future__ import annotations
 
-import math
-from datetime import datetime
-from enum import StrEnum
-from typing import Any, Literal
+from enum import Enum
 
-import numpy as np
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-
-# M02 xuất 16 kHz mono cho M03/M04; Sang review shared contract còn pending.
-EXPECTED_SAMPLE_RATE_HZ = 16_000
-CURRENT_CONSENT_VERSION = "consent-v2"
+from pydantic import AliasChoices, BaseModel, Field, computed_field, model_validator
 
 
-class _Frozen(BaseModel):
-    model_config = ConfigDict(frozen=True, extra="forbid")
+class Status(str, Enum):
+    """State of a single processing run.
 
-
-# --- M08 — Identity and consent ----------------------------------------------
-
-
-class ActorRole(StrEnum):
-    STUDENT = "student"
-    TEACHER = "teacher"
-    ADMIN = "admin"
-
-
-class Actor(_Frozen):
-    actor_id: str = Field(min_length=1)
-    role: ActorRole
-
-
-class ConsentState(StrEnum):
-    ACTIVE = "active"
-    WITHDRAWN = "withdrawn"
-
-
-class ConsentRecord(_Frozen):
-    participant_id: str = Field(min_length=1)
-    consent_version: str = Field(min_length=1)
-    state: ConsentState
-    recorded_at: datetime
-    research_allowed: bool = False
-    audio_storage_allowed: bool = False
-
-
-class SessionRecord(_Frozen):
-    token_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    actor_id: str = Field(min_length=1)
-    role: ActorRole
-    created_at: datetime
-    last_seen_at: datetime
-    idle_expires_at: datetime
-    absolute_expires_at: datetime
-
-
-class ReasonCode(StrEnum):
-    # M01 — Submission and presentation boundary
-    EMPTY_AUDIO = "EMPTY_AUDIO"
-    AUDIO_TOO_LARGE = "AUDIO_TOO_LARGE"
-    UNSUPPORTED_AUDIO_FORMAT = "UNSUPPORTED_AUDIO_FORMAT"
-    TASK_NOT_OPEN = "TASK_NOT_OPEN"
-    PIPELINE_ENQUEUE_FAILED = "PIPELINE_ENQUEUE_FAILED"
-    REPORT_NOT_AVAILABLE = "REPORT_NOT_AVAILABLE"
-    # M02 — Audio QC
-    QC_EMPTY_AUDIO = "QC_EMPTY_AUDIO"
-    QC_INPUT_TOO_LARGE = "QC_INPUT_TOO_LARGE"
-    QC_UNSUPPORTED_FORMAT = "QC_UNSUPPORTED_FORMAT"
-    QC_FORMAT_MISMATCH = "QC_FORMAT_MISMATCH"
-    QC_DECODE_FAILED = "QC_DECODE_FAILED"
-    QC_TOO_MANY_CHANNELS = "QC_TOO_MANY_CHANNELS"
-    QC_SAMPLE_RATE_LIMIT = "QC_SAMPLE_RATE_LIMIT"
-    QC_DURATION_LIMIT = "QC_DURATION_LIMIT"
-    QC_TOO_SHORT = "QC_TOO_SHORT"
-    QC_SILENCE_REVIEW = "QC_SILENCE_REVIEW"
-    QC_SILENCE_REJECT = "QC_SILENCE_REJECT"
-    QC_CLIPPING_REVIEW = "QC_CLIPPING_REVIEW"
-    QC_CLIPPING_REJECT = "QC_CLIPPING_REJECT"
-    QC_MEASUREMENT_MISSING = "QC_MEASUREMENT_MISSING"
-    # M03 — ASR
-    ASR_FAILED = "ASR_FAILED"
-    ASR_EMPTY_TRANSCRIPT = "ASR_EMPTY_TRANSCRIPT"
-    ASR_HALLUCINATION = "ASR_HALLUCINATION"
-    ASR_VERSION_MISMATCH = "ASR_VERSION_MISMATCH"
-    # M04 — Features
-    VAD_VERSION_MISMATCH = "VAD_VERSION_MISMATCH"
-    FEATURE_NOT_COMPUTABLE = "FEATURE_NOT_COMPUTABLE"
-    TOO_FEW_WORDS = "TOO_FEW_WORDS"
-    FEATURE_VERSION_MISMATCH = "FEATURE_VERSION_MISMATCH"
-    # M05 — Scoring
-    OUT_OF_DISTRIBUTION = "OUT_OF_DISTRIBUTION"
-    SCORE_NEAR_BOUNDARY = "SCORE_NEAR_BOUNDARY"
-    SCORE_AGGREGATED = "SCORE_AGGREGATED"
-    PIPELINE_INTERRUPTED = "PIPELINE_INTERRUPTED"
-    MANUAL_REVIEW_REQUESTED = "MANUAL_REVIEW_REQUESTED"
-    MODEL_VERSION_MISSING = "MODEL_VERSION_MISSING"
-    MODEL_ARTIFACT_INVALID = "MODEL_ARTIFACT_INVALID"
-    # M09 — Trust layer
-    LANGUAGE_NOT_ENGLISH = "LANGUAGE_NOT_ENGLISH"
-    LANGUAGE_UNCERTAIN = "LANGUAGE_UNCERTAIN"
-    OFF_TOPIC_SUSPECTED = "OFF_TOPIC_SUSPECTED"
-    PROMPT_READING_SUSPECTED = "PROMPT_READING_SUSPECTED"
-    CALIBRATION_MISSING = "CALIBRATION_MISSING"
-    CALIBRATION_HASH_MISMATCH = "CALIBRATION_HASH_MISMATCH"
-    CALIBRATION_INVALID = "CALIBRATION_INVALID"
-    LONG_RESPONSE_REVIEW = "LONG_RESPONSE_REVIEW"
-
-
-# --- M02 → M03/M04 -----------------------------------------------------------
-
-
-class QCStatus(StrEnum):
-    PASS = "PASS"
-    REVIEW = "REVIEW"
-    REJECT = "REJECT"
-
-
-class QCMeasurement(_Frozen):
-    """Một phép đo QC; giá trị thiếu phải có reason rõ ràng."""
-
-    name: str = Field(min_length=1)
-    value: float | None
-    unit: str = Field(min_length=1)
-    missing_reason: ReasonCode | None = None
-
-    @model_validator(mode="after")
-    def _value_or_reason(self) -> QCMeasurement:
-        if self.value is None and self.missing_reason is None:
-            raise ValueError("giá trị thiếu cần missing_reason")
-        if self.value is not None and self.missing_reason is not None:
-            raise ValueError("giá trị đo không được có missing_reason")
-        if self.value is not None and not math.isfinite(self.value):
-            raise ValueError("giá trị đo phải hữu hạn")
-        return self
-
-
-class QCResult(_Frozen):
-    status: QCStatus
-    reasons: tuple[ReasonCode, ...] = ()
-    qc_config_version: str = Field(min_length=1)
-    measurements: tuple[QCMeasurement, ...] = ()
-
-
-class DecodedAudio(_Frozen):
-    """PCM float32 mono đã giải mã. Không ghi đè bản gốc."""
-
-    model_config = ConfigDict(frozen=True, extra="forbid", arbitrary_types_allowed=True)
-
-    samples: np.ndarray
-    sample_rate_hz: Literal[16_000]
-    duration_s: float = Field(ge=0)
-    audio_sha256: str
-
-    @field_validator("samples")
-    @classmethod
-    def _mono_float32(cls, v: np.ndarray) -> np.ndarray:
-        if v.ndim != 1:
-            raise ValueError("samples phải là mảng 1 chiều (mono)")
-        if v.dtype != np.float32:
-            raise ValueError("samples phải có dtype float32")
-        if not np.isfinite(v).all():
-            raise ValueError("samples phải hữu hạn")
-        return v
-
-
-# --- M08 — Stored response and audit -----------------------------------------
-
-
-class BlobRef(_Frozen):
-    blob_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
-    size_bytes: int = Field(gt=0)
-
-
-class ResponseStatus(StrEnum):
-    """Public lifecycle state of one submitted response.
-
-    ``COMPLETED`` is only shown after M06 has made a report available.  A
-    technical failure carries a stable ``ReasonCode`` instead of an invented
-    score or a free-form implementation detail.
+    QUEUED and RUNNING are the two NOT-YET-FINISHED states, added for FR-05 and
+    QD-W3. Before them the pipeline ran synchronously inside the request, so
+    there was nothing to track: SRS AC-05.1 requires returning 202 with a job id
+    in under 300 ms, while NFR-01 allows the pipeline itself to take up to
+    60 seconds.
     """
 
     QUEUED = "QUEUED"
@@ -198,109 +28,84 @@ class ResponseStatus(StrEnum):
     REJECTED = "REJECTED"
     FAILED = "FAILED"
 
-
-class ResponseRecord(_Frozen):
-    response_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    owner_id: str = Field(min_length=1)
-    task_id: str = Field(min_length=1)
-    task_version: str = Field(min_length=1)
-    blob: BlobRef
-    status: ResponseStatus = ResponseStatus.QUEUED
-    status_reason: ReasonCode | None = None
-    revision: int = Field(default=1, ge=1)
-    created_at: datetime
-    audio_available: bool = True
+    @property
+    def is_pending(self) -> bool:
+        """Still processing; no final result yet."""
+        return self in (Status.QUEUED, Status.RUNNING)
 
 
-class AuditEvent(_Frozen):
-    event_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    actor_id: str = Field(min_length=1)
-    action: str = Field(min_length=1)
-    object_id: str = Field(min_length=1)
-    recorded_at: datetime
-    reason: str | None = None
+class ReasonCode(str, Enum):
+    """Vi sao mot bai khong tra ve ket qua binh thuong. Doi chieu SDD muc 4.0.
 
+    Hai muoi hai ma la nhieu, va mot enum lon thuong la dau hieu thiet ke xau
+    -- nhung chi khi nguoi tieu thu no phai RE NHANH theo tung gia tri. O day
+    thi khong: `ReviewRouter` chi lay giao cua tap ly do voi mot tap kich hoat
+    (`trigger`), con giao dien tra `REASON_NAMES` nhu mot tu dien. Them mot ma
+    la them mot dong vao hai cau truc DU LIEU, khong dong nao vao luong dieu
+    khien. Do la dieu khien mot bo tu vung lon van quan ly duoc.
 
-# --- M03 — ASR ---------------------------------------------------------------
+    Nguoc lai, gop chung lai moi la hong: sinh vien se doc "co loi" thay vi
+    "am thanh qua ngan". Ca he thong nay ton tai de moi phan xet deu co ly do
+    kiem tra duoc, nen do phan giai cua ly do chinh la san pham.
 
+    Ba ma tung ton tai ma khong noi nao sinh ra da duoc bo ngay 19/09/2026:
+    `IDENTITY_FIELD_REJECTED` (het nghia tu khi `speaker_id` lay tu phien dang
+    nhap, form khong con truong dinh danh nao de tu choi), `PROVENANCE_MISSING`
+    va `TEACHER_REVIEW_REQUESTED` (chua bao gio duoc gan o dau).
+    """
 
-class AsrStatus(StrEnum):
-    OK = "OK"
-    UNRELIABLE = "UNRELIABLE"
+    # Dau vao va dieu kien duoc nop
+    AUDIO_UNSUPPORTED = "AUDIO_UNSUPPORTED"
+    AUDIO_TOO_LARGE = "AUDIO_TOO_LARGE"
+    AUDIO_TOO_LONG = "AUDIO_TOO_LONG"
+    AUDIO_TOO_SHORT = "AUDIO_TOO_SHORT"
+    CONSENT_MISSING = "CONSENT_MISSING"
+    # Chat luong am thanh
+    HIGH_SILENCE_RATIO = "HIGH_SILENCE_RATIO"
+    CLIPPING_DETECTED = "CLIPPING_DETECTED"
+    LOW_SNR = "LOW_SNR"
+    WRONG_SAMPLE_RATE = "WRONG_SAMPLE_RATE"
+    # Nhan dang tieng noi
     ASR_FAILED = "ASR_FAILED"
-    NOT_RUN = "NOT_RUN"
+    ASR_EMPTY_TRANSCRIPT = "ASR_EMPTY_TRANSCRIPT"
+    ASR_LOW_CONFIDENCE = "ASR_LOW_CONFIDENCE"
+    ASR_HALLUCINATION = "ASR_HALLUCINATION"
+    # Dac trung va cham diem
+    FEATURE_NOT_COMPUTABLE = "FEATURE_NOT_COMPUTABLE"
+    TOO_FEW_WORDS = "TOO_FEW_WORDS"
+    SCORE_NEAR_BOUNDARY = "SCORE_NEAR_BOUNDARY"
+    SCORE_AGGREGATED = "SCORE_AGGREGATED"
+    MODEL_VERSION_MISSING = "MODEL_VERSION_MISSING"
+    OUT_OF_DISTRIBUTION = "OUT_OF_DISTRIBUTION"
+    # Van hanh va lech phien ban
+    PROCESSING_INTERRUPTED = "PROCESSING_INTERRUPTED"
+    ASR_VERSION_MISMATCH = "ASR_VERSION_MISMATCH"
+    VAD_VERSION_MISMATCH = "VAD_VERSION_MISMATCH"
+    # La chan hop le (D022). Ca ba deu chuyen giang vien. Ngon ngu khac thi
+    # khong cham; lac de / doc lai de thi GIU diem va KHONG tru -- may chi
+    # nghi ngo, nguoi quyet.
+    LANGUAGE_NOT_ENGLISH = "LANGUAGE_NOT_ENGLISH"
+    OFF_TOPIC_SUSPECTED = "OFF_TOPIC_SUSPECTED"
+    PROMPT_COPY_SUSPECTED = "PROMPT_COPY_SUSPECTED"
 
 
-class Word(_Frozen):
-    text: str
-    start_s: float
-    end_s: float
-    prob: float | None = Field(default=None, ge=0.0, le=1.0)
+class QcStatus(str, Enum):
+    """Quality-check outcome, three levels as required by SRS FR-07.
+
+    The QC module used to return only a `passed` bool, which could not express
+    the middle ground: a recording good enough to score but not good enough to
+    trust. That middle ground got folded into PASS, losing a warning layer that
+    the SRS requires.
+    """
+
+    PASS = "PASS"
+    REVIEW = "REVIEW"
+    REJECT = "REJECT"
 
 
-class Transcript(_Frozen):
-    response_id: str
-    status: AsrStatus
-    text: str = ""
-    words: tuple[Word, ...] = ()
-    asr_model: str | None = None
-    engine: str
-    engine_version: str
-    decode_config_version: str
-    audio_sha256: str
-    reasons: tuple[ReasonCode, ...] = ()
-    test_only: bool = False
-    # Independent audio language detection metadata; optional for old reports.
-    language: str | None = None
-    language_probability: float | None = Field(default=None, ge=0.0, le=1.0)
-    language_method: str | None = None
-    language_version: str | None = None
+class Criterion(str, Enum):
+    """The five in-scope CEFR criteria. Interaction was dropped per QD-04."""
 
-    @field_validator("language_probability", mode="before")
-    @classmethod
-    def _language_probability_not_bool(cls, value: Any) -> Any:
-        if isinstance(value, bool):
-            raise ValueError("language probability must be numeric, not bool")
-        return value
-
-
-# --- M04 — Features ----------------------------------------------------------
-
-
-class FeatureValue(_Frozen):
-    name: str
-    value: float | None
-    unit: str
-    missing_reason: ReasonCode | None = None
-
-
-class FeatureSet(_Frozen):
-    response_id: str
-    values: tuple[FeatureValue, ...]
-    feature_version: str
-    vad_name: str | None
-    vad_version: str | None
-    vad_threshold: float | None
-    vad_min_silence_ms: int | None
-    asr_model: str | None
-    transcript_ref: str | None
-    audio_sha256: str
-    reasons: tuple[ReasonCode, ...] = ()
-
-    def names(self) -> tuple[str, ...]:
-        return tuple(v.name for v in self.values)
-
-    def value_of(self, name: str) -> float | None:
-        for v in self.values:
-            if v.name == name:
-                return v.value
-        raise KeyError(name)
-
-
-# --- M05 — Scoring -----------------------------------------------------------
-
-
-class Criterion(StrEnum):
     RANGE = "range"
     ACCURACY = "accuracy"
     FLUENCY = "fluency"
@@ -308,145 +113,731 @@ class Criterion(StrEnum):
     PHONOLOGY = "phonology"
 
 
-class Band(StrEnum):
+class Band(str, Enum):
     A2 = "A2"
     B1 = "B1"
     B2 = "B2"
 
 
-class AssessmentStatus(StrEnum):
-    ESTIMATED = "ESTIMATED"
-    REVIEW_REQUIRED = "REVIEW_REQUIRED"
-    NOT_EVALUATED = "NOT_EVALUATED"
+class EvidenceKind(str, Enum):
+    """The four kinds of evidence the builder can produce.
 
+    Was a plain `str` with the four values written out at each construction
+    site in `report/evidence.py`. That is the same primitive obsession that
+    `Map<str, float>` was on `FeatureSet`: a closed set of four values spelled
+    as an open type, so nothing catches a typo and the diagram could not show
+    the reader what the four values are.
 
-class CriterionCoverage(_Frozen):
-    """Chỉ mang coverage của một tiêu chí; không có điểm hay band riêng."""
-
-    criterion: Criterion
-    coverage: float | None = Field(default=None, ge=0.0, le=1.0)
-    features: tuple[str, ...] = ()
-    reasons: tuple[ReasonCode, ...] = ()
-
-
-class Interaction(_Frozen):
-    """Bài độc thoại không có bằng chứng tương tác."""
-
-    level: None = None
-    score_status: str = "insufficient_evidence"
-
-
-class Provenance(_Frozen):
-    model_version: str | None
-    model_sha256: str | None
-    feature_version: str | None
-    band_map_version: str | None
-    calibration_version: str | None
-    trained_with: dict[str, Any] = Field(default_factory=dict)
-    unit_of_inference: str | None
-    scored_at: str
-
-
-class OutOfRangeFeature(_Frozen):
-    """Đặc trưng nằm ngoài khoảng chấp nhận của model, để báo lý do cho người học."""
-
-    feature: str
-    value: float
-    accepted_low: float
-    accepted_high: float
-    too: str  # "low" | "high"
-
-
-class Assessment(_Frozen):
-    response_id: str
-    status: AssessmentStatus
-    overall_score: float | None = Field(default=None, ge=1.0, le=6.0)
-    overall_band: Band | None = None
-    criteria: tuple[CriterionCoverage, ...]
-    interaction: Interaction = Interaction()
-    reasons: tuple[ReasonCode, ...] = ()
-    out_of_range: tuple[OutOfRangeFeature, ...] = ()
-    provenance: Provenance
-    teacher_verified: bool = False
-
-
-# --- M07 — Teacher review ----------------------------------------------------
-
-
-class ReviewState(StrEnum):
-    """Trạng thái xử lý của một ca cần giảng viên xem xét."""
-
-    PENDING = "PENDING"
-    IN_REVIEW = "IN_REVIEW"
-    APPROVED = "APPROVED"
-    OVERRIDDEN = "OVERRIDDEN"
-    REJECTED = "REJECTED"
-
-
-class ReviewAction(StrEnum):
-    """Hành động cuối cùng của giảng viên trên một ReviewCandidate."""
-
-    APPROVE = "APPROVE"
-    OVERRIDE = "OVERRIDE"
-    REJECT = "REJECT"
-
-
-class ReviewCandidate(_Frozen):
-    """Ca được đưa vào hàng đợi từ reason code và kết quả M05.
-
-    ``revision`` là optimistic-lock token: mọi thao tác ghi phải gửi lại giá trị
-    mà người dùng đã đọc để tránh hai giảng viên ghi đè im lặng.
+    Inherits `str` so the JSON the report screen already reads is unchanged --
+    `EVIDENCE_KIND_NAMES[e.kind]` in `report.js` keeps working.
     """
 
-    response_id: str = Field(min_length=1)
-    response_revision: int = Field(ge=1)
-    assessment_status: AssessmentStatus
-    proposed_band: Band | None = None
-    reasons: tuple[ReasonCode, ...] = Field(min_length=1)
-    source_versions: dict[str, str] = Field(default_factory=dict)
-    state: ReviewState = ReviewState.PENDING
-    revision: int = Field(default=1, ge=1)
-    created_at: datetime
-    updated_at: datetime
-    claimed_by: str | None = None
-
-    @field_validator("source_versions")
-    @classmethod
-    def _source_versions_are_explicit(cls, value: dict[str, str]) -> dict[str, str]:
-        if not value or any(not key or not item for key, item in value.items()):
-            raise ValueError("source_versions phải có giá trị rõ ràng")
-        return value
+    PAUSE = "pause"
+    FILLER = "filler"
+    LOW_CONFIDENCE_WORD = "low_confidence_word"
+    LEXICAL = "lexical"
 
 
-class ReviewDecision(_Frozen):
-    """Quyết định có audit ref thật; không suy ``teacher_verified`` từ score."""
+class TaskPart(str, Enum):
+    """Which exam part a prompt belongs to, and it is NOT a cosmetic label.
 
-    decision_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    response_id: str = Field(min_length=1)
-    teacher_id: str = Field(min_length=1)
-    action: ReviewAction
-    old_state: ReviewState
-    new_state: ReviewState
-    candidate_revision: int = Field(ge=1)
-    proposed_band: Band | None = None
-    final_band: Band | None = None
-    reason: str | None = None
-    audit_id: str = Field(pattern=r"^[0-9a-f]{32}$")
-    recorded_at: datetime
+    `Task.part` was a free `str`. Writing the closed set out matters here
+    because the three values do not mean the same thing to the scorer:
+
+    - `P3` and `P4` are the parts the model was trained on. Each response in
+      the training corpus is exactly one file for one of them, which is what
+      makes the unit of inference line up with what a student submits.
+    - `P5` is the long prompt (120-300s) and sits DELIBERATELY outside that
+      range. It is scored by the windowing path in `scoring/windows.py`, gets
+      `ReasonCode.SCORE_AGGREGATED`, and always goes to a teacher.
+
+    So `part` is what decides which scoring path a response takes. A free
+    string hid that behind a value nobody could enumerate.
+    """
+
+    P3 = "P3"
+    P4 = "P4"
+    P5 = "P5"
+
+
+class TaskPurpose(str, Enum):
+    """Whether a task is for ASSESSMENT or for PRACTICE. D023.
+
+    The two purposes differ at exactly the point that decides the processing
+    path. An assessment response goes through the scoring model, gets a band and
+    may enter the teacher queue. A practice attempt is NEVER given a band: a
+    practice task is a short constrained exercise (use given words, read a
+    passage aloud) that lies outside the exam responses the model learned from,
+    and the model's error is larger than the real progress made in a few weeks.
+    Practice gets rule-based feedback only, with no teacher in the loop.
+    """
+
+    ASSESSMENT = "assessment"
+    PRACTICE = "practice"
+
+
+class MissionKind(str, Enum):
+    """Seven kinds of practice mission, each one a fixed rule applied to the recording. D023.
+
+    Each kind measures something the learner can check by listening to their own
+    recording: how long they spoke, where the longest pause was, which words they
+    used. None of them is a criterion score -- the model only learns the overall
+    label (see `CriterionIndicator`).
+    """
+
+    SPEAK_SECONDS = "speak_seconds"
+    MAX_PAUSE = "max_pause"
+    USE_WORDS = "use_words"
+    UNIQUE_WORDS = "unique_words"
+    PAST_VERBS = "past_verbs"
+    CONDITIONALS = "conditionals"
+    READ_ALOUD = "read_aloud"
+
+
+class QcResult(BaseModel):
+    """Audio quality-check result."""
+
+    duration_ms: int
+    sample_rate_hz: int
+    channels: int
+    silence_ratio: float = Field(ge=0.0, le=1.0)
+    clipping_ratio: float = Field(ge=0.0, le=1.0)
+    snr_db: float | None = None
+    qc_status: QcStatus
+    qc_config_version: str = "qc-v1"
+    reasons: list[ReasonCode] = Field(default_factory=list)
+
+    @property
+    def passed(self) -> bool:
+        """Whether processing may continue.
+
+        REVIEW still continues: the recording can be scored, but the result is
+        flagged for a teacher to look at. Only REJECT stops outright, and per
+        AC-07.1 the ASR step must not be called in that case.
+        """
+        return self.qc_status is not QcStatus.REJECT
+
+
+# Nguong duoi day quyet dinh mot tu co duoc danh dau "may nghe khong ro" hay
+# khong. No tung duoc viet lai o BA noi -- evidence.py, report.js va
+# review_one.js -- nghia la ba cho co the lech nhau ma khong ai biet. Mot luat
+# ve mot tu thi thuoc ve lop Word.
+LOW_WORD_PROB = 0.50
+
+
+class Word(BaseModel):
+    """One word in the transcript, with its timestamps and confidence."""
+
+    text: str
+    start_s: float
+    end_s: float
+    prob: float | None = None
+
+    @computed_field
+    @property
+    def is_uncertain(self) -> bool:
+        """The recogniser was unsure of this word. FR-10, FR-16.
+
+        A word with no probability at all is NOT uncertain: the engine simply
+        did not report one, which is a fact about the engine rather than about
+        the speaker. Treating missing as bad would paint a whole transcript
+        orange the day the project switches recogniser.
+        """
+        return self.prob is not None and self.prob < LOW_WORD_PROB
+
+
+class Transcript(BaseModel):
+    """What the speaker said, as text plus one `Word` per word.
+
+    Named after the thing, not after the machine that produced it: `AsrResult`
+    described *which subsystem ran*, which is a fact about the architecture,
+    not about the recording. The port that produces this is still called
+    `AsrEngine` -- that one IS a piece of technology, and naming it after the
+    technology is correct.
+    """
+
+    # `text`, not `transcript`, because the class is now called `Transcript`
+    # and `transcript.transcript` reads as a stutter. Rows written before the
+    # rename still carry the old key, so validation accepts both.
+    text: str = Field(validation_alias=AliasChoices("text", "transcript"))
+    words: list[Word] = Field(default_factory=list)
+    engine: str
+    model_version: str
+    has_word_timestamps: bool = False
+    is_verbatim: bool = False
+    # Ngon ngu bo nhan dang phat hien tren 30 giay dau (D022). Rong khi engine
+    # khong phat hien duoc -- vi du model chi tieng Anh, hoac ban gia lap.
+    language: str | None = None
+    language_probability: float | None = Field(default=None, ge=0.0, le=1.0)
+    # D057: text tokens the decoder produced, counted by the recogniser; None
+    # when it cannot count them (the test double) or for a report made earlier.
+    output_tokens: int | None = Field(default=None, ge=0)
+
+    def is_foreign(self, min_probability: float) -> bool:
+        """Confidently not English (D022). A recogniser forced into English
+        "translates" Vietnamese speech into English text; scoring that text
+        scores an answer nobody gave."""
+        return (
+            self.language is not None
+            and self.language != "en"
+            and (self.language_probability or 0.0) >= min_probability
+        )
+
+    def cut_at(self, index: int) -> Transcript:
+        """The words before `index`, and the text they make: what is left once
+        a repetition loop of the recogniser is cut off."""
+        kept = self.words[:index]
+        return self.model_copy(
+            update={"words": kept, "text": " ".join(w.text for w in kept).strip()}
+        )
+
+    def shifted(self, offset_s: float) -> Transcript:
+        """The timings moved by `offset_s`: back on the original recording's
+        clock after the recogniser heard a trimmed copy of it."""
+        if not offset_s:
+            return self
+        return self.model_copy(
+            update={
+                "words": [
+                    w.model_copy(
+                        update={
+                            "start_s": round(w.start_s + offset_s, 3),
+                            "end_s": round(w.end_s + offset_s, 3),
+                        }
+                    )
+                    for w in self.words
+                ]
+            }
+        )
+
+
+class Feature(BaseModel):
+    """One measurement: its name, its number, and -- when there is no number --
+    the reason there is none.
+
+    This used to be two parallel dictionaries on `FeatureSet`: `values` keyed by
+    feature name, and `invalid` keyed by the same names. Nothing made them agree.
+    A feature could sit in `values` as None with no entry in `invalid`, and one
+    did: `asr_conf_mean` on a transcript carrying no per-word probabilities. The
+    comment above that code said "missing data returns None with a reason code",
+    and the code did not. Holding the value and the reason in ONE object turns
+    that agreement from a promise in prose into something the type checks.
+    """
+
+    name: str
+    value: float | None = None
+    reason: ReasonCode | None = None
 
     @model_validator(mode="after")
-    def _action_shape_is_consistent(self) -> ReviewDecision:
-        if self.action is ReviewAction.APPROVE:
-            if self.new_state is not ReviewState.APPROVED or self.final_band is None:
-                raise ValueError("APPROVE cần band cuối và trạng thái APPROVED")
-        elif self.action is ReviewAction.OVERRIDE:
-            if (
-                self.new_state is not ReviewState.OVERRIDDEN
-                or self.final_band is None
-                or not self.reason
-            ):
-                raise ValueError("OVERRIDE cần band cuối, reason và trạng thái OVERRIDDEN")
-        elif self.action is ReviewAction.REJECT:
-            if self.new_state is not ReviewState.REJECTED or self.final_band is not None:
-                raise ValueError("REJECT không có band cuối và dùng trạng thái REJECTED")
+    def _a_number_or_a_reason(self) -> Feature:
+        if self.value is None and self.reason is None:
+            raise ValueError(f"dac trung {self.name!r} khong co gia tri thi phai co ly do")
+        if self.value is not None and self.reason is not None:
+            raise ValueError(f"dac trung {self.name!r} co gia tri thi khong mang ly do")
         return self
+
+    @property
+    def is_computable(self) -> bool:
+        """Whether this measurement is available.
+
+        A feature with no value is not a zero and not an absent key -- it is a
+        measurement that could not be taken, and every caller must read it the
+        same way. This is the one place that spelling lives.
+        """
+        return self.value is not None
+
+
+class FeatureSet(BaseModel):
+    """The measurements computed for one response.
+
+    The features are a list rather than 18 named attributes because the source
+    of truth for WHICH features exist is `feature_order` inside the model
+    artifact. Adding a feature means shipping a new artifact, not editing this
+    class -- and a list of names copied here would be a second place to keep in
+    step by hand.
+    """
+
+    # `min_length=1`: mot FeatureSet rong khong mang nghia gi, va boi so `1..*`
+    # tren so do chi dung khi co thu buoc no dung.
+    items: list[Feature] = Field(min_length=1)
+    feature_version: str
+
+    @model_validator(mode="after")
+    def _each_name_once(self) -> FeatureSet:
+        names = [f.name for f in self.items]
+        if len(names) != len(set(names)):
+            dup = sorted({n for n in names if names.count(n) > 1})
+            raise ValueError(f"dac trung bi lap ten: {dup}")
+        return self
+
+    @property
+    def names(self) -> set[str]:
+        return {f.name for f in self.items}
+
+    def feature(self, name: str) -> Feature | None:
+        """The measurement by that name, or None when the extractor never produced it."""
+        return next((f for f in self.items if f.name == name), None)
+
+    def value_of(self, name: str) -> float | None:
+        """The number, or None when there is none.
+
+        Deliberately collapses two cases into one: a name the extractor never
+        produced, and a name whose measurement failed. Both mean the same thing
+        to every caller -- the number is not available -- and making callers
+        handle both spellings is how one of them ends up handling only one.
+        """
+        f = self.feature(name)
+        return f.value if f else None
+
+    def vector(self, order: list[str]) -> list[float]:
+        """The values in the requested order, for scoring.
+
+        Raises rather than skipping or substituting: a scoring vector with a hole
+        in it produces a number that looks like every other number. Callers that
+        can degrade gracefully must check `value_of` first -- `predict_overall`
+        does exactly that before calling this.
+        """
+        out: list[float] = []
+        for name in order:
+            f = self.feature(name)
+            if f is None or not f.is_computable:
+                raise ValueError(f"dac trung {name!r} khong tinh duoc -- khong dung de cham diem")
+            assert f.value is not None  # `is_computable` vua bao dam dieu nay
+            out.append(f.value)
+        return out
+
+
+class CriterionCoverage(BaseModel):
+    """How much of one criterion the pipeline could actually measure.
+
+    It used to be called `CriterionScore` and carried `score_0_6` and `band`.
+    Both were removed because both were lies of a particular kind: the model
+    has ONE output, and `RidgeScorer` wrote that same number into all five
+    rows. Five copies of one number read as five independent judgements, and
+    the report screen already refused to print them for exactly that reason.
+
+    What genuinely differs per criterion is how many of its features the
+    pipeline managed to compute -- so that is all this carries, and the name
+    now says so.
+    """
+
+    criterion: Criterion
+    # Renamed from `confidence`, which promised more than it carries: this is
+    # the FRACTION OF FEATURES that could be computed, not the probability the
+    # score is right. `report.js` already carried a comment saying so, which is
+    # the sign a name is doing a footnote's job. The old spelling is still
+    # accepted so report JSON written before the rename still loads.
+    coverage: float | None = Field(
+        default=None, validation_alias=AliasChoices("coverage", "confidence")
+    )
+    reasons: list[ReasonCode] = Field(default_factory=list)
+
+    @property
+    def is_complete(self) -> bool:
+        """Every feature this criterion rests on was computable."""
+        return self.coverage == 1.0
+
+
+class Evidence(BaseModel):
+    """Evidence backing a comment. It must always trace back to real data."""
+
+    # Stable within one report, assigned in order by the builder ("ev-01", ...).
+    # A comment cites this id, and a test checks every cited id exists: that is
+    # the whole mechanism preventing a report from saying something no
+    # measurement supports.
+    evidence_id: str = ""
+    criterion: Criterion
+    kind: EvidenceKind
+    start_s: float | None = None
+    end_s: float | None = None
+    snippet: str | None = None
+    note: str
+
+
+class AnalysisWindow(BaseModel):
+    """One stretch of a long recording -- before and after it is scored.
+
+    Merged from two classes that described the same stretch of time at two
+    moments: `Window` in `scoring/windows.py` (the plan) and `WindowScore` here
+    (the result). Keeping both forced every caller to convert one into the
+    other, and to remember which one it was holding. The score is simply empty
+    until the window has been scored.
+    """
+
+    index: int
+    start_s: float
+    end_s: float
+    overall_0_6: float | None = None
+    band: Band | None = None
+    reasons: list[ReasonCode] = Field(default_factory=list)
+
+    @property
+    def duration_s(self) -> float:
+        return self.end_s - self.start_s
+
+    @property
+    def was_scored(self) -> bool:
+        return self.overall_0_6 is not None
+
+
+class Comment(BaseModel):
+    """One sentence of feedback, and the evidence it stands on.
+
+    FR-25. `evidence_refs` may never be empty: a sentence with no evidence is
+    the failure mode this whole design exists to prevent -- fluent, confident,
+    and unfalsifiable.
+    """
+
+    criterion: Criterion | None = None
+    text: str
+    evidence_refs: list[str] = Field(default_factory=list)
+
+
+class Priority(BaseModel):
+    """One thing worth practising next. FR-26."""
+
+    # A feature NAME, not a `Feature` object -- the name says so now. Nothing
+    # here can check the name exists, because the list of features lives in the
+    # model artifact; `tests/test_comments.py` pins that every name `ADVICE` can
+    # emit is in that artifact's `feature_order`, which is where the check can
+    # actually be made.
+    feature_name: str = Field(validation_alias=AliasChoices("feature_name", "feature"))
+    text: str
+    # How far this measurement drags the predicted score down, in points on the
+    # 0-6 scale. Kept so a teacher can see WHY this was picked over another.
+    impact: float
+
+
+class ScoreInterval(BaseModel):
+    """Khoang diem co bao dam thong ke va tap band giao voi no. D022.
+
+    Thay cho nguong "gan ranh gioi +-0,5" dat tay. `coverage` la muc phu DANH
+    NGHIA 1 - alpha; CV+ chi bao dam >= 1 - 2*alpha ve ly thuyet, con muc phu
+    thuc nghiem do duoc nam trong artifact hieu chinh (`alpha_curve`).
+    """
+
+    low: float
+    high: float
+    band_set: list[Band] = Field(min_length=1)
+    coverage: float = Field(gt=0.0, lt=1.0)
+    method: str
+    calibration_version: str
+
+    @model_validator(mode="after")
+    def _ordered(self) -> ScoreInterval:
+        if self.low > self.high:
+            raise ValueError("can duoi lon hon can tren")
+        return self
+
+    @property
+    def is_single_band(self) -> bool:
+        return len(self.band_set) == 1
+
+
+class CriterionIndicator(BaseModel):
+    """Vi tri mot phep do trong phan bo bai noi huan luyen. KHONG phai diem.
+
+    Mo hinh chi hoc nhan overall, nen khong co diem rieng tung tieu chi. Thu
+    noi duoc mot cach trung thuc: "toc do noi cua ban cao hon 70% bai noi trong
+    tap tham chieu". `higher_is_better` lay tu dau cua tuong quan voi diem.
+    """
+
+    criterion: Criterion
+    feature: str
+    value: float
+    percentile: float = Field(ge=0.0, le=1.0)
+    higher_is_better: bool
+
+    @property
+    def standing(self) -> float:
+        """Phan vi da quy ve cung chieu: cao luon la tot hon."""
+        return self.percentile if self.higher_is_better else 1.0 - self.percentile
+
+
+class Assessment(BaseModel):
+    """Scoring result together with its provenance.
+
+    FR-27 requires every report to trace back to the exact versions that
+    produced it. The fields below are read from the model artifact; they must
+    not be hard-coded in the source.
+    """
+
+    overall_0_6: float | None
+    overall_band: Band | None
+    criteria: list[CriterionCoverage] = Field(default_factory=list)
+    evidence: list[Evidence] = Field(default_factory=list)
+    model_version: str
+    feature_version: str | None = None
+    band_map_version: str | None = None
+    calibration_version: str | None = None
+    scored_at: str | None = None
+    reasons: list[ReasonCode] = Field(default_factory=list)
+    comments: list[Comment] = Field(default_factory=list)
+    priorities: list[Priority] = Field(default_factory=list)
+    # Empty for a recording short enough to score in one piece. Non-empty means
+    # the score is a median across windows and carries SCORE_AGGREGATED.
+    windows: list[AnalysisWindow] = Field(default_factory=list)
+    # Spread between the highest and lowest window, in points. A wide spread is
+    # the honest signal that one number does not describe this recording.
+    window_spread: float | None = None
+    # Which measurements fell outside the range the model was trained on, with
+    # the numbers. Without these the report can only say "not enough reliable
+    # evidence", which tells the student nothing they can act on.
+    out_of_range: list[dict] = Field(default_factory=list)
+    teacher_verified: bool = False
+    # D022. Rong khi chua co artifact hieu chinh hoac khong co diem.
+    interval: ScoreInterval | None = None
+    indicators: list[CriterionIndicator] = Field(default_factory=list)
+    weakest_criteria: list[Criterion] = Field(default_factory=list)
+
+    @property
+    def was_scored(self) -> bool:
+        return self.overall_0_6 is not None
+
+    @computed_field
+    @property
+    def is_calibrated(self) -> bool:
+        """Whether the number may be read as a calibrated estimate.
+
+        Read from the artifact rather than assumed: today every artifact says
+        `chua-hieu-chuan`, and the report screen uses this to print the warning
+        that goes with an uncalibrated score.
+        """
+        v = (self.calibration_version or "").lower()
+        return bool(v) and not any(k in v for k in ("chua", "chưa", "none", "uncalib"))
+
+
+class ProcessingRequest(BaseModel):
+    """Pipeline input. speaker_id must be a pseudonym; it must never contain a
+    student ID or a real name."""
+
+    response_id: str
+    speaker_id: str
+    task_id: str
+    audio_path: str
+    prompt_version: str
+    config_version: str
+    # Which wording of the consent form the speaker had signed when this
+    # recording was made. Optional in the type so existing fixtures keep
+    # working, but the API never submits without it: FR-01 requires the
+    # provenance, and a recording whose consent cannot be shown is a recording
+    # that cannot be used for research later.
+    consent_version: str | None = None
+
+
+class Review(BaseModel):
+    """Mot lan giang vien giu hoac sua ket qua. FR-30, FR-31.
+
+    Truoc day `Repository.review_history` tra ve `list[dict]`, nghia la hinh
+    dang cua mot quyet dinh duyet chi ton tai trong dau nguoi viet cau SQL.
+    Day la thu ma ca he thong ton tai de phuc vu -- no xung dang co mot lop.
+
+    Luu y `old_*` co the rong: mot bai ma may tu choi cham van duoc duyet, va
+    khi do khong co gi de "sua tu".
+    """
+
+    reviewer_id: str
+    old_score: float | None = None
+    new_score: float | None = None
+    old_band: Band | None = None
+    new_band: Band | None = None
+    reason: str
+    created_at: str
+
+
+class ReviewLock(BaseModel):
+    """Quyen duyet mot bai, giu trong mot khoang thoi gian. FR-30.
+
+    Khong co no, hai giang vien mo cung mot bai se ghi de quyet dinh cua nhau
+    va **ca hai deu khong biet**. Khoa het han thi doi duoc, de mot nguoi dong
+    trinh duyet giua buoi khong lam bai bi treo mai mai.
+    """
+
+    response_id: str
+    reviewer_id: str
+    reviewer_name: str
+    locked_until: str
+
+    def is_held_by(self, reviewer_id: str) -> bool:
+        return self.reviewer_id == reviewer_id
+
+    def has_expired(self, now: str) -> bool:
+        """So sanh chuoi ISO-8601 truc tiep duoc vi chung cung mui gio UTC va
+        cung do chinh xac giay -- thu tu tu dien trung voi thu tu thoi gian."""
+        return self.locked_until <= now
+
+
+class AuditEntry(BaseModel):
+    """Mot dong nhat ky kiem toan. FR-31.
+
+    Giu AI DA LAM GI, khong giu NOI DUNG da lam. Mot dong audit mang theo ban
+    sao cua bai nop hoac cua diem se bien chinh no thanh mot ban luu thu hai,
+    va luc do lenh xoa du lieu ca nhan khong con xoa het.
+    """
+
+    actor_id: str
+    action: str
+    target_id: str | None = None
+    detail: str | None = None
+    created_at: str
+
+
+class AppConfig(BaseModel):
+    """Mot gia tri doi duoc luc dang chay. FR-08, FR-36.
+
+    Mang theo `updated_by` va `updated_at` — thu ma bien moi truong khong mang
+    duoc. Cau hoi "ai ha nguong QC xuong 15 giay, luc nao" phai tra loi duoc,
+    neu khong thi moi bao cao cham truoc do mat can cu.
+
+    Ten truong theo dung ten cot trong bang `app_config`, khong doi cho "dep"
+    hon: mot lop hop dong lech ten voi luoc do la mot phep anh xa tay nua, va
+    day dung la loai viec khong ai nho phai lam.
+    """
+
+    key: str
+    value: str
+    version: str
+    updated_by: str
+    updated_at: str
+
+
+class AuthSession(BaseModel):
+    """Mot phien dang nhap con hieu luc. FR-32, NFR-07.
+
+    KHONG mang token. Trong CSDL chi luu ban bam cua token; giu token o day
+    nghia la mot doi tuong trong bo nho co the doc duoc de mao danh nguoi khac.
+    """
+
+    account_id: str
+    expires_at: str
+
+    def has_expired(self, now: str) -> bool:
+        return self.expires_at <= now
+
+
+class Mission(BaseModel):
+    """One mission of a practice task, written in the task bank. D023.
+
+    `label` is the sentence the student reads BEFORE speaking, so the rule and
+    the promise must be one: "use at least 3 linking words" means `target` is 3
+    and `words` lists the linking words that count. `words` is used only by
+    USE_WORDS; READ_ALOUD compares against the task's own reference passage.
+    """
+
+    kind: MissionKind
+    target: float = Field(gt=0)
+    label: str = Field(min_length=1)
+    words: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def _words_only_where_counted(self) -> Mission:
+        if self.kind is MissionKind.USE_WORDS and not self.words:
+            raise ValueError("a USE_WORDS mission needs a word list")
+        if self.kind is not MissionKind.USE_WORDS and self.words:
+            raise ValueError(f"a {self.kind.value} mission takes no word list")
+        if self.kind is MissionKind.READ_ALOUD and self.target > 1:
+            raise ValueError("READ_ALOUD is a share of matched words and must be in (0, 1]")
+        return self
+
+
+class MissionHit(BaseModel):
+    """One place in the recording that a mission result rests on. D023.
+
+    A word used, with its timestamp; the longest silence, with its timestamp; or a
+    word of the reference passage the machine did not hear (no timestamp, since it
+    does not occur in the recording). Every piece of practice feedback stands on
+    places like these.
+    """
+
+    text: str
+    start_s: float | None = None
+
+
+class MissionCheck(BaseModel):
+    """The measurement of one mission on one attempt. D023.
+
+    Like `Feature`: when measurable it has a number and NO reason; when not, it is
+    empty and MUST carry a reason. `met` is empty when nothing could be measured --
+    "could not measure" is not "not yet met", and merging the two makes the
+    learner blame themselves for the machine's failure.
+    """
+
+    kind: MissionKind
+    label: str
+    target: float
+    measured: float | None = None
+    met: bool | None = None
+    hits: list[MissionHit] = Field(default_factory=list)
+    reason: ReasonCode | None = None
+
+    @model_validator(mode="after")
+    def _a_measurement_or_a_reason(self) -> MissionCheck:
+        if self.measured is None and self.reason is None:
+            raise ValueError(f"an unmeasured {self.kind.value} mission must carry a reason")
+        if self.measured is not None and self.reason is not None:
+            raise ValueError(f"a measured {self.kind.value} mission carries no reason")
+        if (self.met is None) != (self.measured is None):
+            raise ValueError("only a measured mission can be met or not met")
+        return self
+
+
+# Version of the mission rules. Bump it whenever the counting changes (the
+# past-verb lexicon, tokenisation, passage matching): old results still read
+# correctly against the rules that produced them.
+MISSION_RULES_VERSION = "mission-v1"
+
+
+class PracticeResult(BaseModel):
+    """Feedback on one practice attempt: what was measured for each mission. D023.
+
+    `completed` is the conclusion for the WHOLE attempt. It is derived from the
+    missions rather than stored separately, so the two cannot disagree: any
+    mission not met means not completed; no mission unmet but some unmeasurable
+    means empty.
+    """
+
+    task_id: str
+    checks: list[MissionCheck] = Field(min_length=1)
+    rules_version: str = MISSION_RULES_VERSION
+
+    @computed_field
+    @property
+    def completed(self) -> bool | None:
+        if any(c.met is False for c in self.checks):
+            return False
+        if any(c.met is None for c in self.checks):
+            return None
+        return True
+
+    @computed_field
+    @property
+    def met_count(self) -> int:
+        return sum(1 for c in self.checks if c.met)
+
+
+class Response(BaseModel):
+    """The pipeline's single output."""
+
+    response_id: str
+    status: Status
+    qc: QcResult | None = None
+    asr: Transcript | None = None
+    features: FeatureSet | None = None
+    assessment: Assessment | None = None
+    reasons: list[ReasonCode] = Field(default_factory=list)
+    config_version: str
+    # Ban de va ban dong thuan sinh vien da thay khi nop (truy vet). Co tren
+    # ProcessingRequest tu lau nhung khong duoc luu vao ket qua, nen bao cao
+    # khong noi duoc sinh vien da tra loi ban de nao. Rong o ban ghi cu.
+    prompt_version: str | None = None
+    consent_version: str | None = None
+    # D023. Only on practice attempts; empty for assessment responses.
+    practice: PracticeResult | None = None
+
+    @property
+    def was_scored(self) -> bool:
+        return self.assessment is not None and self.assessment.was_scored
+
+    @property
+    def needs_teacher(self) -> bool:
+        return self.status is Status.REVIEW_REQUIRED
