@@ -22,3 +22,10 @@ W6-T03 sync baseline: `main` `f540cb88643214cd1d4444f2dd0d81f4463119fa`; current
 ## Tiến độ backend theo giao việc SCRUM-66
 
 T01 schema đã có từ PR #36 (main `840efb9`). T02.1–T02.7 đã implement/verified trong product commit `311b029`; [review và gate](evidence/scrum-66/review.md). M11-TASK-001–005 phần backend: READY FOR REVIEW. M11-TASK-006/007 (N01/N04) chờ UI consumer sử dụng [handoff](evidence/scrum-66/ui-handoff.md). TASK-008 full W5 integration thuộc T04. Không coi bảng kế hoạch DRAFT là approval hoặc user acceptance.
+
+## W7 — Chuyển M11 từ repo gốc (W7-T02, SCRUM-99)
+
+| Task | Deliverable | Tests | Status |
+| --- | --- | --- | --- |
+| W7-T02 (M11) | Kho MongoDB `auth_repository.py`, `consent_repository.py`, `audit_repository.py`, `retention.py`, `accounts_cli.py`, `maintenance_cli.py` | `test_accounts.py`, `test_accounts_cli.py`, `test_profile.py`, `test_retention.py` | IN_REVIEW — Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95 vào nhánh tích hợp |
+
