@@ -1,0 +1,33 @@
+%% SDD - Diagram 06: Deployment diagram - sau D044
+%% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
+%% (core, speech, web), PostgreSQL mot schema core, RabbitMQ, hai volume. Mot
+%% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
+flowchart TB
+    subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
+        direction TB
+        GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
+        CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
+        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
+        SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
+        PG[("PostgreSQL 16<br/>schema core, một vai trò")]
+        MQ[["RabbitMQ<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        V1[("Volume uploads<br/>bản ghi âm")]
+        V2[("Volume models<br/>cache model Whisper")]
+    end
+
+    GW -->|"API + X-Aicefr-Account"| CO
+    GW -->|"trang + X-Aicefr-Account"| WE
+    WE -->|"HTTP nội bộ"| CO
+    CO --> PG
+    CO -->|"gửi việc chấm, hỏi đo bước"| MQ
+    MQ -->|"việc và câu hỏi"| SP
+    CO --> V1
+    SP -->|"chỉ đọc"| V1
+    SP --> V2
+
+    classDef data fill:#f8d7da,stroke:#b02a37,color:#000
+    classDef app fill:#d1e7dd,stroke:#0f5132,color:#000
+    classDef edge fill:#cfe2ff,stroke:#084298,color:#000
+    class PG,V1,V2 data
+    class CO,WE,SP app
+    class GW,MQ edge

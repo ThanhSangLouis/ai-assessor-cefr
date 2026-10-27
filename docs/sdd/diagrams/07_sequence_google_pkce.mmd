@@ -1,0 +1,38 @@
+%% SDD - So do 07: dang nhap Google, luong ma uy quyen co PKCE (D029, D036)
+%% Ten ham, ten cookie va ten endpoint giu nguyen tieng Anh nhu trong ma nguon.
+sequenceDiagram
+    autonumber
+    actor ND as Người dùng
+    participant TD as Trình duyệt
+    participant API as google_api.py
+    participant AUTH as AuthRepository
+    participant GG as Google (accounts, token)
+
+    ND->>TD: Bấm "Đăng nhập bằng Google"
+    TD->>API: GET /auth/google/start?mode=login
+    API->>API: new_flow(): state, nonce, verifier ngẫu nhiên
+    API->>AUTH: secret("google_flow")
+    AUTH-->>API: khoá 32 byte, tạo một lần, giữ trong CSDL
+    API-->>TD: 303 tới Google + cookie ký HMAC-SHA256
+    Note over TD,API: Cookie HttpOnly, SameSite=Lax, 10 phút. Sau TLS: __Host-aicefr_oauth (Secure, Path=/)
+    TD->>GG: client_id, redirect_uri, scope=openid email, state, nonce, code_challenge=S256(verifier)
+    ND->>GG: Chọn tài khoản Google, đồng ý
+    GG-->>TD: 302 về /auth/google/callback?code&state
+    TD->>API: GET /auth/google/callback?code&state (kèm cookie)
+    API->>API: decode_flow: kiểm chữ ký cookie, hạn 10 phút, state khớp
+
+    alt Cookie không do máy chủ này ký, hết hạn hoặc state lệch
+        API-->>TD: 303 /login?google=state (không hỏi Google)
+    else Luồng hợp lệ
+        API->>GG: POST token: code, code_verifier, client_id, client_secret
+        GG-->>API: ID token (qua TLS)
+        API->>API: verify_id_token: iss, aud, azp, exp, iat, nonce, hd
+        API->>AUTH: login_with_identity("google", SHA-256 của sub)
+        alt Chưa liên kết hoặc tài khoản đã tắt
+            AUTH-->>API: None
+            API-->>TD: 303 /login?google=not_linked hoặc disabled
+        else Đã liên kết
+            AUTH-->>API: phiên mới, method=google
+            API-->>TD: 303 về trang của vai trò, cookie phiên, xoá cookie luồng
+        end
+    end
