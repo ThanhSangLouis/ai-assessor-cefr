@@ -1,0 +1,29 @@
+# D051: what should wake somebody. Shown on Prometheus's Alerts page; wire an
+# Alertmanager to send them anywhere.
+groups:
+  - name: aicefr
+    rules:
+      - alert: ServiceDown
+        expr: up{job="aicefr"} == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "{{ $labels.service }} không trả lời /metrics từ 2 phút"
+      - alert: ScoringJobsFailing
+        expr: sum(rate(aicefr_job_seconds_count{outcome="error"}[10m])) > 0
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Việc chấm bài đang lỗi trong 10 phút gần nhất"
+      - alert: ScoringQueueSlow
+        expr: histogram_quantile(0.95, sum by (le) (rate(aicefr_job_queue_wait_seconds_bucket[10m]))) > 60
+        for: 10m
+        labels: {severity: warning}
+        annotations:
+          summary: "95% việc chấm phải chờ quá 60 giây: cân nhắc chạy thêm một speech"
+      - alert: ServerErrors
+        expr: sum(rate(aicefr_http_request_seconds_count{status="5xx"}[5m])) > 0.1
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Hơn 0,1 lỗi 5xx mỗi giây trong 5 phút"

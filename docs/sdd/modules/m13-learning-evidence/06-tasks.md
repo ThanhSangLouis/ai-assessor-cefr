@@ -16,3 +16,11 @@ Chú giải: `CODE_MERGED` = code + test đã có trên `main`, review/acceptanc
 | M13-TASK-008 | W5-T04 | privacy/full regression/evidence | all | PENDING — SCRUM-68 (W5-T04) đang In Review |
 
 Bằng chứng chạy lại test trên `main` `cabcc44`: [evidence/w6-s02-sync.md](evidence/w6-s02-sync.md).
+
+## W7 — Chuyển sang kiến trúc ba dịch vụ (W7-S03)
+
+| Task | Deliverable | Tests | Trạng thái |
+| --- | --- | --- | --- |
+| M13-W7-S03 | `pronunciation/`, `research/{study,reliable_change,teacher_time,repeatability}.py`, `report/replay.py` (D056), `storage/{study,replay}_repository.py`, `services/core/assessment/{study_api,replay_api}.py`, `tools/repeatability_bench.py` | `test_learning_evidence*`, `test_replay`, `test_repeatability`, `test_review_d039_d043`, `test_pronunciation_unit` (giữ từ repo nộp bài) | IN_REVIEW: PR `port/m10-m12-m13-hoc-tap` vào `migrate/w7-repo-goc` |
+
+Chuyển từ `ThanhSangLouis/ai-assessor-cefr@059fa28`. Code cũ của module (kho SQLite `storage/learning.py`, `api/learning.py`, `api/research.py` và test của chúng) được gỡ cùng PR; quyết định từng phần ở [kiểm kê W7-G1](../../../evidence/w7-migration/kiem-ke.md).

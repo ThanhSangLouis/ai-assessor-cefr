@@ -1,0 +1,717 @@
+{
+  "account": [
+    {
+      "name": "i_pseudonym_lower",
+      "keys": [
+        "pseudonym_lower"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_pseudonym",
+      "keys": [
+        "pseudonym"
+      ],
+      "unique": true
+    }
+  ],
+  "account_identity": [
+    {
+      "name": "u_account_id_provider",
+      "keys": [
+        "account_id",
+        "provider"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_provider_subject_hash",
+      "keys": [
+        "provider",
+        "subject_hash"
+      ],
+      "unique": true
+    }
+  ],
+  "achievement": [
+    {
+      "name": "u_account_id_code",
+      "keys": [
+        "account_id",
+        "code"
+      ],
+      "unique": true
+    }
+  ],
+  "app_config": [
+    {
+      "name": "u_key",
+      "keys": [
+        "key"
+      ],
+      "unique": true
+    }
+  ],
+  "assignment": [
+    {
+      "name": "i_class_id_due_at",
+      "keys": [
+        "class_id",
+        "due_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_assignment_id",
+      "keys": [
+        "assignment_id"
+      ],
+      "unique": true
+    }
+  ],
+  "audit_log": [
+    {
+      "name": "i_service_id",
+      "keys": [
+        "service",
+        "id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_id",
+      "keys": [
+        "id"
+      ],
+      "unique": true
+    }
+  ],
+  "auth_sessions": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_token_hash",
+      "keys": [
+        "token_hash"
+      ],
+      "unique": true
+    }
+  ],
+  "billing_event": [
+    {
+      "name": "u_event_id",
+      "keys": [
+        "event_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_order_id_kind_fingerprint",
+      "keys": [
+        "order_id",
+        "kind",
+        "fingerprint"
+      ],
+      "unique": true
+    }
+  ],
+  "billing_license": [
+    {
+      "name": "i_installed_at",
+      "keys": [
+        "installed_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_license_id",
+      "keys": [
+        "license_id"
+      ],
+      "unique": true
+    }
+  ],
+  "billing_order": [
+    {
+      "name": "i_created_at",
+      "keys": [
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_gateway_checkout_ref",
+      "keys": [
+        "gateway",
+        "checkout_ref"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_status_expires_at",
+      "keys": [
+        "status",
+        "expires_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_order_id",
+      "keys": [
+        "order_id"
+      ],
+      "unique": true
+    }
+  ],
+  "billing_setting": [
+    {
+      "name": "u_key",
+      "keys": [
+        "key"
+      ],
+      "unique": true
+    }
+  ],
+  "class_member": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_class_id_account_id",
+      "keys": [
+        "class_id",
+        "account_id"
+      ],
+      "unique": true
+    }
+  ],
+  "classroom": [
+    {
+      "name": "i_teacher_id",
+      "keys": [
+        "teacher_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_class_id",
+      "keys": [
+        "class_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_code",
+      "keys": [
+        "code"
+      ],
+      "unique": true
+    }
+  ],
+  "consent": [
+    {
+      "name": "i_account_id_signed_at",
+      "keys": [
+        "account_id",
+        "signed_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_consent_id",
+      "keys": [
+        "consent_id"
+      ],
+      "unique": true
+    }
+  ],
+  "credit_grant": [
+    {
+      "name": "u_grant_id",
+      "keys": [
+        "grant_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_source_ref",
+      "keys": [
+        "source",
+        "ref"
+      ],
+      "unique": true
+    }
+  ],
+  "credit_wallet": [
+    {
+      "name": "u_user_ref",
+      "keys": [
+        "user_ref"
+      ],
+      "unique": true
+    }
+  ],
+  "free_quota": [
+    {
+      "name": "u_user_ref_period",
+      "keys": [
+        "user_ref",
+        "period"
+      ],
+      "unique": true
+    }
+  ],
+  "learning_plan": [
+    {
+      "name": "i_account_id_active",
+      "keys": [
+        "account_id",
+        "active"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_plan_id",
+      "keys": [
+        "plan_id"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson": [
+    {
+      "name": "i_unit_id_position",
+      "keys": [
+        "unit_id",
+        "position"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_lesson_id",
+      "keys": [
+        "lesson_id"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson_media": [
+    {
+      "name": "u_media_key",
+      "keys": [
+        "media_key"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson_meta": [
+    {
+      "name": "u_key",
+      "keys": [
+        "key"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson_path": [
+    {
+      "name": "u_path_id",
+      "keys": [
+        "path_id"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson_unit": [
+    {
+      "name": "i_path_id_position",
+      "keys": [
+        "path_id",
+        "position"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_unit_id",
+      "keys": [
+        "unit_id"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson_version": [
+    {
+      "name": "u_lesson_id_version",
+      "keys": [
+        "lesson_id",
+        "version"
+      ],
+      "unique": true
+    }
+  ],
+  "machine_seen": [
+    {
+      "name": "i_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_account_id_response_id",
+      "keys": [
+        "account_id",
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
+  "rating_assignment": [
+    {
+      "name": "i_rater_id_batch_id",
+      "keys": [
+        "rater_id",
+        "batch_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_assignment_id",
+      "keys": [
+        "assignment_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_batch_id_response_id_rater_id",
+      "keys": [
+        "batch_id",
+        "response_id",
+        "rater_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_batch_id_response_id_slot",
+      "keys": [
+        "batch_id",
+        "response_id",
+        "slot"
+      ],
+      "unique": true
+    }
+  ],
+  "rating_batch": [
+    {
+      "name": "u_batch_id",
+      "keys": [
+        "batch_id"
+      ],
+      "unique": true
+    }
+  ],
+  "replay_label": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_response_id_moment_id",
+      "keys": [
+        "response_id",
+        "moment_id"
+      ],
+      "unique": true
+    }
+  ],
+  "research_rating": [
+    {
+      "name": "u_assignment_id",
+      "keys": [
+        "assignment_id"
+      ],
+      "unique": true
+    }
+  ],
+  "response": [
+    {
+      "name": "i_account_id_created_at",
+      "keys": [
+        "account_id",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_speaker_id",
+      "keys": [
+        "speaker_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_status",
+      "keys": [
+        "status"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
+  "review_action": [
+    {
+      "name": "i_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_id",
+      "keys": [
+        "id"
+      ],
+      "unique": true
+    }
+  ],
+  "review_item": [
+    {
+      "name": "i_account_id_done_due_date",
+      "keys": [
+        "account_id",
+        "done",
+        "due_date"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_account_id_kind_lesson_id_step_id_word",
+      "keys": [
+        "account_id",
+        "kind",
+        "lesson_id",
+        "step_id",
+        "word"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_item_id",
+      "keys": [
+        "item_id"
+      ],
+      "unique": true
+    }
+  ],
+  "review_lock": [
+    {
+      "name": "u_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
+  "review_session": [
+    {
+      "name": "i_response_id_reviewer_id_decided_at",
+      "keys": [
+        "response_id",
+        "reviewer_id",
+        "decided_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_id",
+      "keys": [
+        "id"
+      ],
+      "unique": true
+    }
+  ],
+  "seen_marker": [
+    {
+      "name": "u_account_id_marker",
+      "keys": [
+        "account_id",
+        "marker"
+      ],
+      "unique": true
+    }
+  ],
+  "server_secret": [
+    {
+      "name": "u_name",
+      "keys": [
+        "name"
+      ],
+      "unique": true
+    }
+  ],
+  "step_attempt": [
+    {
+      "name": "i_account_id_lesson_id",
+      "keys": [
+        "account_id",
+        "lesson_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_created_at",
+      "keys": [
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_lesson_id_step_id",
+      "keys": [
+        "lesson_id",
+        "step_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_attempt_id",
+      "keys": [
+        "attempt_id"
+      ],
+      "unique": true
+    }
+  ],
+  "study": [
+    {
+      "name": "i_status_created_at",
+      "keys": [
+        "status",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_study_id",
+      "keys": [
+        "study_id"
+      ],
+      "unique": true
+    }
+  ],
+  "study_participant": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_study_id_account_id",
+      "keys": [
+        "study_id",
+        "account_id"
+      ],
+      "unique": true
+    }
+  ],
+  "study_survey": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_study_id_account_id",
+      "keys": [
+        "study_id",
+        "account_id"
+      ],
+      "unique": true
+    }
+  ],
+  "task": [
+    {
+      "name": "i_purpose_active",
+      "keys": [
+        "purpose",
+        "active"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_task_id",
+      "keys": [
+        "task_id"
+      ],
+      "unique": true
+    }
+  ],
+  "usage_ledger": [
+    {
+      "name": "i_state_created_at",
+      "keys": [
+        "state",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_user_ref_created_at",
+      "keys": [
+        "user_ref",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_entry_id",
+      "keys": [
+        "entry_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_key_action",
+      "keys": [
+        "key",
+        "action"
+      ],
+      "unique": true
+    }
+  ]
+}

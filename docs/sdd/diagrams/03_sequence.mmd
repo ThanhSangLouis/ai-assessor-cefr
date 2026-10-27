@@ -1,0 +1,115 @@
+%% SDD - So do 03: Sequence diagram
+%% Luong that trong ma: POST /api/v1/responses -> 202 ngay -> cham o hang doi viec
+%% Ten lop, ten port, ten endpoint va ten trang thai giu nguyen tieng Anh nhu trong ma nguon.
+sequenceDiagram
+    autonumber
+    actor SV as Sinh viên
+    participant UI as Web UI
+    participant API as FastAPI Router
+    participant REPO as Repository
+    participant JQ as JobQueue
+    participant DEC as FirstMatchDecoder
+    participant RP as ResponseProcessor
+    participant QC as AudioQualityChecker
+    participant VAD as VoiceActivityDetector
+    participant ASR as AsrEngine
+    participant FE as FeatureExtractor
+    participant SC as Scorer
+    participant RR as ReviewRouter
+    actor GV as Giảng viên
+
+    SV->>UI: Ghi âm hoặc chọn tệp rồi bấm Nộp bài
+    UI->>API: POST /api/v1/responses (audio, task_id)
+    Note over API: speaker_id lấy từ phiên đăng nhập, form không có trường định danh
+    API->>API: sniff(head) · giới hạn 25 MiB · kiểm tra task_id
+
+    alt Không nhận ra định dạng audio
+        API-->>UI: 415 kèm hướng dẫn ghi âm lại
+        UI-->>SV: Hiện lỗi, mời nộp lại
+    else Nhận được tệp
+        API->>REPO: save(Response, status QUEUED)
+        API->>JQ: enqueue(_score_response)
+        API-->>UI: 202 Accepted (response_id, status QUEUED)
+        UI-->>SV: Chuyển sang trang tiến trình
+
+        JQ->>REPO: set_status(RUNNING)
+        JQ->>DEC: decode(bytes, audio_path)
+        Note over DEC: Giải mã chạy ở nền chứ không trước khi trả 202: ffmpeg chuyển mã WebM mất vài giây
+
+        alt DecodeError hoặc OSError
+            DEC-->>JQ: DecodeError
+            JQ->>REPO: set_status(FAILED, AUDIO_UNSUPPORTED)
+        else Giải mã được
+            DEC-->>JQ: PCM mono kèm sample rate
+            JQ->>RP: process(ProcessingRequest, pcm, sr)
+            RP->>QC: check(pcm, sr, channels, size_bytes)
+            QC-->>RP: QcResult (PASS / REVIEW / REJECT)
+
+            alt QcStatus REJECT
+                RP-->>JQ: Response status REJECTED
+            else QcStatus PASS hoặc REVIEW
+                RP->>VAD: segments(pcm, sr)
+                VAD-->>RP: Danh sách đoạn nói
+                RP->>RP: trim_to_speech · cắt im lặng hai đầu
+                Note over RP,ASR: VAD chạy TRƯỚC nhận dạng - cắt im lặng là cắt nguyên nhân gây lặp token
+                RP->>ASR: transcribe(pcm, sr)
+
+                alt AsrError
+                    ASR-->>RP: AsrError
+                    RP-->>JQ: Response status FAILED (ASR_FAILED)
+                else Bản chép rỗng
+                    ASR-->>RP: Transcript rỗng
+                    RP-->>JQ: Response status REVIEW_REQUIRED (ASR_EMPTY_TRANSCRIPT)
+                else Có bản chép
+                    ASR-->>RP: Transcript kèm mốc thời gian từng từ
+                    RP->>RP: detect_repetition · cắt vòng lặp, gắn ASR_HALLUCINATION
+                    RP->>FE: extract(words, segments, duration)
+                    FE-->>RP: FeatureSet
+                    RP->>SC: score(features)
+
+                    alt ModelNotFoundError
+                        SC-->>RP: ModelNotFoundError
+                        RP-->>JQ: Response status REVIEW_REQUIRED (MODEL_VERSION_MISSING)
+                    else Đặc trưng ngoài phân bố huấn luyện
+                        SC-->>RP: Assessment score None (SCORE_OUT_OF_DISTRIBUTION)
+                        RP-->>JQ: Response status REVIEW_REQUIRED
+                    else Chấm được
+                        SC-->>RP: Assessment (điểm 0-6 và band)
+                        RP->>RP: so phiên bản ASR và VAD với trained_with<br/>gắn ASR_VERSION_MISMATCH nếu lệch
+                        RP->>RR: route(qc, assessment, features)
+                        RR-->>RP: ReviewDecision
+                        RP-->>JQ: Response status COMPLETED hoặc REVIEW_REQUIRED
+                    end
+                end
+            end
+            JQ->>REPO: save(Response) với status cuối cùng
+        end
+    end
+
+    loop Trang tiến trình hỏi lại vài giây một lần
+        UI->>API: GET /api/v1/responses/{response_id}/status
+        API->>REPO: status_of(response_id)
+        REPO-->>API: status và is_pending
+        API-->>UI: 200 OK
+    end
+
+    alt status REVIEW_REQUIRED
+        GV->>API: GET /api/v1/review/queue
+        API->>REPO: queue_with_locks(REVIEW_REQUIRED)
+        REPO-->>API: Danh sách bài chờ kèm ai đang giữ khóa
+        API-->>GV: Hàng đợi duyệt
+        GV->>API: POST /api/v1/review/{response_id}/lock
+        API->>REPO: lock_response(response_id, reviewer_id)
+        REPO-->>API: 200 nếu giành được khóa, 409 nếu người khác đang giữ
+        GV->>API: POST /api/v1/review/{response_id}
+        API->>REPO: apply_review(...) và ghi audit_log
+        REPO-->>API: Báo cáo với teacher_verified true
+        API-->>GV: 200 OK
+    end
+
+    SV->>UI: Mở trang kết quả
+    UI->>API: GET /api/v1/responses/{response_id}
+    API->>REPO: get(response_id)
+    REPO-->>API: Response
+    API-->>UI: 200 OK kèm báo cáo
+    UI-->>SV: Hiện band, điểm, bằng chứng và trạng thái duyệt

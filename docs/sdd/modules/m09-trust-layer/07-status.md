@@ -30,3 +30,9 @@ Code `34da102`: full780PASS, no skips,2smoke deselected; statement90.8241%,branc
 ## Đồng bộ W6-S02 / SCRUM-79 — 21/10/2026
 
 Code của module đã merge vào `main` qua PR #40 (SCRUM-69, merge `a4c119f`) theo chỉ dẫn trực tiếp của user, trong khi verdict Phase 01–05 vẫn PENDING. Bảng task đã cập nhật trạng thái code ([06-tasks](06-tasks.md)); chạy lại test trên `main` `cabcc44`: 171 passed ([bằng chứng](evidence/w6-s02-sync.md)). Lần đồng bộ này không đổi phase, không ghi APPROVED/DONE; review, verification và acceptance chờ reviewer/user.
+
+## W7-S02 — Chuyển M09 sang kiến trúc ba dịch vụ (25/10/2026)
+
+- PR `port/m03-m05-m09-cham` vào nhánh tích hợp `migrate/w7-repo-goc`, xếp trên PR nền `port/m16-nen-w7` (W7-T01). Người làm: Sang. Chưa có verdict.
+- Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.
+- Không có số đo Speak & Improve trong code, test hay tài liệu của PR.

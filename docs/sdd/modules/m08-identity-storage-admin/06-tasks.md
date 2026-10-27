@@ -23,3 +23,10 @@ Implement versioned SQLite schema/repositories, persistent sessions/consent/resp
 - Only task-scoped source and synthetic fixture data; no secrets, real audio, transcript, real PII or generated DB/blob committed.
 - Evidence includes commands, exit codes, coverage and revision under M08 `evidence/`.
 - Cross-owner M01/M07 contract review is recorded before merge. It is currently PENDING.
+
+## W7 — Chuyển M08 từ repo gốc (W7-T02, SCRUM-99)
+
+| Task | Deliverable | Tests | Status |
+| --- | --- | --- | --- |
+| W7-T02 (M08) | `src/aicefr/auth/` (`passwords.py`, `sessions.py`, `google.py`, `pseudonyms.py`), `services/core/identity/` | `test_auth.py`, `test_consent.py`, `test_google_flow.py`, `test_security.py` | IN_REVIEW — Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95 vào nhánh tích hợp |
+

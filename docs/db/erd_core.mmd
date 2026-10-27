@@ -1,0 +1,111 @@
+%% ERD - kho core sau D045 (lược đồ phiên bản 2)
+%% Đường liền: khoá ngoại có trong lược đồ. Đường nét đứt: tham chiếu logic qua
+%% account_id (không khai báo khoá ngoại vì xoá dữ liệu một người đi theo thứ tự
+%% riêng, xem /api/v1/admin/erase). Chỉ ghi cột khoá và vài cột chính.
+erDiagram
+    account ||--o{ auth_sessions : "đăng nhập"
+    account ||--o{ account_identity : "liên kết Google"
+    account ||..o{ consent : "ký"
+    account ||..o{ response : "nộp"
+    account ||..o{ step_attempt : "luyện"
+    account ||..o{ review_item : "ôn"
+    account ||..o{ achievement : "đạt"
+    account ||..o{ learning_plan : "nhận gợi ý"
+    account ||..o{ study_participant : "tham gia"
+
+    task ||..o{ response : "đề của"
+    response ||--o{ review_action : "được duyệt"
+    response ||--o| review_lock : "đang khoá"
+    response ||..o{ review_session : "phiên duyệt"
+    response ||--o{ rating_assignment : "chấm mù"
+    response ||--o{ machine_seen : "đã thấy điểm máy"
+    rating_batch ||--o{ rating_assignment : "gồm"
+    rating_assignment ||--o| research_rating : "điểm"
+
+    study ||--o{ study_participant : "gồm"
+    study ||--o{ study_survey : "khảo sát"
+
+    lesson_path ||--o{ lesson_unit : "gồm"
+    lesson_unit ||--o{ lesson : "gồm"
+    lesson ||..o{ lesson_version : "xuất bản"
+    lesson ||..o{ step_attempt : "lượt nói"
+    lesson ||..o{ review_item : "ôn lại"
+    lesson_path ||..o| learning_plan : "lưu thành"
+
+    billing_order ||..o| billing_license : "cấp"
+    billing_order ||..o{ billing_event : "thông báo"
+    billing_order ||..o| credit_grant : "gói lượt vào ví"
+
+    account ||..o{ classroom : "dạy"
+    classroom ||--o{ class_member : "gồm"
+    account ||..o{ class_member : "học"
+    classroom ||--o{ assignment : "được giao"
+    task ||..o{ assignment : "đề"
+    response ||..o{ replay_label : "nghe lại"
+
+    account {
+        text account_id PK
+        text pseudonym UK
+        text role
+    }
+    response {
+        text response_id PK
+        text account_id
+        text task_id
+        text status
+        real overall_0_6
+    }
+    lesson_path {
+        text path_id PK
+        text status
+        text band_from
+        text band_to
+    }
+    lesson_unit {
+        text unit_id PK
+        text path_id FK
+        text band
+        text criterion
+        text topic
+    }
+    lesson {
+        text lesson_id PK
+        text unit_id FK
+        int published_version
+    }
+    step_attempt {
+        text attempt_id PK
+        text account_id
+        text lesson_id
+        int lesson_version
+        int passed
+    }
+    learning_plan {
+        text plan_id PK
+        text account_id
+        text audience
+        text model_version
+        text path_id
+    }
+    billing_order {
+        text order_id PK
+        text plan
+        text status
+    }
+    classroom {
+        text class_id PK
+        text code UK
+        text teacher_id
+    }
+    assignment {
+        text assignment_id PK
+        text class_id
+        text task_id
+        text due_at
+    }
+    replay_label {
+        text response_id PK
+        text moment_id PK
+        text source
+        text choice
+    }

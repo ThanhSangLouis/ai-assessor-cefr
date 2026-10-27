@@ -218,3 +218,9 @@ Repo nộp bài đang public, còn license S&I không cho công bố thống kê
 Test giờ tính kỳ vọng từ chính artifact (ngoài repo) theo công thức Spec, nên vẫn kiểm đúng như cũ: `tests/scoring/test_scorer.py` có artifact thì 3/3 PASS. Các số đã gỡ lưu ở tài liệu nội bộ của chủ module.
 
 Lịch sử Git còn các số này; theo kế hoạch W4, không viết lại lịch sử khi chưa có quyết định của nhóm và GVHD. Cách giảm rủi ro chính vẫn là chuyển repo sang private (W4-T1, Thắng).
+
+## W7-S02 — Chuyển M05 sang kiến trúc ba dịch vụ (25/10/2026)
+
+- PR `port/m03-m05-m09-cham` vào nhánh tích hợp `migrate/w7-repo-goc`, xếp trên PR nền `port/m16-nen-w7` (W7-T01). Người làm: Sang. Chưa có verdict.
+- Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.
+- Không có số đo Speak & Improve trong code, test hay tài liệu của PR.

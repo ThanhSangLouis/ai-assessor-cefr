@@ -1,0 +1,66 @@
+%% SDD - Diagram 5c: ERD - dinh danh, dong thuan va trang thai theo tai khoan
+%% Phan con lai cua lang dang chay; phan cham diem o hinh 5, cham mu o hinh 5d.
+%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% Ve ngang (direction LR) vi account co bon bang con: ve doc thi bon bang con
+%% nam tren mot hang, ty le vuot 2,0 va in A4 thi chu mat. rankSpacing gian
+%% khoang giua hai cot de nhan cua quan he khong de len chan qua.
+%% Cot them o D028 (must_change_password, last_login_at, password_changed_at)
+%% va D029 (avatar_icon, avatar_color, daily_goal_s; device, method cua
+%% auth_sessions) do _upgrade_schema them bang ALTER TABLE, khong nam trong
+%% cau lenh CREATE TABLE.
+%%{init: {"er": {"rankSpacing": 220}}}%%
+erDiagram
+    direction LR
+    account ||--o{ auth_sessions : "mở phiên (FK)"
+    account ||--o{ account_identity : "liên kết Google (FK)"
+    account ||--o{ consent : "ký và rút đồng thuận"
+    account ||--o{ seen_marker : "đã xem tới đâu"
+
+    account {
+        TEXT account_id PK
+        TEXT pseudonym UK "bút danh, không chứa tên thật hay MSSV"
+        TEXT password_hash "bcrypt cost 12"
+        TEXT role "student · teacher · admin"
+        INTEGER failed_attempts "đếm để khóa tài khoản"
+        TEXT locked_until "NULL nếu không bị khóa"
+        INTEGER disabled "tắt thì mọi phiên kết thúc"
+        TEXT created_at
+        INTEGER must_change_password "1: mật khẩu tạm, chỉ đổi được mật khẩu"
+        TEXT last_login_at
+        TEXT password_changed_at
+        TEXT avatar_icon "một trong 15 biểu tượng"
+        TEXT avatar_color "một trong 10 màu"
+        INTEGER daily_goal_s "60 · 120 · 180 · 300 · 600 giây"
+    }
+
+    auth_sessions {
+        TEXT token_hash PK "băm của cookie, bản gốc không lưu"
+        TEXT account_id FK
+        TEXT expires_at
+        TEXT created_at
+        TEXT device "tên thiết bị thô, ví dụ Chrome · macOS"
+        TEXT method "password hoặc google"
+    }
+
+    account_identity {
+        TEXT provider PK "hiện chỉ có google"
+        TEXT subject_hash PK "SHA-256 của định danh Google, không email"
+        TEXT account_id FK "UNIQUE cùng provider"
+        TEXT linked_at
+    }
+
+    consent {
+        TEXT consent_id PK
+        TEXT account_id "chưa ràng buộc FK"
+        TEXT consent_version "bản văn bản đã ký, sao vào từng dòng"
+        INTEGER audio_storage_allowed "không cho lưu thì không nộp bài được"
+        INTEGER research_use_allowed "không cho thì vẫn chấm, chỉ không vào tập phân tích"
+        TEXT signed_at
+        TEXT withdrawn_at "NULL nghĩa là còn hiệu lực"
+    }
+
+    seen_marker {
+        TEXT account_id PK "chưa ràng buộc FK"
+        TEXT marker PK "hiện chỉ có results"
+        TEXT seen_at "lần cuối mở Bài của tôi"
+    }

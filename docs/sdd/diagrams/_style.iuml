@@ -1,0 +1,55 @@
+' Shared PlantUML style for every diagram in this project.
+' Include it with:  !include _style.iuml
+'
+' The look follows the class diagram style the supervisor asked for:
+' stereotype labels instead of circled letter badges, textual visibility
+' markers instead of coloured icons, tan classes, green enumerations and
+' lilac interfaces.
+
+skinparam dpi 200
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam defaultFontSize 13
+skinparam roundCorner 0
+skinparam nodesep 45
+skinparam ranksep 55
+
+' Circled A/C/I/E badges are Plantuml's own convention, not UML's. Hiding them
+' and writing the stereotype out in guillemets is what the UML specification
+' actually shows.
+hide circle
+hide empty members
+
+' 0 turns the coloured lock/diamond icons into the textual - + # ~ markers
+' that UML defines for private, public, protected and package visibility.
+skinparam classAttributeIconSize 0
+
+skinparam ArrowColor #5B6B8C
+skinparam ArrowFontColor #2D3748
+skinparam ArrowFontSize 12
+
+skinparam class {
+  FontStyle bold
+  FontColor #1A202C
+  BackgroundColor #F7F1E3
+  BorderColor #A08B6F
+  AttributeFontColor #2D3748
+  AttributeFontSize 12
+  StereotypeFontColor #4A5568
+  StereotypeFontSize 11
+
+  BackgroundColor<<enumeration>> #DCEEDC
+  BorderColor<<enumeration>> #7AA87A
+  BackgroundColor<<interface>> #E4DCF5
+  BorderColor<<interface>> #8878B8
+  BackgroundColor<<abstract>> #F2EAD8
+  BorderColor<<abstract>> #A08B6F
+}
+
+skinparam package {
+  BackgroundColor #FBFAF7
+  BorderColor #B8C2CC
+  FontColor #4A5568
+  FontStyle plain
+}
+

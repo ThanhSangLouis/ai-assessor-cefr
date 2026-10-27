@@ -52,12 +52,14 @@ def test_classifier_silently_ignores_unexplained_word_gaps(expected, said):
 
 
 def test_contract_pattern_ids_match_the_m13_specification():
+    # W7-S03: the IDs the lessons, plans and pages already store and display
+    # (M13 Specification updated to match, pending review).
     assert [pattern.value for pattern in Pattern] == [
         "ed_ending",
-        "s_es_ending",
+        "s_ending",
         "final_consonant",
-        "th_substitution",
-        "initial_cluster_reduction",
+        "th_sound",
+        "cluster",
     ]
 
 
