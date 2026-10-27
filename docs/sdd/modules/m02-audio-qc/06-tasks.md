@@ -15,3 +15,9 @@
 - No task may commit audio, transcript, model, secret or actual participant data. No production QC defaults are added.
 
 **Trạng thái:** SCRUM-46 and SCRUM-47 IMPLEMENTED / CHECKS PASS; Sang review PENDING. **Phase 05 verdict:** APPROVED by Thắng · 28/09/2026; Sang review PENDING.
+
+## W7 — Chuyển M02 từ repo gốc (W7-T02, SCRUM-99)
+
+| Task | Deliverable | Tests | Status |
+| --- | --- | --- | --- |
+| W7-T02 (M02) | `src/aicefr/audio/` (`decoder.py`, `config.py`, `recordings.py`, `pipeline.py`), `src/aicefr/qc/` (`audio_qc.py`, `policy.py`) | `test_audio_qc.py`, `test_decoder.py`, `test_pipeline.py` | IN_REVIEW — Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95 vào nhánh tích hợp |
