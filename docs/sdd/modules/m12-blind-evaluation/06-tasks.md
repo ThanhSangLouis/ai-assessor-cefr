@@ -16,3 +16,11 @@ Chú giải: `CODE_MERGED` = code + test đã có trên `main`, review/acceptanc
 Task Done requires browser Network/DOM leakage checklist in addition to functional screenshots.
 
 Bằng chứng chạy lại test trên `main` `cabcc44`: [evidence/w6-s02-sync.md](evidence/w6-s02-sync.md).
+
+## W7 — Chuyển sang kiến trúc ba dịch vụ (W7-S03)
+
+| Task | Deliverable | Tests | Trạng thái |
+| --- | --- | --- | --- |
+| M12-W7-S03 | `research/{agreement,assign}.py`, `storage/rating_repository.py`, `services/core/assessment/rating_api.py`, `tools/agreement_report.py` | `test_agreement`, `test_assign_unit`, `test_ratings` | IN_REVIEW: PR `port/m10-m12-m13-hoc-tap` vào `migrate/w7-repo-goc` |
+
+Chuyển từ `ThanhSangLouis/ai-assessor-cefr@059fa28`. Code cũ của module (kho SQLite `storage/learning.py`, `api/learning.py`, `api/research.py` và test của chúng) được gỡ cùng PR; quyết định từng phần ở [kiểm kê W7-G1](../../../evidence/w7-migration/kiem-ke.md).

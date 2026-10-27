@@ -353,6 +353,6 @@ def nearest(facts: Facts, unlocked: Iterable[str]) -> Standing | None:
     open_ = [
         s
         for s in standings(facts)
-        if s.achievement.code not in done and 0 < s.value and not s.reached
+        if s.achievement.code not in done and s.value > 0 and not s.reached
     ]
     return max(open_, key=lambda s: s.share, default=None)

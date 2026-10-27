@@ -21,3 +21,9 @@ Code của module đã merge vào `main` qua PR #42 (SCRUM-71, merge `3a0dba1`),
 Theo xác nhận trực tiếp của chủ dự án, GVHD đã đồng ý duyệt; chủ dự án được ủy quyền chốt và không cần biên bản riêng. Commit `6de3206` bổ sung hai prompt fixture version hóa, rubric A2–B2 trên phiếu chấm mù và xử lý placeholder `demo-speaking` trong data-dir cũ. Placeholder chưa được dùng được cập nhật an toàn; nếu đã có bài nộp, v1 được giữ lịch sử và wording mới mở ở v2.
 
 Browser QA trên Chromium xác nhận danh sách đề, form nộp và phiếu chấm mù hiển thị đúng prompt/timing/rubric. Chromium vẫn ghi lỗi ViewTransition trong lúc chuyển sang trang giáo viên; trang và control tiếp tục hoạt động. [Báo cáo và ảnh chụp](evidence/scrum-88/report.md). Không có người tham gia hoặc audio thật; phiếu fixture chưa được nộp. Kiểm thử local có một lỗi môi trường `WinError 1314` ở kiểm tra symlink; các kiểm tra liên quan SCRUM-88 qua. Phase/acceptance vẫn chờ verdict của owner.
+
+## W7-S03 — Chuyển M13 sang kiến trúc ba dịch vụ (25/10/2026)
+
+- PR `port/m10-m12-m13-hoc-tap` vào `migrate/w7-repo-goc`, xếp trên `port/m03-m05-m09-cham` (W7-S02). Người làm: Sang. Chưa có verdict.
+- Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.
+- **Đổi hợp đồng cần review:** mã mẫu phát âm theo bản đang chạy (`s_ending`, `th_sound`, `cluster` thay cho `s_es_ending`, `th_substitution`, `initial_cluster_reduction`), vì bài học, lộ trình và giao diện (M15) đều lưu và hiển thị mã này. [03-specification](03-specification.md) đã sửa theo; người review: chủ dự án.

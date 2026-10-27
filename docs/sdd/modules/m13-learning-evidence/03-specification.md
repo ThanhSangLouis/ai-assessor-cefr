@@ -4,7 +4,7 @@
 
 ## Pronunciation
 
-Input is normalized expected/heard word labels plus measured/corrected state. Pattern priority: `ed_ending`, `s_es_ending`, `final_consonant`, `th_substitution`, `initial_cluster_reduction`. Profile counts opportunities and errors, sorts sufficient evidence first, then rate/count; example carries only owned lesson/attempt locator for student and redacted word pair for cohort.
+Input is normalized expected/heard word labels plus measured/corrected state. Pattern priority: `ed_ending`, `s_ending`, `final_consonant`, `th_sound`, `cluster` (W7-S03: đổi theo mã mà bài học, lộ trình và giao diện đang lưu; trước đó là `s_es_ending`, `th_substitution`, `initial_cluster_reduction`; chờ review). Profile counts opportunities and errors, sorts sufficient evidence first, then rate/count; example carries only owned lesson/attempt locator for student and redacted word pair for cohort.
 
 ## Study lifecycle
 

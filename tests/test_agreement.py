@@ -36,6 +36,8 @@ from aicefr.research.agreement import (
     rmse,
 )
 
+pytestmark = pytest.mark.unit
+
 
 def rate(rater: str, overall: float, band: str, *, adjudication: bool = False) -> Rating:
     return Rating(rater, overall, band, dict.fromkeys(CRITERIA, overall), adjudication=adjudication)
@@ -79,7 +81,7 @@ def test_qwk_is_one_for_perfect_agreement():
 
 
 def test_qwk_matches_scikit_learn_on_bands():
-    cohen_kappa_score = pytest.importorskip("sklearn.metrics").cohen_kappa_score
+    from sklearn.metrics import cohen_kappa_score
 
     a = ["A2", "B1", "B2", "B1", "A2", "B2", "B1", "B1", "A2", "B2"]
     b = ["A2", "B1", "B1", "B2", "B1", "B2", "B1", "A2", "A2", "B1"]
@@ -88,7 +90,7 @@ def test_qwk_matches_scikit_learn_on_bands():
 
 
 def test_qwk_matches_scikit_learn_on_half_points_with_unused_categories():
-    cohen_kappa_score = pytest.importorskip("sklearn.metrics").cohen_kappa_score
+    from sklearn.metrics import cohen_kappa_score
 
     a = [2.0, 2.5, 3.0, 3.5, 4.0, 3.0, 2.5]
     b = [2.5, 2.5, 3.5, 3.0, 4.0, 2.0, 3.0]

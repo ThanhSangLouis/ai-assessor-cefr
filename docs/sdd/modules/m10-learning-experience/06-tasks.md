@@ -18,3 +18,11 @@ Chú giải: `CODE_MERGED` = code + test đã có trên `main`, review/acceptanc
 Không task nào `DONE` nếu mới có màn hình không có persistence thật, hoặc domain pass unit test nhưng chưa chứng minh practice không lọt assessment/research paths.
 
 Bằng chứng chạy lại test trên `main` `cabcc44`: [evidence/w6-s02-sync.md](evidence/w6-s02-sync.md).
+
+## W7 — Chuyển sang kiến trúc ba dịch vụ (W7-S03)
+
+| Task | Deliverable | Tests | Trạng thái |
+| --- | --- | --- | --- |
+| M10-W7-S03 | `lessons/`, `practice/` (nhiệm vụ, chuỗi ngày, thành tích, nhắc việc D055), `services/core/learning/`, `storage/{lesson,plan}_repository.py` | `test_lessons_*`, `test_practice_*`, `test_achievements*`, `test_nudges`, `test_path_composer_unit`, `test_learning_plans` | IN_REVIEW: PR `port/m10-m12-m13-hoc-tap` vào `migrate/w7-repo-goc` |
+
+Chuyển từ `ThanhSangLouis/ai-assessor-cefr@059fa28`. Code cũ của module (kho SQLite `storage/learning.py`, `api/learning.py`, `api/research.py` và test của chúng) được gỡ cùng PR; quyết định từng phần ở [kiểm kê W7-G1](../../../evidence/w7-migration/kiem-ke.md).
