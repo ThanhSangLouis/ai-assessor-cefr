@@ -42,5 +42,5 @@ M16-TASK-004 có data-operations code/test trong SCRUM-67 PR #38 (`d60e8a4`); [M
 ## W7-T01 / SCRUM-98 — Nền kiến trúc ba dịch vụ (25/10/2026)
 
 - Nhánh tích hợp `migrate/w7-repo-goc` tạo từ `main` `5a170db`. PR nền `port/m16-nen-w7` chép phần nền từ `ThanhSangLouis/ai-assessor-cefr@059fa28`; danh sách tệp ở [06-tasks](06-tasks.md#w7--nền-kiến-trúc-ba-dịch-vụ-w7-t01-scrum-98).
-- Người làm: Sang, theo chỉ dẫn của chủ dự án (gỡ chặn W7-S02/S03). Người review: Thắng. Chưa có verdict.
+- Người làm: Sang; người review và chủ trì kiến trúc: Thắng (SCRUM-98, chấp thuận cấu trúc nền).
 - Trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển (kho MongoDB `storage/migrations.py` và `services/core/app.py` cần kho và dịch vụ của cả ba người). Kết quả kiểm bằng cách phủ tạm phần còn thiếu từ repo gốc ghi trong mô tả PR.
