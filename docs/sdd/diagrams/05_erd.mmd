@@ -1,0 +1,86 @@
+%% SDD - Diagram 05: ERD - phan cham diem cua lang do dang chay (SQLite, aicefr.db)
+%% Tach lam hai hinh vi gop chin bang vao mot hinh cho ty le 2,28 - qua rong,
+%% in A4 thi chu mat. Hinh 5c ve phan dinh danh, dong thuan va trang thai theo
+%% tai khoan; hinh 5d ve phan cham mu (D030).
+%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+erDiagram
+    account ||--o{ response : "nộp · account_id, chưa ràng buộc FK"
+    task ||--o{ response : "đề bài · task_id, chưa ràng buộc FK"
+    response ||--o{ review_action : "được sửa điểm (FK)"
+    response ||--o| review_lock : "đang có người duyệt (FK)"
+
+    account {
+        TEXT account_id PK "chi tiết ở hình 5c"
+    }
+
+    task {
+        TEXT task_id PK
+        TEXT title
+        TEXT prompt_text
+        TEXT prompt_version
+        TEXT part "phần thi, ví dụ P3"
+        INTEGER min_seconds
+        INTEGER max_seconds
+        INTEGER active
+        TEXT created_at
+        TEXT topic_keywords "từ khóa chủ đề tiếng Anh, rỗng là đề mở (D022)"
+        TEXT purpose "assessment · practice (D023)"
+        TEXT criterion "chỉ đề luyện tập"
+        TEXT band "chỉ đề luyện tập"
+        TEXT missions_json "chỉ đề luyện tập"
+        TEXT tips_json "chỉ đề luyện tập"
+        TEXT reference_text "đoạn đọc theo, chỉ đề luyện tập"
+    }
+
+    response {
+        TEXT response_id PK
+        TEXT speaker_id "bút danh, sao lại lúc nộp"
+        TEXT task_id
+        TEXT status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
+        REAL overall_0_6 "NULL khi chưa chấm được"
+        TEXT overall_band "A2 · B1 · B2"
+        INTEGER teacher_verified
+        TEXT model_version
+        TEXT config_version
+        TEXT report_json "toàn bộ Response, nguồn sự thật của báo cáo"
+        TEXT created_at
+        TEXT account_id
+        TEXT audio_path
+        TEXT purpose "assessment · practice; bài luyện không vào hàng đợi duyệt (D023)"
+    }
+
+    review_action {
+        INTEGER id PK "AUTOINCREMENT"
+        TEXT response_id FK
+        TEXT reviewer_id "bút danh giảng viên, lấy từ phiên"
+        REAL old_score
+        REAL new_score
+        TEXT old_band
+        TEXT new_band
+        TEXT reason
+        TEXT created_at
+    }
+
+    review_lock {
+        TEXT response_id PK "đồng thời là FK"
+        TEXT reviewer_id
+        TEXT reviewer_name
+        TEXT locked_until "khóa hết hạn thì người khác giành được"
+    }
+
+    audit_log {
+        INTEGER id PK "AUTOINCREMENT"
+        TEXT actor_id
+        TEXT action
+        TEXT target_id "không ràng buộc FK - trỏ tới nhiều loại thực thể"
+        TEXT detail
+        TEXT created_at
+    }
+
+    app_config {
+        TEXT key PK "active_model hoặc qc_thresholds"
+        TEXT value "giá trị hiện hành, dạng JSON với ngưỡng QC"
+        TEXT version "nhãn phiên bản, đi vào từng báo cáo sinh ra sau đó"
+        TEXT updated_by "bút danh người đổi — biến môi trường không mang được điều này"
+        TEXT updated_at
+    }

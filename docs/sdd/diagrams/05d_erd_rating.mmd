@@ -1,0 +1,62 @@
+%% SDD - Diagram 5d: ERD - cham mu hai nguoi cho khao sat thuc dia (D030)
+%% Bon bang cua storage/rating_repository.py, cung tep CSDL voi response. Ca bon
+%% di theo response bang ON DELETE CASCADE: xoa bai cua mot nguoi hoc (FR-35)
+%% thi xoa luon phieu cham ve bai do. Khong bang nao ghi vao response hay
+%% review_action: luong duyet van hanh giu nguyen.
+%% response chi ve khoa chinh va bon cot ma dieu kien chon bai doc; day du o
+%% hinh 5.
+%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+erDiagram
+    rating_batch ||--o{ rating_assignment : "gồm phiếu (FK, CASCADE)"
+    response ||--o{ rating_assignment : "được chấm mù (FK, CASCADE)"
+    rating_assignment ||--o| research_rating : "nộp một lần (FK, CASCADE)"
+    response ||--o{ machine_seen : "đã mở kết quả máy (FK, CASCADE)"
+
+    response {
+        TEXT response_id PK "chi tiết ở hình 5"
+        TEXT purpose "chỉ assessment mới vào đợt"
+        TEXT status "COMPLETED hoặc REVIEW_REQUIRED"
+        TEXT audio_path "phải còn tệp ghi âm"
+        TEXT account_id "chủ bài phải đang đồng thuận nghiên cứu"
+    }
+
+    rating_batch {
+        TEXT batch_id PK
+        TEXT name
+        INTEGER seed "một hạt giống quyết định mẫu bài và thứ tự"
+        TEXT status "open · closed"
+        TEXT created_by "account_id quản trị viên, chưa ràng buộc FK"
+        TEXT created_at
+    }
+
+    rating_assignment {
+        TEXT assignment_id PK "mã phiếu; bản ghi phát qua mã này"
+        TEXT batch_id FK
+        TEXT response_id FK "không bao giờ gửi tới giám khảo"
+        TEXT rater_id "account_id giám khảo, chưa ràng buộc FK"
+        INTEGER slot "1, 2: giám khảo chính · 3: phân xử"
+        INTEGER position "vị trí trong thứ tự riêng của giám khảo"
+        TEXT opened_at "lần mở đầu tiên, để đo thời gian chấm"
+    }
+
+    machine_seen {
+        TEXT account_id PK "giảng viên hay quản trị viên, chưa ràng buộc FK"
+        TEXT response_id PK "đồng thời là FK"
+        TEXT first_seen "chỉ lần đầu"
+        TEXT via "report · history · review"
+    }
+
+    research_rating {
+        TEXT assignment_id PK "đồng thời là FK"
+        REAL score_range
+        REAL score_accuracy
+        REAL score_fluency
+        REAL score_coherence
+        REAL score_phonology
+        REAL score_overall "0–6, bước 0,5"
+        TEXT band "A2 · B1 · B2"
+        INTEGER unscorable "1 thì mọi điểm và band là NULL"
+        TEXT unscorable_reason "broken · inaudible · off_task"
+        TEXT reason "một dòng lý do"
+        TEXT submitted_at
+    }

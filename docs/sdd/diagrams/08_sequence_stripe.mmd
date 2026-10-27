@@ -1,0 +1,42 @@
+%% SDD - So do 08: thanh toan qua Stripe Checkout, che do thu (D035)
+%% Ten ham, ten endpoint va ten su kien giu nguyen tieng Anh nhu trong ma nguon.
+sequenceDiagram
+    autonumber
+    actor QT as Quản trị viên
+    participant TD as Trình duyệt
+    participant API as billing_api.py
+    participant BS as BillingService
+    participant SG as StripeGateway
+    participant ST as Stripe
+
+    QT->>TD: Chọn gói, số sinh viên, cổng Stripe, bấm Thanh toán
+    TD->>API: POST /api/v1/admin/billing/orders
+    API->>BS: place_order(..., gateway="stripe")
+    BS->>SG: checkout(order_id, amount, return_url)
+    SG->>ST: POST /v1/checkout/sessions (vnd, client_reference_id, Idempotency-Key)
+    ST-->>SG: id cs_test_…, url
+    SG-->>BS: Checkout(url, cs_test_…)
+    BS-->>API: đơn chờ, checkout_ref = cs_test_…
+    API-->>TD: checkout_url
+    TD->>ST: Trang thanh toán của Stripe
+    QT->>ST: Nhập thẻ thử 4242 4242 4242 4242
+
+    par Trình duyệt quay về
+        ST-->>TD: 303 /billing/return/stripe?session_id=cs_test_…
+        TD->>API: GET /billing/return/stripe?session_id=…
+        API->>BS: store.order_by_checkout("stripe", session_id)
+        Note over API,BS: Không phải phiên của hệ thống: không hỏi Stripe
+        API->>SG: verify_return(session_id)
+        SG->>ST: GET /v1/checkout/sessions/{id}
+        ST-->>SG: payment_status, amount_total, currency
+        SG-->>API: PaymentResult
+        API->>BS: settle(result, "return", "stripe")
+        API-->>TD: Trang kết quả
+    and Máy chủ Stripe báo
+        ST->>API: POST /api/v1/billing/notify/stripe (Stripe-Signature)
+        API->>SG: verify_notification: HMAC-SHA256 của t.body, trong 5 phút
+        SG-->>API: PaymentResult
+        API->>BS: settle(result, "notify", "stripe")
+        API-->>ST: 200 received
+    end
+    Note over BS: settle chỉ áp một lần, đúng cổng, đúng số tiền. Lần sau chỉ ghi sự kiện

@@ -1,0 +1,51 @@
+%% SDD - So do 04: Activity diagram - vong doi mot bai noi
+%% Khop may trang thai that: QUEUED -> RUNNING -> COMPLETED / REVIEW_REQUIRED / REJECTED / FAILED
+%% Ba muc QC: PASS / REVIEW / REJECT (aicefr/qc/audio_qc.py). Chi tiet ma ly do xem enum ReasonCode muc 4.0.
+flowchart TD
+    A0(["Nhận POST /api/v1/responses"]) --> A1["Kiểm tra phiên đăng nhập, task_id<br/>và kích thước tối đa 25 MiB"]
+    A1 --> D1{"Hợp lệ?"}
+    D1 -- Không --> E1["401 · 422 đề bài không tồn tại · 413 AUDIO_TOO_LARGE"]
+
+    D1 -- Có --> A2["sniff(head): đoán định dạng từ byte đầu,<br/>không tin tên tệp"]
+    A2 --> D2{"Nhận ra định dạng?"}
+    D2 -- Không --> E2["415 · không nhận ra định dạng audio"]
+
+    D2 -- Có --> A3["Lưu báo cáo status QUEUED, trả 202 Accepted ngay;<br/>JobQueue.enqueue đặt status RUNNING"]
+    A3 --> A3b["FirstMatchDecoder.decode ở nền<br/>SoundFileDecoder hoặc FfmpegDecoder"]
+    A3b --> D2b{"Giải mã được?"}
+    D2b -- Không --> E2b["status FAILED · AUDIO_UNSUPPORTED"]
+
+    D2b -- Có --> A4["AudioQualityChecker.check:<br/>duration, silence, clipping, SNR"]
+    A4 --> D3{"QcStatus?"}
+    D3 -- REJECT --> E3["status REJECTED · không gọi ASR"]
+    D3 -- "REVIEW (giữ cờ)" --> A5["VoiceActivityDetector.segments<br/>trim_to_speech cắt im lặng hai đầu"]
+    D3 -- PASS --> A5
+
+    A5 --> A5b["AsrEngine.transcribe<br/>kèm mốc thời gian từng từ"]
+    A5b --> D4{"ASR trả kết quả?"}
+    D4 -- AsrError --> E4["status FAILED · ASR_FAILED"]
+    D4 -- "Bản chép rỗng" --> E5["status REVIEW_REQUIRED · ASR_EMPTY_TRANSCRIPT"]
+
+    D4 -- "Có bản chép" --> A6["detect_repetition: cắt vòng lặp token,<br/>gắn ASR_HALLUCINATION nếu có"]
+    A6 --> A6b["FeatureExtractor 19 đặc trưng · Scorer.score"]
+    A6b --> D5{"Chấm được?"}
+    D5 -- ModelNotFoundError --> E6["status REVIEW_REQUIRED · MODEL_VERSION_MISSING"]
+    D5 -- "Ngoài phân bố huấn luyện" --> E6b["status REVIEW_REQUIRED · SCORE_OUT_OF_DISTRIBUTION"]
+
+    D5 -- Có --> A7["Quy điểm 0-6 về band A2 B1 B2 · EvidenceBuilder sinh bằng chứng ·<br/>so phiên bản ASR/VAD với trained_with · ReviewRouter gắn cờ"]
+    A7 --> D6{"Có cờ REVIEW nào<br/>kể cả cờ QC?"}
+    D6 -- Không --> Z1(["status COMPLETED<br/>teacher_verified false"])
+    D6 -- Có --> Z3(["status REVIEW_REQUIRED<br/>vào hàng đợi giảng viên"])
+
+    E5 --> Z3
+    E6 --> Z3
+    E6b --> Z3
+    Z3 --> A8["Giảng viên khóa bài, duyệt hoặc sửa điểm;<br/>Repository.apply_review ghi audit_log, teacher_verified true"]
+
+    E1 --> Z4(["Trả báo cáo kèm mã lý do qua<br/>GET /api/v1/responses/{id}"])
+    E2 --> Z4
+    E2b --> Z4
+    E3 --> Z4
+    E4 --> Z4
+    Z1 --> Z4
+    A8 --> Z4

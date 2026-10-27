@@ -1,0 +1,206 @@
+%% SDD - Diagram 05b: ERD - schema nghien cuu DU KIEN, CHUA HIEN THUC
+%% Day la thiet ke muc tieu cho dot thu du lieu nghien cuu, ve theo muc 7 cua
+%% SRS. KHONG mot bang nao trong hinh nay ton tai trong ma nguon hom nay.
+%% Schema dang chay that chi co tam bang, xem 05_erd.mmd.
+%% Giu hinh nay tach rieng la co y: gop chung voi schema that thi nguoi doc
+%% khong con phan biet duoc cai gi da lam va cai gi moi la du dinh.
+erDiagram
+    speaker ||--o{ response : "submits"
+    speaker ||--o{ consent : "signs"
+    response ||--|| audio_file : "has"
+    response ||--|| qc_result : "produces"
+    response ||--o| transcript : "produces"
+    response ||--o| feature_set : "produces"
+    response ||--o| assessment : "is scored by"
+    assessment ||--o{ criterion_score : "contains"
+    assessment ||--o{ evidence : "based on"
+    assessment ||--o{ review_action : "reviewed by"
+    transcript ||--o{ evidence : "extracted from"
+    feature_set ||--o{ evidence : "supports"
+    account ||--o{ auth_sessions : "opens"
+    account ||--o{ response : "submits"
+    account ||--o{ review_action : "reviews"
+    response ||--o| review_lock : "locked by"
+    speaker ||--o{ audit_log : "relates to"
+    assessment ||--o{ audit_log : "audited by"
+
+    speaker {
+        uuid speaker_id PK
+        string cohort_code
+        string level_self_report
+        string consent_version FK
+        datetime created_at
+        boolean is_anonymized
+    }
+
+    consent {
+        uuid consent_id PK
+        uuid speaker_id FK
+        string consent_version
+        boolean audio_storage_allowed
+        boolean research_use_allowed
+        datetime signed_at
+        datetime withdrawn_at
+    }
+
+    response {
+        uuid response_id PK
+        uuid speaker_id FK
+        string task_id
+        string prompt_version
+        string task_mode
+        string status
+        string pipeline_config_version
+        string run_id
+        datetime submitted_at
+        datetime processed_at
+    }
+
+    audio_file {
+        uuid audio_id PK
+        uuid response_id FK
+        string storage_ref
+        string sha256
+        integer size_bytes
+        integer duration_ms
+        integer sample_rate_hz
+        integer channels
+        string codec
+        datetime stored_at
+        datetime purge_after
+    }
+
+    qc_result {
+        uuid qc_id PK
+        uuid response_id FK
+        string qc_status
+        float silence_ratio
+        float clipping_ratio
+        float rms_dbfs
+        integer duration_ms
+        string reason_codes
+        string qc_config_version
+        datetime created_at
+    }
+
+    transcript {
+        uuid transcript_id PK
+        uuid response_id FK
+        string artifact_ref
+        string artifact_sha256
+        string asr_engine
+        string asr_model_version
+        string language
+        float mean_confidence
+        boolean has_word_timestamps
+        integer word_count
+        datetime created_at
+    }
+
+    feature_set {
+        uuid feature_set_id PK
+        uuid response_id FK
+        string feature_version
+        float speech_rate_wpm
+        float pause_ratio
+        float fillers_per_min
+        float mean_run_length_s
+        integer word_count
+        float mean_word_length
+        float ttr
+        float mtld
+        float asr_mean_confidence
+        string validity_status
+        string reason_codes
+        datetime created_at
+    }
+
+    assessment {
+        uuid assessment_id PK
+        uuid response_id FK
+        float overall_score
+        string band
+        float confidence
+        float boundary_distance
+        string score_status
+        string model_version
+        string calibration_version
+        string rubric_version
+        boolean teacher_verified
+        uuid review_audit_ref FK
+        datetime created_at
+    }
+
+    criterion_score {
+        uuid criterion_score_id PK
+        uuid assessment_id FK
+        string criterion
+        string level
+        float score
+        string evidence_status
+        string reason_codes
+    }
+
+    evidence {
+        uuid evidence_id PK
+        uuid assessment_id FK
+        uuid transcript_id FK
+        string evidence_type
+        integer start_ms
+        integer end_ms
+        string excerpt
+        float confidence
+        string feature_key
+        datetime created_at
+    }
+
+    review_action {
+        uuid review_action_id PK
+        uuid assessment_id FK
+        string reviewer_id
+        string action
+        string band_before
+        string band_after
+        float score_before
+        float score_after
+        string reason_code
+        string note
+        datetime created_at
+    }
+
+    audit_log {
+        uuid audit_id PK
+        string actor_id
+        string actor_role
+        string action
+        string entity_type
+        uuid entity_id
+        string reason_code
+        string run_id
+        datetime created_at
+    }
+
+    account {
+        uuid account_id PK
+        string pseudonym UK
+        string password_hash
+        string role
+        int failed_attempts
+        datetime locked_until
+        boolean disabled
+        datetime created_at
+    }
+
+    auth_sessions {
+        string token_hash PK
+        uuid account_id FK
+        datetime expires_at
+        datetime created_at
+    }
+
+    review_lock {
+        uuid response_id PK
+        uuid reviewer_id FK
+        string reviewer_name
+        datetime locked_until
+    }

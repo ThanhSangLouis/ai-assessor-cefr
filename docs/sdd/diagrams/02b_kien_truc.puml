@@ -1,0 +1,131 @@
+@startuml 02b_kien_truc
+!include _style.iuml
+
+title Kien truc — cac cong va bo chuyen doi
+
+' =====================================================================
+'  Day KHONG phai so do lop. So do lop (02) tra loi "he thong co nhung
+'  doi tuong nghiep vu gi". Hinh nay tra loi mot cau khac: "he thong cam
+'  vao the gioi ben ngoai o dau, va thay duoc cai gi".
+'
+'  Moi cong duoc khai bao BEN TRONG loi va hien thuc ben ngoai, nen moi
+'  mui ten deu chi huong vao trong. Chi ve ten cong va ten bo chuyen doi
+'  — danh sach phuong thuc day du nam trong ma nguon, chep lai o day chi
+'  tao them mot cho phai dong bo tay.
+' =====================================================================
+
+package "Loi nghiep vu — cong" {
+  interface AudioDecoder <<interface>>
+  interface AsrEngine <<interface>>
+  interface VoiceActivityDetector <<interface>>
+  interface Scorer <<interface>>
+  interface BlobStore <<interface>>
+  interface JobQueue <<interface>>
+  interface RateLimiter <<interface>>
+  interface PaymentGateway <<interface>>
+}
+
+package "Ha tang — bo chuyen doi" {
+  class FirstMatchDecoder <<adapter>>
+  class SoundFileDecoder <<adapter>>
+  class FfmpegDecoder <<adapter>>
+  class WhisperEngine <<adapter>>
+  class SileroVad <<adapter>>
+  class EnergyVad <<adapter>>
+  class RidgeScorer <<adapter>>
+  class LocalBlobStore <<adapter>>
+  class InProcessJobQueue <<adapter>>
+  class InMemoryRateLimiter <<adapter>>
+  class SandboxGateway <<adapter>>
+  class VnpayGateway <<adapter>>
+  class StripeGateway <<adapter>>
+  class MomoGateway <<adapter>>
+}
+
+package "Luu tru — SQLite" {
+  class Repository <<adapter>>
+  class AuthRepository <<adapter>>
+  class ConsentRepository <<adapter>>
+  class TaskRepository <<adapter>>
+}
+
+AudioDecoder          <|.. FirstMatchDecoder
+AudioDecoder          <|.. SoundFileDecoder
+AudioDecoder          <|.. FfmpegDecoder
+AsrEngine             <|.. WhisperEngine
+VoiceActivityDetector <|.. SileroVad
+VoiceActivityDetector <|.. EnergyVad
+Scorer                <|.. RidgeScorer
+BlobStore             <|.. LocalBlobStore
+JobQueue              <|.. InProcessJobQueue
+RateLimiter           <|.. InMemoryRateLimiter
+PaymentGateway        <|.. SandboxGateway
+PaymentGateway        <|.. VnpayGateway
+PaymentGateway        <|.. StripeGateway
+PaymentGateway        <|.. MomoGateway
+
+' FirstMatchDecoder la mot Composite: no giu cac bo giai ma khac va uy
+' thac cho bo dau tien nhan duoc tep.
+FirstMatchDecoder o-- "1..*" AudioDecoder : uy thac cho
+
+note bottom of InProcessJobQueue
+  Hai bo chuyen doi da ton tai cho mot cong: mot
+  the chay that, mot the chay thang cho kiem thu.
+  Do la bang chung seam la that chu khong phai trang tri.
+end note
+
+note right of StripeGateway
+  Cong thanh toan (D034, D035). Bat cung luc
+  nhieu cong, quan tri vien chon cho tung don.
+  SandboxGateway: trang thu trong ung dung, khong
+  co tien that. VnpayGateway, MomoGateway: ket qua
+  ky HMAC tra ve dia chi va thong bao. StripeGateway:
+  mo phien qua API, doc lai phien, webhook co ky.
+  Moi cong mac dinh o moi truong thu; tien that
+  can AICEFR_PAYMENTS_LIVE. He thong chi tin ket
+  qua dung chu ky, dung cong, dung so tien.
+end note
+
+note bottom of Repository
+  Bon kho nay CO Y khong ve cong o day.
+
+  `ports.py` co khai mot `ResponseStore` ba phuong
+  thuc va mot test ghim rang Repository thoa no,
+  nhung `api/main.py` khoi tao bang kieu cu the va
+  goi hon hai muoi phuong thuc ngoai cong do. Doi
+  SQLite sang PostgreSQL vi the khong phai viet mot
+  bo chuyen doi ba phuong thuc ma la viet lai gan
+  het Repository.
+
+  Ve no nhu mot seam se hua mot thu chua co, nen
+  hinh nay khong ve — va `ports.py` ghi ro gioi han
+  ngay trong docstring.
+end note
+' Bo cuc: xep cac cong thanh mot cot, neu khong PlantUML dat ca bay cai
+' tren cung mot hang va hinh rong gap nam lan chieu cao.
+AudioDecoder -[hidden]-> AsrEngine
+AsrEngine -[hidden]-> VoiceActivityDetector
+VoiceActivityDetector -[hidden]-> Scorer
+Scorer -[hidden]-> BlobStore
+BlobStore -[hidden]-> JobQueue
+JobQueue -[hidden]-> RateLimiter
+RateLimiter -[hidden]-> PaymentGateway
+
+FirstMatchDecoder -[hidden]-> SoundFileDecoder
+SoundFileDecoder -[hidden]-> FfmpegDecoder
+FfmpegDecoder -[hidden]-> WhisperEngine
+WhisperEngine -[hidden]-> SileroVad
+SileroVad -[hidden]-> EnergyVad
+EnergyVad -[hidden]-> RidgeScorer
+RidgeScorer -[hidden]-> LocalBlobStore
+LocalBlobStore -[hidden]-> InProcessJobQueue
+InProcessJobQueue -[hidden]-> InMemoryRateLimiter
+InMemoryRateLimiter -[hidden]-> SandboxGateway
+SandboxGateway -[hidden]-> VnpayGateway
+VnpayGateway -[hidden]-> StripeGateway
+StripeGateway -[hidden]-> MomoGateway
+
+Repository -[hidden]-> AuthRepository
+AuthRepository -[hidden]-> ConsentRepository
+ConsentRepository -[hidden]-> TaskRepository
+@enduml

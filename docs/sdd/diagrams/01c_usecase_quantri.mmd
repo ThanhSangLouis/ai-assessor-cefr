@@ -1,0 +1,30 @@
+%% So do use case 1c: tac nhan Quan tri vien
+%% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
+%% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+flowchart LR
+    QT(("Quản trị viên"))
+    SV(("Sinh viên"))
+    CTT(("Cổng thanh toán"))
+
+    subgraph SYS["Hệ thống AI Assessor CEFR"]
+        direction TB
+        UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
+        UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
+        UC09["UC-09 Quản trị viên kích hoạt phiên bản mô hình"]
+        UC07["UC-07 Quản trị viên xử lý yêu cầu rút đồng thuận"]
+        UC12["UC-12 Huấn luyện lại mô hình từ manifest đã khóa"]
+        UC22["UC-22 Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận"]
+        UC23["UC-23 Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ"]
+    end
+
+    QT --> UC17
+    QT --> UC10
+    QT --> UC08
+    QT --> UC09
+    QT --> UC07
+    QT --> UC12
+    QT --> UC22
+    QT --> UC23
+    SV --> UC07
+    UC23 --- CTT
