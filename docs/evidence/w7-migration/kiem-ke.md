@@ -10,7 +10,7 @@
 | Module | Chủ | Trạng thái kiểm kê |
 | --- | --- | --- |
 | M01, M06, M07, M15 | Nguyên | chưa điền |
-| M02, M08, M11, M14, M16 | Thắng | chưa điền (M16: phần runtime cũ đã gỡ trong PR nền, xem [M16 06-tasks](../../sdd/modules/m16-monolith-runtime/06-tasks.md#w7--nền-kiến-trúc-ba-dịch-vụ-w7-t01-scrum-98)) |
+| M02, M08, M11, M14, M16 | Thắng | **xong 27/10/2026**, bảng dưới |
 | M03, M04, M05, M09, M10, M12, M13 | Sang | **xong 25/10/2026**, bảng dưới |
 
 ## Sang — M03, M04, M05, M09 (W7-S02)
@@ -46,3 +46,25 @@
 | Test `tests/lessons`, `tests/practice`, `tests/api/test_learning_*.py`, `tests/storage/test_learning_*.py` | bỏ | Viết cho API và kho cũ đã gỡ; hành vi tương ứng trong `test_lessons_*`, `test_practice_*`, `test_learning_*`, `test_achievements*`, `test_agreement.py`, `test_assign_unit.py`, `test_ratings.py`, `test_replay.py` |
 
 Không có mục "chưa rõ" trong phần của Sang.
+
+## Thắng — M02, M08, M11, M14, M16 (W7-T01, W7-T02, W7-T03)
+
+| Phần chỉ repo nộp bài có | Quyết định | Căn cứ ở repo gốc |
+| --- | --- | --- |
+| `audio/service.py`: giải mã SoundFile/Ffmpeg | đã có tương đương | `src/aicefr/audio/` (`SoundFileDecoder`, `FfmpegDecoder`, `FirstMatchDecoder`) |
+| `qc/service.py`, `qc/policy.py`: đo im lặng, vỡ tiếng, thời lượng | đã có tương đương | `src/aicefr/qc/` (`checker.py`, `measure.py`); test `test_audio_qc.py` |
+| `auth/service.py`: mật khẩu PBKDF2, phiên đăng nhập, liên kết Google OAuth PKCE | đã có tương đương | `src/aicefr/auth/` (`passwords.py`, `sessions.py`, `google.py`, `pseudonyms.py`); test `test_auth.py`, `test_security.py`, `test_google_flow.py`, `test_google_unit.py` |
+| `storage/auth_repository.py`: lưu trữ tài khoản, phiên trên SQLite | đã có tương đương | `src/aicefr/storage/auth_repository.py` (MongoDB collections `accounts`, `sessions`, `account_identities`, `seen_markers`, `server_secrets`, D048) |
+| `storage/consent_repository.py`: lưu trữ và phiên bản đồng thuận trên SQLite | đã có tương đương | `src/aicefr/storage/consent_repository.py` (MongoDB `consents`, D048); test `test_consent.py` |
+| `storage/audit_repository.py`: nhật ký kiểm toán trên SQLite | đã có tương đương | `src/aicefr/storage/audit_repository.py` (MongoDB `audit_logs`, D048); gắn micro giây ghép đúng thứ tự |
+| `retention.py`, `maintenance_cli.py`: chính sách dọn dẹp và lưu trữ có thời hạn | đã có tương đương | `src/aicefr/retention.py`, `src/aicefr/maintenance_cli.py`; test `test_retention.py` |
+| `accounts_cli.py`: quản trị tài khoản qua dòng lệnh | đã có tương đương | `src/aicefr/accounts_cli.py`; test `test_accounts_cli.py` |
+| `billing/service.py`: quản lý gói dịch vụ và giấy phép trên SQLite | đã có tương đương | `src/aicefr/billing/` (`plans.py`, `licenses.py`, `quotes.py`, `gateways.py`, `stripe_gateway.py`, `momo_gateway.py`), `services/core/billing/`, `storage/billing_repository.py` |
+| Kênh tính lượt NetID (IDPoint) | đã có tương đương | `src/aicefr/metering/` (`service.py`), `services/core/metering/`, `storage/metering_repository.py` (D049, D053, D057) |
+| `local/` runtime cũ (đơn tiến trình SQLite) | bỏ | Thay bằng kiến trúc 3 dịch vụ: `services/core/`, `services/speech/`, `services/web/` sau Nginx gateway (D043, D044) |
+| `limits.py`, `storage/{sqlite,paths,providers,blob,jobs}.py` | bỏ | Thay bằng `infra/blobs.py` (hỗ trợ S3/SeaweedFS, D051), `platform/redis_bus.py` (Redis BullMQ + Streams, D050), `storage/db.py` (MongoDB, D048) |
+| `storage/migrations/*.sql` (v1..v9 SQLite) | bỏ | Thay bằng MongoDB migrations có sổ phiên bản `storage/migrations.py` (D048) |
+| Tests cũ: `tests/test_local_runtime.py`, `test_limits.py`, `test_sqlite_storage.py` | bỏ | Thay bằng các test của nền kiến trúc mới: `test_contracts.py`, `test_ports.py`, `test_services_split.py`, `test_bus_redis.py`, `test_blobs.py`, `test_observability_unit.py`, `test_platform_unit.py`, `test_deploy_config.py` |
+
+Không có mục "chưa rõ" trong phần của Thắng.
+
