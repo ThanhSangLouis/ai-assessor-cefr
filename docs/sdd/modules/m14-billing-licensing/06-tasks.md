@@ -24,3 +24,10 @@ User giao trực tiếp W5-T03 và cho phép Luna implement/Codex review/tạo P
 - [Authority](evidence/scrum-67/authority.md)
 - [Review record](evidence/scrum-67/review-record.md)
 - [Verification và mapping](evidence/scrum-67/verification.md)
+
+## W7 — Chuyển M14 và kênh tính lượt từ repo gốc (W7-T03, SCRUM-100)
+
+| Task | Deliverable | Tests | Status |
+| --- | --- | --- | --- |
+| W7-T03 (M14) | `src/aicefr/billing/` (plans, licenses, quotes, gateways, payments, service, keys), kho `storage/billing_repository.py`, dịch vụ `services/core/billing/`, module tính lượt `src/aicefr/metering/` và kho `storage/metering_repository.py`, dịch vụ `services/core/metering/` | `test_billing.py`, `test_billing_unit.py`, `test_gateways.py`, `test_gateways_unit.py` | IN_REVIEW — Chuyển từ ThanhSangLouis/ai-assessor-cefr@0853c95 vào nhánh tích hợp |
+
