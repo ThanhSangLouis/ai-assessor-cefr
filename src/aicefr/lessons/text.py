@@ -1,183 +1,235 @@
-"""Versioned normalization and English lemma equivalence for lesson evidence."""
+"""Turn a reference text and a transcript into comparable words (D025).
+
+Both sides go through the same normalisation, so a difference in spelling
+convention never counts against the learner: the recogniser writes "3" where
+the text says "three", "neighborhood" where it says "neighbourhood", "I'm"
+where it says "I am". The learner said the same thing in each case.
+
+Word forms are compared through their lemma (`simplemma`, MIT), so "went"
+counts for the key word "go". A short table covers the irregular forms the
+lemmatiser gets wrong (it maps "gone" to "gan").
+"""
 
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 
-NORMALIZATION_VERSION = "lesson-text-v1"
-LEMMA_VERSION = "simplemma-en-irregular-v1"
+import simplemma
 
-_CONTRACTIONS = {
-    "can't": "can not",
-    "cannot": "can not",
-    "won't": "will not",
-    "shan't": "shall not",
-    "don't": "do not",
-    "doesn't": "does not",
-    "didn't": "did not",
-    "isn't": "is not",
-    "aren't": "are not",
-    "wasn't": "was not",
-    "weren't": "were not",
-    "haven't": "have not",
-    "hasn't": "has not",
-    "hadn't": "had not",
-    "wouldn't": "would not",
-    "couldn't": "could not",
-    "shouldn't": "should not",
-    "mustn't": "must not",
-    "i'm": "i am",
-    "you're": "you are",
-    "we're": "we are",
-    "they're": "they are",
-    "it's": "it is",
-    "he's": "he is",
-    "she's": "she is",
-    "that's": "that is",
-    "there's": "there is",
-    "i've": "i have",
-    "you've": "you have",
-    "we've": "we have",
-    "they've": "they have",
-    "i'll": "i will",
-    "you'll": "you will",
-    "we'll": "we will",
-    "they'll": "they will",
-    "he'll": "he will",
-    "she'll": "she will",
-    "i'd": "i would",
-    "you'd": "you would",
-    "we'd": "we would",
-    "they'd": "they would",
-    "let's": "let us",
+_STRIP = '.,?!;:"()[]{}…“”‘’«»*'
+
+# Contractions expanded the way they are spoken in full. "'s" is left alone
+# when it may be a possessive ("Lan's"), so only the pronoun forms are listed.
+CONTRACTIONS: dict[str, tuple[str, ...]] = {
+    "i'm": ("i", "am"),
+    "you're": ("you", "are"),
+    "we're": ("we", "are"),
+    "they're": ("they", "are"),
+    "he's": ("he", "is"),
+    "she's": ("she", "is"),
+    "it's": ("it", "is"),
+    "that's": ("that", "is"),
+    "there's": ("there", "is"),
+    "what's": ("what", "is"),
+    "who's": ("who", "is"),
+    "where's": ("where", "is"),
+    "let's": ("let", "us"),
+    "i've": ("i", "have"),
+    "you've": ("you", "have"),
+    "we've": ("we", "have"),
+    "they've": ("they", "have"),
+    "i'll": ("i", "will"),
+    "you'll": ("you", "will"),
+    "we'll": ("we", "will"),
+    "they'll": ("they", "will"),
+    "he'll": ("he", "will"),
+    "she'll": ("she", "will"),
+    "it'll": ("it", "will"),
+    "i'd": ("i", "would"),
+    "you'd": ("you", "would"),
+    "we'd": ("we", "would"),
+    "they'd": ("they", "would"),
+    "he'd": ("he", "would"),
+    "she'd": ("she", "would"),
+    "don't": ("do", "not"),
+    "doesn't": ("does", "not"),
+    "didn't": ("did", "not"),
+    "can't": ("can", "not"),
+    "cannot": ("can", "not"),
+    "couldn't": ("could", "not"),
+    "won't": ("will", "not"),
+    "wouldn't": ("would", "not"),
+    "shouldn't": ("should", "not"),
+    "isn't": ("is", "not"),
+    "aren't": ("are", "not"),
+    "wasn't": ("was", "not"),
+    "weren't": ("were", "not"),
+    "haven't": ("have", "not"),
+    "hasn't": ("has", "not"),
+    "hadn't": ("had", "not"),
+    "mustn't": ("must", "not"),
+    "gonna": ("going", "to"),
+    "wanna": ("want", "to"),
 }
-# Canonical forms keep common British/American variants equivalent.
-_SPELLING = {
+
+# British spelling -> the American spelling the recogniser usually writes.
+BRITISH = {
     "colour": "color",
     "colours": "colors",
+    "colourful": "colorful",
     "favourite": "favorite",
     "favourites": "favorites",
-    "honour": "honor",
-    "honours": "honors",
     "neighbour": "neighbor",
     "neighbours": "neighbors",
+    "neighbourhood": "neighborhood",
+    "neighbourhoods": "neighborhoods",
     "centre": "center",
     "centres": "centers",
     "theatre": "theater",
-    "theatres": "theaters",
+    "metre": "meter",
+    "metres": "meters",
+    "litre": "liter",
+    "travelling": "traveling",
+    "travelled": "traveled",
+    "traveller": "traveler",
+    "cancelled": "canceled",
     "organise": "organize",
     "organised": "organized",
     "organising": "organizing",
     "realise": "realize",
     "realised": "realized",
-    "travelling": "traveling",
-    "travelled": "traveled",
-    "learnt": "learned",
+    "recognise": "recognize",
+    "apologise": "apologize",
+    "analyse": "analyze",
+    "programme": "program",
+    "programmes": "programs",
+    "behaviour": "behavior",
+    "honour": "honor",
+    "labour": "labor",
+    "humour": "humor",
+    "flavour": "flavor",
+    "practise": "practice",
+    "practised": "practiced",
+    "licence": "license",
+    "defence": "defense",
     "grey": "gray",
+    "mum": "mom",
+    "jewellery": "jewelry",
+    "tyre": "tire",
+    "aeroplane": "airplane",
+    "learnt": "learned",
+    "spelt": "spelled",
+    "dreamt": "dreamed",
+    "burnt": "burned",
+    "enrol": "enroll",
+    "fulfil": "fulfill",
+    "towards": "toward",
 }
-_IRREGULAR_LEMMAS = {
-    "went": "go",
+AMERICAN = {v: k for k, v in BRITISH.items()}
+
+# Irregular forms the lemmatiser misses or gets wrong, mapped to their base.
+IRREGULAR = {
     "gone": "go",
+    "went": "go",
+    "been": "be",
     "was": "be",
     "were": "be",
-    "been": "be",
-    "did": "do",
     "done": "do",
+    "did": "do",
+    "seen": "see",
+    "saw": "see",
+    "taken": "take",
+    "took": "take",
+    "written": "write",
+    "wrote": "write",
+    "eaten": "eat",
+    "ate": "eat",
+    "given": "give",
+    "gave": "give",
+    "known": "know",
+    "knew": "know",
+    "spoken": "speak",
+    "spoke": "speak",
+    "driven": "drive",
+    "drove": "drive",
+    "chosen": "choose",
+    "chose": "choose",
+    "forgotten": "forget",
+    "forgot": "forget",
+    "gotten": "get",
+    "got": "get",
+    "became": "become",
+    "began": "begin",
+    "begun": "begin",
+    "bought": "buy",
+    "brought": "bring",
+    "thought": "think",
+    "taught": "teach",
+    "caught": "catch",
+    "felt": "feel",
+    "left": "leave",
+    "met": "meet",
+    "ran": "run",
+    "sat": "sit",
+    "slept": "sleep",
+    "spent": "spend",
+    "told": "tell",
+    "said": "say",
+    "made": "make",
     "had": "have",
     "has": "have",
-    "hasn't": "have",
+    "lost": "lose",
+    "found": "find",
+    "heard": "hear",
+    "kept": "keep",
+    "came": "come",
     "children": "child",
-    "mice": "mouse",
-    "men": "man",
-    "women": "woman",
+    "people": "person",
     "better": "good",
     "best": "good",
-    "worse": "bad",
-    "worst": "bad",
-    "bought": "buy",
-    "caught": "catch",
-    "taught": "teach",
-    "thought": "think",
-    "brought": "bring",
-    "sought": "seek",
-    "left": "leave",
-    "felt": "feel",
-    "kept": "keep",
-    "slept": "sleep",
-    "wrote": "write",
-    "written": "write",
-    "ran": "run",
-    "spoke": "speak",
-    "spoken": "speak",
-    "ate": "eat",
-    "eaten": "eat",
-    "saw": "see",
-    "seen": "see",
-    "made": "make",
-    "took": "take",
-    "taken": "take",
-    "gave": "give",
-    "given": "give",
-    "found": "find",
-    "knew": "know",
-    "known": "know",
 }
-_FINAL_E_VERBS = frozenset(
-    {
-        "bake",
-        "close",
-        "dance",
-        "face",
-        "hope",
-        "include",
-        "like",
-        "live",
-        "love",
-        "manage",
-        "move",
-        "place",
-        "reduce",
-        "save",
-        "use",
-    }
+
+ONES = (
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen "
+    "fifteen sixteen seventeen eighteen nineteen"
+).split()
+TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
+
+# Function words: not counted as content when a step checks meaning-bearing
+# words (read-and-look-up), and shown as information when they differ.
+FUNCTION_WORDS = frozenset(
+    """a an the to of in on at for with by from as about into over under after before and or
+    but so if because than then i you he she it we they me him her us them my your his its our
+    their this that these those is am are was were be been being do does did have has had will
+    would can could shall should may might must not no very too also just there here what which
+    who whom whose when where why how""".split()
 )
-_SMALL = {
-    0: "zero",
-    1: "one",
-    2: "two",
-    3: "three",
-    4: "four",
-    5: "five",
-    6: "six",
-    7: "seven",
-    8: "eight",
-    9: "nine",
-    10: "ten",
-    11: "eleven",
-    12: "twelve",
-    13: "thirteen",
-    14: "fourteen",
-    15: "fifteen",
-    16: "sixteen",
-    17: "seventeen",
-    18: "eighteen",
-    19: "nineteen",
-}
-_TENS = {
-    20: "twenty",
-    30: "thirty",
-    40: "forty",
-    50: "fifty",
-    60: "sixty",
-    70: "seventy",
-    80: "eighty",
-    90: "ninety",
-}
-_ORDINAL = {
+
+FILLERS = frozenset({"um", "uh", "erm", "er", "ah", "hmm", "mm", "uhm", "eh"})
+
+
+def number_to_words(n: int) -> list[str]:
+    """0..999,999 as spoken words, the way a reference text would spell them."""
+    if n < 20:
+        return [ONES[n]]
+    if n < 100:
+        tens, ones = divmod(n, 10)
+        return [TENS[tens]] + ([ONES[ones]] if ones else [])
+    if n < 1000:
+        hundreds, rest = divmod(n, 100)
+        return [ONES[hundreds], "hundred"] + (number_to_words(rest) if rest else [])
+    thousands, rest = divmod(n, 1000)
+    return number_to_words(thousands) + ["thousand"] + (number_to_words(rest) if rest else [])
+
+
+# A number as a recogniser may write it: "7", "2026", "1,000", "250,000".
+_NUMBER = re.compile(r"^(?:\d{1,6}|\d{1,3},\d{3})$")
+_ORDINAL = re.compile(r"^(\d{1,6})(st|nd|rd|th)$")
+_ORDINAL_OF = {
     "one": "first",
     "two": "second",
     "three": "third",
-    "four": "fourth",
     "five": "fifth",
     "eight": "eighth",
     "nine": "ninth",
@@ -185,88 +237,84 @@ _ORDINAL = {
 }
 
 
-def _number_words(number: int) -> str:
-    if number < 20:
-        return _SMALL[number]
-    if number < 100:
-        return _TENS[number // 10 * 10] + ("-" + _SMALL[number % 10] if number % 10 else "")
-    if number < 1000:
-        rest = number % 100
-        return _SMALL[number // 100] + " hundred" + (" " + _number_words(rest) if rest else "")
-    if number < 1_000_000:
-        rest = number % 1000
-        return (
-            _number_words(number // 1000)
-            + " thousand"
-            + (" " + _number_words(rest) if rest else "")
-        )
-    return str(number)
+def _ordinal(word: str) -> str:
+    """The ordinal of the last word of a spelled-out number: twenty -> twentieth."""
+    if word in _ORDINAL_OF:
+        return _ORDINAL_OF[word]
+    if word.endswith("y"):
+        return word[:-1] + "ieth"
+    return word + "th"
 
 
-def _replace_number(match: re.Match[str]) -> str:
-    value = int(match.group(1))
-    suffix = match.group(2)
-    if value >= 1_000_000:
-        return match.group(0)
-    words = _number_words(value)
-    if suffix:
-        parts = words.split("-")
-        last = parts[-1].split()[-1]
-        ordinal = _ORDINAL.get(last, last + "th")
-        if " " in parts[-1]:
-            first, last = parts[-1].rsplit(" ", 1)
-            parts[-1] = first + " " + ordinal
-        else:
-            parts[-1] = ordinal
-        words = "-".join(parts)
-    return words
+def normalize_word(raw: str) -> list[str]:
+    """One written word -> the spoken words it stands for, lower-case, unified spelling."""
+    tok = raw.replace("’", "'").replace("‘", "'").lower().strip(_STRIP).strip("'")
+    if not tok:
+        return []
+    if tok in CONTRACTIONS:
+        return list(CONTRACTIONS[tok])
+    if _NUMBER.match(tok):
+        return number_to_words(int(tok.replace(",", "")))
+    m = _ORDINAL.match(tok)
+    if m:
+        words = number_to_words(int(m.group(1)))
+        return [*words[:-1], _ordinal(words[-1])]
+    tok = BRITISH.get(tok, tok)
+    return [tok]
 
 
-def normalize_text(text: str) -> tuple[str, ...]:
-    """Normalize punctuation, contractions, numerals, hyphens, and spelling."""
-    value = text.lower().replace("’", "'").replace("‘", "'")
-    for contraction, expansion in sorted(_CONTRACTIONS.items(), key=lambda item: -len(item[0])):
-        value = re.sub(rf"(?<![a-z]){re.escape(contraction)}(?![a-z])", expansion, value)
-    value = re.sub(r"\b(\d+)(st|nd|rd|th)?\b", _replace_number, value)
-    tokens = re.findall(r"[a-z]+(?:'[a-z]+)?", value)
-    normalized: list[str] = []
-    for token in tokens:
-        normalized.append(_SPELLING.get(token, token))
-    return tuple(normalized)
+def split_words(text: str) -> list[str]:
+    """The written words of a text, keeping punctuation attached, hyphens split."""
+    out: list[str] = []
+    for raw in text.split():
+        parts = [p for p in raw.split("-") if p.strip(_STRIP)]
+        out += parts if len(parts) > 1 else [raw]
+    return out
 
 
+def tokens(text: str) -> list[str]:
+    """A text as normalised spoken words."""
+    out: list[str] = []
+    for raw in split_words(text):
+        out += normalize_word(raw)
+    return out
+
+
+@lru_cache(maxsize=4096)
 def lemma(word: str) -> str:
-    token = normalize_text(word)
-    if not token:
-        return ""
-    value = token[0]
-    if value in _IRREGULAR_LEMMAS:
-        return _IRREGULAR_LEMMAS[value]
+    w = word.lower()
+    if w in IRREGULAR:
+        return IRREGULAR[w]
     try:
-        from simplemma import lemmatize
-
-        result = lemmatize(value, lang="en")
-        if value.endswith("ed") and result.endswith("e") and result not in _FINAL_E_VERBS:
-            result = result[:-1]
-        return _IRREGULAR_LEMMAS.get(result, result)
-    except (ImportError, Exception):
-        return value
+        return simplemma.lemmatize(w, lang="en").lower()
+    except Exception:  # noqa: BLE001 - a lemmatiser failure must not fail a step
+        return w
 
 
-def same_word(left: str, right: str) -> bool:
-    """Return true for exact, normalized spelling, or English lemma equivalence."""
-    left_tokens, right_tokens = normalize_text(left), normalize_text(right)
-    if len(left_tokens) != 1 or len(right_tokens) != 1:
-        return left_tokens == right_tokens
-    return lemma(left_tokens[0]) == lemma(right_tokens[0])
+def same_word(a: str, b: str) -> bool:
+    """The same word, possibly in another form ("went" and "go", "walks" and "walk")."""
+    if a == b:
+        return True
+    a2, b2 = AMERICAN.get(a, a), AMERICAN.get(b, b)
+    if a2 == b2:
+        return True
+    return lemma(a) == lemma(b)
 
 
-def find_phrase(phrase: str, words: tuple[str, ...] | list[str]) -> tuple[int, ...] | None:
-    """Find the first contiguous lemma-equivalent phrase and return its token indexes."""
-    expected = normalize_text(phrase)
-    if not expected:
+def is_content(word: str) -> bool:
+    return word not in FUNCTION_WORDS
+
+
+def phrase_tokens(phrase: str) -> list[str]:
+    return tokens(phrase)
+
+
+def find_phrase(said: list[str], phrase: list[str], start: int = 0) -> int | None:
+    """Index in `said` where `phrase` occurs (any word form), or None."""
+    n = len(phrase)
+    if not n:
         return None
-    for start in range(len(words) - len(expected) + 1):
-        if all(same_word(expected[index], words[start + index]) for index in range(len(expected))):
-            return tuple(range(start, start + len(expected)))
+    for i in range(start, len(said) - n + 1):
+        if all(same_word(said[i + k], phrase[k]) for k in range(n)):
+            return i
     return None

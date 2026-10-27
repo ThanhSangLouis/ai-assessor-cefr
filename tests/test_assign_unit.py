@@ -13,6 +13,8 @@ import pytest
 
 from aicefr.research import assign
 
+pytestmark = pytest.mark.unit
+
 RESPONSES = [f"r{i:02d}" for i in range(12)]
 
 

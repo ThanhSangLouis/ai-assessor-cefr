@@ -1,468 +1,345 @@
-"""Frozen lesson hierarchy, typed step payloads, and publication validation."""
+"""Data model of a lesson path and of one measured step attempt (D025).
+
+The step configuration is ONE model with optional fields rather than a union of
+nine classes. A teacher edits it in a form and it is stored as JSON; one shape
+keeps the editor, the storage and the export format simple, and the validators
+below check that each kind has the fields it needs.
+"""
 
 from __future__ import annotations
 
-import hashlib
-import json
-import math
-from datetime import datetime
-from enum import StrEnum
-from typing import Annotated, Literal
+import re
+import uuid
+from enum import Enum
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
-from aicefr.contracts import Band
-from aicefr.lessons.align import MAX_ALIGNMENT_TOKENS
-from aicefr.lessons.rules import LESSON_RULES_VERSION
-from aicefr.lessons.text import normalize_text
-from aicefr.practice.contracts import FrozenModel, TimeSpan
+from aicefr.contracts import Band, Criterion, Mission, MissionHit, ReasonCode
 
-MAX_CONTENT_TEXT_CHARS = 4_096
-MAX_RESULT_TEXT_CHARS = 32_768
-MAX_REFERENCE_CHARS = 2_048
-MAX_REFERENCE_TOKENS = 512
-MAX_CONTENT_ITEMS = 100
-MAX_LESSON_STEPS = 40
-MAX_STEP_SPEAKING_SECONDS = 3_600
-MAX_CONTENT_REVISION = 2_147_483_647
+# Bump when a rule in checks.py changes what it measures, so an old result can
+# be told apart from a new one measured differently.
+STEP_RULES_VERSION = "step-v1"
+
+# A blank in a gap text: three or more underscores.
+GAP_PATTERN = re.compile(r"_{3,}")
 
 
-def _validate_reference(value: str) -> str:
-    if len(normalize_text(value)) > MAX_REFERENCE_TOKENS:
-        raise ValueError(f"reference text is limited to {MAX_REFERENCE_TOKENS} tokens")
-    return value
+class StepKind(str, Enum):
+    READ_ALOUD = "read_aloud"  # read a given text aloud, hint words highlighted
+    REPEAT = "repeat"  # listen to a model sentence, then repeat it
+    LOOK_UP = "look_up"  # read a sentence, it disappears, say it
+    GAP = "gap"  # read a text with blanks, filling them from a word bank
+    KEYWORDS = "keywords"  # make your own sentence with given words
+    STARTER = "starter"  # answer a question starting with a sentence frame
+    PICTURE = "picture"  # describe a picture or situation using a word bank
+    OUTLINE = "outline"  # a short talk following an outline, with planning time
+    FREE = "free"  # free speech on a parallel topic, possibly in shrinking rounds
 
 
-def _validate_items(values: tuple[str, ...]) -> tuple[str, ...]:
-    if any(len(value) > MAX_REFERENCE_CHARS for value in values):
-        raise ValueError(f"each content item is limited to {MAX_REFERENCE_CHARS} characters")
-    if any(len(normalize_text(value)) > MAX_REFERENCE_TOKENS for value in values):
-        raise ValueError(f"each reference item is limited to {MAX_REFERENCE_TOKENS} tokens")
-    return values
+class Stage(str, Enum):
+    """The four rungs of the ladder every lesson climbs."""
 
-
-class Topic(StrEnum):
-    DAILY_LIFE = "daily_life"
-    EDUCATION = "education"
-    FOOD = "food"
-    TRAVEL = "travel"
-    CAREER = "career"
-    HEALTH = "health"
-    PEOPLE = "people"
-    TECHNOLOGY = "technology"
-    ENVIRONMENT = "environment"
-    SOCIETY = "society"
-
-
-class StepKind(StrEnum):
-    READ_ALOUD = "read_aloud"
-    REPEAT = "repeat"
-    LOOK_UP = "look_up"
-    GAP = "gap"
-    KEYWORDS = "keywords"
-    STARTER = "starter"
-    PICTURE = "picture"
-    OUTLINE = "outline"
-    FREE = "free"
-
-
-class LessonStage(StrEnum):
     MODEL = "model"
     CONTROLLED = "controlled"
     GUIDED = "guided"
     FREE = "free"
 
 
-STAGE_ORDER = (LessonStage.MODEL, LessonStage.CONTROLLED, LessonStage.GUIDED, LessonStage.FREE)
-STAGE_FOR_KIND = {
-    StepKind.READ_ALOUD: LessonStage.MODEL,
-    StepKind.REPEAT: LessonStage.MODEL,
-    StepKind.LOOK_UP: LessonStage.CONTROLLED,
-    StepKind.GAP: LessonStage.CONTROLLED,
-    StepKind.KEYWORDS: LessonStage.GUIDED,
-    StepKind.STARTER: LessonStage.GUIDED,
-    StepKind.PICTURE: LessonStage.GUIDED,
-    StepKind.OUTLINE: LessonStage.GUIDED,
-    StepKind.FREE: LessonStage.FREE,
+STAGE_OF: dict[StepKind, Stage] = {
+    StepKind.READ_ALOUD: Stage.MODEL,
+    StepKind.REPEAT: Stage.MODEL,
+    StepKind.LOOK_UP: Stage.CONTROLLED,
+    StepKind.GAP: Stage.CONTROLLED,
+    StepKind.KEYWORDS: Stage.GUIDED,
+    StepKind.STARTER: Stage.GUIDED,
+    StepKind.PICTURE: Stage.GUIDED,
+    StepKind.OUTLINE: Stage.GUIDED,
+    StepKind.FREE: Stage.FREE,
+}
+STAGE_ORDER = (Stage.MODEL, Stage.CONTROLLED, Stage.GUIDED, Stage.FREE)
+
+STAGE_NAMES = {
+    Stage.MODEL: "Mẫu",
+    Stage.CONTROLLED: "Có kiểm soát",
+    Stage.GUIDED: "Có hướng dẫn",
+    Stage.FREE: "Tự do",
+}
+KIND_NAMES = {
+    StepKind.READ_ALOUD: "Đọc to có từ gợi ý",
+    StepKind.REPEAT: "Nghe và nhắc lại",
+    StepKind.LOOK_UP: "Đọc rồi nói lại",
+    StepKind.GAP: "Đọc đoạn có chỗ trống",
+    StepKind.KEYWORDS: "Ghép câu từ từ khóa",
+    StepKind.STARTER: "Trả lời có khung câu",
+    StepKind.PICTURE: "Mô tả tranh",
+    StepKind.OUTLINE: "Nói theo dàn ý",
+    StepKind.FREE: "Nói tự do",
+}
+
+# Kinds whose result marks each word of a reference text.
+TEXT_KINDS = frozenset({StepKind.READ_ALOUD, StepKind.REPEAT, StepKind.LOOK_UP, StepKind.GAP})
+
+
+class Topic(str, Enum):
+    """What a unit talks about (D027). The path runs A2 → B1 → B2, and within each
+    level the units change topic, so practice stays varied as the level rises."""
+
+    DAILY_LIFE = "daily_life"
+    EDUCATION = "education"
+    TRAVEL = "travel"
+    CAREER = "career"
+    FOOD = "food"
+    HEALTH = "health"
+    TECHNOLOGY = "technology"
+    ENVIRONMENT = "environment"
+    PEOPLE = "people"
+    SOCIETY = "society"
+
+
+TOPIC_NAMES = {
+    Topic.DAILY_LIFE: "Đời sống hằng ngày",
+    Topic.EDUCATION: "Giáo dục",
+    Topic.TRAVEL: "Du lịch",
+    Topic.CAREER: "Nghề nghiệp",
+    Topic.FOOD: "Ẩm thực",
+    Topic.HEALTH: "Sức khoẻ",
+    Topic.TECHNOLOGY: "Công nghệ",
+    Topic.ENVIRONMENT: "Môi trường",
+    Topic.PEOPLE: "Con người",
+    Topic.SOCIETY: "Xã hội",
 }
 
 
-class ReadAloudPayload(FrozenModel):
-    kind: Literal[StepKind.READ_ALOUD]
-    text: str = Field(min_length=1, max_length=MAX_REFERENCE_CHARS)
-    hint_words: tuple[str, ...] = Field(default=(), max_length=MAX_CONTENT_ITEMS)
-    max_seconds: int = Field(gt=0)
-
-    _reference_text = field_validator("text")(_validate_reference)
-    _bounded_hints = field_validator("hint_words")(_validate_items)
+class Strictness(str, Enum):
+    EASY = "easy"
+    NORMAL = "normal"
+    STRICT = "strict"
 
 
-class RepeatPayload(FrozenModel):
-    kind: Literal[StepKind.REPEAT]
-    text: str = Field(min_length=1, max_length=MAX_REFERENCE_CHARS)
-    max_seconds: int = Field(gt=0)
-
-    _reference_text = field_validator("text")(_validate_reference)
+def new_id(prefix: str) -> str:
+    return f"{prefix}{uuid.uuid4().hex[:10]}"
 
 
-class LookUpPayload(FrozenModel):
-    kind: Literal[StepKind.LOOK_UP]
-    text: str = Field(min_length=1, max_length=MAX_REFERENCE_CHARS)
-    show_seconds: int = Field(gt=0)
-    max_seconds: int = Field(gt=0)
-
-    _reference_text = field_validator("text")(_validate_reference)
-
-
-class GapPayload(FrozenModel):
-    kind: Literal[StepKind.GAP]
-    text: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-    answers: tuple[str, ...] = Field(min_length=1, max_length=MAX_CONTENT_ITEMS)
-    hint_words: tuple[str, ...] = Field(default=(), max_length=MAX_CONTENT_ITEMS)
-    max_seconds: int = Field(gt=0)
-
-    _reference_answers = field_validator("answers")(_validate_items)
-    _bounded_hints = field_validator("hint_words")(_validate_items)
+def _words(items: list[str]) -> list[str]:
+    """Trim, drop empties and duplicates, keep the teacher's order."""
+    out: list[str] = []
+    for item in items:
+        text = " ".join(str(item).split())
+        if text and text.lower() not in {x.lower() for x in out}:
+            out.append(text)
+    return out
 
 
-class KeywordsPayload(FrozenModel):
-    kind: Literal[StepKind.KEYWORDS]
-    keywords: tuple[str, ...] = Field(min_length=1, max_length=MAX_CONTENT_ITEMS)
-    min_words: int = Field(default=1, ge=1)
-    max_seconds: int = Field(gt=0)
+class Step(BaseModel):
+    """One exercise of a lesson, as the teacher configured it."""
 
-    _bounded_keywords = field_validator("keywords")(_validate_items)
+    step_id: str = Field(default_factory=lambda: new_id("s"))
+    kind: StepKind
+    title: str = Field(default="", max_length=120)
+    instruction: str = Field(default="", max_length=600)
+    # The English text of the step: the passage to read (READ_ALOUD), the
+    # sentence to repeat or recall (REPEAT, LOOK_UP), the text with blanks
+    # (GAP), the question (STARTER, PICTURE, OUTLINE) or the prompt (FREE).
+    text: str = Field(default="", max_length=2000)
+    # Highlighted words (READ_ALOUD) or the word bank (GAP, PICTURE).
+    hint_words: list[str] = Field(default_factory=list, max_length=20)
+    # GAP: the expected word of each blank, in order. Never sent to students.
+    answers: list[str] = Field(default_factory=list, max_length=10)
+    keywords: list[str] = Field(default_factory=list, max_length=12)
+    starter: str = Field(default="", max_length=120)
+    outline: list[str] = Field(default_factory=list, max_length=8)
+    # OUTLINE: ordered groups of linking words, e.g. [["first"], ["then", "next"]].
+    markers: list[list[str]] = Field(default_factory=list, max_length=6)
+    use_at_least: int = Field(default=0, ge=0, le=20)
+    min_words: int = Field(default=0, ge=0, le=200)
+    show_seconds: int = Field(default=0, ge=0, le=60)
+    prep_seconds: int = Field(default=0, ge=0, le=300)
+    min_seconds: int = Field(default=0, ge=0, le=180)
+    max_seconds: int = Field(default=60, ge=3, le=180)
+    # FREE: the time limit of each round, e.g. [45, 35, 25] for 4/3/2.
+    rounds: list[int] = Field(default_factory=list, max_length=4)
+    strictness: Strictness = Strictness.NORMAL
+    model_audio: str | None = None
+    image: str | None = None
+    image_alt: str = Field(default="", max_length=300)
+    # FREE: optional D023 missions measured on top of time and pauses.
+    missions: list[Mission] = Field(default_factory=list, max_length=4)
+    tip: str = Field(default="", max_length=400)
 
+    @field_validator("hint_words", "answers", "keywords", "outline")
+    @classmethod
+    def _clean_list(cls, v: list[str]) -> list[str]:
+        return _words(v) if v else []
 
-class StarterPayload(FrozenModel):
-    kind: Literal[StepKind.STARTER]
-    text: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-    starter: str = Field(min_length=1, max_length=MAX_REFERENCE_CHARS)
-    min_words: int = Field(default=1, ge=1)
-    max_seconds: int = Field(gt=0)
+    @field_validator("markers")
+    @classmethod
+    def _clean_markers(cls, v: list[list[str]]) -> list[list[str]]:
+        return [g for g in (_words(group) for group in v) if g]
 
-    _bounded_starter = field_validator("starter")(_validate_reference)
-
-
-class PictureChoice(FrozenModel):
-    choice_id: str = Field(min_length=1, max_length=128)
-    description: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-
-
-class PicturePayload(FrozenModel):
-    kind: Literal[StepKind.PICTURE]
-    prompt: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-    pictures: tuple[PictureChoice, ...] = Field(min_length=1, max_length=MAX_CONTENT_ITEMS)
-    min_words: int = Field(default=1, ge=1)
-    max_seconds: int = Field(gt=0)
-
-
-class OutlinePayload(FrozenModel):
-    kind: Literal[StepKind.OUTLINE]
-    text: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-    points: tuple[str, ...] = Field(min_length=1, max_length=MAX_CONTENT_ITEMS)
-    markers: tuple[str, ...] = Field(default=(), max_length=MAX_CONTENT_ITEMS)
-    prep_seconds: int = Field(default=0, ge=0)
-    min_seconds: int = Field(default=0, ge=0)
-    max_seconds: int = Field(gt=0)
-
-    _bounded_points = field_validator("points")(_validate_items)
-    _bounded_markers = field_validator("markers")(_validate_items)
+    @field_validator("rounds")
+    @classmethod
+    def _rounds_in_range(cls, v: list[int]) -> list[int]:
+        for seconds in v:
+            if not 10 <= seconds <= 180:
+                raise ValueError("mỗi lượt nói dài từ 10 đến 180 giây")
+        return v
 
     @model_validator(mode="after")
-    def _time_bounds(self) -> OutlinePayload:
+    def _window(self) -> Step:
         if self.min_seconds > self.max_seconds:
-            raise ValueError("min_seconds cannot exceed max_seconds")
+            raise ValueError("thời gian tối thiểu lớn hơn thời gian tối đa")
         return self
 
+    @property
+    def stage(self) -> Stage:
+        return STAGE_OF[self.kind]
 
-class FreeRound(FrozenModel):
-    duration_seconds: int = Field(gt=0)
-    prompt: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
+    @property
+    def blank_count(self) -> int:
+        return len(GAP_PATTERN.findall(self.text)) if self.kind is StepKind.GAP else 0
+
+    @property
+    def display_title(self) -> str:
+        return self.title or KIND_NAMES[self.kind]
+
+    def round_limits(self) -> list[int]:
+        """The time limit of every round; one round of max_seconds when none is set."""
+        if self.kind is StepKind.FREE and self.rounds:
+            return list(self.rounds)
+        return [self.max_seconds]
+
+    def for_student(self) -> dict:
+        """What the browser of a learner receives: everything but the answers."""
+        data = self.model_dump(mode="json", exclude={"answers"})
+        data["stage"] = self.stage.value
+        data["stage_name"] = STAGE_NAMES[self.stage]
+        data["kind_name"] = KIND_NAMES[self.kind]
+        data["display_title"] = self.display_title
+        data["blank_count"] = self.blank_count
+        data["round_limits"] = self.round_limits()
+        return data
 
 
-class FreePayload(FrozenModel):
-    kind: Literal[StepKind.FREE]
-    rounds: tuple[FreeRound, ...] = Field(min_length=2, max_length=3)
-    max_seconds: int = Field(gt=0)
+class Lesson(BaseModel):
+    """One lesson: a model text, its key words and a ladder of steps."""
+
+    lesson_id: str = Field(default_factory=lambda: new_id("l"))
+    title: str = Field(min_length=1, max_length=160)
+    summary: str = Field(default="", max_length=600)
+    band: Band = Band.A2
+    criterion: Criterion | None = None
+    model_text: str = Field(default="", max_length=3000)
+    keywords: list[str] = Field(default_factory=list, max_length=12)
+    steps: list[Step] = Field(default_factory=list, max_length=12)
+    # Share of steps that must pass, besides the free step being done.
+    pass_ratio: float = Field(default=0.8, ge=0.3, le=1.0)
+    # Shipped sample content, waiting for a teacher of the Faculty of Foreign
+    # Languages to review it.
+    sample: bool = False
+
+    @field_validator("keywords")
+    @classmethod
+    def _clean_keywords(cls, v: list[str]) -> list[str]:
+        return _words(v) if v else []
 
     @model_validator(mode="after")
-    def _decreasing_rounds(self) -> FreePayload:
-        durations = [round_.duration_seconds for round_ in self.rounds]
-        if any(right >= left for left, right in zip(durations, durations[1:], strict=False)):
-            raise ValueError("free round budgets must strictly decrease")
-        if durations[0] > self.max_seconds:
-            raise ValueError("first free round cannot exceed max_seconds")
+    def _unique_step_ids(self) -> Lesson:
+        ids = [s.step_id for s in self.steps]
+        if len(ids) != len(set(ids)):
+            raise ValueError("hai bước trùng mã")
         return self
 
+    def step(self, step_id: str) -> Step | None:
+        return next((s for s in self.steps if s.step_id == step_id), None)
 
-StepPayload = Annotated[
-    ReadAloudPayload
-    | RepeatPayload
-    | LookUpPayload
-    | GapPayload
-    | KeywordsPayload
-    | StarterPayload
-    | PicturePayload
-    | OutlinePayload
-    | FreePayload,
-    Field(discriminator="kind"),
-]
+    @property
+    def free_step_ids(self) -> list[str]:
+        return [s.step_id for s in self.steps if s.kind is StepKind.FREE]
+
+    def for_student(self) -> dict:
+        data = self.model_dump(mode="json", exclude={"steps"})
+        data["steps"] = [s.for_student() for s in self.steps]
+        return data
 
 
-class LessonStep(FrozenModel):
-    step_id: str = Field(min_length=1, max_length=128)
-    ordinal: int = Field(ge=1)
-    stage: LessonStage
+# ---------------------------------------------------------------- results
+
+
+class WordStatus(str, Enum):
+    HEARD = "heard"
+    MISSED = "missed"  # the machine did not hear it -- never "wrong"
+    UNSURE = "unsure"  # heard with low confidence, or a different form of it
+
+
+class WordMark(BaseModel):
+    """One word of the reference text, as the learner sees it marked."""
+
+    index: int
+    text: str
+    status: WordStatus
+    start_s: float | None = None
+    said: str | None = None  # what the machine heard instead, when it differs
+    content: bool = True  # a content word, as opposed to a, the, of...
+    teacher: WordStatus | None = None  # a teacher's correction, when there is one
+    # D039: the Vietnamese-learner pattern the gap between `text` and `said`
+    # names ("ed_ending", "th_sound"...), when one does.
+    pattern: str | None = None
+
+    @property
+    def final(self) -> WordStatus:
+        return self.teacher or self.status
+
+
+class GapStatus(str, Enum):
+    CORRECT = "correct"
+    DISTRACTOR = "distractor"
+    OTHER = "other"
+    MISSING = "missing"
+
+
+class GapMark(BaseModel):
+    index: int
+    expected: str
+    said: str | None = None
+    status: GapStatus
+    start_s: float | None = None
+
+
+class Signal(BaseModel):
+    """One measured quantity, with its Vietnamese label and whether it met its target."""
+
+    key: str
+    label: str
+    value: float | None = None
+    unit: str = ""
+    target: float | None = None
+    met: bool | None = None
+    text: str = ""  # the sentence shown to the learner
+
+
+class StepResult(BaseModel):
+    step_id: str
     kind: StepKind
-    instruction: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-    payload: StepPayload
-    rules_version: str = Field(min_length=1, max_length=128)
+    passed: bool
+    # False when nothing could be measured (no speech, wrong language...).
+    measured: bool = True
+    words: list[WordMark] = Field(default_factory=list)
+    gaps: list[GapMark] = Field(default_factory=list)
+    found: list[MissionHit] = Field(default_factory=list)
+    missing: list[str] = Field(default_factory=list)
+    signals: list[Signal] = Field(default_factory=list)
+    changes: list[str] = Field(default_factory=list)  # FREE: compared with round 1
+    tip: str = ""
+    transcript: str = ""
+    round: int | None = None
+    speaking_s: float = 0.0
+    reasons: list[ReasonCode] = Field(default_factory=list)
+    teacher_reviewed: bool = False
+    teacher_note: str = ""
+    rules_version: str = STEP_RULES_VERSION
 
-    @model_validator(mode="after")
-    def _matching_kind_stage(self) -> LessonStep:
-        if self.payload.kind is not self.kind:
-            raise ValueError("step kind must match its typed payload")
-        if self.stage is not STAGE_FOR_KIND[self.kind]:
-            raise ValueError("step stage does not match its kind")
-        return self
-
-
-class LearningUnit(FrozenModel):
-    unit_id: str = Field(min_length=1, max_length=128)
-    path_id: str = Field(min_length=1, max_length=128)
-    ordinal: int = Field(ge=1)
-    title: str = Field(min_length=1, max_length=256)
-    band: Band
-    topic: Topic | None = None
-    learning_function: str | None = None
-    lesson_ids: tuple[str, ...] = Field(default=(), max_length=MAX_CONTENT_ITEMS)
-    revision: int = Field(default=0, ge=0, le=MAX_CONTENT_REVISION, strict=True)
-
-    @model_validator(mode="after")
-    def _unique_lessons(self) -> LearningUnit:
-        if len(set(self.lesson_ids)) != len(self.lesson_ids):
-            raise ValueError("lesson_ids must be unique within a unit")
-        return self
-
-
-class LearningPath(FrozenModel):
-    path_id: str = Field(min_length=1, max_length=128)
-    title: str = Field(min_length=1, max_length=256)
-    description: str = Field(default="", max_length=MAX_CONTENT_TEXT_CHARS)
-    band_from: Band
-    band_to: Band
-    units: tuple[LearningUnit, ...] = Field(default=(), max_length=MAX_CONTENT_ITEMS)
-    content_version: str = Field(min_length=1, max_length=128)
-    revision: int = Field(default=0, ge=0, le=MAX_CONTENT_REVISION, strict=True)
-
-    @model_validator(mode="after")
-    def _hierarchy(self) -> LearningPath:
-        if len({unit.unit_id for unit in self.units}) != len(self.units):
-            raise ValueError("unit ids must be unique within a path")
-        if any(unit.path_id != self.path_id for unit in self.units):
-            raise ValueError("all units must refer to their containing path")
-        if [unit.ordinal for unit in self.units] != sorted(unit.ordinal for unit in self.units):
-            raise ValueError("units must be ordered by ordinal")
-        return self
-
-
-class Lesson(FrozenModel):
-    lesson_id: str = Field(min_length=1, max_length=128)
-    title: str = Field(min_length=1, max_length=256)
-    summary: str = Field(default="", max_length=MAX_CONTENT_TEXT_CHARS)
-    band: Band
-    steps: tuple[LessonStep, ...] = Field(default=(), max_length=MAX_LESSON_STEPS)
-    revision: int = Field(default=1, ge=1)
-    content_version: str = Field(default="v1", min_length=1, max_length=128)
-
-    @model_validator(mode="after")
-    def _steps_unique_ordered(self) -> Lesson:
-        if len({step.step_id for step in self.steps}) != len(self.steps):
-            raise ValueError("step ids must be unique within a lesson")
-        if len({step.ordinal for step in self.steps}) != len(self.steps):
-            raise ValueError("step ordinals must be unique within a lesson")
-        if [step.ordinal for step in self.steps] != sorted(step.ordinal for step in self.steps):
-            raise ValueError("steps must be ordered by ordinal")
-        return self
-
-
-class PublishedLessonVersion(FrozenModel):
-    lesson_id: str = Field(min_length=1, max_length=128)
-    version: int = Field(ge=1)
-    revision: int = Field(ge=1)
-    title: str = Field(min_length=1, max_length=256)
-    summary: str = Field(default="", max_length=MAX_CONTENT_TEXT_CHARS)
-    band: Band
-    rules_version: str = Field(min_length=1, max_length=128)
-    published_at: datetime
-    content_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    steps: tuple[LessonStep, ...] = Field(min_length=1, max_length=MAX_LESSON_STEPS)
-
-    @field_validator("published_at")
-    @classmethod
-    def _aware_published_at(cls, value: datetime) -> datetime:
-        if value.tzinfo is None or value.utcoffset() is None:
-            raise ValueError("published_at must be timezone-aware")
-        return value
-
-    @classmethod
-    def from_lesson(
-        cls, lesson: Lesson, *, version: int, published_at: datetime
-    ) -> PublishedLessonVersion:
-        from aicefr.lessons.lint import lint_lesson
-
-        validation = lint_lesson(lesson, for_publish=True)
-        if not validation.valid:
-            raise ValueError("lesson must pass publication lint")
-        payload = lesson.model_dump(mode="json")
-        content_hash = hashlib.sha256(
-            json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-        ).hexdigest()
-        rules_versions = {step.rules_version for step in lesson.steps}
-        if len(rules_versions) != 1:
-            raise ValueError("published lesson steps must share one rules version")
-        return cls(
-            lesson_id=lesson.lesson_id,
-            version=version,
-            revision=lesson.revision,
-            title=lesson.title,
-            summary=lesson.summary,
-            band=lesson.band,
-            rules_version=next(iter(rules_versions)),
-            published_at=published_at,
-            content_hash=content_hash,
-            steps=lesson.steps,
-        )
-
-
-class LessonLintIssue(FrozenModel):
-    code: str = Field(min_length=1)
-    message: str = Field(min_length=1)
-    step_id: str | None = None
-
-
-class LessonValidation(FrozenModel):
-    valid: bool
-    errors: tuple[LessonLintIssue, ...] = ()
-    warnings: tuple[LessonLintIssue, ...] = ()
-
-
-class StepResultStatus(StrEnum):
-    PASS = "PASS"
-    FAIL = "FAIL"
-    UNSURE = "UNSURE"
-    UNMEASURED = "UNMEASURED"
-
-
-class StepEvidenceState(StrEnum):
-    HEARD = "HEARD"
-    UNSURE = "UNSURE"
-    MISSED = "MISSED"
-
-
-class StepEvidenceOperation(StrEnum):
-    MATCH = "MATCH"
-    SUBSTITUTE = "SUBSTITUTE"
-    DELETE = "DELETE"
-    INSERT = "INSERT"
-
-
-class StepTokenEvidence(FrozenModel):
-    reference_index: int = Field(ge=0)
-    source_word_index: int | None = Field(default=None, ge=0)
-    expected_token: str = Field(max_length=MAX_REFERENCE_CHARS)
-    heard_token: str | None = Field(default=None, max_length=MAX_REFERENCE_CHARS)
-    operation: StepEvidenceOperation
-    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
-    state: StepEvidenceState
-
-    @field_validator("confidence")
-    @classmethod
-    def _finite_confidence(cls, value: float | None) -> float | None:
-        if value is not None and not math.isfinite(value):
-            raise ValueError("confidence must be finite")
-        return value
-
-
-class StepResult(FrozenModel):
-    step_id: str = Field(min_length=1, max_length=128)
-    kind: StepKind
-    status: StepResultStatus
-    rules_version: str = Field(default=LESSON_RULES_VERSION, min_length=1, max_length=128)
-    heard_text: str = Field(default="", max_length=MAX_RESULT_TEXT_CHARS)
-    matched_count: int | None = Field(default=None, ge=0)
-    target_count: int | None = Field(default=None, ge=0)
-    evidence: tuple[StepTokenEvidence, ...] = Field(default=(), max_length=MAX_ALIGNMENT_TOKENS * 2)
-    round_index: int | None = Field(default=None, ge=0)
-    round_count: int | None = Field(default=None, ge=1)
-    elapsed_seconds: float | None = Field(default=None, ge=0.0)
-    speaking_s: float = Field(default=0.0, ge=0.0, le=MAX_STEP_SPEAKING_SECONDS)
-    time_evidence: tuple[TimeSpan, ...] = Field(default=(), max_length=MAX_ALIGNMENT_TOKENS)
-    word_count: int = Field(default=0, ge=0)
-    feedback: str = Field(min_length=1, max_length=MAX_CONTENT_TEXT_CHARS)
-
-    @model_validator(mode="after")
-    def _evidence_bounds(self) -> StepResult:
-        if any(
-            item.source_word_index is not None and item.source_word_index >= self.word_count
-            for item in self.evidence
-        ):
-            raise ValueError("step evidence index exceeds source transcript word count")
-        if self.elapsed_seconds is not None and not math.isfinite(self.elapsed_seconds):
-            raise ValueError("elapsed_seconds must be finite")
-        if not math.isfinite(self.speaking_s):
-            raise ValueError("speaking_s must be finite")
-        return self
-
-
-class StepAttemptStatus(StrEnum):
-    COMPLETE = "COMPLETE"
-    RETRY = "RETRY"
-    SKIPPED = "SKIPPED"
-
-
-class StepCompletion(FrozenModel):
-    attempt_id: str = Field(min_length=1, max_length=128)
-    step_id: str = Field(min_length=1, max_length=128)
-    kind: StepKind
-    status: StepAttemptStatus
-    attempted_at: datetime
-    round_index: int | None = Field(default=None, ge=0)
-    speaking_s: float = Field(default=0.0, ge=0.0, le=MAX_STEP_SPEAKING_SECONDS)
-
-    @field_validator("attempted_at")
-    @classmethod
-    def _aware_attempted_at(cls, value: datetime) -> datetime:
-        if value.tzinfo is None or value.utcoffset() is None:
-            raise ValueError("attempted_at must be timezone-aware")
-        return value
-
-    @field_validator("speaking_s")
-    @classmethod
-    def _finite_speaking_time(cls, value: float) -> float:
-        if not math.isfinite(value):
-            raise ValueError("speaking_s must be finite")
-        return value
-
-    @model_validator(mode="after")
-    def _round_shape(self) -> StepCompletion:
-        if (self.kind is StepKind.FREE) != (self.round_index is not None):
-            raise ValueError("only FREE attempts require a round index")
-        return self
-
-
-class LessonProgress(FrozenModel):
-    completed_step_ids: tuple[str, ...] = Field(max_length=MAX_LESSON_STEPS)
-    required_step_count: int = Field(ge=0)
-    completion_fraction: float = Field(ge=0.0, le=1.0)
-    completed_free_rounds: int = Field(ge=0)
-    required_free_rounds: int = Field(ge=0)
-    complete: bool
-
-    @field_validator("completion_fraction")
-    @classmethod
-    def _finite_fraction(cls, value: float) -> float:
-        if not math.isfinite(value):
-            raise ValueError("completion_fraction must be finite")
-        return value
+    def missed_words(self) -> list[str]:
+        """Words worth reviewing later: hint, key or gap words the machine did not hear."""
+        out = list(self.missing)
+        out += [g.expected for g in self.gaps if g.status is not GapStatus.CORRECT]
+        return _words(out)

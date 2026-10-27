@@ -1,165 +1,206 @@
 #!/usr/bin/env python3
-"""Benchmark the same typed trust evidence and policy used by runtime.
+"""Refusal benchmark: he thong co "dam tu choi" dung luc khong? D022.
 
-Each observation is precomputed output from actual language, guard, and
-conformal predictors. The benchmark calls the shared ``TrustPolicy`` directly;
-labels are read only after each policy decision has been produced. Reports
-contain aggregate counts and hashes, never transcripts or per-example IDs.
+    # tao bo clip tong hop (im lang, on, nhac, qua ngan) de chay thu
+    .venv/bin/python tools/refusal_benchmark.py --synthesize bench/clips
+
+    # chay pipeline that tren mot thu muc clip, moi nhom mot thu muc con
+    AICEFR_ASR=whisper .venv/bin/python tools/refusal_benchmark.py --root bench/clips \\
+        --engine whisper --out bench/ket_qua.json
+
+Cau truc thu muc `--root`: moi thu muc con la mot NHOM, ten nhom quyet dinh ky
+vong:
+
+  * nhom PHAI TU CHOI (khong duoc phat band ma khong qua giang vien):
+    silence, noise, music, non_english, off_topic, prompt_copy, too_short
+  * nhom HOP LE: valid -- bai noi tieng Anh that, co quyen su dung.
+
+Hai chi so, moi chi so kem khoang tin cay Wilson 95%:
+
+  * ty le LOT (false score rate): trong nhom phai tu choi, bao nhieu bai van
+    duoc phat band ma khong qua giang vien (status COMPLETED);
+  * ty le TU CHOI NHAM (false refusal rate): trong nhom hop le, bao nhieu bai
+    khong duoc cham chut nao (khong co diem).
+
+Bai hop le bi CHUYEN giang vien KHONG tinh la tu choi nham -- do la thiet ke
+(Trust Layer chuyen moi bai co khoang cham hon mot band); ty le chuyen duoc bao
+cao rieng.
+
+Nguon clip goi y (kiem giay phep truoc khi dung): MUSAN (on, nhac, CC BY 4.0),
+Common Voice tieng Viet (CC0), ban ghi cua nhom co dong y. Giong TTS la HAN CHE
+DA BIET (chua co bo phat hien), do va bao cao rieng, khong gop vao ty le lot.
 """
 
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
+import math
 import sys
-from collections import Counter
-from typing import Any
+import tempfile
+from pathlib import Path
 
-from aicefr.contracts import ReasonCode
-from aicefr.trust.contracts import ConformalSet, GuardEvidence, LanguageEvidence
-from aicefr.trust.policy import TrustPolicy
-from tools._trust_cli import InputError, ensure_distinct_paths, json_bytes, read_json, write_json
+import numpy as np
 
-_DISPOSITIONS = {"CONTINUE", "REVIEW_REQUIRED", "NOT_EVALUATED", "REJECTED"}
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "src"))
+
+from aicefr.contracts import ProcessingRequest, Status  # noqa: E402
+
+SR = 16_000
+MUST_REFUSE = (
+    "silence",
+    "noise",
+    "music",
+    "non_english",
+    "off_topic",
+    "prompt_copy",
+    "too_short",
+)
+VALID = ("valid",)
+AUDIO = {".wav", ".flac", ".mp3", ".m4a", ".webm", ".ogg"}
 
 
-def benchmark(manifest: dict[str, Any], *, manifest_sha256: str) -> dict[str, Any]:
-    if manifest.get("version") != "refusal-manifest-v1":
-        raise InputError("unsupported refusal manifest version")
-    split_role = manifest.get("split_role")
-    if split_role not in {"development", "confirmation"}:
-        raise InputError("split_role must be development or confirmation")
-    seed = manifest.get("seed")
-    if type(seed) is not int:
-        raise InputError("seed must be an integer")
-    policy_version = manifest.get("policy_version")
-    if policy_version != TrustPolicy.VERSION:
-        raise InputError("manifest must use the current shared TrustPolicy version")
-    examples = manifest.get("examples")
-    if not isinstance(examples, list) or not examples:
-        raise InputError("benchmark examples are required")
-    decisions: Counter[str] = Counter()
-    expected: Counter[str] = Counter()
-    reason_counts: Counter[str] = Counter()
-    correct = 0
-    labelled = 0
-    seen: set[str] = set()
-    policy = TrustPolicy()
-    for example in examples:
-        if not isinstance(example, dict):
-            raise InputError("each benchmark example must be an object")
-        if any(key.casefold() in {"transcript", "text", "audio", "path"} for key in example):
-            raise InputError("benchmark manifests must not include transcripts, audio, or paths")
-        sample_id = example.get("sample_id")
-        if (
-            not isinstance(sample_id, str)
-            or len(sample_id) != 64
-            or any(char not in "0123456789abcdef" for char in sample_id)
-        ):
-            raise InputError("sample_id must be a pseudonymous lowercase SHA-256")
-        if sample_id in seen:
-            raise InputError("sample_id values must be unique")
-        seen.add(sample_id)
-        observation = example.get("observation")
-        if not isinstance(observation, dict):
-            raise InputError("typed prediction observations are required")
-        if any(key.casefold() in {"transcript", "text", "audio", "path"} for key in observation):
-            raise InputError("observations must not include transcripts, audio, or paths")
-        language_data = observation.get("language")
-        try:
-            language = (
-                LanguageEvidence.model_validate(language_data)
-                if language_data is not None
-                else None
+def wilson(k: int, n: int, z: float = 1.959964) -> tuple[float, float] | None:
+    """Khoang tin cay Wilson cho ty le k/n. Dung tot ca khi k = 0 hoac n nho."""
+    if n == 0:
+        return None
+    p = k / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return round(max(0.0, centre - half), 4), round(min(1.0, centre + half), 4)
+
+
+def synthesize(out: Path, n: int = 5, seed: int = 0) -> None:
+    """Clip TONG HOP, khong co nguoi that: im lang, on trang, 'nhac' (hop am), qua ngan."""
+    import soundfile as sf
+
+    rng = np.random.default_rng(seed)
+    t = np.arange(SR * 40) / SR
+    makers = {
+        "silence": lambda i: np.zeros(SR * 40, dtype=np.float32),
+        "noise": lambda i: (0.05 * (i + 1) * rng.standard_normal(SR * 40)).astype(np.float32),
+        "music": lambda i: (
+            0.15 * sum(np.sin(2 * np.pi * f * (1 + 0.1 * i) * t) for f in (262, 330, 392)) / 3
+        ).astype(np.float32),
+        "too_short": lambda i: (0.2 * np.sin(2 * np.pi * 220 * t[: SR * (3 + i)])).astype(
+            np.float32
+        ),
+    }
+    for cat, make in makers.items():
+        (out / cat).mkdir(parents=True, exist_ok=True)
+        for i in range(n):
+            sf.write(out / cat / f"{cat}_{i:02d}.wav", make(i), SR)
+
+
+def run(root: Path, processor, task_id: str = "P4") -> dict:
+    from aicefr.audio.decoder import FirstMatchDecoder
+
+    decoder = FirstMatchDecoder()
+    rows = []
+    for cat_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        cat = cat_dir.name
+        if cat not in MUST_REFUSE + VALID:
+            print(f"bo qua nhom la: {cat}", file=sys.stderr)
+            continue
+        for clip in sorted(p for p in cat_dir.iterdir() if p.suffix.lower() in AUDIO):
+            pcm, sr = decoder.decode(clip.read_bytes(), clip.name)
+            req = ProcessingRequest(
+                response_id=f"bench-{cat}-{clip.stem}",
+                speaker_id="bench",
+                task_id=task_id,
+                audio_path=str(clip),
+                prompt_version="bench",
+                config_version="bench",
             )
-            guards_data = observation.get("guards", [])
-            if not isinstance(guards_data, list):
-                raise InputError("guards must be a list")
-            guards = tuple(GuardEvidence.model_validate(item) for item in guards_data)
-            conformal_data = observation.get("conformal")
-            conformal = (
-                ConformalSet.model_validate(conformal_data) if conformal_data is not None else None
+            r = processor.process(req, pcm, sr)
+            scored = r.assessment is not None and r.assessment.overall_0_6 is not None
+            rows.append(
+                {
+                    "category": cat,
+                    "clip": clip.name,
+                    "status": r.status.value,
+                    "scored": scored,
+                    "issued": r.status is Status.COMPLETED and scored,
+                    "reasons": [x.value for x in r.reasons],
+                }
             )
-        except InputError:
-            raise
-        except Exception as exc:
-            raise InputError("typed observation evidence is invalid") from exc
-        calibration_state = observation.get("calibration_state", "ready")
-        if calibration_state not in {"ready", "missing", "hash_mismatch", "invalid"}:
-            raise InputError("calibration_state is invalid")
-        prerequisites = calibration_state == "ready" and conformal is not None
-        prerequisite_reason = {
-            "missing": ReasonCode.CALIBRATION_MISSING,
-            "hash_mismatch": ReasonCode.CALIBRATION_HASH_MISMATCH,
-            "invalid": ReasonCode.CALIBRATION_INVALID,
-        }.get(calibration_state)
-        result = policy.decide(
-            language,
-            guards,
-            conformal,
-            prerequisites=prerequisites,
-            prerequisite_reason=prerequisite_reason,
-        )
-        disposition = result.disposition.value
-        decisions[disposition] += 1
-        reason_counts.update(reason.value for reason in result.reasons)
-        # The expected label is accessed only after the policy decision above.
-        label = example.get("label")
-        if label is not None:
-            if (
-                not isinstance(label, dict)
-                or label.get("expected_disposition") not in _DISPOSITIONS
-            ):
-                raise InputError("label expected_disposition must use a known disposition")
-            labelled += 1
-            target = label["expected_disposition"]
-            expected[target] += 1
-            correct += disposition == target
-    config_sha256 = hashlib.sha256(
-        json_bytes({"policy_version": policy_version, "split_role": split_role, "seed": seed})
-    ).hexdigest()
+
+    refuse = [x for x in rows if x["category"] in MUST_REFUSE]
+    valid = [x for x in rows if x["category"] in VALID]
+    leaked = sum(x["issued"] for x in refuse)
+    wrongly_refused = sum(not x["scored"] for x in valid)
+    to_teacher = sum(x["status"] == Status.REVIEW_REQUIRED.value for x in valid)
+    per_cat = {}
+    for x in rows:
+        c = per_cat.setdefault(x["category"], {"n": 0, "issued": 0, "scored": 0})
+        c["n"] += 1
+        c["issued"] += x["issued"]
+        c["scored"] += x["scored"]
     return {
-        "status": "EVALUATED",
-        "method": "shared_trust_policy",
-        "policy_version": policy_version,
-        "config_sha256": config_sha256,
-        "manifest_sha256": manifest_sha256,
-        "seed": seed,
-        "split_role": split_role,
-        "sample_count": len(examples),
-        "labelled_count": labelled,
-        "decision_counts": dict(sorted(decisions.items())),
-        "reason_counts": dict(sorted(reason_counts.items())),
-        "reference_counts": dict(sorted(expected.items())),
-        "disposition_agreement": correct / labelled if labelled else None,
-        "decision_source": "typed_predictor_evidence_and_shared_TrustPolicy_only",
-        "confirmation_used_for_tuning": False,
-        "empirical_coverage": "NOT_EVALUATED",
+        "n_clips": len(rows),
+        "false_score_rate": {
+            "k": leaked,
+            "n": len(refuse),
+            "rate": round(leaked / len(refuse), 4) if refuse else None,
+            "wilson95": wilson(leaked, len(refuse)),
+        },
+        "false_refusal_rate": {
+            "k": wrongly_refused,
+            "n": len(valid),
+            "rate": round(wrongly_refused / len(valid), 4) if valid else None,
+            "wilson95": wilson(wrongly_refused, len(valid)),
+        },
+        "valid_sent_to_teacher": round(to_teacher / len(valid), 4) if valid else None,
+        "per_category": per_cat,
+        "rows": rows,
     }
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", required=True)
-    parser.add_argument(
-        "--output", required=True, help="aggregate report path; contains no raw examples"
-    )
-    args = parser.parse_args(argv)
-    try:
-        ensure_distinct_paths([args.manifest], [args.output])
-        manifest, digest = read_json(args.manifest)
-        if not isinstance(manifest, dict):
-            raise InputError("manifest root must be an object")
-        report = benchmark(manifest, manifest_sha256=digest)
-        report["report_sha256"] = write_json(args.output, report)
-        print(json.dumps(report, sort_keys=True))
-        return 0
-    except (InputError, OSError, ValueError, TypeError, KeyError) as exc:
-        print(
-            json.dumps({"status": "NOT_RUN", "reason": str(exc)}, sort_keys=True), file=sys.stderr
-        )
-        return 2
+def build_processor(engine: str):
+    from aicefr.pipeline import ResponseProcessor
+    from aicefr.storage.task_repository import TaskRepository
+
+    if engine == "whisper":
+        from aicefr.asr.whisper_adapter import WhisperEngine
+
+        asr = WhisperEngine()
+    else:
+        from aicefr.asr.fake import FakeAsrEngine
+
+        asr = FakeAsrEngine()
+    tasks = TaskRepository(Path(tempfile.mkdtemp()) / "bench_tasks.db")
+    return ResponseProcessor(asr, task_lookup=tasks.get)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--root", type=Path)
+    ap.add_argument("--synthesize", type=Path)
+    ap.add_argument("--engine", choices=("fake", "whisper"), default="fake")
+    ap.add_argument("--task", default="P4")
+    ap.add_argument("--out", type=Path)
+    args = ap.parse_args()
+
+    if args.synthesize:
+        synthesize(args.synthesize)
+        print(f"da tao clip tong hop o {args.synthesize}")
+        if not args.root:
+            return 0
+    if not args.root:
+        ap.error("can --root")
+    result = run(args.root, build_processor(args.engine), args.task)
+    fsr, frr = result["false_score_rate"], result["false_refusal_rate"]
+    print(f"{result['n_clips']} clip")
+    print(f"ty le lot        {fsr['k']}/{fsr['n']}  Wilson95 {fsr['wilson95']}")
+    print(f"ty le tu choi nham {frr['k']}/{frr['n']}  Wilson95 {frr['wilson95']}")
+    if args.engine == "fake":
+        print("CANH BAO: engine gia lap chep moi clip thanh cung mot cau -- chi kiem co che.")
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(json.dumps(result, indent=1, ensure_ascii=False), encoding="utf-8")
+    return 0
 
 
 if __name__ == "__main__":

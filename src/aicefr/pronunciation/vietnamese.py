@@ -23,13 +23,12 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
 
 PRONUNCIATION_VERSION = "vi-pron-v1"
 MIN_OPPORTUNITIES = 8
 MAX_EXAMPLES = 5
 
-VOWELS = frozenset("aeiou")
 CONSONANTS = frozenset("bcdfghjklmnpqrstvwxz")
 # Two- and three-letter onsets Vietnamese has no counterpart for.
 CLUSTERS = (
@@ -40,12 +39,12 @@ CLUSTERS = (
 TH_REPLACEMENTS = ("t", "d", "s", "z", "f")
 
 
-class Pattern(StrEnum):
+class Pattern(str, Enum):
     ED_ENDING = "ed_ending"
-    S_ENDING = "s_es_ending"
+    S_ENDING = "s_ending"
     FINAL_CONSONANT = "final_consonant"
-    TH_SOUND = "th_substitution"
-    CLUSTER = "initial_cluster_reduction"
+    TH_SOUND = "th_sound"
+    CLUSTER = "cluster"
 
 
 PATTERN_NAMES = {
