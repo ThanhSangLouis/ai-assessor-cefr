@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import html
 import pathlib
+import re
 import sys
 
 # Duong dan tinh tu vi tri cua chinh tep nay, khong tinh tu thu muc dang dung.
@@ -439,6 +440,19 @@ ROW_OF = {cid: i for _x, ids in COLUMNS for i, cid in enumerate(ids)}
 BOTTOM = max(y + h for _x, y, h in GEO.values())
 
 
+# Names of the classes drawn (not the enumerations): an attribute typed with one
+# of them is an association, and UML writes its multiplicity on the line, not
+# in the box -- `assessment: Assessment`, with `0..1` at the end of the edge.
+CLASS_NAMES = {c[1].split(BR)[-1] for c in CLASSES}
+_MULTIPLICITY = re.compile(r"^([-+] \w+: (\w+)) \[[^\]]*\]$")
+
+
+def attribute_text(text: str) -> str:
+    """The attribute as drawn: an association's multiplicity left to its edge."""
+    m = _MULTIPLICITY.match(text)
+    return m.group(1) if m and m.group(2) in CLASS_NAMES else text
+
+
 def box(cid, box_title, lines, style):
     if NO_STEREOTYPE:
         box_title = box_title.split(BR)[-1]
@@ -450,7 +464,7 @@ def box(cid, box_title, lines, style):
     ]
     for i, text in enumerate(lines):
         out.append(
-            f'<mxCell id="{cid}-{i}" value="{label(text)}" '
+            f'<mxCell id="{cid}-{i}" value="{label(attribute_text(text))}" '
             f'style="{LINE}" vertex="1" parent="{cid}">'
             f'<mxGeometry y="{TITLE_H + LH * i}" width="{W}" height="{LH}" '
             f'as="geometry"/></mxCell>'
