@@ -1,78 +1,87 @@
-# Thiết kế gọn: mô hình nghiệp vụ 20 hộp và 18 collection
+# Mô hình thực thể: 22 thực thể và 20 collection
 
-**Trạng thái:** thiết kế đã được chủ dự án chốt ngày 28/10/2026; code đang được chuyển theo (PR riêng, xếp sau PR làm xanh `main`).
-**Người soạn:** Sang. **Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio) (sinh bằng `tools/gen_class_diagram.py`), bản trên Drive trang "So do lop".
+**Trạng thái:** thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026. Code chưa chuyển theo: migration gộp collection và lớp miền khớp sơ đồ là việc tiếp theo, làm ở PR riêng.
+**Người soạn:** Sang.
+**Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
 
-## 1. Quyết định của chủ dự án (28/10/2026)
+## 1. Quyết định của chủ dự án
 
-1. **Sơ đồ lớp chỉ giữ nghiệp vụ của bài toán:**
-   - đánh giá kỹ năng nói theo CEFR có bằng chứng;
-   - giảng viên duyệt;
-   - vòng "đánh giá để học" (nhiệm vụ, bài học, ôn tập, lộ trình);
-   - giao bài cho lớp.
-2. **Thiết kế phải đúng chuẩn OOP và rã xuống code được.** Khoảng 20 hộp là mục tiêu, được chênh lệch, không ép số làm sai thiết kế.
-3. **Không vẽ phần ngoài nghiệp vụ, nhưng vẫn giữ code của chúng:**
-   - gói dịch vụ, giấy phép, đơn và lượt NetID;
-   - công cụ nghiên cứu (chấm mù hai người, thực nghiệm phản hồi, nghe lại có đối chứng);
-   - thuộc tính kỹ thuật (đăng nhập Google, đổi mật khẩu, hình đại diện, khoá bản ghi âm, tên mô hình ASR).
-4. **Bỏ đồng thuận nghiên cứu.** Đợt xin giọng nói để huấn luyện đã qua, nên bỏ collection `consent`, lớp `Consent` và trang đồng thuận nhiều phiên bản. Chỉ giữ mốc `Account.termsAcceptedAt`, vì hệ thống vẫn lưu giọng nói, là dữ liệu cá nhân.
-5. **Gộp collection MongoDB** theo mục 3, kèm migration dữ liệu.
+1. **Sơ đồ lớp chỉ chứa thực thể** (29/10/2026).
+   - Thực thể là lớp có định danh và vòng đời riêng, lưu thành một document.
+   - Không có lớp trừu tượng, đối tượng giá trị hay hộp kiểu liệt kê.
+2. **Phủ hết nghiệp vụ của bài toán; số collection được linh hoạt** (29/10/2026). Thay cho quyết định ngày 28/10 "chỉ vẽ phần cốt lõi, khoảng 20 hộp". Bản 20 hộp trước đã bỏ sót gói dịch vụ, ví lượt, chấm mù, thực nghiệm, nhật ký kiểm toán và lượt luyện ở bước bài học.
+3. **Bỏ đồng thuận nghiên cứu** (D058). Chỉ giữ `Account.termsAcceptedAt`.
+4. **Band đủ sáu bậc A1 đến C2** (D059).
 
-## 2. Sơ đồ lớp: 37 → 20 hộp
+## 2. Quy tắc vẽ
 
-**Bảy thực thể:** `Account`, `Task`, `Response`, `Lesson`, `LessonPath`, `ReviewItem`, `Classroom`. Mỗi thực thể là một tập dữ liệu có định danh.
+- **Thuộc tính không có định danh** thuộc về thực thể sở hữu nó, ví dụ:
+  - từ có mốc thời gian, phép đo, nhận xét gắn bằng chứng;
+  - nhiệm vụ của đề, nhãn nghe lại, các lần cộng lượt.
+- **Miền giá trị** ghi bằng ràng buộc UML ngay trên thuộc tính, ví dụ `role: str {STUDENT, TEACHER, ADMIN}`, `band: str {A1..C2}`.
+- **Khoá ngoài** không ghi thành thuộc tính.
+  - Quan hệ là đường nối, bội số ghi ở hai đầu đường.
+  - Kim cương đặc là hợp thành: phần mất theo toàn thể.
+  - Đường đậm không mũi tên là quan hệ nhiều–nhiều.
+- **Chung trường giữa `Task` và `Step` thì chấp nhận lặp**, vì không có lớp cha. Hai lớp khác vòng đời:
+  - đề có phiên bản lời đề;
+  - bước nằm trong một phiên bản bài học.
 
-**Chín lớp còn lại:**
-- `Prompt`: lớp trừu tượng, cha của `Task` và `Step`;
-- đối tượng giá trị: `Step`, `Mission`, `Assessment`, `Measure`, `Feedback`, `Word`, `Rating`, `Assignment`.
+## 3. Thực thể theo nghiệp vụ
 
-**Bốn kiểu liệt kê:** `Role`, `Status`, `Band`, `Criterion`.
-
-| Trước | Sau | Lý do (OOP) |
+| Nghiệp vụ | Thực thể | Ghi chú |
 | --- | --- | --- |
-| `Task` và bước bài học (`Step` trong code) có chung lời đề, thời lượng, từ gợi ý, văn bản mẫu, giọng mẫu, ảnh, nhiệm vụ | lớp cha trừu tượng **`Prompt`**, hai lớp con `Task`, `Step` | kế thừa thay cho hai lớp lặp trường |
-| `Consent` | `Account.termsAcceptedAt`, `Account.maySubmit()` | quyết định 4 |
-| `Feature`, `CriterionCoverage`, `CriterionIndicator` | **`Measure`** (tên, giá trị, vị trí trong phân bố, lý do thiếu): dùng cho `Response.features` và `Assessment.criteria` | cùng là một phép đo có tên |
-| `QcResult`, `Transcript`, `FeatureSet` | thuộc tính của `Response` (`durationMs`, `qcStatus`, `transcript`, `words`, `features`) | chỉ thuộc một bài nộp, không có hành vi riêng ngoài `valueOf()` |
-| `Evidence`, `Comment`, `Priority` | **`Feedback`** (loại, tiêu chí, lời, đoạn thời gian) | cùng là nhận xét gắn bằng chứng |
-| `ScoreInterval`, `AnalysisWindow` | `Assessment.intervalLow`, `intervalHigh`, `windowScores`, `isSingleBand()` | không có định danh, chỉ thuộc một `Assessment` |
-| `Review` (giảng viên sửa điểm) | **`Rating`** trong `Response.ratings` | một lần người chấm một bài, bất biến |
-| `PracticeResult`, `MissionCheck`, `MissionHit` | **`Mission`**: phần kết quả (`measured`, `met`, `hits: Word`) để tuỳ chọn | cùng một nhiệm vụ trước và sau khi đo |
-| `WordMark` (đánh dấu từ trong bài học) | **`Word`** thêm `status`, `said`, `pattern` | cùng là một từ có mốc thời gian |
-| lượt nói ở một bước bài học (`step_attempt`) | **`Response`** với `purpose`, `passed` | cùng là một lượt nói được thu âm và đo |
-| lộ trình gợi ý (`learning_plan`) | `LessonPath.ownerId`, `goal` | lộ trình gợi ý là một lộ trình có chủ và mục tiêu |
-| thành tựu, chuỗi ngày, nhắc việc | `Account.achievements`, `streakDays()`, `nudges()` | trạng thái và phép tính của người học |
-| `EvidenceKind`, `QcStatus`, `TaskPart`, `TaskPurpose`, `MissionKind`, `ReasonCode` | ghi `str`, danh sách giá trị ở SRS | chỉ giữ bốn kiểu liệt kê cốt lõi |
+| Tài khoản, điều khoản | `Account` | Thành tựu là thuộc tính. `maySubmit()` khi đã đồng ý điều khoản |
+| Truy vết quyết định | `AuditEntry` | Ai làm gì, với đối tượng nào |
+| Đề và bài nói | `Task`, `Response` | Kết quả chấm (điểm, band, khoảng tin cậy, nhận xét, nhãn nghe lại) là thuộc tính của `Response` |
+| Giảng viên duyệt | `Review` | Mỗi lần đổi điểm hoặc band, kèm lý do |
+| Chấm mù hai người | `RatingBatch`, `Rating` | Phiếu và điểm của giám khảo là một `Rating`; đã thấy điểm máy hay chưa là thuộc tính |
+| Thực nghiệm phản hồi | `Study`, `Participant` | Câu trả lời khảo sát là thuộc tính của người tham gia |
+| Lớp học | `Classroom`, `Assignment` | Thành viên là quan hệ nhiều–nhiều với `Account` |
+| Lộ trình, bài học | `LessonPath`, `Unit`, `Lesson`, `Step` | Phiên bản đã xuất bản và media là thuộc tính của `Lesson` |
+| Luyện ở bước bài học | `StepAttempt` | Một lượt nói ở một bước, ghi phiên bản bài học |
+| Ôn tập ngắt quãng | `ReviewItem` | Hộp Leitner, ngày đến hạn |
+| Lộ trình gợi ý | `LearningPlan` | Với giảng viên còn nối tới lộ trình nháp đã lưu |
+| Gói dịch vụ | `Order`, `License` | Sự kiện cổng thanh toán nhúng vào đơn |
+| Tính lượt | `Wallet`, `LedgerEntry` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nhúng vào ví; mỗi bài một bút toán |
 
-## 3. Collection: 42 → 18
+## 4. Collection: 42 → 20
 
-Collection gộp theo kho, độc lập với việc lớp nào được vẽ: các kho ngoài nghiệp vụ (gói dịch vụ, lượt, nghiên cứu) vẫn gộp như bảng dưới.
+Mỗi thực thể gốc là một collection. Phần có định danh nhưng sống trong thực thể gốc được nhúng vào document của gốc: `Unit` trong lộ trình, `Step` trong bài học, `Rating` trong đợt chấm, `Participant` trong thực nghiệm, `Assignment` trong lớp.
 
+| Phần | Collection sau | Gộp từ |
+| --- | --- | --- |
+| identity | `account` | `account`, `account_identity`, `seen_marker`, `achievement` |
+| | `audit_log` | `audit_log` |
+| assessment | `task` | `task` |
+| | `response` | `response`, `replay_label` |
+| | `review` | `review_action`, `review_lock`, `review_session` |
+| | `rating_batch` | `rating_batch`, `rating_assignment`, `research_rating`, `machine_seen` |
+| | `study` | `study`, `study_participant`, `study_survey` |
+| | `classroom` | `classroom`, `class_member`, `assignment` |
+| learning | `path` | `lesson_path`, `lesson_unit` |
+| | `lesson` | `lesson`, `lesson_version`, `lesson_media` |
+| | `attempt` | `step_attempt` |
+| | `review_item` | `review_item` |
+| | `learning_plan` | `learning_plan` |
+| billing | `order` | `billing_order`, `billing_event` |
+| | `license` | `billing_license` |
+| metering | `wallet` | `credit_wallet`, `free_quota`, `credit_grant` |
+| | `ledger` | `usage_ledger` |
+| kỹ thuật, không vẽ | `session` | `auth_sessions` |
+| | `setting` | `server_secret`, `app_config`, `billing_setting`, `lesson_meta` |
+| | `schema_migrations` | `schema_migrations` |
 
-| Phần (database) | Trước | Sau | Cách gộp |
-| --- | --- | --- | --- |
-| identity (`aicefr`) | `account`, `account_identity`, `seen_marker`, `consent` | `account` | liên kết Google và dấu đã xem nhúng vào tài khoản; `consent` bỏ (quyết định 4) |
-| | `auth_sessions` | `session` | giữ riêng: ghi nhiều, có hạn |
-| | `audit_log` | `audit_log` | giữ: chỉ ghi thêm |
-| dùng chung | `server_secret`, `app_config`, `billing_setting`, `lesson_meta` | `setting` | một lớp `SettingStore` (khoá, giá trị, phạm vi), một collection mỗi database |
-| assessment (`aicefr`) | `task` | `task` | — |
-| | `response`, `replay_label` | `response` | nhãn nghe lại nhúng vào bài |
-| | `review_action`, `review_lock`, `review_session`, `machine_seen` | `review` | một document mỗi bài: khoá, các lần sửa, phiên duyệt, ai đã thấy điểm máy |
-| | `rating_batch`, `rating_assignment`, `research_rating` | `rating_batch` | phiếu và điểm nhúng trong đợt |
-| | `study`, `study_participant`, `study_survey` | `study` | người tham gia kèm khảo sát nhúng vào |
-| | `classroom`, `class_member`, `assignment` | `classroom` | thành viên và bài giao nhúng vào |
-| learning (`aicefr_learning`) | `lesson_path`, `lesson_unit` | `path` | chặng nhúng vào lộ trình |
-| | `lesson`, `lesson_version`, `lesson_media` | `lesson` | phiên bản bất biến và media nhúng vào bài |
-| | `step_attempt` | `attempt` | giữ riêng: số lượng lớn |
-| | `review_item`, `achievement`, `learning_plan` | `learner` | một document mỗi người học |
-| billing (`aicefr`) | `billing_order`, `billing_event` | `order` | sự kiện cổng nhúng vào đơn, chống trùng bằng chỉ mục duy nhất trên `events.event_id` |
-| | `billing_license` | `license` | — |
-| metering (`aicefr_metering`) | `usage_ledger` | `ledger` | giữ: sổ bút toán |
-| | `credit_wallet`, `free_quota`, `credit_grant` | `wallet` | lượt miễn phí theo chu kỳ và các lần cộng lượt nhúng vào ví, chống cộng trùng bằng chỉ mục duy nhất trên `grants.source` + `grants.ref` |
-| hệ thống | `schema_migrations` | `schema_migrations` | — |
+`consent` đã bỏ ở D058 nên không có trong bảng.
 
-Mọi kho kế thừa một lớp cha `MongoStore`. Lớp cha có sẵn thao tác cho document nhúng (thêm, sửa, xoá phần tử con theo khoá) để các kho không tự viết lại. Dữ liệu cũ được chuyển bằng một migration đánh số trong `storage/migrations.py`. Migration chạy lại được và không xoá collection cũ cho tới khi chuyển xong.
+Dữ liệu cũ chuyển bằng migration đánh số trong `storage/migrations.py`. Migration chạy lại được, và không xoá collection cũ cho tới khi chuyển xong.
 
-## 4. Khớp sơ đồ và code
+## 5. Khớp sơ đồ và code
 
-Test đối chiếu sẽ đọc `02_class.drawio` và kiểm: mỗi hộp có một lớp cùng tên trong code, cùng thuộc tính và thao tác; `Task` và `Step` kế thừa `Prompt`. Phần ở quyết định 3 nằm ngoài phép đối chiếu.
+Test đối chiếu sẽ đọc `02_class.drawio` và kiểm ba điều:
+
+1. Mỗi hộp có một lớp miền cùng tên trong code, cùng thuộc tính và thao tác.
+2. Mỗi thực thể gốc có đúng một collection.
+3. Mỗi miền giá trị `{...}` trùng với tập giá trị trong code.
+
+Phần kỹ thuật ở mục 4 nằm ngoài phép đối chiếu.
