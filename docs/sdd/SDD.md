@@ -357,7 +357,7 @@ nào*, đúng tầng thiết kế của chúng.
 
 | Khung nhìn | Tệp nguồn | Định dạng | Nội dung |
 | --- | --- | --- | --- |
-| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | 6 thực thể, 20 đối tượng giá trị, 11 kiểu liệt kê, 47 quan hệ; khớp mã trên `main` ngày 25/10/2026, kể cả D052–D057 (sinh bằng `tools/gen_class_diagram.py`) |
+| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | Bản gọn ngày 28/10/2026: 3 thực thể, 12 đối tượng giá trị, 9 kiểu liệt kê, 29 quan hệ (sinh bằng `tools/gen_class_diagram.py`). Ánh xạ từ bản 37 hộp và kế hoạch 42 → 18 collection: [`thiet-ke-gon-so-do-lop-va-collection.md`](thiet-ke-gon-so-do-lop-va-collection.md); code đang chuyển theo |
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
 | Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
