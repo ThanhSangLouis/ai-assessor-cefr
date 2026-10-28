@@ -147,7 +147,7 @@ function build(d) {
   h += "</tbody></table>";
   h +=
     '<p class="muted">Phân bố này là band <b>máy ước lượng</b>. Trên dữ liệu kiểm định, ' +
-    "mô hình xếp sai band ở 26,6% số bài và chỉ nhận ra 16,7% số bài mức A2, nên đừng đọc " +
+    "mô hình còn xếp sai band ở một phần đáng kể số bài và nhận ra mức A2 kém nhất, nên đừng đọc " +
     "bảng này như bức tranh trình độ thật của lớp.</p>";
 
   h += '<h2 style="margin-top:var(--sp-6)">Theo đề bài</h2>';

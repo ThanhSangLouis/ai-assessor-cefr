@@ -1,7 +1,7 @@
 // Một người học nhìn kết quả của chính mình theo thời gian. FR-27.
 //
 // Cái khó của màn hình này không phải vẽ biểu đồ mà là KHÔNG nói quá.
-// `ridge_resp_v2` có RMSE 0,53 trên chính tập kiểm định của nó, nên chênh lệch
+// `ridge_resp_v2` có sai số cỡ nửa điểm trên chính tập kiểm định của nó, nên chênh lệch
 // 0,2 điểm giữa hai bài nằm gọn trong sai số của dụng cụ đo. Một mũi tên đi lên
 // vẽ trên chênh lệch đó là đang nói với sinh viên rằng họ tiến bộ, trong khi thứ
 // duy nhất thay đổi là hôm ghi âm. Vì vậy ngưỡng để gọi là xu hướng do máy chủ

@@ -13,13 +13,15 @@ Phần này là nhánh transcript, chưa phải model chấm trực tiếp từ 
 
 ## 2. Dữ liệu và kiểm tra đầu vào
 
+> Các số đo trên Speak & Improve trong báo cáo này đã được gỡ theo W7-S01 (giấy phép CUP&A); bản đầy đủ ở hồ sơ nội bộ của Thắng.
+
 | Phần | Train | Dev |
 |---|---:|---:|
-| P1 | 3.068 | 438 |
-| P3 | 3.060 | 438 |
-| P4 | 3.005 | 438 |
-| P5 | 3.085 | 438 |
-| **Tổng** | **12.218** | **1.752** |
+| P1 | — | — |
+| P3 | — | — |
+| P4 | — | — |
+| P5 | — | — |
+| **Tổng** | — | — |
 
 Các kiểm tra đã đạt:
 
@@ -54,21 +56,21 @@ Run manifest dùng seed cơ sở 42. Seed hiệu dụng được ghi trong metri
 
 | Phần | PCC | RMSE | MAE | Bias |
 |---|---:|---:|---:|---:|
-| P1 | 0.7847 | 0.6167 | 0.5041 | +0.3833 |
-| P3 | 0.7239 | 0.5420 | 0.4261 | +0.1951 |
-| P4 | 0.6906 | 0.6756 | 0.5481 | +0.4115 |
-| P5 | 0.7999 | 0.5964 | 0.4783 | +0.3927 |
-| **Overall** | **0.8273** | **0.5118** | **0.4096** | **+0.3456** |
+| P1 | — | — | — | — |
+| P3 | — | — | — | — |
+| P4 | — | — | — | — |
+| P5 | — | — | — | — |
+| **Overall** | — | — | — | — |
 
-PCC overall vượt mốc BERT tham khảo 0.740 trong kế hoạch. Kết quả hiện tại được đo trên dev, chưa phải đánh giá độc lập trên test set.
+PCC overall vượt mốc BERT tham khảo trong kế hoạch. Kết quả hiện tại được đo trên dev, chưa phải đánh giá độc lập trên test set.
 
 ### 4.2. So sánh với baseline
 
 | Cấu hình | PCC overall | RMSE overall | Ý nghĩa |
 |---|---:|---:|---|
-| Mean baseline | — | 0.6706 | Mốc điểm trung bình |
-| Frozen DeBERTa | 0.8167 | 0.4128 | Chỉ huấn luyện pooler/classifier |
-| **Full fine-tune** | **0.8273** | 0.5118 | Cập nhật toàn bộ DeBERTa |
+| Mean baseline | — | — | Mốc điểm trung bình |
+| Frozen DeBERTa | — | — | Chỉ huấn luyện pooler/classifier |
+| **Full fine-tune** | — | — | Cập nhật toàn bộ DeBERTa |
 
 Frozen DeBERTa chỉ cập nhật 591.361/184.422.913 tham số, tương đương 0,321%. Nó được dùng làm baseline đối chứng, không phải model chính.
 
@@ -85,7 +87,7 @@ Hai notebook liên quan:
 
 ## 6. Kết luận bàn giao
 
-Model được đề xuất làm kết quả transcript chính là **full fine-tune DeBERTa**, với PCC overall `0.8273` trên dev. Frozen DeBERTa được giữ lại như baseline để chứng minh tác động của fine-tune.
+Model được đề xuất làm kết quả transcript chính là **full fine-tune DeBERTa**, với PCC overall trên dev cao nhất trong các cấu hình đã thử. Frozen DeBERTa được giữ lại như baseline để chứng minh tác động của fine-tune.
 
 Các model weights, checkpoint, prediction theo từng mẫu và dataset được lưu ở kho riêng ngoài Git repository, hiện tại là:
 

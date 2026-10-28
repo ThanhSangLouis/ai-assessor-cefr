@@ -583,7 +583,7 @@ vì đúng lý do đó — xem mục 10.
 **9. Mô hình có tốt không?**
 
 Ba số phải nói cùng lúc, không được tách:
-`cv_pcc = 0.6966`, `cv_rmse = 0.5262`, `train_n = 876`, GroupKFold 5 chia **theo
+`cv_pcc`, `cv_rmse`, `train_n` (đọc trong artifact ngoài repo, W7-S01), GroupKFold 5 chia **theo
 người nói**. Và ba điều kèm theo: mô hình huấn luyện trên **nhãn tổng thể** chứ
 không phải nhãn từng tiêu chí; `calibration_version = "chua-hieu-chuan"`; đặc
 trưng huấn luyện lấy từ bản chép của `whisper-small` trong khi hệ thống chạy
