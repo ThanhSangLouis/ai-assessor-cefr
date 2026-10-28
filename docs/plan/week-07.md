@@ -303,3 +303,49 @@ gh pr create --base migrate/w7-repo-goc --title "port(M15): ..." --body "Chuyể
 1. Thắng tạo nhánh `migrate/w7-repo-goc` và chép phần nền (W7-T01) trước.
 2. Sang gỡ artifact S&I (W7-S01).
 3. Sau hai việc trên, mọi người chép module của mình; test chạy được đầy đủ khi nền đã vào nhánh.
+
+---
+
+## 11. Đối chiếu thực hiện (28/10/2026)
+
+Đối chiếu bằng `git log`, danh sách PR và CI thực tế trên `thanglb2005/ai-assessor-cefr`; `main` tại `9344152`. Code đã sang đủ, nhưng **quy trình của kế hoạch không được giữ** và `main` đang đỏ.
+
+### 11.1. Task theo kế hoạch
+
+| Task | Thực tế | Lệch so với kế hoạch |
+| --- | --- | --- |
+| W7-S01 gỡ artifact S&I | Làm ở repo gốc (ThanhSangLouis/ai-assessor-cefr#32, chưa merge); bản đã gỡ được dùng làm nguồn cho mọi PR chuyển code | Còn số đo S&I trong `src/aicefr/practice/achievements.py:8`, `src/aicefr/api/static/my_progress.js:4` (RMSE), `docs/sdd/SDD.md`, `docs/sdd/giai_thich_so_do_lop.md:586`, `docs/srs/SRS.md`, `docs/sources/` (DoD 4 chưa đạt) |
+| W7-T01 nền | Có **hai** PR cho cùng việc: #58 (Sang, gỡ chặn) và #62 (Thắng) | Trùng việc |
+| W7-S02, W7-S03 | #59, #60 merge vào nhánh `port/*` xếp chồng, rồi vào nhánh tích hợp bằng commit merge `96cc0f4` | Đúng nội dung; PR không được đổi base trước khi merge |
+| W7-T02, W7-T03, W7-T04 | #63, #64, #65 vào nhánh tích hợp | Mỗi việc có **hai bản commit**, một bản ghi tên "ThanhSangLouis" (`7cdbaa6`, `c24cf35`, `e5f141a`, `d04725f`, `9b6e2de`, `00cad36`, `96cc0f4`) dù email là của Thắng. T04 chép SDD bản 13/10 (còn PostgreSQL, RabbitMQ) và sơ đồ lớp bản 03/10 |
+| W7-G1 kiểm kê | Sang, Thắng xong | **Nguyên (M01, M06, M07, M15) chưa điền** |
+| W7-G2 tích hợp vào `main` | #66 merge ngày 27/10, trước khi Nguyên chuyển phần của mình | Vi phạm nguyên tắc 4: nhánh tích hợp vào `main` khi chưa đủ module và chưa xanh. Commit `95208e7` (SCRUM-92) thêm lại lớp tương thích SQLite/PostgreSQL (`SqlStore`) vào `storage/db.py`, trái D048 |
+| W7-N01, W7-N02 | #67, #68 merge **thẳng vào `main`** ngày 28/10 | Bỏ qua nhánh tích hợp; CI đỏ khi merge |
+| W7-S04 Bản cam kết | Bản thảo v2 (25/10), chưa gửi GVHD | Chưa ký |
+| W7-S05, W7-N03 | Chưa chạy | — |
+
+### 11.2. Definition of Done (mục 5)
+
+| # | Điều kiện | Trạng thái |
+| --- | --- | --- |
+| 1 | `docker compose up`, `/readyz` 200 | NOT_RUN trên `main` |
+| 2 | Toàn bộ test xanh | **Chưa**: 38 tệp test cũ không import được, `test_profile`/`test_google_flow` là bản cũ, thiếu 18 tệp test. Sửa trong #71 (1461 passed, 18 skipped; E2E 79/79) |
+| 3 | CI xanh | **Đỏ** từ #66: job "Dinh dang, lint, kiem thu" và "MongoDB va Redis" |
+| 4 | Không có số liệu S&I | **Chưa** (bảng 11.1, dòng W7-S01) |
+| 5 | Mỗi module có commit của chủ module | **Hỏng**: commit của Thắng mang tên "ThanhSangLouis"; `c1777dd` mang tên "Thang Le" với email của Nguyên. Git không còn là bằng chứng đóng góp tin được (Rubric TC2, G4) |
+| 6 | PR khai nguồn | Có ở các PR port |
+| 7 | SDD khớp code | **Chưa**: SDD, sơ đồ 02/02b/06 là bản cũ (sửa trong #69, #70) |
+| 8 | Kiểm kê xong | Thiếu phần Nguyên |
+| 9 | Bản cam kết | Chưa ký |
+| 10, 11 | Thu thử, hồ sơ | Chưa có biên bản thu thử; AI Prompt Log W07 đã khởi tạo |
+
+### 11.3. Việc sửa, theo thứ tự
+
+1. **Làm xanh `main`** (P0): review và merge #71 (Thắng xem phần `storage/db.py`, Nguyên xem `admin_api.py`).
+2. **Danh tính commit** (P0, cả nhóm): mỗi người kiểm `git config user.name` và `user.email` trên máy mình; ghi rõ trong báo cáo W7 các commit đứng sai tên ở bảng 11.1 và ai thực sự làm. Không viết lại lịch sử `main` khi chưa có quyết định của nhóm.
+3. **Gỡ số đo S&I còn lại** (P0, Sang): hai chỗ trong code và các tài liệu ở bảng 11.1.
+4. **Sơ đồ và SDD** (P1): merge #69, #70.
+5. **Kiểm kê của Nguyên** (P1): điền M01, M06, M07, M15 vào `docs/evidence/w7-migration/kiem-ke.md`.
+6. **Tài liệu vận hành còn ở repo gốc** (P1, Sang): `docs/plan/CAU_HINH_KHOA_BEN_NGOAI.md`, `TRIEN_KHAI_VPS.md`, `CHAY_TREN_LOCALHOST.md`, `TRIEN_KHAI_DICH_VU.md`, `SETUP_CHO_TEAMMATE.md`, `docs/research/PROTOCOL_D040.md`, `docs/license_inventory.md` — code và `.env.example` đang trỏ tới chúng. Sau bước này repo gốc chỉ còn là bản lưu trữ.
+7. **Quy trình từ nay** (cả nhóm): PR vào `main` phải có CI xanh và ít nhất một review trước khi merge; không merge thẳng khi CI đỏ.
+8. **W7-S04, W7-S05, W7-N03**: giữ như kế hoạch; thu thử dùng `main` sau khi bước 1 xong.
