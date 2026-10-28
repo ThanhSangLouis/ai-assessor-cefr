@@ -357,10 +357,11 @@ nào*, đúng tầng thiết kế của chúng.
 
 | Khung nhìn | Tệp nguồn | Định dạng | Nội dung |
 | --- | --- | --- | --- |
-| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | 7 thực thể, 8 đối tượng giá trị, 6 kiểu liệt kê, 31 quan hệ |
+| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | 6 thực thể, 20 đối tượng giá trị, 11 kiểu liệt kê, 47 quan hệ; khớp mã trên `main` ngày 25/10/2026, kể cả D052–D057 (sinh bằng `tools/gen_class_diagram.py`) |
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
-| Kiến trúc | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | 8 cổng và 16 bộ chuyển đổi |
+| Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
+| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 19 bộ chuyển đổi, 13 kho kế thừa `MongoStore` |
 
 **Vì sao sơ đồ lớp dùng draw.io chứ không phải PlantUML.** PlantUML tự đặt vị
 trí các hộp; người đọc không sắp xếp lại được. Sơ đồ lớp là hình phải chỉnh tay
@@ -386,7 +387,7 @@ tính lại toàn bộ — đã hỏng ba lần vì lý do đó trước khi có
 thì sửa phần đặc tả ở đầu `tools/gen_class_diagram.py` rồi sinh lại, đừng sửa
 hai nơi.
 
-Hình kiến trúc giữ PlantUML vì nó nhỏ và bố cục tự động đã đủ dùng.
+Hai hình kiến trúc giữ PlantUML vì bố cục tự động đã đủ dùng. Hình 2b trả lời "hệ thống gồm những dịch vụ nào, nói với nhau thế nào, dữ liệu nằm đâu"; hình 2c trả lời "hệ thống cắm ra bên ngoài ở đâu và thay được những gì". Cổng `ResponseStore` cố ý không vẽ (xem docstring của nó).
 
 **Cú pháp thành viên: đủ kiểu, không rút gọn.** Mọi thuộc tính viết theo đúng
 dạng UML `visibility name: Type`, mọi thao tác viết đủ `name(tham số: Type):
@@ -596,9 +597,13 @@ thứ hai của một biểu thức chính quy trong `report.js`.
 
 *Hình 2. Các đối tượng nghiệp vụ. Nguồn: `diagrams/02_class.drawio`*
 
-![Hình 2b. Kiến trúc](images/02b_kien_truc.png)
+![Hình 2b. Kiến trúc tổng thể](images/02b_kien_truc.png)
 
-*Hình 2b. Cổng và bộ chuyển đổi. Nguồn: `diagrams/02b_kien_truc.puml`*
+*Hình 2b. Kiến trúc tổng thể: ba dịch vụ, bus và kho dữ liệu. Nguồn: `diagrams/02b_kien_truc.puml`*
+
+![Hình 2c. Cổng và bộ chuyển đổi](images/02c_cong_va_bo_chuyen_doi.png)
+
+*Hình 2c. Cổng và bộ chuyển đổi. Nguồn: `diagrams/02c_cong_va_bo_chuyen_doi.puml`*
 
 **Cách đọc sơ đồ lớp.** Hình thoi **đặc** (`◆`) là hợp thành: bộ phận thuộc về
 đúng một thể, sinh ra cùng thể và mất theo thể. Dùng nó cho `Response`
@@ -1449,9 +1454,9 @@ erDiagram
 File: `docs/sdd/diagrams/06_deployment.mmd`
 
 ```mermaid
-%% SDD - Diagram 06: Deployment diagram - sau D044
+%% SDD - Diagram 06: Deployment diagram - sau D044, D048, D050
 %% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
-%% (core, speech, web), PostgreSQL mot schema core, RabbitMQ, hai volume. Mot
+%% (core, speech, web), MongoDB mot database aicefr, Redis (BullMQ), hai volume. Mot
 %% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
 flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
@@ -1460,8 +1465,8 @@ flowchart TB
         CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
         WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
-        PG[("PostgreSQL 16<br/>schema core, một vai trò")]
-        MQ[["RabbitMQ<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        PG[("MongoDB 7.0<br/>database aicefr")]
+        MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]
         V2[("Volume models<br/>cache model Whisper")]
     end
@@ -1811,8 +1816,8 @@ trong cùng một Pull Request; người review Pull Request có trách nhiệm 
 
 **Thuật toán.** Thiết kế ban đầu dự kiến hai nhánh song song rồi hợp nhất. **Mã hiện tại chỉ có nhánh số**; các bước đánh dấu bên dưới **chưa hiện thực**.
 
-1. *Nhánh số (đã hiện thực):* `RidgeScorer` nạp một mô hình hồi quy tuyến tính đã hiệu chỉnh từ tệp JSON người đọc được (`src/aicefr/scoring/models/ridge_resp_v1.json`) thay vì tệp pickle, rồi chuẩn hóa z-score bằng `mean`/`scale` lưu ngay trong tệp đó. Cho ra `s_num`, kẹp về [1.0, 6.0]. Lớp `RidgeModel` riêng **chưa hiện thực** — trọng số, `feature_order`, ngưỡng band và mọi version provenance đều đọc từ tệp JSON.
-2. *Nhánh văn bản (**đã huấn luyện ngoài app, chưa tích hợp** — cập nhật 15/09/2026):* thiết kế ban đầu ghi `bert-base-uncased`, cắt ở 256 token. Mô hình thực tế đã huấn luyện là **`microsoft/deberta-v3-base`**, hồi quy một điểm đầu ra, `max_length = 512`, 3 epoch, lr `2e-5`, batch hiệu dụng 16, trên 12.218 mẫu train của P1/P3/P4/P5. PCC overall 0,8273 trên dev. Lớp `BertTextGrader` trong mã **chưa có**: mô hình mới sống trong `notebooks/`, chưa thành adapter của cổng `Scorer`. Cách đọc con số và những gì phải làm trước khi tích hợp: `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
+1. *Nhánh số (đã hiện thực):* `RidgeScorer` nạp một mô hình hồi quy tuyến tính đã hiệu chỉnh từ tệp JSON người đọc được (`$AICEFR_MODEL_DIR/ridge_resp_v1.json`, nằm ngoài repo và được kiểm SHA-256 ghim sẵn — W7-S01) thay vì tệp pickle, rồi chuẩn hóa z-score bằng `mean`/`scale` lưu ngay trong tệp đó. Cho ra `s_num`, kẹp về [1.0, 6.0]. Lớp `RidgeModel` riêng **chưa hiện thực** — trọng số, `feature_order`, ngưỡng band và mọi version provenance đều đọc từ tệp JSON.
+2. *Nhánh văn bản (**đã huấn luyện ngoài app, chưa tích hợp** — cập nhật 15/09/2026):* thiết kế ban đầu ghi `bert-base-uncased`, cắt ở 256 token. Mô hình thực tế đã huấn luyện là **`microsoft/deberta-v3-base`**, hồi quy một điểm đầu ra, `max_length = 512`, 3 epoch, lr `2e-5`, batch hiệu dụng 16, trên phần train của P1/P3/P4/P5; đã đánh giá trên dev (số đo không công bố khi CUP&A chưa cho phép). Lớp `BertTextGrader` trong mã **chưa có**: mô hình mới sống trong `notebooks/`, chưa thành adapter của cổng `Scorer`. Cách đọc con số và những gì phải làm trước khi tích hợp: `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
 3. *Hợp nhất (**chưa hiện thực**):* `s = w * s_num + (1 - w) * s_txt`, với `w = 0.6` (ưu tiên đặc trưng đo được vì giải thích được trước hội đồng). Hiện `s = s_num`.
 4. *Ánh xạ band (đã hiện thực):* hàm `to_band` đọc `band_thresholds` từ tệp mô hình: dưới ngưỡng `A2_B1` → A2; dưới `B1_B2` → B1; còn lại → B2.
 5. *Gần ranh giới (đã hiện thực):* hàm `near_boundary` gắn `SCORE_NEAR_BOUNDARY` khi `abs(s - ngưỡng) <= boundary_margin`. Trường `boundary_distance` dạng số **chưa hiện thực**.
@@ -2408,6 +2413,105 @@ sequenceDiagram
 
 **Một tiến trình.** `aicefr.api.main` dựng cả ba dịch vụ với facade cục bộ và bus trong tiến trình — cùng router, cùng quy tắc, chỉ khác dây nối. Kiểm thử chạy trên dạng này; `tests/test_services_split.py` chạy ba ứng dụng tách rời (web gọi core qua HTTP) sau một gateway giả lập; CI chạy thêm toàn bộ bộ kiểm thử trên PostgreSQL và bus trên RabbitMQ thật.
 
+### 4.19. Lược đồ có phiên bản — D045 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "chốt database" (14/10/2026). Đến D044, mỗi repository tự tạo bảng của mình bằng `CREATE TABLE IF NOT EXISTS` và tự thêm cột lúc khởi động (`add_columns`). Cách đó không biết kho đang ở phiên bản nào, và một lần sửa chuỗi `SCHEMA` có thể lọt qua không ai thấy.
+
+**Thiết kế.**
+- **Migration và cách áp dụng.** `src/aicefr/storage/migrations.py` giữ danh sách `MIGRATIONS` đánh số liên tục. Phiên bản 1 là lược đồ của D044, dựng bằng chính các repository. Từ phiên bản 2 trở đi là câu SQL kiểu SQLite, dịch sang PostgreSQL như mọi câu khác. Mỗi migration chạy trong một giao dịch: lấy khoá ghi của kho (`BEGIN IMMEDIATE`, khoá advisory trên PostgreSQL), kiểm lại xem còn chờ không, rồi ghi vào `schema_migrations`. Dịch vụ `core` chạy `migrate` trước khi dựng bốn phần. Repository của bảng mới (`PlanRepository`) gọi `ensure_current` thay vì tự tạo bảng.
+- **Bản chụp lược đồ.** Lược đồ chuẩn được commit ở `docs/db/schema_core.sql`, sinh bằng `python -m aicefr.db_cli snapshot`. `tests/test_schema.py` so kho mới với tệp này nên thay đổi thiếu migration sẽ làm kiểm thử đổ. Từ điển dữ liệu ở `docs/db/TU_DIEN_DU_LIEU.md`, sơ đồ ở `docs/db/erd_core.mmd`.
+- **Phiên bản 2.** Thêm bảng `learning_plan` cho D046.
+
+**Không dùng Alembic.** SDD từng dự kiến SQLAlchemy và Alembic. Chuyển sang ORM nghĩa là viết lại chín repository đang chạy trên hai phương ngữ (D043), rủi ro hồi quy lớn hơn lợi ích. Bộ chạy migration ở đây chỉ khoảng 150 dòng và dùng lại lớp dịch phương ngữ có sẵn.
+
+**Cập nhật theo D048 (21/10/2026, đề xuất).** Kho chuyển sang MongoDB. Thiết kế phiên bản giữ nguyên ý: sổ `schema_migrations` (một document mỗi phiên bản, chỉ mục duy nhất), phiên bản 1 dựng bằng repository, phiên bản 2 tạo chỉ mục của `learning_plan`. Khác với SQL: cấu trúc của một collection là các chỉ mục của nó, nên bản chụp chuẩn là `docs/db/schema_core.json` (collection và chỉ mục). Không còn khoá ghi hay giao dịch: mọi migration phải chạy lại được (tạo chỉ mục đã có là không làm gì), hai tiến trình cùng nâng thì cả hai chạy nhưng chỉ một ghi sổ. Đoạn "không dùng Alembic" ở trên không còn áp dụng.
+
+### 4.20. Model ghép lộ trình — D046 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "một model AI tạo lộ trình từ những lộ trình đã có, theo hướng giáo viên hoặc sinh viên muốn" (14/10/2026). D025 cam kết không model ngôn ngữ nào viết nội dung bài học. Vì vậy model **chọn và xếp thứ tự** bài đã xuất bản, không sinh câu chữ (BR-40).
+
+**Ba phần** (`src/aicefr/lessons/composer.py`, hàm thuần, tất định):
+1. **Mục tiêu.** Các ô của form, cộng một câu tự do. `parse_wish` đọc ra chủ đề, tiêu chí, âm cần luyện và band bằng một danh sách từ cố định, không phân biệt có dấu hay không. Cụm nhiều từ phải khớp nguyên từ, nên "ẩm thực" không bị hiểu là âm th.
+2. **Mức phù hợp.** Trung bình có trọng số (`WEIGHTS`) của sáu tín hiệu: band, tiêu chí, chủ đề, từ khớp (TF-IDF giữa mục tiêu và nội dung bài), âm cần luyện (tỷ lệ từ có cơ hội luyện âm đó, theo `pronunciation.vietnamese.opportunities`) và tiến độ của sinh viên. Tín hiệu mà mục tiêu không nhắc tới cho 0,5 với mọi bài nên không làm đổi thứ hạng. Bài trùng giữa hai lộ trình chỉ tính một lần. Bài giống nhau được trải ra bằng maximal marginal relevance. Bài ngoài band đã chọn chỉ dùng để bù khi thiếu, và có cảnh báo.
+3. **Thứ tự học từ lộ trình hiện có.** Mỗi cặp bài liền nhau trong một lộ trình là một ví dụ "bài này trước bài kia". Hồi quy logistic theo cặp, không hệ số tự do, chạy trên bốn đặc trưng: band, số bước, độ dài văn bản, độ khó. Độ khó lấy từ tỷ lệ đạt khi bài có ít nhất 10 lượt luyện. Model dùng quy tắc cố định (band rồi độ khó) khi chưa đủ 12 cặp, hoặc khi thứ tự học được không xếp đúng các cặp hiện có hơn quy tắc đó. Lộ trình nói rõ đã dùng cách nào và khớp bao nhiêu phần trăm.
+
+**Hai lối vào** (`services/core/learning/plans_api.py`):
+- **Người học** (FR-81). Ứng viên chỉ gồm bài đã xuất bản trong lộ trình đã xuất bản. Band bắt đầu từ bài đánh giá gần nhất. Tiêu chí yếu nhất đi qua cổng của thực nghiệm phản hồi (`study_api.latest_assessment`). Âm yếu lấy từ hồ sơ phát âm D039 (tỷ lệ lỗi ≥ 25 % khi đủ cơ hội). Lộ trình lưu trong `learning_plan`; mỗi người có một lộ trình đang dùng; nó có trong bản xuất cá nhân và bị xoá cùng dữ liệu.
+- **Giảng viên** (FR-82). Ứng viên là bài đã xuất bản của mọi lộ trình chưa lưu trữ. Đề xuất được lưu để chỉ người tạo mới lưu được. Lưu thành lộ trình **nháp** gồm bản sao (mã mới, giữ khoá âm thanh và hình của cùng bản cài), nhóm theo band, có nhật ký `lesson.path.compose`.
+
+**Giới hạn đã biết.** Trọng số relevance là hằng số có lý do, chưa được hiệu chỉnh trên dữ liệu người dùng thật. Tín hiệu từ khớp chỉ có ích khi mục tiêu chứa từ tiếng Anh có trong bài. Với lộ trình mẫu hiện có (31 bài, 30 cặp), thứ tự học được không tốt hơn quy tắc cố định nên model dùng quy tắc đó và nói rõ.
+
+### 4.21. Triển khai lên máy chủ — D047 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "deploy web" (14/10/2026).
+
+**Thiết kế.**
+- **Cấu hình.** `docker-compose.prod.yml` chồng lên `docker-compose.yml`. Thêm Caddy làm lối vào duy nhất ở cổng 80 và 443, tự cấp chứng chỉ Let's Encrypt cho `AICEFR_DOMAIN`. Gateway không mở cổng nào và lấy địa chỉ người dùng từ Caddy (chỉ tin mạng nội bộ). `core` và `web` chạy với `AICEFR_HTTPS_ONLY=1` và `AICEFR_PUBLIC_URL` là địa chỉ https. Mọi dịch vụ xoay vòng nhật ký.
+- **Kịch bản trong `deploy/vps/`.** `bootstrap.sh` cài Docker, tường lửa và swap cho Ubuntu 24.04. `deploy.sh` rsync mã lên máy chủ, không bao giờ chép `.env` hay dữ liệu, rồi dựng lại. `backup.sh` và `restore.sh` sao lưu và khôi phục PostgreSQL cùng volume `uploads`, có checksum, giữ 14 ngày.
+- **Hướng dẫn:** `docs/plan/TRIEN_KHAI_VPS.md`.
+- **Giới hạn.** Chỉ dùng phi thương mại vì mô hình chấm học từ Speak & Improve theo giấy phép nghiên cứu. Không mở đăng ký. Không thu tiền thật.
+
+### 4.22. Tính lượt trên kênh NetID — D049 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án muốn đưa phần AI lên NetID và thu theo lượt bằng IDPoint (21/10/2026). Thu theo lượt ngược với BR-29, BR-30 và FR-W7 của bản dành cho trường, nên chỉ bật trên một bản triển khai riêng cho kênh NetID.
+
+**Thiết kế.**
+- **Dịch vụ `metering`** (`services/core/metering`): facade `hold` / `settle` / `is_enabled`, trang `GET /api/v1/me/credits`, `POST /api/v1/admin/credits/grant`. Kho riêng theo `AICEFR_METERING_DB`, mặc định dùng kho của `core`.
+- **Sổ lượt** (`storage/metering_repository.py`): `usage_ledger` duy nhất theo (`key`, `action`); `credit_wallet`; `free_quota` theo chu kỳ; `credit_grant` duy nhất theo (`source`, `ref`). Không có giao dịch nhiều document. Lượt miễn phí lấy bằng so-sánh-rồi-ghi trên số đã dùng; ví trừ bằng cập nhật có điều kiện `balance >= cần`. Chuyển `held` sang trạng thái khác bằng một cập nhật có điều kiện, nên chốt hai lần không đổi gì.
+- **Móc vào `assessment`:** giữ chỗ sau khi tệp ghi âm qua kiểm định dạng, trước khi lưu bài; hết lượt thì 402 và xoá tệp tạm. `scoring.settle_charge` chạy sau mọi kết cục (có kết quả, lỗi, quá hạn) và không bao giờ làm hỏng việc lưu kết quả. Một vòng quét hoàn các chỗ giữ cũ hơn hai lần thời gian chạy tối đa của job.
+- **Bảng giá** (`metering/pricing.py`): từ D057 là `price-v3-per-recording`, theo bài và phút, đo kèm token Whisper (mục 4.30); đơn vị là 1/1000 lượt, mỗi bút toán ghi phiên bản giá và số token.
+
+**Chưa làm:** adapter API IDPoint của NetID, đối soát mỗi ngày, tính lượt cho bước luyện trong bài học và lộ trình, lối vào API riêng cho NetID, Redis/BullMQ.
+
+### 4.23. Bus trên Redis và BullMQ — D050 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu dùng job worker BullMQ/Redis (21/10/2026). Redis còn dùng được cho giới hạn tần suất và bộ nhớ đệm, nên một hạ tầng thay được hai.
+
+**Thiết kế** (`platform/redis_bus.py`, cùng giao diện `MessageBus` với `InlineBus`):
+- **Việc** (`send` / `consume`): một hàng đợi BullMQ cho mỗi tên. Thử lại 3 lần, giãn cách mũ từ 2 giây. `jobId` là mã bài với `speech.score`, nên nộp lại không chấm hai lần. Ưu tiên 1 cho bài đánh giá, 5 cho bài luyện tập. Handler chạy trên luồng riêng để vòng lặp asyncio của BullMQ vẫn gia hạn khoá trong lúc Whisper chạy; worker chết thì khoá hết hạn và worker khác nhận việc. Việc xong giữ 1.000 cái gần nhất, việc hỏng giữ 5.000.
+- **Sự kiện** (`publish` / `subscribe`): mỗi chủ đề một Redis Stream, mỗi dịch vụ đăng ký là một consumer group, đọc xong thì `XACK`. Nhóm mới bắt đầu từ thời điểm đăng ký, không đọc lại lịch sử.
+- **Hỏi đáp** (`call` / `serve`): yêu cầu đẩy vào danh sách kèm hạn chót, máy trả lời đẩy kết quả vào khoá riêng có hạn 60 giây; quá giờ thì `BusTimeout`. Máy trả lời lỗi thì trả `{"error": "internal"}` ngay, không bắt người gọi chờ hết giờ.
+- **Triển khai:** `redis:7-alpine`, có mật khẩu, bật AOF để việc đang chờ còn sau khi khởi động lại, `maxmemory-policy noeviction` theo yêu cầu của BullMQ.
+
+### 4.24. Kho riêng cho từng dịch vụ, object storage, giám sát — D051 (đề xuất)
+
+**Kho dữ liệu riêng.** `learning` đọc `AICEFR_LEARNING_DB`, `metering` đọc `AICEFR_METERING_DB`; không đặt thì dùng kho của `core`. Compose dùng ba database `aicefr`, `aicefr_learning`, `aicefr_metering`. Người dùng `core` có `readWrite` trên ba database này và không có quyền ở đâu khác. Không dịch vụ nào đọc database của dịch vụ khác: xoá dữ liệu một người và xuất dữ liệu cá nhân đi qua facade như trước. `PlanRepository` tự tạo chỉ mục của mình, vì database riêng của `learning` không chạy migration của `core`. Sao lưu: một tệp `mongodump` cho mỗi database.
+
+**Object storage.** Cổng `BlobStore` có thêm `size` và `keys`. Mọi chỗ trước đây làm việc thẳng với tệp đều đi qua cổng này: nộp bài, nghe lại (dùng `FileResponse` khi có tệp cục bộ, gửi byte khi không có), chấm mù, xoá dữ liệu, lưu trữ có thời hạn, dọn tệp mồ côi. Bài nộp lưu đường dẫn tệp khi kho là thư mục, lưu khoá khi kho là object storage; `key_of` đọc khoá từ cả hai dạng, nên bản ghi cũ vẫn dùng được. `S3BlobStore` dùng thư viện `minio` và tạo bucket ở lần dùng đầu. Hai instance `core` hoặc `speech` đọc chung một bucket.
+
+**Giám sát.** `observability` có bộ đếm và histogram kèm nhãn, xuất theo định dạng Prometheus. Nhãn chỉ gồm giá trị hữu hạn, không có dữ liệu cá nhân: bước, hàng đợi, kết cục, route mẫu.
+- **Số đo:** thời gian mỗi bước pipeline (`qc`, `vad`, `asr`, `features`, `scoring`), thời gian chờ trong hàng đợi chấm, thời gian xử lý mỗi việc chấm theo mục đích (cơ sở đặt giá một lượt, mục 4 của thiết kế D049), độ trễ HTTP, số đơn vị đã thu và đã hoàn.
+- **Thu thập và hiển thị:** mỗi dịch vụ phục vụ `/metrics`; gateway trả 404 cho đường này. Prometheus có 4 luật cảnh báo: dịch vụ không trả lời, việc chấm lỗi, hàng đợi chậm, lỗi 5xx. Grafana có bảng dựng sẵn.
+
+### 4.25. Hiệu chuẩn band tuỳ chọn — D052 (đề xuất)
+
+Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình hiệu chuẩn vẫn là một mô hình ridge: hệ số nhân lambda, hệ số chặn dời theo mu. Vì vậy nó là một artifact bình thường (`ridge_resp_v2_cal.json`), đi qua `RidgeScorer` không đổi dòng nào; `contributions()` vẫn tính theo điểm hiển thị, và ngưỡng để kiểm điểm giảng viên sửa là ngưỡng của chính mô hình đã chấm. Khoảng CV+ đi kèm dùng năm mô hình fold giãn cùng lambda. Công cụ sinh: `tools/calibrate_bands.py`.
+
+### 4.26. Gói lượt — D053 (đề xuất)
+
+Đơn `kind = credits` dùng lại máy trạng thái đơn của D033/D035; khác ở bước cuối: thay vì cấp giấy phép, `BillingService.credit_order` gọi `metering.credit(account_id, runs, order_id)`. Metering cộng một lần nhờ chỉ mục duy nhất (`source`, `ref`) của `credit_grant`, còn billing ghi `credited_at` sau khi cộng xong. Nếu lời gọi lỗi, đơn vẫn đã thanh toán và được cộng ở lần gọi sau.
+
+### 4.27. Lớp học và giao bài — D054 (đề xuất)
+
+Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
+
+### 4.28. Nhắc việc — D055 (đề xuất)
+
+`GET /api/v1/me/nudges` ở dịch vụ web (gateway chuyển như `/api/v1/me/badges`), gom số liệu từ `assessment` (bài được giao, mục tiêu hôm nay), `learning` (ôn tập) và `metering` (lượt còn lại), rồi áp quy tắc thuần `practice/nudges.py`.
+
+### 4.29. Tự nghe lại có mốc đối chứng — D056 (đề xuất)
+
+`report/replay.py` chọn đoạn từ evidence có mốc thời gian và từ bản chép (đoạn đối chứng cần ít nhất 3 từ, cách mọi cờ 1 giây); hạt giống là băm của mã bài nên mỗi lần mở đều ra cùng các đoạn. Nhãn lưu trong `replay_label` (migration 5) kèm nguồn đoạn, để phân tích không phải tính lại. API: `GET/POST /api/v1/responses/{id}/replay[/{moment}]`, `GET /api/v1/me/replay-labels`, `GET /api/v1/admin/replay/report`.
+
+### 4.30. Bảng giá theo bài, đo kèm token — D057 (đề xuất)
+
+`PriceList` gồm lượt cho bài tới 1 phút, lượt cho mỗi phút thêm, hệ số bài luyện tập và số IDPoint mỗi lượt. Các giá trị đọc từ `AICEFR_PRICE_FIRST_MINUTE_RUNS`, `AICEFR_PRICE_EXTRA_MINUTE_RUNS`, `AICEFR_PRICE_PRACTICE_FACTOR`, `AICEFR_IDPOINT_PER_RUN` (mặc định 1,0 / 0,7 / 0,5 / 2.000 theo bảng giá team chốt ngày 24/10/2026) và được truyền vào `MeteringFacade`.
+
+- **Giữ chỗ:** `hold_for` tính theo thời lượng tối đa của đề; `GET /api/v1/me/credits/quote` trả giá đó để trang Nộp bài hiện trước khi ghi âm.
+- **Chốt:** `scoring.settle_charge` gửi thời lượng, `Transcript.output_tokens` và số từ. Facade thu theo thời lượng thật và ghi `input_tokens`, `output_tokens`, `usage_estimated` vào bút toán, dùng để tính giá vốn và đối soát với NetID.
+
+Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+
 ## 5. Thiết kế cơ sở dữ liệu
 
 ### 5.1. Bảng, khóa và ràng buộc
@@ -2658,7 +2762,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | 10 | `FeatureExtractor` | 02, 03, 04 | `src/aicefr/features/extract.py` | Lớp thật; 19 đặc trưng, `feature_version = "v3"` |
 | 11 | `Scorer` (port) | 02, 03, 04 | `src/aicefr/ports.py` | `Protocol`; lõi chỉ nhắc tên này |
 | 12 | `RidgeScorer` (adapter) | 02, 03, 04 | `src/aicefr/scoring/scorer.py` | Hồi quy tuyến tính hiệu chỉnh; `RidgeModel` riêng **chưa hiện thực** |
-| 13 | Trọng số mô hình | 04 | `src/aicefr/scoring/models/ridge_resp_v1.json` | JSON đọc được bằng mắt, không dùng pickle |
+| 13 | Trọng số mô hình | 04 | `$AICEFR_MODEL_DIR/ridge_resp_v1.json` (ngoài repo; SHA-256 ghim trong `src/aicefr/scoring/artifacts.py`) | JSON đọc được bằng mắt, không dùng pickle; test dùng bản tổng hợp `tests/fixtures/models` |
 | 14 | `BertTextGrader` | 04 | `notebooks/deberta_cefr_thang.ipynb` | **Chưa hiện thực trong app.** Mô hình DeBERTa đã huấn luyện và bàn giao (mục 4.5 bước 2), nhưng chưa có adapter nào của cổng `Scorer`; bước hợp nhất cũng chưa |
 | 15 | `EvidenceBuilder` | 02, 03, 04 | `src/aicefr/report/evidence.py` | Lớp thật; ngưỡng `lowProb`, `longPauseS`, `maxPerKind` |
 | 16 | `ReviewRouter` | 02, 03, 04 | `src/aicefr/review/router.py` | Lớp thật; ngưỡng duy nhất là thuộc tính `lowAsrConf` |
@@ -2760,9 +2864,9 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: mỗi điểm số truy ngược được tới các đặc trưng cụ thể; độ lệch giữa hai nhánh trở thành tín hiệu confidence hữu ích. Tiêu cực: trọng số cố định chưa tối ưu; (d) bị loại vì dữ liệu pilot quá nhỏ để học thêm một tầng nữa mà không overfit.
 - **Trạng thái hiện thực (cập nhật 15/09/2026).** Mã **đang chạy** vẫn chỉ có nhánh (a): `RidgeScorer` chạy hồi quy tuyến tính đã hiệu chỉnh, nạp từ tệp JSON. `confidence` của từng tiêu chí vì thế vẫn là tỷ lệ đặc trưng tính được, **không** phải độ lệch giữa hai nhánh như phương án (c) mô tả.
 
-  Nhánh (b) thì **đã có mô hình**: `deberta-v3-base` fine-tune trên bản chép lời, PCC overall 0,8273 trên dev (`docs/reports/deberta_cefr_finetune_thang.md`, hai notebook trong `notebooks/`). Trọng số và dự đoán từng mẫu **không** nằm trong repo — corpus Speak & Improve là phi thương mại, không được phát tán.
+  Nhánh (b) thì **đã có mô hình**: `deberta-v3-base` fine-tune trên bản chép lời, đã đánh giá trên dev (số đo không công bố khi CUP&A chưa cho phép; `docs/reports/deberta_cefr_finetune_thang.md`, hai notebook trong `notebooks/`). Trọng số và dự đoán từng mẫu **không** nằm trong repo — corpus Speak & Improve là phi thương mại, không được phát tán.
 
-  Bước hợp nhất vẫn **chưa hiện thực**, và không phải vì thiếu thời gian. Trọng số `w = 0.6` chỉ có nghĩa khi đo được hai nhánh trên **cùng một tập mà cả hai đều chưa từng thấy**, và tập đó hiện **không tồn tại**: `ridge_resp_v2` huấn luyện trên chính 876 mẫu dev P3+P4 mà DeBERTa dùng làm tập đánh giá. Chốt một trọng số trước khi có tập so sánh thứ ba là chốt một con số không ai kiểm chứng được. Phân tích đầy đủ ở `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
+  Bước hợp nhất vẫn **chưa hiện thực**, và không phải vì thiếu thời gian. Trọng số `w = 0.6` chỉ có nghĩa khi đo được hai nhánh trên **cùng một tập mà cả hai đều chưa từng thấy**, và tập đó hiện **không tồn tại**: `ridge_resp_v2` huấn luyện trên chính các mẫu dev P3+P4 mà DeBERTa dùng làm tập đánh giá. Chốt một trọng số trước khi có tập so sánh thứ ba là chốt một con số không ai kiểm chứng được. Phân tích đầy đủ ở `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
 
 ### ADR-03 — SQLite cho phát triển, PostgreSQL cho staging
 
@@ -2821,7 +2925,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 
 ### ADR-10 — Thành tựu ghi công sức, lưu khi đạt, không bảng xếp hạng
 
-- **Bối cảnh.** Chủ dự án muốn tăng mức gắn bó của người học bằng chuỗi ngày và thành tựu như các ứng dụng học phổ biến. Hai rủi ro đi kèm: thưởng theo điểm dạy người học rằng con số mới là mục tiêu, trong khi điểm của hệ thống có sai số cỡ nửa band (RMSE 0,53 trên thang 0–6); và so với bạn cùng lớp làm người đứng cuối nản lòng (Hanus và Fox 2015, khoá học có huy hiệu kèm bảng xếp hạng).
+- **Bối cảnh.** Chủ dự án muốn tăng mức gắn bó của người học bằng chuỗi ngày và thành tựu như các ứng dụng học phổ biến. Hai rủi ro đi kèm: thưởng theo điểm dạy người học rằng con số mới là mục tiêu, trong khi điểm của hệ thống có sai số cỡ nửa band trên thang 0–6; và so với bạn cùng lớp làm người đứng cuối nản lòng (Hanus và Fox 2015, khoá học có huy hiệu kèm bảng xếp hạng).
 - **Phương án.** (a) Tính thành tựu mỗi lần xem, không lưu. (b) Lưu khi đạt, không bao giờ lấy lại. (c) Điểm kinh nghiệm và bảng xếp hạng theo lớp.
 - **Chọn.** (b), chỉ trên dữ kiện công sức; loại (c).
 - **Hệ quả.** Tích cực: ngày đạt có thật để ghi; xoá một lượt luyện — quyền của người học — hay một lần giảng viên sửa nhận định không làm người học mất gì, nên không ai bị phạt vì trung thực. Tiêu cực: một bảng nữa phải xoá khi xoá dữ liệu người học (đã nằm trong `erase_account`); thành tựu có thể còn sau khi dữ kiện của nó không còn, và điều đó được nói rõ ở BR-28 thay vì giấu.
@@ -2875,6 +2979,30 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: còn hai tiến trình web và một vai trò cơ sở dữ liệu; lời gọi giữa tài khoản, bài nộp, bài học, gói thành lời gọi hàm; `speech` vẫn tách riêng với ảnh nặng và không giữ khoá. Tiêu cực: một lỗi trong `core` ảnh hưởng mọi API; vai trò PostgreSQL không còn chặn phần này đọc bảng phần kia — chỉ quy ước mã chặn. Giảm thiểu: facade và kiểm thử ranh giới giữ nguyên, tách lại chỉ là đổi dây nối.
 - **Trạng thái hiện thực.** Đã hiện thực ở D044 (mục 4.18, Hình 6).
 
+### ADR-17 — Lược đồ có phiên bản bằng bộ chạy migration nhỏ, không Alembic (đề xuất)
+
+- **Bối cảnh.** Phải "chốt database"; lược đồ do chín repository tự tạo, không có phiên bản (D045).
+- **Phương án.** (a) Chỉ ghi tài liệu. (b) SQLAlchemy và Alembic. (c) Bộ chạy migration riêng: phiên bản 1 là lược đồ hiện có, sau đó là các migration SQL đánh số, kèm bản chụp lược đồ được kiểm thử.
+- **Chọn.** (c). Đây là đề xuất, chờ chủ dự án xác nhận.
+- **Hệ quả.** Tích cực: biết kho ở phiên bản nào, tự nâng cấp khi khởi động, không đổi lược đồ lén được. Tiêu cực: phiên bản 1 vẫn dựng bằng repository nên chuỗi `SCHEMA` cũ không được sửa nữa; chưa có migration lùi phiên bản. Giảm thiểu: sao lưu trước khi nâng (D047).
+- **Trạng thái hiện thực.** Đã hiện thực (mục 4.19).
+
+### ADR-18 — Model lộ trình chọn và xếp bài, không viết bài (đề xuất)
+
+- **Bối cảnh.** Cần model tạo lộ trình theo ý giáo viên hoặc sinh viên. D025 cấm model ngôn ngữ viết nội dung bài; dự án ưu tiên chạy cục bộ và mô hình giải thích được (AGENTS.md).
+- **Phương án.** (a) Ghép từ bài có sẵn: chấm mức phù hợp giải thích được, thứ tự học từ lộ trình hiện có. (b) LLM cục bộ viết bài mới. (c) LLM qua API.
+- **Chọn.** (a): giữ D025, không thêm phụ thuộc hay dịch vụ ngoài (chỉ dùng `numpy` sẵn có), mỗi lựa chọn có lý do. Đây là đề xuất.
+- **Hệ quả.** Lộ trình chỉ tốt bằng kho bài hiện có; ít bài thì có cảnh báo, không bịa bài. Trọng số cần hiệu chỉnh khi có dữ liệu người dùng thật.
+- **Trạng thái hiện thực.** Đã hiện thực (mục 4.20).
+
+### ADR-19 — Một máy chủ, Docker Compose, Caddy cấp HTTPS (đề xuất)
+
+- **Bối cảnh.** Cần đưa hệ thống lên mạng cho GVHD, nhóm và sinh viên khảo sát (D047).
+- **Phương án.** (a) Một VPS chạy đúng bộ compose hiện có, Caddy phía trước. (b) Máy cá nhân cộng Cloudflare Tunnel. (c) PaaS (Render, Railway, Fly.io).
+- **Chọn.** (a): ít thay đổi nhất so với bộ đã kiểm (D044), chi phí dự đoán được, dữ liệu nằm trên một máy. Đây là đề xuất; nhà cung cấp và tên miền do chủ dự án chọn.
+- **Hệ quả.** Một điểm hỏng duy nhất; sao lưu nằm trên cùng máy cho tới khi có nơi lưu ngoài.
+- **Trạng thái hiện thực.** Bộ cấu hình và kịch bản đã có, đã chạy thử cục bộ; chưa triển khai lên máy chủ thật.
+
 ---
 
 ## 9. Rủi ro thiết kế và phương án dự phòng
@@ -2902,7 +3030,8 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/01b_usecase_giangvien.mmd` | Use case b | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/01c_usecase_quantri.mmd` | Use case c | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/02_class.drawio` | Sơ đồ lớp | draw.io |
-| `docs/sdd/diagrams/02b_kien_truc.puml` | Kiến trúc: cổng và bộ chuyển đổi | PlantUML |
+| `docs/sdd/diagrams/02b_kien_truc.puml` | Kiến trúc tổng thể | PlantUML |
+| `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | Cổng và bộ chuyển đổi | PlantUML |
 | `docs/sdd/diagrams/03_sequence.mmd` | Sequence | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/04_activity.mmd` | Activity | Mermaid `flowchart TD` |
 | `docs/sdd/diagrams/05_erd.mmd` | ERD chấm điểm và vận hành | Mermaid `erDiagram` |

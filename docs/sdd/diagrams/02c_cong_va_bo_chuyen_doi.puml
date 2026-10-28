@@ -1,0 +1,126 @@
+@startuml 02c_cong_va_bo_chuyen_doi
+!include _style.iuml
+
+title Cổng và bộ chuyển đổi — chỗ hệ thống cắm ra bên ngoài
+
+' =====================================================================
+'  Moi cong (interface) duoc khai bao BEN TRONG loi va hien thuc ben
+'  ngoai; doi mot bo chuyen doi khong cham vao ma nghiep vu. Moi hang la
+'  mot nhom: cong ben trai, cac bo chuyen doi thay the duoc ben phai.
+'  Cong ResponseStore CO Y khong ve: Repository duoc goi qua hon hai muoi
+'  phuong thuc ngoai cong, ve no nhu mot seam se hua mot thu chua co.
+' =====================================================================
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 70
+
+package "Âm thanh và nhận dạng (speech)" as Audio {
+  interface AudioDecoder <<interface>>
+  class FirstMatchDecoder <<adapter>>
+  class SoundFileDecoder <<adapter>>
+  class FfmpegDecoder <<adapter>>
+  interface AsrEngine <<interface>>
+  class WhisperEngine <<adapter>>
+  class FakeAsrEngine <<adapter>>
+  interface VoiceActivityDetector <<interface>>
+  class SileroVad <<adapter>>
+  class EnergyVad <<adapter>>
+  interface Scorer <<interface>>
+  class RidgeScorer <<adapter>>
+}
+
+package "Giao tiếp giữa dịch vụ (D050)" as Comm {
+  interface MessageBus <<interface>>
+  class RedisBus <<adapter>>
+  class InlineBus <<adapter>>
+  interface JobQueue <<interface>>
+  class InProcessJobQueue <<adapter>>
+  class InlineJobQueue <<adapter>>
+}
+
+package "Tệp, thanh toán, giới hạn" as Edge {
+  interface BlobStore <<interface>>
+  class LocalBlobStore <<adapter>>
+  class S3BlobStore <<adapter>>
+  interface PaymentGateway <<interface>>
+  class SandboxGateway <<adapter>>
+  class VnpayGateway <<adapter>>
+  class StripeGateway <<adapter>>
+  class MomoGateway <<adapter>>
+  interface RateLimiter <<interface>>
+  class InMemoryRateLimiter <<adapter>>
+}
+
+package "Lưu trữ MongoDB (D048)" as Store {
+  class MongoStore <<base>>
+  class Repository <<repository>>
+  class AuthRepository <<repository>>
+  class ConsentRepository <<repository>>
+  class TaskRepository <<repository>>
+  class RatingRepository <<repository>>
+  class StudyRepository <<repository>>
+  class ClassroomRepository <<repository>>
+  class ReplayRepository <<repository>>
+  class BillingRepository <<repository>>
+  class LessonRepository <<repository>>
+  class PlanRepository <<repository>>
+  class MeteringRepository <<repository>>
+  class AuditLog <<repository>>
+}
+
+AudioDecoder          <|.. FirstMatchDecoder
+AudioDecoder          <|.. SoundFileDecoder
+AudioDecoder          <|.. FfmpegDecoder
+AsrEngine             <|.. WhisperEngine
+AsrEngine             <|.. FakeAsrEngine
+VoiceActivityDetector <|.. SileroVad
+VoiceActivityDetector <|.. EnergyVad
+Scorer                <|.. RidgeScorer
+MessageBus            <|.. RedisBus
+MessageBus            <|.. InlineBus
+JobQueue              <|.. InProcessJobQueue
+JobQueue              <|.. InlineJobQueue
+BlobStore             <|.. LocalBlobStore
+BlobStore             <|.. S3BlobStore
+PaymentGateway        <|.. SandboxGateway
+PaymentGateway        <|.. VnpayGateway
+PaymentGateway        <|.. StripeGateway
+PaymentGateway        <|.. MomoGateway
+RateLimiter           <|.. InMemoryRateLimiter
+MongoStore            <|-- Repository
+MongoStore            <|-- AuthRepository
+MongoStore            <|-- ConsentRepository
+MongoStore            <|-- TaskRepository
+MongoStore            <|-- RatingRepository
+MongoStore            <|-- StudyRepository
+MongoStore            <|-- ClassroomRepository
+MongoStore            <|-- ReplayRepository
+MongoStore            <|-- BillingRepository
+MongoStore            <|-- LessonRepository
+MongoStore            <|-- PlanRepository
+MongoStore            <|-- MeteringRepository
+MongoStore            <|-- AuditLog
+
+note right of FirstMatchDecoder
+  Composite: giữ các bộ giải mã khác,
+  ủy thác cho bộ đầu tiên đọc được tệp.
+end note
+note right of S3BlobStore
+  D051: AICEFR_BLOBS=s3://bucket;
+  hai máy core/speech đọc chung một bucket.
+end note
+note right of SandboxGateway
+  Mọi cổng mặc định ở chế độ thử;
+  hệ thống chỉ tin kết quả đúng chữ ký,
+  đúng cổng, đúng số tiền.
+end note
+note right of InlineBus
+  Chạy cùng tiến trình: cho kiểm thử
+  và một máy đơn. RedisBus cho triển khai.
+end note
+' Bo cuc: hai cot -- am thanh canh tep/thanh toan, giao tiep canh luu tru.
+FfmpegDecoder -[hidden]-> BlobStore
+RedisBus -[hidden]-> MongoStore
+@enduml
