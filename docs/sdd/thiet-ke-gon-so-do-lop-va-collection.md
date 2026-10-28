@@ -20,13 +20,21 @@
   - từ có mốc thời gian, phép đo, nhận xét gắn bằng chứng;
   - nhiệm vụ của đề, nhãn nghe lại, các lần cộng lượt.
 - **Miền giá trị** là một enum, và thuộc tính lấy enum làm kiểu, ví dụ `role: Role`, `band: Band [0..1]`.
-  - Enum đặt dưới cột của thực thể dùng nó. `Band`, `Criterion` dùng ở nhiều cột thì đặt dưới cột đề và bài nói.
-  - Không vẽ đường phụ thuộc tới enum: tên kiểu trên thuộc tính đã nói quan hệ, và riêng `Band` có bảy lớp dùng.
+  - Enum đặt trong khung của thực thể dùng nó. `Band`, `Criterion`, `TaskPurpose` dùng ở nhiều khung thì đặt trong khung Đánh giá.
+  - Thực thể nối tới enum nó dùng bằng đường phụ thuộc UML: nét đứt, mũi tên mở ở phía enum. Có 22 đường như vậy, riêng `Band` có bảy lớp dùng.
   - Hai enum đặt tên khác code để khỏi nhầm: `ResponseStatus` (code: `Status`), `ServicePlan` (code: `Plan`, trùng nghĩa với `LearningPlan`).
 - **Khoá ngoài** không ghi thành thuộc tính.
   - Quan hệ là đường nối, bội số ghi ở hai đầu đường.
   - Kim cương đặc là hợp thành: phần mất theo toàn thể.
   - Đường đậm không mũi tên là quan hệ nhiều–nhiều.
+- **Khung theo phần nghiệp vụ.** Sáu khung, mỗi khung một nhóm thực thể:
+  - hàng trên: Nghiên cứu, Định danh, Thương mại;
+  - hàng dưới: Lớp học, Đánh giá, Học tập.
+  - Định danh ở giữa hàng trên vì `Account` nối tới mọi khung. Đánh giá ở giữa hàng dưới vì bốn khung còn lại đều nối vào bài nói hoặc `Band`.
+  - Đường đi vuông góc, do `tools/zone_layout.py` tìm:
+    - không đi xuyên hộp;
+    - không chồng lên đường khác hay chạy sát viền khung;
+    - đi giữa hai khung thì theo hành lang, không cắt ngang khung thứ ba.
 - **Chung trường giữa `Task` và `Step` thì chấp nhận lặp**, vì không có lớp cha. Hai lớp khác vòng đời:
   - đề có phiên bản lời đề;
   - bước nằm trong một phiên bản bài học.

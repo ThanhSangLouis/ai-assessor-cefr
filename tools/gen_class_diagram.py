@@ -461,16 +461,55 @@ EDGES = [
     ("Order", "Wallet", "0..* : 0..1", "assoc"),
 ]
 
-# Enumeration nam duoi cot cua thuc the dung no; enumeration dung o nhieu cot
-# (Band, Criterion) o cot cua de va bai noi.
-COLUMNS = [
-    (40, ["Order", "License", "Wallet", "Ledger", "OrderKind", "OrderSt"]),
-    (40 + COL_DX, ["Batch", "Rating", "Study", "Part", "StudySt", "SvcPlan", "LedgerSt"]),
-    (40 + 2 * COL_DX, ["Audit", "Account", "Class", "Asg", "Role"]),
-    (40 + 3 * COL_DX, ["Task", "Resp", "Review", "Band", "Status"]),
-    (40 + 4 * COL_DX, ["Plan", "RevItem", "Attempt", "Purpose", "Criterion"]),
-    (40 + 5 * COL_DX, ["Path", "Unit", "Lesson", "Step", "PathSt", "StepKind"]),
+# Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
+# lay lam kieu.
+EDGES += [
+    (src, enum, "", "enum")
+    for src, enum in [
+        ("Account", "Role"),
+        ("Plan", "Role"),
+        ("Task", "Band"),
+        ("Resp", "Band"),
+        ("Review", "Band"),
+        ("Rating", "Band"),
+        ("Path", "Band"),
+        ("Unit", "Band"),
+        ("Lesson", "Band"),
+        ("Task", "Criterion"),
+        ("Lesson", "Criterion"),
+        ("Task", "Purpose"),
+        ("Resp", "Purpose"),
+        ("Ledger", "Purpose"),
+        ("Resp", "Status"),
+        ("Study", "StudySt"),
+        ("Path", "PathSt"),
+        ("Step", "StepKind"),
+        ("Order", "OrderKind"),
+        ("Order", "OrderSt"),
+        ("License", "SvcPlan"),
+        ("Ledger", "LedgerSt"),
+    ]
 ]
+
+# Khung theo phan nghiep vu (`tools/zone_layout.py`). Dinh danh o giua hang tren
+# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Nghien cuu, Lop
+# hoc, Thuong mai va Hoc tap deu noi vao bai noi hoac `Band`.
+# (khoa, tieu de, hang, [(cot, [hop, ...])]); (hop, dy) dat hop cach dinh hang dy.
+ZONES = [
+    ("research", "Nghiên cứu: chấm mù, thực nghiệm", 0,
+     [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
+    ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
+    ("commerce", "Thương mại: gói dịch vụ, tính lượt", 0,
+     [(4, ["Wallet", "Ledger", "LedgerSt"]), (5, ["Order", "License"]),
+      (6, ["OrderKind", "OrderSt", "SvcPlan"])]),
+    ("classroom", "Lớp học", 1, [(0, ["Class", "Asg"])]),
+    ("assessment", "Đánh giá", 1,
+     [(1, ["Task"]), (2, ["Resp", "Review"]), (3, ["Purpose", "Status", "Band", "Criterion"])]),
+    ("learning", "Học tập", 1,
+     [(4, ["Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+      (6, ["PathSt", ("StepKind", 788)])]),
+]  # fmt: skip
+COLUMNS = []
 
 # `--spec v3`: sinh THIET KE DICH tu `tools/class_spec_v3.py` thay cho so do
 # hien trang o tren. Cung bo cuc, cung bo dinh tuyen canh, chi khac dac ta --
@@ -485,6 +524,7 @@ if "--spec" in sys.argv:
     CLASSES, ENUMS, EDGES = _spec.CLASSES, _spec.ENUMS, _spec.EDGES
     COLUMNS = [(40 + i * COL_DX, ids) for i, ids in enumerate(_spec.COLUMN_IDS)]
     PAGE_NAME = _spec.PAGE_NAME
+    ZONES = None
     if "--out" not in sys.argv:
         OUT = ROOT / _spec.OUT
 
@@ -529,6 +569,11 @@ STYLE = {
 
 SPEC = {c[0]: c for c in CLASSES + ENUMS}
 GEO: dict[str, tuple[int, int, int]] = {}
+if ZONES:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import zone_layout
+
+    GEO, ZONE_OF, FRAMES = zone_layout.place(ZONES, lambda cid: TITLE_H + LH * len(SPEC[cid][2]), W)
 for _x, _ids in COLUMNS:
     _y = 40
     for _cid in _ids:
@@ -787,7 +832,8 @@ def build_routes():
     return routes
 
 
-ROUTES = build_routes()
+ROUTES = {} if ZONES else build_routes()
+ZONE_ROUTES = zone_layout.route(EDGES, GEO, ZONE_OF, FRAMES, W) if ZONES else {}
 
 
 # Doi mot vai nhan ra khoi cho co duong khac cat qua. Chi can khi mot canh di
@@ -842,14 +888,81 @@ def edge(i, src, dst, label, kind):
     return cells
 
 
+ZONE_STYLE = (
+    "rounded=1;arcSize=2;whiteSpace=wrap;html=1;fillColor=#f6f8fb;strokeColor=#8a96a8;"
+    "verticalAlign=top;align=left;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=16;"
+    "fontColor=#2b3442;"
+)
+LABEL_STYLE = (
+    "text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
+    "labelBackgroundColor=#ffffff;fontSize=11;fontColor=#000000;spacing=0;"
+)
+
+
+def zone_frame(key):
+    name, x, y, w, h = FRAMES[key]
+    return (
+        f'<mxCell id="zone-{key}" value="{html.escape(name)}" style="{ZONE_STYLE}" '
+        f'vertex="1" parent="1"><mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" '
+        f'as="geometry"/></mxCell>'
+    )
+
+
+def zone_edge(i, src, dst, label, kind):
+    """An edge along its routed path, multiplicities beside the two ports.
+
+    The labels are free text cells placed at the port rather than labels of the
+    edge: a label of the edge sits at a fraction of the path, which on a long
+    path lands far from the box it belongs to.
+    """
+    pts, side_out, side_in = ZONE_ROUTES[i]
+    (x0, y0), (x1, y1) = pts[0], pts[-1]
+    sx, sy, sh = GEO[src]
+    tx, ty, th = GEO[dst]
+    anchors = (
+        f"exitX={(x0 - sx) / W:.4f};exitY={(y0 - sy) / sh:.4f};exitPerimeter=0;"
+        f"entryX={(x1 - tx) / W:.4f};entryY={(y1 - ty) / th:.4f};entryPerimeter=0;"
+    )
+    style = STYLE[kind].replace("edgeStyle=orthogonalEdgeStyle;", "edgeStyle=none;")
+    inner = "".join(f'<mxPoint x="{x}" y="{y}"/>' for x, y in pts[1:-1])
+    cells = [
+        f'<mxCell id="e{i}" style="{style}{anchors}" edge="1" parent="1" '
+        f'source="{src}" target="{dst}"><mxGeometry relative="1" as="geometry">'
+        f'<Array as="points">{inner}</Array></mxGeometry></mxCell>'
+    ]
+    if kind == "enum" or " : " not in label:
+        return cells
+    for k, (txt, (px, py), side) in enumerate(
+        zip(label.split(" : "), (pts[0], pts[-1]), (side_out, side_in), strict=True)
+    ):
+        txt = txt.strip()
+        w, h = 7 * len(txt) + 6, 16
+        if side == "R":
+            lx, ly = px + 4, py - h - 1
+        elif side == "L":
+            lx, ly = px - w - 4, py - h - 1
+        elif side == "B":
+            lx, ly = px + 3, py + 2
+        else:
+            lx, ly = px + 3, py - h - 2
+        cells.append(
+            f'<mxCell id="e{i}l{k}" value="{html.escape(txt)}" style="{LABEL_STYLE}" '
+            f'vertex="1" parent="1"><mxGeometry x="{lx}" y="{ly}" width="{w}" '
+            f'height="{h}" as="geometry"/></mxCell>'
+        )
+    return cells
+
+
 def main() -> None:
     cells: list[str] = []
+    for key in FRAMES if ZONES else []:
+        cells.append(zone_frame(key))
     for c in CLASSES:
         cells += box(c[0], c[1], c[2], BOX)
     for e in ENUMS:
         cells += box(e[0], e[1], e[2], ENUMBOX)
     for i, (src, dst, label, kind) in enumerate(EDGES):
-        cells += edge(i, src, dst, label, kind)
+        cells += (zone_edge if ZONES else edge)(i, src, dst, label, kind)
 
     body = "".join("\n        " + c for c in cells)
     page_id = PAGE_NAME.lower().replace(" ", "-")
