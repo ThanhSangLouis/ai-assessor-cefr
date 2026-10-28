@@ -20,8 +20,8 @@
 
   {% if mode == "preview" %}
   <div class="notice notice-info" id="preview-note">
-    <b>Xem thử bản nháp.</b> Bạn đang xem nội dung sinh viên sẽ thấy. Chế độ xem thử chỉ đọc;
-    không gửi hoặc lưu bản ghi.
+    <b>Xem thử bản nháp.</b> Bạn đang thấy bài học đúng như sinh viên sẽ thấy. Bản ghi của bạn
+    được đo rồi bỏ đi, không lưu và không tính vào thống kê.
   </div>
   {% endif %}
   <div class="notice notice-danger" id="consent-gate" hidden></div>
@@ -35,7 +35,7 @@
 
     <section class="card step-card" id="step-card" aria-labelledby="step-h">
       <div id="step-body"></div>
-      <form id="step-form" class="step-recorder"{% if mode == "preview" %} hidden{% endif %}>
+      <form id="step-form" class="step-recorder">
         {% with submit_label="Nộp lượt này",
                  floor_seconds=1,
                  upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ (max_size_mib or 25) ~ " MiB." %}
@@ -50,6 +50,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script src="{{ asset('learning_recorder.js') }}"></script>
+<script src="{{ asset('recorder.js') }}"></script>
 <script src="{{ asset('lesson.js') }}"></script>
 {% endblock %}

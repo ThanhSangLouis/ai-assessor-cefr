@@ -5,8 +5,10 @@
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("chart") }}</span>Thực nghiệm phản hồi</h1>
   <p class="lede">
-    Các study chỉ bao gồm học viên đã đồng ý dùng dữ liệu cho nghiên cứu. Màn hình này dùng API M13 hiện có;
-    danh sách ID được lưu cục bộ vì API chưa cung cấp route liệt kê.
+    Nhận xét gắn bằng chứng có giúp người học tiến bộ hơn <b>chỉ xem điểm</b> không?
+    Học viên đang cho phép dùng dữ liệu nghiên cứu được chia ngẫu nhiên vào hai nhóm;
+    nhóm “Chỉ điểm” chỉ thấy điểm và mức trong thời gian thực nghiệm. Học viên rời
+    thực nghiệm được bất cứ lúc nào. Quy trình đầy đủ ở <code>docs/research/PROTOCOL_D040.md</code>.
   </p>
 </div>
 
@@ -15,25 +17,16 @@
   <a class="button secondary" href="/admin">Về trang quản trị</a>
 </div>
 
-<section class="card" id="study-new" aria-labelledby="study-new-h">
+<section class="card" id="study-new" aria-labelledby="study-new-h" hidden>
   <div class="card-head"><h2 id="study-new-h">Bắt đầu thực nghiệm</h2></div>
   <form id="study-form" class="stack">
     <label>Tên thực nghiệm
-      <input name="title" required minlength="3" maxlength="120" value="Thực nghiệm phản hồi học kỳ 1">
+      <input name="name" required minlength="3" maxlength="120" value="Thực nghiệm phản hồi học kỳ 1">
     </label>
     <label>Số ngày tối thiểu giữa bài đầu và bài cuối
       <input name="min_days" type="number" min="1" max="120" value="14" required>
     </label>
-    <div class="button-row"><button type="submit" class="button">Tạo study dạng nháp</button></div>
-  </form>
-</section>
-
-<section class="card" aria-labelledby="study-open-h">
-  <div class="card-head"><h2 id="study-open-h">Mở study bằng ID</h2></div>
-  <form id="study-open-form" class="inline-field">
-    <label for="study-id-input">Study ID</label>
-    <input id="study-id-input" name="study_id" required autocomplete="off">
-    <button type="submit" class="secondary">Mở study</button>
+    <div class="button-row"><button type="submit" class="button">Chia nhóm và bắt đầu</button></div>
   </form>
 </section>
 

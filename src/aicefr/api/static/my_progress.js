@@ -28,7 +28,7 @@ function shortDate(iso) {
 // Task titles for the table: "P3" means nothing to a student. A failed call
 // keeps the ids.
 let titles = {};
-const loadTitles = fetch("/api/student/tasks")
+const loadTitles = fetch("/api/v1/tasks")
   .then((r) => (r.ok ? r.json() : []))
   .then((rows) => {
     (rows || []).forEach((t) => {
@@ -37,21 +37,14 @@ const loadTitles = fetch("/api/student/tasks")
   })
   .catch(() => {});
 
-const loadReliableChange = fetch("/api/v1/me/reliable-change")
-  .then((r) => (r.ok ? r.json() : null))
-  .catch(() => null);
-
 const progressDone = Promise.all([
-  fetch("/api/student/progress").then((r) =>
-    window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)
-  ),
+  fetch("/api/v1/me/progress").then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json())),
   loadTitles,
-  loadReliableChange,
 ])
-  .then(([d, , reliableChange]) => {
+  .then(([d]) => {
     if (d === null) return;
     window.clearBusy(panel);
-    panel.innerHTML = build(d, reliableChange);
+    panel.innerHTML = build(d);
     window.wrapTables(panel);
   })
   .catch(() => {
@@ -59,42 +52,6 @@ const progressDone = Promise.all([
     panel.innerHTML =
       '<div class="empty-state"><div class="empty-mark" aria-hidden="true">⚠</div>' +
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
-  });
-
-const effortPanel = document.getElementById("effort-progress");
-const effortBody = document.getElementById("effort-body");
-function effortView(d) {
-  const seconds = Math.round(Number(d.today_seconds) || 0);
-  const goal = Math.max(1, Number(d.goal_seconds) || 1);
-  const pct = Math.min(100, Math.round((seconds / goal) * 100));
-  const rest = new Set(d.rest_days || []);
-  const week = (d.week || []).map((item) => {
-    const day = new Date(`${item.date}T00:00:00`);
-    const label = Number.isNaN(day.getTime()) ? item.date : ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][day.getDay()];
-    const value = Math.round(Number(item.seconds) || 0);
-    const state = value > 0 ? "on" : rest.has(item.date) ? "rest" : "";
-    return `<li class="${state}" title="${window.escapeHtml(window.ui.dmy(item.date))}: ${value} giây"><span class="dot"></span>${label}</li>`;
-  }).join("");
-  return '<div class="stat-grid">' +
-    `<div class="stat"><b>${seconds}/${goal}</b><span>giây luyện nói hôm nay</span></div>` +
-    `<div class="stat"><b>${Number(d.streak_days) || 0}</b><span>ngày liên tiếp</span></div>` +
-    `<div class="stat"><b>${Number(d.record_days) || 0}</b><span>ngày là kỷ lục</span></div></div>` +
-    `<progress class="bar native-progress effort-progress" aria-label="Mục tiêu luyện nói hôm nay" max="${goal}" value="${Math.min(seconds, goal)}">${pct}%</progress>` +
-    `<p>${d.goal_met ? "Đã đạt mục tiêu hôm nay." : `Còn ${Math.max(0, goal - seconds)} giây để đạt mục tiêu hôm nay.`}</p>` +
-    `<ol class="week-dots" aria-label="Thời lượng nói bảy ngày gần nhất">${week}</ol>` +
-    `<p class="muted">7 ngày qua: ${Math.round(Number(d.week_seconds) || 0)} giây · 7 ngày trước: ${Math.round(Number(d.previous_week_seconds) || 0)} giây</p>`;
-}
-
-fetch("/api/v1/me/learning/progress")
-  .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)))
-  .then((d) => {
-    if (!d) return;
-    window.clearBusy(effortPanel);
-    effortBody.innerHTML = effortView(d);
-  })
-  .catch(() => {
-    window.clearBusy(effortPanel);
-    effortBody.innerHTML = '<p class="error">Chưa tải được thời lượng luyện tập.</p>';
   });
 
 // D042: "progress" only when the rise is larger than the measurement error.
@@ -124,69 +81,52 @@ function reliableBlock(rc) {
   return `<div class="notice ${kind}"><b>${title}.</b> ${window.escapeHtml(body)}</div>`;
 }
 
-function build(d, reliableChange) {
-  const submissions = d.items || [];
-  const rows = submissions
-    .filter((row) => typeof row.overall_score === "number")
-    .map((row) => ({ ...row, overall_0_6: row.overall_score }));
-  if (!submissions.length) {
+function build(d) {
+  const rows = d.results || [];
+  if (!rows.length) {
     return (
       '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◎</div>' +
-      "<h2>Chưa có bài đánh giá nào</h2>" +
-      "<p>Lịch sử điểm sẽ xuất hiện sau khi bạn nộp bài đánh giá và hệ thống có kết quả.</p>" +
-      '<div class="button-row"><a class="button" href="/student/tasks">Chọn đề đánh giá</a></div></div>'
+      "<h2>Chưa có bài nào được chấm</h2>" +
+      "<p>Sau khi bạn nộp vài bài, màn hình này sẽ vẽ lại kết quả theo thời gian " +
+      "để bạn tự thấy mình đang ở đâu.</p>" +
+      '<div class="button-row"><a class="button" href="/">Nộp bài đầu tiên</a></div></div>'
     );
   }
 
-  const direction = {
-    tien_bo: "tang",
-    giam: "giam",
-    chua_vuot_sai_so: "chua_ro",
-    chua_co_sai_so: "chua_ro",
-    chua_du_du_lieu: "chua_du_du_lieu",
-  }[reliableChange?.verdict];
-  const label = TREND_LABEL[direction] || TREND_LABEL.chua_du_du_lieu;
+  const t = d.trend || {};
+  const label = TREND_LABEL[t.direction] || TREND_LABEL.chua_du_du_lieu;
 
   let h = '<div class="card-head"><h2>Kết quả theo thời gian</h2>';
   h += `<span class="badge">${rows.length} bài có điểm</span></div>`;
 
   h += '<div class="stat-grid">';
   h += `<div class="stat"><b>${rows.length}</b><span>bài đã có điểm</span></div>`;
-  h += `<div class="stat"><b>${d.teacher_verified_count || 0}</b><span>bài giảng viên đã xác nhận</span></div>`;
+  h += `<div class="stat"><b>${d.verified_count || 0}</b><span>bài giảng viên đã xác nhận</span></div>`;
   const last = rows[rows.length - 1];
-  h += `<div class="stat"><b>${last ? last.overall_0_6.toFixed(2) : "—"}</b><span>bài có điểm gần nhất · ${window.escapeHtml(
-    last ? last.overall_band || "—" : "chưa có"
+  h += `<div class="stat"><b>${last.overall_0_6.toFixed(2)}</b><span>bài gần nhất · ${window.escapeHtml(
+    last.overall_band || "—"
   )}</span></div>`;
   h += "</div>";
 
-  if (rows.length) {
-    const note = reliableChange?.reason_code === "insufficient_scores"
-      ? "Cần ít nhất hai bài có điểm để so sánh."
-      : "Kết luận thay đổi chỉ dùng khi dữ liệu vượt sai số đo.";
-    h += `<div class="notice ${label.kind}"><b>${label.text}.</b> ${note}</div>`;
-    h += reliableBlock(reliableChange);
-    h += chart(rows);
-    h +=
-      '<p class="trend-legend"><span><i class="verified"></i>Giảng viên đã xác nhận</span>' +
-      "<span><i></i>Máy ước lượng, chưa ai xác nhận</span></p>";
-  } else {
-    h += `<div class="notice notice-info"><b>Chưa có bài nào được chấm.</b> ${submissions.length} bài đã nộp chưa có điểm để hiển thị.</div>`;
-  }
+  h += `<div class="notice ${label.kind}"><b>${label.text}.</b> ${window.escapeHtml(t.note || "")}</div>`;
+  h += reliableBlock(d.reliable_change);
 
-  h += '<h2 class="progress-results-title">Từng bài</h2>';
+  h += chart(rows);
+  h +=
+    '<p class="trend-legend"><span><i class="verified"></i>Giảng viên đã xác nhận</span>' +
+    "<span><i></i>Máy ước lượng, chưa ai xác nhận</span></p>";
+
+  h += '<h2 style="margin-top:var(--sp-6)">Từng bài</h2>';
   h += "<table><thead><tr><th>Nộp lúc</th><th>Đề</th><th>Ước lượng</th>" +
     "<th>Trạng thái</th><th>Xác nhận</th><th>Báo cáo</th></tr></thead><tbody>";
-  for (const r of [...submissions].reverse()) {
-    const estimate = typeof r.overall_score === "number"
-      ? `${r.overall_score.toFixed(2)} · ${window.escapeHtml(r.overall_band || "—")}`
-      : "Chưa có ước lượng";
+  for (const r of [...rows].reverse()) {
     h +=
       `<tr><td>${window.escapeHtml(shortDate(r.created_at))}</td>` +
       `<td>${window.escapeHtml(titles[r.task_id] || r.task_id)}</td>` +
-      `<td>${estimate}</td>` +
+      `<td>${r.overall_0_6.toFixed(2)} · ${window.escapeHtml(r.overall_band || "—")}</td>` +
       `<td>${window.escapeHtml(window.ui.statusName(r.status))}</td>` +
       `<td>${r.teacher_verified ? "Đã xác nhận" : '<span class="muted">Chưa</span>'}</td>` +
-      `<td><a href="/student/responses/${encodeURIComponent(r.response_id)}/report">Xem báo cáo</a></td></tr>`;
+      `<td><a href="/report/${encodeURIComponent(r.response_id)}">Xem báo cáo</a></td></tr>`;
   }
   h += "</tbody></table>";
 
@@ -275,7 +215,7 @@ function achievementTile(a) {
     ? `<span class="ach-state">Đạt ngày ${window.escapeHtml(dayOf(a.unlocked_at))}</span>`
     : `<div class="bar" role="progressbar" aria-label="Tiến độ: ${window.escapeHtml(a.title)}"` +
       ` aria-valuemin="0" aria-valuemax="${target}" aria-valuenow="${value}">` +
-      `<progress class="bar native-progress ach-progress" aria-label="Tiến độ: ${window.escapeHtml(a.title)}" max="${target}" value="${Math.min(target, Math.max(0, value))}">${value}/${target}</progress>` +
+      `<span style="width:${Math.round((value / target) * 100)}%"></span></div>` +
       `<span class="ach-state">${value}/${target} ${window.escapeHtml(a.unit)} · chưa đạt</span>`;
   return (
     `<li class="${cls}">` +
@@ -307,15 +247,7 @@ function achievementList(d) {
   return h;
 }
 
-const ACHIEVEMENT_GROUPS = [
-  { key: "habit", name: "Đều đặn" },
-  { key: "voice", name: "Thời gian nói" },
-  { key: "path", name: "Lộ trình" },
-  { key: "persistence", name: "Kiên trì" },
-  { key: "assessment", name: "Đánh giá" },
-];
-
-const achievementsDone = fetch("/api/v1/me/learning/achievements")
+const achievementsDone = fetch("/api/v1/me/achievements")
   .then((r) => {
     if (window.redirectToLoginIfExpired(r)) return null;
     if (!r.ok) throw new Error(String(r.status));
@@ -323,17 +255,11 @@ const achievementsDone = fetch("/api/v1/me/learning/achievements")
   })
   .then((d) => {
     if (!d) return;
-    d.groups = ACHIEVEMENT_GROUPS.filter((group) => d.items.some((item) => item.group === group.key));
-    d.items = d.items.map((item) => ({ ...item, unlocked: Boolean(item.unlocked_at), new: item.is_new }));
-    if (d.next) {
-      const item = d.items.find((row) => row.code === d.next.code);
-      if (item) d.next = { ...item, ...d.next };
-    }
     window.clearBusy(achPanel);
     achPanel.innerHTML = achievementList(d);
     const fresh = d.items.filter((i) => i.new).map((i) => i.code);
     if (fresh.length) {
-      fetch("/api/v1/me/learning/achievements/seen", {
+      fetch("/api/v1/me/achievements/seen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ codes: fresh }),
@@ -349,7 +275,7 @@ const achievementsDone = fetch("/api/v1/me/learning/achievements")
 // D039: pronunciation patterns from the learner's own lesson steps.
 const pronPanel = document.getElementById("pronunciation");
 const pronBody = document.getElementById("pronunciation-body");
-fetch("/api/v1/me/learning/pronunciation")
+fetch("/api/v1/me/pronunciation")
   .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)))
   .then((d) => {
     if (!d) return;
@@ -366,16 +292,62 @@ const studyPanel = document.getElementById("study");
 const studyBody = document.getElementById("study-body");
 const AGREE = ["Hoàn toàn không đồng ý", "Không đồng ý", "Phân vân", "Đồng ý", "Hoàn toàn đồng ý"];
 
-function drawStudy(payload) {
-  const s = payload?.study;
-  if (!s) return;
+function studyView(s) {
+  if (s.withdrawn) {
+    return '<p class="muted">Bạn đã rời thực nghiệm. Báo cáo của bạn hiện đầy đủ như bình thường.</p>';
+  }
+  let h =
+    `<p>Bạn đang tham gia <b>${window.escapeHtml(s.name)}</b>, nhóm <b>${window.escapeHtml(s.arm_name)}</b>. ` +
+    "Hai nhóm được chia ngẫu nhiên để xem nhận xét chi tiết có giúp luyện nói tốt hơn chỉ xem điểm hay không.</p>";
+  if (s.status === "survey") {
+    if (s.survey_done) {
+      h += '<p class="muted">Cảm ơn bạn, câu trả lời khảo sát đã được ghi lại.</p>';
+    } else {
+      h += '<form id="study-survey" class="survey"><p><b>Năm câu hỏi ngắn</b> (1 = hoàn toàn không đồng ý, 5 = hoàn toàn đồng ý):</p>';
+      for (const item of s.survey_items) {
+        h += `<fieldset><legend>${window.escapeHtml(item.text)}</legend><div class="survey-scale">`;
+        for (let v = 1; v <= 5; v++) {
+          h +=
+            `<label title="${window.escapeHtml(AGREE[v - 1])}"><input type="radio" required ` +
+            `name="${encodeURIComponent(item.key)}" value="${v}"> ${v}</label>`;
+        }
+        h += "</div></fieldset>";
+      }
+      h += '<div class="button-row"><button type="submit" class="button">Gửi khảo sát</button></div></form>';
+    }
+  }
+  h +=
+    '<div class="button-row"><button type="button" class="button secondary small" id="study-leave">' +
+    "Rời thực nghiệm</button></div>";
+  return h;
+}
+
+function drawStudy(s) {
+  if (!s || !s.enrolled) return;
   studyPanel.hidden = false;
-  const state = s.state === "SURVEY" ? "Đang ở giai đoạn khảo sát" : "Đang tham gia";
-  const arm = s.arm === "score_only" ? "Chỉ xem điểm" : "Có nhận xét chi tiết";
-  studyBody.innerHTML =
-    `<p>${state} trong nghiên cứu phản hồi, nhóm <b>${window.escapeHtml(arm)}</b>.</p>` +
-    '<p class="muted">Bạn có thể xem hoặc thay đổi lựa chọn dữ liệu nghiên cứu trong phần đồng ý dữ liệu.</p>' +
-    '<p><a class="button secondary small" href="/student/consent">Quản lý lựa chọn đồng ý dữ liệu</a></p>';
+  studyBody.innerHTML = studyView(s);
+  const form = document.getElementById("study-survey");
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const answers = {};
+      for (const item of s.survey_items) answers[item.key] = Number(new FormData(form).get(item.key));
+      const r = await window.apiJson("/api/v1/me/study/survey", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers }),
+      });
+      if (r) drawStudy({ ...s, survey_done: true });
+    });
+  }
+  const leave = document.getElementById("study-leave");
+  if (leave) {
+    leave.addEventListener("click", async () => {
+      if (!window.confirm("Rời thực nghiệm? Từ giờ báo cáo của bạn sẽ hiện đầy đủ nhận xét.")) return;
+      const r = await window.apiJson("/api/v1/me/study/withdraw", { method: "POST" });
+      if (r) drawStudy({ ...s, withdrawn: true });
+    });
+  }
 }
 
 fetch("/api/v1/me/study")
@@ -388,3 +360,19 @@ fetch("/api/v1/me/study")
 Promise.allSettled([progressDone, achievementsDone]).then(() => {
   if (location.hash === "#achievements") achPanel.scrollIntoView({ block: "start" });
 });
+
+// D056: what I said when listening back, newest last, linked to the report.
+(async function replayNotes() {
+  const r = await fetch("/api/v1/me/replay-labels");
+  if (!r.ok) return;
+  const notes = await r.json();
+  if (!notes.length) return;
+  const mmss = window.ui.mmss;
+  document.getElementById("replay-notes-body").innerHTML = `<ul class="plain-list">${notes
+    .map(
+      (n) => `<li><a href="/report/${encodeURIComponent(n.response_id)}">${new Date(n.created_at).toLocaleDateString("vi-VN")} · đoạn ${mmss(n.start_s)}–${mmss(n.end_s)}</a>
+        — ${window.escapeHtml(n.answer)}${n.intended ? `<div class="small">Bạn định nói: “${window.escapeHtml(n.intended)}”</div>` : ""}</li>`,
+    )
+    .join("")}</ul>`;
+  document.getElementById("replay-notes").hidden = false;
+})();

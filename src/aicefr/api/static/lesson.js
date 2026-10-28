@@ -47,67 +47,6 @@ const stopTimers = () => {
 // Kinds whose unheard words come back in the review, as on the server.
 const REVIEWED_KINDS = ["read_aloud", "gap", "keywords", "starter"];
 
-const STAGE_NAMES = { model: "Nghe mẫu", controlled: "Có hướng dẫn", guided: "Tự luyện", free: "Nói tự do" };
-const KIND_NAMES = {
-  read_aloud: "Đọc to", repeat: "Nhắc lại", look_up: "Nhìn rồi nói", gap: "Điền từ",
-  keywords: "Từ khóa", starter: "Mở đầu câu", picture: "Mô tả tranh", outline: "Dàn ý", free: "Nói tự do",
-};
-
-function adaptStep(source) {
-  const payload = source.payload || {};
-  const kind = source.kind;
-  const rounds = payload.rounds || [];
-  return {
-    ...payload,
-    step_id: source.step_id,
-    kind,
-    stage: source.stage,
-    stage_name: STAGE_NAMES[source.stage] || source.stage,
-    kind_name: KIND_NAMES[kind] || kind,
-    display_title: KIND_NAMES[kind] || kind,
-    instruction: source.instruction || "",
-    text: payload.text || payload.prompt || (rounds[0] && rounds[0].prompt) || "",
-    hint_words: payload.hint_words || payload.pictures?.map((item) => item.description) || [],
-    keywords: payload.keywords || [],
-    outline: payload.points || [],
-    markers: (payload.markers || []).map((marker) => Array.isArray(marker) ? marker : [marker]),
-    min_seconds: payload.min_seconds || 0,
-    max_seconds: payload.max_seconds || 300,
-    show_seconds: payload.show_seconds || 5,
-    round_limits: rounds.map((round) => round.duration_seconds),
-    model_audio_url: source.model_audio_url || "",
-  };
-}
-
-function adaptResult(source) {
-  if (!source) return null;
-  const status = source.status || "UNMEASURED";
-  const measured = status === "PASS" || status === "FAIL";
-  return {
-    ...source,
-    passed: status === "PASS",
-    measured: status !== "UNMEASURED",
-    tip: source.feedback || "",
-    round: source.round_index == null ? null : source.round_index + 1,
-    words: (source.evidence || []).map((item) => ({
-      text: item.expected_token,
-      said: item.heard_token,
-      status: String(item.state || "UNSURE").toLowerCase(),
-    })),
-    gaps: [],
-    found: [],
-    missing: [],
-    signals: [],
-  };
-}
-
-async function getJson(url) {
-  const response = await fetch(url);
-  if (window.redirectToLoginIfExpired(response)) throw new Error("SESSION_REQUIRED");
-  if (!response.ok) throw new Error(String(response.status));
-  return response.json();
-}
-
 const current = () => steps[index];
 const limitOf = (step, r) =>
   step.kind === "free" ? step.round_limits[Math.min(r, step.round_limits.length) - 1] : step.max_seconds;
@@ -385,7 +324,7 @@ function showStep(i) {
   layoutEl.hidden = false;
   feedbackEl.hidden = true;
   feedbackEl.innerHTML = "";
-  formEl.hidden = MODE === "preview";
+  formEl.hidden = false;
   bodyEl.innerHTML =
     `<div class="step-top">${stageChip(step)}<span class="muted">Bước ${index + 1}/${steps.length}</span></div>` +
     `<h2 id="step-h" tabindex="-1">${escapeHtml(step.display_title)}</h2>` +
@@ -408,12 +347,9 @@ function showStep(i) {
 
 function lastTry(a) {
   if (!a) return "";
-  const outcome = a.result && a.result.status === "UNSURE"
-    ? "Chưa đủ căn cứ"
-    : a.passed ? "Đạt" : "Chưa đạt";
   return (
     '<div class="last-try">' +
-    `<span>${icon("clock")}Lần gần nhất: <b>${outcome}</b> · ${escapeHtml(window.ui.localTime(a.created_at))}</span>` +
+    `<span>${icon("clock")}Lần gần nhất: <b>${a.passed ? "Đạt" : "Chưa đạt"}</b> · ${escapeHtml(window.ui.localTime(a.created_at))}</span>` +
     (a.result.teacher_reviewed ? '<span class="badge state-on">Giáo viên đã xem lại</span>' : "") +
     '<button type="button" class="link-button" id="show-last">Xem lại kết quả</button></div>'
   );
@@ -506,10 +442,7 @@ function signalList(result) {
 }
 
 function verdict(result) {
-  if (result.status === "UNSURE") {
-    return `<div class="verdict warn">${icon("info")}<span><b>Chưa đủ căn cứ để kết luận.</b> Xem phản hồi rồi thử lại nếu muốn.</span></div>`;
-  }
-  if (result.status === "UNMEASURED" || !result.measured) {
+  if (!result.measured) {
     return `<div class="verdict warn">${icon("info")}<span><b>Chưa đo được lượt này.</b> Xem gợi ý bên dưới rồi ghi lại.</span></div>`;
   }
   if (result.passed) return `<div class="verdict ok">${icon("check-circle")}<span><b>Đạt bước này.</b></span></div>`;
@@ -668,21 +601,18 @@ async function submit(audio, name) {
   const step = current();
   const body = new FormData();
   body.append("audio", audio, name);
-  body.append("idempotency_key", crypto.randomUUID());
   let url;
   if (MODE === "review") {
-    url = `/api/v1/learn/reviews/${encodeURIComponent(step.review_id)}/attempts`;
+    url = "/api/v1/learn/review/attempts";
+    body.append("review_id", step.review_id);
   } else if (MODE === "preview") {
     url = "/api/v1/teach/preview";
     body.append("lesson_id", LESSON_ID);
     body.append("step_id", step.step_id);
     if (step.kind === "free") body.append("round", String(round));
   } else {
-    url = "/api/v1/learn/step-attempts";
-    body.append("lesson_id", LESSON_ID);
-    body.append("lesson_version", String(data.lesson.version));
-    body.append("step_id", step.step_id);
-    if (step.kind === "free") body.append("round_index", String(round - 1));
+    url = `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}/steps/${encodeURIComponent(step.step_id)}/attempts`;
+    if (step.kind === "free") body.append("round", String(round));
   }
   try {
     const r = await fetch(url, { method: "POST", body });
@@ -693,24 +623,8 @@ async function submit(audio, name) {
       return;
     }
     recorder.done();
-    const progress = MODE === "lesson"
-      ? await getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}/progress`).catch(() => null)
-      : null;
-    if (progress) {
-      data.progress = {
-        complete: progress.complete,
-        completed: progress.complete,
-        completed_step_ids: progress.completed_step_ids || [],
-        free_done: progress.completed_free_rounds >= progress.required_free_rounds,
-      };
-      data.progress.completed_step_ids.forEach((stepId) => passedSteps.add(stepId));
-    }
-    showFeedback({
-      ...d,
-      result: adaptResult(d.result),
-      progress: data && data.progress,
-      completed_now: Boolean(progress && progress.complete),
-    });
+    showFeedback(d);
+    celebrate(d.achievements);
   } catch (err) {
     window.toast("Mất kết nối khi gửi. Bản ghi vẫn còn, hãy thử lại.", "error", { sticky: true });
   }
@@ -718,101 +632,44 @@ async function submit(audio, name) {
 
 // ---------------------------------------------------------------- load
 
-function emptyReview() {
+function emptyReview(d) {
   window.clearBusy(root);
   layoutEl.hidden = true;
   summaryEl.hidden = false;
   summaryEl.innerHTML =
     `<div class="empty-state"><div class="empty-mark" aria-hidden="true">${icon("check-circle")}</div>` +
     "<h2>Không có mục nào đến hạn hôm nay</h2>" +
-    "<p>Học thêm bài mới; các mục đến hạn sẽ xuất hiện ở đây.</p>" +
+    `<p>${d.open ? `Còn ${Number(d.open)} mục đang chờ, lần ôn tới vào ngày ${escapeHtml(dmy(d.next_due))}.` : "Học thêm bài mới, những từ máy chưa nghe ra sẽ quay lại đây."}</p>` +
     '<div class="button-row"><a class="button" href="/practice">Về lộ trình</a></div></div>';
 }
 
 async function load() {
   try {
     if (MODE === "review") {
-      const d = await getJson("/api/v1/learn/reviews/due");
-      const due = d.reviews || [];
+      const r = await fetch("/api/v1/learn/review");
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json();
       renderHead();
-      if (!due.length) {
-        emptyReview();
+      if (!d.steps.length) {
+        emptyReview(d);
         return;
       }
-      steps = [];
-      for (const item of due) {
-        if (item.source_kind === "practice") {
-          const attempt = await getJson(`/api/v1/practice/attempts/${encodeURIComponent(item.source_attempt_id)}`);
-          const mission = attempt.mission || {};
-          steps.push({
-            step_id: item.review_id,
-            review_id: item.review_id,
-            kind: "free",
-            stage: "free",
-            stage_name: "Ôn tập",
-            kind_name: "Nói tự do",
-            display_title: mission.title || "Ôn lại lượt luyện tập",
-            instruction: "Nói lại bằng câu mới của riêng bạn.",
-            text: mission.prompt || "Hãy thử lại mục tiêu của bài luyện tập.",
-            round_limits: [],
-            max_seconds: 300,
-            lesson_title: mission.title || "Bài luyện tập",
-          });
-          continue;
-        }
-        const attempt = await getJson(`/api/v1/learn/step-attempts/${encodeURIComponent(item.source_attempt_id)}`);
-        const lesson = await getJson(`/api/v1/learn/lessons/${encodeURIComponent(attempt.lesson_id)}/versions/${attempt.lesson_version}`);
-        const source = (lesson.steps || []).find((step) => step.step_id === attempt.step_id);
-        if (!source) continue;
-        steps.push({
-          ...adaptStep(source),
-          review_id: item.review_id,
-          lesson_title: lesson.title,
-          instruction: "Ôn tập bằng một câu nói mới của riêng bạn.",
-        });
-      }
-      if (!steps.length) {
-        emptyReview();
-        return;
-      }
+      steps = d.steps.map((s) => ({ ...s.step, review_id: s.review_id, lesson_title: s.lesson_title }));
     } else {
-      const lessonUrl = MODE === "preview"
-        ? `/api/v1/teacher/learn/lessons/${encodeURIComponent(LESSON_ID)}`
-        : `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`;
-      const lesson = await getJson(lessonUrl);
-      const [progress, attempts] = MODE === "preview" ? [null, { attempts: [] }] : await Promise.all([
-        getJson(`/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}/progress`).catch(() => null),
-        getJson(`/api/v1/learn/step-attempts?limit=100&lesson_id=${encodeURIComponent(LESSON_ID)}`).catch(() => ({ attempts: [] })),
-      ]);
-      data = {
-        lesson,
-        unit: { title: "Lộ trình học tập" },
-        next_lesson: null,
-        progress: progress ? {
-          complete: progress.complete,
-          completed: progress.complete,
-          completed_step_ids: progress.completed_step_ids || [],
-          free_done: progress.completed_free_rounds >= progress.required_free_rounds,
-        } : null,
-      };
-      steps = (lesson.steps || []).map((step) => ({
-        ...adaptStep(step),
-        model_audio_url: (lesson.sample_media || []).find((item) => item.step_id === step.step_id)?.url || "",
-      }));
-      (data.progress?.completed_step_ids || []).forEach((stepId) => passedSteps.add(stepId));
-      for (const attempt of attempts.attempts || []) {
-        if (!attempt.result || !attempt.step_id) continue;
-        const result = adaptResult(attempt.result);
-        result.round = attempt.round_index == null ? null : attempt.round_index + 1;
-        results[attempt.step_id] = result;
-        if (result.passed) passedSteps.add(attempt.step_id);
-        lastAttempt[attempt.step_id] = {
-          result,
-          passed: result.passed,
-          created_at: attempt.created_at,
-          audio_url: null,
-        };
-      }
+      const url =
+        MODE === "preview"
+          ? `/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}/preview`
+          : `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`;
+      const r = await fetch(url);
+      if (window.redirectToLoginIfExpired(r)) return;
+      if (!r.ok) throw new Error(String(r.status));
+      data = await r.json();
+      steps = data.lesson.steps;
+      Object.entries(data.latest || {}).forEach(([sid, a]) => {
+        results[sid] = { ...a.result, passed: a.passed, round: a.round };
+        lastAttempt[sid] = a;
+      });
+      (data.passed_steps || []).forEach((sid) => passedSteps.add(sid));
       renderHead();
     }
     window.clearBusy(root);
@@ -828,9 +685,14 @@ async function load() {
 }
 
 // Health: the fake recogniser warning and whether live recording works.
-simulated = document.body.dataset.asrIsReal !== "true";
-if (simulated) document.getElementById("fake-asr-warning").hidden = false;
-recorder.enable(MODE !== "preview" && document.body.dataset.recordingEnabled === "true");
+fetch("/api/v1/health")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((h) => {
+    simulated = !!(h && !h.asr_is_real);
+    if (simulated) document.getElementById("fake-asr-warning").hidden = false;
+    recorder.enable(!!(h && h.recording_enabled));
+  })
+  .catch(() => recorder.enable(false));
 
 // Consent: a learner's recordings are personal data. A teacher previewing a
 // draft stores nothing, so the check is for learners only.

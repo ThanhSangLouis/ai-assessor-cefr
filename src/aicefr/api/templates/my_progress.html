@@ -13,20 +13,21 @@
   </div>
   <div class="button-row page-tools">
     <button type="button" class="button secondary small" id="print-progress">In hoặc lưu PDF</button>
-    <a class="button secondary small" href="/student/profile.json">Tải hồ sơ năng lực (JSON)</a>
+    <a class="button secondary small" href="/api/v1/me/profile.json">Tải hồ sơ năng lực (JSON)</a>
   </div>
 </div>
-
-<section class="card" id="effort-progress" aria-labelledby="effort-title" aria-busy="true">
-  <div class="card-head"><h2 id="effort-title">Nhịp luyện tập</h2></div>
-  <div id="effort-body"><div class="skeleton skeleton-block"></div></div>
-</section>
 
 <div class="card" id="progress-panel" aria-busy="true" aria-live="polite">
   <div class="skeleton skeleton-title"></div>
   <div class="skeleton skeleton-block"></div>
   <div class="skeleton skeleton-line"></div>
 </div>
+
+{#- D056. What I said when listening back to my own recordings. -#}
+<section class="card" id="replay-notes" aria-labelledby="replay-notes-h" hidden>
+  <div class="card-head"><h2 id="replay-notes-h">Ghi chú khi nghe lại bài của mình</h2></div>
+  <div id="replay-notes-body"></div>
+</section>
 
 {#- D040. Shown only to a learner enrolled in the feedback study. -#}
 <section class="card" id="study" aria-labelledby="study-title" hidden>

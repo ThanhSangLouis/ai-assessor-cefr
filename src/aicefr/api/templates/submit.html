@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Nộp bài nói · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("mic") }}</span>Nộp bài đánh giá</h1>
+  <p class="lede">
+    Chọn đề, ghi âm hoặc chọn file, nghe lại rồi nộp. Hệ thống trả về <b>một ước lượng
+    tổng thể</b> kèm bằng chứng trên bản ghi; bài máy chưa đủ chắc sẽ được giảng viên
+    xem lại trước khi công bố.
+  </p>
+</div>
+
+<div class="notice notice-danger" id="fake-asr-warning" hidden>
+  <b>Chế độ thử nghiệm.</b> Hệ thống đang dùng bộ nhận dạng tiếng nói giả lập nên
+  điểm số <b>không có ý nghĩa</b>. Đặt biến môi trường <code>AICEFR_ASR=whisper</code> để chấm thật.
+</div>
+{#- Filled by submit.js after asking /api/v1/me/consent. Kept empty and hidden
+    here rather than built in JavaScript, so the notice sits in the reading
+    order from the start instead of jumping into the page once it loads. -#}
+<div class="notice notice-danger" id="consent-gate" hidden></div>
+
+{#- Two columns on a wide screen: the task list on the left, the recorder on
+    the right with the chosen prompt right above the button, so the student
+    reads the question and answers it without scrolling. -#}
+<form id="f" class="work-split" data-prep-seconds="{{ prep_seconds }}">
+  <section class="card" aria-labelledby="task-h">
+    <h2 id="task-h"><span class="step-number" aria-hidden="true">1</span>Chọn đề bài</h2>
+    <div id="task-list" aria-busy="true" aria-live="polite">
+      <div class="skeleton skeleton-block"></div>
+    </div>
+  </section>
+
+  <section class="card recorder-card" aria-labelledby="rec-h">
+    <h2 id="rec-h"><span class="step-number" aria-hidden="true">2</span>Ghi âm, nghe lại, nộp</h2>
+    <div class="prompt-card" id="chosen-prompt" aria-live="polite"></div>
+    {#- D028. Thirty seconds to prepare, as in the survey protocol (KE_HOACH_KHAO_SAT
+        §5.2) and in a test room; then recording starts by itself. Optional: the
+        record button works at any time and cancels the countdown. -#}
+    <div class="prep" id="prep" data-state="ready" hidden>
+      <div class="prep-ring" id="prep-ring" aria-hidden="true"><span id="prep-left">{{ prep_seconds }}</span></div>
+      <div class="prep-text">
+        <p class="prep-title" id="prep-title">Chuẩn bị {{ prep_seconds }} giây như phòng thi</p>
+        <p class="muted" id="prep-hint">Đọc đề, nghĩ ý chính và ví dụ. Hết giờ, máy tự bắt đầu ghi âm.</p>
+      </div>
+      <div class="prep-actions">
+        <button type="button" class="secondary" id="prep-start">{{ icon("hourglass") }} Bắt đầu chuẩn bị</button>
+        <button type="button" class="secondary" id="prep-skip" hidden>{{ icon("mic") }} Nói ngay</button>
+        <button type="button" class="link-button" id="prep-cancel" hidden>Huỷ</button>
+      </div>
+      <p class="visually-hidden" id="prep-status" role="status" aria-live="polite"></p>
+    </div>
+    {% with submit_label="Nộp bài và chấm",
+             floor_seconds=min_duration_s,
+             upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, dài từ " ~ (min_duration_s | int) ~ " đến " ~ (max_duration_s | int) ~ " giây, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+      {% include "_recorder.html" %}
+    {% endwith %}
+  </section>
+  <input type="hidden" id="task_id" name="task_id" value="P3">
+</form>
+{% endblock %}
+{% block scripts %}
+<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('submit.js') }}"></script>
+{% endblock %}

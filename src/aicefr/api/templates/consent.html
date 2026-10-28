@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Đồng thuận tham gia · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("file-check") }}</span>Đồng thuận tham gia nghiên cứu</h1>
+  <p class="lede">
+    Đọc kỹ trước khi ghi âm. Bạn chọn riêng từng mục, không có nút đồng ý gộp.
+  </p>
+</div>
+
+{% if not account %}
+<div class="notice">
+  Bạn cần <a href="/login">đăng nhập</a> trước khi ký đồng thuận.
+</div>
+{% else %}
+
+<div class="card">
+  <h2>Bạn được mời làm gì</h2>
+  <ol class="consent-points">
+    <li>Ghi âm <b>2 bài nói tiếng Anh</b>, mỗi bài <b>40–60 giây</b>, theo đề có sẵn.</li>
+    <li>
+      Bản ghi dùng để <b>kiểm định một hệ thống chấm điểm tự động</b>. Đây là
+      <b>công cụ hỗ trợ học tập, không phải chứng chỉ CEFR</b>; kết quả không
+      thay thế quyết định của giảng viên.
+    </li>
+    <li>Bản ghi gắn với <b>bút danh</b> của bạn, hệ thống không lưu họ tên, email hay MSSV.</li>
+    <li>Dữ liệu lưu <b>tối đa 12 tháng</b>, chỉ nhóm nghiên cứu truy cập.</li>
+    <li>
+      Bạn <b>rút lại lúc nào cũng được</b>, không cần nêu lý do và
+      <b>không ảnh hưởng tới điểm học phần</b>.
+    </li>
+    <li>Bạn xem được kết quả chấm của chính mình bất cứ lúc nào.</li>
+  </ol>
+  <p class="muted">Phiên bản văn bản đồng thuận: <code>{{ consent_version }}</code></p>
+</div>
+
+{#- The boxes start in the state the server holds, so they are right before
+    the script runs; consent.js keeps them in step afterwards. -#}
+<div class="card">
+  <div class="card-head">
+    <h2>Lựa chọn của bạn</h2>
+    <span class="muted" id="state"></span>
+  </div>
+
+  <form id="form" class="stack">
+    <label class="check">
+      <input type="checkbox" id="audio" name="audio_storage_allowed"{% if consent and consent.audio_storage_allowed %} checked{% endif %}>
+      <span>
+        <b>Cho phép lưu bản ghi âm của tôi.</b>
+        Không chọn mục này thì hệ thống không nhận bài nói — vì không có gì để chấm.
+      </span>
+    </label>
+
+    <label class="check">
+      <input type="checkbox" id="research" name="research_use_allowed"{% if consent and consent.research_use_allowed %} checked{% endif %}>
+      <span>
+        <b>Cho phép dùng dữ liệu của tôi cho nghiên cứu</b> của đồ án (so sánh
+        điểm máy với điểm giảng viên). Không chọn mục này thì bạn vẫn nộp bài và
+        nhận kết quả bình thường, chỉ là dữ liệu không vào tập phân tích.
+      </span>
+    </label>
+
+    <div class="button-row">
+      <button type="submit" id="sign">Ký đồng thuận</button>
+      <button type="button" id="withdraw" class="secondary"{% if not (consent and consent.signed) %} disabled{% endif %}>Rút lại đồng thuận</button>
+    </div>
+    <p id="msg" role="status" aria-live="polite" class="muted"></p>
+    <div class="button-row" id="next-links" hidden>
+      <a class="button" href="/practice">Vào luyện tập</a>
+      <a class="button secondary" href="/">Nộp bài đánh giá</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Dữ liệu của bạn</h2>
+  <p>
+    Tải về mọi thứ hệ thống đang lưu về bạn: các bài đã nộp, kết quả, lịch sử duyệt của
+    giảng viên và trạng thái đồng thuận, trong một tệp JSON.
+  </p>
+  <div class="button-row">
+    <a class="button secondary" href="/api/v1/me/export.json" download="my-data.json">Tải toàn bộ dữ liệu của tôi</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ asset('consent.js') }}"></script>
+{% endblock %}

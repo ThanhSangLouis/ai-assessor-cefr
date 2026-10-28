@@ -1,173 +1,162 @@
-// Blind rating sheet adapted to M12's token-scoped assignment contract.
+// One blind rating sheet (D030). The server sends the task, an audio address
+// under this assignment and, once submitted, the rater's own rating: nothing
+// else exists on this page to anchor the score.
 const escapeHtml = window.escapeHtml;
 const sheet = document.getElementById("sheet");
-const token = sheet.dataset.assignment;
+const ID = sheet.dataset.assignment;
 const form = document.getElementById("sheet-form");
 const unscorable = document.getElementById("unscorable");
 const unscorableBox = document.getElementById("unscorable-box");
 const scoreBox = document.getElementById("score-box");
-const rationale = document.getElementById("sheet-reason");
-const message = document.getElementById("sheet-message");
-const submit = document.getElementById("sheet-submit");
+const reasonEl = document.getElementById("sheet-reason");
+const messageEl = document.getElementById("sheet-message");
+const submitEl = document.getElementById("sheet-submit");
 const criteriaInputs = [...document.querySelectorAll("[data-criterion]")];
-const overallInput = document.getElementById("score-overall");
-let nextToken = null;
-let adjudication = false;
+const overallEl = document.getElementById("score-overall");
+
+let nextId = null;
 
 function paintUnscorable() {
-  unscorableBox.hidden = !unscorable.checked;
-  scoreBox.hidden = unscorable.checked;
-  criteriaInputs.forEach((input) => { input.disabled = unscorable.checked; });
-  overallInput.disabled = unscorable.checked;
-  document.querySelectorAll('input[name="band"]').forEach((input) => { input.disabled = unscorable.checked; });
-  document.querySelectorAll('input[name="unscorable-reason"]').forEach((input) => { input.disabled = !unscorable.checked; });
+  const off = unscorable.checked;
+  unscorableBox.hidden = !off;
+  scoreBox.hidden = off;
 }
 unscorable.addEventListener("change", paintUnscorable);
-paintUnscorable();
 
-function lockForm() {
-  form.querySelectorAll("input, button[type=submit]").forEach((element) => { element.disabled = true; });
-}
-
-function showSaved(rating) {
-  const isUnrateable = Boolean(rating.unrateable_reason);
-  unscorable.checked = isUnrateable;
+function readOnly(rating) {
+  unscorable.checked = rating.unscorable;
   paintUnscorable();
-  if (isUnrateable) {
-    const input = document.querySelector(`input[name="unscorable-reason"][value="${CSS.escape(rating.unrateable_reason)}"]`);
-    if (input) input.checked = true;
+  if (rating.unscorable) {
+    const pick = document.querySelector(`input[name="unscorable-reason"][value="${rating.unscorable_reason}"]`);
+    if (pick) pick.checked = true;
   } else {
-    criteriaInputs.forEach((input) => { input.value = rating.criteria?.[input.dataset.criterion] ?? ""; });
-    overallInput.value = rating.overall ?? "";
-    const band = document.querySelector(`input[name="band"][value="${CSS.escape(rating.band || "")}"]`);
+    criteriaInputs.forEach((el) => {
+      el.value = rating.criteria[el.dataset.criterion] ?? "";
+    });
+    overallEl.value = rating.overall ?? "";
+    const band = document.querySelector(`input[name="band"][value="${rating.band}"]`);
     if (band) band.checked = true;
   }
-  rationale.value = rating.rationale || "";
-  lockForm();
-  message.innerHTML = `<p class="success">Đã nộp lúc ${escapeHtml(window.ui.localTime(rating.submitted_at))}.</p>`;
+  reasonEl.value = rating.reason || "";
+  form.querySelectorAll("input, button[type=submit]").forEach((el) => {
+    el.disabled = true;
+  });
+  messageEl.innerHTML =
+    `<p class="success">Đã nộp lúc ${escapeHtml(window.ui.localTime(rating.submitted_at))}.</p>`;
 }
 
-function findNext(assignments) {
-  const current = assignments.find((item) => item.token === token);
-  if (!current) return null;
-  const sameBatch = assignments
-    .filter((item) => item.batch_id === current.batch_id && item.batch_state === "OPEN" && item.state === "OPEN" && item.position > current.position)
-    .sort((a, b) => a.position - b.position)[0];
-  if (sameBatch) return sameBatch.token;
-  return assignments.find((item) => item.batch_state === "OPEN" && item.state === "OPEN" && item.token !== token)?.token || null;
+function load() {
+  fetch(`/api/v1/rate/assignments/${encodeURIComponent(ID)}`)
+    .then((r) => {
+      if (window.redirectToLoginIfExpired(r)) return null;
+      if (!r.ok) throw new Error(String(r.status));
+      return r.json();
+    })
+    .then((s) => {
+      if (!s) return;
+      nextId = s.next_assignment_id;
+      document.getElementById("sheet-batch").textContent = `Phiếu chấm mù · ${s.batch.name}`;
+      document.getElementById("sheet-h").lastChild.textContent = `Bài ${s.position}/${s.total}`;
+      document.title = "Bài " + s.position + "/" + s.total + " · Chấm mù";
+      document.getElementById("sheet-adjudication").hidden = !s.adjudication;
+      if (s.task) {
+        document.getElementById("task-title").textContent = s.task.title;
+        document.getElementById("task-prompt").textContent = s.task.prompt_text;
+        document.getElementById("task-time").textContent =
+          `Đề yêu cầu nói ${s.task.min_seconds}–${s.task.max_seconds} giây.`;
+      }
+      document.getElementById("sheet-audio").src = s.audio_url;
+      sheet.hidden = false;
+      if (s.rating) readOnly(s.rating);
+      else if (s.seen_machine) {
+        // The rater opened the machine's result for this response after the
+        // sheet was given: a rating now would not be blind, so none is taken.
+        form.querySelectorAll("input, button[type=submit]").forEach((el) => {
+          el.disabled = true;
+        });
+        messageEl.innerHTML =
+          '<p class="notice notice-warn">Bạn đã mở kết quả của máy cho bài này nên phiếu không còn mù và không nhận điểm.' +
+          (nextId ? ' <a href="/rate/' + encodeURIComponent(nextId) + '">Sang phiếu tiếp theo</a>.' : "") +
+          "</p>";
+      } else if (!s.batch.open) {
+        form.querySelectorAll("input, button[type=submit]").forEach((el) => {
+          el.disabled = true;
+        });
+        messageEl.innerHTML = '<p class="muted">Đợt chấm đã đóng, phiếu này không nộp được nữa.</p>';
+      }
+    })
+    .catch(() => {
+      document.getElementById("sheet-error").innerHTML =
+        '<p class="error">Không mở được phiếu chấm này. <a href="/rate">Về danh sách phiếu</a>.</p>';
+    });
 }
 
-async function load() {
-  try {
-    const [sheetResponse, listResponse] = await Promise.all([
-      fetch(`/api/v1/rating/assignments/${encodeURIComponent(token)}`),
-      fetch("/api/v1/rating/assignments"),
-    ]);
-    if (window.redirectToLoginIfExpired(sheetResponse) || window.redirectToLoginIfExpired(listResponse)) return;
-    if (!sheetResponse.ok || !listResponse.ok) throw new Error("assignment unavailable");
-    const assignment = await sheetResponse.json();
-    const list = await listResponse.json();
-    const assignments = Array.isArray(list.assignments) ? list.assignments : [];
-    nextToken = findNext(assignments);
-    const current = assignments.find((item) => item.token === token);
-    adjudication = Boolean(assignment.adjudication);
-    document.getElementById("sheet-batch").textContent = `Phiếu chấm mù · bài ${assignment.position}`;
-    document.getElementById("sheet-h").lastChild.textContent = `Bài ${assignment.position}`;
-    document.title = `Bài ${assignment.position} · Chấm mù`;
-    document.getElementById("sheet-adjudication").hidden = !adjudication;
-    if (adjudication) {
-      unscorable.checked = false;
-      unscorable.closest("label").hidden = true;
-      unscorableBox.hidden = true;
-    }
-    if (assignment.task) {
-      document.getElementById("task-title").textContent = assignment.task.title || "Bài nói";
-      document.getElementById("task-prompt").textContent = assignment.task.prompt_text || "";
-      const min = assignment.task.min_seconds;
-      const max = assignment.task.max_seconds;
-      document.getElementById("task-time").textContent = Number.isFinite(min) && Number.isFinite(max)
-        ? `Đề yêu cầu nói ${min}–${max} giây.` : "";
-    }
-    document.getElementById("sheet-audio").src = assignment.audio_url;
-    sheet.hidden = false;
-    if (assignment.rating) showSaved(assignment.rating);
-    else if (current?.state === "SUBMITTED") {
-      lockForm();
-      message.innerHTML = '<p class="success">Phiếu đã được nộp.</p>';
-    }
-  } catch (error) {
-    document.getElementById("sheet-error").innerHTML =
-      '<p class="error">Không mở được phiếu hoặc đợt chấm đã đóng. <a href="/rate">Về danh sách phiếu</a>.</p>';
-  }
+function number(el) {
+  const v = el.value.trim().replace(",", ".");
+  return v === "" ? null : Number(v);
 }
 
-function number(input) {
-  const value = input.value.trim().replace(",", ".");
-  return value === "" ? null : Number(value);
-}
-
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  message.textContent = "";
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  messageEl.innerHTML = "";
   let body;
   if (unscorable.checked) {
-    const selected = document.querySelector('input[name="unscorable-reason"]:checked');
-    if (!selected) {
-      message.innerHTML = '<p class="error">Hãy chọn lý do không chấm được.</p>';
+    const pick = document.querySelector('input[name="unscorable-reason"]:checked');
+    if (!pick) {
+      messageEl.innerHTML = '<p class="error">Hãy chọn lý do không chấm được.</p>';
       return;
     }
-    body = { criteria: {}, overall: null, band: null, rationale: rationale.value.trim(), unrateable_reason: selected.value };
+    body = { unscorable: true, unscorable_reason: pick.value, reason: reasonEl.value.trim() || null };
   } else {
     const criteria = {};
-    for (const input of criteriaInputs) {
-      const value = number(input);
-      if (value === null || Number.isNaN(value) || value < 0 || value > 6 || (value * 2) % 1 !== 0) {
-        message.innerHTML = '<p class="error">Mỗi tiêu chí cần một điểm từ 0 đến 6, bước 0,5.</p>';
-        input.focus();
+    for (const el of criteriaInputs) {
+      const v = number(el);
+      if (v === null || Number.isNaN(v) || v < 0 || v > 6 || (v * 2) % 1 !== 0) {
+        messageEl.innerHTML = '<p class="error">Mỗi tiêu chí cần một điểm từ 0 đến 6, bước 0,5.</p>';
+        el.focus();
         return;
       }
-      criteria[input.dataset.criterion] = value;
+      criteria[el.dataset.criterion] = v;
     }
-    const overall = number(overallInput);
+    const overall = number(overallEl);
     const band = document.querySelector('input[name="band"]:checked');
     if (overall === null || Number.isNaN(overall) || overall < 0 || overall > 6 || (overall * 2) % 1 !== 0) {
-      message.innerHTML = '<p class="error">Điểm tổng từ 0 đến 6, bước 0,5.</p>';
-      overallInput.focus();
+      messageEl.innerHTML = '<p class="error">Điểm tổng từ 0 đến 6, bước 0,5.</p>';
+      overallEl.focus();
       return;
     }
     if (!band) {
-      message.innerHTML = '<p class="error">Hãy chọn band.</p>';
+      messageEl.innerHTML = '<p class="error">Hãy chọn band.</p>';
       return;
     }
-    if (rationale.value.trim().length < 1 || rationale.value.trim().length > 300) {
-      message.innerHTML = '<p class="error">Hãy ghi lý do từ 1 đến 300 ký tự.</p>';
-      rationale.focus();
+    if (reasonEl.value.trim().length < 3) {
+      messageEl.innerHTML = '<p class="error">Hãy ghi một dòng lý do.</p>';
+      reasonEl.focus();
       return;
     }
-    body = { criteria, overall, band: band.value, rationale: rationale.value.trim() };
+    body = { criteria, overall, band: band.value, reason: reasonEl.value.trim() };
   }
-
-  submit.disabled = true;
+  submitEl.disabled = true;
   try {
-    const action = adjudication ? "adjudicate" : "submit";
-    const response = await fetch(`/api/v1/rating/assignments/${encodeURIComponent(token)}/${action}`, {
+    const r = await fetch(`/api/v1/rate/assignments/${encodeURIComponent(ID)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (window.redirectToLoginIfExpired(response)) return;
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const code = typeof result.error === "string" ? result.error : "Không nộp được phiếu.";
-      message.innerHTML = `<p class="error">${escapeHtml(code)}</p>`;
-      submit.disabled = false;
+    if (window.redirectToLoginIfExpired(r)) return;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      const detail = typeof d.detail === "string" ? d.detail : "Không nộp được phiếu.";
+      messageEl.innerHTML = `<p class="error">${escapeHtml(detail)}</p>`;
+      submitEl.disabled = false;
       return;
     }
     window.toast("Đã nộp phiếu.", "ok");
-    location.href = nextToken ? `/rate/${encodeURIComponent(nextToken)}` : "/rate";
-  } catch (error) {
-    message.innerHTML = '<p class="error">Không kết nối được máy chủ. Phiếu chưa được nộp.</p>';
-    submit.disabled = false;
+    const next = d.next_assignment_id || nextId;
+    location.href = next ? `/rate/${encodeURIComponent(next)}` : "/rate";
+  } catch (err) {
+    messageEl.innerHTML = '<p class="error">Không kết nối được máy chủ. Phiếu chưa được nộp.</p>';
+    submitEl.disabled = false;
   }
 });
 

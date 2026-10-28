@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Đang xử lý {{ response_id }} · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("clock") }}</span>Đang xử lý bài nói</h1>
+  <p class="lede">
+    Mã bài <code>{{ response_id }}</code>. Trang này tự chuyển sang báo cáo khi chấm xong —
+    không cần bấm gì thêm.
+  </p>
+</div>
+
+<div class="card" id="td" data-response-id="{{ response_id }}">
+  <div class="progress-head">
+    <h2>Tiến trình</h2>
+    <span class="elapsed" id="elapsed" aria-label="Thời gian đã trôi">Đã chờ 0:00</span>
+  </div>
+
+  <div class="progress-bar" id="progress-bar"
+       role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0"
+       aria-label="Tiến trình xử lý bài nói">
+    <span id="progress-fill"></span>
+  </div>
+
+  <ol class="steps" id="steps">
+    <li data-step="badge">
+      <span class="step-label">Đã nhận bài</span>
+      <span class="step-note">Bản ghi đã lên máy chủ và được xếp hàng.</span>
+    </li>
+    <li data-step="qc">
+      <span class="step-label">Kiểm tra chất lượng bản ghi</span>
+      <span class="step-note">Đo thời lượng, tỷ lệ im lặng, tiếng ồn nền.</span>
+    </li>
+    <li data-step="asr">
+      <span class="step-label">Nhận dạng tiếng nói</span>
+      <span class="step-note">Chuyển lời nói thành văn bản kèm mốc thời gian từng từ.</span>
+    </li>
+    <li data-step="cham">
+      <span class="step-label">Chấm điểm</span>
+      <span class="step-note">Tính các phép đo và đưa ra ước lượng tổng thể.</span>
+    </li>
+  </ol>
+
+  <p id="tb" class="muted" role="status" aria-live="polite">Đang kiểm tra trạng thái…</p>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('progress.js') }}"></script>{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Lượt của tôi · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D049, D053. A learner's runs on the metered channel: what is left this
+    cycle, what each recording cost, and the packs on sale. -#}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("star") }}</span>Lượt của tôi</h1>
+  <p class="lede">
+    Mỗi bài được tính theo <b>thời lượng thật đã ghi</b>, không theo thời lượng tối đa của đề.
+    Lượt bị giữ khi bạn nộp, phần thừa được trả lại ngay khi có kết quả, và trả lại hết nếu bài không ra kết quả.
+  </p>
+</div>
+
+<div class="card" id="balance" aria-busy="true" aria-live="polite">
+  <div class="skeleton skeleton-title"></div>
+  <div class="skeleton skeleton-line"></div>
+</div>
+
+<section class="card" id="packs-card" aria-labelledby="packs-h" hidden>
+  <div class="card-head"><h2 id="packs-h">Mua thêm lượt</h2></div>
+  <p class="muted" id="packs-note"></p>
+  <div class="pack-grid" id="packs"></div>
+  <label class="field" id="gateway-field" hidden>
+    <span>Cổng thanh toán</span>
+    <select id="gateway"></select>
+  </label>
+</section>
+
+<section class="card" aria-labelledby="history-h">
+  <div class="card-head"><h2 id="history-h">Lượt đã dùng gần đây</h2></div>
+  <div id="history"></div>
+</section>
+
+<section class="card" id="orders-card" aria-labelledby="orders-h" hidden>
+  <div class="card-head"><h2 id="orders-h">Đơn mua lượt</h2></div>
+  <div id="orders"></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('credits.js') }}"></script>{% endblock %}

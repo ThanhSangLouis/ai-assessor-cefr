@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, cube %}
+{% from "_art.html" import terraces %}
+{% block title %}Đăng nhập · AI Assessor CEFR{% endblock %}
+{% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
+{% block content %}
+<div class="auth-split">
+  {#- D037: the product page's terraces, coming in from behind the form. -#}
+  <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
+  <section class="auth-intro" aria-labelledby="auth-intro-h">
+    <p class="eyebrow">AI Assessor CEFR</p>
+    <h2 id="auth-intro-h">Luyện nói có lộ trình, tiến bộ có bằng chứng</h2>
+    {#- D031: the product page's three blocks, A2 to B2. -#}
+    <div class="cube-stage auth-cubes" aria-hidden="true"><div class="cube-row">{{ cube("A2", "tone-1", 72) }}{{ cube("B1", "tone-2", 108) }}{{ cube("B2", "is-solid", 144) }}</div></div>
+    <ul class="auth-points">
+      <li>Bài học ngắn, đi từ đọc theo đến nói tự do.</li>
+      <li>Phản hồi chỉ đúng chỗ cần luyện trong bản ghi.</li>
+      <li>Ước lượng theo khung CEFR; giảng viên quyết định cuối cùng.</li>
+    </ul>
+  </section>
+
+  <section class="card auth-card" aria-labelledby="login-h">
+    <h1 id="login-h">Đăng nhập</h1>
+    <p class="lede">Dùng mã bút danh do lớp cấp. Hệ thống không lưu họ tên thật.</p>
+    {% if google_error %}
+    <div class="notice notice-danger" role="alert">{{ google_error }}</div>
+    {% endif %}
+    <form id="f">
+      <label for="pseudonym">Mã bút danh</label>
+      <input id="pseudonym" name="pseudonym" autocomplete="username" required autofocus
+             autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
+      <p class="field-hint" id="pseudonym-hint">Ví dụ: SV-001, GV-02.</p>
+
+      <label for="password">Mật khẩu</label>
+      <div class="password-field">
+        <input id="password" name="password" type="password"
+               autocomplete="current-password" required aria-describedby="caps-hint tb">
+        <button type="button" class="link-button" id="show-password" aria-pressed="false"
+                aria-controls="password">Hiện</button>
+      </div>
+      <p class="field-hint" id="caps-hint" hidden>Phím Caps Lock đang bật.</p>
+
+      <div class="button-row">
+        <button id="b" type="submit">Đăng nhập</button>
+      </div>
+      {#- The one place a failed login is announced; a toast as well would read it twice. -#}
+      <div id="tb" role="alert"></div>
+    </form>
+    {#- D029. Google signs in an account that has been linked to it from the
+        account page; it never creates one. -#}
+    {% if google_enabled %}
+    <div class="auth-or" aria-hidden="true"><span>hoặc</span></div>
+    <a class="button secondary google-button" id="google-login" href="/auth/google/start?mode=login">
+      {{ icon("user") }} Đăng nhập bằng Google
+    </a>
+    <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
+    {% endif %}
+    <details class="auth-help">
+      <summary>Quên mật khẩu?</summary>
+      <p>
+        Hệ thống không có email của bạn nên không gửi được thư đặt lại mật khẩu. Hãy báo giảng
+        viên hoặc quản trị viên của lớp: họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng
+        nhập tới bạn đặt mật khẩu mới. Nếu đã liên kết Google, bạn đăng nhập bằng Google rồi đổi
+        mật khẩu ở trang Tài khoản.
+      </p>
+    </details>
+    <p class="muted auth-foot">
+      Chưa có tài khoản thì liên hệ quản trị viên của lớp. Hệ thống không cho tự đăng ký vì mỗi
+      tài khoản phải gắn với một vai trò cụ thể.
+    </p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('login.js') }}"></script>{% endblock %}

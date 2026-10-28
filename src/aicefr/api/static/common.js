@@ -469,6 +469,7 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
     ratings: "phiếu chấm mù chưa làm",
+    assignments: "bài được giao chưa nộp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {
@@ -482,12 +483,14 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     });
   };
   window.ui.setBadge = setBadge;
-  if (document.querySelector('.nav-badge[data-badge="reviews_due"]')) {
-    fetch("/api/v1/learn/reviews/due")
+  if (document.querySelector(".nav-badge[data-badge]")) {
+    fetch("/api/v1/me/badges")
       .then((r) => (r.ok ? r.json() : null))
-      .then((value) => {
-        if (!value || !Array.isArray(value.reviews)) return;
-        setBadge("reviews_due", value.reviews.length);
+      .then((counts) => {
+        if (!counts) return;
+        Object.keys(BADGE_WORDS).forEach((name) => {
+          if (name in counts) setBadge(name, counts[name]);
+        });
       })
       // A badge is a convenience; a failed count must not disturb the page.
       .catch(() => {});
