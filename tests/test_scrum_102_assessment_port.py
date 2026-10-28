@@ -181,7 +181,6 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
         ],
         engine="fake",
         model_version="v1",
-        has_word_timestamps=True,
         is_verbatim=True,
     )
     evidence = EvidenceBuilder().build(transcript, features, [(0.0, 1.2), (2.5, 3.0)])

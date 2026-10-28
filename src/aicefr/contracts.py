@@ -263,7 +263,6 @@ class Transcript(BaseModel):
     words: list[Word] = Field(default_factory=list)
     engine: str
     model_version: str
-    has_word_timestamps: bool = False
     is_verbatim: bool = False
     # Ngon ngu bo nhan dang phat hien tren 30 giay dau (D022). Rong khi engine
     # khong phat hien duoc -- vi du model chi tieng Anh, hoac ban gia lap.

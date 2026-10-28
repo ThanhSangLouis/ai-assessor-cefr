@@ -28,7 +28,6 @@ def _asr(verbatim: bool = False) -> Transcript:
         words=words,
         engine="fake",
         model_version="v1",
-        has_word_timestamps=True,
         is_verbatim=verbatim,
     )
 

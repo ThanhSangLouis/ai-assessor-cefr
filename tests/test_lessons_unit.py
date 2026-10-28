@@ -77,9 +77,7 @@ def transcript(text: str, step: float = 0.5, probs: list[float] | None = None) -
         )
         for i, w in enumerate(text.split())
     ]
-    return Transcript(
-        text=text, words=words, engine="test", model_version="test-v1", has_word_timestamps=True
-    )
+    return Transcript(text=text, words=words, engine="test", model_version="test-v1")
 
 
 def timed(*words: tuple[str, float, float]) -> Transcript:
@@ -89,7 +87,6 @@ def timed(*words: tuple[str, float, float]) -> Transcript:
         words=[Word(text=w, start_s=s, end_s=e, prob=0.9) for w, s, e in words],
         engine="test",
         model_version="test-v1",
-        has_word_timestamps=True,
     )
 
 
