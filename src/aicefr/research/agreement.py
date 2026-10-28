@@ -33,7 +33,7 @@ from typing import Any, TypeVar
 
 import numpy as np
 
-BANDS: tuple[str, ...] = ("A2", "B1", "B2")
+BANDS: tuple[str, ...] = ("A1", "A2", "B1", "B2", "C1", "C2")
 CRITERIA: tuple[str, ...] = ("range", "accuracy", "fluency", "coherence", "phonology")
 ADJUDICATION_GAP = 1.0
 SCORE_MIN, SCORE_MAX = 0.0, 6.0

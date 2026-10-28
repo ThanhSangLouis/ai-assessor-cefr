@@ -201,20 +201,23 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     assert path["path_id"] == SAMPLE_PATH_ID and path["sample"] == 1
     assert "chờ giảng viên" in path["description"]  # labelled as content awaiting review
     units = repo.outline(SAMPLE_PATH_ID)
-    # Three levels in order, each through units on different topics.
-    assert [u["band"] for u in units] == ["A2"] * 6 + ["B1"] * 6 + ["B2"] * 6
-    for band in ("A2", "B1", "B2"):
-        assert len({u["topic"] for u in units if u["band"] == band}) == 6
+    # Six levels in order (D059), each through units on different topics.
+    assert [u["band"] for u in units] == (
+        ["A1"] * 2 + ["A2"] * 6 + ["B1"] * 6 + ["B2"] * 6 + ["C1"] * 2 + ["C2"] * 2
+    )
+    for band in ("A1", "A2", "B1", "B2", "C1", "C2"):
+        topics = [u["topic"] for u in units if u["band"] == band]
+        assert len(set(topics)) == len(topics) >= 2
     items = [item for u in units for item in u["lessons"]]
-    assert len(items) == 31
+    assert len(items) == 46
     assert all(item["published_version"] == 1 for item in items)
     assert all(item["lesson"].sample for item in items)
     assert all(item["lesson"].steps[-1].kind is StepKind.FREE for item in items)
 
     home = login_as(m, "SV-001").get("/api/v1/learn").json()
     assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["sample"] is True
-    assert home["path"]["lessons_total"] == 31 and home["path"]["lessons_completed"] == 0
-    assert home["next"]["lesson_id"] == SAMPLE and home["next"]["basis"] == "path_order"
+    assert home["path"]["lessons_total"] == 46 and home["path"]["lessons_completed"] == 0
+    assert home["next"]["lesson_id"] == "lesson-pr-flu-a1" and home["next"]["basis"] == "path_order"
 
 
 def test_students_see_the_published_version_until_republished(m):
@@ -269,7 +272,7 @@ def test_archived_lesson_is_hidden_from_learners_but_its_attempts_stay_readable(
 
     assert student.get(f"/api/v1/learn/lessons/{SAMPLE}").status_code == 404
     record(student, SAMPLE, KEYWORDS, expect=404)
-    assert student.get("/api/v1/learn").json()["path"]["lessons_total"] == 30
+    assert student.get("/api/v1/learn").json()["path"]["lessons_total"] == 45
     seen = teacher.get(f"/api/v1/teach/attempts/{attempt_id}").json()
     assert seen["lesson"]["title"] == "Khu phố của tôi" and seen["step"]["kind"] == "keywords"
     exported = student.get("/api/v1/me/export.json").json()["lesson_attempts"]
@@ -513,7 +516,8 @@ def test_keywords_without_a_text_build_a_word_lesson(m):
 
     assert teacher.post(f"/api/v1/teach/lessons/{words}/publish").json() == {"version": 1}
     student = login_as(m, "SV-001")
-    a2 = student.get("/api/v1/learn").json()["path"]["units"][0]
+    units = student.get("/api/v1/learn").json()["path"]["units"]
+    [a2] = [u for u in units if u["unit_id"] == "unit-sample-a2"]
     assert a2["lessons"][-1]["lesson_id"] == words  # the two drafts stay hidden
     assert a2["lessons"][-1]["kinds"] == ["keywords", "keywords", "free"]
     say(m, "the traffic near my home is bad but the park nearby is quiet")
@@ -651,7 +655,7 @@ def test_path_export_import_roundtrip(m):
     assert _shape(m, new_id) == _shape(m, SAMPLE_PATH_ID)
     imported = [i for u in m.lessons.outline(new_id, published_only=False) for i in u["lessons"]]
     original = [i for u in m.lessons.outline(SAMPLE_PATH_ID) for i in u["lessons"]]
-    assert len(imported) == 31
+    assert len(imported) == 46
     assert all(i["published_version"] == 0 for i in imported)  # drafts, nothing published
     assert not {i["lesson"].lesson_id for i in imported} & {i["lesson"].lesson_id for i in original}
     learner_paths = login_as(m, "SV-001").get("/api/v1/learn").json()["paths"]
@@ -672,7 +676,7 @@ def test_rejected_import_leaves_no_half_built_path(m):
         "title": "Lộ trình nhập lỗi",
         "units": [
             {"title": "Chặng 1", "band": "B1", "lessons": []},
-            {"title": "Chặng 2", "band": "C1", "lessons": []},
+            {"title": "Chặng 2", "band": "D1", "lessons": []},
         ],
     }
 
@@ -759,7 +763,7 @@ def _old_sample_path(db: Path) -> LessonRepository:
             repo.add_lesson(uid, every[lid], by="system")
             repo.publish(lid, by="system")
     for lid, lesson in every.items():
-        if lid.startswith("lesson-pr-"):
+        if lid.startswith("lesson-pr-") and Band(lesson.band).value in by_band:
             repo.add_lesson(by_band[Band(lesson.band).value], lesson, by="system")
             repo.publish(lid, by="system")
     return repo
@@ -778,12 +782,13 @@ def test_an_older_sample_path_is_laid_out_by_topic_once(tmp_path):
     ids = [u["unit_id"] for u in units]
     assert ids == [*(u["unit_id"] for u in SAMPLE_UNITS), own]  # a teacher's unit stays, last
     assert all(u["topic"] for u in units[:-1]) and units[-1]["topic"] is None
-    assert units[0]["title"] == "Đời sống hằng ngày" and repo.path(SAMPLE_PATH_ID)["title"] != (
+    assert units[2]["title"] == "Đời sống hằng ngày" and repo.path(SAMPLE_PATH_ID)["title"] != (
         "Lộ trình mẫu cũ"
     )
     where = {i["lesson"].lesson_id: u["unit_id"] for u in units for i in u["lessons"]}
     assert where["lesson-pr-coh-a2"] == "unit-a2-food"
-    assert len([lid for lid in where if lid.startswith("lesson-")]) == 31
+    assert len([lid for lid in where if lid.startswith("lesson-")]) == 46  # D059 adds 15
+    assert repo.path(SAMPLE_PATH_ID)["band_from"] == "A1"
     assert repo.published("lesson-b2-plastic")[1] == 1  # new lessons arrive published
     assert len(repo.attempts(lesson_id="lesson-pr-coh-a2")) == 1  # attempts untouched
 

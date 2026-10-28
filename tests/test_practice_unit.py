@@ -100,9 +100,10 @@ def check(kind: MissionKind, measured: float | None, met: bool | None, **kw) -> 
 
 def test_bank_has_one_task_per_criterion_and_band():
     cells = {(t.criterion, t.band) for t in PRACTICE_TASKS}
-    assert len(PRACTICE_TASKS) == 15
+    # Five criteria by six bands, A1 to C2 (D059).
+    assert len(PRACTICE_TASKS) == 30
     assert cells == {(c, b) for c in PATH_ORDER for b in BAND_ORDER}
-    assert len({t.task_id for t in PRACTICE_TASKS}) == 15
+    assert len({t.task_id for t in PRACTICE_TASKS}) == 30
     for c in PATH_ORDER:
         for b in BAND_ORDER:
             assert practice_task_id(c, b) == f"PR-{c.value[:3].upper()}-{b.value}"
@@ -391,13 +392,16 @@ def test_weakest_criterion_and_band_of_assessment_drive_suggestion():
 def test_after_current_band_go_up_then_down():
     bank = _bank()
     weak = [Criterion.COHERENCE]
+    upper = ("PR-COH-B1", "PR-COH-B2", "PR-COH-C1", "PR-COH-C2")
     assert recommend(bank, done("PR-COH-B1"), weak, Band.B1).task_id == "PR-COH-B2"
-    assert recommend(bank, done("PR-COH-B1", "PR-COH-B2"), weak, Band.B1).task_id == "PR-COH-A2"
+    assert recommend(bank, done(*upper[:2]), weak, Band.B1).task_id == "PR-COH-C1"
+    assert recommend(bank, done(*upper), weak, Band.B1).task_id == "PR-COH-A2"
+    assert recommend(bank, done(*upper, "PR-COH-A2"), weak, Band.B1).task_id == "PR-COH-A1"
 
 
 def test_after_weakest_criterion_continue_the_path():
     rec = recommend(
-        _bank(), done("PR-COH-A2", "PR-COH-B1", "PR-COH-B2"), [Criterion.COHERENCE], Band.B1
+        _bank(), done(*(f"PR-COH-{b.value}" for b in Band)), [Criterion.COHERENCE], Band.B1
     )
     assert rec.task_id == "PR-FLU-B1"
     assert rec.basis is RecommendationBasis.CONTINUE_PATH

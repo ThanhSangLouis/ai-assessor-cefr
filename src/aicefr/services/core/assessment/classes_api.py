@@ -20,6 +20,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import STAFF_ONLY, STUDENT_ONLY
+from aicefr.contracts import Band
 from aicefr.practice.streak import LOCAL_TZ
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account, Role
@@ -115,7 +116,7 @@ def _summary(assignment: dict, states: dict[str, dict]) -> dict:
         "late": counts["late"],
         "open": counts["open"],
         "missing": counts["missing"],
-        "bands": {b: bands.get(b, 0) for b in ("A2", "B1", "B2")},
+        "bands": {b: bands.get(b, 0) for b in (band.value for band in Band)},
         "verified": sum(1 for s in states.values() if s.get("teacher_verified")),
     }
 

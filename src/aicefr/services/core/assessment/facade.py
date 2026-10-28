@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from aicefr.platform.rpc import exposed
 from aicefr.qc import audio_qc
+from aicefr.scoring.band_map import thresholds_of
 from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import PREP_SECONDS, active_model_name, active_qc
 from aicefr.storage.rating_repository import RatingRepository
@@ -86,8 +87,7 @@ class AssessmentFacade:
             "max_size_mib": audio_qc.MAX_BYTES // (1024 * 1024),
             "sample_rate_hz": audio_qc.TARGET_SR,
             "prep_seconds": PREP_SECONDS,
-            "a2_b1": model["band_thresholds"]["A2_B1"],
-            "b1_b2": model["band_thresholds"]["B1_B2"],
+            "band_thresholds": thresholds_of(model["band_thresholds"]),
             "model_version": model["model_version"],
         }
 

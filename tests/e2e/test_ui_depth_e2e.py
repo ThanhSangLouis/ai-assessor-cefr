@@ -126,7 +126,7 @@ def scored(live_server, response_id: str) -> None:
     )  # fmt: skip
 
 
-def test_the_report_marks_the_estimated_band_among_the_three(context, live_server):
+def test_the_report_marks_the_estimated_band_among_the_six(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), "/practice")
     accept_terms(page)
@@ -145,10 +145,10 @@ def test_the_report_marks_the_estimated_band_among_the_three(context, live_serve
     page.goto(f"/report/{response_id}")
     podium = page.locator(".band-podium")
     expect(podium).to_have_attribute("aria-hidden", "true")
-    expect(podium.locator(".cube")).to_have_count(3)
+    expect(podium.locator(".cube")).to_have_count(6)  # A1 to C2 (D059)
     expect(podium.locator(".cube.is-band")).to_have_text("B1")
     expect(podium.locator(".cube.is-possible")).to_have_text("B2")
-    expect(podium.locator(".cube.is-dim")).to_have_text("A2")
+    expect(podium.locator(".cube.is-dim")).to_have_text(["A1", "A2", "C1", "C2"])
     # The band itself is written beside the blocks, for every reader.
     expect(page.locator(".score-band")).to_have_text("B1")
 

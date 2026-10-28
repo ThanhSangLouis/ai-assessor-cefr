@@ -1090,7 +1090,7 @@ class Repository(MongoStore):
         # Diem va band khong duoc mau thuan (5,5 kem A2 tung duoc luu la "da xac
         # nhan"). Gui ca hai thi chung phai khop nguong cua chinh mo hinh da cham.
         if new_score is not None and new_band is not None:
-            from aicefr.scoring.scorer import to_band
+            from aicefr.scoring.band_map import to_band
 
             if to_band(new_score, thresholds).value != new_band:
                 raise InvalidStateError(
@@ -1111,7 +1111,7 @@ class Repository(MongoStore):
         # verified, exported, and meaningless. When only the score moves, the
         # band follows it.
         if new_score is not None and new_band is None:
-            from aicefr.scoring.scorer import to_band
+            from aicefr.scoring.band_map import to_band
 
             a.overall_band = to_band(new_score, thresholds)
 
@@ -1331,11 +1331,12 @@ def _band_thresholds(model_version: str | None) -> dict[str, float]:
     Bai do giang vien tu cham ("teacher") hoac mo hinh khong con tren dia thi
     dung mo hinh mac dinh.
     """
+    from aicefr.scoring.band_map import thresholds_of
     from aicefr.scoring.scorer import ModelNotFoundError, load_model
 
     if model_version:
         try:
-            return load_model(model_version)["band_thresholds"]
+            return thresholds_of(load_model(model_version)["band_thresholds"])
         except (ModelNotFoundError, KeyError):
             pass
-    return load_model()["band_thresholds"]
+    return thresholds_of(load_model()["band_thresholds"])

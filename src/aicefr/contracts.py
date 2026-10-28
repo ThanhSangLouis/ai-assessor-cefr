@@ -114,9 +114,19 @@ class Criterion(str, Enum):
 
 
 class Band(str, Enum):
+    """The six CEFR levels, lowest first (D059). The order is meaningful."""
+
+    A1 = "A1"
     A2 = "A2"
     B1 = "B1"
     B2 = "B2"
+    C1 = "C1"
+    C2 = "C2"
+
+    @property
+    def rank(self) -> int:
+        """0 for A1 up to 5 for C2: what "higher band" and "lower band" compare."""
+        return list(Band).index(self)
 
 
 class EvidenceKind(str, Enum):

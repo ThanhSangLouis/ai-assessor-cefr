@@ -23,13 +23,13 @@ from functools import lru_cache
 
 from aicefr.contracts import (
     Assessment,
-    Band,
     Criterion,
     CriterionCoverage,
     FeatureSet,
     ReasonCode,
 )
 from aicefr.scoring import artifacts
+from aicefr.scoring.band_map import BAND_MAP_VERSION, near_boundary, thresholds_of, to_band
 from aicefr.scoring.conformal import ConformalCalibrator, weakest
 
 # ridge_resp_v2 is ridge_resp_v1 with one term removed: `filler_ratio`, whose
@@ -95,19 +95,6 @@ def load_model(name: str = DEFAULT_MODEL) -> dict:
 def _load_model(name: str, folder: str) -> dict:
     # Keyed by the folder too: tests point AICEFR_MODEL_DIR somewhere else.
     return artifacts.read_json(name)
-
-
-def to_band(score: float, thresholds: dict[str, float]) -> Band:
-    if score < thresholds["A2_B1"]:
-        return Band.A2
-    if score < thresholds["B1_B2"]:
-        return Band.B1
-    return Band.B2
-
-
-def near_boundary(score: float, thresholds: dict[str, float], margin: float) -> bool:
-    """A score close to the boundary between two bands should go to a teacher."""
-    return any(abs(score - t) <= margin for t in thresholds.values())
 
 
 def out_of_distribution(features: FeatureSet, model: dict) -> list[str]:
@@ -202,11 +189,13 @@ class RidgeScorer:
         self._refuse_if_wrong_unit(model_name, self._model)
         self.model_version: str = self._model["model_version"]
         self.feature_version = self._model.get("feature_version")
-        self.band_map_version = self._model.get("band_map_version")
+        # D059: the band map lives in the code (six bands, five boundaries); the
+        # artifact contributes its own boundaries, not the version.
+        self.band_map_version = BAND_MAP_VERSION
         self.calibration_version = self._model.get("calibration_version")
         # Exposed so the window aggregation maps its median to a band with the
         # same thresholds the artifact declares, instead of a second copy.
-        self.band_thresholds: dict = self._model["band_thresholds"]
+        self.band_thresholds: dict = thresholds_of(self._model["band_thresholds"])
         # Which recogniser and detector produced the features this model was
         # fitted on. The pipeline compares them with what is actually running.
         self.trained_with: dict = self._model.get("trained_with", {})
@@ -264,7 +253,7 @@ class RidgeScorer:
         """
         model = self._model
         overall, reasons = predict_overall(features, model)
-        th = model["band_thresholds"]
+        th = self.band_thresholds
 
         criteria: list[CriterionCoverage] = []
         for crit, feats in CRITERION_FEATURES.items():

@@ -129,22 +129,27 @@ def page_login(request: Request):
 
 @router.get("/bands", response_class=HTMLResponse, tags=["web"])
 def page_bands(request: Request, account: Account | None = Depends(optional_account)):
-    """What A2, B1 and B2 describe, and what the machine measures of each aspect (D028).
+    """What A1 to C2 describe, and what the machine measures of each aspect (D028, D059).
 
-    Open to visitors too: it explains a result, it does not show one. The two
-    thresholds come from the model in force, the same numbers `to_band` uses.
+    Open to visitors too: it explains a result, it does not show one. The five
+    thresholds are those of the model in force, the same numbers `to_band` uses.
     """
     from aicefr.report.bands import page_rows
+    from aicefr.scoring.band_map import band_spans
 
     lim = _limits()
+    spans = [
+        {"band": b.value, "low": None if lo == float("-inf") else lo,
+         "high": None if hi == float("inf") else hi}
+        for b, lo, hi in band_spans(lim["band_thresholds"])
+    ]  # fmt: skip
     return _page(
         request,
         "bands.html",
         account,
         "bands",
         rows=page_rows(),
-        a2_b1=lim["a2_b1"],
-        b1_b2=lim["b1_b2"],
+        spans=spans,
         model_version=lim["model_version"],
     )
 

@@ -259,7 +259,7 @@ def test_a_rating_follows_the_rating_sheet_rules(m):
         {**GOOD, "criteria": {"range": 3}},
         {**GOOD, "overall": 6.5},
         {**GOOD, "overall": 3.25},
-        {**GOOD, "band": "C1"},
+        {**GOOD, "band": "D1"},
         {**GOOD, "reason": ""},
         {"unscorable": True, "unscorable_reason": "broken", "overall": 2.0},
         {"unscorable": True},

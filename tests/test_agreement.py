@@ -113,8 +113,8 @@ def test_qwk_is_none_when_undefined_or_too_small():
 
 
 def test_qwk_rejects_a_value_outside_the_categories():
-    with pytest.raises(ValueError, match="C1"):
-        quadratic_weighted_kappa(["B1", "C1"], ["B1", "B1"], BANDS)
+    with pytest.raises(ValueError, match="D1"):
+        quadratic_weighted_kappa(["B1", "D1"], ["B1", "B1"], BANDS)
 
 
 # --------------------------------------------------------- pearson, rmse, icc
@@ -158,17 +158,25 @@ def test_icc_is_none_when_too_small_or_undefined():
 
 
 def test_confusion_rows_follow_the_first_sequence():
+    # Six bands (D059): the rows and columns run A1 to C2.
     assert confusion(["A2", "B1", "B1"], ["B1", "B1", "B2"], BANDS) == [
-        [0, 1, 0],
-        [0, 1, 1],
-        [0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 1, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
     ]
 
 
 def test_per_band_recall_and_precision_on_a_hand_made_example():
     reference_bands = ["A2", "A2", "B1", "B1", "B1", "B2"]
     machine_bands = ["A2", "B1", "B1", "B1", "A2", "B1"]
+    empty = {"support": 0, "recall": None, "precision": None}
     assert per_band(reference_bands, machine_bands) == {
+        "A1": empty,
+        "C1": empty,
+        "C2": empty,
         "A2": {"support": 2, "recall": 0.5, "precision": 0.5},
         "B1": {"support": 3, "recall": pytest.approx(2 / 3), "precision": 0.5},
         "B2": {"support": 1, "recall": 0.0, "precision": None},
@@ -261,7 +269,7 @@ def test_rating_rejects_inconsistent_input():
     with pytest.raises(ValueError, match="band"):
         Rating("R1", 3.0, None, {})
     with pytest.raises(ValueError, match="unknown band"):
-        Rating("R1", 3.0, "C1", {})
+        Rating("R1", 3.0, "D1", {})
     with pytest.raises(ValueError, match="within"):
         Rating("R1", 6.5, "B2", {})
     with pytest.raises(ValueError, match="unknown criteria"):
@@ -486,7 +494,14 @@ def test_report_is_reproducible_with_the_default_bootstrap():
 def test_report_human_human_block(report: dict):
     humans = report["human_human"]
     assert (humans["n"], humans["speakers"]) == (7, 6)
-    assert humans["confusion_band"] == [[1, 1, 0], [0, 2, 1], [0, 0, 2]]
+    assert humans["confusion_band"] == [
+        [0, 0, 0, 0, 0, 0],
+        [0, 1, 1, 0, 0, 0],
+        [0, 0, 2, 1, 0, 0],
+        [0, 0, 0, 2, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
     assert humans["exact_band_agreement"]["value"] == round(5 / 7, 4)
     assert humans["mean_abs_diff"] == 0.5
     assert humans["icc_overall"]["kind"] == "ICC(2,1)"
@@ -500,7 +515,14 @@ def test_report_leaves_pending_responses_out_of_machine_human(report: dict):
     machine = report["machine_human"]
     assert (machine["n"], machine["speakers"]) == (6, 5)
     assert machine["reference_kinds"] == {"mean_of_two": 5, "median_of_three": 1}
-    assert machine["confusion_band"] == [[1, 0, 0], [0, 3, 0], [0, 1, 1]]
+    assert machine["confusion_band"] == [
+        [0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0],
+        [0, 0, 3, 0, 0, 0],
+        [0, 0, 1, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
     assert machine["per_band"]["B2"] == {"support": 2, "recall": 0.5, "precision": 1.0}
     assert any("pending" in note for note in report["notes"])
     without_pending = [item for item in STUDY if item.response_id != "r5"]

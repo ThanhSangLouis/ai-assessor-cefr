@@ -157,8 +157,8 @@ def test_thirty_seconds_of_preparation_then_the_answer_is_recorded(context, live
 def test_the_band_page_says_what_the_machine_does_not_measure(context, live_server):
     page = context.new_page()
     page.goto("/bands")
-    expect(page.get_by_role("heading", name="Band A2, B1, B2 nghĩa là gì")).to_be_visible()
+    expect(page.get_by_role("heading", name="Band A1 đến C2 nghĩa là gì")).to_be_visible()
     expect(page.locator('.aspect-card[data-provenance="not_measured"]')).to_have_count(2)
-    expect(page.locator(".band-ladder li")).to_have_count(3)
+    expect(page.locator(".band-ladder li")).to_have_count(6)
     # Reached from every page, guests included.
     expect(page.locator(".site-footer a[href='/bands']")).to_be_visible()

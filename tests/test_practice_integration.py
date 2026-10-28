@@ -62,10 +62,10 @@ def wav(seconds: float = 35.0) -> bytes:
 # ================================================================= database (FR-40, FR-44)
 
 
-def test_task_repository_seeds_15_practice_tasks_and_lists_assessment_by_default(tmp_path):
+def test_task_repository_seeds_30_practice_tasks_and_lists_assessment_by_default(tmp_path):
     tasks = TaskRepository(tmp_path / "t.db")
     practice = tasks.list_active(TaskPurpose.PRACTICE)
-    assert len(practice) == 15 and all(t.is_practice for t in practice)
+    assert len(practice) == 30 and all(t.is_practice for t in practice)
     assert {t.task_id for t in tasks.list_active()} == {"P3", "P4", "P5"}
     loaded = tasks.get("PR-COH-B2")
     assert loaded.criterion is Criterion.COHERENCE and loaded.band is Band.B2
@@ -339,10 +339,13 @@ def test_new_learner_gets_an_a2_suggestion_and_the_full_path(m):
         "accuracy",
         "phonology",
     ]
-    assert all([t["band"] for t in row["tasks"]] == ["A2", "B1", "B2"] for row in body["path"])
+    assert all(
+        [t["band"] for t in row["tasks"]] == ["A1", "A2", "B1", "B2", "C1", "C2"]
+        for row in body["path"]
+    )
     assert body["daily"]["today"] == 0 and body["daily"]["streak"] == 0
     assert len(body["daily"]["week"]) == 7
-    assert body["totals"] == {"tasks": 15, "completed": 0, "attempts": 0}
+    assert body["totals"] == {"tasks": 30, "completed": 0, "attempts": 0}
 
 
 def test_practice_tasks_never_appear_in_the_assessment_task_list(m):
@@ -392,8 +395,8 @@ def test_practice_submission_gets_a_result_without_band_and_skips_the_queue(m):
 
     hub = student.get("/api/v1/practice").json()
     coherence = next(r for r in hub["path"] if r["criterion"] == "coherence")
-    assert coherence["tasks"][0]["status"] == "completed"
-    assert hub["totals"] == {"tasks": 15, "completed": 1, "attempts": 1}
+    assert coherence["tasks"][1]["status"] == "completed"  # [0] is A1
+    assert hub["totals"] == {"tasks": 30, "completed": 1, "attempts": 1}
 
 
 def test_completing_the_suggested_task_moves_the_suggestion_on(m):

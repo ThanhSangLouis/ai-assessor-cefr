@@ -226,12 +226,14 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
 
 
 def test_band_thresholds_follow_the_model_that_scored_the_response() -> None:
+    from aicefr.scoring.band_map import thresholds_of
     from aicefr.scoring.scorer import load_model
     from aicefr.storage.repository import _band_thresholds
 
-    assert _band_thresholds("ridge_resp_v1") == load_model("ridge_resp_v1")["band_thresholds"]
-    assert _band_thresholds("teacher") == load_model()["band_thresholds"]
-    assert _band_thresholds(None) == load_model()["band_thresholds"]
+    old = thresholds_of(load_model("ridge_resp_v1")["band_thresholds"])
+    assert _band_thresholds("ridge_resp_v1") == old
+    assert _band_thresholds("teacher") == thresholds_of(load_model()["band_thresholds"])
+    assert _band_thresholds(None) == thresholds_of(load_model()["band_thresholds"])
 
 
 def test_the_model_list_hides_the_calibration_artifact(tmp_path) -> None:

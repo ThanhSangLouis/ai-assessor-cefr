@@ -194,7 +194,7 @@ def test_changing_the_score_moves_the_band_with_it(app) -> None:
     )
     if r.status_code == 409:
         pytest.skip("bài không ở trạng thái chờ duyệt trong lần chạy này")
-    assert r.json()["assessment"]["overall_band"] == "B2"
+    assert r.json()["assessment"]["overall_band"] == "C1"  # D059: 5.5 is above B2/C1
 
 
 # ------------------------------------------------------------------ state left behind

@@ -38,7 +38,7 @@ def _typical() -> dict[str, float]:
         (2.75, 3.5, [Band.B1]),  # 2,75 la can duoi cua B1, khong thuoc A2
         (2.74, 2.75, [Band.A2, Band.B1]),
         (3.0, 3.75, [Band.B1, Band.B2]),
-        (1.0, 6.0, [Band.A2, Band.B1, Band.B2]),
+        (1.0, 6.0, list(Band)),
     ],
 )
 def test_band_set_is_every_band_the_interval_touches(low, high, expected) -> None:
@@ -94,24 +94,23 @@ def _strong(frac: float) -> dict[str, float]:
     }
 
 
-def test_a_clearly_strong_response_gets_its_band_without_a_teacher() -> None:
-    """Khoang 90% nam gon trong B2 thi may duoc phat band, khong co co bien."""
+def test_a_strong_response_lands_in_the_upper_bands() -> None:
+    """D059: band rong mot diem, khoang 90% rong gan hai diem, nen bai manh cham B2..C2."""
     a = RidgeScorer().score(feature_set(_strong(0.9)))
-    assert a.interval.band_set == [Band.B2] and a.overall_band is Band.B2
-    assert ReasonCode.SCORE_NEAR_BOUNDARY not in a.reasons
+    assert a.overall_band is Band.C1
+    assert a.interval.band_set == [Band.B2, Band.C1, Band.C2]
 
 
 def test_the_same_response_at_a_looser_alpha_can_be_auto_banded() -> None:
-    """Cung bai: alpha 0,10 cham B1 va B2, alpha 0,30 chi con B2.
+    """Cung bai: alpha 0,10 cham B1, B2, C1; alpha 0,30 chi con B2, C1.
 
     Doi alpha la doi tai giang vien -- day la nut dieu chinh, khong phai mot hang so.
     """
     fs = feature_set(_strong(0.75))
     strict, loose = RidgeScorer(alpha=0.10).score(fs), RidgeScorer(alpha=0.30).score(fs)
-    assert strict.interval.band_set == [Band.B1, Band.B2]
+    assert strict.interval.band_set == [Band.B1, Band.B2, Band.C1]
     assert ReasonCode.SCORE_NEAR_BOUNDARY in strict.reasons
-    assert loose.interval.band_set == [Band.B2]
-    assert ReasonCode.SCORE_NEAR_BOUNDARY not in loose.reasons
+    assert loose.interval.band_set == [Band.B2, Band.C1]
 
 
 def test_without_a_calibration_the_old_margin_rule_still_runs() -> None:

@@ -183,7 +183,7 @@ def test_invalid_band_rejected(app):
     teacher = _login_as(app, "GV-01", "teacher")
     r = teacher.post(
         f"/api/v1/review/{rid}",
-        json={"new_band": "C1", "reason": "thu band ngoai pham vi"},
+        json={"new_band": "D1", "reason": "thu band ngoai pham vi"},
     )
     assert r.status_code == 422
 

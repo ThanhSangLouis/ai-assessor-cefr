@@ -1,6 +1,6 @@
 # Tài liệu Thiết kế Phần mềm (SDD)
 
-## Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR (A2–B2) cho sinh viên đại học Việt Nam
+## Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR (A1–C2) cho sinh viên đại học Việt Nam
 
 | Thuộc tính | Giá trị |
 | --- | --- |
@@ -33,11 +33,11 @@
 
 ### 1.1. Mục đích tài liệu
 
-Tài liệu này mô tả thiết kế phần mềm của hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo khung CEFR ở dải A2–B2. Tài liệu chuyển các yêu cầu trong SRS thành một kiến trúc thi hành được: ranh giới module, hợp đồng dữ liệu có kiểu, lược đồ cơ sở dữ liệu, hợp đồng API và bảng ánh xạ từ thành phần thiết kế sang đường dẫn mã nguồn dự kiến. Người đọc mục tiêu gồm: ba thành viên nhóm khi lập trình, giảng viên hướng dẫn khi duyệt thiết kế, và hội đồng bảo vệ khi đối chiếu sơ đồ với mã nguồn.
+Tài liệu này mô tả thiết kế phần mềm của hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo khung CEFR ở dải A1–C2 (D059; ngưỡng A1/A2, B2/C1, C1/C2 chưa hiệu chuẩn). Tài liệu chuyển các yêu cầu trong SRS thành một kiến trúc thi hành được: ranh giới module, hợp đồng dữ liệu có kiểu, lược đồ cơ sở dữ liệu, hợp đồng API và bảng ánh xạ từ thành phần thiết kế sang đường dẫn mã nguồn dự kiến. Người đọc mục tiêu gồm: ba thành viên nhóm khi lập trình, giảng viên hướng dẫn khi duyệt thiết kế, và hội đồng bảo vệ khi đối chiếu sơ đồ với mã nguồn.
 
 ### 1.2. Bối cảnh bài toán
 
-Sinh viên đại học Việt Nam ở dải A2–B2 thường thiếu cơ hội luyện nói có phản hồi. Một giảng viên chấm thủ công 40 bài nói mỗi lớp mất nhiều giờ, phản hồi đến chậm và không đồng nhất giữa các lần chấm. Hệ thống này không thay thế giảng viên: nó sinh ra một **ước lượng band có kèm bằng chứng**, tự động phát hiện các trường hợp rủi ro và định tuyến chúng sang giảng viên. Giảng viên là người ra quyết định cuối cùng; trường `teacher_verified` chỉ bằng `true` khi tồn tại bản ghi `review_action` thật.
+Sinh viên đại học Việt Nam, phần lớn ở dải A2–B2, thường thiếu cơ hội luyện nói có phản hồi. Một giảng viên chấm thủ công 40 bài nói mỗi lớp mất nhiều giờ, phản hồi đến chậm và không đồng nhất giữa các lần chấm. Hệ thống này không thay thế giảng viên: nó sinh ra một **ước lượng band có kèm bằng chứng**, tự động phát hiện các trường hợp rủi ro và định tuyến chúng sang giảng viên. Giảng viên là người ra quyết định cuối cùng; trường `teacher_verified` chỉ bằng `true` khi tồn tại bản ghi `review_action` thật.
 
 ### 1.3. Phạm vi thiết kế
 
@@ -2212,7 +2212,7 @@ sequenceDiagram
 
 **Bất biến 6 — phân xử theo một luật, và không ai phân xử bài mình đã chấm (FR-63).** `needs_adjudication` trả đúng khi hai điểm tổng lệch từ 1,0 trở lên (có dung sai 1e-9, để 4,1 − 3,1 vẫn tính là 1,0), khi hai band khác nhau, hoặc khi đúng một trong hai người thấy bài không chấm được. `add_adjudication` tạo phiếu `slot` 3 cho mọi bài cần phân xử chưa có người thứ ba, bỏ qua và đếm (`skipped_own`) những bài người phân xử đã chấm ở vai giám khảo chính, và (`skipped_seen`) những bài họ đã xem kết quả của máy, xếp thứ tự riêng tiếp sau các phiếu sẵn có của họ, với hạt giống `seed + 1`. Test: `test_a_disagreement_goes_to_a_third_rater_who_did_not_rate_it`, `test_needs_adjudication`.
 
-**Bất biến 7 — điểm đối chiếu và điểm máy là những thứ đã định nghĩa trước (FR-64).** `reference` làm theo §6.5 của kế hoạch khảo sát: không cần phân xử thì lấy trung bình hai điểm tổng; đã phân xử thì lấy trung vị ba điểm và trung vị thứ bậc của ba band (A2 < B1 < B2); còn chờ người thứ ba thì là `pending` và bị loại khỏi mọi chỉ số máy–người; hai người cùng thấy không chấm được thì là `unscorable`. Điểm máy là kết quả **trước** mọi quyết định của giảng viên (biểu thức `_MACHINE`, mục 3.5b), và chỉ được nhận khi đủ cả điểm trong 0–6 lẫn một trong ba band; thiếu thì bài được đếm là không có điểm máy chứ không bị đoán. Test: `test_the_report_puts_humans_first_and_compares_the_machine_before_any_review` — RMSE tính so với điểm của máy, không so với điểm giảng viên đã sửa.
+**Bất biến 7 — điểm đối chiếu và điểm máy là những thứ đã định nghĩa trước (FR-64).** `reference` làm theo §6.5 của kế hoạch khảo sát: không cần phân xử thì lấy trung bình hai điểm tổng; đã phân xử thì lấy trung vị ba điểm và trung vị thứ bậc của sáu band (A1 < A2 < B1 < B2 < C1 < C2, D059); còn chờ người thứ ba thì là `pending` và bị loại khỏi mọi chỉ số máy–người; hai người cùng thấy không chấm được thì là `unscorable`. Điểm máy là kết quả **trước** mọi quyết định của giảng viên (biểu thức `_MACHINE`, mục 3.5b), và chỉ được nhận khi đủ cả điểm trong 0–6 lẫn một trong sáu band; thiếu thì bài được đếm là không có điểm máy chứ không bị đoán. Test: `test_the_report_puts_humans_first_and_compares_the_machine_before_any_review` — RMSE tính so với điểm của máy, không so với điểm giảng viên đã sửa.
 
 **Bất biến 8 — người với người đứng trước máy với người, và mỗi chỉ số nói nó dựa trên bao nhiêu bài (FR-64).** `agreement_report` trả các khoá theo đúng thứ tự `counts`, `human_human`, `machine_human`, `routing`, `notes`, `bootstrap`. Khối người–người gồm kappa trọng số bậc hai trên band, tỷ lệ trùng band, kappa trên điểm tổng làm tròn tới nửa điểm (giữa hai mức thì làm tròn lên), ICC(2,1) khi cùng một cặp chấm mọi bài và ICC(1,1) khi cặp thay đổi, Pearson, chênh lệch tuyệt đối trung bình, Pearson từng tiêu chí, ma trận nhầm lẫn. Khối máy–người gồm Pearson, RMSE, kappa band, ma trận nhầm lẫn, recall và precision từng band, và số bài theo từng loại điểm đối chiếu. Khối `routing` (RQ4) so sai số tuyệt đối trung bình của nhóm bài máy đã chuyển giảng viên với nhóm còn lại. Khoảng tin cậy 95% là bootstrap phân vị lấy mẫu lại **theo người nói** (2000 vòng, hạt giống 20261007), vì hai bài của cùng một sinh viên không độc lập với nhau; dưới ba người nói, hoặc khi quá nửa số vòng cho chỉ số không xác định, thì không có khoảng. Chỉ số không xác định là `None` kèm một dòng giải thích trong `notes`, không bao giờ là NaN hay một số thay chỗ. Màn hình hiện mốc của kế hoạch (`PLAN_TARGETS`: kappa band 0,70, ICC 0,75) cạnh giá trị đo như mốc tham khảo chưa ký, không phải kết luận. Test: `tests/test_agreement.py`, `test_the_command_line_report_gives_the_numbers_of_the_screen`.
 
@@ -2560,7 +2560,7 @@ Hai đường dẫn cũ đổi hành vi. `POST /api/v1/auth/login` nay trả th�
 
 | Method | Đường dẫn | Mục đích | Khi từ chối | Quyết định |
 | --- | --- | --- | --- | --- |
-| GET | `/bands` | Trang band A2, B1, B2 theo năm mặt, mở cho cả khách | — | D028 |
+| GET | `/bands` | Trang band A1 đến C2 theo năm mặt, mở cho cả khách | — | D028 |
 | GET | `/auth/google/start` | `mode=login` từ trang đăng nhập, hoặc `mode=link` từ trang Tài khoản (cần đang đăng nhập); sinh `state`, `nonce`, PKCE, đặt cookie `aicefr_oauth` mười phút, chuyển tới Google | 303 về `/login` hoặc `/account` với `?google=<mã>` | D029 |
 | GET | `/auth/google/callback` | Kiểm `state`, đổi mã, kiểm ID token; liên kết hoặc mở phiên | 303 với một mã cố định của `google.MESSAGES` | D029 |
 

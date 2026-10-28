@@ -171,6 +171,8 @@ class LessonRepository(MongoStore):
                 SAMPLE_PATH_ID,
                 title=SAMPLE_PATH["title"],
                 description=SAMPLE_PATH["description"],
+                band_from=SAMPLE_PATH["band_from"],
+                band_to=SAMPLE_PATH["band_to"],
             )
         for position, unit in enumerate(SAMPLE_UNITS, 1):
             uid = unit["unit_id"]

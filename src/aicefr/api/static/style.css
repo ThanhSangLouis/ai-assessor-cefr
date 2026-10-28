@@ -3932,7 +3932,9 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   font-weight: 700;
 }
 .band-b1 .part-badge { background: var(--accent); }
-.band-b2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
+.band-b2 .part-badge,
+.band-c1 .part-badge,
+.band-c2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
 .part-count { margin-left: auto; font-size: var(--t-sm); color: var(--fg-muted); white-space: nowrap; }
 
 /* A unit: one topic, a banner and its trail. */

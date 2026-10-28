@@ -43,7 +43,8 @@ from aicefr.qc.audio_qc import AudioQualityChecker
 from aicefr.report.comments import CommentBuilder
 from aicefr.report.evidence import EvidenceBuilder
 from aicefr.review.router import ReviewRouter
-from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer, to_band
+from aicefr.scoring.band_map import thresholds_of, to_band
+from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer
 from aicefr.scoring.windows import clip_segments, plan_windows
 
 
@@ -220,10 +221,7 @@ class ResponseProcessor:
 
         median = statistics.median(values)
         spread = max(values) - min(values)
-        thresholds = getattr(self.scorer, "band_thresholds", None) or {
-            "A2_B1": 2.75,
-            "B1_B2": 3.75,
-        }
+        thresholds = thresholds_of(getattr(self.scorer, "band_thresholds", None))
 
         merged = self.scorer.score(whole)
         merged.overall_0_6 = round(median, 2)

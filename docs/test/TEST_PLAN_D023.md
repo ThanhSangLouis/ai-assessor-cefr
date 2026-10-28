@@ -132,7 +132,7 @@ Tệp: `tests/test_practice_unit.py`.
 
 | ID | Hàm test | AC / FR | Loại | Nội dung kiểm |
 | --- | --- | --- | --- | --- |
-| TC-PR-I01 | `test_task_repository_seeds_15_practice_tasks_and_lists_assessment_by_default` | AC-40.2 | Thuận | Seed 15 đề luyện; danh sách mặc định chỉ có đề đánh giá |
+| TC-PR-I01 | `test_task_repository_seeds_30_practice_tasks_and_lists_assessment_by_default` | AC-40.2 | Thuận | Seed 30 đề luyện (năm tiêu chí × sáu band, D059); danh sách mặc định chỉ có đề đánh giá |
 | TC-PR-I02 | `test_bank_version_bump_updates_the_row_and_same_version_leaves_it` | AC-40.4 | Biên | Tăng phiên bản thì cập nhật; cùng phiên bản thì không đụng tới |
 | TC-PR-I04 | `test_later_save_without_purpose_keeps_the_stored_purpose` | FR-44 | Âm | Lần ghi sau không truyền purpose vẫn giữ purpose cũ |
 | TC-PR-I05 | `test_attempts_keep_submission_order_within_one_second_and_filter_by_task` | AC-43.1 | Biên | Thứ tự nộp giữ đúng kể cả cùng một giây; lọc theo đề (hồi quy D023-B2) |

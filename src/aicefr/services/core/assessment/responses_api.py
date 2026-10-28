@@ -351,7 +351,7 @@ FIELD_PURPOSES: dict[str, str] = {
     "status": "Trạng thái xử lý của bài.",
     "created_at": "Thời điểm nộp, dùng để áp chính sách lưu trữ 12 tháng.",
     "overall_0_6": "Điểm ước lượng của hệ thống trên thang 0-6.",
-    "overall_band": "Band ước lượng A2/B1/B2. Không phải chứng chỉ.",
+    "overall_band": "Band ước lượng A1–C2. Không phải chứng chỉ.",
     "teacher_verified": "Giảng viên đã xác nhận kết quả này hay chưa.",
     "model_version": "Phiên bản mô hình đã chấm bài, để truy lại khi kết quả bị nghi ngờ.",
     "transcript": "Bản chép lời do máy nhận dạng, dùng để trích bằng chứng.",

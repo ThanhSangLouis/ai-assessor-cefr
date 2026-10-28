@@ -1,6 +1,6 @@
 # ĐẶC TẢ YÊU CẦU PHẦN MỀM (SRS)
 
-## Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR (A2–B2) cho sinh viên đại học Việt Nam
+## Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR (A1–C2) cho sinh viên đại học Việt Nam
 
 | Thuộc tính | Giá trị |
 | --- | --- |
@@ -49,7 +49,7 @@
 
 ## 1.1. Mục đích tài liệu
 
-Tài liệu này đặc tả đầy đủ yêu cầu chức năng và phi chức năng của phần mềm **AI Assessor CEFR Speaking (viết tắt: AICEFR)** — một hệ thống web hỗ trợ giảng viên đánh giá năng lực nói tiếng Anh của sinh viên đại học Việt Nam trong dải A2–B2.
+Tài liệu này đặc tả đầy đủ yêu cầu chức năng và phi chức năng của phần mềm **AI Assessor CEFR Speaking (viết tắt: AICEFR)** — một hệ thống web hỗ trợ giảng viên đánh giá năng lực nói tiếng Anh của sinh viên đại học Việt Nam trong dải A1–C2 (D059).
 
 Đối tượng đọc:
 
@@ -202,7 +202,7 @@ Hệ thống viết bằng Python, chạy local-first, đóng gói bằng Docker
 
 | Actor | Mô tả | Trình độ CNTT | Tần suất dùng | Quyền chính |
 | --- | --- | --- | --- | --- |
-| **Sinh viên** (Student) | Người học 18+, A2–B2, nộp bài nói và xem phản hồi | Dùng web cơ bản | 1–3 lần/tuần | Upload bài của mình; xem báo cáo đã phát hành; yêu cầu xuất/xóa dữ liệu của mình. **Không** sửa được transcript/audio/điểm sau khi nộp |
+| **Sinh viên** (Student) | Người học 18+, A1–C2 (phần lớn A2–B2), nộp bài nói và xem phản hồi | Dùng web cơ bản | 1–3 lần/tuần | Upload bài của mình; xem báo cáo đã phát hành; yêu cầu xuất/xóa dữ liệu của mình. **Không** sửa được transcript/audio/điểm sau khi nộp |
 | **Giảng viên đánh giá** (Teacher/Rater) | GV tiếng Anh, chịu trách nhiệm chuyên môn cuối cùng | Dùng web cơ bản, hiểu rubric CEFR | Theo đợt, 20–60 bài/đợt | Xem hàng đợi review, nghe audio, xem bằng chứng, duyệt hoặc sửa band và điểm tiêu chí, ghi lý do; phát hành báo cáo |
 | **Quản trị viên** (Admin) | Thành viên nhóm nghiên cứu (SV3) vận hành hệ thống | Kỹ thuật | Hằng ngày trong đợt thu | Quản lý tài khoản/vai trò, cấu hình ngưỡng QC, kích hoạt `model_version`, xem log vận hành, xử lý yêu cầu xóa dữ liệu, xuất dataset đã giả danh |
 
@@ -813,7 +813,7 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 
 ### FR-40 — Ngân hàng nhiệm vụ luyện tập
 
-**Mô tả:** Hệ thống có 15 nhiệm vụ luyện tập, mỗi nhiệm vụ một tiêu chí đang chấm (Range, Accuracy, Fluency, Coherence, Phonology) ở một band (A2, B1, B2). Mỗi nhiệm vụ có đề bài, mục tiêu đo được bằng luật cố định (`MissionKind`), mẹo, và với tiêu chí phát âm là một đoạn văn mẫu để đọc to. Mục tiêu hiện cho người học **trước** khi ghi âm. Nhiệm vụ luyện tập không xuất hiện trong danh sách đề đánh giá.
+**Mô tả:** Hệ thống có 30 nhiệm vụ luyện tập, mỗi nhiệm vụ một tiêu chí đang chấm (Range, Accuracy, Fluency, Coherence, Phonology) ở một band (A1 đến C2, D059). Mỗi nhiệm vụ có đề bài, mục tiêu đo được bằng luật cố định (`MissionKind`), mẹo, và với tiêu chí phát âm là một đoạn văn mẫu để đọc to. Mục tiêu hiện cho người học **trước** khi ghi âm. Nhiệm vụ luyện tập không xuất hiện trong danh sách đề đánh giá.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -875,14 +875,14 @@ Thay lộ trình 15 nhiệm vụ của M9 bằng các bài học có thứ tự.
 
 ### FR-45 — Lộ trình, chặng, bài học, bước và phiên bản
 
-**Mô tả:** Một lộ trình gồm các chặng; mỗi chặng là một chức năng giao tiếp ở một band (A2, B1, B2), có thể gắn một tiêu chí; mỗi chặng gồm các bài học; mỗi bài học gồm các bước. Giáo viên sửa bản nháp; **xuất bản** tạo một phiên bản bất biến của bài học, sinh viên chỉ thấy phiên bản đã xuất bản mới nhất. Mỗi lượt luyện ghi phiên bản bài học và phiên bản luật đo. Bài học hoàn thành khi số bước đạt ≥ tỷ lệ của bài (mặc định 80%) **và** bước nói tự do đã được làm. Lộ trình đi ba phần theo trình độ (A2, B1, B2); mỗi phần gồm các chặng theo chủ đề (D027: đời sống, giáo dục, du lịch, nghề nghiệp, ẩm thực, sức khoẻ, công nghệ, môi trường, con người, xã hội). Bản cài mới có sẵn một lộ trình mẫu 18 chặng, 31 bài: 16 bài soạn đủ và 15 bài dựng từ 15 nhiệm vụ D023, ghi rõ là nội dung mẫu chờ giảng viên duyệt.
+**Mô tả:** Một lộ trình gồm các chặng; mỗi chặng là một chức năng giao tiếp ở một band (A1 đến C2), có thể gắn một tiêu chí; mỗi chặng gồm các bài học; mỗi bài học gồm các bước. Giáo viên sửa bản nháp; **xuất bản** tạo một phiên bản bất biến của bài học, sinh viên chỉ thấy phiên bản đã xuất bản mới nhất. Mỗi lượt luyện ghi phiên bản bài học và phiên bản luật đo. Bài học hoàn thành khi số bước đạt ≥ tỷ lệ của bài (mặc định 80%) **và** bước nói tự do đã được làm. Lộ trình đi sáu phần theo trình độ (A1 đến C2, D059); mỗi phần gồm các chặng theo chủ đề (D027: đời sống, giáo dục, du lịch, nghề nghiệp, ẩm thực, sức khoẻ, công nghệ, môi trường, con người, xã hội). Bản cài mới có sẵn một lộ trình mẫu 24 chặng, 46 bài: 16 bài soạn đủ và 30 bài dựng từ 30 nhiệm vụ luyện tập, ghi rõ là nội dung mẫu chờ giảng viên duyệt.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
 | **AC-45.1** — *Given* một bài học đã xuất bản phiên bản 1, *When* giáo viên sửa và lưu nháp mà chưa xuất bản, *Then* sinh viên vẫn nhận phiên bản 1 (`test_students_see_the_published_version_until_republished`). |
 | **AC-45.2** — *Given* một lượt luyện được xử lý, *When* lưu, *Then* lượt đó ghi phiên bản bài học và phiên bản luật đo (`test_attempt_records_lesson_version_and_rules_version`). |
-| **AC-45.3** — *Given* bản cài mới, *When* khởi động, *Then* có lộ trình mẫu đã xuất bản gồm ba phần A2, B1, B2, mỗi phần sáu chặng theo sáu chủ đề khác nhau, tổng 31 bài học, mọi bài có bước cuối là nói tự do (`test_fresh_install_seeds_the_sample_path`). |
+| **AC-45.3** — *Given* bản cài mới, *When* khởi động, *Then* có lộ trình mẫu đã xuất bản gồm sáu phần A1 đến C2, mỗi phần các chặng theo chủ đề khác nhau (A2, B1, B2 sáu chặng; A1, C1, C2 hai chặng), tổng 46 bài học, mọi bài có bước cuối là nói tự do (`test_fresh_install_seeds_the_sample_path`). |
 | **AC-45.4** — *Given* một bài 5 bước, *When* sinh viên đạt 4 bước nhưng chưa làm bước tự do, *Then* bài chưa hoàn thành; làm thêm bước tự do thì hoàn thành (`test_lesson_completes_only_with_enough_passed_steps_and_the_free_step`). |
 
 ### FR-46 — Chín dạng bước và bộ đo bằng luật
@@ -987,7 +987,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 ### FR-54 — Trang giải thích band và giới hạn của máy
 
-**Mô tả:** Trang `/bands`, mở cho cả khách, nói band A2, B1, B2 mô tả kiểu nói nào theo năm mặt (vốn từ, ngữ pháp, độ trôi chảy, mạch lạc, phát âm dễ nghe), diễn đạt lại bằng tiếng Việt theo tinh thần thang mô tả định tính của CEFR (bản bổ sung 2020), không phải bản dịch chính thức, chờ giảng viên Ngoại ngữ duyệt. Mỗi mặt mang **một trong ba nhãn**: máy đo gián tiếp (kèm máy dùng phép đo nào), máy không đo, không đánh giá (Tương tác). Trang ghi hai ngưỡng band đọc từ mô hình đang chấm, nói rõ máy chỉ có một điểm tổng, và nêu giới hạn: chưa hiệu chuẩn trên giọng Việt, người nói lắp hoặc có khó khăn về giọng nói có thể bị ước lượng độ trôi chảy thấp hơn thực tế, giọng không bị trừ điểm, giảng viên quyết định cuối cùng. Báo cáo có đường dẫn tới trang này cạnh band.
+**Mô tả:** Trang `/bands`, mở cho cả khách, nói band A1 đến C2 mô tả kiểu nói nào theo năm mặt (vốn từ, ngữ pháp, độ trôi chảy, mạch lạc, phát âm dễ nghe), diễn đạt lại bằng tiếng Việt theo tinh thần thang mô tả định tính của CEFR (bản bổ sung 2020), không phải bản dịch chính thức, chờ giảng viên Ngoại ngữ duyệt. Mỗi mặt mang **một trong ba nhãn**: máy đo gián tiếp (kèm máy dùng phép đo nào), máy không đo, không đánh giá (Tương tác). Trang ghi năm ngưỡng band (hai ngưỡng giữa đọc từ mô hình đang chấm, ba ngưỡng ngoài là quy ước chưa hiệu chuẩn), nói rõ máy chỉ có một điểm tổng, và nêu giới hạn: chưa hiệu chuẩn trên giọng Việt, người nói lắp hoặc có khó khăn về giọng nói có thể bị ước lượng độ trôi chảy thấp hơn thực tế, giọng không bị trừ điểm, giảng viên quyết định cuối cùng. Báo cáo có đường dẫn tới trang này cạnh band.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
@@ -2018,7 +2018,7 @@ Mọi NFR dưới đây đều có ràng buộc định lượng và phương ph
 | **NFR-01** | Hiệu năng — độ trễ pipeline | Thời gian xử lý đầy đủ (QC → ASR → feature → scoring → report) cho một bài nói **120 giây** phải ≤ **60 giây** ở phân vị 90 (P90) trên máy tham chiếu | Script `benchmarks/bench_pipeline.py` chạy trên 30 fixture audio 120 s, ghi P50/P90/P99 vào `benchmarks/results.json`; CI fail nếu P90 > 60 s |
 | **NFR-02** | Hiệu năng — phản hồi API | Các endpoint đồng bộ (`POST /sessions`, `GET /responses`, `GET /reports/{id}`, `GET /review/queue`) phải trả về trong ≤ **300 ms** ở P95 với DB chứa 1.000 response | Test tải bằng `locust` 20 người dùng ảo trong 5 phút; đọc P95 từ báo cáo locust; ngưỡng kiểm tra tự động trong `tests/test_perf_api.py` |
 | **NFR-03** | Hiệu năng — thông lượng | Hệ thống xử lý được ≥ **40 bài nói 120 giây trong 60 phút** với 2 worker chạy song song, không lỗi OOM | Chạy kịch bản batch 40 file, đo tổng thời gian và RSS đỉnh bằng `psutil`; RSS đỉnh phải ≤ 12 GB |
-| **NFR-04** | Độ chính xác — chấm điểm | Trên tập dev Speak & Improve 2025 chia theo speaker, mô hình fusion đạt **QWK(AI, nhãn) ≥ 0,60** và **RMSE ≤ 1,10** trên thang 0–6; **tỷ lệ lệch 2 band (A2↔B2) ≤ 5%** | `make evaluate` sinh `reports/eval_{model_version}.json` với QWK, RMSE, confusion matrix và khoảng tin cậy 95% bằng cluster bootstrap 2.000 vòng theo `speaker_id`, seed = 0 |
+| **NFR-04** | Độ chính xác — chấm điểm | Trên tập dev Speak & Improve 2025 chia theo speaker, mô hình fusion đạt **QWK(AI, nhãn) ≥ 0,60** và **RMSE ≤ 1,10** trên thang 0–6; **tỷ lệ lệch từ 2 band trở lên ≤ 5%** | `make evaluate` sinh `reports/eval_{model_version}.json` với QWK, RMSE, confusion matrix và khoảng tin cậy 95% bằng cluster bootstrap 2.000 vòng theo `speaker_id`, seed = 0 |
 | **NFR-05** | Độ chính xác — ASR | WER của ASR trên tập 20 bài do người chép tay (from scratch) phải được **đo và báo cáo**; nếu WER > **35%** trên một nhóm điều kiện, hệ thống phải tự bật `ASR_LOW_CONFIDENCE` cho nhóm đó | `scripts/measure_wer.py` so transcript ASR với transcript tay bằng `jiwer`, xuất bảng WER theo nhóm SNR và theo band; kết quả lưu `reports/wer_report.md` |
 | **NFR-06** | Độ chính xác — hiệu quả cờ review | Bộ quy tắc cờ phải bắt được ≥ **70% số bài lệch từ 2 band trở lên** trong khi gắn cờ ≤ **25% tổng số bài** | `scripts/evaluate_flags.py` dựng đường cong yield–flag rate trên tập có nhãn giảng viên; kiểm tra ngưỡng tự động, xuất `reports/flag_yield.md` |
 | **NFR-07** | Bảo mật — xác thực | Mật khẩu băm bằng bcrypt cost ≥ **12**; phiên đăng nhập mang bằng **cookie có chữ ký** (`HttpOnly`, `SameSite=Lax`) tra bảng `auth_sessions` phía máy chủ, hết hạn sau ≤ **8 giờ** và bị vô hiệu ngay khi đăng xuất; khóa tài khoản **15 phút** sau **5 lần** đăng nhập sai liên tiếp. Chọn phiên phía máy chủ thay vì JWT vì JWT không thu hồi được trước hạn: đăng xuất không làm token mất hiệu lực, mà hệ thống có vai trò giảng viên sửa được điểm nên đó là điểm yếu thật | `tests/test_auth_security.py`: kiểm tra tiền tố hash `$2b$12$`, kiểm tra `expires_at` của bản ghi `auth_sessions` ≤ 8 h kể từ khi phát hành, kiểm tra cookie có cờ `HttpOnly` và `SameSite=Lax`, kiểm tra cookie sau khi đăng xuất trả HTTP 401, mô phỏng 6 lần đăng nhập sai và xác nhận HTTP 429 ở lần thứ 6 |
@@ -2248,7 +2248,7 @@ Nội dung mục này là thiết kế tuân thủ ở mức thực hành kỹ t
 
 | Nguyên tắc | Cách hệ thống đáp ứng | FR/NFR |
 | --- | --- | --- |
-| Mục đích cụ thể, rõ ràng | `consent_version` bắt buộc trên mọi phiên; consent nêu rõ mục đích đánh giá Speaking A2–B2; không tái dùng cho nhận dạng người nói | FR-01 |
+| Mục đích cụ thể, rõ ràng | `consent_version` bắt buộc trên mọi phiên; điều khoản nêu rõ mục đích đánh giá Speaking A1–C2; không tái dùng cho nhận dạng người nói | FR-01 |
 | Tối thiểu hóa dữ liệu | Không thu CCCD, địa chỉ, dữ liệu sức khỏe; DB nghiên cứu không có cột danh tính | FR-33 |
 | Tách danh tính | `identity_map` nằm ngoài workspace nghiên cứu; định danh giả danh bị chặn nếu trông giống mã số sinh viên | FR-33, AC-01.3 |
 | Bảo mật khi lưu trữ | Mã hóa at rest, phân quyền theo vai trò, băm mật khẩu bcrypt ≥ 12, quét secret ở mỗi PR | FR-32, NFR-07, NFR-08 |

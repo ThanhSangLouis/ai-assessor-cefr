@@ -81,7 +81,7 @@ TEXT_KINDS = frozenset({StepKind.READ_ALOUD, StepKind.REPEAT, StepKind.LOOK_UP, 
 
 
 class Topic(str, Enum):
-    """What a unit talks about (D027). The path runs A2 → B1 → B2, and within each
+    """What a unit talks about (D027). The path runs A1 → C2 (D059), and within each
     level the units change topic, so practice stays varied as the level rises."""
 
     DAILY_LIFE = "daily_life"

@@ -221,7 +221,7 @@ class RatingIn(BaseModel):
     unscorable: bool = False
     unscorable_reason: Literal["broken", "inaudible", "off_task"] | None = None
     overall: float | None = Field(None, ge=0, le=6)
-    band: Literal["A2", "B1", "B2"] | None = None
+    band: Literal["A1", "A2", "B1", "B2", "C1", "C2"] | None = None
     criteria: dict[str, float] = Field(default_factory=dict)
     reason: str | None = Field(None, max_length=300)
 
