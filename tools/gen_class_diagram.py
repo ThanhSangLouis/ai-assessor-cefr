@@ -102,17 +102,18 @@ def _n(cid, name, values):
     return (cid, "«enumeration»" + BR + name, values)
 
 
-# Mo hinh nghiep vu cua bai toan (chu du an chot 29/10/2026): CHI ve thuc the --
-# lop co dinh danh, vong doi rieng, luu thanh mot document. Khong lop truu tuong,
-# khong value object, khong hop enumeration: phan khong co dinh danh (tu co moc
-# thoi gian, phep do, nhan xet, nhiem vu) la thuoc tinh cua thuc the so huu; tap
-# gia tri cua mot thuoc tinh ghi bang rang buoc UML `{...}` ngay tren thuoc tinh.
+# Mo hinh nghiep vu cua bai toan (chu du an chot 29/10/2026): thuc the -- lop co
+# dinh danh, vong doi rieng, luu thanh mot document -- va cac enumeration ma thuoc
+# tinh cua chung lay kieu. Khong lop truu tuong, khong value object: phan khong co
+# dinh danh (tu co moc thoi gian, phep do, nhan xet, nhiem vu) la thuoc tinh cua
+# thuc the so huu. Mot thuoc tinh co tap gia tri dong thi lay kieu la enumeration
+# (`role: Role`); enumeration dat duoi cot cua thuc the dung no, khong ve duong
+# phu thuoc -- ten kieu tren thuoc tinh da noi quan he, va `Band` co bay lop dung.
 # Khoa ngoai khong ve thanh thuoc tinh: quan he la duong noi, boi so ghi tren duong.
 # Phu het nghiep vu: tai khoan va dieu khoan, de va bai noi, giang vien duyet,
 # cham mu va thuc nghiem, lop hoc, lo trinh bai hoc va luot luyen, on tap, lo
 # trinh goi y, goi dich vu, vi luot va so luot. Chi bo phan ky thuat: phien dang
 # nhap, cau hinh, khoa ky, dau nang cap, schema_migrations.
-BANDS = "{A1..C2}"
 CLASSES = [
     _e(
         "Account",
@@ -120,7 +121,7 @@ CLASSES = [
         [
             "- accountId: str",
             "- pseudonym: str",
-            "- role: str {STUDENT, TEACHER, ADMIN}",
+            "- role: Role",
             "- dailyGoalS: int",
             "- achievements: str [*]",
             "- termsAcceptedAt: datetime [0..1]",
@@ -139,15 +140,16 @@ CLASSES = [
         [
             "- taskId: str",
             "- title: str",
-            "- purpose: str {ASSESSMENT, PRACTICE}",
+            "- purpose: TaskPurpose",
+            "- part: TaskPart",
             "- promptText: str",
             "- minSeconds: int",
             "- maxSeconds: int",
             "- topicKeywords: str [*]",
-            "- criterion: str [0..1]",
-            f"- band: str [0..1] {BANDS}",
+            "- criterion: Criterion [0..1]",
+            "- band: Band [0..1]",
             "- referenceText: str [0..1]",
-            "- missions: str [*]",
+            "- missions: MissionKind [*]",
             "- promptVersion: str",
         ],
     ),
@@ -156,13 +158,13 @@ CLASSES = [
         "Response",
         [
             "- responseId: str",
-            "- purpose: str {ASSESSMENT, PRACTICE}",
-            "- status: str {QUEUED, RUNNING, COMPLETED,",
-            "    REVIEW_REQUIRED, REJECTED, FAILED}",
+            "- purpose: TaskPurpose",
+            "- status: ResponseStatus",
+            "- reasonCodes: ReasonCode [*]",
             "- durationMs: int",
             "- transcript: str",
             "- overall06: float [0..1]",
-            f"- overallBand: str [0..1] {BANDS}",
+            "- overallBand: Band [0..1]",
             "- criterionScores: float [5]",
             "- intervalLow: float [0..1]",
             "- intervalHigh: float [0..1]",
@@ -181,8 +183,8 @@ CLASSES = [
             "- reviewId: int",
             "- oldScore: float [0..1]",
             "- newScore: float [0..1]",
-            f"- oldBand: str [0..1] {BANDS}",
-            f"- newBand: str [0..1] {BANDS}",
+            "- oldBand: Band [0..1]",
+            "- newBand: Band [0..1]",
             "- reason: str",
             "- decidedAt: datetime",
         ],
@@ -190,7 +192,13 @@ CLASSES = [
     _e(
         "Batch",
         "RatingBatch",
-        ["- batchId: str", "- name: str", "- seed: int", "- createdAt: datetime"],
+        [
+            "- batchId: str",
+            "- name: str",
+            "- seed: int",
+            "- status: BatchStatus",
+            "- createdAt: datetime",
+        ],
     ),
     _e(
         "Rating",
@@ -199,9 +207,9 @@ CLASSES = [
             "- assignmentId: str",
             "- position: int",
             "- scoreOverall: float [0..1]",
-            f"- band: str [0..1] {BANDS}",
+            "- band: Band [0..1]",
             "- criterionScores: float [*]",
-            "- unscorableReason: str [0..1]",
+            "- unscorableReason: UnscorableReason [0..1]",
             "- machineSeen: bool",
             "- submittedAt: datetime [0..1]",
         ],
@@ -212,7 +220,7 @@ CLASSES = [
         [
             "- studyId: str",
             "- name: str",
-            "- status: str {OPEN, CLOSED}",
+            "- status: StudyStatus",
             "- minDays: int",
             "- measuredUntil: datetime [0..1]",
         ],
@@ -244,9 +252,9 @@ CLASSES = [
         [
             "- pathId: str",
             "- title: str",
-            f"- bandFrom: str {BANDS}",
-            f"- bandTo: str {BANDS}",
-            "- status: str {DRAFT, PUBLISHED, ARCHIVED}",
+            "- bandFrom: Band",
+            "- bandTo: Band",
+            "- status: PathStatus",
             "- sample: bool",
         ],
     ),
@@ -257,8 +265,8 @@ CLASSES = [
             "- unitId: str",
             "- title: str",
             "- function: str",
-            f"- band: str {BANDS}",
-            "- topic: str [0..1]",
+            "- band: Band",
+            "- topic: Topic [0..1]",
             "- position: int",
         ],
     ),
@@ -268,8 +276,8 @@ CLASSES = [
         [
             "- lessonId: str",
             "- title: str",
-            f"- band: str {BANDS}",
-            "- criterion: str [0..1]",
+            "- band: Band",
+            "- criterion: Criterion [0..1]",
             "- modelText: str",
             "- passRatio: float",
             "- publishedVersion: int",
@@ -281,11 +289,13 @@ CLASSES = [
         "Step",
         [
             "- stepId: str",
-            "- kind: str",
+            "- kind: StepKind",
             "- text: str",
             "- hintWords: str [*]",
             "- modelAudio: str [0..1]",
             "- rounds: int [*]",
+            "- strictness: Strictness",
+            "+ stage(): Stage",
         ],
     ),
     _e(
@@ -306,7 +316,7 @@ CLASSES = [
         "ReviewItem",
         [
             "- itemId: str",
-            "- kind: str {WORD, SPEECH}",
+            "- kind: ReviewKind",
             "- word: str [0..1]",
             "- box: int",
             "- dueDate: date",
@@ -319,7 +329,7 @@ CLASSES = [
         [
             "- planId: str",
             "- goal: str",
-            "- audience: str {LEARNER, TEACHER}",
+            "- audience: Audience",
             "- active: bool",
             "- modelVersion: str",
         ],
@@ -329,11 +339,12 @@ CLASSES = [
         "Order",
         [
             "- orderId: str",
-            "- kind: str {LICENSE, CREDITS}",
+            "- kind: OrderKind",
             "- seats: int",
             "- valueVnd: int",
-            "- gateway: str",
-            "- status: str",
+            "- gateway: Gateway",
+            "- status: OrderStatus",
+            "- events: str [*]",
             "- creditedAt: datetime [0..1]",
         ],
     ),
@@ -342,12 +353,13 @@ CLASSES = [
         "License",
         [
             "- licenseId: str",
-            "- plan: str",
+            "- plan: ServicePlan",
             "- seats: int",
             "- validFrom: date",
             "- validTo: date",
-            "- source: str {TRIAL, ORDER, CODE}",
-            "+ isActive(today: date): bool",
+            "- source: LicenseSource",
+            "+ state(today: date): LicenseState",
+            "+ allows(feature: PlanFeature): bool",
         ],
     ),
     _e(
@@ -366,17 +378,112 @@ CLASSES = [
         "LedgerEntry",
         [
             "- entryId: str",
+            "- action: MeteredAction",
             "- held: int",
             "- fromFree: int",
             "- fromWallet: int",
             "- charged: int",
-            "- state: str {HELD, CHARGED, RELEASED}",
+            "- state: LedgerState",
             "- priceVersion: str",
         ],
     ),
 ]
 
-ENUMS = []
+# Tap gia tri lay tu code (D059 cho Band). Ten khac code o ba cho de khong nham:
+# `ResponseStatus` (code: Status), `ServicePlan` (code: Plan, trung nghia voi
+# LearningPlan), `MeteredAction` (code: Action).
+ENUMS = [
+    _n("Role", "Role", ["STUDENT", "TEACHER", "ADMIN"]),
+    _n("Band", "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
+    _n("Criterion", "Criterion", ["RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "PHONOLOGY"]),
+    _n("Purpose", "TaskPurpose", ["ASSESSMENT", "PRACTICE"]),
+    _n("TaskPart", "TaskPart", ["P3", "P4", "P5"]),
+    _n("Mission", "MissionKind", ["SPEAK_SECONDS", "MAX_PAUSE", "USE_WORDS"]),
+    _n(
+        "Status",
+        "ResponseStatus",
+        ["QUEUED", "RUNNING", "COMPLETED", "REVIEW_REQUIRED", "REJECTED", "FAILED"],
+    ),
+    _n(
+        "Reason",
+        "ReasonCode",
+        [
+            "AUDIO_UNSUPPORTED",
+            "AUDIO_TOO_LARGE",
+            "AUDIO_TOO_LONG",
+            "AUDIO_TOO_SHORT",
+            "TERMS_NOT_ACCEPTED",
+            "HIGH_SILENCE_RATIO",
+            "CLIPPING_DETECTED",
+            "LOW_SNR",
+            "WRONG_SAMPLE_RATE",
+            "ASR_FAILED",
+            "ASR_EMPTY_TRANSCRIPT",
+            "ASR_LOW_CONFIDENCE",
+            "ASR_HALLUCINATION",
+            "FEATURE_NOT_COMPUTABLE",
+            "TOO_FEW_WORDS",
+            "SCORE_NEAR_BOUNDARY",
+            "SCORE_AGGREGATED",
+            "MODEL_VERSION_MISSING",
+            "OUT_OF_DISTRIBUTION",
+            "PROCESSING_INTERRUPTED",
+            "ASR_VERSION_MISMATCH",
+            "VAD_VERSION_MISMATCH",
+            "LANGUAGE_NOT_ENGLISH",
+            "OFF_TOPIC_SUSPECTED",
+            "PROMPT_COPY_SUSPECTED",
+        ],
+    ),
+    _n("BatchSt", "BatchStatus", ["OPEN", "CLOSED"]),
+    _n("Unscorable", "UnscorableReason", ["BROKEN", "INAUDIBLE", "OFF_TASK"]),
+    _n("StudySt", "StudyStatus", ["RUNNING", "SURVEY", "CLOSED"]),
+    _n("PathSt", "PathStatus", ["DRAFT", "PUBLISHED", "ARCHIVED"]),
+    _n(
+        "Topic",
+        "Topic",
+        [
+            "DAILY_LIFE",
+            "EDUCATION",
+            "TRAVEL",
+            "CAREER",
+            "FOOD",
+            "HEALTH",
+            "TECHNOLOGY",
+            "ENVIRONMENT",
+            "PEOPLE",
+            "SOCIETY",
+        ],
+    ),  # fmt: skip
+    _n(
+        "StepKind",
+        "StepKind",
+        [
+            "READ_ALOUD",
+            "REPEAT",
+            "LOOK_UP",
+            "GAP",
+            "KEYWORDS",
+            "STARTER",
+            "PICTURE",
+            "OUTLINE",
+            "FREE",
+        ],
+    ),
+    _n("Stage", "Stage", ["MODEL", "CONTROLLED", "GUIDED", "FREE"]),
+    _n("Strict", "Strictness", ["EASY", "NORMAL", "STRICT"]),
+    _n("RevKind", "ReviewKind", ["WORD", "TALK"]),
+    _n("Audience", "Audience", ["STUDENT", "TEACHER"]),
+    _n("OrderKind", "OrderKind", ["LICENSE", "CREDITS"]),
+    _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
+    _n("Gateway", "Gateway", ["STRIPE", "MOMO"]),
+    _n("SvcPlan", "ServicePlan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
+    _n("Feature", "PlanFeature", ["LESSON_AUTHORING", "CLASS_INSIGHTS", "BLIND_RATING"]),
+    _n("LicSource", "LicenseSource", ["TRIAL", "ORDER", "KEY"]),
+    _n("LicState", "LicenseState", ["ACTIVE", "GRACE", "FREE"]),
+    _n("Action", "MeteredAction", ["ASSESS", "PRACTICE"]),
+    _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
+]
 
 # (nguon, dich, "boi so nguon : boi so dich", kieu)
 EDGES = [
@@ -412,14 +519,19 @@ EDGES = [
     ("Order", "Wallet", "0..* : 0..1", "assoc"),
 ]
 
+# Enumeration nam duoi cot cua thuc the dung no; enumeration dung o nhieu cot
+# (Band, Criterion) o cot cua de va bai noi.
 COLUMNS = [
-    (40, ["Order", "License", "Wallet", "Ledger"]),
-    (40 + COL_DX, ["Batch", "Rating", "Study", "Part"]),
-    (40 + 2 * COL_DX, ["Audit", "Account", "Class", "Asg"]),
-    (40 + 3 * COL_DX, ["Task", "Resp", "Review"]),
-    (40 + 4 * COL_DX, ["Plan", "RevItem", "Attempt"]),
-    (40 + 5 * COL_DX, ["Path", "Unit", "Lesson", "Step"]),
-]
+    (40, ["Order", "License", "Wallet", "Ledger", "OrderKind", "OrderSt", "Gateway", "Action"]),
+    (40 + COL_DX, ["Batch", "Rating", "Study", "Part", "BatchSt", "Unscorable", "StudySt",
+                   "SvcPlan", "Feature", "LicSource", "LicState", "LedgerSt"]),
+    (40 + 2 * COL_DX, ["Audit", "Account", "Class", "Asg", "Role", "Reason"]),
+    (40 + 3 * COL_DX, ["Task", "Resp", "Review", "Band", "Criterion", "Purpose", "TaskPart",
+                       "Mission", "Status"]),
+    (40 + 4 * COL_DX, ["Plan", "RevItem", "Attempt", "Audience", "RevKind", "Topic"]),
+    (40 + 5 * COL_DX, ["Path", "Unit", "Lesson", "Step", "PathSt", "StepKind", "Stage",
+                       "Strict"]),
+]  # fmt: skip
 
 # `--spec v3`: sinh THIET KE DICH tu `tools/class_spec_v3.py` thay cho so do
 # hien trang o tren. Cung bo cuc, cung bo dinh tuyen canh, chi khac dac ta --

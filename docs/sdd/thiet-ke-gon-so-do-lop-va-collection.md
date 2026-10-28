@@ -1,4 +1,4 @@
-# Mô hình thực thể: 22 thực thể và 20 collection
+# Mô hình thực thể: 22 thực thể, 27 enum và 20 collection
 
 **Trạng thái:** thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026. Code chưa chuyển theo: migration gộp collection và lớp miền khớp sơ đồ là việc tiếp theo, làm ở PR riêng.
 **Người soạn:** Sang.
@@ -6,9 +6,10 @@
 
 ## 1. Quyết định của chủ dự án
 
-1. **Sơ đồ lớp chỉ chứa thực thể** (29/10/2026).
+1. **Sơ đồ lớp chỉ chứa thực thể và enum** (29/10/2026).
    - Thực thể là lớp có định danh và vòng đời riêng, lưu thành một document.
-   - Không có lớp trừu tượng, đối tượng giá trị hay hộp kiểu liệt kê.
+   - Enum là tập giá trị đóng mà thuộc tính của thực thể lấy làm kiểu. Bổ sung theo chỉ dẫn cùng ngày.
+   - Không có lớp trừu tượng hay đối tượng giá trị.
 2. **Phủ hết nghiệp vụ của bài toán; số collection được linh hoạt** (29/10/2026). Thay cho quyết định ngày 28/10 "chỉ vẽ phần cốt lõi, khoảng 20 hộp". Bản 20 hộp trước đã bỏ sót gói dịch vụ, ví lượt, chấm mù, thực nghiệm, nhật ký kiểm toán và lượt luyện ở bước bài học.
 3. **Bỏ đồng thuận nghiên cứu** (D058). Chỉ giữ `Account.termsAcceptedAt`.
 4. **Band đủ sáu bậc A1 đến C2** (D059).
@@ -18,7 +19,10 @@
 - **Thuộc tính không có định danh** thuộc về thực thể sở hữu nó, ví dụ:
   - từ có mốc thời gian, phép đo, nhận xét gắn bằng chứng;
   - nhiệm vụ của đề, nhãn nghe lại, các lần cộng lượt.
-- **Miền giá trị** ghi bằng ràng buộc UML ngay trên thuộc tính, ví dụ `role: str {STUDENT, TEACHER, ADMIN}`, `band: str {A1..C2}`.
+- **Miền giá trị** là một enum, và thuộc tính lấy enum làm kiểu, ví dụ `role: Role`, `band: Band [0..1]`.
+  - Enum đặt dưới cột của thực thể dùng nó. `Band`, `Criterion` dùng ở nhiều cột thì đặt dưới cột đề và bài nói.
+  - Không vẽ đường phụ thuộc tới enum: tên kiểu trên thuộc tính đã nói quan hệ, và riêng `Band` có bảy lớp dùng.
+  - Ba enum đặt tên khác code để khỏi nhầm: `ResponseStatus` (code: `Status`), `ServicePlan` (code: `Plan`, trùng nghĩa với `LearningPlan`), `MeteredAction` (code: `Action`).
 - **Khoá ngoài** không ghi thành thuộc tính.
   - Quan hệ là đường nối, bội số ghi ở hai đầu đường.
   - Kim cương đặc là hợp thành: phần mất theo toàn thể.
@@ -44,6 +48,32 @@
 | Lộ trình gợi ý | `LearningPlan` | Với giảng viên còn nối tới lộ trình nháp đã lưu |
 | Gói dịch vụ | `Order`, `License` | Sự kiện cổng thanh toán nhúng vào đơn |
 | Tính lượt | `Wallet`, `LedgerEntry` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nhúng vào ví; mỗi bài một bút toán |
+
+### Enum
+
+| Nhóm | Enum |
+| --- | --- |
+| Tài khoản | `Role` |
+| Đề và bài nói | `Band` (A1–C2), `Criterion`, `TaskPurpose`, `TaskPart`, `MissionKind`, `ResponseStatus`, `ReasonCode` |
+| Chấm mù, thực nghiệm | `BatchStatus`, `UnscorableReason`, `StudyStatus` |
+| Bài học, ôn tập, lộ trình gợi ý | `PathStatus`, `Topic`, `StepKind`, `Stage`, `Strictness`, `ReviewKind`, `Audience` |
+| Gói dịch vụ | `OrderKind`, `OrderStatus`, `Gateway`, `ServicePlan`, `PlanFeature`, `LicenseSource`, `LicenseState` |
+| Tính lượt | `MeteredAction`, `LedgerState` |
+
+Không vẽ các enum chỉ dùng **bên trong** bước tính, không là kiểu của thuộc tính nào được lưu:
+
+- `QcStatus` (kết quả kiểm chất lượng âm thanh, đã thể hiện qua `ResponseStatus` và `ReasonCode`);
+- `EvidenceKind`, `Pattern` (chi tiết trong từng dòng nhận xét);
+- `WordStatus`, `GapStatus`, `Op` (chi tiết trong kết quả một lượt luyện);
+- `Provenance`, `RecommendationBasis` (nhãn hiển thị trên báo cáo và gợi ý).
+
+### Rà lại khi thêm enum
+
+Đối chiếu tập giá trị với code đã lộ ra chỗ sơ đồ trước thiếu hoặc lệch, nay đã sửa:
+
+- thiếu `RatingBatch.status`, `Task.part`, `Response.reasonCodes`, `LedgerEntry.action`, `Order.events`, `Step.strictness`, `Step.stage()`;
+- lệch giá trị: `Study.status` là RUNNING/SURVEY/CLOSED (không phải OPEN/CLOSED), `ReviewItem.kind` là WORD/TALK, `LearningPlan.audience` là STUDENT/TEACHER, `License.source` là TRIAL/ORDER/KEY;
+- `License.isActive()` đổi thành `state(today): LicenseState` (có hạn gia hạn GRACE), thêm `allows(feature)`.
 
 ## 4. Collection: 42 → 20
 
@@ -82,6 +112,6 @@ Test đối chiếu sẽ đọc `02_class.drawio` và kiểm ba điều:
 
 1. Mỗi hộp có một lớp miền cùng tên trong code, cùng thuộc tính và thao tác.
 2. Mỗi thực thể gốc có đúng một collection.
-3. Mỗi miền giá trị `{...}` trùng với tập giá trị trong code.
+3. Mỗi enum trùng tập giá trị với enum tương ứng trong code (không phân biệt hoa thường).
 
 Phần kỹ thuật ở mục 4 nằm ngoài phép đối chiếu.
