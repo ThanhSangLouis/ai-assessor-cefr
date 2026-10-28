@@ -1,0 +1,179 @@
+"""What a band describes, and what the machine actually measures of it (D028).
+
+A learner who reads "B1" on a report deserves to know what B1 means in terms of
+speaking, and -- the half most products leave out -- which of those behaviours
+this system observed at all. The descriptors are paraphrased in Vietnamese in
+the spirit of the CEFR qualitative aspects of spoken language use (Council of
+Europe, Companion Volume 2020); they are not a translation of the official
+scales and are waiting for review by the Foreign Languages teachers (A-03).
+
+Every aspect carries one of three labels, so the page cannot imply that the
+machine heard grammar or cohesion when its eighteen measurements are lengths,
+counts, word variety, recogniser confidence and pause statistics:
+
+* measured indirectly -- some measurement touches this aspect;
+* not measured        -- the machine has no measurement of it at all;
+* not assessed        -- outside what a monologue task can show (Interaction).
+
+The scorer has ONE output, an overall estimate. Nothing here suggests five
+separate criterion scores.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+
+from aicefr.contracts import Band
+
+
+class Provenance(str, Enum):
+    MEASURED_INDIRECTLY = "indirect"
+    NOT_MEASURED = "not_measured"
+    NOT_ASSESSED = "not_assessed"
+
+
+PROVENANCE_NAMES = {
+    Provenance.MEASURED_INDIRECTLY: "Máy đo gián tiếp",
+    Provenance.NOT_MEASURED: "Máy không đo",
+    Provenance.NOT_ASSESSED: "Không đánh giá",
+}
+
+
+@dataclass(frozen=True)
+class Aspect:
+    """One aspect of speaking and how much of it the system can see."""
+
+    key: str
+    name: str
+    provenance: Provenance
+    # What the machine uses, in words a learner understands; empty when nothing.
+    measured_by: str
+    # What it cannot see of the aspect, said plainly.
+    blind_to: str
+
+
+ASPECTS: tuple[Aspect, ...] = (
+    Aspect(
+        "range",
+        "Vốn từ (Range)",
+        Provenance.MEASURED_INDIRECTLY,
+        "số từ khác nhau, độ đa dạng từ, độ dài trung bình của từ",
+        "không biết từ dùng có đúng ngữ cảnh không, không đo độ phong phú của cấu trúc câu",
+    ),
+    Aspect(
+        "accuracy",
+        "Ngữ pháp (Accuracy)",
+        Provenance.NOT_MEASURED,
+        "",
+        "không có phép đo nào về lỗi ngữ pháp hay lỗi dùng từ; độ chắc chắn của máy nhận dạng "
+        "chỉ cho biết máy nghe rõ tới đâu, không cho biết câu đúng hay sai",
+    ),
+    Aspect(
+        "fluency",
+        "Độ trôi chảy (Fluency)",
+        Provenance.MEASURED_INDIRECTLY,
+        "tốc độ nói, số chỗ ngừng mỗi phút, độ dài chỗ ngừng, tỷ lệ chỗ ngừng dài",
+        "không phân biệt ngừng để suy nghĩ với ngừng vì nói lắp hay vì lý do sức khoẻ",
+    ),
+    Aspect(
+        "coherence",
+        "Mạch lạc (Coherence)",
+        Provenance.NOT_MEASURED,
+        "",
+        "không đo từ nối, cách sắp xếp ý hay sự liên kết giữa các câu; độ dài bài nói không phải "
+        "là mạch lạc",
+    ),
+    Aspect(
+        "phonology",
+        "Phát âm dễ nghe (Phonology)",
+        Provenance.MEASURED_INDIRECTLY,
+        "mức máy nhận dạng nghe chắc chắn các từ, tỷ lệ khoảng lặng",
+        "không chấm giọng; máy nghe kém có thể do micro, tiếng ồn hay giọng lạ chứ không phải do "
+        "phát âm sai. Không đo ngữ điệu và trọng âm",
+    ),
+    Aspect(
+        "interaction",
+        "Tương tác (Interaction)",
+        Provenance.NOT_ASSESSED,
+        "",
+        "bài nói là độc thoại nên không có bằng chứng về lượt lời, hỏi lại hay phản hồi; hệ thống "
+        "không suy ra tiêu chí này",
+    ),
+)
+
+# Paraphrased descriptors, one line per aspect and band. Interaction is left
+# out on purpose: the page says why in its own row of ASPECTS.
+DESCRIPTORS: dict[Band, dict[str, str]] = {
+    Band.A2: {
+        "range": (
+            "Dùng các mẫu câu cơ bản và cụm từ quen thuộc để nói về bản thân, gia đình, việc "
+            "hằng ngày; vốn từ đủ cho nhu cầu đơn giản."
+        ),
+        "accuracy": (
+            "Dùng đúng một số cấu trúc đơn giản nhưng vẫn lặp lại lỗi cơ bản như lẫn thì, quên "
+            "chia động từ; ý chính vẫn hiểu được."
+        ),
+        "fluency": ("Nói được những câu ngắn; ngập ngừng rõ, hay dừng để tìm từ hoặc nói lại câu."),
+        "coherence": 'Nối ý bằng những từ nối đơn giản nhất như "and", "but", "because".',
+        "phonology": (
+            "Phát âm nhìn chung đủ rõ để hiểu dù mang giọng tiếng Việt; người nghe đôi khi phải "
+            "hỏi lại."
+        ),
+    },
+    Band.B1: {
+        "range": (
+            "Đủ từ và cấu trúc để nói về hầu hết chủ đề quen thuộc như học tập, sở thích, du lịch; "
+            "khi thiếu từ thì nói vòng được."
+        ),
+        "accuracy": (
+            "Dùng khá chính xác các mẫu câu thông dụng trong tình huống quen thuộc; còn lỗi nhưng "
+            "thường không làm sai ý."
+        ),
+        "fluency": (
+            "Giữ được một lượt nói khá dài và dễ theo dõi, dù còn những chỗ dừng để sắp ý hay sửa "
+            "lời."
+        ),
+        "coherence": "Kể hay trình bày thành một chuỗi ý nối tiếp, theo trình tự rõ ràng.",
+        "phonology": (
+            "Phát âm rõ, dễ hiểu dù còn giọng và vài âm chưa chuẩn; ngữ điệu đôi chỗ chưa tự nhiên."
+        ),
+    },
+    Band.B2: {
+        "range": (
+            "Vốn từ và cấu trúc đủ rộng để mô tả rõ, nêu và bảo vệ quan điểm về nhiều chủ đề mà ít "
+            "phải dừng tìm từ; dùng được câu phức."
+        ),
+        "accuracy": ("Kiểm soát ngữ pháp khá tốt; lỗi ít khi gây hiểu lầm và thường tự sửa được."),
+        "fluency": (
+            "Nói với nhịp khá đều, duy trì được đoạn dài; chỗ ngừng để cân nhắc cách nói ít "
+            "khi kéo dài."
+        ),
+        "coherence": (
+            "Dùng nhiều cách liên kết để gắn các ý thành bài nói rõ ràng, mạch lạc; đoạn dài đôi "
+            "khi còn hơi rời."
+        ),
+        "phonology": (
+            "Phát âm và ngữ điệu rõ, người nghe không phải cố gắng; giọng không phải vấn đề khi đã "
+            "dễ hiểu."
+        ),
+    },
+}
+
+
+def page_rows() -> list[dict]:
+    """One row per aspect: its label, what the machine uses, and the three bands."""
+    rows = []
+    for a in ASPECTS:
+        rows.append(
+            {
+                "key": a.key,
+                "name": a.name,
+                "provenance": a.provenance.value,
+                "provenance_name": PROVENANCE_NAMES[a.provenance],
+                "measured_by": a.measured_by,
+                "blind_to": a.blind_to,
+                "bands": {b.value: DESCRIPTORS[b].get(a.key, "") for b in DESCRIPTORS},
+            }
+        )
+    return rows
