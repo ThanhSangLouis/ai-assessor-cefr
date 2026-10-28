@@ -311,7 +311,6 @@ class ResponseProcessor:
             "response_id": request.response_id,
             "config_version": request.config_version,
             "prompt_version": request.prompt_version,
-            "consent_version": request.consent_version,
         }
 
         # Pass the real channel count and byte size: without them the report

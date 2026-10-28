@@ -23,10 +23,9 @@
 
 | Bảng | CN | Nội dung | Khoá và ràng buộc |
 | --- | --- | --- | --- |
-| `account` | CN | Tài khoản: bút danh, băm mật khẩu (scrypt), vai trò, khoá do đăng nhập sai, mật khẩu tạm, mục tiêu luyện mỗi ngày, hình đại diện | PK `account_id`; `pseudonym` duy nhất |
+| `account` | CN | Tài khoản: bút danh, băm mật khẩu (scrypt), vai trò, khoá do đăng nhập sai, mật khẩu tạm, mục tiêu luyện mỗi ngày, hình đại diện, thời điểm đồng ý điều khoản sử dụng (`terms_accepted_at`, D058) | PK `account_id`; `pseudonym` duy nhất |
 | `auth_sessions` | CN | Phiên đăng nhập: băm của mã phiên, hạn, thiết bị, cách đăng nhập | PK `token_hash`; FK `account_id` |
 | `account_identity` | CN | Liên kết Google: băm của mã người dùng Google, không giữ email | PK (`provider`, `subject_hash`); mỗi tài khoản một liên kết mỗi nhà cung cấp |
-| `consent` | CN | Đồng thuận lưu bản ghi âm và dùng cho nghiên cứu, theo phiên bản văn bản; rút lại thì ghi `withdrawn_at` | PK `consent_id` |
 | `server_secret` | | Khoá ký của bản triển khai (cookie luồng Google, D036) | PK `name` |
 | `audit_log` | CN | Nhật ký kiểm toán: ai làm gì, với đối tượng nào, phần nào ghi (`service`) | PK `id` tự tăng |
 

@@ -48,10 +48,7 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    c.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+    c.post("/api/v1/me/terms")
     return c
 
 

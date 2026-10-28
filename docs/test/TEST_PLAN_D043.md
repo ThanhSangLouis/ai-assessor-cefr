@@ -41,7 +41,6 @@
 | | `test_internal_calls_need_the_key` | Lời gọi nội bộ thiếu hoặc sai khoá: 403; phương thức không `@exposed`: 404 |
 | | `test_the_gateway_never_forwards_internal_paths` | Gateway không chuyển `/internal/` |
 | | `test_a_student_submits_practises_and_is_erased_across_the_services` | Đăng nhập, đồng thuận, nộp bài được `speech` chấm, bước bài học được `speech` đo, thanh bên, bản xuất cá nhân gom từ ba dịch vụ, nhật ký ghép, xoá dữ liệu tới `learning` |
-| | `test_withdrawing_research_consent_reaches_the_study_over_the_bus` | Rút đồng ý ở `identity` đưa người học ra khỏi thực nghiệm ở `assessment` qua sự kiện |
 | `test_bus_rabbitmq.py` | 5 test | Việc gửi khi chưa có worker chờ trong hàng đợi; mỗi việc một worker; sự kiện tới mọi dịch vụ đăng ký; hỏi–đáp và hết giờ; thông điệp hỏng không chặn hàng đợi |
 | `test_ratings.py` | `test_a_review_decision_keeps_the_ratings_and_who_saw_the_machine` (từ PR D039–D042) | Giữ lại sau khi đổi `save` sang upsert |
 

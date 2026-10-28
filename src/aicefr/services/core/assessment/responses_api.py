@@ -50,7 +50,6 @@ from aicefr.services.core.assessment.context import (
     scorable_duration,
     svc,
 )
-from aicefr.services.core.identity.facade import consent_from
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.repository import InvalidStateError
 from aicefr.storage.task_repository import Task
@@ -79,15 +78,14 @@ async def submit_response(
     # let a student submit under somebody else's pseudonym.
     speaker_id = account.pseudonym
 
-    # FR-01: no consent, no recording. Checked before a single byte is written
-    # to disk -- storing the audio first and asking permission afterwards is the
-    # exact order that makes an ethics committee say no.
-    consent = consent_from(s.peers.identity.consent(account_id=account.account_id))
-    if consent is None or not consent.may_submit:
+    # FR-01 (D058): no accepted terms, no recording. Checked before a single
+    # byte is written to disk -- storing the audio first and asking afterwards
+    # is the wrong order for personal data.
+    if not account.may_submit:
         raise HTTPException(
             403,
-            "chưa có đồng thuận cho phép lưu bản ghi. Vào trang /consent để ký"
-            f" ({ReasonCode.CONSENT_MISSING.value})",
+            "chưa đồng ý điều khoản sử dụng. Vào trang /terms để đồng ý"
+            f" ({ReasonCode.TERMS_NOT_ACCEPTED.value})",
         )
 
     task = s.tasks.get(task_id)
@@ -163,7 +161,6 @@ async def submit_response(
         audio_path=audio_ref,
         prompt_version=task.prompt_version,
         config_version=CONFIG_VERSION,
-        consent_version=consent.consent_version,
     )
 
     # Persist immediately in the QUEUED state and reply, instead of waiting for
@@ -175,7 +172,6 @@ async def submit_response(
             status=Status.QUEUED,
             config_version=CONFIG_VERSION,
             prompt_version=req.prompt_version,
-            consent_version=req.consent_version,
         ),
         speaker_id,
         task_id,
@@ -349,7 +345,7 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
 # export, reachable without asking an administrator.
 FIELD_PURPOSES: dict[str, str] = {
     "speaker_id": "Bút danh gắn bài nói với tài khoản. Không chứa họ tên hay MSSV.",
-    "consent": "Lịch sử đồng thuận: đã ký bản nào, cho phép gì, rút khi nào.",
+    "terms_accepted_at": "Thời điểm bạn đồng ý điều khoản sử dụng; từ đó hệ thống mới lưu bản ghi.",
     "response_id": "Mã bài nói, dùng để tra cứu và để xoá đúng bản ghi khi bạn yêu cầu.",
     "task_id": "Đề bài đã nói, để so sánh các bài cùng đề.",
     "status": "Trạng thái xử lý của bài.",
@@ -382,8 +378,8 @@ FIELD_PURPOSES: dict[str, str] = {
 def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
     """Everything the system holds about the caller, and what it is used for.
 
-    Consent comes from the identity service and lesson attempts and achievements
-    from the learning service (D043); the export is still one file.
+    Lesson attempts and achievements come from the learning service (D043);
+    the export is still one file.
     """
     s = svc()
     responses = []
@@ -423,19 +419,7 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "speaker_id": account.pseudonym,
             "fields": FIELD_PURPOSES,
-            "consent": [
-                {
-                    k: c[k]
-                    for k in (
-                        "consent_version",
-                        "audio_storage_allowed",
-                        "research_use_allowed",
-                        "signed_at",
-                        "withdrawn_at",
-                    )
-                }
-                for c in s.peers.identity.consent_history(account_id=account.account_id)
-            ],
+            "terms_accepted_at": account.terms_accepted_at,
             "response_count": len(responses),
             "responses": responses,
             "lesson_attempt_count": len(lesson_attempts),

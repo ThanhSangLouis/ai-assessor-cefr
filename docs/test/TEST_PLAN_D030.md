@@ -136,7 +136,6 @@ Tiêu chí chấp nhận AC-61.1..AC-64.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-BR-I08 | `test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more` | AC-62.6 | Con số phiếu chưa làm; đợt đóng không nhận phiếu |
 | TC-BR-I09 | `test_a_disagreement_goes_to_a_third_rater_who_did_not_rate_it` | AC-63.1 | Phân xử bỏ qua người đã chấm; phiếu phân xử vẫn mù |
 | TC-BR-I10 | `test_the_report_puts_humans_first_and_compares_the_machine_before_any_review` | AC-64.1 | Báo cáo dùng điểm máy trước duyệt; người–người trước |
-| TC-BR-I11 | `test_withdrawn_consent_takes_a_response_out_of_report_and_export` | AC-64.2 | Rút đồng thuận là rút khỏi báo cáo và bản xuất |
 | TC-BR-I12 | `test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score` | AC-64.3 | CSV đủ phiếu, bút danh giám khảo, điểm máy |
 | TC-BR-I13 | `test_erasing_a_participant_erases_what_raters_said_about_them` | AC-64.4 | Xoá dữ liệu người học xoá luôn phiếu về bài của họ |
 | TC-BR-I14 | `test_only_an_administrator_runs_batches` | AC-64.6 | Giảng viên không quản lý đợt được |

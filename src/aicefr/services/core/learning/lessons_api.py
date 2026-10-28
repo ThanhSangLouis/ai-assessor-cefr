@@ -2,7 +2,8 @@
 
 The learning service (D043). A recorded step goes into the blob store and the
 speech service measures it (`speech.step`, request-reply) while the learner
-waits; consent comes from identity, a learner's latest result from assessment,
+waits; the forwarded account says whether the terms were accepted (D058), a
+learner's latest result comes from assessment,
 the plan in force from billing. Wired once at start-up through `configure`.
 """
 
@@ -67,7 +68,6 @@ from aicefr.practice.achievements import count as count_facts
 from aicefr.practice.streak import LOCAL_TZ
 from aicefr.pronunciation.vietnamese import profile as pronunciation_profile
 from aicefr.services import Peers
-from aicefr.services.core.identity.facade import consent_from
 from aicefr.services.speech.worker import PROBE_QUEUE, STEP_QUEUE, STEP_TIMEOUT_S
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import Account
@@ -295,12 +295,9 @@ def _lesson_view(lesson: Lesson) -> dict:
     return data
 
 
-def _require_consent(request: Request, account: Account) -> None:
-    consent = consent_from(svc().peers.identity.consent(account_id=account.account_id))
-    if consent is None or not consent.may_submit:
-        raise HTTPException(
-            403, "chưa có đồng thuận cho phép lưu bản ghi. Vào trang /consent để ký"
-        )
+def _require_terms(request: Request, account: Account) -> None:
+    if not account.may_submit:
+        raise HTTPException(403, "chưa đồng ý điều khoản sử dụng. Vào trang /terms để đồng ý")
 
 
 # ================================================================= learners
@@ -541,7 +538,7 @@ async def learn_attempt(
     account: Account = STUDENT_ONLY,
 ) -> dict:
     """Record one step and measure it right away. FR-46."""
-    _require_consent(request, account)
+    _require_terms(request, account)
     lessons_repo = svc().lessons
     lesson, version = _live(lesson_id)
     step = lesson.step(step_id)
@@ -735,7 +732,7 @@ async def learn_review_attempt(
     review_id: str = Form(...),
     account: Account = STUDENT_ONLY,
 ) -> dict:
-    _require_consent(request, account)
+    _require_terms(request, account)
     session = {s["review_id"]: s for s in _review_steps(account.account_id)}
     entry = session.get(review_id)
     if entry is None:

@@ -103,11 +103,10 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-LE-I01 | `test_lesson_word_marks_name_the_vietnamese_pattern` | AC-75.5 | Bước nhắc lại: "because" nghe thành "becau" có nhãn `final_consonant` |
 | TC-LE-I02 | `test_learner_profile_counts_errors_against_opportunities` | AC-75.6 | Hai lượt cùng lỗi: âm cuối 2 lỗi, đủ dữ liệu, ví dụ dẫn về bài học |
 | TC-LE-I03 | `test_class_profile_is_for_staff_and_names_nobody` | AC-76.1 | Bản của lớp: 2 người học, ví dụ chỉ có từ và chữ máy nghe, không bút danh; sinh viên 403 |
-| TC-LE-I04 | `test_study_enrols_consenting_students_half_in_each_arm` | AC-77.2 | Chỉ sinh viên đồng ý nghiên cứu vào nhóm, chia 2–3; thực nghiệm thứ hai 409; nhật ký có hạt giống |
-| TC-LE-I05 | `test_study_needs_enough_consenting_students` | AC-77.3 | Dưới 4 người: 422 kèm lý do |
+| TC-LE-I04 | `test_study_enrols_students_with_terms_half_in_each_arm` | AC-77.2 | Chỉ sinh viên đồng ý nghiên cứu vào nhóm, chia 2–3; thực nghiệm thứ hai 409; nhật ký có hạt giống |
+| TC-LE-I05 | `test_study_needs_enough_students_with_terms` | AC-77.3 | Dưới 4 người: 422 kèm lý do |
 | TC-LE-I06 | `test_score_only_arm_gets_the_score_and_nothing_more` | AC-77.4 | Nhóm "Chỉ điểm" chỉ có điểm, mức; nhóm kia và giảng viên thấy đủ |
 | TC-LE-I07 | `test_leaving_the_study_or_closing_it_brings_feedback_back` | AC-77.5 | Rời thực nghiệm: phản hồi trở lại ngay; đóng: không ai còn trong thực nghiệm |
-| TC-LE-I08 | `test_withdrawing_research_consent_leaves_the_study` | AC-77.6 | Rút đồng ý là rời thực nghiệm |
 | TC-LE-I09 | `test_survey_opens_only_in_the_survey_phase_and_checks_answers` | AC-78.4 | Khảo sát chỉ mở ở giai đoạn khảo sát, kiểm đủ năm câu 1–5; chuyển giai đoạn chỉ đi tới |
 | TC-LE-I10 | `test_study_export_carries_codes_not_people` | AC-78.5 | CSV theo mã P001, không bút danh, không mã tài khoản; sinh viên 403 |
 | TC-LE-I11 | `test_erasure_takes_the_learner_out_of_every_study` | AC-77.7 | Xoá dữ liệu người học là xoá họ khỏi thực nghiệm |

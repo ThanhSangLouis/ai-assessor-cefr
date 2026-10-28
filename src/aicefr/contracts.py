@@ -59,7 +59,7 @@ class ReasonCode(str, Enum):
     AUDIO_TOO_LARGE = "AUDIO_TOO_LARGE"
     AUDIO_TOO_LONG = "AUDIO_TOO_LONG"
     AUDIO_TOO_SHORT = "AUDIO_TOO_SHORT"
-    CONSENT_MISSING = "CONSENT_MISSING"
+    TERMS_NOT_ACCEPTED = "TERMS_NOT_ACCEPTED"
     # Chat luong am thanh
     HIGH_SILENCE_RATIO = "HIGH_SILENCE_RATIO"
     CLIPPING_DETECTED = "CLIPPING_DETECTED"
@@ -616,12 +616,6 @@ class ProcessingRequest(BaseModel):
     audio_path: str
     prompt_version: str
     config_version: str
-    # Which wording of the consent form the speaker had signed when this
-    # recording was made. Optional in the type so existing fixtures keep
-    # working, but the API never submits without it: FR-01 requires the
-    # provenance, and a recording whose consent cannot be shown is a recording
-    # that cannot be used for research later.
-    consent_version: str | None = None
 
 
 class Review(BaseModel):
@@ -825,11 +819,10 @@ class Response(BaseModel):
     assessment: Assessment | None = None
     reasons: list[ReasonCode] = Field(default_factory=list)
     config_version: str
-    # Ban de va ban dong thuan sinh vien da thay khi nop (truy vet). Co tren
-    # ProcessingRequest tu lau nhung khong duoc luu vao ket qua, nen bao cao
-    # khong noi duoc sinh vien da tra loi ban de nao. Rong o ban ghi cu.
+    # Ban de sinh vien da thay khi nop (truy vet). Co tren ProcessingRequest
+    # tu lau nhung khong duoc luu vao ket qua, nen bao cao khong noi duoc sinh
+    # vien da tra loi ban de nao. Rong o ban ghi cu.
     prompt_version: str | None = None
-    consent_version: str | None = None
     # D023. Only on practice attempts; empty for assessment responses.
     practice: PracticeResult | None = None
 

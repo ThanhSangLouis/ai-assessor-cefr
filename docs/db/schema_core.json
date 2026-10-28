@@ -224,23 +224,6 @@
       "unique": true
     }
   ],
-  "consent": [
-    {
-      "name": "i_account_id_signed_at",
-      "keys": [
-        "account_id",
-        "signed_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_consent_id",
-      "keys": [
-        "consent_id"
-      ],
-      "unique": true
-    }
-  ],
   "credit_grant": [
     {
       "name": "u_grant_id",

@@ -744,7 +744,6 @@ function provenanceBlock(d, a) {
     ["Hiệu chuẩn", a.calibration_version],
     ["Bộ ngưỡng QC", d.qc ? d.qc.qc_config_version : null],
     ["Phiên bản đề", d.prompt_version],
-    ["Phiên bản đồng thuận", d.consent_version],
     ["Thời điểm chấm", a.scored_at],
   ];
   let h = '<h3 class="block-title">Nguồn gốc kết quả</h3><table class="kv"><tbody>';

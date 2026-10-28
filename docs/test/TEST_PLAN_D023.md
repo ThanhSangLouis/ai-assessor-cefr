@@ -157,7 +157,7 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I24 | `test_task_detail_rejects_assessment_and_unknown_tasks` | FR-40 | Âm | API chi tiết đề: đề đánh giá và đề không tồn tại trả 404 (2 ca) |
 | TC-PR-I25 | `test_practice_submission_gets_a_result_without_band_and_skips_the_queue` | AC-44.1 | Thuận | Nộp bài luyện: có kết quả, không band, không vào hàng đợi, lộ trình cập nhật |
 | TC-PR-I26 | `test_completing_the_suggested_task_moves_the_suggestion_on` | FR-42 | Thuận | Hoàn thành nhiệm vụ gợi ý thì gợi ý chuyển sang nhiệm vụ kế |
-| TC-PR-I27 | `test_practice_without_consent_is_refused` | FR-44 | Âm | Chưa đồng thuận thì không nộp được bài luyện (403) |
+| TC-PR-I27 | `test_practice_without_the_terms_is_refused` | FR-44 | Âm | Chưa đồng thuận thì không nộp được bài luyện (403) |
 | TC-PR-I28 | `test_submission_to_an_unknown_task_is_refused` | FR-40 | Âm | Nộp vào đề không tồn tại bị từ chối (422) |
 | TC-PR-I29 | `test_qc_rejected_practice_counts_toward_neither_goal_nor_path` | FR-43 | Âm | Bài bị QC từ chối không tính vào mục tiêu ngày và lộ trình |
 | TC-PR-I30 | `test_second_attempt_compares_with_the_previous_one_on_the_same_task` | AC-43.1 | Biên | Lần sau so với lần trước cùng đề, kể cả nộp cùng một giây |
@@ -186,7 +186,7 @@ Tệp: `tests/test_practice_integration.py`.
 | TC-PR-E06 | `test_continue_button_opens_the_next_suggested_task` | FR-42 | Thuận | Nút Luyện tiếp mở nhiệm vụ gợi ý kế tiếp |
 | TC-PR-E08 | `test_too_short_file_is_rejected_with_reason_and_not_counted` | FR-43 | Âm | File 10 giây bị từ chối, nói lý do, không tính vào mục tiêu ngày của D023 |
 | TC-PR-E09 | `test_fake_microphone_recording_is_submitted_and_processed` | FR-41 | Âm | Ghi âm bằng micro giả, chuyển mã, xử lý; bản 3 giây bị từ chối có lý do |
-| TC-PR-E10 | `test_without_consent_a_warning_shows_and_submit_is_disabled` | FR-44 | Âm | Chưa đồng thuận: hiện cảnh báo, nút ghi âm và ô chọn file bị tắt |
+| TC-PR-E10 | `test_without_the_terms_a_warning_shows_and_submit_is_disabled` | FR-44 | Âm | Chưa đồng thuận: hiện cảnh báo, nút ghi âm và ô chọn file bị tắt |
 | TC-PR-E11 | `test_another_learner_cannot_see_your_result` | AC-44.3 | Âm | Người khác mở link kết quả thì không thấy gì |
 | TC-PR-E12 | `test_my_responses_tags_practice_and_opens_its_result` | FR-44 | Thuận | Bài của tôi gắn nhãn Luyện tập, Không chấm, mở đúng trang kết quả |
 | TC-PR-E13 | `test_teacher_sees_class_practice_without_per_student_rows` | FR-44 | Thuận | Giảng viên thấy khối Luyện tập của lớp, không có dòng theo sinh viên |

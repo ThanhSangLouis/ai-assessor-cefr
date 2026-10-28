@@ -37,15 +37,9 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    # FR-01: recording requires consent. Signed through the real endpoint so the
-    # fixtures walk the same path as a student.
-    assert (
-        c.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        ).status_code
-        == 200
-    )
+    # FR-01 (D058): recording requires the terms of use. Accepted through the real
+    # endpoint so the fixtures walk the same path as a student.
+    assert c.post("/api/v1/me/terms").status_code == 200
     return c
 
 

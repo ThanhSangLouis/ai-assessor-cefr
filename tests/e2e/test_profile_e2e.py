@@ -23,11 +23,11 @@ pytest.importorskip("playwright.sync_api")
 
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
+    accept_terms,
     browser,
     context,
     live_server,
     login,
-    sign_consent,
 )
 
 pytestmark = pytest.mark.e2e
@@ -52,7 +52,7 @@ def test_a_learner_picks_an_avatar_and_a_daily_goal_and_the_path_follows(context
 
     page.locator(".chip-radio").filter(has_text="5 phút").click()
     expect(page.locator(".toast").last).to_contain_text("5 phút")
-    sign_consent(page)
+    accept_terms(page)
     page.goto("/practice")
     expect(page.locator(".today-card")).to_contain_text("/300")
 

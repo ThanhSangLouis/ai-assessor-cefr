@@ -211,7 +211,6 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
         audio_path="x",
         prompt_version="v7",
         config_version="v1",
-        consent_version="c2",
     )
     t = np.arange(16_000 * 40) / 16_000
     pcm = (0.2 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
@@ -219,8 +218,8 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
     r = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(req, pcm, 16_000)
     assert r.assessment is not None and r.assessment.overall_0_6 is None
     assert r.assessment.priorities == []
-    # muc 16: ban de va ban dong thuan di theo ket qua
-    assert (r.prompt_version, r.consent_version) == ("v7", "c2")
+    # muc 16: ban de di theo ket qua
+    assert r.prompt_version == "v7"
 
 
 # ------------------------------------------- muc 13: nguong band theo mo hinh cua bai

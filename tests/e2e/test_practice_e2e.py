@@ -215,21 +215,18 @@ def wait_until(page, expression: str, timeout_s: float = 10.0) -> None:
     raise AssertionError(f"timed out waiting for: {expression}")
 
 
-def sign_consent(page) -> None:
-    """Sign consent through the API with the browser's own session cookie."""
-    r = page.request.post(
-        "/api/v1/me/consent",
-        form={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+def accept_terms(page) -> None:
+    """Accept the terms through the API with the browser's own session cookie."""
+    r = page.request.post("/api/v1/me/terms")
     assert r.ok, r.text()
 
 
 @pytest.fixture
 def student(context, live_server):
-    """A new student, logged in and with consent, on the practice home."""
+    """A new student, logged in and with the terms accepted, on the practice home."""
     page = context.new_page()
     login(page, live_server, live_server.account())
-    sign_consent(page)
+    accept_terms(page)
     page.goto("/practice")
     return page
 
@@ -322,11 +319,11 @@ def test_fake_microphone_recording_is_submitted_and_processed(student):
     expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
 
 
-def test_without_consent_a_warning_shows_and_submit_is_disabled(context, live_server):
+def test_without_the_terms_a_warning_shows_and_submit_is_disabled(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), "/practice/PR-COH-A2")
-    expect(page.locator("#consent-gate")).to_be_visible()
-    expect(page.locator("#consent-gate")).to_contain_text("Chưa có đồng thuận")
+    expect(page.locator("#terms-gate")).to_be_visible()
+    expect(page.locator("#terms-gate")).to_contain_text("Chưa đồng ý điều khoản")
     # Both ways in are closed before a minute is spent recording: the record
     # button and the file picker. The server refuses the upload as well.
     expect(page.locator("#rec-button")).to_be_disabled()
@@ -376,7 +373,7 @@ def test_phone_layout_of_a_task_has_no_horizontal_scroll(context, live_server):
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account())
-    sign_consent(page)
+    accept_terms(page)
     page.goto("/practice/PR-COH-A2")
     expect(page.locator("#practice-form")).to_be_visible()
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")

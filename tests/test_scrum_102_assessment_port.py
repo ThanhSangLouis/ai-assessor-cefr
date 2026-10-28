@@ -27,6 +27,8 @@ from aicefr.services.core.assessment import context
 from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.repository import Repository
 
+ACCEPTED = "2026-10-28T00:00:00+00:00"  # D058: the terms of use, accepted
+
 
 @pytest.fixture
 def assessment_service(tmp_path, monkeypatch, request):
@@ -80,7 +82,7 @@ def test_student_can_join_a_class_and_see_its_open_assignment(assessment_service
     parts, settings = assessment_service
     app = asgi(parts, settings)
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
 
     with TestClient(app) as client:
         made = client.post(
@@ -128,10 +130,9 @@ def test_teacher_review_queue_and_admin_stats_are_wired(assessment_service):
         assert stats.json()["total"] == 0
 
 
-def test_submission_requires_consent_before_writing_audio_or_response(assessment_service):
+def test_submission_requires_the_terms_before_writing_audio_or_response(assessment_service):
     parts, settings = assessment_service
-    context.svc().peers.identity.consent = lambda *, account_id: None
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT)  # terms not accepted
     with TestClient(asgi(parts, settings)) as client:
         denied = client.post(
             "/api/v1/responses",
@@ -144,7 +145,7 @@ def test_submission_requires_consent_before_writing_audio_or_response(assessment
 
 def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
     parts, settings = assessment_service
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
     with TestClient(asgi(parts, settings)) as client:
         accepted = client.post(
             "/api/v1/responses",
@@ -213,7 +214,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     )
     context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
 
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
     with TestClient(asgi(parts, settings)) as client:
         result = client.get("/api/v1/responses/report-1", headers=headers(student))
     assert result.status_code == 200, result.text

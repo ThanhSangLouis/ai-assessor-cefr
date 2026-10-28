@@ -75,7 +75,7 @@ PLANS = [
             "TC-BR-E": ROOT / "tests" / "e2e" / "test_ratings_e2e.py",
         },
         "6[1-4]",
-        21,
+        20,  # AC-64.2 (withdrawn consent) dropped with D058
     ),
     Plan(
         "D032",
@@ -130,7 +130,7 @@ PLANS = [
             "TC-LE-E": ROOT / "tests" / "e2e" / "test_learning_evidence_e2e.py",
         },
         "7[5-9]|80",
-        34,
+        33,  # AC-77.6 (withdrawing research consent) dropped with D058
     ),
     Plan(
         "D045-D047",

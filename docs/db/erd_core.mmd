@@ -5,7 +5,6 @@
 erDiagram
     account ||--o{ auth_sessions : "đăng nhập"
     account ||--o{ account_identity : "liên kết Google"
-    account ||..o{ consent : "ký"
     account ||..o{ response : "nộp"
     account ||..o{ step_attempt : "luyện"
     account ||..o{ review_item : "ôn"

@@ -20,8 +20,7 @@ from aicefr.auth import google, passwords
 from aicefr.config import Settings
 from aicefr.research.agreement import BANDS, CRITERIA
 from aicefr.services import Peers
-from aicefr.services.core.identity.auth_api import consent_state
-from aicefr.services.core.identity.facade import consent_from
+from aicefr.services.core.identity.auth_api import terms_state
 from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
     AVATAR_ICONS,
@@ -29,7 +28,6 @@ from aicefr.storage.auth_repository import (
     Account,
     Role,
 )
-from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION
 from aicefr.storage.rating_repository import UNSCORABLE_REASONS
 
 router = APIRouter()
@@ -151,21 +149,17 @@ def page_bands(request: Request, account: Account | None = Depends(optional_acco
     )
 
 
-@router.get("/consent", response_class=HTMLResponse, tags=["web"])
-def page_consent(request: Request, account: Account | None = Depends(optional_account)):
-    """The consent screen. Wording lives in the template, version in the code."""
-    state = None
-    if account is not None:
-        current = consent_from(svc().peers.identity.consent(account_id=account.account_id))
-        state = consent_state(current, account)
-    return _page(
-        request,
-        "consent.html",
-        account,
-        "consent",
-        consent=state,
-        consent_version=CURRENT_CONSENT_VERSION,
-    )
+@router.get("/terms", response_class=HTMLResponse, tags=["web"])
+def page_terms(request: Request, account: Account | None = Depends(optional_account)):
+    """The terms of use (D058). The account says whether they were accepted."""
+    state = terms_state(account) if account is not None else None
+    return _page(request, "terms.html", account, "terms", terms=state)
+
+
+@router.get("/consent", include_in_schema=False)
+def page_consent() -> RedirectResponse:
+    """The old address of the consent screen, which the terms replaced."""
+    return RedirectResponse("/terms", status_code=301)
 
 
 @router.get("/account", response_class=HTMLResponse, tags=["web"])

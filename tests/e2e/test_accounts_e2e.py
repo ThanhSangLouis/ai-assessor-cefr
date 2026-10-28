@@ -24,11 +24,11 @@ pytest.importorskip("playwright.sync_api")
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
     PASSWORD,
+    accept_terms,
     browser,
     context,
     live_server,
     login,
-    sign_consent,
     wait_until,
 )
 
@@ -101,7 +101,7 @@ def test_a_teacher_decision_is_a_count_until_the_student_opens_their_list(
 ):
     student = context.new_page()
     login(student, live_server, live_server.account(), "/")
-    sign_consent(student)
+    accept_terms(student)
     student.goto("/")
     expect(student.locator(".task")).not_to_have_count(0)
     student.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
@@ -133,7 +133,7 @@ def test_a_teacher_decision_is_a_count_until_the_student_opens_their_list(
 def test_thirty_seconds_of_preparation_then_the_answer_is_recorded(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), "/")
-    sign_consent(page)
+    accept_terms(page)
     page.goto("/")
     prep = page.locator("#prep")
     expect(prep).to_be_visible()

@@ -153,10 +153,7 @@ def test_a_profile_takes_only_listed_avatars_and_goals(m):
 
 def test_the_daily_goal_sets_the_target_on_the_path_page(m):
     c = login_as(m, "SV-001")
-    c.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+    c.post("/api/v1/me/terms")
     assert c.get("/api/v1/learn").json()["today"]["goal_seconds"] == 180
     c.patch("/api/v1/me/profile", json={"daily_goal_s": 600})
     assert c.get("/api/v1/learn").json()["today"]["goal_seconds"] == 600

@@ -17,7 +17,6 @@ from aicefr.platform.callers import (
 from aicefr.services import Peers
 from aicefr.services.core.assessment import app as assessment_app
 from aicefr.storage.auth_repository import Account, Role
-from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION
 
 GATEWAY_TOKEN = "test-gateway-token"
 INTERNAL_TOKEN = "test-internal-token"
@@ -31,17 +30,6 @@ class IdentityStub:
 
     def pseudonyms(self, *, account_ids: list[str]) -> dict[str, str]:
         return {account_id: "SV-001" for account_id in account_ids if account_id == "student-1"}
-
-    def consent(self, *, account_id: str) -> dict:
-        return {
-            "consent_id": "consent-1",
-            "account_id": account_id,
-            "consent_version": CURRENT_CONSENT_VERSION,
-            "audio_storage_allowed": True,
-            "research_use_allowed": True,
-            "signed_at": "2026-10-28T00:00:00+00:00",
-            "withdrawn_at": None,
-        }
 
 
 def build_assessment_service(tmp_path, monkeypatch, request=None):

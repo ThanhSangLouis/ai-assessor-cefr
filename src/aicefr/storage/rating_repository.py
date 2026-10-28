@@ -171,11 +171,11 @@ class RatingRepository(MongoStore):
     # ------------------------------------------------------------ eligibility
 
     def eligible(self, allowed_accounts: set[str], only_new: bool = True) -> list[str]:
-        """Responses that may go to raters: assessed, recorded, owner consents to research.
+        """Responses that may go to raters: assessed, recorded, owner accepted the terms.
 
         A practice attempt is not assessment data (D023); a response without its
         recording cannot be listened to; and rating is research use, so only
-        owners whose standing consent allows research count. `only_new` leaves
+        owners who accepted the terms of use (D058) count. `only_new` leaves
         out responses already in a batch.
         """
         if not allowed_accounts:
@@ -614,7 +614,7 @@ class RatingRepository(MongoStore):
         return list(items.values())
 
     def analysis_rows(self, batch_id: str, allowed: set[str]) -> list[dict]:
-        """Every response of the batch whose owner still consents, with all its ratings.
+        """Every response of the batch whose owner is in `allowed`, with all its ratings.
 
         For administrators: holds the speaker pseudonym (the bootstrap resamples
         speakers) and the machine's own score next to the human ones.

@@ -101,20 +101,8 @@ CLASSES = [
             "- avatarIcon: str",
             "- avatarColor: str",
             "- dailyGoalS: int",
+            "- termsAcceptedAt: str",
             "+ isTeacher(): bool",
-        ],
-    ),
-    (
-        "Consent",
-        "«entity»" + BR + "Consent",
-        [
-            "- consentId: str",
-            "- accountId: str",
-            "- consentVersion: str",
-            "- audioStorageAllowed: bool",
-            "- researchUseAllowed: bool",
-            "- signedAt: str",
-            "- withdrawnAt: str",
             "+ maySubmit(): bool",
         ],
     ),
@@ -164,7 +152,6 @@ CLASSES = [
             "- reasons: List<ReasonCode>",
             "- configVersion: str",
             "- promptVersion: str",
-            "- consentVersion: str",
             "- practice: PracticeResult",
         ],
     ),
@@ -414,7 +401,7 @@ ENUMS = [
             "AUDIO_TOO_LARGE",
             "AUDIO_TOO_LONG",
             "AUDIO_TOO_SHORT",
-            "CONSENT_MISSING",
+            "TERMS_NOT_ACCEPTED",
             "HIGH_SILENCE_RATIO",
             "CLIPPING_DETECTED",
             "LOW_SNR",
@@ -447,7 +434,6 @@ ENUMS = [
 
 # (nguon, dich, "boi so nguon : boi so dich", kieu)
 EDGES = [
-    ("Account", "Consent", "1 : 0..*", "assoc"),
     ("Account", "Report", "1 : 0..*", "assoc"),
     ("Account", "Review", "1 : 0..*", "assoc"),
     ("Task", "Report", "1 : 0..*", "assoc"),
@@ -500,7 +486,7 @@ EDGES = [
 # Bon cot, doc tu trai sang phai theo luong nghiep vu. Enum dat canh lop dung
 # no nhieu nhat de duong phu thuoc ngan.
 COLUMNS = [
-    (40, ["Account", "Role", "Consent", "Review", "Price", "Tok", "Action"]),
+    (40, ["Account", "Role", "Review", "Price", "Tok", "Action"]),
     (40 + COL_DX, ["Task", "TaskPart", "TaskPurpose", "Mis", "MissionKind", "Mom", "Nud"]),
     (40 + 2 * COL_DX, ["Status", "Report", "Qc", "QcStatus", "Prac", "MChk", "MHit"]),
     (40 + 3 * COL_DX, ["Asr", "Word", "Feat", "Ftr", "Win", "Cov", "ReasonCode"]),

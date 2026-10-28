@@ -1,7 +1,7 @@
 """Blind double rating in the app (D030): raters score without seeing the machine.
 
 Part of the assessment service (D043): the ratings sit beside the responses
-they rate. Raters' names and research consent come from the identity service;
+they rate. Raters' names and who accepted the terms (D058) come from identity;
 the rating pages are drawn by the web service.
 
 The field study needs human scores that nothing has anchored
@@ -23,7 +23,7 @@ An administrator creates batches (two raters per response, a random order per
 rater, one seed recorded), sends disagreements to a third rater, and reads the
 agreement report -- human-human agreement first, machine-human after -- or
 downloads every rating as CSV for the analysis. Only responses whose owner
-consents to research use are rated, reported or exported.
+accepted the terms of use are rated, reported or exported.
 """
 
 from __future__ import annotations
@@ -510,8 +510,8 @@ def batch_export(
     """Every submitted rating of the batch, one row each, for the analysis outside the app.
 
     Raters appear under their pseudonyms; the machine's score is its own
-    output, from before any teacher decision. Owners who withdrew consent are
-    left out.
+    output, from before any teacher decision. Owners who have not accepted the
+    terms, or were erased, are left out.
     """
     _batch_or_404(batch_id)
     _not_while_owed(batch_id, account)

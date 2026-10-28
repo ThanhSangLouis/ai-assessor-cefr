@@ -213,8 +213,8 @@ def test_a_submission_without_runs_left_is_refused_with_402(metered):
 def test_only_an_administrator_grants_runs(metered):
     m = metered
     login_as(m, "SV-001")
-    admin = login_as(m, "QT-01", "admin", consent=False)
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
+    admin = login_as(m, "QT-01", "admin", terms=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
     body = {"pseudonym": "SV-001", "runs": 2, "reference": "phiếu-1"}
     assert teacher.post("/api/v1/admin/credits/grant", json=body).status_code == 403
     first = admin.post("/api/v1/admin/credits/grant", json=body).json()
@@ -228,14 +228,14 @@ def test_only_an_administrator_grants_runs(metered):
 
 def test_the_metered_deployment_runs_no_research_study(metered):
     m = metered
-    admin = login_as(m, "QT-01", "admin", consent=False)
+    admin = login_as(m, "QT-01", "admin", terms=False)
     r = admin.post("/api/v1/admin/studies", json={"name": "Không được chạy"})
     assert r.status_code == 409 and "tính lượt" in r.json()["detail"]
 
 
 def test_granting_on_the_school_deployment_is_refused(tmp_path, monkeypatch):
     m = boot(tmp_path, monkeypatch)
-    admin = login_as(m, "QT-01", "admin", consent=False)
+    admin = login_as(m, "QT-01", "admin", terms=False)
     r = admin.post(
         "/api/v1/admin/credits/grant",
         json={"pseudonym": "QT-01", "runs": 1, "reference": "x"},

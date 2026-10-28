@@ -44,7 +44,6 @@ def test_every_identifier_a_table_had_as_key_is_unique():
         "response": ["response_id"],
         "account": ["account_id"],
         "auth_sessions": ["token_hash"],
-        "consent": ["consent_id"],
         "task": ["task_id"],
         "billing_order": ["order_id"],
         "research_rating": ["assignment_id"],

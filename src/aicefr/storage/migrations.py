@@ -41,7 +41,6 @@ def _baseline(db: Database, target: str) -> None:
     from aicefr.storage.audit_repository import AuditLog
     from aicefr.storage.auth_repository import AuthRepository
     from aicefr.storage.billing_repository import BillingRepository
-    from aicefr.storage.consent_repository import ConsentRepository
     from aicefr.storage.lesson_repository import LessonRepository
     from aicefr.storage.rating_repository import RatingRepository
     from aicefr.storage.repository import Repository
@@ -50,7 +49,6 @@ def _baseline(db: Database, target: str) -> None:
 
     Repository(target)
     AuthRepository(target)
-    ConsentRepository(target)
     TaskRepository(target)
     RatingRepository(target)
     StudyRepository(target)
@@ -109,6 +107,25 @@ def _replay(db: Database, target: str) -> None:
     )
 
 
+def _terms(db: Database, target: str) -> None:
+    """D058: the research consent form is gone; accepting the terms replaces it.
+
+    A standing signature that allowed keeping recordings becomes the account's
+    `terms_accepted_at`, dated when it was signed, so nobody who could submit
+    before has to accept again. Then the consent collection is dropped. Run on
+    a store with no consent collection (the learning or metering database), it
+    does nothing.
+    """
+    if "consent" not in db.list_collection_names():
+        return
+    for row in db["consent"].find({"withdrawn_at": None, "audio_storage_allowed": 1}):
+        db["account"].update_one(
+            {"account_id": row["account_id"], "terms_accepted_at": None},
+            {"$set": {"terms_accepted_at": row["signed_at"]}},
+        )
+    db.drop_collection("consent")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -119,6 +136,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(3, "metering: usage ledger, wallets, free quota, top-ups (D049)", _metering),
     Migration(4, "classrooms: classes, members, assignments (D054)", _classrooms),
     Migration(5, "replay_label: guided listening with control moments (D056)", _replay),
+    Migration(6, "terms: research consent replaced by account.terms_accepted_at (D058)", _terms),
 )
 
 LATEST = MIGRATIONS[-1].version

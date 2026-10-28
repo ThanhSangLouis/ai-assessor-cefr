@@ -36,10 +36,10 @@ from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
     LiveServer,
     _free_port,
+    accept_terms,
     browser,
     e2e_store,
     login,
-    sign_consent,
     write_wav,
 )
 
@@ -124,10 +124,10 @@ def context(browser, live_server):
 
 @pytest.fixture
 def student(context, live_server):
-    """A new student, logged in, with consent, on the lesson path."""
+    """A new student, logged in, the terms accepted, on the lesson path."""
     page = context.new_page()
     login(page, live_server, live_server.account())
-    sign_consent(page)
+    accept_terms(page)
     page.goto("/practice")
     return page
 
@@ -250,10 +250,10 @@ def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
     expect(sidebar.locator(".site-nav a[aria-current='page']")).to_have_text("Luyện tập")
 
 
-def test_learner_without_consent_cannot_record_a_step(context, live_server):
+def test_learner_without_the_terms_cannot_record_a_step(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), f"/practice/lessons/{LESSON}")
-    expect(page.locator("#consent-gate")).to_be_visible()
+    expect(page.locator("#terms-gate")).to_be_visible()
     expect(page.locator("#rec-button")).to_be_disabled()
     expect(page.locator("#audio")).to_be_disabled()
 
@@ -274,7 +274,7 @@ def test_phone_layout_of_the_path_and_a_lesson_has_no_sideways_scroll(context, l
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account())
-    sign_consent(page)
+    accept_terms(page)
     for path in ("/practice", f"/practice/lessons/{LESSON}"):
         page.goto(path)
         page.wait_for_load_state("networkidle")

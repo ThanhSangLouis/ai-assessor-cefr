@@ -236,7 +236,7 @@ if (mainEl && "MutationObserver" in window) {
     ASR_HALLUCINATION: "Máy sinh ra chữ không có trong tiếng",
     ASR_VERSION_MISMATCH: "Khác bộ nhận dạng lúc huấn luyện",
     VAD_VERSION_MISMATCH: "Khác bộ tách tiếng lúc huấn luyện",
-    CONSENT_MISSING: "Chưa ký đồng thuận",
+    TERMS_NOT_ACCEPTED: "Chưa đồng ý điều khoản",
     LANGUAGE_NOT_ENGLISH: "Không phải tiếng Anh",
     OFF_TOPIC_SUSPECTED: "Nghi lạc đề",
     PROMPT_COPY_SUSPECTED: "Nghi đọc lại đề bài",

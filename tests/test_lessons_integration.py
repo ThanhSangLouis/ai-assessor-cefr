@@ -128,17 +128,14 @@ def freeze(monkeypatch, moment: datetime) -> None:
 
 
 def login_as(
-    m, pseudonym: str, role: str = "student", consent: bool = True, raise_errors: bool = True
+    m, pseudonym: str, role: str = "student", terms: bool = True, raise_errors: bool = True
 ) -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     client = TestClient(m.app, raise_server_exceptions=raise_errors)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    if consent:
-        client.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
+    if terms:
+        client.post("/api/v1/me/terms")
     return client
 
 
@@ -1075,24 +1072,10 @@ def test_retention_sweep_covers_lesson_attempts(tmp_path):
     assert row["passed"] is False
 
 
-def test_recording_a_step_needs_consent(m):
-    student = login_as(m, "SV-001", consent=False)
+def test_recording_a_step_needs_the_terms(m):
+    student = login_as(m, "SV-001", terms=False)
     acc = account_id(m, "SV-001")
 
-    record(student, SAMPLE, KEYWORDS, expect=403)
-    student.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "false", "research_use_allowed": "true"},
-    )
-    record(student, SAMPLE, KEYWORDS, expect=403)  # storing audio is what must be allowed
-    assert m.lessons.count_attempts(acc) == 0
-
-    student.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "false"},
-    )
-    record(student, SAMPLE, KEYWORDS)
-    student.post("/api/v1/me/consent/withdraw")
     record(student, SAMPLE, KEYWORDS, expect=403)
     review = student.post(
         "/api/v1/learn/review/attempts",
@@ -1100,6 +1083,10 @@ def test_recording_a_step_needs_consent(m):
         data={"review_id": "w-anything"},
     )
     assert review.status_code == 403
+    assert m.lessons.count_attempts(acc) == 0
+
+    student.post("/api/v1/me/terms")
+    record(student, SAMPLE, KEYWORDS)
     assert m.lessons.count_attempts(acc) == 1
 
 

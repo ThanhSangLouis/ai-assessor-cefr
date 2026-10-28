@@ -42,7 +42,6 @@ from aicefr.services.core.assessment.context import (
     svc,
 )
 from aicefr.storage.auth_repository import Account
-from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -233,7 +232,7 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
 
 @router.get("/api/v1/admin/export/research.json", tags=["admin"])
 def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
-    """Export the analysis set: only speakers whose standing consent allows it.
+    """Export the analysis set: only speakers who accepted the terms of use (D058).
 
     The export carries the size of the allowed set alongside the rows, so a
     reviewer can check the filter did something, and no transcript.
@@ -259,11 +258,10 @@ def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
     return JSONResponse(
         {
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "consent_version": CURRENT_CONSENT_VERSION,
-            "accounts_allowing_research": len(allowed),
+            "accounts_with_terms": len(allowed),
             "row_count": len(rows),
             "note": (
-                "Chỉ gồm bài của người đã đồng thuận cho nghiên cứu và chưa rút."
+                "Chỉ gồm bài của người đã đồng ý điều khoản sử dụng (D058)."
                 " Không chứa bản chép lời."
             ),
             "rows": rows,

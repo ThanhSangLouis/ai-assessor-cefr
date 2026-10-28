@@ -1,9 +1,7 @@
 """The assessment service: tasks, responses, review, blind rating, the feedback study (D043).
 
 It receives recordings and keeps them in the blob store the speech service
-reads, sends each one to be scored over the bus and takes the result back. A
-change of consent announced by identity takes a learner out of the feedback
-study at once.
+reads, sends each one to be scored over the bus and takes the result back.
 """
 
 from __future__ import annotations
@@ -37,8 +35,6 @@ from aicefr.storage.task_repository import TaskRepository
 
 logger = logging.getLogger(__name__)
 
-CONSENT_CHANGED = "consent.changed"
-
 
 def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     store = settings.store("core")
@@ -69,13 +65,6 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     study_api.configure(study_api.Services(studies=studies, repo=repo, peers=peers))
 
     bus.consume(scoring.RESULT_QUEUE, scoring.on_scoring)
-
-    def on_consent(event: dict) -> None:
-        # D040: no research use, no study arm -- and full feedback again at once.
-        if not event.get("research_use_allowed"):
-            studies.withdraw(event["account_id"])
-
-    bus.subscribe(CONSENT_CHANGED, "assessment", on_consent)
 
     stop = threading.Event()
 

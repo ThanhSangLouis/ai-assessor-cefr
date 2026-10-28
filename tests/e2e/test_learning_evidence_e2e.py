@@ -68,17 +68,12 @@ def test_progress_page_names_the_pronunciation_patterns(student, live_server):
 
 def test_a_score_only_learner_sees_why_and_can_leave(browser, live_server):
     from aicefr.storage.auth_repository import AuthRepository
-    from aicefr.storage.consent_repository import ConsentRepository
     from aicefr.storage.study_repository import StudyRepository
 
-    auth, consent = AuthRepository(live_server.db_path), ConsentRepository(live_server.db_path)
+    auth = AuthRepository(live_server.db_path)
     names = [live_server.account() for _ in range(4)]
     for name in names:
-        consent.sign(
-            auth.get_by_pseudonym(name)["account_id"],
-            audio_storage_allowed=True,
-            research_use_allowed=True,
-        )
+        auth.accept_terms(auth.get_by_pseudonym(name)["account_id"])
 
     admin = _page(browser, live_server, "/admin", "admin")
     admin.goto("/admin/study")

@@ -295,18 +295,15 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", consent: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student", terms: bool = True) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200
-    if consent:
-        c.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
+    if terms:
+        c.post("/api/v1/me/terms")
     return c
 
 
@@ -407,8 +404,8 @@ def test_completing_the_suggested_task_moves_the_suggestion_on(m):
     assert first == "PR-FLU-A2" and after["task_id"] == "PR-FLU-B1"
 
 
-def test_practice_without_consent_is_refused(m):
-    student = login_as(m, "SV-001", consent=False)
+def test_practice_without_the_terms_is_refused(m):
+    student = login_as(m, "SV-001", terms=False)
     submit(student, "PR-COH-A2", expect=403)
     assert student.get("/api/v1/me/responses").json() == []
 

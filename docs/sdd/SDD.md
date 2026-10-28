@@ -1085,7 +1085,6 @@ erDiagram
     direction LR
     account ||--o{ auth_sessions : "mở phiên (FK)"
     account ||--o{ account_identity : "liên kết Google (FK)"
-    account ||--o{ consent : "ký và rút đồng thuận"
     account ||--o{ seen_marker : "đã xem tới đâu"
 
     account {
@@ -1103,6 +1102,7 @@ erDiagram
         TEXT avatar_icon "một trong 15 biểu tượng"
         TEXT avatar_color "một trong 10 màu"
         INTEGER daily_goal_s "60 · 120 · 180 · 300 · 600 giây"
+        TEXT terms_accepted_at "NULL: chưa đồng ý điều khoản, chưa nộp bài được (D058)"
     }
 
     auth_sessions {
@@ -1121,15 +1121,6 @@ erDiagram
         TEXT linked_at
     }
 
-    consent {
-        TEXT consent_id PK
-        TEXT account_id "chưa ràng buộc FK"
-        TEXT consent_version "bản văn bản đã ký, sao vào từng dòng"
-        INTEGER audio_storage_allowed "không cho lưu thì không nộp bài được"
-        INTEGER research_use_allowed "không cho thì vẫn chấm, chỉ không vào tập phân tích"
-        TEXT signed_at
-        TEXT withdrawn_at "NULL nghĩa là còn hiệu lực"
-    }
 
     seen_marker {
         TEXT account_id PK "chưa ràng buộc FK"
@@ -2207,7 +2198,7 @@ sequenceDiagram
 
 **Luồng.** Quản trị viên xem `setup` (số bài đủ điều kiện, danh sách giám khảo có thể chọn) rồi tạo đợt. Giám khảo mở `/rate`, chấm từng phiếu theo thứ tự riêng; con số phiếu chưa nộp hiện trên thanh điều khiển. Quản trị viên theo dõi tiến độ từng giám khảo, giao phân xử cho bài lệch, đóng đợt, đọc báo cáo và tải CSV.
 
-**Bất biến 1 — chỉ bài đánh giá có bản ghi, của người đang đồng ý cho nghiên cứu (FR-61).** `RatingRepository.eligible` lấy bài có `purpose = 'assessment'` (bài luyện tập không phải dữ liệu đánh giá, D023), `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, `audio_path` khác NULL và tệp còn trên đĩa, và chủ bài thuộc `ConsentRepository.accounts_allowing_research()`; mặc định bỏ những bài đã nằm trong một đợt (`only_new`). Đồng thuận được kiểm **lại** mỗi lần đọc báo cáo hay bản xuất (`analysis_rows(batch_id, allowed)`): người rút đồng thuận sau khi bài đã được chấm thì bài đó ra khỏi báo cáo và CSV, và báo cáo đếm nó ở `withdrawn`. Test: `test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order`, `test_withdrawn_consent_takes_a_response_out_of_report_and_export`.
+**Bất biến 1 — chỉ bài đánh giá có bản ghi, của người đã đồng ý điều khoản (FR-61, D058).** `RatingRepository.eligible` lấy bài có `purpose = 'assessment'` (bài luyện tập không phải dữ liệu đánh giá, D023), `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, `audio_path` khác NULL và tệp còn trên đĩa, và chủ bài thuộc `AuthRepository.accounts_with_terms()`; mặc định bỏ những bài đã nằm trong một đợt (`only_new`). Tập người được dùng dữ liệu được hỏi **lại** mỗi lần đọc báo cáo hay bản xuất (`analysis_rows(batch_id, allowed)`): người bị xoá dữ liệu sau khi bài đã được chấm thì bài đó ra khỏi báo cáo và CSV, và báo cáo đếm nó ở `withdrawn`. Test: `test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order`.
 
 **Bất biến 2 — hai giám khảo khác nhau cho mỗi bài, tải đều, thứ tự riêng, tái lập được từ một hạt giống (FR-61).** `assign.plan` từ chối khi có dưới hai giám khảo. Nó xáo danh sách bài và danh sách mọi cặp giám khảo, giao bài thứ *i* cho cặp thứ *i* mod số cặp — hai giám khảo thì cả hai chấm mọi bài, nhiều hơn thì tải chia đều và các cặp gặp nhau xấp xỉ như nhau — bốc thăm ai giữ `slot` 1, ai giữ `slot` 2, rồi xáo thứ tự riêng của từng giám khảo. Mọi phép bốc đi từ **một** `random.Random(seed)`; hạt giống do quản trị viên nhập hoặc sinh bằng `secrets.randbelow(2**31)`, lưu ở `rating_batch.seed` và trong dòng kiểm toán `rating.batch_create`, nên cùng tập bài, cùng giám khảo, cùng hạt giống cho cùng một kế hoạch. Giám khảo phải là tài khoản giảng viên hoặc quản trị viên đang bật, không thì 422. `create_batch` truyền cho `plan` danh sách người đã xem kết quả của máy về từng bài (`seen_by`, bất biến 4b): bài đó đi tới cặp kế tiếp không có người ấy; không còn cặp nào thì bài ra khỏi đợt và được đếm ở `skipped_seen`; không còn bài nào thì 422. Không có ai bị loại thì kế hoạch đúng như hạt giống vẫn cho trước đây. Ở tầng CSDL, hai ràng buộc `UNIQUE` của `rating_assignment` chặn việc một chỗ chấm của một bài có hai người, hay một người chấm cùng một bài hai lần trong một đợt. Test: `tests/test_assign_unit.py`, `test_a_batch_needs_two_raters_and_something_to_rate`, `test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response`.
 

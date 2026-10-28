@@ -45,7 +45,6 @@ package "Ha tang — bo chuyen doi" {
 package "Luu tru — SQLite" {
   class Repository <<adapter>>
   class AuthRepository <<adapter>>
-  class ConsentRepository <<adapter>>
   class TaskRepository <<adapter>>
 }
 
@@ -126,6 +125,5 @@ VnpayGateway -[hidden]-> StripeGateway
 StripeGateway -[hidden]-> MomoGateway
 
 Repository -[hidden]-> AuthRepository
-AuthRepository -[hidden]-> ConsentRepository
-ConsentRepository -[hidden]-> TaskRepository
+AuthRepository -[hidden]-> TaskRepository
 @enduml

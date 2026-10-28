@@ -861,7 +861,7 @@ class Repository(MongoStore):
         """Delete a single response: its document, its review history, its audio file.
 
         Separate from `erase_speaker` because the two answer different requests.
-        `erase_speaker` is an administrator acting on a withdrawal of consent and
+        `erase_speaker` is an administrator acting on a request to erase and
         removes everything a person ever submitted. This is a person deleting one
         recording of their own -- "I mumbled through that one, take it off" --
         and it must not require asking anybody. A right that needs someone else
@@ -1175,8 +1175,8 @@ class Repository(MongoStore):
         """Rows for the research export, restricted to accounts that allow it.
 
         The caller passes the allowed set rather than this method reading the
-        consent collection itself. Two reasons: the scoring store and the
-        consent records are separate concerns, and a caller holding an explicit
+        accounts itself. Two reasons: the scoring store and the accounts are
+        separate concerns, and a caller holding an explicit
         set is auditable -- you can print it, count it, and show it to an ethics
         reviewer. A join hidden inside the query cannot be shown to anybody.
 
@@ -1187,7 +1187,7 @@ class Repository(MongoStore):
         if not allowed_account_ids:
             return []
         # Filtered in the query, then limited: limiting first and filtering
-        # after would silently drop the newer responses of consenting learners
+        # after would silently drop the newer responses of allowed learners
         # once there were more than `limit` in all.
         rows = self.col("response").find(
             {

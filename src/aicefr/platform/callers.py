@@ -42,6 +42,7 @@ def encode_account(account: Account | None) -> str:
         "avatar_icon": account.avatar_icon,
         "avatar_color": account.avatar_color,
         "daily_goal_s": account.daily_goal_s,
+        "terms_accepted_at": account.terms_accepted_at,
     }
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
 
@@ -59,6 +60,7 @@ def decode_account(value: str | None) -> Account | None:
             avatar_icon=data.get("avatar_icon"),
             avatar_color=data.get("avatar_color"),
             daily_goal_s=int(data.get("daily_goal_s") or DEFAULT_DAILY_GOAL),
+            terms_accepted_at=data.get("terms_accepted_at"),
         )
     except (ValueError, KeyError, TypeError):
         return None

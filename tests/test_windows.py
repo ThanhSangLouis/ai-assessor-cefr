@@ -339,7 +339,6 @@ def _process(seconds: float, sr: int = 16_000):
             audio_path="dai.wav",
             prompt_version="v1",
             config_version="v1",
-            consent_version="dt-v1",
         ),
         _paused_tone(seconds, sr),
         sr,

@@ -47,16 +47,13 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", research: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
     if role == "student":
-        c.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": str(research).lower()},
-        )
+        c.post("/api/v1/me/terms")
     return c
 
 
@@ -141,8 +138,6 @@ def rate_all(teacher: TestClient, **changes) -> None:
 
 def test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order(m):
     rids, teachers, admin = study(m)
-    # Consented to storing the recording, not to research use: never rated.
-    submit(login_as(m, "SV-100", research=False))
     setup = admin.get("/api/v1/admin/ratings/setup").json()
     assert setup["eligible_new"] == 3
     assert {r["pseudonym"] for r in setup["raters"]} >= {"GV-01", "GV-02"}
@@ -520,28 +515,6 @@ def test_a_review_decision_keeps_the_ratings_and_who_saw_the_machine(m):
     assert store()["machine_seen"].count_documents({}) == before
     d = admin.get(f"/api/v1/admin/ratings/batches/{made['batch_id']}/report").json()
     assert d["report"]["counts"]["rated_twice"] == 2
-
-
-def test_withdrawn_consent_takes_a_response_out_of_report_and_export(m):
-    rids, teachers, admin = study(m, students=2)
-    made = new_batch(m, admin)
-    rate_all(teachers["GV-01"])
-    rate_all(teachers["GV-02"])
-    student = TestClient(m.app)
-    student.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
-    student.post("/api/v1/me/consent/withdraw")
-    d = admin.get(f"/api/v1/admin/ratings/batches/{made['batch_id']}/report").json()
-    assert d["withdrawn"] == 1 and d["report"]["counts"]["responses"] == 1
-    rows = list(
-        csv.DictReader(
-            io.StringIO(
-                admin.get(
-                    f"/api/v1/admin/ratings/batches/{made['batch_id']}/export.csv"
-                ).text.lstrip("﻿")
-            )
-        )
-    )
-    assert {r["speaker_id"] for r in rows} == {"SV-002"}
 
 
 def test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score(m):

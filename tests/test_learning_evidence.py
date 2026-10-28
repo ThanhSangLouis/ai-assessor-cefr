@@ -114,8 +114,8 @@ def _start_study(m, n: int = 4):
     return admin, study_id, students, by_arm
 
 
-def test_study_enrols_consenting_students_half_in_each_arm(m):
-    login_as(m, "SV-NO", consent=False)
+def test_study_enrols_students_with_terms_half_in_each_arm(m):
+    login_as(m, "SV-NO", terms=False)
     login_as(m, "GV-01", "teacher")
     admin, study_id, students, _ = _start_study(m, n=5)
     people = m.studies.participants(study_id)
@@ -126,7 +126,7 @@ def test_study_enrols_consenting_students_half_in_each_arm(m):
     assert audit and "seed=" in audit[0]["detail"]
 
 
-def test_study_needs_enough_consenting_students(m):
+def test_study_needs_enough_students_with_terms(m):
     login_as(m, "SV-001")
     admin = login_as(m, "AD-01", "admin")
     r = admin.post("/api/v1/admin/studies", json={"name": "Quá ít"})
@@ -171,15 +171,6 @@ def test_leaving_the_study_or_closing_it_brings_feedback_back(m):
     closed = admin.post(f"/api/v1/admin/studies/{study_id}/status", json={"status": "closed"})
     assert closed.status_code == 200
     assert other.get("/api/v1/me/study").json() == {"enrolled": False}
-
-
-def test_withdrawing_research_consent_leaves_the_study(m):
-    _, _, _, arm = _start_study(m)
-    client = arm["score_only"]
-    rid = submit_assessment(client)
-    _with_feedback(rid)
-    client.post("/api/v1/me/consent/withdraw")
-    assert "feedback_withheld" not in client.get(f"/api/v1/responses/{rid}").json()
 
 
 def test_feedback_stays_held_back_through_the_survey_and_in_the_export(m):
