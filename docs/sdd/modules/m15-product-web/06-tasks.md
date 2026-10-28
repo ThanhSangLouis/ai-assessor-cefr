@@ -25,7 +25,7 @@ The project owner’s Phase 05 approval unblocks SCRUM-74/75/76 (`M15-TASK-003`�
 - **Verification:** Ruff and Python compilation passed; 47 focused middleware/SCRUM-102 integration tests passed; all 79 E2E cases passed on isolated MongoDB 7.0.45 using synthetic model fixtures. See [transfer checkpoint](reviews/implementation-transfer-scrum-103-2026-10-28.md) and [M16 middleware evidence](../m16-monolith-runtime/evidence/scrum-103-middleware-integration.md).
 - **Integration:** after explicit owner authorization, SCRUM-92 foundation PR #66 and SCRUM-102 PR #67 were integrated and are already present in `main`; neither dependency is part of this PR's diff. Integration exposed and fixed the transferred model-list endpoint's import of a nonexistent `MODEL_DIR` symbol; it now uses `artifacts.model_dir()`.
 - **State:** implementation and E2E verification are `READY_FOR_REVIEW`; M16 owner review remains pending. Jira remains `In Progress`; no owner acceptance or Jira verdict is recorded.
-- **Delivery direction:** the latest owner instruction sets `main` as the PR target, overriding Jira's original `migrate/w7-repo-goc` target. Jira remains `In Progress` and no owner acceptance is recorded.
+- **Delivery direction:** the latest owner instruction set `main` as the PR target, overriding Jira's original `migrate/w7-repo-goc` target. [PR #68](https://github.com/thanglb2005/ai-assessor-cefr/pull/68) targets `main`; Jira remains `In Progress` and no owner acceptance is recorded.
 
 ## `M15-TASK-001A` — Phase 05 readiness candidate
 

@@ -32,6 +32,6 @@ The project owner authorized integrating SCRUM-92 foundation PR #66 and SCRUM-10
 
 ## Current status and boundary
 
-The previously recorded missing-middleware and missing-assessment import errors are resolved on this branch. The full E2E result is 79/79 on MongoDB 7.0.45. The latest owner instruction sets `main` as the PR target, overriding Jira's original `migrate/w7-repo-goc` target. SCRUM-103 remains `In Progress` in Jira; no owner acceptance is recorded.
+The previously recorded missing-middleware and missing-assessment import errors are resolved on this branch. The full E2E result is 79/79 on MongoDB 7.0.45. The latest owner instruction sets `main` as the PR target, overriding Jira's original `migrate/w7-repo-goc` target. [PR #68](https://github.com/thanglb2005/ai-assessor-cefr/pull/68) targets `main`. SCRUM-103 remains `In Progress` in Jira; no owner acceptance is recorded.
 
 M16 task status and verdicts are unchanged. **M16 owner review is pending**; this evidence does not record `PASS`, `DONE` or owner acceptance for M16 or SCRUM-103.

@@ -29,6 +29,6 @@ After this initial M16 checkpoint, the project owner authorized integrating SCRU
 - The integrated admin model-list endpoint now uses `aicefr.scoring.artifacts.model_dir()`; its prior import of nonexistent `scorer.MODEL_DIR` returned an internal error.
 - Ruff, Python compilation and `git diff --check` are recorded at the final revision.
 
-The latest owner instruction directs this PR to `main`, overriding Jira's original `migrate/w7-repo-goc` target. SCRUM-103 remains `In Progress` in Jira; this middleware evidence does not record owner acceptance.
+The latest owner instruction directs [PR #68](https://github.com/thanglb2005/ai-assessor-cefr/pull/68) to `main`, overriding Jira's original `migrate/w7-repo-goc` target. SCRUM-103 remains `In Progress` in Jira; this middleware evidence does not record owner acceptance.
 
 M16 task status and verdicts are unchanged. **M16 owner review is pending**; this integration evidence does not mark M16 or SCRUM-103 `PASS`, `DONE` or accepted.
