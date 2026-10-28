@@ -1,4 +1,4 @@
-# Mô hình thực thể: 22 thực thể, 27 enum và 20 collection
+# Mô hình thực thể: 22 thực thể, 12 enum và 17 collection
 
 **Trạng thái:** thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026. Code chưa chuyển theo: migration gộp collection và lớp miền khớp sơ đồ là việc tiếp theo, làm ở PR riêng.
 **Người soạn:** Sang.
@@ -22,7 +22,7 @@
 - **Miền giá trị** là một enum, và thuộc tính lấy enum làm kiểu, ví dụ `role: Role`, `band: Band [0..1]`.
   - Enum đặt dưới cột của thực thể dùng nó. `Band`, `Criterion` dùng ở nhiều cột thì đặt dưới cột đề và bài nói.
   - Không vẽ đường phụ thuộc tới enum: tên kiểu trên thuộc tính đã nói quan hệ, và riêng `Band` có bảy lớp dùng.
-  - Ba enum đặt tên khác code để khỏi nhầm: `ResponseStatus` (code: `Status`), `ServicePlan` (code: `Plan`, trùng nghĩa với `LearningPlan`), `MeteredAction` (code: `Action`).
+  - Hai enum đặt tên khác code để khỏi nhầm: `ResponseStatus` (code: `Status`), `ServicePlan` (code: `Plan`, trùng nghĩa với `LearningPlan`).
 - **Khoá ngoài** không ghi thành thuộc tính.
   - Quan hệ là đường nối, bội số ghi ở hai đầu đường.
   - Kim cương đặc là hợp thành: phần mất theo toàn thể.
@@ -49,43 +49,60 @@
 | Gói dịch vụ | `Order`, `License` | Sự kiện cổng thanh toán nhúng vào đơn |
 | Tính lượt | `Wallet`, `LedgerEntry` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nhúng vào ví; mỗi bài một bút toán |
 
-### Enum
+### Enum: chỉ giữ cái điều khiển nghiệp vụ
 
-| Nhóm | Enum |
+Một tập giá trị được vẽ thành enum khi code **rẽ nhánh theo nó**: phân quyền, chấm điểm, chuyển trạng thái, tính tiền.
+
+| Nhóm | Enum giữ lại (12) |
 | --- | --- |
 | Tài khoản | `Role` |
-| Đề và bài nói | `Band` (A1–C2), `Criterion`, `TaskPurpose`, `TaskPart`, `MissionKind`, `ResponseStatus`, `ReasonCode` |
-| Chấm mù, thực nghiệm | `BatchStatus`, `UnscorableReason`, `StudyStatus` |
-| Bài học, ôn tập, lộ trình gợi ý | `PathStatus`, `Topic`, `StepKind`, `Stage`, `Strictness`, `ReviewKind`, `Audience` |
-| Gói dịch vụ | `OrderKind`, `OrderStatus`, `Gateway`, `ServicePlan`, `PlanFeature`, `LicenseSource`, `LicenseState` |
-| Tính lượt | `MeteredAction`, `LedgerState` |
+| Chấm điểm | `Band` (A1–C2), `Criterion`, `TaskPurpose`, `ResponseStatus` |
+| Thực nghiệm | `StudyStatus` |
+| Bài học | `PathStatus`, `StepKind` (quyết định cách chấm một bước) |
+| Gói dịch vụ, tính lượt | `OrderKind`, `OrderStatus`, `ServicePlan`, `LedgerState` |
 
-Không vẽ các enum chỉ dùng **bên trong** bước tính, không là kiểu của thuộc tính nào được lưu:
+Bỏ khỏi sơ đồ, kèm cách ghi thay:
 
-- `QcStatus` (kết quả kiểm chất lượng âm thanh, đã thể hiện qua `ResponseStatus` và `ReasonCode`);
-- `EvidenceKind`, `Pattern` (chi tiết trong từng dòng nhận xét);
-- `WordStatus`, `GapStatus`, `Op` (chi tiết trong kết quả một lượt luyện);
-- `Provenance`, `RecommendationBasis` (nhãn hiển thị trên báo cáo và gợi ý).
+| Bỏ | Ghi thay | Lý do |
+| --- | --- | --- |
+| `ReasonCode` (25 mã), `MissionKind`, `TaskPart`, `Topic` | `str` | Chi tiết hoặc dữ liệu tham chiếu, không đổi luồng nghiệp vụ |
+| `UnscorableReason`, `Gateway`, `LicenseSource`, `Strictness`, `ReviewKind` | `str` | Như trên |
+| `BatchStatus` (mở/đóng) | `closed: bool` | Hai trạng thái là một cờ |
+| `MeteredAction` | `TaskPurpose` | Trùng nghĩa: chấm hay luyện |
+| `Audience` | `Role` | Trùng giá trị STUDENT/TEACHER |
+| `Stage` | bỏ | Suy ra từ `StepKind` |
+| `PlanFeature`, `LicenseState` | `License.isActive()` | Suy ra từ gói và ngày, không lưu |
+
+Code vẫn giữ các enum này để kiểm đầu vào. Sơ đồ chỉ không vẽ chúng.
 
 ### Rà lại khi thêm enum
 
 Đối chiếu tập giá trị với code đã lộ ra chỗ sơ đồ trước thiếu hoặc lệch, nay đã sửa:
 
-- thiếu `RatingBatch.status`, `Task.part`, `Response.reasonCodes`, `LedgerEntry.action`, `Order.events`, `Step.strictness`, `Step.stage()`;
+- thiếu `RatingBatch.closed`, `Task.part`, `Response.reasonCodes`, `LedgerEntry.action`, `Order.events`, `Step.strictness`;
 - lệch giá trị: `Study.status` là RUNNING/SURVEY/CLOSED (không phải OPEN/CLOSED), `ReviewItem.kind` là WORD/TALK, `LearningPlan.audience` là STUDENT/TEACHER, `License.source` là TRIAL/ORDER/KEY;
-- `License.isActive()` đổi thành `state(today): LicenseState` (có hạn gia hạn GRACE), thêm `allows(feature)`.
+- thuộc tính `Step.strictness` ghi `str`.
 
-## 4. Collection: 42 → 20
+## 4. Collection: 42 → 17
 
-Mỗi thực thể gốc là một collection. Phần có định danh nhưng sống trong thực thể gốc được nhúng vào document của gốc: `Unit` trong lộ trình, `Step` trong bài học, `Rating` trong đợt chấm, `Participant` trong thực nghiệm, `Assignment` trong lớp.
+**Nguyên tắc:** mỗi aggregate root là một collection. Phần hợp thành (kim cương đặc) nằm trong document của gốc, trừ khi số phần tăng không giới hạn.
 
-| Phần | Collection sau | Gộp từ |
+- Nhúng vào gốc:
+  - `Unit` trong lộ trình, `Step` trong bài học;
+  - `Rating` trong đợt chấm, `Participant` trong thực nghiệm, `Assignment` trong lớp;
+  - `Review` trong bài nói;
+  - `Wallet` trong tài khoản.
+- Giữ collection riêng dù là phần hợp thành hoặc chỉ là tham chiếu:
+  - `ledger`: mỗi bài nói thêm một bút toán, mảng nhúng sẽ lớn mãi.
+  - `lesson`: giảng viên sửa và xuất bản từng bài độc lập; nhúng vào lộ trình thì hai người sửa hai bài sẽ ghi đè cùng một document.
+  - `attempt`, `review_item`: tăng theo mỗi lượt luyện.
+
+| Phần | Collection | Gộp từ |
 | --- | --- | --- |
-| identity | `account` | `account`, `account_identity`, `seen_marker`, `achievement` |
+| identity | `account` | `account`, `account_identity`, `seen_marker`, `achievement`, `credit_wallet`, `free_quota`, `credit_grant` |
 | | `audit_log` | `audit_log` |
 | assessment | `task` | `task` |
-| | `response` | `response`, `replay_label` |
-| | `review` | `review_action`, `review_lock`, `review_session` |
+| | `response` | `response`, `replay_label`, `review_action`, `review_lock`, `review_session` |
 | | `rating_batch` | `rating_batch`, `rating_assignment`, `research_rating`, `machine_seen` |
 | | `study` | `study`, `study_participant`, `study_survey` |
 | | `classroom` | `classroom`, `class_member`, `assignment` |
@@ -96,11 +113,14 @@ Mỗi thực thể gốc là một collection. Phần có định danh nhưng s�
 | | `learning_plan` | `learning_plan` |
 | billing | `order` | `billing_order`, `billing_event` |
 | | `license` | `billing_license` |
-| metering | `wallet` | `credit_wallet`, `free_quota`, `credit_grant` |
-| | `ledger` | `usage_ledger` |
-| kỹ thuật, không vẽ | `session` | `auth_sessions` |
-| | `setting` | `server_secret`, `app_config`, `billing_setting`, `lesson_meta` |
-| | `schema_migrations` | `schema_migrations` |
+| metering | `ledger` | `usage_ledger` |
+| kỹ thuật, không vẽ | `session` | `auth_sessions` (giữ riêng vì có chỉ mục TTL tự xoá phiên hết hạn) |
+| | `system` | `server_secret`, `app_config`, `billing_setting`, `lesson_meta`, `schema_migrations` |
+
+Không gộp thêm:
+
+- `license` vào `order`: license dùng thử hoặc từ mã kích hoạt không có đơn nào.
+- `learning_plan` vào `account`: lộ trình gợi ý của giảng viên còn nối tới lộ trình nháp, không thuộc riêng một tài khoản học.
 
 `consent` đã bỏ ở D058 nên không có trong bảng.
 
@@ -111,7 +131,7 @@ Dữ liệu cũ chuyển bằng migration đánh số trong `storage/migrations.
 Test đối chiếu sẽ đọc `02_class.drawio` và kiểm ba điều:
 
 1. Mỗi hộp có một lớp miền cùng tên trong code, cùng thuộc tính và thao tác.
-2. Mỗi thực thể gốc có đúng một collection.
-3. Mỗi enum trùng tập giá trị với enum tương ứng trong code (không phân biệt hoa thường).
+2. Mỗi aggregate root có đúng một collection, phần nhúng thì không có collection riêng.
+3. Mỗi enum trên sơ đồ trùng tập giá trị với enum tương ứng trong code (không phân biệt hoa thường).
 
 Phần kỹ thuật ở mục 4 nằm ngoài phép đối chiếu.
