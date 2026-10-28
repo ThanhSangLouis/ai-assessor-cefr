@@ -1,7 +1,7 @@
 """Persistence for accounts and login sessions. Implements FR-32 and NFR-07.
 
 Kept separate from Repository so that scoring logic and authentication are not
-mixed together, but pointed at the SAME database file so there is only one
+mixed together, but pointed at the SAME database so there is only one
 connection target to manage.
 
 The same privacy rule applies: the account table holds only pseudonyms. Never
@@ -23,7 +23,7 @@ from aicefr.auth import passwords
 from aicefr.auth import sessions as session_tokens
 from aicefr.auth.pseudonyms import validate_pseudonym
 from aicefr.contracts import AuthSession
-from aicefr.storage.db import Connection, DbRow, SqlStore, add_columns
+from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes
 from aicefr.storage.db import now_iso as _now
 
 # NFR-07: lock the account for 15 minutes after 5 consecutive failed logins;
@@ -31,46 +31,37 @@ from aicefr.storage.db import now_iso as _now
 MAX_FAILED_ATTEMPTS = 5
 LOCK_MINUTES = 15
 
-SCHEMA_AUTH = """
-CREATE TABLE IF NOT EXISTS account (
-    account_id      TEXT PRIMARY KEY,
-    pseudonym       TEXT NOT NULL UNIQUE,
-    password_hash   TEXT NOT NULL,
-    role            TEXT NOT NULL,
-    failed_attempts INTEGER NOT NULL DEFAULT 0,
-    locked_until    TEXT,
-    disabled        INTEGER NOT NULL DEFAULT 0,
-    created_at      TEXT NOT NULL
-);
+# account_identity (D029): an outside identity (Google) linked to an account by
+# its owner. Only a one-way hash of the provider's subject identifier is kept:
+# no email, no name, no photo. One identity per account per provider, one
+# account per identity. server_secret (D036): random keys this deployment signs
+# with, made once and kept, so every worker and every restart agree. Not a
+# person's data; never shown.
+INDEXES = {
+    "account": [(("account_id",), True), (("pseudonym",), True), (("pseudonym_lower",), False)],
+    "auth_sessions": [(("token_hash",), True), (("account_id",), False)],
+    "account_identity": [(("provider", "subject_hash"), True), (("account_id", "provider"), True)],
+    "server_secret": [(("name",), True)],
+}
 
-CREATE TABLE IF NOT EXISTS auth_sessions (
-    token_hash      TEXT PRIMARY KEY,
-    account_id      TEXT NOT NULL REFERENCES account(account_id),
-    expires_at      TEXT NOT NULL,
-    created_at      TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_auth_account ON auth_sessions(account_id);
-
--- D029. An outside identity (Google) linked to an account by its owner. Only a
--- one-way hash of the provider's subject identifier is kept: no email, no
--- name, no photo. One identity per account per provider, one account per
--- identity.
-CREATE TABLE IF NOT EXISTS account_identity (
-    provider        TEXT NOT NULL,
-    subject_hash    TEXT NOT NULL,
-    account_id      TEXT NOT NULL REFERENCES account(account_id),
-    linked_at       TEXT NOT NULL,
-    PRIMARY KEY (provider, subject_hash),
-    UNIQUE (account_id, provider)
-);
--- D036. Random keys this deployment signs with, made once and kept, so every
--- worker and every restart agree. Not a person's data; never shown.
-CREATE TABLE IF NOT EXISTS server_secret (
-    name        TEXT PRIMARY KEY,
-    value_hex   TEXT NOT NULL,
-    created_at  TEXT NOT NULL
-);
-"""
+# Every field of an account document, so a reader gets None for one never set,
+# as it got NULL from a column.
+ACCOUNT_FIELDS = (
+    "account_id",
+    "pseudonym",
+    "password_hash",
+    "role",
+    "failed_attempts",
+    "locked_until",
+    "disabled",
+    "created_at",
+    "must_change_password",
+    "last_login_at",
+    "password_changed_at",
+    "avatar_icon",
+    "avatar_color",
+    "daily_goal_s",
+)
 
 
 class Role(str, Enum):
@@ -155,13 +146,18 @@ DEFAULT_PREFIX = {Role.STUDENT: "SV", Role.TEACHER: "GV", Role.ADMIN: "QT"}
 PREFIX_PATTERN = re.compile(r"^[A-Za-z]{1,6}$")
 
 
-class AuthRepository(SqlStore):
+def _account(found) -> dict | None:
+    """An account document with every field, `_id` left out."""
+    if found is None:
+        return None
+    return {name: found.get(name) for name in ACCOUNT_FIELDS}
+
+
+class AuthRepository(MongoStore):
     def __init__(self, db_path: str | Path = "aicefr.db") -> None:
         self.db_path = str(db_path)
         self._secrets: dict[str, bytes] = {}
-        with self._conn() as c:
-            c.executescript(SCHEMA_AUTH)
-            self._upgrade_schema(c)
+        ensure_indexes(self.db, INDEXES, "auth")
 
     def secret(self, name: str) -> bytes:
         """A 32-byte key of this deployment for `name`, made the first time it is asked for.
@@ -170,40 +166,42 @@ class AuthRepository(SqlStore):
         it back.
         """
         if name not in self._secrets:
-            with self._conn() as c:
-                c.execute(
-                    "INSERT OR IGNORE INTO server_secret(name, value_hex, created_at)"
-                    " VALUES (?,?,?)",
-                    (name, os.urandom(32).hex(), _now()),
+            secrets = self.col("server_secret")
+            try:
+                secrets.insert_one(
+                    {"name": name, "value_hex": os.urandom(32).hex(), "created_at": _now()}
                 )
-                row = c.execute(
-                    "SELECT value_hex FROM server_secret WHERE name=?", (name,)
-                ).fetchone()
+            except IntegrityError:
+                pass  # made already, by this process earlier or by another
+            row = secrets.find_one({"name": name})
             self._secrets[name] = bytes.fromhex(row["value_hex"])
         return self._secrets[name]
 
-    @staticmethod
-    def _upgrade_schema(c: Connection) -> None:
-        """Add the D028 and D029 columns to tables created by an older build."""
-        for table, wanted in (
-            (
-                "account",
-                (
-                    ("must_change_password", "INTEGER NOT NULL DEFAULT 0"),
-                    ("last_login_at", "TEXT"),
-                    ("password_changed_at", "TEXT"),
-                    ("avatar_icon", "TEXT"),
-                    ("avatar_color", "TEXT"),
-                    ("daily_goal_s", f"INTEGER NOT NULL DEFAULT {DEFAULT_DAILY_GOAL}"),
-                ),
-            ),
-            # D029: how a session was opened and on what kind of device, so a
-            # person can tell "my phone" from "a computer I do not recognise".
-            ("auth_sessions", (("device", "TEXT"), ("method", "TEXT"))),
-        ):
-            add_columns(c, table, wanted)
-
     # ---------- accounts ----------
+
+    @staticmethod
+    def _new_account(
+        aid: str, pseudonym: str, password_hash: str, role: Role, must_change: bool, now: str
+    ) -> dict:
+        return {
+            "account_id": aid,
+            "pseudonym": pseudonym,
+            # Kept beside the pseudonym for the case-blind uniqueness check of
+            # a class list, which SQL did with lower().
+            "pseudonym_lower": pseudonym.lower(),
+            "password_hash": password_hash,
+            "role": role.value,
+            "failed_attempts": 0,
+            "locked_until": None,
+            "disabled": 0,
+            "created_at": now,
+            "must_change_password": int(must_change),
+            "last_login_at": None,
+            "password_changed_at": None,
+            "avatar_icon": None,
+            "avatar_color": None,
+            "daily_goal_s": DEFAULT_DAILY_GOAL,
+        }
 
     def create_account(
         self,
@@ -215,22 +213,19 @@ class AuthRepository(SqlStore):
         """Create a new account and return its account_id."""
         # Enforced here, at the one place a pseudonym enters the system. Doing
         # it at submission time instead let a bad pseudonym exist in the account
-        # table and only fail later, on somebody else's screen.
+        # collection and only fail later, on somebody else's screen.
         pseudonym = validate_pseudonym(pseudonym)
         aid = uuid.uuid4().hex[:12]
-        with self._conn() as c:
-            c.execute(
-                "INSERT INTO account(account_id,pseudonym,password_hash,role,created_at,"
-                "must_change_password) VALUES(?,?,?,?,?,?)",
-                (
-                    aid,
-                    pseudonym,
-                    passwords.hash_password(raw_password),
-                    role.value,
-                    _now(),
-                    int(must_change_password),
-                ),
+        self.col("account").insert_one(
+            self._new_account(
+                aid,
+                pseudonym,
+                passwords.hash_password(raw_password),
+                role,
+                must_change_password,
+                _now(),
             )
+        )
         return aid
 
     def create_with_temporary_passwords(
@@ -250,43 +245,41 @@ class AuthRepository(SqlStore):
         names = [validate_pseudonym(n) for n in pseudonyms]
         if len({n.lower() for n in names}) != len(names):
             raise ValueError("danh sách bút danh bị trùng")
+        accounts = self.col("account")
+        taken = list(
+            accounts.find(
+                {"pseudonym_lower": {"$in": [n.lower() for n in names]}}, {"pseudonym": 1}
+            )
+        )
+        if taken:
+            raise ValueError(
+                "bút danh đã tồn tại: " + ", ".join(sorted(r["pseudonym"] for r in taken))
+            )
         temporaries = [passwords.temporary_password() for _ in names]
         workers = max(1, min(8, os.cpu_count() or 1, len(names)))
         with ThreadPoolExecutor(max_workers=workers) as pool:
             hashes = list(pool.map(passwords.hash_password, temporaries))
         created = [(uuid.uuid4().hex[:12], n, t) for n, t in zip(names, temporaries, strict=True)]
         now = _now()
-        with self._conn() as c:
-            taken = c.execute(
-                f"SELECT pseudonym FROM account WHERE lower(pseudonym) IN"
-                f" ({','.join('?' * len(names))})",
-                [n.lower() for n in names],
-            ).fetchall()
-            if taken:
-                raise ValueError(
-                    "bút danh đã tồn tại: " + ", ".join(sorted(r["pseudonym"] for r in taken))
-                )
-            c.executemany(
-                "INSERT INTO account(account_id,pseudonym,password_hash,role,created_at,"
-                "must_change_password) VALUES(?,?,?,?,?,1)",
-                [
-                    (aid, name, h, role.value, now)
-                    for (aid, name, _), h in zip(created, hashes, strict=True)
-                ],
-            )
+        documents = [
+            self._new_account(aid, name, h, role, True, now)
+            for (aid, name, _), h in zip(created, hashes, strict=True)
+        ]
+        try:
+            accounts.insert_many(documents, ordered=True)
+        except IntegrityError as e:
+            # Taken between the check and the insert: undo the ones that went in.
+            accounts.delete_many({"account_id": {"$in": [d["account_id"] for d in documents]}})
+            raise ValueError("bút danh vừa được tạo bởi người khác, hãy thử lại") from e
         return created
 
-    def get(self, account_id: str) -> DbRow | None:
+    def get(self, account_id: str) -> dict | None:
         """One account by id, disabled or not: the administrator's view."""
-        with self._conn() as c:
-            return c.execute("SELECT * FROM account WHERE account_id=?", (account_id,)).fetchone()
+        return _account(self.col("account").find_one({"account_id": account_id}))
 
     def count_role(self, role: Role) -> int:
         """Enabled accounts of one role: the seats a plan counts (D033)."""
-        with self._conn() as c:
-            return c.execute(
-                "SELECT COUNT(*) FROM account WHERE role=? AND disabled=0", (role.value,)
-            ).fetchone()[0]
+        return self.col("account").count_documents({"role": role.value, "disabled": 0})
 
     def list_accounts(self) -> list[dict]:
         """Every account with what an administrator needs to look after it.
@@ -295,20 +288,14 @@ class AuthRepository(SqlStore):
         that have not expired, so "signed in on two devices" is visible.
         """
         now = _now()
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT a.account_id, a.pseudonym, a.role, a.created_at, a.last_login_at,"
-                " a.password_changed_at, a.must_change_password, a.disabled,"
-                " a.failed_attempts, a.locked_until, a.avatar_icon, a.avatar_color,"
-                " EXISTS(SELECT 1 FROM account_identity i WHERE i.account_id = a.account_id)"
-                "  AS identity_linked,"
-                " (SELECT COUNT(*) FROM auth_sessions s WHERE s.account_id = a.account_id"
-                "  AND s.expires_at > ?) AS active_sessions"
-                " FROM account a ORDER BY a.role, a.pseudonym",
-                (now,),
-            ).fetchall()
+        rows = list(self.col("account").find().sort([("role", 1), ("pseudonym", 1)]))
+        linked = set(self.col("account_identity").distinct("account_id"))
+        active: dict[str, int] = {}
+        for s in self.col("auth_sessions").find({"expires_at": {"$gt": now}}, {"account_id": 1}):
+            active[s["account_id"]] = active.get(s["account_id"], 0) + 1
         out = []
-        for r in rows:
+        for found in rows:
+            r = _account(found)
             locked = bool(r["locked_until"]) and not session_tokens.is_expired(r["locked_until"])
             out.append(
                 {
@@ -322,10 +309,10 @@ class AuthRepository(SqlStore):
                     "disabled": bool(r["disabled"]),
                     "locked_until": r["locked_until"] if locked else None,
                     "failed_attempts": r["failed_attempts"],
-                    "active_sessions": r["active_sessions"],
+                    "active_sessions": active.get(r["account_id"], 0),
                     "avatar_icon": r["avatar_icon"],
                     "avatar_color": r["avatar_color"],
-                    "google_linked": bool(r["identity_linked"]),
+                    "google_linked": r["account_id"] in linked,
                 }
             )
         return out
@@ -341,30 +328,23 @@ class AuthRepository(SqlStore):
             raise ValueError("tiền tố chỉ gồm 1 đến 6 chữ cái không dấu")
         prefix = prefix.upper()
         pattern = re.compile(rf"^{re.escape(prefix)}-(\d+)$", re.IGNORECASE)
-        with self._conn() as c:
-            names = [r["pseudonym"] for r in c.execute("SELECT pseudonym FROM account")]
+        names = self.col("account").distinct("pseudonym")
         used = [int(m.group(1)) for n in names if (m := pattern.match(n))]
         start = max(used, default=0) + 1
         width = max(3, len(str(start + count - 1)))
         return [f"{prefix}-{n:0{width}d}" for n in range(start, start + count)]
 
-    def get_by_pseudonym(self, pseudonym: str) -> DbRow | None:
-        with self._conn() as c:
-            return c.execute(
-                "SELECT * FROM account WHERE pseudonym=? AND disabled=0", (pseudonym,)
-            ).fetchone()
+    def get_by_pseudonym(self, pseudonym: str) -> dict | None:
+        return _account(self.col("account").find_one({"pseudonym": pseudonym, "disabled": 0}))
 
     def pseudonyms(self, account_ids: list[str]) -> dict[str, str]:
         """Pseudonym of each account id, for screens that list other people's work."""
         ids = list(dict.fromkeys(account_ids))
         if not ids:
             return {}
-        with self._conn() as c:
-            rows = c.execute(
-                f"SELECT account_id, pseudonym FROM account WHERE account_id IN"
-                f" ({','.join('?' * len(ids))})",
-                ids,
-            ).fetchall()
+        rows = self.col("account").find(
+            {"account_id": {"$in": ids}}, {"account_id": 1, "pseudonym": 1}
+        )
         return {r["account_id"]: r["pseudonym"] for r in rows}
 
     # ---------- login ----------
@@ -413,55 +393,49 @@ class AuthRepository(SqlStore):
             return None
 
         self._reset_failures(row["account_id"])
-        with self._conn() as c:
-            c.execute(
-                "UPDATE account SET last_login_at=? WHERE account_id=?", (_now(), row["account_id"])
-            )
+        self.col("account").update_one(
+            {"account_id": row["account_id"]}, {"$set": {"last_login_at": _now()}}
+        )
         return self._open_session(row["account_id"], device)
 
     def _record_failure(self, account_id: str) -> None:
-        """Tang bo dem NGUYEN TU va khoa ngay trong cung cau lenh.
+        """Tang bo dem NGUYEN TU va khoa ngay khi cham nguong.
 
         Truoc day doc `failed_attempts` roi ghi `current + 1`. bcrypt mat khoang
         250 ms va endpoint chay tren threadpool, nen 20 lan thu sai song song deu
         doc cung mot gia tri: bo dem dung o 1 va tai khoan khong bao gio bi khoa.
-        Trong SQLite, ve phai cua SET doc gia tri TRUOC khi cap nhat.
+        Gio $inc la mot thao tac nguyen tu, va lan dem cham nguong dat khoa bang
+        mot cap nhat co dieu kien tren chinh gia tri vua tang.
         """
         lock_at = (datetime.now(UTC) + timedelta(minutes=LOCK_MINUTES)).isoformat(
             timespec="seconds"
         )
-        with self._conn() as c:
-            c.execute(
-                "UPDATE account SET failed_attempts = failed_attempts + 1,"
-                " locked_until = CASE WHEN failed_attempts + 1 >= ? THEN ? ELSE locked_until END"
-                " WHERE account_id = ?",
-                (MAX_FAILED_ATTEMPTS, lock_at, account_id),
-            )
+        accounts = self.col("account")
+        accounts.update_one({"account_id": account_id}, {"$inc": {"failed_attempts": 1}})
+        accounts.update_one(
+            {"account_id": account_id, "failed_attempts": {"$gte": MAX_FAILED_ATTEMPTS}},
+            {"$set": {"locked_until": lock_at}},
+        )
 
     def _reset_failures(self, account_id: str) -> None:
-        with self._conn() as c:
-            c.execute(
-                "UPDATE account SET failed_attempts=0, locked_until=NULL WHERE account_id=?",
-                (account_id,),
-            )
+        self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {"failed_attempts": 0, "locked_until": None}}
+        )
 
     def _open_session(
         self, account_id: str, device: str | None = None, method: str = "password"
     ) -> str:
         token = session_tokens.new_token()
-        with self._conn() as c:
-            c.execute(
-                "INSERT INTO auth_sessions(token_hash,account_id,expires_at,created_at,"
-                "device,method) VALUES(?,?,?,?,?,?)",
-                (
-                    session_tokens.hash_token(token),
-                    account_id,
-                    session_tokens.new_expiry(),
-                    _now(),
-                    device,
-                    method,
-                ),
-            )
+        self.col("auth_sessions").insert_one(
+            {
+                "token_hash": session_tokens.hash_token(token),
+                "account_id": account_id,
+                "expires_at": session_tokens.new_expiry(),
+                "created_at": _now(),
+                "device": device,
+                "method": method,
+            }
+        )
         return token
 
     # ---------- sessions ----------
@@ -470,19 +444,17 @@ class AuthRepository(SqlStore):
         """Return the account matching the session token, or None if it is invalid."""
         if not token:
             return None
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT a.account_id, a.pseudonym, a.role, a.must_change_password, s.expires_at,"
-                " a.avatar_icon, a.avatar_color, a.daily_goal_s"
-                " FROM auth_sessions s JOIN account a ON a.account_id=s.account_id"
-                " WHERE s.token_hash=? AND a.disabled=0",
-                (session_tokens.hash_token(token),),
-            ).fetchone()
+        found = self.col("auth_sessions").find_one({"token_hash": session_tokens.hash_token(token)})
+        if found is None:
+            return None
+        row = _account(
+            self.col("account").find_one({"account_id": found["account_id"], "disabled": 0})
+        )
         if row is None:
             return None
         # Doc ra AuthSession thay vi so sanh thang tren dict: luat "phien nay
         # con hieu luc hay khong" nam o mot cho duy nhat, va cho do la lop.
-        session = AuthSession(account_id=row["account_id"], expires_at=row["expires_at"])
+        session = AuthSession(account_id=row["account_id"], expires_at=found["expires_at"])
         if session_tokens.is_expired(session.expires_at):
             return None
         return Account(
@@ -500,25 +472,19 @@ class AuthRepository(SqlStore):
         immediately."""
         if not token:
             return
-        with self._conn() as c:
-            c.execute(
-                "DELETE FROM auth_sessions WHERE token_hash=?", (session_tokens.hash_token(token),)
-            )
+        self.col("auth_sessions").delete_one({"token_hash": session_tokens.hash_token(token)})
 
     def purge_expired_sessions(self) -> int:
-        with self._conn() as c:
-            cur = c.execute("DELETE FROM auth_sessions WHERE expires_at <= ?", (_now(),))
-            return cur.rowcount
+        return self.col("auth_sessions").delete_many({"expires_at": {"$lte": _now()}}).deleted_count
 
     def revoke_sessions(self, account_id: str, keep_token: str | None = None) -> int:
         """End every session of an account except, optionally, the caller's own."""
         keep = session_tokens.hash_token(keep_token) if keep_token else ""
-        with self._conn() as c:
-            cur = c.execute(
-                "DELETE FROM auth_sessions WHERE account_id=? AND token_hash<>?",
-                (account_id, keep),
-            )
-            return cur.rowcount
+        return (
+            self.col("auth_sessions")
+            .delete_many({"account_id": account_id, "token_hash": {"$ne": keep}})
+            .deleted_count
+        )
 
     # ---------- passwords and account state (D028) ----------
 
@@ -541,13 +507,18 @@ class AuthRepository(SqlStore):
             self._record_failure(account_id)
             raise WrongPassword(account_id)
         passwords.check_new_password(new, row["pseudonym"], current)
-        with self._conn() as c:
-            c.execute(
-                "UPDATE account SET password_hash=?, must_change_password=0,"
-                " password_changed_at=?, failed_attempts=0, locked_until=NULL"
-                " WHERE account_id=?",
-                (passwords.hash_password(new), _now(), account_id),
-            )
+        self.col("account").update_one(
+            {"account_id": account_id},
+            {
+                "$set": {
+                    "password_hash": passwords.hash_password(new),
+                    "must_change_password": 0,
+                    "password_changed_at": _now(),
+                    "failed_attempts": 0,
+                    "locked_until": None,
+                }
+            },
+        )
         return self.revoke_sessions(account_id, keep_token)
 
     def set_temporary_password(self, account_id: str) -> str:
@@ -557,24 +528,28 @@ class AuthRepository(SqlStore):
         is lifted and every session ends: whoever held the old password is out.
         """
         temporary = passwords.temporary_password()
-        with self._conn() as c:
-            cur = c.execute(
-                "UPDATE account SET password_hash=?, must_change_password=1,"
-                " failed_attempts=0, locked_until=NULL WHERE account_id=?",
-                (passwords.hash_password(temporary), account_id),
-            )
-        if cur.rowcount == 0:
+        done = self.col("account").update_one(
+            {"account_id": account_id},
+            {
+                "$set": {
+                    "password_hash": passwords.hash_password(temporary),
+                    "must_change_password": 1,
+                    "failed_attempts": 0,
+                    "locked_until": None,
+                }
+            },
+        )
+        if done.matched_count == 0:
             raise KeyError(account_id)
         self.revoke_sessions(account_id)
         return temporary
 
     def set_disabled(self, account_id: str, disabled: bool) -> None:
         """Turn an account off or on. Turning it off ends its sessions at once."""
-        with self._conn() as c:
-            cur = c.execute(
-                "UPDATE account SET disabled=? WHERE account_id=?", (int(disabled), account_id)
-            )
-        if cur.rowcount == 0:
+        done = self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {"disabled": int(disabled)}}
+        )
+        if done.matched_count == 0:
             raise KeyError(account_id)
         if disabled:
             self.revoke_sessions(account_id)
@@ -585,6 +560,13 @@ class AuthRepository(SqlStore):
             raise KeyError(account_id)
         self._reset_failures(account_id)
 
+    def unlock_pseudonym(self, pseudonym: str) -> bool:
+        """Lift the lockout of the account with this pseudonym; False when there is none."""
+        done = self.col("account").update_one(
+            {"pseudonym": pseudonym}, {"$set": {"failed_attempts": 0, "locked_until": None}}
+        )
+        return done.matched_count > 0
+
     # ---------- sessions a person can see (D029) ----------
 
     def sessions(self, account_id: str) -> list[dict]:
@@ -593,19 +575,18 @@ class AuthRepository(SqlStore):
         The id is the first sixteen hex characters of the token's hash: enough
         to tell sessions apart and to end one, useless for opening one.
         """
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT token_hash, created_at, expires_at, device, method FROM auth_sessions"
-                " WHERE account_id=? AND expires_at > ? ORDER BY created_at DESC",
-                (account_id, _now()),
-            ).fetchall()
+        rows = (
+            self.col("auth_sessions")
+            .find({"account_id": account_id, "expires_at": {"$gt": _now()}})
+            .sort([("created_at", -1), ("_id", -1)])
+        )
         return [
             {
                 "session_id": r["token_hash"][:16],
                 "created_at": r["created_at"],
                 "expires_at": r["expires_at"],
-                "device": r["device"],
-                "method": r["method"] or "password",
+                "device": r.get("device"),
+                "method": r.get("method") or "password",
             }
             for r in rows
         ]
@@ -614,12 +595,11 @@ class AuthRepository(SqlStore):
         """End one session of this account, by its short id. False if there is none."""
         if not re.fullmatch(r"[0-9a-f]{16}", session_id or ""):
             return False
-        with self._conn() as c:
-            cur = c.execute(
-                "DELETE FROM auth_sessions WHERE account_id=? AND substr(token_hash,1,16)=?",
-                (account_id, session_id),
-            )
-            return cur.rowcount > 0
+        # The short id is hex only, so it is safe inside an anchored pattern.
+        done = self.col("auth_sessions").delete_many(
+            {"account_id": account_id, "token_hash": {"$regex": f"^{session_id}"}}
+        )
+        return done.deleted_count > 0
 
     # ---------- profile and role (D029) ----------
 
@@ -646,39 +626,31 @@ class AuthRepository(SqlStore):
             changes["daily_goal_s"] = daily_goal_s
         if not changes:
             return
-        assignments = ", ".join(f"{k}=?" for k in changes)
-        with self._conn() as c:
-            c.execute(
-                f"UPDATE account SET {assignments} WHERE account_id=?",
-                (*changes.values(), account_id),
-            )
+        self.col("account").update_one({"account_id": account_id}, {"$set": changes})
 
     def set_role(self, account_id: str, role: Role) -> str:
         """Give an account another role; returns the role it had."""
         row = self.get(account_id)
         if row is None:
             raise KeyError(account_id)
-        with self._conn() as c:
-            c.execute("UPDATE account SET role=? WHERE account_id=?", (role.value, account_id))
+        self.col("account").update_one({"account_id": account_id}, {"$set": {"role": role.value}})
         return row["role"]
 
     # ---------- outside identities (D029) ----------
 
-    def account_by_identity(self, provider: str, subject_hash: str) -> DbRow | None:
-        with self._conn() as c:
-            return c.execute(
-                "SELECT a.* FROM account_identity i JOIN account a ON a.account_id = i.account_id"
-                " WHERE i.provider=? AND i.subject_hash=?",
-                (provider, subject_hash),
-            ).fetchone()
+    def account_by_identity(self, provider: str, subject_hash: str) -> dict | None:
+        link = self.col("account_identity").find_one(
+            {"provider": provider, "subject_hash": subject_hash}
+        )
+        if link is None:
+            return None
+        return _account(self.col("account").find_one({"account_id": link["account_id"]}))
 
-    def identity(self, account_id: str, provider: str) -> DbRow | None:
-        with self._conn() as c:
-            return c.execute(
-                "SELECT provider, linked_at FROM account_identity"
-                " WHERE account_id=? AND provider=?",
-                (account_id, provider),
-            ).fetchone()
+    def identity(self, account_id: str, provider: str) -> dict | None:
+        row = self.col("account_identity").find_one(
+            {"account_id": account_id, "provider": provider}
+        )
+        return {"provider": row["provider"], "linked_at": row["linked_at"]} if row else None
 
     def link_identity(self, account_id: str, provider: str, subject_hash: str) -> None:
         """Link an outside identity to this account, replacing any earlier one.
@@ -690,34 +662,33 @@ class AuthRepository(SqlStore):
         owner = self.account_by_identity(provider, subject_hash)
         if owner is not None and owner["account_id"] != account_id:
             raise IdentityTaken(provider)
-        with self._conn() as c:
-            c.execute(
-                "DELETE FROM account_identity WHERE account_id=? AND provider=?",
-                (account_id, provider),
+        links = self.col("account_identity")
+        links.delete_many({"account_id": account_id, "provider": provider})
+        try:
+            links.insert_one(
+                {
+                    "provider": provider,
+                    "subject_hash": subject_hash,
+                    "account_id": account_id,
+                    "linked_at": _now(),
+                }
             )
-            c.execute(
-                "INSERT OR IGNORE INTO account_identity(provider,subject_hash,account_id,linked_at)"
-                " VALUES(?,?,?,?)",
-                (provider, subject_hash, account_id, _now()),
-            )
+        except IntegrityError as e:
+            # Linked to another account between the check and the insert.
+            raise IdentityTaken(provider) from e
 
     def count_identities(self, provider: str) -> int:
-        with self._conn() as c:
-            return c.execute(
-                "SELECT COUNT(*) FROM account_identity WHERE provider=?", (provider,)
-            ).fetchone()[0]
+        return self.col("account_identity").count_documents({"provider": provider})
 
     def unlink_identity(self, account_id: str, provider: str) -> bool:
-        with self._conn() as c:
-            cur = c.execute(
-                "DELETE FROM account_identity WHERE account_id=? AND provider=?",
-                (account_id, provider),
-            )
-            return cur.rowcount > 0
+        done = self.col("account_identity").delete_many(
+            {"account_id": account_id, "provider": provider}
+        )
+        return done.deleted_count > 0
 
     def login_with_identity(
         self, provider: str, subject_hash: str, device: str | None = None
-    ) -> tuple[str, DbRow] | None:
+    ) -> tuple[str, dict] | None:
         """Open a session for the account linked to this identity, or None.
 
         No password is involved, so the password lockout does not apply: it
@@ -727,8 +698,7 @@ class AuthRepository(SqlStore):
         row = self.account_by_identity(provider, subject_hash)
         if row is None or row["disabled"]:
             return None
-        with self._conn() as c:
-            c.execute(
-                "UPDATE account SET last_login_at=? WHERE account_id=?", (_now(), row["account_id"])
-            )
+        self.col("account").update_one(
+            {"account_id": row["account_id"]}, {"$set": {"last_login_at": _now()}}
+        )
         return self._open_session(row["account_id"], device, method=provider), row

@@ -19,6 +19,7 @@ dependencies = [
   # Bam mat khau. NFR-07 quy dinh bcrypt cost >= 12, tieu chi kiem thu la hash
   # mang tien to $2b$12$.
   "bcrypt>=4.1",
+  "argon2-cffi>=23.1",
   # Lesson steps (D025) count any form of a key word: "went" for "go",
   # "studies" for "study". Pure Python, no dependencies, data bundled in the
   # wheel, runs offline; MIT licence. Approved by the project owner with D025.
@@ -26,6 +27,7 @@ dependencies = [
   # D048: the store is MongoDB. pymongo is the official driver, Apache-2.0,
   # pure Python with an optional C extension; it ships bson for Extended JSON.
   "pymongo>=4.8,<5",
+  "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
