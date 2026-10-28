@@ -1,44 +1,50 @@
-# Quy tắc chung cho nhóm và AI agents
+# Hướng dẫn làm việc cho AI agents
 
-**Áp dụng cho toàn bộ repo.** Thắng, Sang, Nguyên và mọi phiên làm việc Codex/Antigravity đọc file này cùng [skill SDD dùng chung](.agents/skills/sdd-antigravity-orchestrator/SKILL.md) trước khi làm W2. Bản trong repo là phiên bản nhóm dùng; nếu máy cá nhân có bản khác, dùng bản trong repo. Khi sửa quy trình, cập nhật một bản này qua Git và báo cả nhóm.
+Áp dụng cho toàn repo và mọi agent. Làm theo yêu cầu mới nhất của chủ dự án. Quy trình dưới đây kết hợp kỷ luật kiểm soát bối cảnh, phụ thuộc kỹ thuật, kiểm thử tập trung và cơ chế dừng an toàn (`BLOCKED`), nhưng vẫn linh hoạt theo quy mô để không biến việc nhỏ thành chuỗi thủ tục.
 
-## Nguồn quyết định và trạng thái
+## 1. Quy trình 8 bước chuẩn (co giãn theo loại task)
 
-1. Chỉ dẫn mới nhất của chủ dự án và các quyết định đã được họ xác nhận.
-2. Requirement, Research (nếu chọn RUN), Specification, Test Plan, Plan/Tasks đã được duyệt trong `docs/sdd/modules/<module>/`.
-3. File quy tắc này và skill SDD. `AI_CONTEXT.md` là bản đồ ngắn, không thay Specification.
-4. `docs/sources/` lưu tài liệu gốc, model provenance và hồ sơ kỹ thuật nội bộ do chính nhóm tạo. Requirement và evidence của dự án được xác định theo SDD đã duyệt và revision hiện hành.
+Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. Với thay đổi code, bug fix hoặc liên module, thực hiện đầy đủ theo trình tự:
 
-### Phê duyệt trong phạm vi dự án
+1. **01 — Intake:** Xác định rõ loại task, mục tiêu, phạm vi file/module và tiêu chí hoàn thành (acceptance criteria).
+2. **02 — Context Discovery:** Đọc hướng dẫn theo phân cấp từ gốc đến thư mục đích (`AGENTS.md` con, `README.md`, và `01-requirement.md` / `03-specification.md` / `07-status.md` nếu thuộc module cụ thể). Chỉ mở `AI_CONTEXT.md` khi cần định hướng tổng thể.
+3. **03 — Impact Analysis:** Kiểm tra shared types/utilities/components hiện có để tái sử dụng trước khi tạo mới; xác định phụ thuộc liên module, schema/generated code bị ảnh hưởng và rủi ro hồi quy (regression risk).
+4. **04 — Plan & Gate Check:** Lập kế hoạch ngắn và chọn bộ test/check tương ứng phạm vi. Kiểm tra điều kiện `BLOCKED` hoặc điểm cần chủ dự án quyết định trước khi viết code.
+5. **05 — Implementation:** Triển khai đúng phạm vi owner, giữ nguyên comment/docstring hiện hữu và tuân thủ thứ tự phụ thuộc kỹ thuật theo từng loại task ở Mục 2.
+6. **06 — Verification:** Ưu tiên chạy focused test, lint và typecheck trên đúng file/module thay đổi; tránh build hoặc chạy toàn bộ test suite của repo khi không cần thiết. Chạy integration test khi thay đổi chạm contract/API liên module.
+7. **07 — Review & Fix:** Xem lại `git diff`, đối chiếu yêu cầu ban đầu, kiểm tra không lọt thay đổi ngoài phạm vi hoặc dữ liệu nhạy cảm, sửa lỗi phát sinh và verify lại.
+8. **08 — Handover:** Báo cáo ngắn gọn gồm: file đã đổi, lệnh và kết quả kiểm tra thực tế, các kiểm tra chưa chạy (`NOT_RUN`/`NOT_EVALUATED` hoặc để CI chạy), giới hạn còn lại, và các mục `BLOCKED`/cần chủ dự án chốt.
 
-- Theo chỉ dẫn của chủ dự án ngày 25/10/2026, với các task nghiên cứu/thu thập dữ liệu của nhóm, GVHD là đầu mối duyệt; không yêu cầu thêm phê duyệt riêng từ GV Ngoại ngữ. Chủ dự án đã được GVHD ủy quyền chốt và nghiệm thu các task này.
-- Không bắt buộc biên bản hoặc hồ sơ họp riêng. Xác nhận trực tiếp của chủ dự án trong chat là căn cứ cho verdict; cập nhật người duyệt, ngày và quyết định vào `07-status.md` khi phase/task có status tương ứng.
-- Quy tắc này thay đổi thẩm quyền và hình thức ghi nhận, không tự chọn thay nội dung chuyên môn còn mâu thuẫn. Chỉ ghi `APPROVED` khi chủ dự án đã chốt đúng artifact/version/phạm vi cụ thể.
+## 2. Điều chỉnh quy trình theo loại task
 
-W1 (14–18/09/2026) **DONE theo chủ dự án**; minh chứng lịch sử vẫn có mục cần bổ sung. Các SDD W2 hiện là **DRAFT, Phase 01 PENDING**. Việc chia người đọc/review tài liệu được thực hiện ngay; prompt triển khai cho Antigravity chỉ phát khi module có Phase 01, 03, 04 và 05 `APPROVED` theo đúng thứ tự. Không ghi `APPROVED`, `PASS`, `DONE` thay chủ dự án hoặc từ kết quả dự kiến.
+- **Việc trực tiếp, phạm vi rõ** *(chuyển/copy file, chạy lệnh/test có sẵn, đọc tài liệu, báo cáo trạng thái, sửa typo/lỗi nhỏ đã rõ)*: Thực hiện ngay; không tạo SDD, Task ID, phase, prompt hay yêu cầu `APPROVED` mới. Hỏi lại trước nếu đích file/lệnh chưa rõ hoặc có nguy cơ ghi đè dữ liệu.
+- **Fix Bug (theo hướng test-first):** Kiểm tra phạm vi → Tìm test hiện có để mở rộng (ưu tiên hơn tạo file test mới) hoặc viết test tái hiện lỗi → Chạy xác nhận test `FAIL` → Đánh giá rủi ro ảnh hưởng → Sửa code trong phạm vi được phép → Chạy lại xác nhận test `PASS` và không gây hồi quy.
+- **Update Function / Thay đổi tính năng:** Đối chiếu và cập nhật requirement/contract liên quan (nếu có) và đánh giá ảnh hưởng tới các màn hình/API gọi hàm đó trước khi sửa logic; cập nhật unit/integration test tương ứng.
+- **Task Full-stack hoặc liên module:** Triển khai tuần tự theo phụ thuộc kỹ thuật thay vì sửa tự do hoặc chạy đồng thời thiếu đồng bộ:
+  `Contract / API types (shared)` → `Backend / Service logic` → `API / Controllers` → `Frontend / UI` → `Tests & Verification`.
+- **Thay đổi lớn hoặc rủi ro cao:** Tóm tắt tác động, phương án và quyết định còn thiếu; dừng ở checkpoint cần chủ dự án chốt trước khi triển khai sâu. Tạo hoặc cập nhật SDD khi task cần hợp đồng bền vững, nhiều owner/dependency, bằng chứng đồ án yêu cầu, hoặc chủ dự án chỉ định.
+- **Handoff Antigravity:** Chỉ dùng khi chủ dự án yêu cầu hoặc task được giao cho Antigravity. Gửi brief gọn (mục tiêu, file/phạm vi, ràng buộc, lệnh check cần chạy); lưu prompt/evidence khi rubric hoặc task yêu cầu. Khi nhận kết quả, kiểm tra `git diff` và chạy/đối chiếu kết quả thực tế rồi báo cáo. Không đòi Phase 01–09 hay `APPROVED` mặc định.
 
-## Một quy trình SDD cho cả ba người
+## 3. Cơ chế `BLOCKED` và ranh giới phê duyệt
 
-- Mỗi module M01–M08 sở hữu `01-requirement.md`, Research khi được chọn, `03-specification.md`, `04-test-plan.md`, `05-plan.md`, `06-tasks.md`, `07-status.md` và `prompts/`, `evidence/`, `reviews/` riêng. Đọc `07-status.md` trước khi sửa scope. Thay đổi contract liên module phải nêu impact, thống nhất với owner liên quan và duyệt lại phase bị ảnh hưởng.
-- Người phụ trách module chuẩn bị nội dung và kiểm tra nguồn; Codex viết prompt, điều phối checkpoint và review actual diff/evidence; Antigravity triển khai và chạy test/browser QA theo prompt đã duyệt; chủ dự án quyết định verdict. Các thành viên có thể dùng phiên Codex riêng cho module của mình, nhưng cùng skill và cùng quy tắc này.
-- Mỗi task chỉ có một owner, vùng file được sửa và dependency rõ trong `docs/plan/week-02.md`/SDD. Trước khi sửa source chung, thông báo owner module liên quan; không để hai phiên AI cùng sửa một vùng source tại một thời điểm. Dùng branch/commit riêng có Task ID, review diff trước khi gộp. Không đưa thay đổi ngoài task vào commit.
-- Prompt Antigravity phải được lưu tại `docs/sdd/modules/<module>/prompts/` và ghi Prompt ID, Task ID, base revision/fingerprint vào log local **trước khi gửi**. Antigravity trả raw report, diff/commit và lệnh/kết quả kiểm tra; lưu tại `evidence/` local, review tại `reviews/`, cập nhật `07-status.md`. Bản chat hay lời nhắc “dùng skill” không tự lưu prompt/evidence.
+Không mặc định mọi task đều có thể tự động hoàn thành. Agent **phải dừng và báo `BLOCKED`** (hoặc yêu cầu xác nhận rõ từ chủ dự án) trước khi thực hiện các hành động sau:
 
-## Minh chứng, dữ liệu và chất lượng
+- Thay đổi rubric chấm điểm, trọng số hoặc quy tắc quy đổi band CEFR (thuộc scope M05).
+- Thay đổi kiến trúc liên module chưa có contract, thay đổi cơ chế auth/phân quyền, billing, hoặc migration làm biến đổi/xóa dữ liệu lưu trữ.
+- Xử lý, commit hoặc phát tán secret, audio thật, dữ liệu cá nhân thật (PII) hoặc model weights không có quyền phân phối.
+- Thực hiện `git push`, deploy, gọi/gửi dữ liệu ra dịch vụ ngoài, hoặc can thiệp môi trường production khi chưa được chủ dự án cho phép rõ.
+- Tự ý ghi nhận verdict `APPROVED`, `PASS` (cấp độ nghiệm thu cổng) hay `DONE` thay cho chủ dự án. Phase và verdict trong `docs/sdd/` là hồ sơ của scope tương ứng, không phải thủ tục mặc định cho mọi yêu cầu. Chỉ cập nhật artifact thực sự bị ảnh hưởng.
 
-- Mỗi người ghi **mọi lần dùng AI** vào sheet mang tên mình trong workbook của tuần tương ứng tại `docs/evidence/tc2-3-ai-usage/`, theo mẫu `AI Prompt Log - Wxx - YYYY-MM-DD_YYYY-MM-DD.xlsx`: ngày, người, công cụ, công việc, prompt, link minh chứng. Tuần tính từ thứ Hai đến Chủ nhật và xếp theo ngày sử dụng AI, không theo tên task/module. Xem [danh sách file tuần](docs/evidence/tc2-3-ai-usage/README.md). Sheet `Tổng hợp` trong từng file cộng cả ba sheet của tuần đó. Prompt triển khai còn phải có bản file/log tại module. `docs/evidence/` là hồ sơ nộp theo rubric, dẫn về bằng chứng gốc trong module; tránh nhân bản file và claim.
-- Chỉ dùng số liệu đo được trên **repo dự án** và revision ghi rõ. Kiểm thử, coverage, ASR/model version, consent và nguồn audio phải có evidence truy cập được. Ghi `NOT_RUN`/`NOT_EVALUATED` khi chưa có phép đo. Dữ liệu kiểm thử do nhóm tạo được gọi là `fixture` hoặc `test data`; kết quả CEFR thực nghiệm phải dẫn tới bộ dữ liệu và phép đo tương ứng.
-- Bản nháp sản phẩm dùng 5 tiêu chí Range, Accuracy, Fluency, Coherence, Phonology; chỉ hiển thị overall score/band và coverage/evidence của từng tiêu chí. `Interaction=null` với `insufficient_evidence` cho bài độc thoại. Overall không được trình bày thành năm điểm tiêu chí. Mọi thay đổi rubric/band mapping phải quay về SDD M05 và được duyệt.
-- Không commit secret, audio hoặc dữ liệu cá nhân thật, model weights không có quyền phân phối. Tuân thủ `.gitignore`; manifest ghi nơi giữ bằng chứng bị hạn chế truy cập. Không push, deploy, gửi dữ liệu ra dịch vụ ngoài hoặc thay đổi production nếu chưa có quyền rõ từ chủ dự án.
+## 4. Phạm vi, phối hợp và nguồn chuẩn
 
-## Cách mô tả dự án
+- **Thứ tự ưu tiên nguồn sự thật:** (1) Chỉ dẫn mới nhất của chủ dự án → (2) Quyết định/contract đã chốt của scope liên quan → (3) Code và test hiện hành → (4) Bản đồ định hướng trong `AI_CONTEXT.md`.
+- **Quản lý phạm vi và xung đột:** Mỗi task có một owner và phạm vi file rõ khi làm việc nhóm. Trước khi sửa file dùng chung (shared packages/types, cấu hình), kiểm tra xung đột với owner/phiên khác. Không đưa thay đổi ngoài phạm vi vào commit.
+- **Hướng dẫn theo thư mục:** Trước khi sửa file trong thư mục có `AGENTS.md` riêng, đọc hướng dẫn gần nhất và chỉ áp dụng trong phạm vi thư mục đó. Nếu sửa `.github/workflows/`, đọc `.github/AGENTS.md` trước (nếu tồn tại). Quy tắc workflow chung toàn repo chỉ đặt tại file gốc này; khi thay đổi, cập nhật qua Git và báo nhóm.
+- **Xử lý thiếu dữ kiện:** Khi thiếu thông tin ảnh hưởng trực tiếp tới kết quả, nêu câu hỏi ngắn gọn hoặc giả định rõ ràng. Không biến chi tiết kỹ thuật có thể tự quyết trong phạm vi thành điểm chờ phê duyệt.
+- **Thuật ngữ và nguồn gốc:** Dùng tên `dự án`, `repo dự án`, `mã nguồn dự án`, `implementation hiện tại` hoặc `revision hiện hành`. Tránh cách diễn đạt khiến repo bị hiểu nhầm là bản sao của nguồn khác. Thư mục `docs/sources/` lưu tài liệu nguồn và provenance do nhóm quản lý.
 
-- `ai-assessor-cefr` là dự án chính thức do nhóm phát triển từ đầu theo SDD để phục vụ đồ án và báo cáo.
-- Trong tài liệu, prompt và báo cáo, dùng các tên `dự án`, `repo dự án`, `mã nguồn dự án`, `implementation hiện tại` hoặc `revision hiện hành`.
-- Tránh các cụm `dựng lại`, `viết lại`, `làm lại`, `bản dựng mới`, `repo mới`, `source mới` và cách diễn đạt khiến dự án bị hiểu là clone hoặc bản sao của một source khác.
-- `../ai-assessor-cefr-runtime/backups/ai-assessor-cefr-thamchie-before-cleanup-2026-10-08` lưu hồ sơ kỹ thuật nội bộ do chính nhóm phát triển trong giai đoạn hình thành đề tài. Chỉ dẫn tới hồ sơ này qua `docs/sources/` khi cần giải thích provenance, quyết định kỹ thuật hoặc tính khả thi.
-- Gọi dữ liệu do nhóm chuẩn bị để kiểm thử là `fixture` hoặc `dữ liệu kiểm thử do nhóm tạo`. Mọi số liệu báo cáo phải có lệnh chạy, revision và evidence tương ứng.
+## 5. Kiểm tra, evidence và quy tắc miền CEFR
 
-## Bắt đầu W2
-
-Đọc [kế hoạch W2](docs/plan/week-02.md), [bản đồ tài liệu](docs/README.md), module được giao và Status của nó. Gửi review/đề xuất sửa SDD theo FR/AC/Test/Task ID. Chỉ sau verdict Phase 05 mới tạo prompt triển khai với helper `.agents/skills/sdd-antigravity-orchestrator/scripts/workspace_fingerprint.py`. Nếu thông tin quan trọng còn thiếu, ghi câu hỏi/blocker ở module và hỏi chủ dự án; chỉ ghi kết quả đã có evidence thực tế.
+- **Báo cáo kiểm chứng trung thực:** Nêu rõ lệnh đã chạy, kết quả thực tế, revision và giới hạn còn lại. Ghi rõ `NOT_RUN` hoặc `NOT_EVALUATED` cho các kiểm tra chưa thực hiện (hoặc để CI chạy); phân biệt rõ dữ liệu fixture kiểm thử với dữ liệu người học thật hay kết quả CEFR thực nghiệm.
+- **Nhật ký AI & Evidence đồ án:** Theo rubric đồ án, ghi mọi lần dùng AI vào sheet cá nhân trong workbook tuần tương ứng tại `docs/evidence/tc2-3-ai-usage/`. Evidence kỹ thuật lưu tại module/scope tương ứng; hồ sơ nộp dẫn link về bằng chứng gốc, tránh nhân bản claim.
+- **Quy tắc miền đánh giá Speaking:** Bản nháp đánh giá sử dụng 5 tiêu chí: `Range`, `Accuracy`, `Fluency`, `Coherence`, `Phonology`; hiển thị overall score/band kèm coverage/evidence của từng tiêu chí. Với bài nói độc thoại, giữ nguyên `Interaction=null` và lý do `insufficient_evidence`.
