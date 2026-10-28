@@ -13,12 +13,11 @@ import base64
 import importlib
 import json
 import time
-from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from conftest import on_postgres
-from dbutil import connect
+from conftest import on_server
+from dbutil import store
 from fastapi.testclient import TestClient
 
 from aicefr.auth import google
@@ -290,12 +289,15 @@ def test_linking_then_signing_in_with_google(m, monkeypatch, tmp_path):
     assert audit(m, "account.google_link")[0].target_id == account_id(m, "SV-001")
 
     # Only a hash is kept: the email is nowhere in the identity service's store.
-    with connect() as c:
-        (stored,) = c.execute("SELECT subject_hash FROM account_identity").fetchone()
+    links = list(store()["account_identity"].find())
+    stored = links[0]["subject_hash"]
     assert stored == google.subject_hash("google-sub-1") and len(stored) == 64
-    if not on_postgres:
-        db = Path(m.app.state.auth_repo.db_path)
-        assert b"sinhvien@example.edu.vn" not in db.read_bytes()
+    if not on_server:
+        # Nothing the provider said about the person is kept anywhere in the store.
+        from bson import json_util
+
+        everything = {n: list(store()[n].find()) for n in store().list_collection_names()}
+        assert "sinhvien@example.edu.vn" not in json_util.dumps(everything)
 
     browser = TestClient(m.app, headers={"user-agent": CHROME_MAC})
     _, flow = start(browser, "login", "/my-progress")

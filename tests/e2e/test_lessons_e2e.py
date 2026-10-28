@@ -75,9 +75,10 @@ def live_server(tmp_path_factory) -> Iterator[LiveServer]:
     env.update(
         AICEFR_DB=str(db),
         AICEFR_UPLOADS=str(root / "uploads"),
+        AICEFR_JOB_MODE="inline",
+        # The synthetic scoring artifacts tests/conftest.py points at (W7-S01).
         AICEFR_MODEL_DIR=os.environ["AICEFR_MODEL_DIR"],
         AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
-        AICEFR_JOB_MODE="inline",
         AICEFR_FAKE_TRANSCRIPT=HEARD,
         AICEFR_LOGIN_RATE="1000",
     )

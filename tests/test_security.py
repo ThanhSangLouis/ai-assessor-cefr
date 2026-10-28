@@ -232,7 +232,7 @@ def test_health_details_require_a_session(app) -> None:
 
 
 def test_runtime_assets_are_declared_as_package_data() -> None:
-    """Templates, static files and the scoring artifact must ship in the wheel.
+    """Templates and static files must ship in the wheel.
 
     They are not .py files, so setuptools leaves them out unless told. An
     editable install hides this completely: it points at the source tree. The
@@ -241,5 +241,8 @@ def test_runtime_assets_are_declared_as_package_data() -> None:
     with "Directory ... does not exist".
     """
     config = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
-    for pattern in ("api/templates/*.html", "api/static/*.js", "scoring/models/*.json"):
+    for pattern in ("api/templates/*.html", "api/static/*.js"):
         assert pattern in config, f"thiếu {pattern} trong package-data"
+    # The scoring artifacts are the opposite: corpus statistics that must never
+    # ship (W7-S01). They are read from AICEFR_MODEL_DIR at run time.
+    assert "scoring/models" not in config

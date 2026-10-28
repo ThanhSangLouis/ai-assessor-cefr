@@ -110,9 +110,10 @@ def live_server(tmp_path_factory) -> Iterator[LiveServer]:
     env.update(
         AICEFR_DB=str(db),
         AICEFR_UPLOADS=str(root / "uploads"),
+        AICEFR_JOB_MODE="inline",
+        # The synthetic scoring artifacts tests/conftest.py points at (W7-S01).
         AICEFR_MODEL_DIR=os.environ["AICEFR_MODEL_DIR"],
         AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
-        AICEFR_JOB_MODE="inline",
         AICEFR_FAKE_TRANSCRIPT=COH_TEXT,
         # Every test logs in once from the same 127.0.0.1; the real limit
         # (10 per minute) is tested in tests/test_security.py, not by this layer.

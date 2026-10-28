@@ -73,36 +73,32 @@ def stats_summary(account: Account = ADMIN_ONLY) -> dict:
 @router.get("/api/v1/admin/models", tags=["admin"])
 def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
     """Scoring artifacts on disk, with the metrics each one reports. FR-36."""
-    from aicefr.scoring.artifacts import model_dir
-    from aicefr.scoring.scorer import (
-        IncompatibleModelError,
-        RidgeScorer,
-        load_model,
-    )
+    from aicefr.scoring import artifacts
+    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer, load_model
 
     active = active_model_name()
     out = []
-    for path in sorted(model_dir().glob("*.json")):
+    for stem in artifacts.available():
         # The CV+ calibration artifact (D022) sits in the same folder but is not a
         # scoring model; listing it as "incompatible" would mean nothing.
-        if path.stem.startswith("conformal_"):
+        if stem.startswith("conformal_"):
             continue
         try:
-            m = load_model(path.stem)
+            m = load_model(stem)
         except Exception as e:  # noqa: BLE001 - a broken artifact must be listed, not hidden
-            out.append({"name": path.stem, "usable": False, "error": str(e)})
+            out.append({"name": stem, "usable": False, "error": str(e)})
             continue
         # An artifact can load fine and still be unusable here: `ridge_v3` was
         # fitted on whole exam sittings and reports a higher correlation for a
         # different task. Saying so stops an administrator activating it.
         try:
-            RidgeScorer(path.stem)
+            RidgeScorer(stem)
             compatible, why = True, None
         except IncompatibleModelError as e:
             compatible, why = False, str(e)
         out.append(
             {
-                "name": path.stem,
+                "name": stem,
                 "usable": True,
                 "model_version": m.get("model_version"),
                 "feature_version": m.get("feature_version"),
@@ -113,7 +109,7 @@ def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
                 "train_n": m.get("train_n"),
                 "compatible": compatible,
                 "incompatible_reason": why,
-                "active": path.stem == active,
+                "active": stem == active,
             }
         )
     return out
@@ -127,9 +123,10 @@ def activate_model(name: str, account: Account = ADMIN_ONLY) -> dict:
     touch results already stored, and it is audited. The speech service builds
     the new pipeline on the next job, since every job names its model.
     """
-    from aicefr.scoring.scorer import MODEL_DIR, IncompatibleModelError, RidgeScorer
+    from aicefr.scoring import artifacts
+    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer
 
-    if not (MODEL_DIR / f"{name}.json").is_file():
+    if name not in artifacts.available():
         raise HTTPException(404, f"không có tệp mô hình tên {name!r}")
     try:
         scorer = RidgeScorer(name)

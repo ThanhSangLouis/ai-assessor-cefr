@@ -5,8 +5,8 @@
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Mã tài liệu | SRS-AICEFR-001 |
-| Phiên bản | 1.10 |
-| Ngày ban hành | 13/10/2026 (bản 1.0 ngày 12/09/2026, bản 1.2 ngày 14/09/2026) |
+| Phiên bản | 1.11 |
+| Ngày ban hành | 14/10/2026 (bản 1.0 ngày 12/09/2026, bản 1.2 ngày 14/09/2026) |
 | Môn học | Công nghệ phần mềm — đồ án môn học |
 | Nhóm thực hiện | 3 sinh viên: SV1 (Speech pipeline), SV2 (Scoring/ML & đo lường), SV3 (Hệ thống & tích hợp) |
 | Người duyệt | GVHD [tên], GV Ngoại ngữ [tên] |
@@ -32,7 +32,10 @@
 | 1.8 | 11/10/2026 | **+6 FR, +3 quy tắc.** Bằng chứng học tập (mục 3.9j): FR-75 chẩn đoán phát âm theo năm lỗi đặc trưng của người Việt trên trang Tiến độ; FR-76 bản gộp của cả lớp cho giảng viên, không chỉ ra ai; FR-77 thực nghiệm phản hồi — chia nhóm ngẫu nhiên, nhóm "Chỉ điểm" do máy chủ giữ lại phản hồi, rời được bất cứ lúc nào; FR-78 khảo sát, phân tích có khoảng tin cậy bootstrap, xuất CSV theo mã; FR-79 đo thời gian giảng viên và phần máy tự xử lý; FR-80 tiến bộ đáng tin theo sai số đo. BR-37..BR-39 | D039, D040, D041, D042 |
 | 1.9 | 11/10/2026 | **Không thêm FR.** Kiến trúc (mục 2.1): sáu dịch vụ sau một gateway, PostgreSQL mỗi dịch vụ một schema, RabbitMQ cho việc chấm, đo bước bài học và sự kiện đồng thuận. Mọi FR, NFR và quy tắc nghiệp vụ giữ nguyên hành vi; kiểm thử chạy trên cả dạng một tiến trình lẫn dạng tách dịch vụ | D043 |
 | 1.10 | 13/10/2026 | **Không thêm FR.** Kiến trúc (mục 2.1): gộp còn ba dịch vụ — `core`, `speech`, `web` — `core` một schema PostgreSQL. Mọi FR, NFR và quy tắc nghiệp vụ giữ nguyên hành vi | D044 |
-| **1.11** | **25/10/2026** | **+10 FR.** Bổ sung hoàn thiện hệ thống và nền dịch vụ (mục 3.9k): FR-81 ghép lộ trình bài học tự động (D046); FR-82 lộ trình riêng và xuất bản bản sao cho giảng viên (D046); FR-83 lưu trữ toàn diện trên MongoDB với chỉ mục duy nhất và cập nhật nguyên tử (D048); FR-84 đóng gói triển khai VPS với Caddy HTTPS tự động và sao lưu xoay vòng (D047); FR-85 kênh tính lượt NetID và số dư IDPoint (D049, D057); FR-86 hàng đợi chấm BullMQ và sự kiện qua Redis (D050); FR-87 lưu trữ đối tượng âm thanh BlobStore S3 và đo lường hệ thống (D051); FR-88 hiệu chuẩn band tuỳ chọn cho mô hình chấm (D052); FR-89 mua gói lượt qua cổng thanh toán và cộng vào ví NetID (D053, D057); FR-90 quản lý lớp học, giao bài có hạn nộp, nhắc việc và tự nghe lại có dẫn đường (D054, D055, D056) | D046..D057 |
+| 1.11 | 14/10/2026 | +4 FR, +1 quy tắc (đề xuất). Mục 3.9k: FR-81 lộ trình riêng của người học và FR-82 giảng viên ghép lộ trình từ bài có sẵn (model chọn và xếp thứ tự bài đã xuất bản, học thứ tự từ các lộ trình hiện có); FR-83 lược đồ cơ sở dữ liệu có phiên bản; FR-84 triển khai lên máy chủ có HTTPS. BR-40 | D045, D046, D047 (PROPOSED) |
+| **1.12** | **21/10/2026** | **+1 FR (đề xuất).** FR-85 tính lượt trên bản triển khai thương mại cho kênh NetID: giữ chỗ khi nộp, chỉ thu khi có kết quả, 3 lượt miễn phí mỗi chu kỳ; bản của trường và nghiên cứu không đổi (BR-29, BR-30, FR-W7 giữ nguyên). Kho dữ liệu chuyển sang MongoDB (D048) | D048, D049 (PROPOSED) |
+| **1.13** | **24/10/2026** | **+5 FR (đề xuất).** FR-86 hiệu chuẩn band tuỳ chọn, FR-87 gói lượt mua qua cổng thanh toán, FR-88 lớp học và giao bài, FR-89 nhắc việc trong ứng dụng, FR-90 tự nghe lại có mốc đối chứng | D052–D056 (PROPOSED) |
+| **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -276,6 +279,7 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | BR-37 | Trong thực nghiệm phản hồi, phản hồi của nhóm "Chỉ điểm" được **máy chủ** giữ lại, không phải trang ẩn đi; chỉ áp cho báo cáo bài đánh giá của chính người học, không bao giờ cho giảng viên, quản trị viên, bài học hay luyện tập. Chỉ sinh viên **đang cho phép dùng dữ liệu nghiên cứu** được chia nhóm; người học rời được bất cứ lúc nào và nhận lại phản hồi đầy đủ ngay; rút đồng ý nghiên cứu hay bị xoá dữ liệu cũng là rời | FR-77, FR-78 | 1.8 (D040) | `api/study_api.py` (`gate_report`); `test_score_only_arm_gets_the_score_and_nothing_more`, `test_leaving_the_study_or_closing_it_brings_feedback_back` |
 | BR-38 | Trang Tiến độ chỉ gọi là **tiến bộ** khi chênh lệch vượt 1,96 lần sai số của chênh lệch tính từ **sai số đo (SEM)** đo bằng cặp bài thử lại hoặc nhập tay **kèm nguồn**; chưa có SEM thì nói là chưa đo được sai số. RMSE của mô hình không được dùng thay SEM | FR-80 | 1.8 (D042) | `research/reliable_change.py`; `test_reliable_change_verdicts`, `test_progress_says_no_error_measured_until_an_admin_sets_one` |
 | BR-39 | Chẩn đoán phát âm **không phải điểm phát âm** và không vào điểm tổng: nó đếm chỗ chữ máy nghe được lệch khỏi chữ viết theo năm lỗi đặc trưng, chỉ nêu tỉ lệ khi đủ 8 lần gặp, và từ giảng viên đã sửa thành "nghe được" không tính là lỗi. Bản của cả lớp không chỉ ra ai | FR-75, FR-76 | 1.8 (D039) | `pronunciation/vietnamese.py`; `test_profile_reports_a_rate_only_from_enough_opportunities`, `test_class_profile_is_for_staff_and_names_nobody` |
+| BR-40 | Model lộ trình (D046) chỉ **chọn và xếp thứ tự** bài giảng viên đã xuất bản; không viết câu chữ, không sửa bài. Mỗi bài được chọn kèm lý do. Lộ trình của sinh viên chỉ gồm bài đã xuất bản trong lộ trình đã xuất bản; lộ trình giảng viên lưu ra luôn là bản nháp | FR-81, FR-82 | 1.11 (D046, đề xuất) | `lessons/composer.py`; `test_a_draft_path_never_reaches_a_learners_plan`, `test_a_teacher_saves_the_kept_lessons_as_a_draft_path_of_copies` |
 
 ---
 
@@ -654,7 +658,7 @@ Các loại evidence: `LONG_PAUSE`, `FILLER_CLUSTER`, `LOW_CONFIDENCE_WORD`, `TR
 
 **Mô tả:** Người học xem lại kết quả các bài nói của chính mình xếp theo thời gian, để trả lời câu hỏi "mình có tiến bộ không" — khác với màn danh sách bài nộp vốn trả lời "bài vừa nộp ra sao".
 
-Yêu cầu khó của màn hình này không phải vẽ biểu đồ mà là **không nói quá**. Mô hình đang dùng có RMSE 0,53 trên chính tập kiểm định của nó, nên chênh lệch 0,2 điểm giữa hai bài nằm gọn trong sai số của dụng cụ đo.
+Yêu cầu khó của màn hình này không phải vẽ biểu đồ mà là **không nói quá**. Mô hình đang dùng có sai số cỡ nửa điểm trên chính tập kiểm định của nó, nên chênh lệch 0,2 điểm giữa hai bài nằm gọn trong sai số của dụng cụ đo.
 
 **Ưu tiên:** S
 
@@ -863,7 +867,7 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 | **AC-44.1** — *Given* một bài luyện đã xử lý, *When* giảng viên mở hàng đợi duyệt, *Then* bài đó không có trong hàng đợi (`test_practice_submission_gets_a_result_without_band_and_skips_the_queue`). |
 | **AC-44.2** — *Given* một sinh viên có một bài đánh giá và một bài luyện, *When* quản trị viên xuất dữ liệu nghiên cứu, *Then* chỉ có bài đánh giá (`test_admin_research_export_excludes_practice`). |
 | **AC-44.3** — *Given* sinh viên khác hoặc giảng viên, *When* mở kết quả luyện của người khác, *Then* nhận 404 (`test_only_the_owner_can_open_a_practice_result`). |
-| **AC-44.4** — *Given* CSDL tạo trước D023, *When* khởi động, *Then* các cột mới được thêm và bài cũ là bài đánh giá (`test_database_created_before_d023_gains_columns_and_old_rows_are_assessment`). |
+| AC-44.4 (đã bỏ) — Theo D048: kho MongoDB được dựng mới, không có dữ liệu nào tạo trước D023 để nâng cấp. |
 
 ## 3.9b. Module M10 — Lộ trình bài học do giáo viên soạn (`src/aicefr/lessons/`) — D025
 
@@ -1372,98 +1376,139 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-80.5** — *Given* chưa có cặp nào rồi có 10 cặp, *When* quản trị viên chọn dùng bài thử lại, *Then* lần đầu 422 nói số cặp; lần sau SEM nguồn `retest` từ 10 cặp (`test_measured_error_needs_enough_retest_pairs`). |
 | **AC-80.6** — *Given* quản trị viên ở tab Cấu hình, *When* chưa có cặp thử lại và nhập tay 0,25 kèm nguồn, *Then* khung ghi "Chưa đặt", nút dùng bài thử lại bị tắt, sau khi lưu ghi nguồn đã nhập (`test_admin_sets_the_measurement_error_with_its_source`). |
 
-## 3.9k. Hoàn thiện hệ thống và nền dịch vụ — FR-81..FR-90 (D046..D057)
+## 3.9k. Lộ trình ghép từ bài có sẵn, lược đồ có phiên bản, triển khai máy chủ — D045..D047
 
-### FR-81 — Ghép lộ trình bài học tự động
-**Mô tả:** Hệ thống hỗ trợ ghép lộ trình học tập từ các bài học sẵn có dựa trên mục tiêu đầu vào (tiếng Việt hoặc tiếng Anh). Model phân tích mục tiêu thành chủ đề, tiêu chí, âm phát âm và band đích; chọn các bài học phù hợp và sắp xếp thứ tự học hợp lý.
+> Ba yêu cầu của chủ dự án ngày 14/10/2026: "chốt database", "làm thêm một model AI tạo lộ trình từ những lộ trình đã có, theo hướng giáo viên hoặc sinh viên muốn", "deploy web". Phương án của từng việc là **đề xuất** (D045, D046, D047 trong nhật ký quyết định đều PROPOSED), chờ chủ dự án xác nhận.
+
+### FR-81 — Lộ trình riêng của người học
+
+**Mô tả:** Ở trang Luyện tập, sinh viên nhập điều muốn luyện bằng tiếng Việt hoặc tiếng Anh, chọn chủ đề, tiêu chí, âm cần luyện và số bài (3–15). Hệ thống ghép một lộ trình từ các bài **đã xuất bản thuộc lộ trình đã xuất bản**. Lộ trình bắt đầu từ band của bài đánh giá gần nhất và đi lên. Hệ thống ưu tiên tiêu chí yếu nhất của bài đánh giá đó (đã qua cổng của thực nghiệm phản hồi, BR-37), các âm sinh viên hay nói sai (FR-75), bài chưa học và bài đang làm dở. Mỗi bài kèm lý do được chọn. Lộ trình được giữ đến khi sinh viên ghép lại hoặc bỏ; nó có trong bản xuất dữ liệu cá nhân và bị xoá cùng dữ liệu của sinh viên. Hệ thống không viết câu chữ nào (BR-40). `POST/GET/DELETE /api/v1/learn/plan`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-81.1** — *Given* mục tiêu học tập tiếng Việt hoặc tiếng Anh, *When* yêu cầu ghép lộ trình, *Then* hệ thống phân tích ra đúng chủ đề và tiêu chí trọng tâm. |
-| **AC-81.2** — *Given* danh sách bài học đã xuất bản, *When* tổng hợp lộ trình, *Then* chỉ các bài học thoả mãn điều kiện được đưa vào, không tự tạo bài mới ngoài danh mục. |
+| **AC-81.1** — *Given* câu "Muốn luyện kể chuyện du lịch, tập trung trôi chảy và âm cuối, từ A2 lên B1", *When* đọc mục tiêu, *Then* ra chủ đề Du lịch, tiêu chí Độ trôi chảy, âm cuối, band A2 và B1 (`test_a_wish_in_vietnamese_names_topics_criteria_sounds_and_bands`). |
+| **AC-81.2** — *Given* năm bài, hai bài đã hoàn thành, một bài đang làm, *When* ghép 3 bài rồi 4 bài, *Then* lần đầu chỉ có ba bài chưa xong; lần sau mới thêm một bài đã xong để ôn (`test_a_learner_gets_new_lessons_first_and_finished_ones_only_to_fill_up`). |
+| **AC-81.3** — *Given* tiêu chí yếu nhất là Độ trôi chảy, *When* ghép, *Then* bài luyện trôi chảy ghi lý do là tiêu chí yếu nhất trong bài đánh giá gần nhất (`test_the_learners_weakest_criterion_is_named_as_the_reason`). |
+| **AC-81.4** — *Given* lộ trình mẫu, *When* sinh viên ghép 5 bài cho "du lịch, tập trung trôi chảy", *Then* có 5 bài trạng thái "chưa học", mỗi bài có lý do, có bài ghi chủ đề Du lịch, bài nào cũng mở được (`test_a_learner_gets_a_path_of_published_lessons_with_reasons`). |
+| **AC-81.5** — *Given* sinh viên đã có lộ trình riêng, *When* ghép lại với "B2" rồi bỏ lộ trình, *Then* lộ trình mới thay lộ trình cũ và chỉ gồm bài B2; sau khi bỏ thì không còn lộ trình đang dùng (`test_asking_again_replaces_the_plan_and_closing_it_sets_it_aside`). |
+| **AC-81.6** — *Given* một bài đã xuất bản nằm trong lộ trình còn nháp, *When* sinh viên ghép 30 bài và giảng viên ghép, *Then* lộ trình của sinh viên không có bài đó, đề xuất của giảng viên có (`test_a_draft_path_never_reaches_a_learners_plan`). |
+| **AC-81.7** — *Given* sinh viên có lộ trình riêng, *When* tải bản xuất dữ liệu rồi bị xoá dữ liệu, *Then* bản xuất có `learning_plans` kèm mục đích; sau khi xoá không còn lộ trình nào của sinh viên (`test_plans_are_in_the_export_and_go_with_erasure`). |
+| **AC-81.8** — *Given* sinh viên ở trang Luyện tập, *When* nhập mục tiêu, chọn âm cuối, bấm "Ghép lộ trình", tải lại trang rồi bấm "Bỏ lộ trình này", *Then* thấy 6 bài có lý do và đường dẫn tới bài; tải lại vẫn còn; bỏ thì trở về lời mời ghép (`test_a_learner_composes_a_path_and_sets_it_aside`). |
+| **AC-81.9** — *Given* bài đánh giá gần nhất ra B1, yếu nhất Độ trôi chảy, *When* sinh viên ghép 4 bài không nhập band, *Then* các bài ở B1 hoặc B2 và có lý do là tiêu chí yếu nhất (`test_the_latest_assessment_steers_the_learners_path`). |
 
-### FR-82 — Lộ trình riêng và xuất bản bản sao cho giảng viên
-**Mô tả:** Sinh viên có thể tạo lộ trình riêng trên trang Luyện tập. Giảng viên có thể xem gợi ý lộ trình và lưu thành bản sao lộ trình nháp để tuỳ chỉnh và xuất bản cho lớp.
+### FR-82 — Giảng viên ghép lộ trình từ bài có sẵn
+
+**Mô tả:** Ở trang Soạn bài, giảng viên mô tả lộ trình muốn có: mục tiêu, band từ–đến, chủ đề, tiêu chí, âm cần luyện, số bài (3–30). Model chọn trong các bài đã xuất bản của mọi lộ trình chưa lưu trữ. Model chấm mức phù hợp theo sáu tín hiệu: band, tiêu chí, chủ đề, từ khớp, âm cần luyện và, với sinh viên, tiến độ. Model trải đều các bài giống nhau và tính một lần bài trùng giữa hai lộ trình. Thứ tự **học từ các lộ trình hiện có**: hồi quy logistic theo cặp trên các bài liền nhau. Khi chưa đủ 12 cặp, hoặc thứ tự học được không xếp đúng các lộ trình hiện có hơn quy tắc cố định (band rồi độ khó), model dùng quy tắc cố định và nói rõ. Giảng viên xem đề xuất kèm lý do, bỏ bớt bài, đặt tên và lưu thành lộ trình **nháp** gồm bản sao các bài; sinh viên chỉ thấy khi giảng viên xuất bản. Có nhật ký `lesson.path.compose`. `POST /api/v1/teach/paths/compose`, `POST /api/v1/teach/paths/compose/{plan_id}/save`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-82.1** — *Given* sinh viên yêu cầu lộ trình cá nhân, *When* hệ thống sinh lộ trình, *Then* lộ trình gắn với tài khoản sinh viên và xuất hiện trên trang Luyện tập. |
-| **AC-82.2** — *Given* giảng viên xem lộ trình đề xuất, *When* lưu lộ trình, *Then* một bản sao độc lập được tạo ra cho phép biên tập các bước học. |
+| **AC-82.1** — *Given* ba bài A2 và ba bài B1, *When* ghép 3 bài B1 rồi 5 bài B1, *Then* lần đầu chỉ có ba bài B1; lần sau thêm bài band liền kề kèm cảnh báo; bài cách hai band không bao giờ được chọn (`test_the_band_asked_for_comes_first_and_others_only_fill_in`). |
+| **AC-82.2** — *Given* ba bài khác chủ đề và tiêu chí, *When* ghép với chủ đề Du lịch và tiêu chí Độ trôi chảy, *Then* bài du lịch luyện trôi chảy có điểm cao nhất, lý do nêu cả chủ đề lẫn tiêu chí (`test_topic_and_criterion_rank_the_matching_lessons_first_with_their_reasons`). |
+| **AC-82.3** — *Given* bốn lộ trình đều đặt bài văn bản dài trước, *When* học thứ tự, *Then* model học được từ 20 cặp, xếp đúng 100 % cặp, trọng số độ dài văn bản âm (`test_the_order_teachers_use_is_learned_from_their_paths`). |
+| **AC-82.4** — *Given* chưa đủ 12 cặp, *When* ghép, *Then* dùng quy tắc cố định và lộ trình có cảnh báo "chưa đủ" (`test_with_few_pairs_the_fixed_order_is_used_and_said`). |
+| **AC-82.5** — *Given* đề xuất 6 bài A2–B1, *When* giảng viên giữ 4 bài và lưu, *Then* có lộ trình nháp gồm 4 bản sao mang mã mới theo đúng thứ tự; lưu lần hai bị 409; nhật ký ghi `lesson.path.compose` (`test_a_teacher_saves_the_kept_lessons_as_a_draft_path_of_copies`). |
+| **AC-82.6** — *Given* một sinh viên và hai giảng viên, *When* sinh viên gọi ghép, giảng viên khác lưu đề xuất, giảng viên giữ một bài không có trong đề xuất, *Then* lần lượt 403, 403, 422; giảng viên gọi lộ trình riêng của sinh viên bị 403 (`test_only_staff_compose_and_only_the_author_saves`). |
+| **AC-82.7** — *Given* giảng viên ở trang Soạn bài, *When* ghép 5 bài A2–B1 cho "ẩm thực và du lịch", bỏ bài cuối và lưu, *Then* đề xuất có 5 bài, có lý do chủ đề Ẩm thực; thông báo lưu 4 bài và lộ trình mới hiện trong danh sách (`test_a_teacher_keeps_part_of_a_proposal_as_a_draft_path`). |
+| **AC-82.8** — *Given* chỉ có một bài và chủ đề Sức khoẻ không có bài nào, *When* ghép 5 bài, *Then* lộ trình có một bài và cảnh báo nói số bài tìm được và chủ đề còn thiếu (`test_too_few_lessons_is_said_not_hidden`). |
 
-### FR-83 — Lưu trữ toàn diện trên MongoDB
-**Mô tả:** Toàn bộ kho dữ liệu được lưu trữ trên MongoDB, thay thế PostgreSQL/SQLite. Mỗi bảng chuyển thành collection tương ứng, khoá chính và ràng buộc UNIQUE thành chỉ mục duy nhất; cập nhật nguyên tử trên document chống tranh chấp.
+### FR-83 — Lược đồ cơ sở dữ liệu có phiên bản
+
+**Mô tả:** Kho của dịch vụ `core` có lược đồ đánh phiên bản. Phiên bản 1 là lược đồ của D044; mọi thay đổi sau đó là một migration đánh số, ghi vào bảng `schema_migrations`. Dịch vụ `core` tự nâng kho lên phiên bản mới nhất khi khởi động, nhiều tiến trình cùng khởi động cũng chỉ áp dụng mỗi phiên bản một lần. Lược đồ chuẩn được commit ở `docs/db/schema_core.sql`; mọi bảng có trong từ điển dữ liệu `docs/db/TU_DIEN_DU_LIEU.md`. Lệnh `python -m aicefr.db_cli status|migrate|snapshot`.
 **Ưu tiên:** M
 
 | Acceptance Criteria |
 | --- |
-| **AC-83.1** — *Given* các thao tác ghi dữ liệu, *When* thực hiện ghi nhận kết quả hoặc cập nhật trạng thái, *Then* mọi cập nhật cần chống tranh chấp được thực hiện nguyên tử trên document. |
-| **AC-83.2** — *Given* yêu cầu xoá dữ liệu một người dùng, *When* thực hiện xoá, *Then* hệ thống tự động xoá cascade các bản ghi phụ thuộc ở các collection liên quan. |
+| **AC-83.1** — *Given* một kho mới, *When* tạo lược đồ, *Then* đúng từng collection và chỉ mục với `docs/db/schema_core.json` (`test_a_fresh_store_matches_the_committed_snapshot`). |
+| **AC-83.2** — *Given* một kho dựng bởi bản D044, chưa có sổ phiên bản, *When* nâng cấp, *Then* áp dụng phiên bản 1 và 2 và cấu trúc giống hệt kho mới (`test_a_store_built_by_d044_reaches_the_same_structure`). |
+| **AC-83.3** — *Given* bốn tiến trình cùng nâng cấp một kho, *When* chạy, *Then* không lỗi và mỗi phiên bản được ghi một lần (`test_processes_starting_together_record_each_version_once`). |
+| **AC-83.4** — *Given* kho còn thiếu phiên bản, *When* chạy `db_cli status`, `migrate`, rồi `status`, *Then* lần đầu trả mã 1 và ghi "CHƯA áp dụng"; lần sau trả mã 0 (`test_status_says_what_is_pending`). |
+| **AC-83.5** — *Given* cấu trúc chuẩn, *When* đối chiếu với từ điển dữ liệu, *Then* collection nào cũng được mô tả (`test_every_collection_is_in_the_data_dictionary`). |
 
-### FR-84 — Đóng gói triển khai VPS với Caddy HTTPS tự động
-**Mô tả:** Đóng gói triển khai trên máy chủ VPS bằng Docker Compose phối hợp máy chủ web Caddy xử lý HTTPS tự động, gateway nội bộ và kịch bản sao lưu/khôi phục định kỳ 14 ngày.
+### FR-84 — Triển khai lên máy chủ có HTTPS
+
+**Mô tả:** Bộ triển khai `docker-compose.prod.yml` + `deploy/Caddyfile` + `deploy/vps/*.sh` chạy hệ thống trên một máy chủ Ubuntu. Caddy là lối vào duy nhất ở cổng 80 và 443, tự cấp chứng chỉ HTTPS cho tên miền trong `AICEFR_DOMAIN`; gateway không mở cổng nào. `core` và `web` đánh dấu cookie Secure và biết địa chỉ HTTPS của mình. Bản triển khai không bao giờ chép tệp `.env` từ máy phát triển. Có kịch bản sao lưu và khôi phục. Hướng dẫn: `docs/plan/TRIEN_KHAI_VPS.md`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-84.1** — *Given* máy chủ VPS cài đặt theo kịch bản chuẩn, *When* khởi động stack Docker, *Then* Caddy tự động cấp phát chứng chỉ SSL và gateway nội bộ chỉ nhận yêu cầu qua cổng an toàn. |
-| **AC-84.2** — *Given* kịch bản sao lưu định kỳ, *When* chạy backup, *Then* bản dump dữ liệu được lưu trữ có gắn mốc thời gian và xoay vòng trong 14 ngày. |
+| **AC-84.1** — *Given* cấu hình production, *When* đọc các cổng, *Then* chỉ Caddy mở 80 và 443 (`test_caddy_is_the_only_public_entry_on_80_and_443`). |
+| **AC-84.2** — *Given* cấu hình production, *When* đọc biến môi trường của `core` và `web`, *Then* `AICEFR_HTTPS_ONLY=1` và `AICEFR_PUBLIC_URL` là địa chỉ https của tên miền (`test_core_and_web_mark_cookies_secure_and_know_their_https_address`). |
+| **AC-84.3** — *Given* chưa đặt tên miền, *When* đọc cấu hình, *Then* tên miền là bắt buộc, không có giá trị mặc định (`test_the_domain_is_required_not_defaulted`). |
+| **AC-84.4** — *Given* kịch bản `deploy.sh`, *When* đọc danh sách loại trừ, *Then* tệp `.env` không bao giờ được chép lên máy chủ (`test_the_deploy_never_ships_an_env_file`). |
 
-### FR-85 — Kênh tính lượt NetID và số dư IDPoint
-**Mô tả:** Hỗ trợ kênh tích hợp tính lượt theo tài khoản NetID (IDPoint). Đơn vị tính: 1 lượt cho 1 bài đánh giá ≤ 60 giây; bài dài tính theo phút; bài luyện tập tính nửa lượt mỗi phút. Số dư được giữ chỗ khi nộp bài và chỉ thu khi có kết quả hợp lệ, tự hoàn khi lỗi. Cung cấp lượt miễn phí định kỳ mỗi chu kỳ ngày 16.
+### FR-85 — Tính lượt trên bản triển khai thương mại (kênh NetID)
+
+**Mô tả:** Chỉ khi `AICEFR_METERING=on`, tức bản triển khai cho kênh NetID, mỗi bài nộp bị tính lượt theo bảng giá team chốt ngày 24/10/2026 (D057): bài tới 1 phút là 1 lượt (2.000 IDPoint, quy ước 1 IDPoint = 1 đồng), mỗi phút bắt đầu thêm 0,7 lượt (1.400 IDPoint), tối đa 5 phút; bài luyện tập trả 50%. Người bán đặt các mức này bằng `AICEFR_PRICE_*` và `AICEFR_IDPOINT_PER_RUN`. Mỗi bút toán ghi kèm số token Whisper đã dùng (1.500 token âm thanh cho mỗi cửa sổ 30 giây, thêm một cửa sổ kiểm tra ngôn ngữ, cộng số token chữ) để tính giá vốn và đối soát, không dùng để tính giá. Khi nộp, hệ thống giữ chỗ theo thời lượng tối đa của đề, lấy lượt miễn phí của chu kỳ trước (3 lượt, chu kỳ bắt đầu ngày 16) rồi tới ví; trang Nộp bài báo trước giá tối đa. Bài có kết quả thì thu theo thời lượng thật và trả lại phần thừa; mọi kết cục khác thì hoàn hết. Bản của trường và nghiên cứu không bao giờ giữ, thu hay từ chối gì (BR-29, BR-30), và bản tính lượt không chạy thực nghiệm nghiên cứu. Thiết kế: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-85.1** — *Given* bảng giá `price-v3-per-recording`, *When* tính bài 1, 35 và 60 giây, *Then* đều 1 lượt = 2.000 IDPoint (`test_a_recording_up_to_a_minute_is_one_run`); bài 61–120 giây là 3.400 IDPoint, 5 phút trở lên là 7.600 (`test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five`). |
+| **AC-85.2** — *Given* còn lượt miễn phí và có ví, *When* giữ chỗ, *Then* lấy lượt miễn phí trước (`test_free_runs_are_used_before_the_wallet`). |
+| **AC-85.3** — *Given* lượt miễn phí và ví cộng lại không đủ, *When* giữ chỗ, *Then* bị từ chối và không lấy gì (`test_a_hold_beyond_free_and_wallet_is_refused_and_takes_nothing`). |
+| **AC-85.4** — *Given* một bài đã được giữ chỗ, *When* giữ lại cùng bài, *Then* không lấy thêm (`test_holding_the_same_key_twice_takes_once`). |
+| **AC-85.5** — *Given* giữ 5 lượt, *When* bài có kết quả và dùng hết 2 lượt, *Then* thu 2 lượt và trả 3 lượt, vào ví trước (`test_a_result_charges_what_was_used_and_returns_the_rest`). |
+| **AC-85.6** — *Given* bài đang giữ chỗ, *When* máy chấm báo lỗi, *Then* bài FAILED và lượt được hoàn (`test_a_failed_scoring_releases_the_hold`). |
+| **AC-85.7** — *Given* 12 bài nộp cùng lúc, 3 lượt miễn phí và 2 lượt trong ví, *When* giữ chỗ, *Then* đúng 5 bài qua, số dư không âm (`test_concurrent_holds_never_overdraw`). |
+| **AC-85.8** — *Given* bản của trường (`AICEFR_METERING` tắt), *When* nộp nhiều bài, *Then* không giữ, không thu, không từ chối (`test_with_metering_off_nothing_is_held_or_refused`). |
+| **AC-85.9** — *Given* hết lượt, *When* nộp bài, *Then* HTTP 402 kèm lời giải thích, không lưu bài hay tệp ghi âm nào (`test_a_submission_without_runs_left_is_refused_with_402`). |
+| **AC-85.10** — *Given* bản tính lượt, *When* quản trị viên tạo thực nghiệm nghiên cứu, *Then* bị từ chối (`test_the_metered_deployment_runs_no_research_study`). |
+
+### FR-86 — Hiệu chuẩn band tuỳ chọn (D052)
+
+**Mô tả:** Có thêm artifact `ridge_resp_v2_cal`: điểm của `ridge_resp_v2` giãn quanh trung bình với hệ số lambda và hai ngưỡng band ước lại, khớp bằng CV lồng theo người nói. Quản trị viên bật hay tắt như mọi mô hình (FR-36); mặc định không đổi. Báo cáo vẫn ghi chưa hiệu chuẩn.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-86.1** — *Given* một đầu vào trong vùng huấn luyện, *When* chấm bằng hai artifact, *Then* điểm hiệu chuẩn bằng `mu + lambda * (điểm gốc - mu)` (`test_the_calibrated_score_is_the_base_score_stretched_around_mu`). |
+| **AC-86.2** — *Given* artifact hiệu chuẩn, *When* tạo báo cáo, *Then* `is_calibrated` vẫn sai (`test_the_report_keeps_its_not_calibrated_warning`). |
+| **AC-86.3** — *Given* bản cài mới, *When* chưa ai bật, *Then* mô hình mặc định vẫn là `ridge_resp_v2` (`test_the_default_model_is_unchanged`). |
+
+### FR-87 — Gói lượt mua qua cổng thanh toán (D053)
+
+**Mô tả:** Trên bản tính lượt có bật thanh toán, sinh viên mua gói lượt ở trang Lượt của tôi; khi cổng báo đã thanh toán, số lượt vào ví của chính người mua, đúng một lần.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-87.1** — *Given* đơn gói 10 lượt, *When* cổng báo thành công nhiều lần, *Then* ví tăng đúng 10 lượt (`test_a_paid_pack_reaches_the_buyers_wallet_once`). |
+| **AC-87.2** — *Given* dịch vụ tính lượt không trả lời lúc thanh toán, *When* gọi lại sau, *Then* lượt được cộng (`test_a_pack_paid_while_metering_was_away_is_credited_later`). |
+| **AC-87.3** — *Given* bản không tính lượt, *When* đặt gói, *Then* 409 (`test_no_packs_where_runs_are_not_counted`). |
+
+### FR-88 — Lớp học và giao bài (D054)
+
+**Mô tả:** Giảng viên tạo lớp, thêm sinh viên, giao đề đánh giá kèm hạn nộp và xem ai nộp đúng hạn, muộn hay chưa nộp; sinh viên vào lớp bằng mã và xem bài được giao.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-85.1** — *Given* tài khoản thuộc kênh NetID nộp bài đánh giá, *When* nộp bài, *Then* hệ thống giữ chỗ số lượt tương ứng và chỉ trừ số dư khi có kết quả hoàn tất. |
-| **AC-85.2** — *Given* lượt xử lý bị lỗi hoặc từ chối hợp lệ, *When* pipeline kết thúc, *Then* số lượt giữ chỗ được hoàn trả nguyên vẹn vào số dư. |
+| **AC-88.1** — *Given* một đề đã giao, *When* thành viên nộp bài đề đó, *Then* bài được tính là đã nộp đúng hạn (`test_a_submission_of_the_task_counts_as_handed_in`). |
+| **AC-88.2** — *Given* bài làm trước lúc giao, *When* xem tiến độ, *Then* bài đó không được tính (`test_work_before_the_task_was_set_does_not_count`). |
+| **AC-88.3** — *Given* lớp của giảng viên khác, *When* mở, *Then* 404 (`test_another_teachers_class_is_not_found`). |
 
-### FR-86 — Hàng đợi chấm Redis BullMQ và sự kiện Redis Streams
-**Mô tả:** Thay thế RabbitMQ bằng Redis: sử dụng BullMQ cho hàng đợi xử lý việc chấm bài với cơ chế thử lại mũ 3 lần và ưu tiên bài đánh giá hơn bài luyện tập; sử dụng Redis Streams cho truyền nhận sự kiện giữa các dịch vụ.
-**Ưu tiên:** M
+### FR-89 — Nhắc việc trong ứng dụng (D055)
 
-| Acceptance Criteria |
-| --- |
-| **AC-86.1** — *Given* bài nộp mới vào hàng đợi, *When* gửi việc tới worker, *Then* BullMQ phân phối theo mức ưu tiên của loại bài và tự động gán lại nếu worker gặp sự cố. |
-| **AC-86.2** — *Given* sự kiện nghiệp vụ phát sinh (như thay đổi đồng thuận), *When* phát sự kiện, *Then* consumer group của các dịch vụ liên quan nhận và xử lý sự kiện qua Redis Streams. |
-
-### FR-87 — Lưu trữ đối tượng âm thanh BlobStore và giám sát chỉ số
-**Mô tả:** Mọi tệp ghi âm đi qua cổng trừu tượng BlobStore hỗ trợ lưu trữ cục bộ hoặc S3 tương thích (SeaweedFS). Hệ thống tích hợp xuất chỉ số Prometheus `/metrics` đo thời gian từng bước pipeline, độ trễ và thời gian hàng đợi phục vụ giám sát và tính chi phí.
-**Ưu tiên:** S
+**Mô tả:** Trang Luyện tập hiện tối đa 3 lời nhắc, gấp trước: bài được giao sắp hạn hoặc quá hạn, chuỗi ngày, ôn tập đến hạn, mục tiêu hôm nay, hết lượt.
+**Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-87.1** — *Given* cấu hình lưu trữ S3, *When* lưu hoặc đọc tệp âm thanh bài nói, *Then* BlobStore tương tác chính xác qua API S3 tương thích và dọn dẹp theo hạn lưu trữ. |
-| **AC-87.2** — *Given* dịch vụ đang vận hành, *When* truy vấn endpoint `/metrics`, *Then* hệ thống trả về histogram thời gian xử lý và độ trễ theo đúng chuẩn Prometheus. |
+| **AC-89.1** — *Given* không có việc gì, *When* mở trang, *Then* không có lời nhắc (`test_nothing_to_do_means_no_reminder`). |
+| **AC-89.2** — *Given* chuỗi 4 ngày chưa giữ hôm nay, *When* mở trang, *Then* lời nhắc nêu ngày nghỉ được phép (`test_a_streak_not_kept_today_is_said_kindly_and_more_firmly_in_the_evening`). |
 
-### FR-88 — Hiệu chuẩn band tuỳ chọn cho mô hình chấm
-**Mô tả:** Cung cấp tuỳ chọn hiệu chuẩn phân phối band cho mô hình `ridge_resp_v2` (tái cân bằng phương sai và điều chỉnh ngưỡng) dưới dạng artifact riêng. Cho phép quản trị viên bật/tắt trong màn hình Mô hình mà không làm mất tính toàn vẹn của mô hình chuẩn.
-**Ưu tiên:** S
+### FR-90 — Tự nghe lại có mốc đối chứng (D056)
 
-| Acceptance Criteria |
-| --- |
-| **AC-88.1** — *Given* quản trị viên trong trang cấu hình Mô hình, *When* bật tuỳ chọn hiệu chuẩn, *Then* pipeline chấm điểm áp dụng bộ hiệu chuẩn tương ứng cho bài nộp mới. |
-| **AC-88.2** — *Given* báo cáo đánh giá được sinh, *When* phiên bản hiệu chuẩn chưa qua kiểm định thực tế, *Then* cảnh báo chưa hiệu chuẩn vẫn được thể hiện minh bạch trên báo cáo. |
-
-### FR-89 — Mua gói lượt qua cổng thanh toán và cộng vào ví NetID
-**Mô tả:** Sinh viên sử dụng kênh tính lượt có thể mua các gói lượt (10, 30, 100 lượt) qua cổng thanh toán tích hợp (chế độ thử nghiệm). Khi giao dịch thanh toán hoàn tất thành công, số lượt tương ứng được cộng một lần duy nhất vào ví tài khoản.
-**Ưu tiên:** S
+**Mô tả:** Khi bật, sinh viên nghe lại các đoạn 6 giây của bài mình, gồm đoạn máy chọn và đoạn ngẫu nhiên không phân biệt, chọn một trong bốn câu giống nhau và ghi điều định nói; báo cáo cho quản trị viên so tỷ lệ xác nhận giữa hai loại đoạn.
+**Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-89.1** — *Given* sinh viên tạo đơn mua gói lượt, *When* hoàn tất thanh toán thành công qua cổng thanh toán, *Then* dịch vụ metering ghi nhận và cộng đúng số lượt vào ví. |
-| **AC-89.2** — *Given* tín hiệu thanh toán bị trùng lặp hoặc webhook gọi lại nhiều lần, *When* xử lý giao dịch, *Then* hệ thống bảo đảm số lượt chỉ được cộng đúng một lần duy nhất. |
-
-### FR-90 — Quản lý lớp học, giao bài có hạn nộp và nhắc việc học tập
-**Mô tả:** Giảng viên có thể tạo lớp học (mã tham gia 6 ký tự), thêm sinh viên theo bút danh và giao bài đánh giá kèm hạn nộp. Sinh viên theo dõi danh sách bài được giao, nhận nhắc việc (nudges) trực quan trên giao diện và thực hiện tự nghe lại có dẫn đường với mốc đối chứng ngẫu nhiên.
-**Ưu tiên:** S
-
-| Acceptance Criteria |
-| --- |
-| **AC-90.1** — *Given* giảng viên tạo lớp học và giao đề, *When* sinh viên nhập mã tham gia hoặc được thêm vào lớp, *Then* sinh viên nhìn thấy bài tập trong trang Bài được giao và nộp bài trước hạn. |
-| **AC-90.2** — *Given* sinh viên có bài sắp đến hạn hoặc chuỗi học tập cần duy trì, *When* truy cập trang Luyện tập, *Then* tối đa 3 nhắc việc ưu tiên nhất được hiển thị rõ ràng. |
-| **AC-90.3** — *Given* tính năng tự nghe lại có dẫn đường được kích hoạt, *When* sinh viên xem lại bài nói, *Then* hệ thống cung cấp các đoạn đối chứng ngẫu nhiên đan xen đoạn máy chọn để thu thập phản hồi khách quan. |
+| **AC-90.1** — *Given* một bài có cờ, *When* mở bài nghe lại, *Then* có đoạn đối chứng tránh mọi chỗ bị gắn cờ và không lộ nguồn (`test_a_control_moment_avoids_everything_flagged`, `test_the_learner_is_never_told_which_moment_is_which`). |
+| **AC-90.2** — *Given* bộ chọn không hơn ngẫu nhiên, *When* phân tích, *Then* chỉ số chính không đạt (`test_a_picker_no_better_than_chance_does_not_pass`). |
+| **AC-90.3** — *Given* người học rút quyền dùng cho nghiên cứu, *When* phân tích, *Then* nhãn của họ bị loại (`test_only_the_owner_listens_and_the_analysis_counts_consented_learners`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

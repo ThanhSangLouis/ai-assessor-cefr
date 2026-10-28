@@ -12,7 +12,7 @@ import json
 import pytest
 
 from aicefr.contracts import Assessment, Band, Response, Status, Transcript, Word
-from aicefr.retention import apply_retention, backup, orphaned_recordings
+from aicefr.retention import apply_retention, backup, orphaned_recordings, restore_backup
 from aicefr.storage.repository import Repository
 
 
@@ -98,17 +98,12 @@ def test_a_sweep_clears_rows_written_before_the_field_was_renamed(tmp_path) -> N
     repo.save(_report("legacy1"), "SV-002", "P3", account_id="acc", audio_path=str(audio))
 
     # Rewrite the stored row the way the pre-rename code wrote it.
-    with repo._conn() as c:  # noqa: SLF001
-        raw = json.loads(
-            c.execute(
-                "SELECT report_json FROM response WHERE response_id=?", ("legacy1",)
-            ).fetchone()["report_json"]
-        )
-        raw["asr"]["transcript"] = raw["asr"].pop("text")
-        c.execute(
-            "UPDATE response SET report_json=? WHERE response_id=?",
-            (json.dumps(raw, ensure_ascii=False), "legacy1"),
-        )
+    responses = repo.col("response")
+    raw = json.loads(responses.find_one({"response_id": "legacy1"})["report_json"])
+    raw["asr"]["transcript"] = raw["asr"].pop("text")
+    responses.update_one(
+        {"response_id": "legacy1"}, {"$set": {"report_json": json.dumps(raw, ensure_ascii=False)}}
+    )
 
     # The alias keeps the old row readable...
     assert repo.get("legacy1").asr.text == "i think online learning is flexible"
@@ -152,24 +147,21 @@ def test_orphaned_recordings_are_found(tmp_path) -> None:
 
 
 def test_backup_produces_a_readable_copy(tmp_path) -> None:
-    """`cp` on a live database can produce a corrupt copy that looks fine.
-
-    It only fails on the day it is needed, so the backup goes through SQLite's
-    own snapshot API instead.
-    """
+    """A backup is only worth something once it has been restored and read."""
     repo = Repository(tmp_path / "t.db")
     repo.save(_report("r1"), "SV-001", "P3")
 
-    copy = backup(repo, tmp_path / "backups" / "aicefr.db")
+    copy = backup(repo, tmp_path / "backups" / "aicefr.json")
     assert copy.is_file()
-    assert Repository(copy).get("r1") is not None
+    restored = Repository(tmp_path / "restored.db")
+    assert restore_backup(restored, copy) > 0
+    assert restored.get("r1") is not None
+    with pytest.raises(ValueError):
+        restore_backup(repo, copy)  # never merged into a store holding data
 
 
 def test_report_json_stays_valid_after_a_sweep(repo_with_recording) -> None:
     repo, _audio = repo_with_recording
     apply_retention(repo, days=-1, dry_run=False)
-    with repo._conn() as c:  # noqa: SLF001
-        raw = c.execute(
-            "SELECT report_json FROM response WHERE response_id=?", ("old1",)
-        ).fetchone()
+    raw = repo.col("response").find_one({"response_id": "old1"})
     json.loads(raw["report_json"])  # phải phân tích được

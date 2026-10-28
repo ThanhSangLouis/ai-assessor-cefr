@@ -1,2 +1,1 @@
-"""Teacher-review routing, queue and auditable decision services for M07."""
-
+"""Xem docs/sdd/SDD.md muc 4."""
