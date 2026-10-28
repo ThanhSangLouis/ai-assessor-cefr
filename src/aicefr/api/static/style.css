@@ -1616,27 +1616,14 @@ button.evidence:hover {
 .practice-today { display: grid; justify-items: center; text-align: center; gap: var(--sp-2); }
 .practice-today h2 { margin: 0; justify-self: start; }
 .goal-ring {
-  position: relative;
+  --pct: 0;
   width: 112px;
   height: 112px;
   border-radius: 50%;
   display: grid;
   place-items: center;
+  background: conic-gradient(var(--ok) calc(var(--pct) * 1%), var(--bg-sunken) 0);
 }
-.goal-ring-chart {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-.goal-ring-chart circle {
-  fill: none;
-  stroke-width: 8;
-}
-.goal-ring-track { stroke: var(--bg-sunken); }
-.goal-ring-progress { stroke: var(--ok); stroke-linecap: round; }
-.goal-ring span { position: relative; z-index: 1; }
 .goal-ring span {
   width: 84px;
   height: 84px;
@@ -3126,45 +3113,14 @@ button.window-chunk:hover { background: var(--bg-hover); }
 .sample-badge { background: var(--accent-soft); color: var(--accent); }
 
 .overall { display: flex; align-items: center; gap: var(--sp-3); max-width: 560px; }
-.native-progress {
-  display: block;
-  appearance: none;
-  -webkit-appearance: none;
-  width: 100%;
-  padding: 0;
-  color: var(--ok);
-}
-.native-progress::-webkit-progress-bar {
-  border-radius: var(--r-pill);
-  background: var(--bg-sunken);
-}
-.native-progress::-webkit-progress-value {
-  border-radius: var(--r-pill);
-  background: var(--ok);
-  transition: width var(--dur-slow) var(--ease);
-}
-.native-progress::-moz-progress-bar {
-  border-radius: var(--r-pill);
-  background: var(--ok);
-  transition: width var(--dur-slow) var(--ease);
-}
-.overall-track {
-  flex: 1;
-  height: 6px;
-  min-width: 0;
-  border: 0;
-  border-radius: var(--r-pill);
-  background: var(--bg-sunken);
-  overflow: hidden;
-}
-.lesson-progress-track {
+.overall-track, .lesson-progress-track {
   flex: 1;
   height: 6px;
   border-radius: var(--r-pill);
   background: var(--bg-sunken);
   overflow: hidden;
 }
-.lesson-progress-track span {
+.overall-track span, .lesson-progress-track span {
   display: block;
   height: 100%;
   width: 0;
@@ -3173,7 +3129,6 @@ button.window-chunk:hover { background: var(--bg-hover); }
   transition: width var(--dur-slow) var(--ease);
 }
 .overall .muted, .lesson-progress .muted { white-space: nowrap; }
-.progress-results-title { margin-top: var(--sp-6); }
 
 .unit-tags { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
 .band-badge { background: var(--brand); color: var(--brand-fg); }
@@ -3496,12 +3451,6 @@ dialog.sheet[open]::backdrop { opacity: 1; }
 .inline-field { display: flex; gap: var(--sp-2); align-items: center; }
 .inline-field > select, .inline-field > input { flex: 1; min-width: 0; }
 .inline-field > button { margin-top: 0; flex: none; }
-@media (max-width: 640px) {
-  #study-open-form { flex-wrap: wrap; }
-  #study-open-form > label,
-  #study-open-form > input,
-  #study-open-form > button { flex: 1 1 100%; }
-}
 
 /* --- the lesson builder ---------------------------------------------------- */
 .builder-head { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-3); }
@@ -4036,37 +3985,22 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 .unit-trail {
   --row: 124px;
   --coin: 64px;
-  --swing: 64px;
   position: relative;
+  height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 48px);
   margin: var(--sp-5) 0 var(--sp-3);
 }
-.trail-line { position: absolute; z-index: 0; top: 0; left: 50%; transform: translateX(-50%); overflow: visible; }
+.trail-line { position: absolute; top: 0; left: 50%; transform: translateX(-50%); overflow: visible; }
 .trail-line path { fill: none; stroke-width: 6; stroke-linecap: round; }
 .trail-line path.ahead { stroke: var(--border-strong); stroke-dasharray: 1 12; }
 .trail-line path.done { stroke: color-mix(in srgb, var(--ok) 70%, var(--bg-elevated)); }
-.trail {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-auto-rows: var(--coin);
-  row-gap: calc(var(--row) - var(--coin));
-  list-style: none;
-  margin: 0;
-  padding: 0 0 16px;
-}
+.trail { list-style: none; margin: 0; padding: 0; }
 .lesson-node {
-  position: relative;
-  justify-self: center;
+  position: absolute;
+  top: calc(var(--i) * var(--row));
+  left: calc(50% + var(--x) - var(--coin) / 2);
   width: var(--coin);
   height: var(--coin);
-  transform: translateX(calc(var(--swing) * var(--swing-factor, 0)));
 }
-.lesson-node.position-0 { --swing-factor: 0; }
-.lesson-node.position-1, .lesson-node.position-3 { --swing-factor: 1; }
-.lesson-node.position-2 { --swing-factor: 1.45; }
-.lesson-node.position-4 { --swing-factor: 0; }
-.lesson-node.position-5, .lesson-node.position-7 { --swing-factor: -1; }
-.lesson-node.position-6 { --swing-factor: -1.45; }
 .node-coin {
   position: relative;
   width: var(--coin);
@@ -4086,7 +4020,6 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 .node-coin:active { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--topic) 30%, var(--border-strong)); }
 .node-coin[aria-expanded="true"] { outline: 3px solid color-mix(in srgb, var(--topic) 45%, transparent); outline-offset: 4px; }
 .coin-icon { width: 28px; height: 28px; }
-.node-coin .coin-icon { position: relative; z-index: 1; }
 .lesson-node.started .node-coin {
   background: var(--topic);
   border-color: var(--topic);
@@ -4094,21 +4027,14 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   box-shadow: 0 5px 0 color-mix(in srgb, var(--topic) 60%, #000);
 }
 /* Steps passed so far, as a ring around a coin in progress. */
-.node-progress {
+.lesson-node.started .node-coin::after {
+  content: "";
   position: absolute;
   inset: -9px;
-  z-index: 0;
-  width: calc(100% + 18px);
-  height: calc(100% + 18px);
-  overflow: visible;
-  transform: rotate(-90deg);
-  pointer-events: none;
-}
-.node-progress circle {
-  fill: none;
-  stroke: var(--ok);
-  stroke-width: 8;
-  stroke-linecap: round;
+  border-radius: 50%;
+  background: conic-gradient(var(--ok) calc(var(--done) * 1%), transparent 0);
+  -webkit-mask: radial-gradient(circle, transparent 37px, #000 38px);
+  mask: radial-gradient(circle, transparent 37px, #000 38px);
 }
 .lesson-node.completed .node-coin {
   background: var(--ok);
@@ -4125,7 +4051,7 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 }
 .node-flag {
   position: absolute;
-  top: -12px;
+  bottom: calc(100% + 12px);
   left: 50%;
   transform: translateX(-50%);
   padding: var(--sp-1) var(--sp-3);
@@ -4171,13 +4097,9 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
 /* The card a coin opens. */
 .node-card {
   position: absolute;
-  top: calc(var(--coin) + 14px);
-  left: 50%;
   z-index: 5;
   display: grid;
   gap: var(--sp-2);
-  width: min(300px, calc(100vw - 2rem));
-  transform: translateX(-50%);
   padding: var(--sp-4);
   background: var(--bg-elevated);
   border: 2px solid var(--topic, var(--brand));
@@ -4188,8 +4110,7 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   content: "";
   position: absolute;
   bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: calc(var(--arrow) - 8px);
   border: 8px solid transparent;
   border-bottom-color: var(--topic, var(--brand));
 }
@@ -4214,7 +4135,6 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   .path-side .next-card { grid-column: 1 / -1; }
 }
 @media (max-width: 640px) {
-  .unit-trail { --swing: 36px; }
   .path-side { grid-template-columns: minmax(0, 1fr); }
   .unit-banner { padding: var(--sp-3) var(--sp-4); gap: var(--sp-3); }
   .unit-icon { width: 40px; height: 40px; border-radius: 12px; }
@@ -4284,7 +4204,7 @@ h1:has(> .head-icon) { display: flex; align-items: center; gap: var(--sp-3); }
 /* Trail refinements: the coin icon at full size (button .icon would shrink it),
    titles beside the coin on wide screens, under it with a ground on phones. */
 .node-coin .coin-icon { width: 28px; height: 28px; }
-.lesson-node .lesson-title { top: calc(var(--coin) / 2); transform: translateY(-50%); width: 176px; text-align: left; }
+.lesson-node .lesson-title { top: 50%; transform: translateY(-50%); width: var(--room, 176px); text-align: left; }
 .lesson-node.label-right .lesson-title { left: calc(var(--coin) + 14px); }
 .lesson-node.label-left .lesson-title { left: auto; right: calc(var(--coin) + 14px); text-align: right; }
 .lesson-node.label-below .lesson-title {
@@ -4298,7 +4218,8 @@ h1:has(> .head-icon) { display: flex; align-items: center; gap: var(--sp-3); }
   border-radius: var(--r-sm);
   background: var(--bg);
 }
-.unit-trail:has(.label-below) .trail { padding-bottom: 64px; }
+.unit-trail { height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 16px); }
+.unit-trail:has(.label-below) { height: calc(var(--n) * var(--row) - var(--row) + var(--coin) + 48px); }
 
 /* Phones: what to study next, then today and the reviews side by side, short. */
 @media (max-width: 640px) {
@@ -5565,35 +5486,59 @@ button:not(:disabled):hover,
 .survey-scale label { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .kpi-arms { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--sp-4); }
 .kpi-arm h3 { margin: 0; }
-.admin-link-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: var(--sp-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.admin-link-list li {
-  display: grid;
-  gap: .2rem;
-  padding: var(--sp-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-}
-.admin-link-list a { font-weight: 700; }
-.admin-link-list span { color: var(--fg-muted); font-size: var(--t-sm); }
-.admin-summary-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-  gap: var(--sp-3);
-  margin: 0;
-}
-.admin-summary-list > div {
-  display: grid;
-  gap: .2rem;
-  padding: var(--sp-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-md);
-}
-.admin-summary-list strong { color: var(--fg-muted); font-size: var(--t-sm); }
-.admin-summary-list span { overflow-wrap: anywhere; }
+
+/* ===================================================== 9. composed paths (D046) */
+.plan-card { margin-top: var(--sp-5); display: grid; gap: var(--sp-4); }
+.plan-head h2 { margin: 0 0 var(--sp-1); }
+.plan-head .eyebrow { display: flex; align-items: center; gap: var(--sp-2); margin: 0 0 var(--sp-1); }
+.plan-head p { margin: 0; max-width: 70ch; }
+.plan-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.plan-summary p { margin: 0; }
+.plan-warnings p { margin: 0 0 var(--sp-1); }
+.plan-unit { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--t-base); }
+.plan-list { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-3); }
+.plan-item { padding-left: var(--sp-1); }
+.plan-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); }
+.plan-item.status-completed .plan-item-head b { color: var(--fg-muted); }
+.plan-meta { margin: var(--sp-1) 0 0; font-size: var(--t-sm); }
+.plan-reasons { margin: var(--sp-1) 0 0; padding-left: var(--sp-4); font-size: var(--t-sm); color: var(--fg-muted); }
+.plan-model { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); margin: var(--sp-3) 0 0; }
+.plan-form summary { cursor: pointer; display: flex; align-items: center; gap: var(--sp-2); }
+.plan-form form { margin-top: var(--sp-3); }
+.plan-keep { display: flex; gap: var(--sp-2); align-items: baseline; margin: 0; font-weight: 400; }
+.plan-keep input { width: auto; margin: 0; }
+.goal-fieldset { border: 0; padding: 0; margin: var(--sp-3) 0 0; }
+.goal-fieldset legend { font-weight: 600; padding: 0; }
+.goal-fieldset .goal-chips { margin-top: var(--sp-2); }
+#compose-result h3 { margin-top: 0; }
+
+/* ================================================================= my runs (D053) */
+.plain-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); font-size: var(--t-md); }
+.pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--sp-3); margin: var(--sp-3) 0; }
+.pack { display: grid; gap: var(--sp-1); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg-elevated); }
+.pack-runs { font-size: var(--t-xl); font-weight: 700; }
+.pack-price { font-variant-numeric: tabular-nums; }
+.pack .button { justify-self: start; margin-top: var(--sp-2); }
+
+/* ================================================================= classes and assignments (D054) */
+.assign-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+.assign-row:last-child { border-bottom: 0; }
+.band-spread { display: inline-flex; flex-wrap: wrap; gap: var(--sp-2); }
+.band-chip { font-variant-numeric: tabular-nums; }
+.join-code { font-size: var(--t-lg); letter-spacing: 0.12em; }
+
+/* ================================================================= reminders (D055) */
+.nudges { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.nudges[hidden] { display: none; }
+.nudge { display: grid; gap: 2px; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--r-sm); background: var(--bg-elevated); color: inherit; text-decoration: none; }
+.nudge:hover { background: var(--bg-hover); }
+.nudge:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.nudge-urgent { border-left-color: var(--warn); }
+.nudge-kind { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-muted); }
+
+/* ================================================================= guided listening (D056) */
+.replay-list { counter-reset: none; }
+.replay-moment { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
+.replay-moment:last-child { border-bottom: 0; }
+.replay-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.replay-moment fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }

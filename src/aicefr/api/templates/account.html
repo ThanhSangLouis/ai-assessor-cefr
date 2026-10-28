@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Tài khoản · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D028, D029. The signed-in person's own account in four parts: profile
+    (avatar, daily goal, display), security (password, Google, sessions),
+    history (sign-ins and changes) and, for a student, their data. An account
+    on a temporary password sees only the password form until it has its own:
+    every other call would be refused (deps.PASSWORD_CHANGE_PATHS). -#}
+{%- set role_names = {"student": "Sinh viên", "teacher": "Giảng viên", "admin": "Quản trị viên"} -%}
+{%- set is_student = account.role.value == "student" -%}
+{%- set first_time = account.must_change_password -%}
+{%- set icon_names = {"user": "người", "star": "ngôi sao", "leaf": "chiếc lá", "heart": "trái tim",
+    "flame": "ngọn lửa", "sparkle": "tia sáng", "trophy": "cúp", "target": "hồng tâm",
+    "cap": "mũ tốt nghiệp", "plane": "máy bay", "briefcase": "cặp tài liệu", "bowl": "bát",
+    "chip": "vi mạch", "house": "ngôi nhà", "news": "tờ báo"} -%}
+{%- set color_names = {"daily": "xanh ngọc", "education": "xanh mực", "travel": "xanh trời",
+    "career": "tím", "food": "cam", "health": "hồng đỏ", "technology": "chàm",
+    "environment": "xanh lá", "people": "nâu đất", "society": "xám xanh"} -%}
+<div class="page-head profile-head">
+  <span class="avatar-lg avatar-{{ account.avatar_color or 'none' }}" id="avatar-preview" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
+  <div>
+    <p class="eyebrow">Tài khoản</p>
+    <h1>{{ account.pseudonym }}</h1>
+    <p class="lede">
+      {{ role_names.get(account.role.value, account.role.value) }}. Hệ thống chỉ biết bạn qua bút
+      danh này, không lưu họ tên, mã số sinh viên hay email.
+    </p>
+  </div>
+</div>
+
+<div class="notice notice-danger" id="first-time" {% if not first_time %}hidden{% endif %}>
+  <b>Bạn đang dùng mật khẩu tạm do quản trị viên cấp.</b> Hãy đặt mật khẩu của riêng bạn
+  ngay bây giờ; các trang khác sẽ mở sau khi đổi xong.
+</div>
+{% if google_note %}
+<div class="notice {{ 'notice-ok' if google_ok else 'notice-danger' }}" role="status">{{ google_note }}</div>
+{% endif %}
+
+{% if not first_time %}
+<div class="tabs" role="tablist" aria-label="Các mục của tài khoản">
+  <button id="tab-profile" class="chosen" data-panel="panel-profile" role="tab"
+          aria-selected="true" aria-controls="panel-profile">{{ icon("user") }} Hồ sơ</button>
+  <button id="tab-security" data-panel="panel-security" role="tab"
+          aria-selected="false" aria-controls="panel-security">{{ icon("lock") }} Bảo mật</button>
+  <button id="tab-activity" data-panel="panel-activity" role="tab"
+          aria-selected="false" aria-controls="panel-activity">{{ icon("clock") }} Hoạt động</button>
+  {% if is_student %}
+  <button id="tab-data" data-panel="panel-data" role="tab"
+          aria-selected="false" aria-controls="panel-data">{{ icon("file-check") }} Dữ liệu</button>
+  {% endif %}
+</div>
+
+<section id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="0">
+  <div class="account-grid">
+    <div class="card" aria-labelledby="avatar-h">
+      <h2 id="avatar-h">{{ icon("sparkle") }} Ảnh đại diện</h2>
+      <p class="muted small-note">Một biểu tượng và một màu, hiện ở thanh điều khiển. Không có ảnh chụp, để không
+        lộ mặt ai.</p>
+      <fieldset class="picker">
+        <legend>Biểu tượng</legend>
+        <div class="icon-picker" id="icon-picker">
+          {% for name in avatar_icons %}
+          <label class="pick" title="{{ icon_names.get(name, name) }}">
+            <input type="radio" name="avatar-icon" value="{{ name }}"{% if (account.avatar_icon or 'user') == name %} checked{% endif %}>
+            <span class="pick-face">{{ icon(name) }}</span>
+            <span class="visually-hidden">Biểu tượng {{ icon_names.get(name, name) }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <fieldset class="picker">
+        <legend>Màu</legend>
+        <div class="color-picker" id="color-picker">
+          {% for name in avatar_colors %}
+          <label class="pick swatch avatar-{{ name }}" title="{{ color_names.get(name, name) }}">
+            <input type="radio" name="avatar-color" value="{{ name }}"{% if account.avatar_color == name %} checked{% endif %}>
+            <span class="pick-face" aria-hidden="true"></span>
+            <span class="visually-hidden">Màu {{ color_names.get(name, name) }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="button-row">
+        <button type="button" id="avatar-save">{{ icon("check") }} Lưu ảnh đại diện</button>
+      </div>
+    </div>
+
+    <div class="stack-cards">
+      {% if is_student %}
+      <div class="card" aria-labelledby="goal-h">
+        <h2 id="goal-h">{{ icon("target") }} Mục tiêu nói mỗi ngày</h2>
+        <p class="muted small-note">Tính bằng số giây bạn thật sự nói trong các bài luyện, như vòng "Hôm nay" ở trang
+          Luyện tập.</p>
+        <div class="chips goal-chips" role="radiogroup" aria-label="Mục tiêu mỗi ngày" id="goal-chips">
+          {% for seconds in daily_goals %}
+          <label class="chip-radio">
+            <input type="radio" name="daily-goal" value="{{ seconds }}"{% if account.daily_goal_s == seconds %} checked{% endif %}>
+            <span>{{ seconds // 60 }} phút</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="card" aria-labelledby="display-h">
+        <h2 id="display-h">{{ icon("eye") }} Hiển thị trên máy này</h2>
+        <label for="pref-theme">Giao diện</label>
+        <select id="pref-theme">
+          <option value="system">Theo hệ thống</option>
+          <option value="light">Sáng</option>
+          <option value="dark">Tối</option>
+        </select>
+        <label for="pref-font">Cỡ chữ</label>
+        <select id="pref-font">
+          <option value="normal">Vừa</option>
+          <option value="large">Lớn</option>
+        </select>
+        <p class="muted small-note">Lưu trên trình duyệt này, không gửi về máy chủ.</p>
+      </div>
+
+      <div class="card" aria-labelledby="me-h">
+        <h2 id="me-h">{{ icon("user") }} Thông tin đăng nhập</h2>
+        <dl class="facts" id="me-facts" aria-busy="true">
+          <div><dt>Bút danh</dt><dd>{{ account.pseudonym }}</dd></div>
+          <div><dt>Vai trò</dt><dd>{{ role_names.get(account.role.value, account.role.value) }}</dd></div>
+          <div><dt>Tạo lúc</dt><dd data-fact="created_at">—</dd></div>
+          <div><dt>Đăng nhập gần nhất</dt><dd data-fact="last_login_at">—</dd></div>
+          <div><dt>Đổi mật khẩu gần nhất</dt><dd data-fact="password_changed_at">—</dd></div>
+        </dl>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section id="panel-security" role="tabpanel" aria-labelledby="tab-security" tabindex="0"{% if not first_time %} hidden{% endif %}>
+  <div class="account-grid">
+    <div class="card" aria-labelledby="pw-h">
+      <h2 id="pw-h">{{ icon("lock") }} Đổi mật khẩu</h2>
+      <form id="pw-form" class="stack" novalidate>
+        <label for="pw-current">Mật khẩu hiện tại{% if first_time %} (mật khẩu tạm trên phiếu){% endif %}</label>
+        <input id="pw-current" type="password" autocomplete="current-password" required>
+
+        <label for="pw-new">Mật khẩu mới</label>
+        <input id="pw-new" type="password" autocomplete="new-password" required
+               minlength="{{ min_length }}" aria-describedby="pw-rules">
+        <ul class="pw-rules" id="pw-rules">
+          <li data-rule="length">Từ {{ min_length }} ký tự trở lên; một câu ngắn dễ nhớ là đủ tốt</li>
+          <li data-rule="pseudonym">Không trùng với bút danh</li>
+          <li data-rule="different">Khác mật khẩu hiện tại</li>
+        </ul>
+
+        <label for="pw-again">Nhập lại mật khẩu mới</label>
+        <input id="pw-again" type="password" autocomplete="new-password" required>
+
+        <label class="check-row"><input type="checkbox" id="pw-show"> Hiện mật khẩu đang gõ</label>
+
+        <div class="button-row">
+          <button type="submit" id="pw-save">{{ icon("check") }} Lưu mật khẩu mới</button>
+        </div>
+        <p class="muted small-note">Đổi xong, mọi thiết bị khác đang đăng nhập bằng tài khoản này sẽ bị đăng xuất.</p>
+        <div id="pw-message" aria-live="polite"></div>
+      </form>
+    </div>
+
+    {% if not first_time %}
+    <div class="stack-cards">
+      <div class="card" aria-labelledby="google-h">
+        <h2 id="google-h">{{ icon("key") }} Đăng nhập bằng Google</h2>
+        {% if google_enabled %}
+        <p id="google-state" class="muted">Đang kiểm tra…</p>
+        <div class="button-row">
+          <a class="button secondary" id="google-link" href="/auth/google/start?mode=link" hidden>{{ icon("plus") }} Liên kết tài khoản Google</a>
+          <button type="button" class="secondary" id="google-unlink" hidden>{{ icon("x") }} Gỡ liên kết</button>
+        </div>
+        <p class="muted small-note">
+          Hệ thống chỉ giữ một mã băm một chiều của tài khoản Google để nhận ra nó lần sau; không lưu
+          email, tên hay ảnh. Google không nhận bản ghi âm hay kết quả nào của bạn.
+        </p>
+        {% else %}
+        <p class="muted">Máy chủ này chưa bật đăng nhập bằng Google. Quản trị viên bật bằng cấu hình
+          <code>AICEFR_GOOGLE_CLIENT_ID</code> và <code>AICEFR_GOOGLE_CLIENT_SECRET</code>.</p>
+        {% endif %}
+      </div>
+
+      <div class="card" aria-labelledby="sessions-h">
+        <h2 id="sessions-h">{{ icon("users") }} Phiên đăng nhập</h2>
+        <ul class="session-list" id="session-list" aria-busy="true"></ul>
+        <div class="button-row">
+          <button type="button" class="secondary" id="revoke-others">{{ icon("logout") }} Đăng xuất khỏi các thiết bị khác</button>
+        </div>
+        <p class="muted small-note">Thấy một phiên lạ thì đăng xuất nó rồi đổi mật khẩu.</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% if not first_time %}
+<section id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden>
+  <div class="card" aria-labelledby="activity-h">
+    <h2 id="activity-h">{{ icon("clock") }} Hoạt động gần đây</h2>
+    <p class="muted small-note">Đăng nhập, lần đăng nhập sai và mọi thay đổi trên tài khoản, mới nhất ở trên.</p>
+    <ol class="activity-list" id="activity-list" aria-busy="true"></ol>
+  </div>
+</section>
+
+{% if is_student %}
+<section id="panel-data" role="tabpanel" aria-labelledby="tab-data" tabindex="0" hidden>
+  <div class="account-grid">
+    <div class="card" aria-labelledby="consent-h">
+      <h2 id="consent-h">{{ icon("file-check") }} Đồng thuận</h2>
+      <p id="consent-state" class="muted">Đang kiểm tra…</p>
+      <div class="button-row"><a class="button secondary" href="/consent">Xem hoặc thay đổi đồng thuận</a></div>
+    </div>
+    <div class="card" aria-labelledby="export-h">
+      <h2 id="export-h">{{ icon("download") }} Dữ liệu của tôi</h2>
+      <p>Tải về mọi thứ hệ thống giữ về bạn: các bài đã nộp, bản chép lời, phép đo, điểm, lịch sử duyệt và
+        đồng thuận, kèm lời giải thích từng trường dùng để làm gì.</p>
+      <div class="button-row">
+        <button type="button" id="export-all">{{ icon("download") }} Tải toàn bộ dữ liệu (JSON)</button>
+      </div>
+      <p class="muted small-note">Muốn xoá: xoá từng bài ở "Bài của tôi", hoặc rút đồng thuận để hệ thống ngừng dùng
+        dữ liệu cho nghiên cứu và xoá theo chính sách lưu trữ; cần xoá ngay toàn bộ thì báo quản trị viên.</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endif %}
+<span id="account-home" data-home="{{ home }}" data-first="{{ 'yes' if first_time else '' }}" hidden></span>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('account.js') }}"></script>{% endblock %}

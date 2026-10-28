@@ -44,3 +44,9 @@ M16-TASK-004 có data-operations code/test trong SCRUM-67 PR #38 (`d60e8a4`); [M
 - Nhánh tích hợp `migrate/w7-repo-goc` tạo từ `main` `5a170db`. PR nền `port/m16-nen-w7` chép phần nền từ `ThanhSangLouis/ai-assessor-cefr@059fa28`; danh sách tệp ở [06-tasks](06-tasks.md#w7--nền-kiến-trúc-ba-dịch-vụ-w7-t01-scrum-98).
 - Người làm: Sang; người review và chủ trì kiến trúc: Thắng (SCRUM-98, chấp thuận cấu trúc nền).
 - Trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển (kho MongoDB `storage/migrations.py` và `services/core/app.py` cần kho và dịch vụ của cả ba người). Kết quả kiểm bằng cách phủ tạm phần còn thiếu từ repo gốc ghi trong mô tả PR.
+
+## SCRUM-103 middleware integration support (2026-10-28)
+
+- M16's `api/middleware.py` is present on the SCRUM-103 branch from source revision `0853c95`, after explicit project-owner scope expansion.
+- The generic 500 fallback now receives the same security and API cache headers as normal responses. Five focused middleware tests, Ruff and compilation pass.
+- The M16 task lifecycle and verdicts are unchanged. M16 owner review remains pending; see [integration evidence](evidence/scrum-103-middleware-integration.md).

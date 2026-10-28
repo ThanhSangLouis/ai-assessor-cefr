@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Bài của tôi · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head page-head-row">
+  <div>
+    <h1><span class="head-icon">{{ icon("folder") }}</span>Bài của tôi</h1>
+    <p class="lede">
+      Mọi bài đánh giá và bài luyện bạn đã nộp. Band và điểm là <b>ước lượng</b> của hệ
+      thống; bài chưa có giảng viên xác nhận vẫn có thể thay đổi sau khi duyệt.
+    </p>
+  </div>
+  <a class="button" href="/">Nộp bài mới</a>
+</div>
+
+<section class="card" aria-labelledby="list-h">
+  <div class="card-head">
+    <h2 id="list-h">Lịch sử nộp bài</h2>
+    <span class="muted" id="list-count"></span>
+  </div>
+  <div class="chips" id="list-filter" role="group" aria-label="Lọc theo loại bài" hidden>
+    <button type="button" data-kind="all" aria-pressed="true">Tất cả</button>
+    <button type="button" data-kind="assessment" aria-pressed="false">Đánh giá</button>
+    <button type="button" data-kind="practice" aria-pressed="false">Luyện tập</button>
+  </div>
+  <div id="list" aria-busy="true" aria-live="polite">
+    <div class="skeleton skeleton-row"></div>
+    <div class="skeleton skeleton-row"></div>
+    <div class="skeleton skeleton-row"></div>
+  </div>
+</section>
+
+<section class="card" aria-labelledby="export-h">
+  <h2 id="export-h">Hồ sơ năng lực</h2>
+  <p>
+    Tệp hồ sơ <b>chỉ chứa những kết quả đã được giảng viên xác nhận</b>. Bài đang chờ duyệt,
+    bài bị từ chối, bài lỗi và bài luyện tập không có trong tệp; chúng vẫn nằm đầy đủ trong
+    danh sách phía trên.
+  </p>
+  <div class="button-row">
+    <button id="export" type="button" class="secondary">Tải hồ sơ năng lực (JSON)</button>
+  </div>
+  <div id="export-note" aria-live="polite"></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('my_responses.js') }}"></script>{% endblock %}

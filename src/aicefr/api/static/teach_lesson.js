@@ -11,8 +11,6 @@ const root = document.getElementById("builder");
 const icon = (name, cls) => window.ui.icon(name, cls);
 const KIND_ICON = window.ui.STEP_ICONS;
 const LESSON_ID = root.dataset.lessonId;
-const PUBLISHED_KEY = "aicefr-published-lesson-" + LESSON_ID;
-const DRAFT_CHANGED_KEY = "aicefr-draft-changed-" + LESSON_ID;
 const $ = (id) => document.getElementById(id);
 
 const KIND_NAMES = {
@@ -47,9 +45,9 @@ const FIELDS = {
   look_up: ["text", "show_seconds", "max_seconds"],
   gap: ["text", "answers", "hint_words", "max_seconds"],
   keywords: ["keywords", "min_words", "max_seconds"],
-  starter: ["text", "starter", "min_words", "max_seconds"],
-  picture: ["text", "image_alt", "min_words", "max_seconds"],
-  outline: ["text", "outline", "markers", "prep_seconds", "min_seconds", "max_seconds"],
+  starter: ["text", "starter", "keywords", "min_words", "max_seconds"],
+  picture: ["text", "hint_words", "use_at_least", "min_words", "image_alt", "max_seconds"],
+  outline: ["text", "outline", "markers", "keywords", "prep_seconds", "min_seconds", "max_seconds"],
   free: ["text", "rounds"],
 };
 const TEXT_LABEL = {
@@ -98,98 +96,9 @@ let dirty = false;
 let saving = null;
 let again = false;
 let timer = null;
-let domainRevision = 0;
-let draftVersion = 1;
-
-function validationIssues(value) {
-  return (value && value.errors || []).map((item) => ({ ...item, level: "error", field: "" }))
-    .concat((value && value.warnings || []).map((item) => ({ ...item, level: "warn", field: "" })));
-}
-function domainPayload(s) {
-  const max = Math.max(1, Number(s.max_seconds) || 30);
-  switch (s.kind) {
-    case "read_aloud": return { kind:s.kind, text:s.text, hint_words:s.hint_words || [], max_seconds:max };
-    case "repeat": return { kind:s.kind, text:s.text, max_seconds:max };
-    case "look_up": return { kind:s.kind, text:s.text, show_seconds:Math.max(1,Number(s.show_seconds)||6), max_seconds:max };
-    case "gap": return { kind:s.kind, text:s.text, answers:s.answers || [], hint_words:s.hint_words || [], max_seconds:max };
-    case "keywords": return { kind:s.kind, keywords:s.keywords || [], min_words:Math.max(1,Number(s.min_words)||1), max_seconds:max };
-    case "starter": return { kind:s.kind, text:s.text, starter:s.starter, min_words:Math.max(1,Number(s.min_words)||1), max_seconds:max };
-    case "picture": {
-      const pictures = (s.pictures || []).map((item, index) => index === 0 && s.image_alt
-        ? { ...item, description: s.image_alt } : item);
-      return { kind:s.kind, prompt:s.text, pictures, min_words:Math.max(1,Number(s.min_words)||1), max_seconds:max };
-    }
-    case "outline": return { kind:s.kind, text:s.text, points:s.outline || [], markers:s.markers || [], prep_seconds:Math.max(0,Number(s.prep_seconds)||0), min_seconds:Math.max(0,Number(s.min_seconds)||0), max_seconds:max };
-    case "free": {
-      const values=(s.rounds || []).filter((item)=>Number(item)>0);
-      const durations=values.length>=2 ? values.slice(0,3) : [45,30];
-      return { kind:s.kind, rounds:durations.map((seconds)=>({duration_seconds:seconds,prompt:s.text})), max_seconds:durations[0] };
-    }
-    default: throw new Error("Loại bước này không được M10 hỗ trợ.");
-  }
-}
-function toDomainLesson(value) {
-  return { lesson_id:value.lesson_id, title:value.title, summary:value.summary || "", band:value.band,
-    steps:(value.steps || []).map((item,index)=>({ step_id:item.step_id, ordinal:index+1,
-      stage:STAGE_OF[item.kind], kind:item.kind, instruction:item.instruction || DEFAULT_INSTRUCTION[item.kind],
-      payload:domainPayload(item), rules_version:item.rules_version || "lesson-rules-v1" })),
-    revision:domainRevision, content_version:value.content_version || "v1" };
-}
-function fromDomainStep(item) {
-  const p=item.payload, s={step_id:item.step_id,kind:item.kind,title:"",instruction:item.instruction || "",
-    text:"",hint_words:[],answers:[],keywords:[],starter:"",outline:[],markers:[],use_at_least:0,
-    min_words:1,show_seconds:6,prep_seconds:0,min_seconds:0,max_seconds:p.max_seconds || 30,
-    rounds:[],strictness:"normal",model_audio:null,image:null,image_alt:"",pictures:[],missions:[],tip:"",
-    rules_version:item.rules_version};
-  if (["read_aloud","repeat","look_up","gap","starter","outline"].includes(item.kind)) s.text=p.text || "";
-  if (item.kind==="read_aloud" || item.kind==="gap") s.hint_words=p.hint_words || [];
-  if (item.kind==="gap") s.answers=p.answers || [];
-  if (item.kind==="keywords") s.keywords=p.keywords || [];
-  if (item.kind==="starter") s.starter=p.starter || "";
-  if (["starter","keywords","picture"].includes(item.kind)) s.min_words=p.min_words || 1;
-  if (item.kind==="look_up") s.show_seconds=p.show_seconds || 6;
-  if (item.kind==="picture") { s.text=p.prompt || ""; s.pictures=p.pictures || []; s.image_alt=s.pictures.map((x)=>x.description).join("; "); }
-  if (item.kind==="outline") { s.outline=p.points || []; s.markers=p.markers || []; s.prep_seconds=p.prep_seconds || 0; s.min_seconds=p.min_seconds || 0; }
-  if (item.kind==="free") { s.text=p.rounds && p.rounds.length ? p.rounds[0].prompt : ""; s.rounds=(p.rounds || []).map((x)=>x.duration_seconds); }
-  return s;
-}
-function fromDomainLesson(value) {
-  return { lesson_id:value.lesson_id,title:value.title,summary:value.summary || "",band:value.band,
-    revision:value.revision,content_version:value.content_version || "v1",model_text:"",keywords:[],
-    criterion:null,pass_ratio:0.7,steps:(value.steps || []).map(fromDomainStep) };
-}
-async function requestJson(url, options) {
-  const response=await fetch(url,options || {});
-  if (window.redirectToLoginIfExpired(response)) throw new Error("expired");
-  const body=await response.json().catch(()=>({}));
-  if (!response.ok) throw new Error(errorText(body));
-  return body;
-}
-async function resolveContext() {
-  const map=JSON.parse(localStorage.getItem("aicefr-teacher-lessons") || "{}");
-  const queryUnit=new URLSearchParams(location.search).get("unit_id");
-  const relation=map[LESSON_ID] || (queryUnit ? {unit_id:queryUnit} : null);
-  const ids=JSON.parse(localStorage.getItem("aicefr-teacher-path-ids") || "[]");
-  for (const pathId of ids) {
-    const response=await fetch("/api/v1/teacher/learn/paths/"+encodeURIComponent(pathId));
-    if (!response.ok) continue;
-    const candidate=await response.json();
-    const found=(candidate.units || []).find((item)=>(relation && item.unit_id===relation.unit_id) || (item.lesson_ids || []).includes(LESSON_ID));
-    if (found) {
-      unit=found; path=candidate; map[LESSON_ID]={path_id:path.path_id,unit_id:unit.unit_id};
-      localStorage.setItem("aicefr-teacher-lessons",JSON.stringify(map)); return;
-    }
-  }
-  if (relation) { unit={unit_id:relation.unit_id,title:"Chặng"}; path={title:"Lộ trình"}; }
-}
-function attachMedia(value, media) {
-  const byStep=new Map();
-  for (const item of media || []) { if (!byStep.has(item.step_id)) byStep.set(item.step_id,[]); byStep.get(item.step_id).push(item); }
-  for (const item of value.steps) {
-    const artifact=(byStep.get(item.step_id) || []).find((entry)=>entry.media_kind==="sample_audio");
-    if (artifact) { item.model_audio=artifact.media_id; item.model_audio_url=artifact.url; }
-  }
-}
+// The simulated recogniser hears a fixed sentence, so a model-audio check made
+// with it says nothing about the recording.
+let simulated = false;
 
 const step = () => (lesson ? lesson.steps[selected] : null);
 
@@ -208,108 +117,79 @@ function errorText(d) {
 }
 
 // ---------------------------------------------------------------- saving
-function setState(text, kind = "") { const el=$("save-state"); el.textContent=text; el.className="save-state "+kind; }
-function draftIssue() {
-  for (const item of lesson.steps || []) {
-    const label = KIND_NAMES[item.kind] || "Bước học";
-    const hasText = typeof item.text === "string" && item.text.trim().length > 0;
-    let missing = false;
-    switch (item.kind) {
-      case "read_aloud":
-      case "repeat":
-      case "look_up":
-        missing = !hasText;
-        break;
-      case "gap":
-        missing = !hasText || !(item.answers || []).some((value) => String(value).trim());
-        break;
-      case "keywords":
-        missing = !(item.keywords || []).some((value) => String(value).trim());
-        break;
-      case "starter":
-        missing = !hasText || !String(item.starter || "").trim();
-        break;
-      case "picture":
-        missing = !hasText || !(item.pictures || []).some((picture) => String(picture.description || "").trim());
-        break;
-      case "outline":
-        missing = !hasText || !(item.outline || []).some((value) => String(value).trim());
-        break;
-      case "free":
-        missing = !hasText;
-        break;
-    }
-    if (missing) return `Hoàn thiện nội dung bắt buộc của bước “${label}” trước khi lưu.`;
-  }
-  return "";
-}
-async function loadLint() {
-  const result=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/lint",{
-    method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({lesson:toDomainLesson(lesson),for_publish:false})});
-  lint=validationIssues(result);
-}
-async function save() {
-  clearTimeout(timer);
-  if (saving) { again=true; return saving; }
-  if (!dirty) return null;
-  const issue = draftIssue();
-  if (issue) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return null; }
-  if (!unit || !unit.unit_id) { window.toast("Không xác định được chặng. Hãy mở bài từ trang Soạn bài.","error"); throw new Error("unit unavailable"); }
-  dirty=false; setState("Đang lưu…","pending");
-  saving=(async()=>{
-    try {
-      const saved=await requestJson("/api/v1/teacher/learn/lessons",{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({unit_id:unit.unit_id,expected_revision:domainRevision,lesson:toDomainLesson(lesson)})});
-      domainRevision=saved.revision; lesson.revision=saved.revision; await loadLint();
-      if (meta.published_version) {
-        meta.draft_changed = true;
-        localStorage.setItem(DRAFT_CHANGED_KEY, "1");
-      }
-      setState("Đã lưu nháp lúc "+new Date().toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}),"ok");
-      renderHead(); renderLint(); renderRail();
-    } catch(error) { dirty=true; setState("Chưa lưu được","error"); if(error.message!=="expired") window.toast(error.message || "Không lưu được bản nháp.","error"); throw error; }
-  })();
-  try { await saving; } finally { saving=null; if(again){again=false;if(dirty)save().catch(()=>{});} }
-  return null;
+function setState(text, kind = "") {
+  const el = $("save-state");
+  el.textContent = text;
+  el.className = `save-state ${kind}`;
 }
 
 function markDirty() {
   dirty = true;
-  if (meta && meta.published_version) meta.draft_changed = true;
   setState("Có thay đổi chưa lưu", "pending");
-  renderHead();
   clearTimeout(timer);
-  timer = window.setTimeout(() => {
-    if (draftIssue()) { setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending"); return; }
-    save().catch(() => {});
-  }, 500);
+  timer = setTimeout(() => save().catch(() => {}), 1200);
+}
+
+// One save at a time; a change made during a save triggers one more after it.
+async function save() {
+  clearTimeout(timer);
+  if (saving) {
+    again = true;
+    return saving;
+  }
+  if (!dirty) return null;
+  dirty = false;
+  setState("Đang lưu…", "pending");
+  saving = (async () => {
+    const r = await fetch(`/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lesson),
+    });
+    if (window.redirectToLoginIfExpired(r)) throw new Error("expired");
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      dirty = true;
+      setState("Chưa lưu được", "error");
+      window.toast(errorText(d), "error");
+      throw new Error("save failed");
+    }
+    lint = d.lint || [];
+    if (meta.published_version) meta.draft_changed = true;
+    setState(`Đã lưu nháp lúc ${new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}`, "ok");
+    renderHead();
+    renderLint();
+    renderRail();
+  })();
+  try {
+    await saving;
+  } finally {
+    saving = null;
+    if (again) {
+      again = false;
+      if (dirty) save().catch(() => {});
+    }
+  }
+  return null;
 }
 
 // Before anything that reads the draft on the server: media, preview, publish.
 async function flush() {
-  if (saving) await saving;
-  if (!dirty) return;
-  const issue = draftIssue();
-  if (issue) {
-    setState("Hoàn thiện nội dung bắt buộc trước khi lưu", "pending");
-    window.toast(issue, "warn");
-    throw new Error(issue);
-  }
-  await save();
-  if (dirty) await flush();
+  if (saving) await saving.catch(() => {});
+  if (dirty) await save();
 }
 
 // ---------------------------------------------------------------- head + rail
 function renderHead() {
-  const state=meta.published_version
-    ? '<span class="badge state-on">Đã xuất bản v'+Number(meta.published_version)+'</span>'+(meta.draft_changed?' <span class="badge state-warn">Có sửa đổi chưa xuất bản</span>':"")
-    : '<span class="badge state-off">Bản nháp · chưa xuất bản</span>';
-  $("builder-head").innerHTML='<p class="eyebrow">'+escapeHtml(path && path.title || "Soạn bài")+' · '+escapeHtml(unit && unit.title || "Chặng chưa xác định")+'</p>'+
-    '<h1>'+escapeHtml(lesson.title || "Bài học chưa đặt tên")+'</h1><div class="unit-tags">'+state+'</div>'+
-    '<p class="notice notice-info">Bài được lưu theo typed lesson contract M10. Tiêu chí và tỷ lệ hoàn thành không thuộc contract này.</p>';
-  document.title=lesson.title+" · Soạn bài";
+  const state = meta.published_version
+    ? `<span class="badge state-on">Đã xuất bản v${Number(meta.published_version)}</span>` +
+      (meta.draft_changed ? ' <span class="badge state-warn">Có sửa đổi chưa xuất bản</span>' : "")
+    : '<span class="badge state-off">Chưa xuất bản: sinh viên chưa thấy bài này</span>';
+  $("builder-head").innerHTML =
+    `<p class="eyebrow">${escapeHtml(path.title)} · ${escapeHtml(unit.title)}</p>` +
+    `<h1>${escapeHtml(lesson.title || "Bài học chưa đặt tên")}</h1>` +
+    `<div class="unit-tags">${state}${lesson.sample ? '<span class="badge sample-badge">Nội dung mẫu</span>' : ""}</div>`;
+  document.title = lesson.title + " · Soạn bài";
 }
 
 function issuesOf(stepId) {
@@ -437,28 +317,53 @@ function renderEditor() {
       .join("") +
     "</select></div></details>";
 
-  for (const field of ["title", "tip", "strictness"]) {
-    const element = $("editor-fields").querySelector('[data-field="' + field + '"]');
-    if (element && element.closest(".editor-field")) element.closest(".editor-field").hidden = true;
-  }
-  const metaDetails = document.querySelector(".meta-more");
-  if (metaDetails) metaDetails.hidden = true;
   renderAudio();
   renderImage();
 }
 
 function renderAudio() {
-  const current=step(), show=current && (current.kind==="read_aloud" || current.kind==="repeat");
-  $("audio-panel").hidden=!show;
-  if(!show)return;
-  $("audio-check").hidden=true;
-  $("audio-current").innerHTML=current.model_audio
-    ? '<div class="media-current"><span class="eyebrow">Giọng mẫu hiện tại</span><audio controls preload="none" src="'+escapeHtml(current.model_audio_url || "")+'"></audio></div>'
+  const s = step();
+  const show = s && (s.kind === "read_aloud" || s.kind === "repeat");
+  $("audio-panel").hidden = !show;
+  if (!show) return;
+  $("audio-check").hidden = true;
+  $("audio-current").innerHTML = s.model_audio
+    ? '<div class="media-current"><span class="eyebrow">Giọng mẫu hiện tại</span>' +
+      `<audio controls preload="none" src="${escapeHtml(s.model_audio_url || "")}"></audio>` +
+      `<button type="button" class="small secondary" id="audio-remove">${icon("trash")}<span>Bỏ giọng mẫu</span></button></div>`
     : '<p class="muted">Bước này chưa có giọng mẫu.</p>';
-  recorder.reset(); recorder.repaint();
+  const remove = $("audio-remove");
+  if (remove) {
+    remove.addEventListener("click", () => {
+      s.model_audio = null;
+      s.model_audio_url = null;
+      markDirty();
+      renderAudio();
+    });
+  }
+  recorder.reset();
+  recorder.repaint();
 }
 
-function renderImage() { $("image-panel").hidden=true; }
+function renderImage() {
+  const s = step();
+  const show = s && s.kind === "picture";
+  $("image-panel").hidden = !show;
+  if (!show) return;
+  $("image-current").innerHTML = s.image
+    ? `<img class="step-image" src="${escapeHtml(s.image_url || "")}" alt="${escapeHtml(s.image_alt || "Ảnh của bước")}">` +
+      `<button type="button" class="small secondary" id="image-remove">${icon("trash")}<span>Bỏ ảnh</span></button>`
+    : '<p class="muted">Bước này chưa có ảnh.</p>';
+  const remove = $("image-remove");
+  if (remove) {
+    remove.addEventListener("click", () => {
+      s.image = null;
+      s.image_url = null;
+      markDirty();
+      renderImage();
+    });
+  }
+}
 
 function select(i) {
   selected = Math.max(0, Math.min(i, lesson.steps.length - 1));
@@ -582,33 +487,75 @@ const recorder = window.setUpRecorder({
     } catch (err) {
       return;
     }
-    const body=new FormData();
-    body.append("media_kind","sample_audio"); body.append("audio",audio,name);
-    const url="/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/versions/"+draftVersion+"/steps/"+encodeURIComponent(s.step_id)+"/media";
-    const r=await fetch(url,{method:"POST",body});
+    const body = new FormData();
+    body.append("audio", audio, name);
+    const r = await fetch(
+      `/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}/steps/${encodeURIComponent(s.step_id)}/model-audio`,
+      { method: "POST", body }
+    );
     if (window.redirectToLoginIfExpired(r)) return;
     const d = await r.json().catch(() => ({}));
     if (!r.ok) {
       window.toast(errorText(d), "error");
       return;
     }
-    s.model_audio = d.media_id;
+    s.model_audio = d.media_key;
     s.model_audio_url = d.url;
-    if (meta.published_version) {
-      meta.draft_changed = true;
-      localStorage.setItem(DRAFT_CHANGED_KEY, "1");
-    }
+    if (meta.published_version) meta.draft_changed = true;
     renderAudio();
     renderHead();
+    const check = $("audio-check");
+    if (d.check && simulated) {
+      check.className = "notice notice-info";
+      check.textContent =
+        "Đã lưu giọng mẫu. Máy chủ đang dùng bộ nhận dạng giả lập nên chưa kiểm được giọng mẫu " +
+        "có khớp văn bản không; bật bộ nhận dạng thật rồi ghi lại để kiểm.";
+      check.hidden = false;
+    } else if (d.check) {
+      check.className = d.check.warning ? "notice notice-warn" : "notice notice-ok";
+      check.textContent =
+        d.check.warning || `Máy chép giọng mẫu khớp ${d.check.heard}/${d.check.total} từ của văn bản.`;
+      check.hidden = false;
+    }
     window.toast("Đã lưu giọng mẫu.", "ok");
   },
 });
 
-$("image-upload").addEventListener("click", () => {
-  window.toast("M10 chưa cung cấp route tải ảnh cho bài học; hãy dùng bước không cần ảnh.","info");
+$("image-upload").addEventListener("click", async () => {
+  const file = $("image-file").files[0];
+  const s = step();
+  if (!file) {
+    window.toast("Chọn một ảnh trước.", "warn");
+    return;
+  }
+  const button = $("image-upload");
+  button.disabled = true;
+  try {
+    await flush();
+    const body = new FormData();
+    body.append("image", file, file.name);
+    const r = await fetch(
+      `/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}/steps/${encodeURIComponent(s.step_id)}/image`,
+      { method: "POST", body }
+    );
+    if (window.redirectToLoginIfExpired(r)) return;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      window.toast(errorText(d), "error");
+      return;
+    }
+    s.image = d.media_key;
+    s.image_url = d.url;
+    $("image-file").value = "";
+    renderImage();
+    window.toast("Đã tải ảnh lên.", "ok");
+  } catch (err) {
+    /* a failed save is already on screen */
+  } finally {
+    button.disabled = false;
+  }
 });
 
-// ---------------------------------------------------------------- bar
 // ---------------------------------------------------------------- bar
 $("save-draft").addEventListener("click", () => {
   dirty = true;
@@ -624,23 +571,28 @@ $("preview").addEventListener("click", async () => {
   location.href = `/practice/lessons/${encodeURIComponent(LESSON_ID)}?preview=1`;
 });
 
-$("publish").addEventListener("click",async()=>{
-  try { await flush(); } catch(_) { return; }
-  let validation;
-  try { validation=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/lint",{
-    method:"POST",headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({lesson:toDomainLesson(lesson),for_publish:true})}); }
-  catch(error){window.toast(error.message,"error");return;}
-  if(!validation.valid){const first=validation.errors && validation.errors[0];window.toast(first?first.message:"Bài học chưa đạt điều kiện xuất bản.","error");lint=validationIssues(validation);renderLint();return;}
-  if(!confirm("Xuất bản bài học? Sinh viên sẽ thấy phiên bản này."))return;
+$("publish").addEventListener("click", async () => {
   try {
-    const published=await requestJson("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID)+"/publish",{
-      method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({expected_revision:domainRevision})});
-    meta.published_version=published.version;meta.draft_changed=false;
-    localStorage.setItem(PUBLISHED_KEY,String(published.version));
-    localStorage.removeItem(DRAFT_CHANGED_KEY);
-    renderHead();window.toast("Đã xuất bản phiên bản "+published.version+".","ok");
-  } catch(error){window.toast(error.message,"error");}
+    await flush();
+  } catch (err) {
+    return;
+  }
+  const warnings = lint.filter((i) => i.level === "warn").length;
+  const question = warnings
+    ? `Còn ${warnings} cảnh báo soát lỗi. Vẫn xuất bản? Sinh viên sẽ thấy bản này ngay.`
+    : "Xuất bản bài học? Sinh viên sẽ thấy bản này ngay; các lượt luyện cũ vẫn giữ nguyên.";
+  if (!confirm(question)) return;
+  const r = await fetch(`/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}/publish`, { method: "POST" });
+  if (window.redirectToLoginIfExpired(r)) return;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    window.toast(errorText(d), "error");
+    return;
+  }
+  meta.published_version = d.version;
+  meta.draft_changed = false;
+  renderHead();
+  window.toast(`Đã xuất bản phiên bản ${d.version}.`, "ok");
 });
 
 // Ctrl/Cmd+S saves, as in any editor.
@@ -661,24 +613,48 @@ window.addEventListener("beforeunload", (e) => {
 
 // ---------------------------------------------------------------- load
 async function load() {
-  const response=await fetch("/api/v1/teacher/learn/lessons/"+encodeURIComponent(LESSON_ID));
-  if(window.redirectToLoginIfExpired(response))return;
+  const r = await fetch(`/api/v1/teach/lessons/${encodeURIComponent(LESSON_ID)}`);
+  if (window.redirectToLoginIfExpired(r)) return;
   window.clearBusy(root);
-  if(response.status===403){$("builder-head").innerHTML='<p class="error">Tài khoản này không có quyền soạn bài.</p>';$("builder-bar").hidden=true;return;}
-  if(!response.ok){$("builder-head").innerHTML='<div class="empty-state"><h2>Không mở được bài học này</h2><p><a href="/teach">Quay lại lộ trình</a>.</p></div>';$("builder-bar").hidden=true;return;}
-  const raw=await response.json();domainRevision=raw.revision || 0;draftVersion=raw.version || 1;
-  lesson=fromDomainLesson(raw);meta={published_version:Number(localStorage.getItem(PUBLISHED_KEY))||null,
-    draft_changed:localStorage.getItem(DRAFT_CHANGED_KEY)==="1",updated_at:null};
-  attachMedia(lesson,raw.sample_media);await resolveContext();
-  if(!unit || !unit.unit_id){$("builder-bar").hidden=true;$("builder-head").innerHTML='<div class="empty-state"><h2>Chưa xác định được chặng</h2><p>Mở bài từ trang <a href="/teach">Soạn bài</a> để đồng bộ bản nháp.</p></div>';return;}
-  $("f-title").value=lesson.title;$("f-summary").value=lesson.summary || "";$("f-band").value=lesson.band;
-  $("f-criterion").disabled=true;$("f-pass").disabled=true;$("f-model-text").disabled=true;$("f-keywords").disabled=true;
-  $("f-model-text").value="";$("f-keywords").value="";$("builder-layout").hidden=false;
-  setState("Bản nháp hiện tại · revision "+domainRevision);renderHead();
-  try{await loadLint();}catch(_){lint=[];}renderLint();select(0);
+  if (r.status === 403) {
+    $("builder-head").innerHTML =
+      '<p class="error">Tài khoản này không có quyền soạn bài. <a href="/">Về trang của bạn</a>.</p>';
+    $("builder-bar").hidden = true;
+    return;
+  }
+  if (!r.ok) {
+    $("builder-head").innerHTML =
+      '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
+      '<h2>Không mở được bài học này</h2><p><a href="/teach">Quay lại danh sách lộ trình</a>.</p></div>';
+    $("builder-bar").hidden = true;
+    return;
+  }
+  const d = await r.json();
+  lesson = d.lesson;
+  meta = d.meta;
+  unit = d.unit;
+  path = d.path;
+  lint = d.lint || [];
+  $("f-title").value = lesson.title;
+  $("f-summary").value = lesson.summary || "";
+  $("f-band").value = lesson.band;
+  $("f-criterion").value = lesson.criterion || "";
+  $("f-pass").value = String(lesson.pass_ratio);
+  $("f-model-text").value = lesson.model_text || "";
+  $("f-keywords").value = (lesson.keywords || []).join(", ");
+  $("builder-layout").hidden = false;
+  setState(meta.updated_at ? `Lưu lần cuối: ${window.ui.localTime(meta.updated_at)}` : "");
+  renderHead();
+  renderLint();
+  select(0);
 }
 
-
-recorder.enable(document.body.dataset.recordingEnabled === "true");
+fetch("/api/v1/health")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((h) => {
+    simulated = !!(h && !h.asr_is_real);
+    recorder.enable(!!(h && h.recording_enabled));
+  })
+  .catch(() => recorder.enable(false));
 
 load();

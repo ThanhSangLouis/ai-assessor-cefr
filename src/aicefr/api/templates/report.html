@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Báo cáo {{ response_id }} · AI Assessor CEFR{% endblock %}
+{% block content %}
+<div class="page-head page-head-row">
+  <div>
+    <h1><span class="head-icon">{{ icon("news") }}</span>Báo cáo bài nói</h1>
+    <p class="lede">
+      Mã bài <code>{{ response_id }}</code>. Hệ thống đưa ra <b>một ước lượng tổng thể</b>
+      kèm bằng chứng đo được trên bản ghi, để người học biết nên luyện tiếp phần nào.
+    </p>
+  </div>
+  <div class="button-row page-tools">
+    <button type="button" class="button secondary small" id="print-report">In hoặc lưu PDF</button>
+    <a class="button secondary small" href="/api/v1/responses/{{ response_id }}" download="report-{{ response_id }}.json">Tải dữ liệu (JSON)</a>
+  </div>
+</div>
+
+{#- The report is several cards built by report.js: the result and the next
+    step first, then comments, evidence with the recording, and the technical
+    detail last. The QC limits in force ride along as data attributes so a
+    rejection reason quotes the threshold actually applied. -#}
+<div class="report" id="evidence" data-response-id="{{ response_id }}"
+     data-min-seconds="{{ min_duration_s | int }}" data-max-seconds="{{ max_duration_s | int }}"
+     data-max-mib="{{ max_size_mib }}" aria-busy="true">
+  <div class="card">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-block"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line medium"></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('report.js') }}"></script>
+<script src="{{ asset('replay.js') }}"></script>{% endblock %}

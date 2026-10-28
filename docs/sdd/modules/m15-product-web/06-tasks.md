@@ -16,6 +16,17 @@
 
 The project owner’s Phase 05 approval unblocks SCRUM-74/75/76 (`M15-TASK-003`–`006`) for the scoped UI adaptation. They are ready for independent review; remaining API/policy limitations are surfaced in the UI and report, not recorded as blockers. Phase 09 owner acceptance remains open.
 
+## `SCRUM-103` / W7-N02 — transfer M15 pages and E2E (2026-10-28)
+
+- **Jira scope:** transfer `services/web` (`pages`, `bff`), all `api/templates` and `api/static` assets, and `tests/e2e`; target 79/79 E2E on MongoDB 7 and a PR into `migrate/w7-repo-goc`.
+- **Source:** `ThanhSangLouis/ai-assessor-cefr@0853c951e796b299d81dc363c3e0e20616c4e631`.
+- **Transferred on:** `feat/SCRUM-103-W7-N02-M15-trang-va-test-E2E`, originally based on `migrate/w7-repo-goc` at `1abd17f0f4ac40bdfe78f8a21672fd302eac7fe0`; the PR branch is now based on `main` at `e840f5f39a58739f5a11b9ecdb9c4c3db37572eb`.
+- **Included:** `services/web`, `api/web.py`, `api/main.py` (single-process E2E app), templates, static assets and all 14 E2E modules. Existing project consent PDF and other target-only files were preserved.
+- **Verification:** Ruff and Python compilation passed; 47 focused middleware/SCRUM-102 integration tests passed; all 79 E2E cases passed on isolated MongoDB 7.0.45 using synthetic model fixtures. See [transfer checkpoint](reviews/implementation-transfer-scrum-103-2026-10-28.md) and [M16 middleware evidence](../m16-monolith-runtime/evidence/scrum-103-middleware-integration.md).
+- **Integration:** after explicit owner authorization, SCRUM-92 foundation PR #66 and SCRUM-102 PR #67 were integrated and are already present in `main`; neither dependency is part of this PR's diff. Integration exposed and fixed the transferred model-list endpoint's import of a nonexistent `MODEL_DIR` symbol; it now uses `artifacts.model_dir()`.
+- **State:** implementation and E2E verification are `READY_FOR_REVIEW`; M16 owner review remains pending. Jira remains `In Progress`; no owner acceptance or Jira verdict is recorded.
+- **Delivery direction:** the latest owner instruction set `main` as the PR target, overriding Jira's original `migrate/w7-repo-goc` target. [PR #68](https://github.com/thanglb2005/ai-assessor-cefr/pull/68) targets `main`; Jira remains `In Progress` and no owner acceptance is recorded.
+
 ## `M15-TASK-001A` — Phase 05 readiness candidate
 
 - **Objective:** semantic shell/tokens/state styling cho các page hiện hữu, không đổi URL, auth, payload hoặc business copy. Kết quả xem được trên local HTML tại 1280×800 và 390×844; skip link/main landmark/focus/contrast/light-dark/reduced motion/print có assertion.

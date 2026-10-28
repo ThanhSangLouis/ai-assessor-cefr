@@ -1,5 +1,15 @@
 # M15 — Status
 
+## Current W7 checkpoint — SCRUM-103 (2026-10-28)
+
+- **Implementation:** M15 pages, static assets and all 14 E2E modules are on `feat/SCRUM-103-W7-N02-M15-trang-va-test-E2E`. The owner-authorized SCRUM-92 foundation PR #66 and SCRUM-102 PR #67 are already in the `main` base and are not part of this PR diff.
+- **E2E:** all 79 cases passed on isolated MongoDB 7.0.45 with synthetic fixtures. The practice, lesson and billing server fixtures pass the pinned model directory into their child processes; the admin model-list endpoint now reads the folder through `artifacts.model_dir()`.
+- **Focused checks:** 47 middleware/SCRUM-102 integration tests passed. M16 middleware regression coverage is 5 tests; M16 owner review remains pending.
+- **Delivery:** the latest owner instruction overrides Jira's original `migrate/w7-repo-goc` target. [PR #68](https://github.com/thanglb2005/ai-assessor-cefr/pull/68) targets `main`; SCRUM-103 remains `In Progress` in Jira, and no owner acceptance or workflow verdict is recorded.
+- **Acceptance:** M16 owner review remains pending. Merging PR #68 does not record owner acceptance or a Jira workflow verdict.
+
+Evidence: [SCRUM-103 transfer checkpoint](reviews/implementation-transfer-scrum-103-2026-10-28.md).
+
 | Mục | Trạng thái |
 | --- | --- |
 | Lifecycle | in_progress |

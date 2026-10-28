@@ -73,8 +73,8 @@ def stats_summary(account: Account = ADMIN_ONLY) -> dict:
 @router.get("/api/v1/admin/models", tags=["admin"])
 def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
     """Scoring artifacts on disk, with the metrics each one reports. FR-36."""
+    from aicefr.scoring.artifacts import model_dir
     from aicefr.scoring.scorer import (
-        MODEL_DIR,
         IncompatibleModelError,
         RidgeScorer,
         load_model,
@@ -82,7 +82,7 @@ def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
 
     active = active_model_name()
     out = []
-    for path in sorted(MODEL_DIR.glob("*.json")):
+    for path in sorted(model_dir().glob("*.json")):
         # The CV+ calibration artifact (D022) sits in the same folder but is not a
         # scoring model; listing it as "incompatible" would mean nothing.
         if path.stem.startswith("conformal_"):

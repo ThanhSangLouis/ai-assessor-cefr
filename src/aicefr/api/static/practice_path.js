@@ -73,7 +73,7 @@ function head() {
     '<div class="path-head-row">' +
     `<div class="overall" title="${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành">` +
     icon("trophy") +
-    `<progress class="overall-track native-progress" max="100" value="${pct}" aria-label="Tiến độ lộ trình ${pct}%">${pct}%</progress>` +
+    `<div class="overall-track"><span style="width:${pct}%"></span></div>` +
     `<span class="muted">${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành</span></div>` +
     switcher +
     "</div>";
@@ -92,27 +92,23 @@ function coinIcon(l) {
 }
 
 function nodeHtml(l, i, swing, nextId, half, start) {
-  const position = (start + i) % SWING.length;
-  const x = Math.round(SWING[position] * swing);
-  const ratio = l.steps ? Math.max(0, Math.min(1, Number(l.passed) / Number(l.steps))) : 0;
-  const progress = Math.round(ratio * 100);
+  const x = Math.round(SWING[(start + i) % SWING.length] * swing);
+  const ratio = l.steps ? l.passed / l.steps : 0;
   const isNext = l.lesson_id === nextId;
   // The title sits beside the coin, on the side away from the centre line, so
   // the trail (which leaves a coin at its top and bottom) never crosses it.
   // Without room beside the outermost coin (a narrow column), every title of
   // the trail goes under its coin instead, so the trail reads one way.
+  const room = Math.min(176, Math.floor(half - Math.abs(x) - COIN / 2 - 14));
   const roomy = half - SWING_MAX * swing - COIN / 2 - 14 >= 110;
   const side = !roomy ? "below" : x < 0 ? "left" : "right";
-  const cls = `lesson-node position-${position} ${escapeHtml(l.status)}${isNext ? " next" : ""} label-${side}`;
+  const cls = `lesson-node ${escapeHtml(l.status)}${isNext ? " next" : ""} label-${side}`;
   return (
-    `<li class="${cls}">` +
+    `<li class="${cls}" style="--i:${i};--x:${x}px;--done:${Math.round(ratio * 100)};--room:${room}px">` +
     (isNext ? `<span class="node-flag" aria-hidden="true">${l.status === "new" ? "Bắt đầu" : "Học tiếp"}</span>` : "") +
     `<button type="button" class="node-coin" data-lesson="${escapeHtml(l.lesson_id)}" aria-expanded="false" ` +
     `aria-label="${escapeHtml(l.title)}, ${STATUS_TEXT[l.status] || ""}">` +
     icon(coinIcon(l), "icon coin-icon") +
-    (progress > 0
-      ? `<svg class="node-progress" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><circle cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="${progress} ${100 - progress}"/></svg>`
-      : "") +
     "</button>" +
     `<span class="lesson-title">${escapeHtml(l.title)}</span>` +
     `<span class="visually-hidden lesson-state">${STATUS_TEXT[l.status] || ""}</span>` +
@@ -156,7 +152,7 @@ function unitHtml(u, swing, nextId, half, start) {
     `<span class="unit-count" title="${done}/${u.lessons.length} bài đã hoàn thành">${icon("check-circle")}${done}/${u.lessons.length}</span>` +
     "</div>" +
     (u.lessons.length
-      ? `<div class="unit-trail">${lineHtml(u.lessons, swing, start)}` +
+      ? `<div class="unit-trail" style="--n:${u.lessons.length}">${lineHtml(u.lessons, swing, start)}` +
         `<ol class="trail">${u.lessons.map((l, i) => nodeHtml(l, i, swing, nextId, half, start)).join("")}</ol></div>`
       : '<p class="muted unit-empty">Chặng này chưa có bài học.</p>') +
     "</section>"
@@ -221,8 +217,8 @@ function openCard(coin) {
   closeCard();
   const { lesson: l, unit: u } = found;
   const action = l.status === "new" ? "Bắt đầu" : l.status === "completed" ? "Học lại" : "Học tiếp";
+  const box = coin.closest(".unit-trail");
   const node = coin.closest(".lesson-node");
-  if (!node) return;
   const card = document.createElement("div");
   card.id = "node-card";
   card.className = `node-card topic-${topicOf(u)}`;
@@ -234,11 +230,18 @@ function openCard(coin) {
     (l.summary ? `<p class="card-summary">${escapeHtml(l.summary)}</p>` : "") +
     '<ul class="card-facts">' +
     `<li>${icon("layers")}${Number(l.steps)} bước</li>` +
-    (l.passed ? `<li>${icon("check-circle")}hoàn thành ${Number(l.passed)}/${Number(l.steps)} bước</li>` : "") +
+    (l.passed ? `<li>${icon("check-circle")}đạt ${Number(l.passed)}/${Number(l.steps)}</li>` : "") +
     (l.criterion ? `<li>${icon("target")}${escapeHtml(criterionName(l.criterion))}</li>` : "") +
     "</ul>" +
     `<a class="button" href="/practice/lessons/${encodeURIComponent(l.lesson_id)}">${icon("play")}${action}</a>`;
-  node.appendChild(card);
+  box.appendChild(card);
+  // Under the coin's label, kept inside the trail's box.
+  const width = Math.min(300, box.clientWidth - 16);
+  const centre = node.offsetLeft + COIN / 2;
+  card.style.width = `${width}px`;
+  card.style.left = `${Math.max(8, Math.min(box.clientWidth - width - 8, centre - width / 2))}px`;
+  card.style.top = `${node.offsetTop + COIN + (node.classList.contains("label-below") ? 46 : 14)}px`;
+  card.style.setProperty("--arrow", `${centre - parseFloat(card.style.left)}px`);
   coin.setAttribute("aria-expanded", "true");
   openCoin = coin;
   card.querySelector("a").focus({ preventScroll: true });
@@ -333,10 +336,7 @@ function todayCard(t) {
     '<section class="card side-card today-card" aria-labelledby="today-h">' +
     `<h2 id="today-h">${icon("target")}Hôm nay</h2>` +
     '<div class="today-row">' +
-    `<div class="goal-ring" role="img" aria-label="Đã nói ${seconds} trên ${goal} giây hôm nay">` +
-    `<svg class="goal-ring-chart" viewBox="0 0 100 100" aria-hidden="true" focusable="false">` +
-    '<circle class="goal-ring-track" cx="50" cy="50" r="46"></circle>' +
-    `<circle class="goal-ring-progress" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="${pct} ${100 - pct}"></circle></svg>` +
+    `<div class="goal-ring" style="--pct:${pct}" role="img" aria-label="Đã nói ${seconds} trên ${goal} giây hôm nay">` +
     `<span><b>${seconds}</b>/${goal} giây</span></div>` +
     '<div class="today-facts">' +
     `<p class="streak">${icon("flame", "icon flame")}<b>${streak}</b> ngày liên tiếp</p>` +
@@ -372,8 +372,8 @@ function achievementsCard(a) {
     ahead =
       `<p class="ach-next">Sắp đạt: <b>${escapeHtml(next.title)}</b>` +
       ` <span>${value}/${target} ${escapeHtml(next.unit)}</span></p>` +
-      `<progress class="bar native-progress achievement-progress" aria-label="${escapeHtml(next.title)}"` +
-      ` max="${target}" value="${Math.min(target, Math.max(0, value))}">${value}/${target}</progress>`;
+      `<div class="bar" role="progressbar" aria-label="${escapeHtml(next.title)}" aria-valuemin="0"` +
+      ` aria-valuemax="${target}" aria-valuenow="${value}"><span style="width:${Math.round((value / target) * 100)}%"></span></div>`;
   } else if (!n) {
     ahead = '<p class="muted">Ghi lượt nói đầu tiên để mở thành tựu đầu tiên.</p>';
   }
@@ -455,105 +455,15 @@ new ResizeObserver(() => {
   }, 150);
 }).observe(unitsEl);
 
-async function getJson(url) {
-  const response = await fetch(url);
-  if (window.redirectToLoginIfExpired(response)) throw new Error("SESSION_REQUIRED");
-  if (!response.ok) throw new Error(String(response.status));
-  return response.json();
-}
-
-async function lessonCard(lessonId, unit) {
-  const [lesson, progress] = await Promise.all([
-    getJson(`/api/v1/learn/lessons/${encodeURIComponent(lessonId)}`),
-    getJson(`/api/v1/learn/lessons/${encodeURIComponent(lessonId)}/progress`).catch(() => null),
-  ]);
-  const completed = new Set((progress && progress.completed_step_ids) || []);
-  const steps = Array.isArray(lesson.steps) ? lesson.steps : [];
-  const done = steps.filter((step) => completed.has(step.step_id)).length;
-  return {
-    lesson_id: lesson.lesson_id,
-    title: lesson.title,
-    summary: lesson.summary || "",
-    band: lesson.band,
-    steps: steps.length,
-    passed: done,
-    status: progress && progress.complete ? "completed" : done ? "started" : "new",
-    kinds: steps.map((step) => step.kind),
-    criterion: "",
-    unit,
-  };
-}
-
-async function loadPathView() {
-  const chosen = new URLSearchParams(location.search).get("path");
-  const [catalogue, effort, achievements, due] = await Promise.all([
-    getJson("/api/v1/learn/path"),
-    getJson("/api/v1/me/learning/progress"),
-    getJson("/api/v1/me/learning/achievements"),
-    getJson("/api/v1/learn/reviews/due"),
-  ]);
-  const paths = catalogue.paths || [];
-  const selected = paths.find((path) => path.path_id === chosen) || paths[0] || null;
-  if (!selected) {
-    return { path: null, paths: [], next: null, today: mapEffort(effort), reviews_due: (due.reviews || []).length, achievements: mapAchievementSummary(achievements) };
-  }
-
-  const units = await Promise.all((selected.units || []).map(async (unit) => {
-    const lessons = await Promise.all((unit.lesson_ids || []).map((id) => lessonCard(id, unit)));
-    return {
-      unit_id: unit.unit_id,
-      title: unit.title,
-      band: unit.band,
-      topic: unit.topic || "",
-      function: unit.learning_function || "",
-      lessons,
-    };
-  }));
-  const flattened = units.flatMap((unit) => unit.lessons);
-  const nextLesson = flattened.find((lesson) => lesson.status !== "completed") || null;
-  const path = {
-    ...selected,
-    units,
-    lessons_total: flattened.length,
-    lessons_completed: flattened.filter((lesson) => lesson.status === "completed").length,
-  };
-  return {
-    path,
-    paths: paths.map(({ path_id, title }) => ({ path_id, title })),
-    next: nextLesson ? { ...nextLesson, basis: "path_order", reason: "Bài tiếp theo trong lộ trình của bạn." } : null,
-    today: mapEffort(effort),
-    reviews_due: (due.reviews || []).length,
-    achievements: mapAchievementSummary(achievements),
-  };
-}
-
-function mapEffort(value) {
-  return {
-    seconds: value.today_seconds,
-    goal_seconds: value.goal_seconds,
-    goal_met: value.goal_met,
-    streak: value.streak_days,
-    best_streak: value.record_days,
-    week: value.week || [],
-    last_week_seconds: value.previous_week_seconds,
-    rest_days: value.rest_days || [],
-  };
-}
-
-function mapAchievementSummary(value) {
-  const items = value.items || [];
-  const nextItem = items.find((item) => item.code === (value.next || {}).code);
-  return {
-    total: value.total,
-    unlocked: value.unlocked,
-    new: items.filter((item) => item.is_new).length,
-    recent: items.filter((item) => item.unlocked_at).slice(-5).reverse(),
-    next: nextItem && value.next ? { ...nextItem, ...value.next } : null,
-  };
-}
-
-loadPathView()
+const chosen = new URLSearchParams(location.search).get("path");
+fetch(`/api/v1/learn${chosen ? `?path_id=${encodeURIComponent(chosen)}` : ""}`)
+  .then((r) => {
+    if (window.redirectToLoginIfExpired(r)) return null;
+    if (!r.ok) throw new Error(String(r.status));
+    return r.json();
+  })
   .then((d) => {
+    if (!d) return;
     data = d;
     render();
   })

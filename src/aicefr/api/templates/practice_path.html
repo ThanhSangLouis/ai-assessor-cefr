@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
+{% from "_plan_goal.html" import goal_fields %}
 {% block title %}Lộ trình luyện nói · AI Assessor CEFR{% endblock %}
 {% block content %}
 {#- The learner's lesson path (D025, M13; drawn as a trail in D027): three
@@ -14,6 +15,9 @@
 
   <div class="notice notice-danger" id="consent-gate" hidden></div>
 
+  {#- D055: reminders, computed when the page opens; none when nothing waits. -#}
+  <section class="nudges" id="nudges" aria-label="Nhắc việc" hidden></section>
+
   <div class="path-grid">
     <div class="path-trail" id="path-units" aria-live="polite">
       <div class="skeleton skeleton-block"></div>
@@ -22,6 +26,27 @@
       <div class="card"><div class="skeleton skeleton-block"></div></div>
     </aside>
   </div>
+
+  {#- D046: a path of published lessons composed for what the learner asks. -#}
+  <section class="card plan-card" id="my-plan" aria-labelledby="my-plan-h" hidden>
+    <div class="plan-head">
+      <div>
+        <p class="eyebrow">{{ icon("sparkle") }}Lộ trình riêng</p>
+        <h2 id="my-plan-h">Ghép lộ trình theo ý bạn</h2>
+        <p class="muted">Hệ thống chọn và xếp thứ tự các bài giảng viên đã xuất bản, theo mục tiêu
+          bạn nhập, trình độ và tiêu chí cần luyện nhất trong bài đánh giá gần nhất, cùng các âm bạn
+          hay nói sai. Hệ thống không viết bài mới.</p>
+      </div>
+    </div>
+    <div id="my-plan-body" aria-live="polite"></div>
+    <details class="plan-form" id="my-plan-form-wrap">
+      <summary>{{ icon("plus") }}<b id="my-plan-form-label">Ghép lộ trình</b></summary>
+      <form id="my-plan-form">
+        {{ goal_fields("mp", bands=false) }}
+        <div class="button-row"><button type="submit">{{ icon("sparkle") }}<span>Ghép lộ trình</span></button></div>
+      </form>
+    </details>
+  </section>
 
   <details class="card practice-rules">
     <summary>{{ icon("info") }}<b>Lộ trình được sắp xếp và gợi ý thế nào?</b></summary>
@@ -37,4 +62,6 @@
   </details>
 </div>
 {% endblock %}
-{% block scripts %}<script src="{{ asset('practice_path.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ asset('practice_path.js') }}"></script>
+<script src="{{ asset('path_plans.js') }}"></script>
+<script src="{{ asset('nudges.js') }}"></script>{% endblock %}

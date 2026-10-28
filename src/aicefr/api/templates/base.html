@@ -32,10 +32,7 @@
 {%- set role_names = {"student": "Sinh viên", "teacher": "Giảng viên", "admin": "Quản trị"} -%}
 {%- set homes = {"student": "/practice", "teacher": "/review", "admin": "/admin"} -%}
 {%- set here = nav_here | default("") -%}
-<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}"
-  data-icons="{{ asset('icons.svg') }}"
-  data-recording-enabled="{{ recording_enabled | default(false) | string | lower }}"
-  data-asr-is-real="{{ asr_is_real | default(false) | string | lower }}">
+<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}" data-icons="{{ asset('icons.svg') }}">
 <a class="skip-link" href="#main">Bỏ qua điều hướng, tới nội dung chính</a>
 {#- D037: the ground behind every page -- contour lines high on the right,
     terraced hills low on the right whose ridges are spoken phrases. Decoration
@@ -65,12 +62,17 @@
     {% if role == "student" %}
       <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("path") }}<span class="nav-label">Luyện tập</span>{{ badge("reviews_due") }}</a>
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
+      <a href="/my-assignments"{% if here == "assignments" %} aria-current="page"{% endif %}>{{ icon("target") }}<span class="nav-label">Bài được giao</span>{{ badge("assignments") }}</a>
       <a href="/my-responses"{% if here == "mine" %} aria-current="page"{% endif %}>{{ icon("folder") }}<span class="nav-label">Bài của tôi</span>{{ badge("results") }}</a>
       <a href="/my-progress"{% if here == "progress" %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Tiến độ</span></a>
+      {% if metered() %}
+      <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
+      {% endif %}
     {% else %}
       <a href="/review"{% if here == "queue" %} aria-current="page"{% endif %}>{{ icon("inbox") }}<span class="nav-label">Hàng đợi duyệt</span>{{ badge("queue") }}</a>
+      <a href="/teach/classes"{% if here == "classes" %} aria-current="page"{% endif %}>{{ icon("users") }}<span class="nav-label">Lớp học</span></a>
       <a href="/teach"{% if here == "teach" %} aria-current="page"{% endif %}>{{ icon("layers") }}<span class="nav-label">Lộ trình luyện</span></a>
-      <a href="/teacher/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê lớp</span></a>
+      <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê lớp</span></a>
       <a href="/rate"{% if here == "rate" %} aria-current="page"{% endif %}>{{ icon("eye-off") }}<span class="nav-label">Chấm mù</span>{{ badge("ratings") }}</a>
       {% if role == "admin" %}
         <a href="/admin"{% if here == "admin" %} aria-current="page"{% endif %}>{{ icon("shield") }}<span class="nav-label">Quản trị</span></a>

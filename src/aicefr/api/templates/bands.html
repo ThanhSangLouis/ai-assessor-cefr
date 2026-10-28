@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon, cube %}
+{% block title %}Thang band · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D028. What each band describes, and -- for every aspect -- whether the
+    machine measures any of it. Content: report/bands.py; thresholds: the
+    scoring model in force, so the page and the scorer cannot disagree. -#}
+<div class="page-head">
+  <p class="eyebrow">Đọc kết quả</p>
+  <h1><span class="head-icon">{{ icon("target") }}</span>Band A2, B1, B2 nghĩa là gì</h1>
+  <p class="lede">
+    Mỗi band mô tả một kiểu nói. Trang này cho biết từng band nghĩa là gì, và với mỗi mặt của
+    kỹ năng nói, máy thật sự đo được phần nào, phần nào chỉ giảng viên nghe ra được.
+  </p>
+</div>
+
+<section class="card band-scale" aria-labelledby="scale-h">
+  <h2 id="scale-h">Từ điểm sang band</h2>
+  <p>
+    Máy đưa ra <b>một điểm tổng ước lượng</b> trên thang 0–6, rồi quy ra band theo hai ngưỡng
+    của mô hình đang dùng (<code>{{ model_version }}</code>):
+  </p>
+  {#- D031: the three bands as the blocks of the product's mark. -#}
+  <div class="cube-stage" aria-hidden="true"><div class="cube-row">{{ cube("A2", "tone-1", 64) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "is-solid", 128) }}</div></div>
+  <ol class="band-ladder">
+    <li><span class="band-name">A2</span><span>điểm dưới {{ "%.2f" | format(a2_b1) }}</span></li>
+    <li><span class="band-name">B1</span><span>từ {{ "%.2f" | format(a2_b1) }} đến dưới {{ "%.2f" | format(b1_b2) }}</span></li>
+    <li><span class="band-name">B2</span><span>từ {{ "%.2f" | format(b1_b2) }} trở lên</span></li>
+  </ol>
+  <p class="muted">
+    Bài có điểm sát ranh giới hai band luôn được chuyển giảng viên nghe lại. Máy <b>không chấm
+    riêng năm tiêu chí</b>: các mục bên dưới chỉ cho biết phép đo của máy chạm tới đâu.
+  </p>
+</section>
+
+<div class="prov-legend" aria-label="Chú thích nhãn">
+  <span class="prov prov-indirect">{{ icon("eye") }} Máy đo gián tiếp</span>
+  <span class="prov prov-not_measured">{{ icon("eye-off") }} Máy không đo</span>
+  <span class="prov prov-not_assessed">{{ icon("x") }} Không đánh giá</span>
+</div>
+
+{% for row in rows %}
+<section class="card aspect-card" aria-labelledby="aspect-{{ row.key }}" data-provenance="{{ row.provenance }}">
+  <div class="aspect-head">
+    <h2 id="aspect-{{ row.key }}">{{ row.name }}</h2>
+    <span class="prov prov-{{ row.provenance }}">{{ row.provenance_name }}</span>
+  </div>
+  <dl class="aspect-machine">
+    {% if row.measured_by %}<div><dt>Máy dùng</dt><dd>{{ row.measured_by }}</dd></div>{% endif %}
+    <div><dt>Máy không thấy</dt><dd>{{ row.blind_to }}</dd></div>
+  </dl>
+  {% if row.bands["A2"] %}
+  <div class="band-columns">
+    {% for band, text in row.bands.items() %}
+    <div class="band-col"><p class="band-label">{{ band }}</p><p>{{ text }}</p></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endfor %}
+
+<section class="card" aria-labelledby="limits-h">
+  <h2 id="limits-h">Giới hạn cần biết</h2>
+  <ul class="limit-list">
+    <li>
+      <b>Chưa hiệu chuẩn trên giọng sinh viên Việt Nam.</b> Mô hình học từ người học tiếng Anh
+      nhiều quốc tịch; mức sai trên giọng Việt chưa đo được. Vì vậy mọi band là ước lượng.
+    </li>
+    <li>
+      <b>Một điểm tổng, không phải năm điểm.</b> Máy không cho điểm riêng từng tiêu chí; những mặt
+      "máy không đo" chỉ giảng viên đánh giá được.
+    </li>
+    <li>
+      <b>Nói lắp hay khó khăn về giọng nói.</b> Mô hình dựa nhiều vào chỗ ngừng, nên người nói lắp
+      hoặc có vấn đề về giọng vì lý do sức khoẻ có thể nhận ước lượng độ trôi chảy thấp hơn thực tế.
+      Hãy báo giảng viên: giảng viên nghe lại bài và quyết định.
+    </li>
+    <li>
+      <b>Giọng không bị trừ điểm.</b> Hệ thống không chấm giọng; khi máy "nghe không rõ" một từ,
+      điều đó nói về micro, tiếng ồn hay bộ nhận dạng nhiều không kém gì về cách bạn phát âm.
+    </li>
+    <li>
+      <b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi giảng viên
+      duyệt. Hệ thống không cấp chứng chỉ.
+    </li>
+  </ul>
+  <p class="muted small-note">
+    Mô tả band được diễn đạt lại bằng tiếng Việt theo tinh thần các thang mô tả định tính về ngôn
+    ngữ nói trong Khung tham chiếu CEFR, bản bổ sung 2020 của Hội đồng châu Âu; đây không phải
+    bản dịch chính thức và đang chờ giảng viên Ngoại ngữ duyệt nội dung.
+  </p>
+</section>
+{% endblock %}

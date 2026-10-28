@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Cổng thanh toán thử · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D033. Stands in for a real gateway's payment page when no money should move:
+    the person picks the outcome, and the result comes back signed the way a
+    gateway signs it. Never the gateway of a deployment that sells for real. -#}
+<div class="pay-page">
+  <div class="notice notice-warn pay-banner" role="note">
+    <b>Môi trường thử.</b> Trang này đứng thay trang của cổng thanh toán. Không có tiền thật
+    nào được chuyển, không cần thẻ hay tài khoản ngân hàng.
+  </div>
+  <section class="card pay-card" aria-labelledby="pay-h">
+    <p class="eyebrow">{{ icon("lock") }} Cổng thanh toán thử</p>
+    <p class="pay-label">Số tiền cần thanh toán</p>
+    <h1 id="pay-h" class="pay-amount">{{ order.amount_vnd | vnd }}</h1>
+    <dl class="pay-facts">
+      <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
+      <dt>Đơn vị nhận</dt><dd>AI Assessor CEFR</dd>
+      {% if order.kind == "credits" %}
+      <dt>Nội dung</dt><dd>{{ order.plan_name }} chấm bài nói</dd>
+      {% else %}
+      <dt>Nội dung</dt><dd>Gói {{ order.plan_name }} · {{ order.seats }} sinh viên · {{ order.months }} tháng</dd>
+      <dt>Thời hạn</dt><dd>{{ order.starts_on | dmy }} – {{ order.ends_on | dmy }}</dd>
+      <dt>Bên mua</dt><dd>{{ organization or "—" }}</dd>
+      {% endif %}
+    </dl>
+    {% if payable %}
+    <p class="muted">Chọn kết quả muốn thử. Hệ thống nhận kết quả đúng như từ một cổng thật: có chữ ký,
+      đối chiếu số tiền, ghi nhận một lần.</p>
+    <form method="post" action="/billing/sandbox/{{ order.order_id }}/pay" class="pay-actions">
+      <input type="hidden" name="t" value="{{ token }}">
+      <button type="submit" name="outcome" value="paid">{{ icon("check-circle") }}<span>Thanh toán thành công</span></button>
+      <button type="submit" name="outcome" value="failed" class="secondary">Thanh toán không thành công</button>
+      <button type="submit" name="outcome" value="cancelled" class="secondary">Huỷ giao dịch</button>
+    </form>
+    {% else %}
+    <p class="notice">Đơn này đang ở trạng thái <b>{{ order.status_name | lower }}</b>; không thanh toán lại được.</p>
+    <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
