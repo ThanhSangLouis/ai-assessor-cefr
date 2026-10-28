@@ -1,33 +1,53 @@
-# Thiết kế gọn: sơ đồ lớp 24 hộp và 18 collection
+# Thiết kế gọn: mô hình nghiệp vụ 20 hộp và 18 collection
 
 **Trạng thái:** thiết kế đã được chủ dự án chốt ngày 28/10/2026; code đang được chuyển theo (PR riêng, xếp sau PR làm xanh `main`).
 **Người soạn:** Sang. **Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio) (sinh bằng `tools/gen_class_diagram.py`), bản trên Drive trang "So do lop".
 
 ## 1. Quyết định của chủ dự án (28/10/2026)
 
-1. Giảm số lớp và số collection xuống mức tối thiểu. Lớp dùng chung được thì gộp theo OOP. Sau đó code phải khớp đúng sơ đồ.
-2. Gộp luôn các collection MongoDB, kèm migration dữ liệu.
-3. Phần mở rộng không thuộc cam kết **bỏ khỏi sơ đồ nhưng giữ code**: gói dịch vụ và kênh NetID (`PriceList`, `TokenUsage`, `Action`), nghe lại D056 (`Moment`), nhắc việc D055 (`Nudge`).
-4. **Bỏ đồng thuận nghiên cứu.** Đợt xin giọng nói để huấn luyện đã qua, nên bỏ collection `consent`, hộp `Consent` và trang đồng thuận nhiều phiên bản. Chỉ giữ mốc `Account.termsAcceptedAt`: người học đồng ý điều khoản trước lần nộp đầu tiên, vì hệ thống vẫn lưu giọng nói, là dữ liệu cá nhân.
+1. **Sơ đồ lớp chỉ giữ nghiệp vụ của bài toán:**
+   - đánh giá kỹ năng nói theo CEFR có bằng chứng;
+   - giảng viên duyệt;
+   - vòng "đánh giá để học" (nhiệm vụ, bài học, ôn tập, lộ trình);
+   - giao bài cho lớp.
+2. **Thiết kế phải đúng chuẩn OOP và rã xuống code được.** Khoảng 20 hộp là mục tiêu, được chênh lệch, không ép số làm sai thiết kế.
+3. **Không vẽ phần ngoài nghiệp vụ, nhưng vẫn giữ code của chúng:**
+   - gói dịch vụ, giấy phép, đơn và lượt NetID;
+   - công cụ nghiên cứu (chấm mù hai người, thực nghiệm phản hồi, nghe lại có đối chứng);
+   - thuộc tính kỹ thuật (đăng nhập Google, đổi mật khẩu, hình đại diện, khoá bản ghi âm, tên mô hình ASR).
+4. **Bỏ đồng thuận nghiên cứu.** Đợt xin giọng nói để huấn luyện đã qua, nên bỏ collection `consent`, lớp `Consent` và trang đồng thuận nhiều phiên bản. Chỉ giữ mốc `Account.termsAcceptedAt`, vì hệ thống vẫn lưu giọng nói, là dữ liệu cá nhân.
+5. **Gộp collection MongoDB** theo mục 3, kèm migration dữ liệu.
 
-## 2. Sơ đồ lớp: 37 → 24 hộp
+## 2. Sơ đồ lớp: 37 → 20 hộp
 
-| Trước | Sau | Lý do |
+**Bảy thực thể:** `Account`, `Task`, `Response`, `Lesson`, `LessonPath`, `ReviewItem`, `Classroom`. Mỗi thực thể là một tập dữ liệu có định danh.
+
+**Chín lớp còn lại:**
+- `Prompt`: lớp trừu tượng, cha của `Task` và `Step`;
+- đối tượng giá trị: `Step`, `Mission`, `Assessment`, `Measure`, `Feedback`, `Word`, `Rating`, `Assignment`.
+
+**Bốn kiểu liệt kê:** `Role`, `Status`, `Band`, `Criterion`.
+
+| Trước | Sau | Lý do (OOP) |
 | --- | --- | --- |
-| `Consent` («entity») | `Account.termsAcceptedAt`, `Account.maySubmit()` | quyết định 4 |
-| `Feature`, `CriterionIndicator` | **`Measure`**, dùng chung cho `FeatureSet.items` và `CriterionResult.measures` | cùng là một phép đo có tên, giá trị, lý do thiếu, vị trí trong phân bố |
-| `CriterionCoverage` | **`CriterionResult`** (độ phủ, lý do, các `Measure`) | một kết quả cho mỗi tiêu chí thay vì hai danh sách song song |
-| `Evidence`, `Comment`, `Priority`, `EvidenceKind` | **`Feedback`** + **`FeedbackKind`** (`PAUSE`, `FILLER`, `LOW_CONFIDENCE_WORD`, `LEXICAL`, `COMMENT`, `PRIORITY`) | cùng là phản hồi gắn bằng chứng trên báo cáo |
-| `ScoreInterval` | `Assessment.intervalLow`, `intervalHigh`, `intervalBands`, `intervalCoverage`, `isSingleBand()` | không có định danh, chỉ thuộc một `Assessment` |
-| `Assessment` («entity») | «value object» trong `Response` | không có định danh riêng; sửa điểm được ghi bằng `Review` |
-| `Review` («entity») | «value object» trong `Response.reviews` | mỗi lần sửa là một bản ghi bất biến |
-| `PracticeResult`, `MissionCheck`, `MissionHit` | **`MissionResult`** trong `Response.missionResults`; chỗ máy nghe được là `Word` | dùng lại `Word` thay vì một lớp hai trường |
-| `TaskPart` | `Task.part: str` | chỉ một lớp dùng, không có luật riêng |
-| `PriceList`, `TokenUsage`, `Action`, `Moment`, `Nudge` | bỏ khỏi sơ đồ, code giữ | quyết định 3 |
-
-Kết quả: 3 thực thể (`Account`, `Task`, `Response`), 12 đối tượng giá trị, 9 kiểu liệt kê, 29 quan hệ.
+| `Task` và bước bài học (`Step` trong code) có chung lời đề, thời lượng, từ gợi ý, văn bản mẫu, giọng mẫu, ảnh, nhiệm vụ | lớp cha trừu tượng **`Prompt`**, hai lớp con `Task`, `Step` | kế thừa thay cho hai lớp lặp trường |
+| `Consent` | `Account.termsAcceptedAt`, `Account.maySubmit()` | quyết định 4 |
+| `Feature`, `CriterionCoverage`, `CriterionIndicator` | **`Measure`** (tên, giá trị, vị trí trong phân bố, lý do thiếu): dùng cho `Response.features` và `Assessment.criteria` | cùng là một phép đo có tên |
+| `QcResult`, `Transcript`, `FeatureSet` | thuộc tính của `Response` (`durationMs`, `qcStatus`, `transcript`, `words`, `features`) | chỉ thuộc một bài nộp, không có hành vi riêng ngoài `valueOf()` |
+| `Evidence`, `Comment`, `Priority` | **`Feedback`** (loại, tiêu chí, lời, đoạn thời gian) | cùng là nhận xét gắn bằng chứng |
+| `ScoreInterval`, `AnalysisWindow` | `Assessment.intervalLow`, `intervalHigh`, `windowScores`, `isSingleBand()` | không có định danh, chỉ thuộc một `Assessment` |
+| `Review` (giảng viên sửa điểm) | **`Rating`** trong `Response.ratings` | một lần người chấm một bài, bất biến |
+| `PracticeResult`, `MissionCheck`, `MissionHit` | **`Mission`**: phần kết quả (`measured`, `met`, `hits: Word`) để tuỳ chọn | cùng một nhiệm vụ trước và sau khi đo |
+| `WordMark` (đánh dấu từ trong bài học) | **`Word`** thêm `status`, `said`, `pattern` | cùng là một từ có mốc thời gian |
+| lượt nói ở một bước bài học (`step_attempt`) | **`Response`** với `purpose`, `passed` | cùng là một lượt nói được thu âm và đo |
+| lộ trình gợi ý (`learning_plan`) | `LessonPath.ownerId`, `goal` | lộ trình gợi ý là một lộ trình có chủ và mục tiêu |
+| thành tựu, chuỗi ngày, nhắc việc | `Account.achievements`, `streakDays()`, `nudges()` | trạng thái và phép tính của người học |
+| `EvidenceKind`, `QcStatus`, `TaskPart`, `TaskPurpose`, `MissionKind`, `ReasonCode` | ghi `str`, danh sách giá trị ở SRS | chỉ giữ bốn kiểu liệt kê cốt lõi |
 
 ## 3. Collection: 42 → 18
+
+Collection gộp theo kho, độc lập với việc lớp nào được vẽ: các kho ngoài nghiệp vụ (gói dịch vụ, lượt, nghiên cứu) vẫn gộp như bảng dưới.
+
 
 | Phần (database) | Trước | Sau | Cách gộp |
 | --- | --- | --- | --- |
@@ -55,4 +75,4 @@ Mọi kho kế thừa một lớp cha `MongoStore`. Lớp cha có sẵn thao tá
 
 ## 4. Khớp sơ đồ và code
 
-Test đối chiếu sẽ đọc `02_class.drawio` và kiểm mỗi hộp có một lớp cùng tên, cùng thuộc tính và thao tác trong code. Phần mở rộng ở quyết định 3 nằm ngoài phép đối chiếu.
+Test đối chiếu sẽ đọc `02_class.drawio` và kiểm: mỗi hộp có một lớp cùng tên trong code, cùng thuộc tính và thao tác; `Task` và `Step` kế thừa `Prompt`. Phần ở quyết định 3 nằm ngoài phép đối chiếu.
