@@ -31,6 +31,15 @@ Dùng tài khoản AWS cá nhân hoặc của trường, không dùng tài kho�
   | `t3.xlarge` | 4 / 16 GB | Whisper, chấm nhanh hơn | khoảng 155 USD |
 
   Giá chỉ để ước lượng. Xem số chính xác trên trang giá EC2 trước khi tạo máy. Bản free tier (`t3.micro`, 1 GB) không chạy được hệ thống này.
+
+  **Tài khoản gói Free** (tài khoản mới, có credit 100 USD) chỉ cho tạo loại máy *free-tier eligible*, nên không chọn được `t3.large`. Khi đó dùng **`m7i-flex.large`** (2 vCPU, 8 GB, x86, đủ cho Whisper): ở Sydney khoảng 0,12 USD/giờ, tính cả ổ đĩa và IP là khoảng 95 USD/tháng nếu chạy liên tục, trừ vào credit. Xem các loại được phép:
+
+  ```bash
+  aws ec2 describe-instance-types --filters Name=free-tier-eligible,Values=true \
+    --query 'InstanceTypes[].[InstanceType,MemoryInfo.SizeInMiB]' --output text
+  ```
+
+  Tài khoản gói Free cũng có thể chỉ cho dùng một region cố định (ví dụ `ap-southeast-2`, Sydney). `aws login` sẽ báo nếu chọn sai region.
 - **Key pair:** tạo một cặp mới (ed25519). Đây là khoá để **bạn** đăng nhập, khác khoá deploy ở bước 5.
 - **Network settings → Security group:** mở cho Inbound:
   - `22/tcp` từ `0.0.0.0/0`, vì runner của GitHub không có dải IP cố định. Máy chỉ nhận đăng nhập bằng khoá (xem bước 3).
@@ -44,6 +53,8 @@ Nên đặt một ngưỡng cảnh báo ở **Billing → Budgets** (ví dụ 50
 ## 2. Trỏ tên miền
 
 Làm như [TRIEN_KHAI_VPS.md mục 2](TRIEN_KHAI_VPS.md#2-trỏ-tên-miền): tạo bản ghi **A** trỏ về Elastic IP. Caddy cần một tên miền thật để xin chứng chỉ Let's Encrypt; địa chỉ `ec2-…amazonaws.com` không dùng được.
+
+Chưa có tên miền thì dùng `sslip.io`: IP `52.64.179.250` có sẵn tên `52-64-179-250.sslip.io`, tự trỏ về IP đó, không cần đăng ký, và Let's Encrypt vẫn cấp chứng chỉ được. Đủ cho demo; khi có tên miền riêng thì đổi `AICEFR_DOMAIN` trong `.env` rồi deploy lại.
 
 ## 3. Chuẩn bị máy chủ
 
@@ -84,8 +95,12 @@ Rồi làm như [TRIEN_KHAI_VPS.md mục 4](TRIEN_KHAI_VPS.md#4-tạo-env-trên-
 Bộ model của nhóm (thư mục `aicefr-models`) không có trong git, và workflow không chép nó lên. Compose đọc model từ `AICEFR_MODEL_HOST_DIR`, mặc định là `../aicefr-models`, tức `/srv/aicefr-models` trên máy chủ. Nếu bản triển khai cần model, chép tay một lần:
 
 ```bash
+ssh -i ~/.ssh/<khoá-ec2>.pem ubuntu@<IP> sudo install -d -m 0750 -o aicefr -g aicefr /srv/aicefr-models
 rsync -az ../aicefr-models/ aicefr-ec2:/srv/aicefr-models/
+ssh aicefr-ec2 'cd /srv/aicefr-models && sha256sum -c --quiet SHA256SUMS && echo OK'
 ```
+
+Người dùng `aicefr` không có quyền tạo thư mục trong `/srv`, nên lệnh đầu cần chạy bằng `ubuntu` với `sudo`.
 
 ## 5. Khoá deploy cho GitHub Actions
 
