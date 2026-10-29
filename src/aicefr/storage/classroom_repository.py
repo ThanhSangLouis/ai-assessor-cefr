@@ -1,11 +1,13 @@
 """Classes and the assessments a teacher sets them (D054).
 
-Three collections:
-
-* `classroom` -- a teacher's class: a name, and a join code the teacher hands
-  out so students add themselves;
-* `class_member` -- who is in which class, unique on (class, account);
-* `assignment` -- one task set to one class, due at the end of a day.
+One collection, `classroom`, one document per class (D060). The document is a
+`Classroom`: a name, a join code the teacher hands out so students add
+themselves, the members, and the assignments -- one task set to the class, due
+at the end of a day. An assignment lives and dies with its class, so it is part
+of the class's document, not a document of its own (the composition
+`Classroom ◆ Assignment` of the class diagram). The members are a many-to-many
+association with accounts: the class keeps the account ids, in the order they
+joined, and no linking record stands between them.
 
 What a student has done is not stored here: an assessment response of the
 assigned task, made by a member after the task was set, is the submission, and
@@ -18,25 +20,15 @@ from __future__ import annotations
 
 import secrets
 import uuid
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from pymongo import ASCENDING, DESCENDING
+from pymongo import DESCENDING
 
-from aicefr.storage.db import IntegrityError, MongoStore, fields
+from aicefr.storage.db import IntegrityError, MongoStore
 from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import ensure_current
 
-CLASS_FIELDS = ("class_id", "name", "code", "teacher_id", "created_at", "archived")
-ASSIGNMENT_FIELDS = (
-    "assignment_id",
-    "class_id",
-    "task_id",
-    "note",
-    "due_on",
-    "due_at",
-    "created_by",
-    "created_at",
-)
 # Without 0/O and 1/I/L: a code read aloud in class or copied off a board.
 CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
 CODE_LENGTH = 6
@@ -46,42 +38,113 @@ def new_code() -> str:
     return "".join(secrets.choice(CODE_ALPHABET) for _ in range(CODE_LENGTH))
 
 
+@dataclass
+class Assignment:
+    """One assessment task set to a class, due at the end of `due_on` (Vietnam)."""
+
+    assignment_id: str
+    task_id: str
+    note: str
+    due_on: str
+    due_at: str  # the end of the due day as the UTC stamp responses carry
+    created_by: str
+    created_at: str
+
+    def is_late(self, at: str) -> bool:
+        """Whether a response made at `at` came after the due day."""
+        return at >= self.due_at
+
+
+@dataclass
+class Classroom:
+    """A teacher's class: its join code, its members, what it was set."""
+
+    class_id: str
+    name: str
+    code: str
+    teacher_id: str
+    created_at: str
+    archived: bool = False
+    members: list[str] = field(default_factory=list)  # account ids, in joining order
+    assignments: list[Assignment] = field(default_factory=list)
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> Classroom:
+        return cls(
+            class_id=doc["class_id"],
+            name=doc["name"],
+            code=doc["code"],
+            teacher_id=doc["teacher_id"],
+            created_at=doc["created_at"],
+            archived=bool(doc.get("archived", False)),
+            members=list(doc.get("members", [])),
+            assignments=[Assignment(**a) for a in doc.get("assignments", [])],
+        )
+
+    def to_doc(self) -> dict:
+        return asdict(self)
+
+    def view(self) -> dict:
+        """What the screens show of the class itself, without members or assignments."""
+        return {
+            "class_id": self.class_id,
+            "name": self.name,
+            "code": self.code,
+            "teacher_id": self.teacher_id,
+            "created_at": self.created_at,
+            "archived": self.archived,
+        }
+
+
+def _assignment_view(a: Assignment, class_id: str) -> dict:
+    return {"class_id": class_id, **asdict(a)}
+
+
+def as_assignment(view: dict) -> Assignment:
+    """The assignment back from what the repository hands out."""
+    return Assignment(**{k: view[k] for k in Assignment.__dataclass_fields__})
+
+
 class ClassroomRepository(MongoStore):
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = str(db_path)
         ensure_current(self.db_path)
 
+    def _load(self, query: dict) -> Classroom | None:
+        doc = self.col("classroom").find_one(query)
+        return Classroom.from_doc(doc) if doc else None
+
     # ------------------------------------------------------------ classes
 
     def create(self, name: str, teacher_id: str) -> dict:
         for _ in range(8):
-            doc = {
-                "class_id": "lop-" + uuid.uuid4().hex[:10],
-                "name": name,
-                "code": new_code(),
-                "teacher_id": teacher_id,
-                "created_at": _now(),
-                "archived": False,
-            }
+            made = Classroom(
+                class_id="lop-" + uuid.uuid4().hex[:10],
+                name=name,
+                code=new_code(),
+                teacher_id=teacher_id,
+                created_at=_now(),
+            )
             try:
-                self.col("classroom").insert_one(doc)
+                self.col("classroom").insert_one(made.to_doc())
             except IntegrityError:
                 continue  # the code was taken: draw another
-            return fields(doc, CLASS_FIELDS)  # type: ignore[return-value]
+            return made.view()
         raise RuntimeError("could not draw a free join code")
 
     def get(self, class_id: str) -> dict | None:
-        return fields(self.col("classroom").find_one({"class_id": class_id}), CLASS_FIELDS)
+        found = self._load({"class_id": class_id})
+        return found.view() if found else None
 
     def by_code(self, code: str) -> dict | None:
-        row = self.col("classroom").find_one({"code": code.strip().upper(), "archived": False})
-        return fields(row, CLASS_FIELDS)
+        found = self._load({"code": code.strip().upper(), "archived": False})
+        return found.view() if found else None
 
     def of_teacher(self, teacher_id: str | None) -> list[dict]:
         """A teacher's classes; every class when `teacher_id` is None (an administrator)."""
         query = {} if teacher_id is None else {"teacher_id": teacher_id}
         rows = self.col("classroom").find(query).sort([("created_at", DESCENDING)])
-        return [fields(r, CLASS_FIELDS) for r in rows]  # type: ignore[misc]
+        return [Classroom.from_doc(r).view() for r in rows]
 
     def set_archived(self, class_id: str, archived: bool) -> None:
         self.col("classroom").update_one({"class_id": class_id}, {"$set": {"archived": archived}})
@@ -89,63 +152,79 @@ class ClassroomRepository(MongoStore):
     # ------------------------------------------------------------ members
 
     def add_member(self, class_id: str, account_id: str) -> bool:
-        """False when the account is in the class already."""
-        try:
-            self.col("class_member").insert_one(
-                {"class_id": class_id, "account_id": account_id, "joined_at": _now()}
-            )
-        except IntegrityError:
-            return False
-        return True
+        """False when the account is in the class already.
+
+        One conditional update: the account is appended only where it is not
+        a member yet, so two joins at once add it once.
+        """
+        done = self.col("classroom").update_one(
+            {"class_id": class_id, "members": {"$ne": account_id}},
+            {"$push": {"members": account_id}},
+        )
+        return bool(done.modified_count)
 
     def remove_member(self, class_id: str, account_id: str) -> bool:
-        done = self.col("class_member").delete_one({"class_id": class_id, "account_id": account_id})
-        return bool(done.deleted_count)
+        done = self.col("classroom").update_one(
+            {"class_id": class_id, "members": account_id}, {"$pull": {"members": account_id}}
+        )
+        return bool(done.modified_count)
 
     def members(self, class_id: str) -> list[dict]:
-        rows = self.col("class_member").find({"class_id": class_id}).sort("joined_at", ASCENDING)
-        return [fields(r, ("account_id", "joined_at")) for r in rows]  # type: ignore[misc]
+        found = self._load({"class_id": class_id})
+        return [{"account_id": m} for m in (found.members if found else [])]
 
     def classes_of(self, account_id: str) -> list[str]:
-        rows = self.col("class_member").find({"account_id": account_id}, {"class_id": 1})
+        rows = self.col("classroom").find({"members": account_id}, {"class_id": 1})
         return [r["class_id"] for r in rows]
 
     def count_members(self, class_id: str) -> int:
-        return self.col("class_member").count_documents({"class_id": class_id})
+        found = self._load({"class_id": class_id})
+        return len(found.members) if found else 0
 
     def forget_account(self, account_id: str) -> None:
         """Erasure (FR-37): the account leaves every class."""
-        self.col("class_member").delete_many({"account_id": account_id})
+        self.col("classroom").update_many(
+            {"members": account_id}, {"$pull": {"members": account_id}}
+        )
 
     # ------------------------------------------------------------ assignments
 
     def assign(
         self, class_id: str, task_id: str, due_on: str, due_at: str, note: str, by: str
     ) -> dict:
-        doc = {
-            "assignment_id": "bg-" + uuid.uuid4().hex[:10],
-            "class_id": class_id,
-            "task_id": task_id,
-            "note": note,
-            "due_on": due_on,
-            "due_at": due_at,
-            "created_by": by,
-            "created_at": _now(),
-        }
-        self.col("assignment").insert_one(doc)
-        return fields(doc, ASSIGNMENT_FIELDS)  # type: ignore[return-value]
+        made = Assignment(
+            assignment_id="bg-" + uuid.uuid4().hex[:10],
+            task_id=task_id,
+            note=note,
+            due_on=due_on,
+            due_at=due_at,
+            created_by=by,
+            created_at=_now(),
+        )
+        self.col("classroom").update_one(
+            {"class_id": class_id}, {"$push": {"assignments": asdict(made)}}
+        )
+        return _assignment_view(made, class_id)
 
     def assignment(self, assignment_id: str) -> dict | None:
-        row = self.col("assignment").find_one({"assignment_id": assignment_id})
-        return fields(row, ASSIGNMENT_FIELDS)
+        found = self._load({"assignments.assignment_id": assignment_id})
+        if found is None:
+            return None
+        a = next(a for a in found.assignments if a.assignment_id == assignment_id)
+        return _assignment_view(a, found.class_id)
 
     def assignments(self, class_ids: list[str]) -> list[dict]:
-        rows = (
-            self.col("assignment")
-            .find({"class_id": {"$in": class_ids}})
-            .sort([("due_at", DESCENDING), ("created_at", DESCENDING)])
-        )
-        return [fields(r, ASSIGNMENT_FIELDS) for r in rows]  # type: ignore[misc]
+        rows = self.col("classroom").find({"class_id": {"$in": class_ids}})
+        out = [
+            _assignment_view(a, c.class_id)
+            for c in map(Classroom.from_doc, rows)
+            for a in c.assignments
+        ]
+        # Latest due first, then latest set first.
+        return sorted(out, key=lambda a: (a["due_at"], a["created_at"]), reverse=True)
 
     def remove_assignment(self, assignment_id: str) -> None:
-        self.col("assignment").delete_one({"assignment_id": assignment_id})
+        self.col("classroom").update_one(
+            {"assignments.assignment_id": assignment_id},
+            {"$pull": {"assignments": {"assignment_id": assignment_id}}},
+        )

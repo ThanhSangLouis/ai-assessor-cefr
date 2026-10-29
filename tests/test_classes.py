@@ -84,8 +84,9 @@ def test_work_before_the_task_was_set_does_not_count(m):
     # response in the same second as the assignment is given the benefit.
     from aicefr.services.core.assessment import context
 
-    context.svc().classrooms.col("assignment").update_one(
-        {"assignment_id": a["assignment_id"]}, {"$set": {"created_at": "9999-01-01T00:00:00+00:00"}}
+    context.svc().classrooms.col("classroom").update_one(
+        {"assignments.assignment_id": a["assignment_id"]},
+        {"$set": {"assignments.$.created_at": "9999-01-01T00:00:00+00:00"}},
     )
     assert teacher.get(f"/api/v1/assignments/{a['assignment_id']}").json()["open"] == 1
 
@@ -99,10 +100,11 @@ def test_a_submission_after_the_due_day_is_late(m):
     student.post("/api/v1/me/classes/join", json={"code": c["code"]})
     a = assign(teacher, c["class_id"], days=0)
     yesterday = today() - timedelta(days=1)
-    context.svc().classrooms.col("assignment").update_one(
-        {"assignment_id": a["assignment_id"]},
-        {"$set": {"due_on": yesterday.isoformat(), "due_at": due_at(yesterday)}},
-    )
+    context.svc().classrooms.col("classroom").update_one(
+        {"assignments.assignment_id": a["assignment_id"]},
+        {"$set": {"assignments.$.due_on": yesterday.isoformat(),
+                  "assignments.$.due_at": due_at(yesterday)}},
+    )  # fmt: skip
     submit_assessment(student)
     assert teacher.get(f"/api/v1/assignments/{a['assignment_id']}").json()["late"] == 1
 

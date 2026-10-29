@@ -126,6 +126,66 @@ def _terms(db: Database, target: str) -> None:
     db.drop_collection("consent")
 
 
+# ---------------------------------------------------------------- D060
+# One collection per aggregate root of the class diagram: the parts of an
+# aggregate move into its document. Each step copies first and drops the old
+# collection only after, and finds nothing to do the second time.
+
+
+def _has(db: Database, name: str) -> bool:
+    return name in db.list_collection_names()
+
+
+def _d060_classroom(db: Database) -> None:
+    """`class_member` and `assignment` become `classroom.members` / `.assignments`."""
+    if _has(db, "class_member") or _has(db, "assignment"):
+        for c in db["classroom"].find({}, {"class_id": 1}):
+            cid = c["class_id"]
+            members = [
+                m["account_id"]
+                for m in db["class_member"].find({"class_id": cid}).sort("joined_at", 1)
+            ]
+            assignments = [
+                {k: a.get(k) for k in _ASSIGNMENT_KEYS}
+                for a in db["assignment"].find({"class_id": cid}).sort("created_at", 1)
+            ]
+            db["classroom"].update_one(
+                {"_id": c["_id"]}, {"$set": {"members": members, "assignments": assignments}}
+            )
+        db.drop_collection("class_member")
+        db.drop_collection("assignment")
+    if _has(db, "classroom"):
+        for key in ("members", "assignments"):
+            db["classroom"].update_many({key: {"$exists": False}}, {"$set": {key: []}})
+    ensure_indexes(db, D060_INDEXES["classroom"], "migration-7-classroom")
+
+
+_ASSIGNMENT_KEYS = (
+    "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
+)  # fmt: skip
+
+# The indexes of the D060 collections, by the aggregate that owns them.
+D060_INDEXES: dict[str, dict] = {
+    "classroom": {
+        "classroom": [
+            (("class_id",), True),
+            (("code",), True),
+            (("teacher_id",), False),
+            (("members",), False),
+            (("assignments.assignment_id",), False),
+        ]
+    },
+}
+
+D060_STEPS: tuple[Callable[[Database], None], ...] = (_d060_classroom,)
+
+
+def _d060(db: Database, target: str) -> None:
+    """D060: the collections follow the class diagram (one per aggregate root)."""
+    for step in D060_STEPS:
+        step(db)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -137,6 +197,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(4, "classrooms: classes, members, assignments (D054)", _classrooms),
     Migration(5, "replay_label: guided listening with control moments (D056)", _replay),
     Migration(6, "terms: research consent replaced by account.terms_accepted_at (D058)", _terms),
+    Migration(7, "one collection per aggregate root of the class diagram (D060)", _d060),
 )
 
 LATEST = MIGRATIONS[-1].version
