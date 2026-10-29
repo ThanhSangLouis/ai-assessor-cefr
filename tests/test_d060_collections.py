@@ -150,3 +150,62 @@ def test_identities_markers_sessions_and_secrets_find_their_places(db):
     assert db["system"].find_one({"key": "assessment.review_policy"})["version"] == "1"
     gone = {"account_identity", "seen_marker", "auth_sessions", "server_secret", "app_config"}
     assert not gone & set(db.list_collection_names())
+
+
+def test_reviews_lock_visits_and_labels_move_into_the_response(db):
+    db["response"].insert_one({"response_id": "r1", "status": "COMPLETED"})
+    db["review_session"].insert_one(
+        {"id": 1, "response_id": "r1", "reviewer_id": "t", "opened_at": "t1",
+         "decided_at": "t3", "action": "decision"}
+    )  # fmt: skip
+    db["review_action"].insert_one(
+        {"id": 7, "response_id": "r1", "reviewer_id": "t", "old_score": 3.0, "new_score": 3.5,
+         "old_band": "B1", "new_band": "B1", "reason": "ok", "created_at": "t2"}
+    )  # fmt: skip
+    db["_counters"].insert_one({"_id": "review_action", "seq": 7})
+    db["review_lock"].insert_one(
+        {"response_id": "r1", "reviewer_id": "t", "reviewer_name": "GV-01", "locked_until": "t9"}
+    )
+    db["replay_label"].insert_one({"response_id": "r1", "moment_id": "m1", "account_id": "s"})
+
+    _twice(migrations._d060_response, db)
+
+    r = db["response"].find_one({"response_id": "r1"})
+    assert [(v["review_id"], v["opened_at"]) for v in r["reviews"]] == [(7, "t1")]
+    assert [v["action"] for v in r["review_visits"]] == ["decision"]
+    assert r["review_lock"]["reviewer_name"] == "GV-01"
+    assert [x["moment_id"] for x in r["replay_labels"]] == ["m1"]
+    assert db["_counters"].find_one({"_id": "review"})["seq"] == 7  # numbering goes on
+    gone = {"review_session", "review_action", "review_lock", "replay_label"}
+    assert not gone & set(db.list_collection_names())
+
+
+def test_sheets_and_their_ratings_become_the_batch_and_seen_goes_to_the_response(db):
+    db["response"].insert_one({"response_id": "r1"})
+    db["rating_batch"].insert_one(
+        {"batch_id": "b1", "name": "B", "seed": 1, "status": "closed", "created_by": "a",
+         "created_at": "t0"}
+    )  # fmt: skip
+    db["rating_assignment"].insert_many(
+        [
+            {"assignment_id": "x2", "batch_id": "b1", "response_id": "r1", "rater_id": "t2",
+             "slot": 2, "position": 2, "opened_at": None},
+            {"assignment_id": "x1", "batch_id": "b1", "response_id": "r1", "rater_id": "t1",
+             "slot": 1, "position": 1, "opened_at": "t1"},
+        ]
+    )  # fmt: skip
+    db["research_rating"].insert_one(
+        {"assignment_id": "x1", "score_overall": 3.0, "band": "B1", "unscorable": 0,
+         "submitted_at": "t2"}
+    )  # fmt: skip
+    db["machine_seen"].insert_one({"account_id": "t9", "response_id": "r1", "first_seen": "t5"})
+
+    _twice(migrations._d060_rating, db)
+
+    b = db["rating_batch"].find_one({"batch_id": "b1"})
+    assert b["closed"] is True and "status" not in b
+    assert [x["assignment_id"] for x in b["ratings"]] == ["x1", "x2"]
+    assert b["ratings"][0]["score_overall"] == 3.0 and b["ratings"][1]["submitted_at"] is None
+    assert [m["account_id"] for m in db["response"].find_one()["machine_seen"]] == ["t9"]
+    gone = {"rating_assignment", "research_rating", "machine_seen"}
+    assert not gone & set(db.list_collection_names())

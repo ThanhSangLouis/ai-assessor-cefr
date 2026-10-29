@@ -645,7 +645,11 @@ class Review(BaseModel):
     old_band: Band | None = None
     new_band: Band | None = None
     reason: str
-    created_at: str
+    created_at: str  # when the teacher decided
+    # D060: a review is part of its response's document; numbered in the order
+    # decisions were taken, and stamped with when the teacher opened it (D041).
+    review_id: int | None = None
+    opened_at: str | None = None
 
 
 class ReviewLock(BaseModel):
@@ -835,6 +839,10 @@ class Response(BaseModel):
     prompt_version: str | None = None
     # D023. Only on practice attempts; empty for assessment responses.
     practice: PracticeResult | None = None
+    # D060: the teachers' decisions on this response, oldest first. Part of the
+    # response (`Response ◆ Review`): they live and go with it. Kept out of the
+    # stored report -- the repository keeps them beside it and fills them in.
+    reviews: list[Review] = Field(default_factory=list)
 
     @property
     def was_scored(self) -> bool:

@@ -54,7 +54,7 @@ def _check_score(value: float, what: str) -> None:
 
 
 @dataclass(frozen=True)
-class Rating:
+class RaterScore:
     """One rater's judgement of one response, as the rating form records it (appendix B).
 
     Scorable: an overall score and a band, plus criterion scores, all on 0-6.
@@ -93,7 +93,7 @@ class RatedResponse:
 
     response_id: str
     speaker_id: str  # cluster unit for the bootstrap
-    ratings: tuple[Rating, ...]  # the two primary ratings in slot order, then the adjudication
+    ratings: tuple[RaterScore, ...]  # the two primary ratings in slot order, then the adjudication
     ai_overall: float | None = None
     ai_band: str | None = None
     flagged: bool | None = None  # True when the machine routed it to teacher review
@@ -286,7 +286,7 @@ def per_band(reference: Sequence[str], predicted: Sequence[str]) -> dict[str, di
 # -------------------------------------------------------------------- protocol
 
 
-def needs_adjudication(first: Rating, second: Rating) -> bool:
+def needs_adjudication(first: RaterScore, second: RaterScore) -> bool:
     """Whether a third rater must adjudicate between the two primary ratings (section 6.4).
 
     Yes when the overall scores differ by ADJUDICATION_GAP or more, the bands

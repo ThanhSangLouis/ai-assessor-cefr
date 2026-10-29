@@ -325,6 +325,132 @@ def _d060_identity(db: Database) -> None:
         db.drop_collection("app_config")
 
 
+def _d060_response(db: Database) -> None:
+    """Reviews, the lock, review visits and replay labels into `response`.
+
+    `review_action` -> `response.reviews` (numbered by the old id, stamped with
+    the opening of the visit it closed), `review_lock` -> `response.review_lock`,
+    `review_session` -> `response.review_visits`, `replay_label` ->
+    `response.replay_labels`.
+    """
+    if not _has(db, "response"):
+        return
+    if _has(db, "review_session"):
+        for v in db["review_session"].find().sort("id", 1):
+            visit = {k: v.get(k) for k in ("reviewer_id", "opened_at", "decided_at", "action")}
+            db["response"].update_one(
+                {"response_id": v["response_id"], "review_visits": {"$ne": visit}},
+                {"$push": {"review_visits": visit}},
+            )
+    if _has(db, "review_action"):
+        for r in db["review_action"].find().sort("id", 1):
+            visit = (
+                db["review_session"].find_one(
+                    {"response_id": r["response_id"], "reviewer_id": r["reviewer_id"],
+                     "decided_at": {"$gte": r["created_at"]}},
+                    sort=[("decided_at", 1)],
+                )
+                if _has(db, "review_session")
+                else None
+            )  # fmt: skip
+            review = {
+                "review_id": r["id"],
+                "reviewer_id": r["reviewer_id"],
+                "old_score": r.get("old_score"),
+                "new_score": r.get("new_score"),
+                "old_band": r.get("old_band"),
+                "new_band": r.get("new_band"),
+                "reason": r.get("reason") or "",
+                "created_at": r["created_at"],
+                "opened_at": visit["opened_at"] if visit else None,
+            }
+            db["response"].update_one(
+                {"response_id": r["response_id"], "reviews.review_id": {"$ne": r["id"]}},
+                {"$push": {"reviews": review}},
+            )
+        # Reviews are numbered on from where the old series stopped.
+        last = db["_counters"].find_one({"_id": "review_action"})
+        if last:
+            db["_counters"].update_one(
+                {"_id": "review"}, {"$max": {"seq": last["seq"]}}, upsert=True
+            )
+    if _has(db, "review_lock"):
+        for lock in db["review_lock"].find():
+            held = {k: lock[k] for k in ("reviewer_id", "reviewer_name", "locked_until")}
+            db["response"].update_one(
+                {"response_id": lock["response_id"]}, {"$set": {"review_lock": held}}
+            )
+    if _has(db, "replay_label"):
+        for x in db["replay_label"].find({}, {"_id": 0}).sort("moment_id", 1):
+            db["response"].update_one(
+                {
+                    "response_id": x["response_id"],
+                    "replay_labels.moment_id": {"$ne": x["moment_id"]},
+                },
+                {"$push": {"replay_labels": x}},
+            )
+    for old in ("review_session", "review_action", "review_lock", "replay_label"):
+        db.drop_collection(old)
+
+
+def _d060_rating(db: Database) -> None:
+    """Sheets and ratings into `rating_batch.ratings`; `machine_seen` into the response.
+
+    `rating_assignment` + `research_rating` -> `rating_batch.ratings` (a sheet
+    and its rating are one `Rating`), `rating_batch.status` -> `closed`,
+    `machine_seen` -> `response.machine_seen`.
+    """
+    if _has(db, "machine_seen"):
+        for m in db["machine_seen"].find().sort("first_seen", 1):
+            item = {"account_id": m["account_id"], "first_seen": m.get("first_seen"),
+                    "via": m.get("via")}  # fmt: skip
+            db["response"].update_one(
+                {
+                    "response_id": m["response_id"],
+                    "machine_seen.account_id": {"$ne": m["account_id"]},
+                },
+                {"$push": {"machine_seen": item}},
+            )
+        db.drop_collection("machine_seen")
+    if _has(db, "rating_assignment"):
+        given = (
+            {r["assignment_id"]: r for r in db["research_rating"].find({}, {"_id": 0})}
+            if _has(db, "research_rating")
+            else {}
+        )
+        for b in db["rating_batch"].find({}, {"batch_id": 1}):
+            sheets = []
+            for x in db["rating_assignment"].find({"batch_id": b["batch_id"]}).sort("position", 1):
+                rating = given.get(x["assignment_id"], {})
+                sheets.append(
+                    {
+                        "assignment_id": x["assignment_id"],
+                        "response_id": x["response_id"],
+                        "rater_id": x["rater_id"],
+                        "slot": x["slot"],
+                        "position": x["position"],
+                        "opened_at": x.get("opened_at"),
+                        **{k: rating.get(k) for k in _RATING_KEYS},
+                        "unscorable": rating.get("unscorable", 0),
+                    }
+                )
+            db["rating_batch"].update_one({"_id": b["_id"]}, {"$set": {"ratings": sheets}})
+        db.drop_collection("rating_assignment")
+        db.drop_collection("research_rating")
+    if _has(db, "rating_batch"):
+        for b in db["rating_batch"].find({"closed": {"$exists": False}}, {"status": 1}):
+            db["rating_batch"].update_one(
+                {"_id": b["_id"]},
+                {"$set": {"closed": b.get("status") == "closed"}, "$unset": {"status": ""}},
+            )
+        db["rating_batch"].update_many({"ratings": {"$exists": False}}, {"$set": {"ratings": []}})
+
+
+_RATING_KEYS = (
+    "score_range", "score_accuracy", "score_fluency", "score_coherence", "score_phonology",
+    "score_overall", "band", "unscorable_reason", "reason", "submitted_at",
+)  # fmt: skip
+
 _ASSIGNMENT_KEYS = (
     "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
 )  # fmt: skip
@@ -358,6 +484,8 @@ D060_STEPS: tuple[Callable[[Database], None], ...] = (
     _d060_billing,
     _d060_metering,
     _d060_identity,
+    _d060_response,
+    _d060_rating,
 )
 
 
