@@ -76,4 +76,4 @@ def test_trang_bands_mach_lac_do_gian_tiep_ngu_phap_khong_do() -> None:
     assert by_key["coherence"].provenance is Provenance.MEASURED_INDIRECTLY
     assert "từ nối" in by_key["coherence"].measured_by
     assert by_key["accuracy"].provenance is Provenance.NOT_MEASURED
-    assert by_key["interaction"].provenance is Provenance.NOT_ASSESSED
+    assert "interaction" not in by_key  # D062

@@ -354,7 +354,7 @@ def test_the_band_page_labels_what_the_machine_does_not_measure(m):
     assert "2.75" in text and "3.75" in text
     # D061: Coherence is now measured indirectly (connectors); grammar still is not.
     assert text.count('data-provenance="not_measured"') == 1
-    assert 'data-provenance="not_assessed"' in text
+    assert "Tương tác" not in text  # D062
     assert "Máy đo gián tiếp" in text
     assert "nói lắp" in text
     assert "Không cấp chứng chỉ" in text

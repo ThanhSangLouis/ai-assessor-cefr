@@ -4510,7 +4510,6 @@ tr.row-muted td { color: var(--fg-muted); }
 .prov .icon { width: 16px; height: 16px; }
 .prov-indirect { background: var(--ok-soft); color: var(--ok); }
 .prov-not_measured { background: var(--warn-soft); color: var(--warn); }
-.prov-not_assessed { background: var(--bg-sunken); color: var(--fg-muted); }
 
 .aspect-head {
   display: flex;
@@ -4535,7 +4534,6 @@ tr.row-muted td { color: var(--fg-muted); }
 .band-col p { margin: 0; font-size: var(--t-md); }
 .band-col .band-label { font-weight: 700; color: var(--brand); margin-bottom: var(--sp-1); }
 @media (max-width: 760px) { .band-columns { grid-template-columns: 1fr; } }
-.aspect-card[data-provenance="not_assessed"] { background: var(--bg-sunken); }
 .limit-list { margin: 0; padding-left: 1.2em; display: grid; gap: var(--sp-2); }
 .band-help { display: inline-block; margin-top: var(--sp-2); font-size: var(--t-sm); }
 
