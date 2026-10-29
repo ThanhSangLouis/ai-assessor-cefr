@@ -43,7 +43,8 @@ def place(zones, height_of, width):
 
     `zones` is a list of (key, title, row, columns) where columns is a list of
     (column index, items); an item is a box id, stacked under the one before,
-    or (box id, dy) to put it `dy` below the top of its row.
+    or (box id, dy) to put it `dy` below the top of its row, or (box id, other)
+    to put it level with a box of an earlier column.
     """
     geo: dict[str, tuple[int, int, int]] = {}
     zone_of: dict[str, str] = {}
@@ -57,7 +58,9 @@ def place(zones, height_of, width):
                 x, y = COL_X0 + col * COL_DX, row_top[row]
                 for item in items:
                     cid, dy = item if isinstance(item, tuple) else (item, None)
-                    if dy is not None:
+                    if isinstance(dy, str):
+                        y = geo[dy][1]  # level with a box placed before
+                    elif dy is not None:
                         y = row_top[row] + dy
                     h = height_of(cid)
                     geo[cid] = (x, y, h)

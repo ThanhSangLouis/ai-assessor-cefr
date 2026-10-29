@@ -103,17 +103,21 @@ def _n(cid, name, values):
 
 
 # Mo hinh nghiep vu cua bai toan (chu du an chot 29/10/2026): thuc the -- lop co
-# dinh danh, vong doi rieng, luu thanh mot document -- va cac enumeration ma thuoc
-# tinh cua chung lay kieu. Khong lop truu tuong, khong value object: phan khong co
-# dinh danh (tu co moc thoi gian, phep do, nhan xet, nhiem vu) la thuoc tinh cua
-# thuc the so huu. Mot thuoc tinh co tap gia tri dong thi lay kieu la enumeration
-# (`role: Role`); enumeration dat duoi cot cua thuc the dung no, khong ve duong
-# phu thuoc -- ten kieu tren thuoc tinh da noi quan he, va `Band` co bay lop dung.
-# Khoa ngoai khong ve thanh thuoc tinh: quan he la duong noi, boi so ghi tren duong.
-# Phu het nghiep vu: tai khoan va dieu khoan, de va bai noi, giang vien duyet,
-# cham mu va thuc nghiem, lop hoc, lo trinh bai hoc va luot luyen, on tap, lo
-# trinh goi y, goi dich vu, vi luot va so luot. Chi bo phan ky thuat: phien dang
-# nhap, cau hinh, khoa ky, dau nang cap, schema_migrations.
+# dinh danh, vong doi rieng -- va cac enumeration ma thuoc tinh cua chung lay
+# kieu. Khong lop truu tuong, khong value object: phan khong co dinh danh (tu co
+# moc thoi gian, phep do, nhan xet) la thuoc tinh cua thuc the so huu.
+#
+# QUAN HE QUA THUOC TINH (quy tac cua chu du an): moi duong noi co dung mot
+# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `ratings: Rating [1..*]` o
+# `RatingBatch` thi moi co kim cuong `RatingBatch` -> `Rating`. Hop thanh: lop
+# toan the giu danh sach phan (luu chung mot document). Ket hop: lop giu tham
+# chieu (luu ma cua ben kia). Boi so cua thuoc tinh ve tren dau duong, khong ve
+# trong hop. `check_relations()` duoi day bat moi duong thieu thuoc tinh.
+#
+# Ba database (D051): core, learning, metering. Hop thanh khong vuot database
+# -- `Wallet` o metering nen la thuc the rieng tro toi `Account`, khong nhung
+# vao tai khoan; thanh tuu o learning nen la `Achievement`, khong la thuoc tinh
+# cua `Account`.
 CLASSES = [
     _e(
         "Account",
@@ -123,7 +127,8 @@ CLASSES = [
             "- pseudonym: str",
             "- role: Role",
             "- dailyGoalS: int",
-            "- achievements: str [*]",
+            "- identities: str [*]",
+            "- seenMarkers: str [*]",
             "- termsAcceptedAt: datetime [0..1]",
             "+ maySubmit(): bool",
             "+ isStaff(): bool",
@@ -132,7 +137,14 @@ CLASSES = [
     _e(
         "Audit",
         "AuditEntry",
-        ["- entryId: int", "- action: str", "- targetId: str", "- service: str", "- at: datetime"],
+        [
+            "- entryId: int",
+            "- actor: Account [0..1]",
+            "- action: str",
+            "- targetId: str",
+            "- service: str",
+            "- at: datetime",
+        ],
     ),
     _e(
         "Task",
@@ -158,6 +170,8 @@ CLASSES = [
         "Response",
         [
             "- responseId: str",
+            "- speaker: Account [1]",
+            "- task: Task [1]",
             "- purpose: TaskPurpose",
             "- status: ResponseStatus",
             "- reasonCodes: str [*]",
@@ -170,6 +184,7 @@ CLASSES = [
             "- intervalHigh: float [0..1]",
             "- feedback: str [*]",
             "- replayLabels: str [*]",
+            "- reviews: Review [0..*]",
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
@@ -181,11 +196,13 @@ CLASSES = [
         "Review",
         [
             "- reviewId: int",
+            "- reviewer: Account [1]",
             "- oldScore: float [0..1]",
             "- newScore: float [0..1]",
             "- oldBand: Band [0..1]",
             "- newBand: Band [0..1]",
             "- reason: str",
+            "- openedAt: datetime [0..1]",
             "- decidedAt: datetime",
         ],
     ),
@@ -197,6 +214,7 @@ CLASSES = [
             "- name: str",
             "- seed: int",
             "- closed: bool",
+            "- ratings: Rating [1..*]",
             "- createdAt: datetime",
         ],
     ),
@@ -205,6 +223,8 @@ CLASSES = [
         "Rating",
         [
             "- assignmentId: str",
+            "- response: Response [1]",
+            "- rater: Account [1]",
             "- position: int",
             "- scoreOverall: float [0..1]",
             "- band: Band [0..1]",
@@ -222,6 +242,7 @@ CLASSES = [
             "- name: str",
             "- status: StudyStatus",
             "- minDays: int",
+            "- participants: Participant [0..*]",
             "- measuredUntil: datetime [0..1]",
         ],
     ),
@@ -230,6 +251,7 @@ CLASSES = [
         "Participant",
         [
             "- code: str",
+            "- account: Account [1]",
             "- arm: str",
             "- enrolledAt: datetime",
             "- withdrawnAt: datetime [0..1]",
@@ -239,12 +261,26 @@ CLASSES = [
     _e(
         "Class",
         "Classroom",
-        ["- classId: str", "- name: str", "- code: str", "- archived: bool"],
+        [
+            "- classId: str",
+            "- name: str",
+            "- code: str",
+            "- teacher: Account [1]",
+            "- members: Account [0..*]",
+            "- assignments: Assignment [0..*]",
+            "- archived: bool",
+        ],
     ),
     _e(
         "Asg",
         "Assignment",
-        ["- assignmentId: str", "- note: str", "- dueOn: date", "+ isLate(at: datetime): bool"],
+        [
+            "- assignmentId: str",
+            "- task: Task [1]",
+            "- note: str",
+            "- dueOn: date",
+            "+ isLate(at: datetime): bool",
+        ],
     ),
     _e(
         "Path",
@@ -252,9 +288,11 @@ CLASSES = [
         [
             "- pathId: str",
             "- title: str",
+            "- author: Account [0..1]",
             "- bandFrom: Band",
             "- bandTo: Band",
             "- status: PathStatus",
+            "- units: Unit [1..*]",
             "- sample: bool",
         ],
     ),
@@ -268,6 +306,7 @@ CLASSES = [
             "- band: Band",
             "- topic: str [0..1]",
             "- position: int",
+            "- lessons: Lesson [0..*]",
         ],
     ),
     _e(
@@ -280,7 +319,9 @@ CLASSES = [
             "- criterion: Criterion [0..1]",
             "- modelText: str",
             "- passRatio: float",
+            "- steps: Step [1..12]",
             "- publishedVersion: int",
+            "- media: str [*]",
             "- archived: bool",
         ],
     ),
@@ -302,6 +343,8 @@ CLASSES = [
         "StepAttempt",
         [
             "- attemptId: str",
+            "- learner: Account [1]",
+            "- step: Step [1]",
             "- lessonVersion: int",
             "- round: int",
             "- passed: bool",
@@ -315,6 +358,8 @@ CLASSES = [
         "ReviewItem",
         [
             "- itemId: str",
+            "- learner: Account [1]",
+            "- lesson: Lesson [1]",
             "- kind: str",
             "- word: str [0..1]",
             "- box: int",
@@ -323,12 +368,25 @@ CLASSES = [
         ],
     ),
     _e(
+        "Achv",
+        "Achievement",
+        [
+            "- code: str",
+            "- learner: Account [1]",
+            "- reachedAt: datetime",
+            "- seenAt: datetime [0..1]",
+        ],
+    ),
+    _e(
         "Plan",
         "LearningPlan",
         [
             "- planId: str",
+            "- owner: Account [1]",
             "- goal: str",
             "- audience: Role",
+            "- lessons: Lesson [1..*]",
+            "- savedAs: LessonPath [0..1]",
             "- active: bool",
             "- modelVersion: str",
         ],
@@ -338,7 +396,9 @@ CLASSES = [
         "Order",
         [
             "- orderId: str",
+            "- placedBy: Account [1]",
             "- kind: OrderKind",
+            "- plan: ServicePlan [0..1]",
             "- seats: int",
             "- valueVnd: int",
             "- gateway: str",
@@ -352,11 +412,13 @@ CLASSES = [
         "License",
         [
             "- licenseId: str",
+            "- organization: str",
             "- plan: ServicePlan",
             "- seats: int",
             "- validFrom: date",
             "- validTo: date",
             "- source: str",
+            "- order: Order [0..1]",
             "+ isActive(today: date): bool",
         ],
     ),
@@ -364,6 +426,7 @@ CLASSES = [
         "Wallet",
         "Wallet",
         [
+            "- owner: Account [1]",
             "- balance: int",
             "- freeUsed: int",
             "- period: str",
@@ -376,6 +439,8 @@ CLASSES = [
         "LedgerEntry",
         [
             "- entryId: str",
+            "- wallet: Wallet [1]",
+            "- response: Response [1]",
             "- action: TaskPurpose",
             "- held: int",
             "- fromFree: int",
@@ -427,38 +492,40 @@ ENUMS = [
     _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
 ]
 
-# (nguon, dich, "boi so nguon : boi so dich", kieu)
+# (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
+# co thuoc tinh mang kieu lop kia; boi so lop kia chinh la boi so cua thuoc tinh.
 EDGES = [
-    ("Account", "Audit", "1 : 0..*", "assoc"),
-    ("Account", "Resp", "1 : 0..*", "assoc"),
-    ("Task", "Resp", "1 : 0..*", "assoc"),
+    ("Audit", "Account", "0..* : 0..1", "assoc"),
+    ("Resp", "Account", "0..* : 1", "assoc"),
+    ("Resp", "Task", "0..* : 1", "assoc"),
     ("Resp", "Review", "1 : 0..*", "comp"),
-    ("Account", "Review", "1 : 0..*", "assoc"),
+    ("Review", "Account", "0..* : 1", "assoc"),
     ("Batch", "Rating", "1 : 1..*", "comp"),
     ("Rating", "Resp", "0..* : 1", "assoc"),
-    ("Account", "Rating", "1 : 0..*", "assoc"),
+    ("Rating", "Account", "0..* : 1", "assoc"),
     ("Study", "Part", "1 : 0..*", "comp"),
     ("Part", "Account", "0..* : 1", "assoc"),
-    ("Account", "Class", "1 : 0..*", "assoc"),
+    ("Class", "Account", "0..* : 1", "assoc"),
     ("Class", "Account", "0..* : 0..*", "nn"),
     ("Class", "Asg", "1 : 0..*", "comp"),
     ("Asg", "Task", "0..* : 1", "assoc"),
+    ("Path", "Account", "0..* : 0..1", "assoc"),
     ("Path", "Unit", "1 : 1..*", "comp"),
     ("Unit", "Lesson", "1 : 0..*", "comp"),
     ("Lesson", "Step", "1 : 1..12", "comp"),
+    ("Attempt", "Account", "0..* : 1", "assoc"),
     ("Attempt", "Step", "0..* : 1", "assoc"),
-    ("Account", "Attempt", "1 : 0..*", "assoc"),
-    ("Account", "RevItem", "1 : 0..*", "assoc"),
+    ("RevItem", "Account", "0..* : 1", "assoc"),
     ("RevItem", "Lesson", "0..* : 1", "assoc"),
-    ("Account", "Plan", "1 : 0..*", "assoc"),
+    ("Achv", "Account", "0..* : 1", "assoc"),
+    ("Plan", "Account", "0..* : 1", "assoc"),
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
     ("Plan", "Path", "0..1 : 0..1", "assoc"),
-    ("Account", "Order", "1 : 0..*", "assoc"),
-    ("Order", "License", "1 : 0..1", "assoc"),
-    ("Account", "Wallet", "1 : 0..1", "comp"),
-    ("Wallet", "Ledger", "1 : 0..*", "comp"),
+    ("Order", "Account", "0..* : 1", "assoc"),
+    ("License", "Order", "0..1 : 0..1", "assoc"),
+    ("Wallet", "Account", "0..1 : 1", "assoc"),
+    ("Ledger", "Wallet", "0..* : 1", "assoc"),
     ("Ledger", "Resp", "0..1 : 1", "assoc"),
-    ("Order", "Wallet", "0..* : 0..1", "assoc"),
 ]
 
 # Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
@@ -485,6 +552,7 @@ EDGES += [
         ("Path", "PathSt"),
         ("Step", "StepKind"),
         ("Order", "OrderKind"),
+        ("Order", "SvcPlan"),
         ("Order", "OrderSt"),
         ("License", "SvcPlan"),
         ("Ledger", "LedgerSt"),
@@ -506,8 +574,8 @@ ZONES = [
     ("assessment", "Đánh giá", 1,
      [(1, ["Task"]), (2, ["Resp", "Review"]), (3, ["Purpose", "Status", "Band", "Criterion"])]),
     ("learning", "Học tập", 1,
-     [(4, ["Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
-      (6, ["PathSt", ("StepKind", 788)])]),
+     [(4, ["Plan", "RevItem", "Attempt", "Achv"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+      (6, ["PathSt", ("StepKind", "Step")])]),
 ]  # fmt: skip
 COLUMNS = []
 
@@ -568,6 +636,51 @@ STYLE = {
 }
 
 SPEC = {c[0]: c for c in CLASSES + ENUMS}
+
+
+def check_relations() -> None:
+    """Every line has its attribute, every class-typed attribute has its line.
+
+    The owner's rule for this diagram: a relationship is drawn only where the
+    class holding it has an attribute of the other class's type, and the
+    multiplicity at the far end of the line is that attribute's multiplicity.
+    """
+    name = {c[0]: c[1].split(BR)[-1] for c in CLASSES + ENUMS}
+    typed = re.compile(r"^- (\w+): (\w+)(?: \[([^\]]*)\])?$")
+    problems = []
+    claimed: set[tuple[str, str]] = set()
+    for src, dst, label, kind in EDGES:
+        lines = SPEC[src][2]
+        if kind == "enum":
+            hits = [ln for ln in lines if (m := typed.match(ln)) and m.group(2) == name[dst]]
+            if not hits:
+                problems.append(f"{name[src]} uses {name[dst]} but no attribute has that type")
+            continue
+        far = label.split(" : ")[1]
+        hits = [
+            m.group(1)
+            for ln in lines
+            if (m := typed.match(ln))
+            and m.group(2) == name[dst]
+            and (m.group(3) or "1") == far
+            and (src, m.group(1)) not in claimed
+        ]
+        if not hits:
+            problems.append(f"{name[src]} -> {name[dst]} [{far}]: no attribute holds it")
+        else:
+            claimed.add((src, hits[0]))
+    classes = {name[c[0]] for c in CLASSES}
+    for c in CLASSES:
+        for ln in c[2]:
+            m = typed.match(ln)
+            if m and m.group(2) in classes and (c[0], m.group(1)) not in claimed:
+                problems.append(f"{name[c[0]]}.{m.group(1)}: {m.group(2)} has no line")
+    if problems:
+        raise SystemExit("relations:\n  " + "\n  ".join(problems))
+
+
+if ZONES:
+    check_relations()
 GEO: dict[str, tuple[int, int, int]] = {}
 if ZONES:
     sys.path.insert(0, str(ROOT / "tools"))
