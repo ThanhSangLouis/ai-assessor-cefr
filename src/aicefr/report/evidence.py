@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from aicefr.contracts import Criterion, Evidence, EvidenceKind, FeatureSet, Transcript, Word
+from aicefr.report.connectors import connectors_used
 
 LOW_PROB = 0.50
+MIN_WORDS_FOR_CONNECTORS = 20
+MAX_CONNECTORS_LISTED = 8
 LONG_PAUSE_S = 1.00
 MAX_PER_KIND = 3
 FILLERS = {"um", "uh", "hmm", "mm", "erm", "ah", "eh", "er"}
@@ -119,6 +122,26 @@ class EvidenceBuilder:
                     note=(
                         f"Bài nói dùng {int(nwords)} từ, trong đó khoảng "
                         f"{int(round(2.718**uniq - 1))} từ khác nhau."
+                    ),
+                )
+            )
+
+        # D061: only when there are enough words for the count to mean
+        # something; ten words with no connector say nothing about cohesion.
+        if nwords and nwords >= MIN_WORDS_FOR_CONNECTORS:
+            used = connectors_used(asr.words)
+            listed = ", ".join(f'"{c}"' for c in list(used)[:MAX_CONNECTORS_LISTED])
+            more = len(used) - MAX_CONNECTORS_LISTED
+            ev.append(
+                Evidence(
+                    criterion=Criterion.COHERENCE,
+                    kind=EvidenceKind.CONNECTOR,
+                    snippet=None,
+                    note=(
+                        f"Bài dùng {len(used)} kiểu từ nối khác nhau: {listed}"
+                        + (f" và {more} từ khác." if more > 0 else ".")
+                        if used
+                        else "Máy không thấy từ nối nào trong bản chép lời."
                     ),
                 )
             )

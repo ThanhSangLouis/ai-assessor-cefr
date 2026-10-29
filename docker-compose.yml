@@ -79,6 +79,8 @@ services:
       AICEFR_VNPAY_HASH_SECRET: ${AICEFR_VNPAY_HASH_SECRET:-}
       AICEFR_VNPAY_URL: ${AICEFR_VNPAY_URL:-}
       AICEFR_MODEL_DIR: /models
+      # Extra pins: only for the synthetic artifacts of tests/fixtures/models (.env.example).
+      AICEFR_MODEL_PINS: ${AICEFR_MODEL_PINS:-}
     volumes:
       # Recordings: written here, read by the speech service. Personal data:
       # keep it on a named volume, back it up, never bake it into an image.
@@ -119,6 +121,8 @@ services:
       AICEFR_ASR: ${AICEFR_ASR:-fake}
       AICEFR_FAKE_TRANSCRIPT: ${AICEFR_FAKE_TRANSCRIPT:-}
       AICEFR_MODEL_DIR: /models
+      # Extra pins: only for the synthetic artifacts of tests/fixtures/models (.env.example).
+      AICEFR_MODEL_PINS: ${AICEFR_MODEL_PINS:-}
     volumes:
       # Read only: the speech service reads recordings, never writes or deletes one.
       - uploads:/data/uploads:ro

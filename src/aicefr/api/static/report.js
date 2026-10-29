@@ -41,7 +41,9 @@ const ASPECT_MEASURES = {
   range: "Số từ khác nhau, độ đa dạng từ vựng, độ dài trung bình của từ.",
   accuracy: "Mức độ máy nghe rõ từng từ.",
   fluency: "Tốc độ nói, số lần và độ dài các quãng ngừng.",
-  coherence: "Tổng số từ, độ dài các đoạn nói liền mạch, tổng thời lượng.",
+  coherence:
+    "Số kiểu từ nối khác nhau trong bản chép lời. Mức đủ dữ liệu tính theo tổng số từ, " +
+    "độ dài các đoạn nói liền mạch và tổng thời lượng.",
   phonology: "Mức độ máy nghe rõ và tỷ lệ im lặng trong bản ghi.",
 };
 
@@ -54,6 +56,9 @@ const ASPECT_CAVEATS = {
   phonology:
     "Hệ thống không chấm phát âm theo âm vị. Chỉ số này suy ra từ việc máy nghe rõ đến đâu, " +
     "nên chịu ảnh hưởng của chất lượng bản ghi.",
+  coherence:
+    "Máy chỉ đếm từ nối, không biết từ nối có nối đúng ý hay cả bài có được sắp xếp " +
+    "rõ ràng không.",
 };
 
 const EVIDENCE_KIND_NAMES = {
@@ -61,6 +66,7 @@ const EVIDENCE_KIND_NAMES = {
   filler: "từ ngập ngừng",
   low_confidence_word: "từ máy nghe không rõ",
   lexical: "vốn từ",
+  connector: "từ nối",
 };
 
 // "Day du du lieu": the share of the measurements for one aspect that the
