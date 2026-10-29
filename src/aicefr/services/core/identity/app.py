@@ -1,4 +1,4 @@
-"""The identity service: accounts, sessions, Google sign-in, consent (D043).
+"""The identity service: accounts, sessions, Google sign-in, terms of use (D043, D058).
 
 The only service that reads the session cookie. The gateway asks it who a
 request comes from (`/internal/identity/session`) and forwards the answer to
@@ -16,22 +16,18 @@ from aicefr.services.core.identity import accounts_api, auth_api, google_api
 from aicefr.services.core.identity.facade import IdentityFacade
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import AuthRepository
-from aicefr.storage.consent_repository import ConsentRepository
 
 
 def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     store = settings.store("core")
     auth = AuthRepository(store)
-    consents = ConsentRepository(store)
     audit_log = AuditLog(store, "identity")
-    facade = IdentityFacade(auth, consents, audit_log)
+    facade = IdentityFacade(auth, audit_log)
 
     auth_api.configure(
         auth_api.Services(
             auth=auth,
-            consents=consents,
             audit_log=audit_log,
-            bus=bus,
             gateway_token=settings.gateway_token,
             peers=peers,
         )
@@ -48,7 +44,6 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         facade=facade,
         state={
             "auth_repo": auth,
-            "consent_repo": consents,
             "callers": SessionCallers(auth),
         },
     )

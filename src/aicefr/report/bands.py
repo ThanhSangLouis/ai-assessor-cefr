@@ -105,6 +105,23 @@ ASPECTS: tuple[Aspect, ...] = (
 # Paraphrased descriptors, one line per aspect and band. Interaction is left
 # out on purpose: the page says why in its own row of ASPECTS.
 DESCRIPTORS: dict[Band, dict[str, str]] = {
+    Band.A1: {
+        "range": (
+            "Dùng được một số từ và cụm từ rất đơn giản về bản thân và những thứ cụ thể quanh mình."
+        ),
+        "accuracy": (
+            "Kiểm soát rất hạn chế vài cấu trúc đơn giản đã học thuộc; lỗi cơ bản xuất hiện thường "
+            "xuyên."
+        ),
+        "fluency": (
+            "Nói những câu rất ngắn, rời rạc, thường dừng lâu để tìm từ hoặc phát âm từ lạ."
+        ),
+        "coherence": 'Nối từ hay cụm từ bằng những từ nối rất cơ bản như "and", "then".',
+        "phonology": (
+            "Phát âm một số ít từ đã học; người nghe quen với người học tiếng Việt mới hiểu được, "
+            "phải cố gắng nhiều."
+        ),
+    },
     Band.A2: {
         "range": (
             "Dùng các mẫu câu cơ bản và cụm từ quen thuộc để nói về bản thân, gia đình, việc "
@@ -156,6 +173,47 @@ DESCRIPTORS: dict[Band, dict[str, str]] = {
         "phonology": (
             "Phát âm và ngữ điệu rõ, người nghe không phải cố gắng; giọng không phải vấn đề khi đã "
             "dễ hiểu."
+        ),
+    },
+    Band.C1: {
+        "range": (
+            "Vốn từ rộng, chọn được cách diễn đạt phù hợp để nói trôi chảy về chủ đề phức tạp mà "
+            "hầu như không phải giới hạn điều muốn nói."
+        ),
+        "accuracy": "Giữ độ chính xác ngữ pháp cao một cách ổn định; lỗi hiếm và khó nhận ra.",
+        "fluency": (
+            "Diễn đạt trôi chảy, tự nhiên, gần như không phải dừng; chỉ chủ đề khó về khái niệm "
+            "mới làm mạch nói chậm lại."
+        ),
+        "coherence": (
+            "Bài nói rõ ràng, chặt chẽ, dùng thành thạo các cách tổ chức ý, từ nối và phương tiện "
+            "liên kết."
+        ),
+        "phonology": (
+            "Thay đổi ngữ điệu và trọng âm câu đúng để diễn tả sắc thái nghĩa; giọng gốc gần như "
+            "không ảnh hưởng tới việc hiểu."
+        ),
+    },
+    Band.C2: {
+        "range": (
+            "Nắm vững thành ngữ và cách nói thông tục, diễn đạt chính xác những sắc thái nghĩa "
+            "tinh tế một cách linh hoạt."
+        ),
+        "accuracy": (
+            "Kiểm soát ngữ pháp nhất quán ngay cả khi tập trung vào việc khác như lên kế hoạch hay "
+            "theo dõi phản ứng người nghe."
+        ),
+        "fluency": (
+            "Nói dài, tự nhiên, không ngập ngừng; chỉ dừng để chọn đúng từ diễn đạt ý tưởng, người "
+            "nghe khó nhận ra."
+        ),
+        "coherence": (
+            "Bài nói mạch lạc, có cấu trúc logic giúp người nghe nhận ra và nhớ các điểm "
+            "quan trọng."
+        ),
+        "phonology": (
+            "Dùng toàn bộ các đặc điểm âm vị để diễn đạt chính xác ý muốn nói; luôn rõ ràng, dễ "
+            "hiểu."
         ),
     },
 }

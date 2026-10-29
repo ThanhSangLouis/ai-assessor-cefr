@@ -1,11 +1,10 @@
 """Persistence for assessment results. Implements FR-32 to FR-38.
 
-SQLite is used during development; switching to PostgreSQL on deployment is a
-matter of changing the connection string. The schema follows the entity
-relationship diagram in SDD section 5 closely.
+One MongoDB database (D048); the collections follow the entity relationship
+diagram in SDD section 5 closely, one document per former row.
 
-Privacy rule: the speaker table holds only pseudonym codes. Never store a real
-name, a student ID, or any contact detail in this database.
+Privacy rule: the speaker collection holds only pseudonym codes. Never store a
+real name, a student ID, or any contact detail in this database.
 """
 
 from __future__ import annotations
@@ -16,93 +15,66 @@ from collections.abc import Collection
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from pymongo import ASCENDING, DESCENDING
+from pymongo.database import Database
+
 from aicefr.contracts import (
     AppConfig,
     ReasonCode,
     Response,
+    ResponseStatus,
     Review,
     ReviewLock,
-    Status,
     TaskPurpose,
 )
+from aicefr.infra.blobs import key_of
 from aicefr.storage.audit_repository import prepare as prepare_audit
-from aicefr.storage.audit_repository import write_audit
-from aicefr.storage.db import Connection, DbRow, SqlStore, add_columns
+from aicefr.storage.audit_repository import recent_entries, write_audit
+from aicefr.storage.db import (
+    SYSTEM,
+    IntegrityError,
+    MongoStore,
+    ensure_indexes,
+    ensure_system,
+    fields,
+    next_id,
+)
 from aicefr.storage.db import now_iso as _now
 
-SCHEMA = """
-CREATE TABLE IF NOT EXISTS response (
-    response_id     TEXT PRIMARY KEY,
-    speaker_id      TEXT NOT NULL,
-    task_id         TEXT NOT NULL,
-    status          TEXT NOT NULL,
-    overall_0_6     REAL,
-    overall_band    TEXT,
-    teacher_verified INTEGER NOT NULL DEFAULT 0,
-    model_version   TEXT,
-    config_version  TEXT NOT NULL,
-    report_json     TEXT NOT NULL,
-    created_at      TEXT NOT NULL,
-    account_id      TEXT,
-    audio_path      TEXT,
-    -- D023. 'practice' for a practice attempt: never in the teacher queue, the
-    -- research export, or the class scoring statistics.
-    purpose         TEXT NOT NULL DEFAULT 'assessment'
-);
-CREATE INDEX IF NOT EXISTS idx_response_speaker ON response(speaker_id);
-CREATE INDEX IF NOT EXISTS idx_response_status  ON response(status);
+# The collections of the assessment service and the indexes that stand for the
+# former primary keys and UNIQUE constraints.
+#
+# response.purpose is 'practice' for a practice attempt (D023): never in the
+# teacher queue, the research export, or the class scoring statistics.
+# A response's document holds its parts (D060): `reviews` (each teacher
+# decision), `review_lock` (who may decide right now), `review_visits` (when a
+# teacher opened it and when they left, D041 -- the lock is cleared on decision,
+# so its start is kept here) and `replay_labels` (guided listening, D056).
+# The settings an administrator changes at run time live in `system` under
+# `assessment.` (D060). When a person last looked at something that can change
+# behind their back (D028) is on their account, asked of the identity part.
+CONFIG = "assessment."
+INDEXES = {
+    "response": [
+        (("response_id",), True),
+        (("speaker_id",), False),
+        (("status",), False),
+        (("account_id", "created_at"), False),
+        (("reviews.created_at",), False),
+        (("replay_labels.account_id",), False),
+    ],
+}
 
-CREATE TABLE IF NOT EXISTS review_action (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    response_id     TEXT NOT NULL REFERENCES response(response_id),
-    reviewer_id     TEXT NOT NULL,
-    old_score       REAL,
-    new_score       REAL,
-    old_band        TEXT,
-    new_band        TEXT,
-    reason          TEXT NOT NULL,
-    created_at      TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_review_response ON review_action(response_id);
-
-CREATE TABLE IF NOT EXISTS review_lock (
-    response_id     TEXT PRIMARY KEY REFERENCES response(response_id),
-    reviewer_id     TEXT NOT NULL,
-    reviewer_name   TEXT NOT NULL,
-    locked_until    TEXT NOT NULL
-);
-
--- D041. When a teacher opened a response for review and when they decided:
--- the lock itself is deleted on decision, so its start is kept here.
-CREATE TABLE IF NOT EXISTS review_session (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    response_id     TEXT NOT NULL,
-    reviewer_id     TEXT NOT NULL,
-    opened_at       TEXT NOT NULL,
-    decided_at      TEXT,
-    action          TEXT
-);
-CREATE INDEX IF NOT EXISTS idx_review_session_open
-    ON review_session(response_id, reviewer_id, decided_at);
-
-CREATE TABLE IF NOT EXISTS app_config (
-    key         TEXT PRIMARY KEY,
-    value       TEXT NOT NULL,
-    version     TEXT NOT NULL,
-    updated_by  TEXT NOT NULL,
-    updated_at  TEXT NOT NULL
-);
-
--- D028. When a person last looked at something that can change behind their
--- back (a teacher's decision on their response), so the sidebar can count
--- what is new since then.
-CREATE TABLE IF NOT EXISTS seen_marker (
-    account_id  TEXT NOT NULL,
-    marker      TEXT NOT NULL,
-    seen_at     TEXT NOT NULL,
-    PRIMARY KEY (account_id, marker)
-);
-"""
+LIST_FIELDS = (
+    "response_id",
+    "speaker_id",
+    "task_id",
+    "status",
+    "overall_0_6",
+    "overall_band",
+    "teacher_verified",
+    "created_at",
+)
 
 
 logger = logging.getLogger(__name__)
@@ -113,93 +85,97 @@ class InvalidStateError(Exception):
 
 
 def _audit(
-    c: Connection, actor_id: str, action: str, target_id: str | None, detail: str | None
+    db: Database, actor_id: str, action: str, target_id: str | None, detail: str | None
 ) -> None:
-    """One row of this service's audit log, inside the caller's transaction."""
-    write_audit(c, "assessment", actor_id, action, target_id, detail)
+    """One entry of this service's audit log."""
+    write_audit(db, "assessment", actor_id, action, target_id, detail)
 
 
 def _record_decision(
-    c: Connection,
+    db: Database,
     response_id: str,
     reviewer_id: str,
-    status: Status,
+    status: ResponseStatus,
     action: str,
     reason: str,
     scores: tuple[float | None, float | None, str | None, str | None] = (None, None, None, None),
-) -> DbRow:
+) -> dict:
     """Claim a review decision, record it and audit it; return the response's owner.
 
     `scores` is (old score, new score, old band, new band). The caller saves the
     report afterwards with the owner returned here, never with placeholders.
+    The claim comes first: a teacher who loses the race writes nothing.
     """
-    _claim_decision(c, response_id, status)
-    owner = c.execute(
-        "SELECT speaker_id, task_id, account_id FROM response WHERE response_id=?",
-        (response_id,),
-    ).fetchone()
-    c.execute(
-        """INSERT INTO review_action
-           (response_id, reviewer_id, old_score, new_score, old_band, new_band,
-            reason, created_at) VALUES (?,?,?,?,?,?,?,?)""",
-        (response_id, reviewer_id, *scores, reason, _now()),
+    _claim_decision(db, response_id, status)
+    owner = db["response"].find_one(
+        {"response_id": response_id},
+        {"speaker_id": 1, "task_id": 1, "account_id": 1, "review_visits": 1},
     )
-    _audit(c, reviewer_id, action, response_id, reason)
-    return owner
+    old_score, new_score, old_band, new_band = scores
+    visit = next(
+        (
+            v
+            for v in (owner or {}).get("review_visits") or []
+            if v["reviewer_id"] == reviewer_id and v.get("decided_at") is None
+        ),
+        None,
+    )
+    review = Review(
+        review_id=next_id(db, "review"),
+        reviewer_id=reviewer_id,
+        old_score=old_score,
+        new_score=new_score,
+        old_band=old_band,
+        new_band=new_band,
+        reason=reason,
+        created_at=_now(),
+        opened_at=visit["opened_at"] if visit else None,
+    )
+    db["response"].update_one(
+        {"response_id": response_id}, {"$push": {"reviews": review.model_dump(mode="json")}}
+    )
+    _audit(db, reviewer_id, action, response_id, reason)
+    return fields(owner, ("speaker_id", "task_id", "account_id"))  # type: ignore[return-value]
 
 
-class Repository(SqlStore):
-    """The repository. Each method opens and closes its own connection so that it
-    stays safe under multiple threads."""
+class Repository(MongoStore):
+    """The repository. pymongo's client is shared between threads; no method
+    keeps state of its own between calls."""
 
-    def __init__(self, db_path: str | Path = "aicefr.db") -> None:
+    def __init__(self, db_path: str | Path = "aicefr.db", blobs=None) -> None:
         self.db_path = str(db_path)
-        with self._conn() as c:
-            c.executescript(SCHEMA)
-            prepare_audit(c)
-            self._upgrade_schema(c)
+        # D051: where the recordings are (disk or object storage); unset, the
+        # settings' upload folder, read when first needed.
+        self._blobs = blobs
+        db = self.db
+        ensure_indexes(db, INDEXES, "assessment")
+        ensure_system(db)
+        prepare_audit(db)
 
-    @staticmethod
-    def _upgrade_schema(c: Connection) -> None:
-        """Add the columns a database from an older build lacks (see `add_columns`)."""
-        add_columns(
-            c,
-            "response",
-            (
-                ("account_id", "TEXT"),
-                ("audio_path", "TEXT"),
-                ("purpose", "TEXT NOT NULL DEFAULT 'assessment'"),
-                # D043: when the speech service started on it, for the overdue sweep.
-                ("started_at", "TEXT"),
-            ),
-        )
-        Repository._backfill_review_bands(c)
+    @property
+    def blobs(self):
+        if self._blobs is None:
+            from aicefr.config import get_settings
+            from aicefr.infra.blobs import blob_store
 
-    @staticmethod
-    def _backfill_review_bands(c: Connection) -> None:
-        """Dien `new_band` cho cac quyet dinh cu chi ghi tham so dau vao (D022 review).
+            self._blobs = blob_store(get_settings())
+        return self._blobs
 
-        Truoc day giang vien chi sua diem thi band duoc suy lai nhung `new_band`
-        luu None, va thong ke dong thuan coi None la "giu nguyen band": sua 3,2
-        (B1) thanh 2,0 (A2) van tinh la dong y voi may. Chay lai vo hai: chi cham
-        toi dong con thieu.
-        """
-        c.execute(
-            "UPDATE review_action SET new_band = old_band"
-            " WHERE new_band IS NULL AND new_score IS NULL AND old_band IS NOT NULL"
-        )
-        rows = c.execute(
-            "SELECT id, new_score FROM review_action"
-            " WHERE new_band IS NULL AND new_score IS NOT NULL"
-        ).fetchall()
-        if rows:
-            from aicefr.scoring.scorer import load_model, to_band
+    def _has_audio(self, audio_path: str | None) -> bool:
+        if audio_path and Path(audio_path).is_absolute() and Path(audio_path).is_file():
+            return True  # a file a response saved before D051 names by its path
+        key = key_of(audio_path)
+        return key is not None and self.blobs.exists(key)
 
-            th = load_model()["band_thresholds"]
-            c.executemany(
-                "UPDATE review_action SET new_band=? WHERE id=?",
-                [(to_band(r["new_score"], th).value, r["id"]) for r in rows],
-            )
+    def _drop_audio(self, audio_path: str | None) -> None:
+        """Delete a recording: the object, and a file a response saved before
+        D051 pointed at by its full path."""
+        key = key_of(audio_path)
+        if key is None:
+            return
+        self.blobs.delete(key)
+        if Path(audio_path).is_absolute():
+            Path(audio_path).unlink(missing_ok=True)
 
     def save(
         self,
@@ -221,141 +197,133 @@ class Repository(SqlStore):
         thu hai de len.
         """
         a = report.assessment
-        with self._conn() as c:
-            existing = c.execute(
-                "SELECT teacher_verified, created_at, speaker_id, task_id, account_id,"
-                " audio_path, status, purpose FROM response WHERE response_id=?",
-                (report.response_id,),
-            ).fetchone()
+        responses = self.col("response")
+        existing = responses.find_one({"response_id": report.response_id})
 
-            if must_exist and (
-                existing is None
-                or existing["status"] not in (Status.QUEUED.value, Status.RUNNING.value)
-            ):
-                logger.warning(
-                    "bo ket qua cham cua %s: bai da bi xoa hoac khong con dang cho",
-                    report.response_id,
-                )
-                return False
-
-            # A teacher's decision outranks anything the machine produces later.
-            #
-            # This used to be an unconditional overwrite, so a late background
-            # job -- after a reload, a second worker, or a rescoring run --
-            # could replace a verified result with a fresh estimate and clear
-            # teacher_verified, leaving no trace that a human had ever decided.
-            if (
-                existing is not None
-                and existing["teacher_verified"]
-                and not (a and a.teacher_verified)
-            ):
-                logger.warning(
-                    "refusing to overwrite a teacher-verified result for %s",
-                    report.response_id,
-                )
-                return False
-
-            # Preserve, rather than overwrite, anything the caller did not pass.
-            # Dropping speaker_id or account_id here is what orphaned reports
-            # once before; created_at is the submission time and must not drift
-            # to "time of last write", or the queue reorders itself and the
-            # stuck-job sweep measures from the wrong moment.
-            def keep(column: str, value):
-                """Keep what is already stored when the caller passes nothing."""
-                if value is not None:
-                    return value
-                return existing[column] if existing is not None else None
-
-            values = (
-                keep("speaker_id", speaker_id or None),
-                keep("task_id", task_id or None),
-                report.status.value,
-                a.overall_0_6 if a else None,
-                a.overall_band.value if a and a.overall_band else None,
-                int(a.teacher_verified) if a else 0,
-                a.model_version if a else None,
-                report.config_version,
-                json.dumps(report.model_dump(mode="json"), ensure_ascii=False),
-                keep("account_id", account_id),
-                keep("audio_path", audio_path),
-                keep("purpose", purpose.value if purpose else None) or TaskPurpose.ASSESSMENT.value,
+        if must_exist and (
+            existing is None
+            or existing.get("status")
+            not in (ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value)
+        ):
+            logger.warning(
+                "bo ket qua cham cua %s: bai da bi xoa hoac khong con dang cho",
+                report.response_id,
             )
-            if must_exist:
-                # The worker's path updates, and only a response that still
-                # waits: checked by the UPDATE itself, not by the SELECT above,
-                # so an erasure committed in between leaves nothing to write to
-                # -- never an INSERT that would bring the transcript back.
-                cur = c.execute(
-                    """UPDATE response SET speaker_id=?, task_id=?, status=?, overall_0_6=?,
-                       overall_band=?, teacher_verified=?, model_version=?, config_version=?,
-                       report_json=?, account_id=?, audio_path=?, purpose=?
-                       WHERE response_id=? AND status IN (?,?) AND teacher_verified=0""",
-                    (*values, report.response_id, Status.QUEUED.value, Status.RUNNING.value),
-                )
-                return cur.rowcount == 1
+            return False
 
-            # An upsert, not INSERT OR REPLACE: REPLACE deletes the old row
-            # first, and with foreign keys on that delete cascades -- every
-            # blind-rating assignment and "saw the machine" record of the
-            # response went with a teacher's decision.
-            c.execute(
-                """INSERT INTO response
-                   (response_id, speaker_id, task_id, status, overall_0_6, overall_band,
-                    teacher_verified, model_version, config_version, report_json, created_at,
-                    account_id, audio_path, purpose)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-                   ON CONFLICT(response_id) DO UPDATE SET
-                    speaker_id=excluded.speaker_id, task_id=excluded.task_id,
-                    status=excluded.status, overall_0_6=excluded.overall_0_6,
-                    overall_band=excluded.overall_band,
-                    teacher_verified=excluded.teacher_verified,
-                    model_version=excluded.model_version,
-                    config_version=excluded.config_version,
-                    report_json=excluded.report_json, created_at=excluded.created_at,
-                    account_id=excluded.account_id, audio_path=excluded.audio_path,
-                    purpose=excluded.purpose""",
-                (
-                    report.response_id,
-                    *values[:9],
-                    existing["created_at"] if existing is not None else _now(),
-                    *values[9:],
-                ),
+        # A teacher's decision outranks anything the machine produces later.
+        #
+        # This used to be an unconditional overwrite, so a late background
+        # job -- after a reload, a second worker, or a rescoring run -- could
+        # replace a verified result with a fresh estimate and clear
+        # teacher_verified, leaving no trace that a human had ever decided.
+        if (
+            existing is not None
+            and existing.get("teacher_verified")
+            and not (a and a.teacher_verified)
+        ):
+            logger.warning(
+                "refusing to overwrite a teacher-verified result for %s", report.response_id
             )
+            return False
+
+        # Preserve, rather than overwrite, anything the caller did not pass.
+        # Dropping speaker_id or account_id here is what orphaned reports once
+        # before; created_at is the submission time and must not drift to
+        # "time of last write", or the queue reorders itself and the stuck-job
+        # sweep measures from the wrong moment.
+        def keep(name: str, value):
+            """Keep what is already stored when the caller passes nothing."""
+            if value is not None:
+                return value
+            return existing.get(name) if existing is not None else None
+
+        values = {
+            "speaker_id": keep("speaker_id", speaker_id or None),
+            "task_id": keep("task_id", task_id or None),
+            "status": report.status.value,
+            "overall_0_6": a.overall_0_6 if a else None,
+            "overall_band": a.overall_band.value if a and a.overall_band else None,
+            "teacher_verified": int(a.teacher_verified) if a else 0,
+            "model_version": a.model_version if a else None,
+            "config_version": report.config_version,
+            # The reviews are kept beside the report, not inside it (`get`).
+            "report_json": json.dumps(
+                report.model_dump(mode="json", exclude={"reviews"}), ensure_ascii=False
+            ),
+            "account_id": keep("account_id", account_id),
+            "audio_path": keep("audio_path", audio_path),
+            "purpose": keep("purpose", purpose.value if purpose else None)
+            or TaskPurpose.ASSESSMENT.value,
+        }
+        if must_exist:
+            # The worker's path updates, and only a response that still waits:
+            # checked by the update itself, not by the read above, so an
+            # erasure in between leaves nothing to write to -- never an insert
+            # that would bring the transcript back.
+            done = responses.update_one(
+                {
+                    "response_id": report.response_id,
+                    "status": {"$in": [ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value]},
+                    "teacher_verified": 0,
+                },
+                {"$set": values},
+            )
+            return done.modified_count == 1
+
+        # An upsert of the one document: its _id, and with it everything that
+        # points at the response (blind-rating assignments, "saw the machine"
+        # records), stays as it was.
+        try:
+            responses.update_one(
+                {"response_id": report.response_id},
+                {
+                    "$set": values,
+                    "$setOnInsert": {"created_at": _now(), "started_at": None},
+                },
+                upsert=True,
+            )
+        except IntegrityError:
+            # Two first saves of one response at once: the other created it.
+            responses.update_one({"response_id": report.response_id}, {"$set": values})
         return True
 
     def set_status(
         self,
         response_id: str,
-        status: Status,
+        status: ResponseStatus,
         reasons: list[ReasonCode] | None = None,
-        only_from: tuple[Status, ...] | None = None,
+        only_from: tuple[ResponseStatus, ...] | None = None,
     ) -> bool:
         """Change the status of a response being processed; True when it changed.
 
-        Both the status column and the JSON blob are updated so the two cannot
-        drift apart. List queries read the column while the report page reads the
+        Both the status field and the JSON report are updated so the two cannot
+        drift apart. List queries read the field while the report page reads the
         JSON; if they diverge, one of the two places would be lying.
 
         `only_from`: change it only while it is in one of these states, checked
-        by the UPDATE itself -- a result that lands between the caller's look
+        by the update itself -- a result that lands between the caller's look
         and this write is not overwritten (D043: the overdue sweep, a worker's
         failure report).
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT report_json, status FROM response WHERE response_id=?", (response_id,)
-            ).fetchone()
-            if row is None or (only_from and row["status"] not in {s.value for s in only_from}):
-                return False
-            report = json.loads(row["report_json"])
-            report["status"] = status.value
-            if reasons is not None:
-                report["reasons"] = [r.value for r in reasons]
-            cur = c.execute(
-                "UPDATE response SET status=?, report_json=? WHERE response_id=? AND status=?",
-                (status.value, json.dumps(report, ensure_ascii=False), response_id, row["status"]),
-            )
-            return cur.rowcount == 1
+        responses = self.col("response")
+        row = responses.find_one({"response_id": response_id}, {"report_json": 1, "status": 1})
+        if row is None or (only_from and row["status"] not in {s.value for s in only_from}):
+            return False
+        report = json.loads(row["report_json"])
+        report["status"] = status.value
+        if reasons is not None:
+            report["reasons"] = [r.value for r in reasons]
+        done = responses.update_one(
+            {"response_id": response_id, "status": row["status"]},
+            {
+                "$set": {
+                    "status": status.value,
+                    "report_json": json.dumps(report, ensure_ascii=False),
+                }
+            },
+        )
+        return done.modified_count == 1
 
     def mark_running(self, response_id: str) -> bool:
         """QUEUED becomes RUNNING, stamped with the time; anything else stays as it is.
@@ -365,44 +333,40 @@ class Repository(SqlStore):
         arriving after the result must not put a finished response back to
         RUNNING, so only a QUEUED response moves.
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT report_json FROM response WHERE response_id=? AND status=?",
-                (response_id, Status.QUEUED.value),
-            ).fetchone()
-            if row is None:
-                return False
-            report = json.loads(row["report_json"])
-            report["status"] = Status.RUNNING.value
-            c.execute(
-                "UPDATE response SET status=?, report_json=?, started_at=?"
-                " WHERE response_id=? AND status=?",
-                (
-                    Status.RUNNING.value,
-                    json.dumps(report, ensure_ascii=False),
-                    _now(),
-                    response_id,
-                    Status.QUEUED.value,
-                ),
-            )
+        responses = self.col("response")
+        row = responses.find_one(
+            {"response_id": response_id, "status": ResponseStatus.QUEUED.value}, {"report_json": 1}
+        )
+        if row is None:
+            return False
+        report = json.loads(row["report_json"])
+        report["status"] = ResponseStatus.RUNNING.value
+        responses.update_one(
+            {"response_id": response_id, "status": ResponseStatus.QUEUED.value},
+            {
+                "$set": {
+                    "status": ResponseStatus.RUNNING.value,
+                    "report_json": json.dumps(report, ensure_ascii=False),
+                    "started_at": _now(),
+                }
+            },
+        )
         return True
 
     def running_since(self, cutoff: str) -> list[str]:
         """Responses RUNNING since before `cutoff`: the speech service never finished them."""
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id FROM response WHERE status=? AND started_at <= ?",
-                (Status.RUNNING.value, cutoff),
-            ).fetchall()
+        rows = self.col("response").find(
+            {"status": ResponseStatus.RUNNING.value, "started_at": {"$ne": None, "$lte": cutoff}},
+            {"response_id": 1},
+        )
         return [r["response_id"] for r in rows]
 
     def queued_since(self, cutoff: str) -> list[str]:
         """Responses still QUEUED, submitted before `cutoff`: no worker ever took them."""
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id FROM response WHERE status=? AND created_at <= ?",
-                (Status.QUEUED.value, cutoff),
-            ).fetchall()
+        rows = self.col("response").find(
+            {"status": ResponseStatus.QUEUED.value, "created_at": {"$lte": cutoff}},
+            {"response_id": 1},
+        )
         return [r["response_id"] for r in rows]
 
     def fail_stuck(self, minutes: int = 10) -> list[str]:
@@ -414,25 +378,34 @@ class Repository(SqlStore):
         state, is never met.
         """
         cutoff = (datetime.now(UTC) - timedelta(minutes=minutes)).isoformat(timespec="seconds")
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id FROM response WHERE status IN (?,?) AND created_at <= ?",
-                (Status.QUEUED.value, Status.RUNNING.value, cutoff),
-            ).fetchall()
+        rows = self.col("response").find(
+            {
+                "status": {"$in": [ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value]},
+                "created_at": {"$lte": cutoff},
+            },
+            {"response_id": 1},
+        )
         ids = [r["response_id"] for r in rows]
         for rid in ids:
-            self.set_status(rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED])
+            self.set_status(rid, ResponseStatus.FAILED, [ReasonCode.PROCESSING_INTERRUPTED])
         return ids
 
     def status_of(self, response_id: str) -> dict | None:
         """Lightweight status information for periodic polling. Serves FR-05."""
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT response_id, task_id, status, overall_0_6, overall_band,"
-                " teacher_verified, created_at, purpose FROM response WHERE response_id=?",
-                (response_id,),
-            ).fetchone()
-        return dict(row) if row else None
+        row = self.col("response").find_one({"response_id": response_id})
+        return fields(
+            row,
+            (
+                "response_id",
+                "task_id",
+                "status",
+                "overall_0_6",
+                "overall_band",
+                "teacher_verified",
+                "created_at",
+                "purpose",
+            ),
+        )
 
     # ---------- review locking (FR-29) ----------
 
@@ -449,112 +422,130 @@ class Repository(SqlStore):
         closes the browser mid-review does not leave the response locked forever.
         """
         until = (datetime.now(UTC) + timedelta(minutes=minutes)).isoformat(timespec="seconds")
-        with self._conn() as c:
-            # One statement, so the check and the claim cannot be interleaved.
-            #
-            # Reading the row and then writing it left a window in which two
-            # teachers both read "nobody holds this" and both wrote their own
-            # claim: the lock reported success to both, which is the one thing
-            # it exists to prevent. The conflict clause is evaluated atomically,
-            # so exactly one writer wins.
-            c.execute(
-                """INSERT INTO review_lock(response_id, reviewer_id, reviewer_name, locked_until)
-                   VALUES(?,?,?,?)
-                   ON CONFLICT(response_id) DO UPDATE SET
-                       reviewer_id = excluded.reviewer_id,
-                       reviewer_name = excluded.reviewer_name,
-                       locked_until = excluded.locked_until
-                   WHERE review_lock.locked_until <= ?
-                      OR review_lock.reviewer_id = excluded.reviewer_id""",
-                (response_id, reviewer_id, reviewer_name, until, _now()),
-            )
-            row = c.execute(
-                "SELECT response_id, reviewer_id, reviewer_name, locked_until"
-                " FROM review_lock WHERE response_id=?",
-                (response_id,),
-            ).fetchone()
-        lock = ReviewLock(**dict(row)) if row else None
+        claim = {"reviewer_id": reviewer_id, "reviewer_name": reviewer_name, "locked_until": until}
+        # One conditional write on the response, so the check and the claim
+        # cannot be interleaved. Reading the lock and then writing it left a
+        # window in which two teachers both read "nobody holds this" and both
+        # wrote their own claim. Here the update takes the response only when
+        # nobody holds it, the lock has run out, or it is one's own.
+        self.col("response").update_one(
+            {
+                "response_id": response_id,
+                "$or": [
+                    {"review_lock": None},
+                    {"review_lock.locked_until": {"$lte": _now()}},
+                    {"review_lock.reviewer_id": reviewer_id},
+                ],
+            },
+            {"$set": {"review_lock": claim}},
+        )
+        lock = self._lock(response_id)
         if lock is not None and not lock.is_held_by(reviewer_id):
             return False, lock.reviewer_name
         return True, None
 
+    def _lock(self, response_id: str) -> ReviewLock | None:
+        row = self.col("response").find_one({"response_id": response_id}, {"review_lock": 1})
+        held = (row or {}).get("review_lock")
+        return ReviewLock(response_id=response_id, **held) if held else None
+
     def unlock_response(self, response_id: str, reviewer_id: str) -> None:
         """Release the lock. Only the current holder can release it."""
-        with self._conn() as c:
-            c.execute(
-                "DELETE FROM review_lock WHERE response_id=? AND reviewer_id=?",
-                (response_id, reviewer_id),
-            )
+        self.col("response").update_one(
+            {"response_id": response_id, "review_lock.reviewer_id": reviewer_id},
+            {"$set": {"review_lock": None}},
+        )
 
     def locked_by(self, response_id: str) -> str | None:
         """Name of whoever holds a still-valid lock, or None."""
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT reviewer_name, locked_until FROM review_lock WHERE response_id=?",
-                (response_id,),
-            ).fetchone()
-        if row is None or row["locked_until"] <= _now():
+        lock = self._lock(response_id)
+        if lock is None or lock.locked_until <= _now():
             return None
-        return row["reviewer_name"]
+        return lock.reviewer_name
 
     def review_history(self, response_id: str) -> list[Review]:
         """History of result edits for one response. FR-31."""
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT reviewer_id, old_score, new_score, old_band, new_band, reason,"
-                " created_at FROM review_action WHERE response_id=? ORDER BY created_at",
-                (response_id,),
-            ).fetchall()
-        return [Review(**dict(r)) for r in rows]
+        row = self.col("response").find_one({"response_id": response_id}, {"reviews": 1})
+        return [Review(**r) for r in (row or {}).get("reviews") or []]
 
     # ---------- personal data: export and erasure (FR-34, FR-35, FR-38) ----------
 
     def speaking_profile(self, account_id: str) -> list[dict]:
         """Verified results for one learner, for the exported profile.
 
-        Only rows a teacher has confirmed. An unverified machine score is an
-        estimate; putting it in an exportable profile would let it travel as
+        Only responses a teacher has confirmed. An unverified machine score is
+        an estimate; putting it in an exportable profile would let it travel as
         though it were a finding, which is exactly what FR-21 forbids.
         """
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id, task_id, overall_0_6, overall_band, created_at, report_json"
-                " FROM response WHERE account_id=? AND teacher_verified=1"
-                " ORDER BY created_at",
-                (account_id,),
-            ).fetchall()
-        return [_profile_row(dict(r)) for r in rows]
+        rows = (
+            self.col("response")
+            .find({"account_id": account_id, "teacher_verified": 1})
+            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+        )
+        names = (
+            "response_id",
+            "task_id",
+            "overall_0_6",
+            "overall_band",
+            "created_at",
+            "report_json",
+        )
+        return [_profile_row(fields(r, names)) for r in rows]  # type: ignore[arg-type]
 
     def open_review_session(self, response_id: str, reviewer_id: str) -> None:
-        """Note that a teacher opened a response for review; once per open session."""
-        with self._conn() as c:
-            open_row = c.execute(
-                "SELECT 1 FROM review_session WHERE response_id=? AND reviewer_id=?"
-                " AND decided_at IS NULL",
-                (response_id, reviewer_id),
-            ).fetchone()
-            if not open_row:
-                c.execute(
-                    "INSERT INTO review_session(response_id, reviewer_id, opened_at) VALUES(?,?,?)",
-                    (response_id, reviewer_id, _now()),
-                )
+        """Note that a teacher opened a response for review; once per open visit."""
+        self.col("response").update_one(
+            {
+                "response_id": response_id,
+                "review_visits": {
+                    "$not": {"$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}}
+                },
+            },
+            {
+                "$push": {
+                    "review_visits": {
+                        "reviewer_id": reviewer_id,
+                        "opened_at": _now(),
+                        "decided_at": None,
+                        "action": None,
+                    }
+                }
+            },
+        )
 
     def close_review_session(self, response_id: str, reviewer_id: str, action: str) -> None:
-        with self._conn() as c:
-            c.execute(
-                "UPDATE review_session SET decided_at=?, action=? WHERE response_id=?"
-                " AND reviewer_id=? AND decided_at IS NULL",
-                (_now(), action, response_id, reviewer_id),
+        now = _now()
+        # One open visit per reviewer at a time; the loop closes a stray second.
+        for _ in range(4):
+            done = self.col("response").update_one(
+                {
+                    "response_id": response_id,
+                    "review_visits": {
+                        "$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}
+                    },
+                },
+                {
+                    "$set": {
+                        "review_visits.$.decided_at": now,
+                        "review_visits.$.action": action,
+                    }
+                },
             )
+            if not done.modified_count:
+                return
 
     def review_sessions(self, limit: int = 5000) -> list[dict]:
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT opened_at, decided_at, action FROM review_session"
-                " WHERE decided_at IS NOT NULL ORDER BY id DESC LIMIT ?",
-                (limit,),
-            ).fetchall()
-        return [dict(r) for r in rows]
+        rows = self.col("response").find(
+            {"review_visits.decided_at": {"$ne": None}}, {"review_visits": 1}
+        )
+        visits = [
+            {"opened_at": v["opened_at"], "decided_at": v["decided_at"], "action": v["action"]}
+            for r in rows
+            for v in r.get("review_visits") or []
+            if v.get("decided_at") is not None
+        ]
+        visits.sort(key=lambda v: v["decided_at"], reverse=True)
+        return visits[:limit]
 
     def settled_counts(self) -> tuple[int, int]:
         """(scored assessments the machine settled alone, scored assessments that reached a result).
@@ -562,13 +553,19 @@ class Repository(SqlStore):
         Alone: COMPLETED with no teacher confirmation. Reached a result:
         COMPLETED or REVIEW_REQUIRED, with a machine score.
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT SUM(CASE WHEN status='COMPLETED' AND teacher_verified=0 THEN 1 ELSE 0 END),"
-                " COUNT(*) FROM response WHERE purpose='assessment' AND overall_0_6 IS NOT NULL"
-                " AND status IN ('COMPLETED','REVIEW_REQUIRED')"
-            ).fetchone()
-        return int(row[0] or 0), int(row[1] or 0)
+        rows = self.col("response").find(
+            {
+                "purpose": "assessment",
+                "overall_0_6": {"$ne": None},
+                "status": {"$in": ["COMPLETED", "REVIEW_REQUIRED"]},
+            },
+            {"status": 1, "teacher_verified": 1},
+        )
+        alone = total = 0
+        for r in rows:
+            total += 1
+            alone += int(r["status"] == "COMPLETED" and not r.get("teacher_verified"))
+        return alone, total
 
     def scored_assessments(
         self,
@@ -580,27 +577,30 @@ class Repository(SqlStore):
 
         The test-retest pairs of D042 and the outcomes of the feedback study
         (D040) come from here. `accounts` narrows to those learners;
-        `machine_only` keeps the machine's own scores, leaving out the rows a
-        teacher's decision overwrote -- a test-retest pair compares the
+        `machine_only` keeps the machine's own scores, leaving out the responses
+        a teacher's decision overwrote -- a test-retest pair compares the
         instrument with itself.
         """
-        where = ["overall_0_6 IS NOT NULL", "purpose='assessment'", "account_id IS NOT NULL"]
-        args: list = []
+        query: dict = {
+            "overall_0_6": {"$ne": None},
+            "purpose": "assessment",
+            "account_id": {"$ne": None},
+        }
         if accounts is not None:
             ids = list(accounts)
             if not ids:
                 return []
-            where.append(f"account_id IN ({','.join('?' * len(ids))})")
-            args += ids
+            query["account_id"] = {"$in": ids}
         if machine_only:
-            where.append("teacher_verified=0")
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT account_id, task_id, overall_0_6, model_version, created_at FROM response"
-                f" WHERE {' AND '.join(where)} ORDER BY created_at DESC LIMIT ?",
-                (*args, limit),
-            ).fetchall()
-        return [dict(r) for r in reversed(rows)]
+            query["teacher_verified"] = 0
+        rows = (
+            self.col("response")
+            .find(query)
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        names = ("account_id", "task_id", "overall_0_6", "model_version", "created_at")
+        return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
 
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         """One learner's results over time, machine estimate and verified alike.
@@ -613,16 +613,24 @@ class Repository(SqlStore):
         back. The distinction is carried per row in `teacher_verified`, so the
         screen can draw the two differently instead of blurring them together.
         """
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id, task_id, status, overall_0_6, overall_band,"
-                " teacher_verified, model_version, created_at"
-                " FROM response WHERE account_id=? AND overall_0_6 IS NOT NULL"
-                " ORDER BY created_at DESC, rowid DESC LIMIT ?",
-                (account_id, limit),
-            ).fetchall()
+        rows = (
+            self.col("response")
+            .find({"account_id": account_id, "overall_0_6": {"$ne": None}})
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        names = (
+            "response_id",
+            "task_id",
+            "status",
+            "overall_0_6",
+            "overall_band",
+            "teacher_verified",
+            "model_version",
+            "created_at",
+        )
         # The latest `limit`, in time order: "the last three results" must be.
-        return [dict(r) for r in reversed(rows)]
+        return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
 
     def cohort_stats(self, limit: int = 5000) -> dict:
         """What a teacher needs to see about a class rather than one student. FR-29.
@@ -639,50 +647,45 @@ class Repository(SqlStore):
         # The numbers about the SCORING MACHINE count assessment responses only
         # (D023): practice is never scored, and counting it would make "responses"
         # and "scored responses" drift apart for no reason anyone could explain.
-        with self._conn() as c:
-            by_band = {
-                r["overall_band"]: r["n"]
-                for r in c.execute(
-                    "SELECT overall_band, COUNT(*) n FROM response"
-                    " WHERE overall_band IS NOT NULL AND purpose='assessment'"
-                    " GROUP BY overall_band"
-                ).fetchall()
-            }
-            by_task = [
-                dict(r)
-                for r in c.execute(
-                    "SELECT task_id, COUNT(*) n,"
-                    " AVG(overall_0_6) avg_score,"
-                    " SUM(CASE WHEN status='REVIEW_REQUIRED' THEN 1 ELSE 0 END) waiting"
-                    " FROM response WHERE purpose='assessment' GROUP BY task_id ORDER BY task_id"
-                ).fetchall()
-            ]
-            total = c.execute(
-                "SELECT COUNT(*) n FROM response WHERE purpose='assessment'"
-            ).fetchone()["n"]
-            speakers = c.execute(
-                "SELECT COUNT(DISTINCT account_id) n FROM response"
-                " WHERE account_id IS NOT NULL AND purpose='assessment'"
-            ).fetchone()["n"]
-            waiting = c.execute(
-                "SELECT COUNT(*) n FROM response"
-                " WHERE status='REVIEW_REQUIRED' AND purpose='assessment'"
-            ).fetchone()["n"]
-            verified = c.execute(
-                "SELECT COUNT(*) n FROM response WHERE teacher_verified=1"
-            ).fetchone()["n"]
+        responses = self.col("response")
+        assessed = list(
+            responses.find(
+                {"purpose": "assessment"},
+                {"overall_band": 1, "task_id": 1, "overall_0_6": 1, "status": 1, "account_id": 1},
+            )
+        )
+        by_band: dict[str, int] = {}
+        tasks: dict[str, dict] = {}
+        for r in assessed:
+            if r.get("overall_band") is not None:
+                by_band[r["overall_band"]] = by_band.get(r["overall_band"], 0) + 1
+            cell = tasks.setdefault(r["task_id"], {"n": 0, "scores": [], "waiting": 0})
+            cell["n"] += 1
+            if r.get("overall_0_6") is not None:
+                cell["scores"].append(r["overall_0_6"])
+            cell["waiting"] += int(r["status"] == "REVIEW_REQUIRED")
+        speakers = len({r["account_id"] for r in assessed if r.get("account_id") is not None})
+        waiting = sum(1 for r in assessed if r["status"] == "REVIEW_REQUIRED")
+        verified = responses.count_documents({"teacher_verified": 1})
 
-            # Only decisions where the machine had proposed a band at all.
-            # A review of a response the model refused to score is a teacher
-            # doing the work from scratch, not a teacher agreeing or
-            # disagreeing with anything, and counting it as agreement would
-            # flatter the model with cases it never answered.
-            decisions = c.execute(
-                "SELECT old_band, new_band FROM review_action WHERE old_band IS NOT NULL LIMIT ?",
-                (limit,),
-            ).fetchall()
+        # Only decisions where the machine had proposed a band at all.
+        # A review of a response the model refused to score is a teacher doing
+        # the work from scratch, not a teacher agreeing or disagreeing with
+        # anything, and counting it as agreement would flatter the model with
+        # cases it never answered.
+        decisions = sorted(
+            (
+                r
+                for row in self.col("response").find(
+                    {"reviews.old_band": {"$ne": None}}, {"reviews": 1}
+                )
+                for r in row.get("reviews") or []
+                if r.get("old_band") is not None
+            ),
+            key=lambda r: r.get("review_id") or 0,
+        )[:limit]
 
-        kept = sum(1 for r in decisions if r["new_band"] == r["old_band"])
+        kept = sum(1 for r in decisions if r.get("new_band") == r["old_band"])
         changed = len(decisions) - kept
         return {
             # Two different counts, and the screen shows both. `responses` alone
@@ -690,7 +693,7 @@ class Repository(SqlStore):
             # responses beside 13 waiting for review looks like an error until
             # you know that a response the model refused to score is also
             # waiting -- and is in fact the kind most in need of a teacher.
-            "responses": total,
+            "responses": len(assessed),
             "scored": sum(by_band.values()),
             "speakers": speakers,
             "waiting_for_review": waiting,
@@ -698,12 +701,14 @@ class Repository(SqlStore):
             "by_band": by_band,
             "by_task": [
                 {
-                    "task_id": r["task_id"],
-                    "n": r["n"],
-                    "avg_score": round(r["avg_score"], 2) if r["avg_score"] is not None else None,
-                    "waiting": r["waiting"],
+                    "task_id": task_id,
+                    "n": cell["n"],
+                    "avg_score": round(sum(cell["scores"]) / len(cell["scores"]), 2)
+                    if cell["scores"]
+                    else None,
+                    "waiting": cell["waiting"],
                 }
-                for r in by_task
+                for task_id, cell in sorted(tasks.items(), key=lambda kv: str(kv[0]))
             ],
             "agreement": {
                 "decisions": len(decisions),
@@ -726,12 +731,12 @@ class Repository(SqlStore):
         from aicefr.practice.bank import PRACTICE_TASKS
 
         criterion_of = {t.task_id: t.criterion.value for t in PRACTICE_TASKS}
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT account_id, task_id, report_json FROM response"
-                " WHERE purpose='practice' AND status=?",
-                (Status.COMPLETED.value,),
-            ).fetchall()
+        rows = list(
+            self.col("response").find(
+                {"purpose": "practice", "status": ResponseStatus.COMPLETED.value},
+                {"account_id": 1, "task_id": 1, "report_json": 1},
+            )
+        )
         by_criterion: dict[str, dict[str, int]] = {}
         done = 0
         for r in rows:
@@ -739,12 +744,12 @@ class Repository(SqlStore):
                 criterion_of.get(r["task_id"], "khac"), {"attempts": 0, "completed": 0}
             )
             cell["attempts"] += 1
-            if _practice_completed(r["report_json"]):
+            if _practice_completed(r.get("report_json")):
                 cell["completed"] += 1
                 done += 1
         return {
             "attempts": len(rows),
-            "learners": len({r["account_id"] for r in rows if r["account_id"]}),
+            "learners": len({r["account_id"] for r in rows if r.get("account_id")}),
             "completed": done,
             "by_criterion": by_criterion,
         }
@@ -758,21 +763,17 @@ class Repository(SqlStore):
         "your last attempt was rejected for too much silence" rather than act as if it
         never happened. The streak and the learning path count processed attempts only.
         """
-        sql = (
-            "SELECT response_id, task_id, status, created_at, report_json FROM response"
-            " WHERE account_id=? AND purpose='practice'"
-        )
-        args: tuple = (account_id,)
+        query = {"account_id": account_id, "purpose": "practice"}
         if task_id is not None:
-            sql += " AND task_id=?"
-            args += (task_id,)
-        with self._conn() as c:
-            # rowid keeps submission order when two attempts share a second
-            # (created_at only has second precision).
-            rows = c.execute(sql + " ORDER BY created_at, rowid", args).fetchall()
+            query["task_id"] = task_id
+        # _id keeps submission order when two attempts share a second
+        # (created_at only has second precision).
+        rows = (
+            self.col("response").find(query).sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+        )
         out = []
         for r in rows:
-            result = (json.loads(r["report_json"] or "{}").get("practice")) or {}
+            result = (json.loads(r.get("report_json") or "{}").get("practice")) or {}
             out.append(
                 {
                     "response_id": r["response_id"],
@@ -792,37 +793,38 @@ class Repository(SqlStore):
         Per account rather than one total, so the caller can leave out research
         participants, who do not count towards a plan (BR-30).
         """
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT account_id, COUNT(*) AS n FROM response"
-                " WHERE purpose='assessment' AND account_id IS NOT NULL"
-                " AND created_at >= ? AND created_at < ? GROUP BY account_id",
-                (since, until),
-            ).fetchall()
-        return {r["account_id"]: r["n"] for r in rows}
+        rows = self.col("response").find(
+            {
+                "purpose": "assessment",
+                "account_id": {"$ne": None},
+                "created_at": {"$gte": since, "$lt": until},
+            },
+            {"account_id": 1},
+        )
+        out: dict[str, int] = {}
+        for r in rows:
+            out[r["account_id"]] = out.get(r["account_id"], 0) + 1
+        return out
 
     def latest_assessment(self, account_id: str) -> dict | None:
         """The latest scored assessment: the basis for suggesting practice.
 
-        The band is the one stored on the row, i.e. the teacher's band if the response
-        was reviewed. `weakest_criteria` is empty for responses scored before D022 or
-        without per-criterion indicators -- the suggestion then does not rely on a
-        weakest criterion rather than guess one.
+        The band is the one stored on the response, i.e. the teacher's band if
+        the response was reviewed. `weakest_criteria` is empty for responses
+        scored before D022 or without per-criterion indicators -- the suggestion
+        then does not rely on a weakest criterion rather than guess one.
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT response_id, overall_band, teacher_verified, created_at, report_json"
-                " FROM response WHERE account_id=? AND purpose='assessment'"
-                " AND overall_band IS NOT NULL ORDER BY created_at DESC LIMIT 1",
-                (account_id,),
-            ).fetchone()
+        row = self.col("response").find_one(
+            {"account_id": account_id, "purpose": "assessment", "overall_band": {"$ne": None}},
+            sort=[("created_at", DESCENDING), ("_id", DESCENDING)],
+        )
         if row is None:
             return None
-        assessment = json.loads(row["report_json"] or "{}").get("assessment") or {}
+        assessment = json.loads(row.get("report_json") or "{}").get("assessment") or {}
         return {
             "response_id": row["response_id"],
             "band": row["overall_band"],
-            "teacher_verified": bool(row["teacher_verified"]),
+            "teacher_verified": bool(row.get("teacher_verified")),
             "created_at": row["created_at"],
             "weakest_criteria": list(assessment.get("weakest_criteria") or []),
         }
@@ -834,64 +836,76 @@ class Repository(SqlStore):
         second time. Deleting a participant's recordings is irreversible, so
         the interface must make the operator look at the list before acting.
         """
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id, audio_path FROM response WHERE speaker_id=?",
-                (speaker_id,),
-            ).fetchall()
-            reviews = c.execute(
-                "SELECT COUNT(*) AS n FROM review_action WHERE response_id IN"
-                " (SELECT response_id FROM response WHERE speaker_id=?)",
-                (speaker_id,),
-            ).fetchone()["n"]
-        audio_files = sum(1 for r in rows if r["audio_path"] and Path(r["audio_path"]).is_file())
+        rows = list(
+            self.col("response").find(
+                {"speaker_id": speaker_id}, {"response_id": 1, "audio_path": 1, "reviews": 1}
+            )
+        )
+        ids = [r["response_id"] for r in rows]
+        reviews = sum(len(r.get("reviews") or []) for r in rows)
+        audio_files = sum(1 for r in rows if self._has_audio(r.get("audio_path")))
         return {
             "speaker_id": speaker_id,
             "responses": len(rows),
             "audio_files": audio_files,
             "review_actions": reviews,
-            "response_ids": [r["response_id"] for r in rows],
+            "response_ids": ids,
         }
+
+    def _forget_responses(self, ids: list[str]) -> None:
+        """Everything that hangs off these responses, then the responses.
+
+        What a foreign key's ON DELETE CASCADE did in SQL: the blind-rating
+        sheets and their ratings go with the response they are about; the
+        review history, the lock and who saw the machine's result are part of
+        the response's own document (D060).
+        """
+        if not ids:
+            return
+        db = self.db
+        within = {"response_id": {"$in": ids}}
+        # The blind-rating sheets about them, from whichever batch holds them.
+        db["rating_batch"].update_many(
+            {"ratings.response_id": {"$in": ids}},
+            {"$pull": {"ratings": {"response_id": {"$in": ids}}}},
+        )
+        # The reviews, the lock, the visits and the replay labels are part of
+        # the response document and go with it.
+        db["response"].delete_many(within)
 
     def erase_speaker(self, speaker_id: str, actor_id: str) -> dict:
         """Delete one participant's recordings and reports. Irreversible.
 
-        Removes the audio from disk as well as the rows. Leaving the files
+        Removes the audio from disk as well as the documents. Leaving the files
         behind would make the deletion a lie: a recording of someone's voice is
-        personal data whether or not a database row still points at it.
+        personal data whether or not a document still points at it.
 
         Writes an audit entry that records the erasure itself. The entry keeps
         the pseudonym and the counts, not the content.
         """
         preview = self.erasure_preview(speaker_id)
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id, audio_path FROM response WHERE speaker_id=?",
-                (speaker_id,),
-            ).fetchall()
-            for r in rows:
-                if r["audio_path"]:
-                    Path(r["audio_path"]).unlink(missing_ok=True)
-            ids = [r["response_id"] for r in rows]
-            marks = ",".join("?" * len(ids)) or "NULL"
-            if ids:
-                c.execute(f"DELETE FROM review_action WHERE response_id IN ({marks})", ids)
-                c.execute(f"DELETE FROM review_lock WHERE response_id IN ({marks})", ids)
-            c.execute("DELETE FROM response WHERE speaker_id=?", (speaker_id,))
-            _audit(
-                c,
-                actor_id,
-                "ERASE_PARTICIPANT",
-                speaker_id,
-                f"{preview['responses']} responses, {preview['audio_files']} audio files",
+        rows = list(
+            self.col("response").find(
+                {"speaker_id": speaker_id}, {"response_id": 1, "audio_path": 1}
             )
+        )
+        for r in rows:
+            self._drop_audio(r.get("audio_path"))
+        self._forget_responses([r["response_id"] for r in rows])
+        _audit(
+            self.db,
+            actor_id,
+            "ERASE_PARTICIPANT",
+            speaker_id,
+            f"{preview['responses']} responses, {preview['audio_files']} audio files",
+        )
         return preview
 
     def erase_one_response(self, response_id: str, actor_id: str) -> bool:
-        """Delete a single response: its row, its review history, its audio file.
+        """Delete a single response: its document, its review history, its audio file.
 
         Separate from `erase_speaker` because the two answer different requests.
-        `erase_speaker` is an administrator acting on a withdrawal of consent and
+        `erase_speaker` is an administrator acting on a request to erase and
         removes everything a person ever submitted. This is a person deleting one
         recording of their own -- "I mumbled through that one, take it off" --
         and it must not require asking anybody. A right that needs someone else
@@ -904,30 +918,27 @@ class Repository(SqlStore):
         Returns False when there is nothing to delete, so the caller can answer
         404 rather than claim success for a response that never existed.
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT audio_path, teacher_verified FROM response WHERE response_id=?",
-                (response_id,),
-            ).fetchone()
-            if row is None:
-                return False
-            if row["teacher_verified"]:
-                raise InvalidStateError(
-                    "bài đã được giảng viên xác nhận nên không tự xoá được;"
-                    " hãy liên hệ giảng viên phụ trách"
-                )
+        row = self.col("response").find_one(
+            {"response_id": response_id}, {"audio_path": 1, "teacher_verified": 1}
+        )
+        if row is None:
+            return False
+        if row.get("teacher_verified"):
+            raise InvalidStateError(
+                "bài đã được giảng viên xác nhận nên không tự xoá được;"
+                " hãy liên hệ giảng viên phụ trách"
+            )
 
-            if row["audio_path"]:
-                # The file, not only the row. A recording of someone's voice is
-                # personal data whether or not a row still points at it.
-                Path(row["audio_path"]).unlink(missing_ok=True)
-            c.execute("DELETE FROM review_action WHERE response_id=?", (response_id,))
-            c.execute("DELETE FROM review_lock WHERE response_id=?", (response_id,))
-            c.execute("DELETE FROM response WHERE response_id=?", (response_id,))
-            # The entry records that a deletion happened and who asked for it.
-            # It carries no transcript and no score: an audit log that keeps a
-            # copy of what was deleted has not deleted it.
-            _audit(c, actor_id, "ERASE_OWN_RESPONSE", response_id, "người học tự xoá bài của mình")
+        # The recording, not only the document. A recording of someone's voice
+        # is personal data whether or not a document still points at it.
+        self._drop_audio(row.get("audio_path"))
+        self._forget_responses([response_id])
+        # The entry records that a deletion happened and who asked for it. It
+        # carries no transcript and no score: an audit log that keeps a copy of
+        # what was deleted has not deleted it.
+        _audit(
+            self.db, actor_id, "ERASE_OWN_RESPONSE", response_id, "người học tự xoá bài của mình"
+        )
         return True
 
     def audio_path_of(self, response_id: str) -> str | None:
@@ -936,19 +947,13 @@ class Repository(SqlStore):
         Internal use only. Never return this path through the API: leaking the
         server's directory layout is one step towards leaking more.
         """
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT audio_path FROM response WHERE response_id=?", (response_id,)
-            ).fetchone()
-        return row["audio_path"] if row else None
+        row = self.col("response").find_one({"response_id": response_id}, {"audio_path": 1})
+        return row.get("audio_path") if row else None
 
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT account_id FROM response WHERE response_id=?", (response_id,)
-            ).fetchone()
-        return row["account_id"] if row else None
+        row = self.col("response").find_one({"response_id": response_id}, {"account_id": 1})
+        return row.get("account_id") if row else None
 
     def list_by_account(self, account_id: str, limit: int = 200) -> list[dict]:
         """List one person's responses. Serves FR-04.
@@ -956,36 +961,25 @@ class Repository(SqlStore):
         `reviewed_at` is the time of the latest teacher decision, so the list
         can mark a result a teacher confirmed since the owner last looked (D028).
         """
-        with self._conn() as c:
-            rows = c.execute(
-                """SELECT r.response_id, r.speaker_id, r.task_id, r.status, r.overall_0_6,
-                          r.overall_band, r.teacher_verified, r.created_at, r.purpose,
-                          (SELECT MAX(a.created_at) FROM review_action a
-                            WHERE a.response_id = r.response_id) AS reviewed_at
-                   FROM response r WHERE r.account_id=? ORDER BY r.created_at DESC LIMIT ?""",
-                (account_id, limit),
-            ).fetchall()
-        return [dict(r) for r in rows]
+        rows = list(
+            self.col("response")
+            .find({"account_id": account_id})
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        latest = {
+            r["response_id"]: max(x["created_at"] for x in r["reviews"])
+            for r in rows
+            if r.get("reviews")
+        }
+        out = []
+        for r in rows:
+            item = fields(r, (*LIST_FIELDS, "purpose"))
+            item["reviewed_at"] = latest.get(r["response_id"])  # type: ignore[index]
+            out.append(item)
+        return out  # type: ignore[return-value]
 
     # ---------- what is new for a person (D028) ----------
-
-    def seen_at(self, account_id: str, marker: str) -> str | None:
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT seen_at FROM seen_marker WHERE account_id=? AND marker=?",
-                (account_id, marker),
-            ).fetchone()
-        return row["seen_at"] if row else None
-
-    def mark_seen(self, account_id: str, marker: str) -> str:
-        now = _now()
-        with self._conn() as c:
-            c.execute(
-                "INSERT INTO seen_marker(account_id, marker, seen_at) VALUES(?,?,?)"
-                " ON CONFLICT(account_id, marker) DO UPDATE SET seen_at=excluded.seen_at",
-                (account_id, marker, now),
-            )
-        return now
 
     def count_reviewed_since(self, account_id: str, since: str | None) -> int:
         """The owner's assessed responses a teacher decided on after `since`.
@@ -993,66 +987,85 @@ class Repository(SqlStore):
         Never-looked (`since` None) counts every decided response: a student who
         has not opened their list yet has not seen any of those decisions.
         """
-        # Two statements rather than "(? IS NULL OR ...)": PostgreSQL cannot tell
-        # the type of a parameter that is only ever compared with NULL.
-        sql = """SELECT COUNT(DISTINCT r.response_id) FROM response r
-                 JOIN review_action a ON a.response_id = r.response_id
-                 WHERE r.account_id = ? AND r.purpose = 'assessment'"""
-        args: tuple = (account_id,)
-        if since is not None:
-            sql += " AND a.created_at > ?"
-            args += (since,)
-        with self._conn() as c:
-            return c.execute(sql, args).fetchone()[0]
+        rows = self.col("response").find(
+            {"account_id": account_id, "purpose": "assessment", "reviews.0": {"$exists": True}},
+            {"reviews": 1},
+        )
+        return sum(
+            1 for r in rows if since is None or any(x["created_at"] > since for x in r["reviews"])
+        )
 
     def count_waiting_review(self, exclude: Collection[str] = ()) -> int:
         """How many assessed responses wait in the teacher queue, less the ones in `exclude`."""
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT response_id FROM response WHERE status=? AND purpose='assessment'",
-                (Status.REVIEW_REQUIRED.value,),
-            ).fetchall()
+        rows = self.col("response").find(
+            {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"},
+            {"response_id": 1},
+        )
         hidden = set(exclude)
         return sum(r["response_id"] not in hidden for r in rows)
 
     def get(self, response_id: str) -> Response | None:
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT report_json FROM response WHERE response_id=?", (response_id,)
-            ).fetchone()
-        return Response.model_validate_json(row["report_json"]) if row else None
+        row = self.col("response").find_one(
+            {"response_id": response_id}, {"report_json": 1, "reviews": 1}
+        )
+        if row is None:
+            return None
+        report = Response.model_validate_json(row["report_json"])
+        return report.model_copy(
+            update={"reviews": [Review(**r) for r in row.get("reviews") or []]}
+        )
 
-    def queue_with_locks(self, status: Status, limit: int = 50) -> list[dict]:
-        """The review queue plus, for each row, who currently holds it.
+    def queue_with_locks(self, status: ResponseStatus, limit: int = 50) -> list[dict]:
+        """The review queue plus, for each response, who currently holds it.
 
-        One query with a LEFT JOIN rather than a query per row. The caller used
-        to loop over the rows calling `locked_by` on each, which costs one round
-        trip per queued response: fine with three rows in a test, linear in the
-        size of the queue in a real term.
+        Two reads rather than one read per queued response: the caller used to
+        loop over the responses calling `locked_by` on each, which costs one
+        round trip per response -- fine with three in a test, linear in the size
+        of the queue in a real term.
         """
-        with self._conn() as c:
-            rows = c.execute(
-                """SELECT r.response_id, r.speaker_id, r.task_id, r.status,
-                          r.overall_0_6, r.overall_band, r.teacher_verified, r.created_at,
-                          CASE WHEN l.locked_until > ? THEN l.reviewer_name END AS locked_by
-                   FROM response r
-                   LEFT JOIN review_lock l ON l.response_id = r.response_id
-                   WHERE r.status = ? AND r.purpose = 'assessment'
-                   ORDER BY r.created_at
-                   LIMIT ?""",
-                (_now(), status.value, limit),
-            ).fetchall()
-        return [dict(r) for r in rows]
+        rows = list(
+            self.col("response")
+            .find({"status": status.value, "purpose": "assessment"})
+            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+            .limit(limit)
+        )
+        now = _now()
+        out = []
+        for r in rows:
+            item = fields(r, LIST_FIELDS)
+            lock = r.get("review_lock")
+            held = lock is not None and lock["locked_until"] > now
+            item["locked_by"] = lock["reviewer_name"] if held else None  # type: ignore[index]
+            out.append(item)
+        return out  # type: ignore[return-value]
+
+    def assessments_since(self, account_ids: list[str], task_id: str, since: str) -> list[dict]:
+        """Assessment responses of `task_id` by these accounts from `since` on, oldest first.
+
+        What a class assignment counts as handed in (D054).
+        """
+        rows = (
+            self.col("response")
+            .find(
+                {
+                    "account_id": {"$in": account_ids},
+                    "task_id": task_id,
+                    "purpose": {"$ne": "practice"},
+                    "created_at": {"$gte": since},
+                }
+            )
+            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+        )
+        return [fields(r, (*LIST_FIELDS, "account_id")) for r in rows]  # type: ignore[misc]
 
     def list_all(self, limit: int = 200) -> list[dict]:
-        with self._conn() as c:
-            rows = c.execute(
-                """SELECT response_id, speaker_id, task_id, status, overall_0_6,
-                          overall_band, teacher_verified, created_at
-                   FROM response ORDER BY created_at DESC LIMIT ?""",
-                (limit,),
-            ).fetchall()
-        return [dict(r) for r in rows]
+        rows = (
+            self.col("response")
+            .find()
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        return [fields(r, LIST_FIELDS) for r in rows]  # type: ignore[misc]
 
     def apply_review(
         self,
@@ -1075,7 +1088,7 @@ class Repository(SqlStore):
         # travel into the exported profile, which is exactly what FR-21 forbids.
         # A response still QUEUED or RUNNING could be decided before it had been
         # scored at all, and an already decided one could be quietly changed again.
-        if report.status is not Status.REVIEW_REQUIRED:
+        if report.status is not ResponseStatus.REVIEW_REQUIRED:
             raise InvalidStateError(
                 f"bài đang ở trạng thái {report.status.value}, chỉ duyệt được bài "
                 "đang chờ giảng viên"
@@ -1106,7 +1119,7 @@ class Repository(SqlStore):
         # Diem va band khong duoc mau thuan (5,5 kem A2 tung duoc luu la "da xac
         # nhan"). Gui ca hai thi chung phai khop nguong cua chinh mo hinh da cham.
         if new_score is not None and new_band is not None:
-            from aicefr.scoring.scorer import to_band
+            from aicefr.scoring.band_map import to_band
 
             if to_band(new_score, thresholds).value != new_band:
                 raise InvalidStateError(
@@ -1127,7 +1140,7 @@ class Repository(SqlStore):
         # verified, exported, and meaningless. When only the score moves, the
         # band follows it.
         if new_score is not None and new_band is None:
-            from aicefr.scoring.scorer import to_band
+            from aicefr.scoring.band_map import to_band
 
             a.overall_band = to_band(new_score, thresholds)
 
@@ -1137,26 +1150,25 @@ class Repository(SqlStore):
         # duoc tren ban ghi.
 
         a.teacher_verified = True
-        report.status = Status.COMPLETED
+        report.status = ResponseStatus.COMPLETED
 
-        with self._conn() as c:
-            owner = _record_decision(
-                c,
-                response_id,
-                reviewer_id,
-                Status.COMPLETED,
-                "REVIEW_DECISION",
-                reason,
-                (
-                    old_score,
-                    new_score,
-                    old_band.value if old_band else None,
-                    # Band SAU quyet dinh, ke ca khi no duoc suy tu diem. Ghi tham
-                    # so dau vao (None khi chi sua diem) lam thong ke dong thuan
-                    # dem nham "sua band" thanh "giu band".
-                    a.overall_band.value if a.overall_band else None,
-                ),
-            )
+        owner = _record_decision(
+            self.db,
+            response_id,
+            reviewer_id,
+            ResponseStatus.COMPLETED,
+            "REVIEW_DECISION",
+            reason,
+            (
+                old_score,
+                new_score,
+                old_band.value if old_band else None,
+                # Band SAU quyet dinh, ke ca khi no duoc suy tu diem. Ghi tham
+                # so dau vao (None khi chi sua diem) lam thong ke dong thuan
+                # dem nham "sua band" thanh "giu band".
+                a.overall_band.value if a.overall_band else None,
+            ),
+        )
         # Write the report back WITHOUT losing who it belongs to.
         #
         # This line used to read `self.save(report, report.response_id, "")`,
@@ -1164,7 +1176,7 @@ class Repository(SqlStore):
         # and no account id. Approving a review therefore erased the owner: the
         # student lost access to their own report, it vanished from "my
         # responses", and it never reached the exported profile. Nothing failed
-        # loudly — the row was still there, just orphaned.
+        # loudly — the document was still there, just orphaned.
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
 
@@ -1173,19 +1185,18 @@ class Repository(SqlStore):
 
         Chi cho bai dang cho duyet VA khong co ket qua cham. Bai chuyen sang
         REJECTED: sinh vien thay "ban ghi chua dung duoc" va duoc moi nop lai.
-        Co dong review_action (khong co band, nen khong tinh vao ty le dong thuan)
-        va dong audit, nhu moi quyet dinh khac.
+        Co ban ghi review_action (khong co band, nen khong tinh vao ty le dong
+        thuan) va ban ghi audit, nhu moi quyet dinh khac.
         """
         report = self.get(response_id)
         if report is None:
             return None
-        if report.status is not Status.REVIEW_REQUIRED or report.assessment is not None:
+        if report.status is not ResponseStatus.REVIEW_REQUIRED or report.assessment is not None:
             raise InvalidStateError("chỉ đóng được bài đang chờ duyệt mà máy không chấm được")
-        report.status = Status.REJECTED
-        with self._conn() as c:
-            owner = _record_decision(
-                c, response_id, reviewer_id, Status.REJECTED, "REVIEW_CLOSED", reason
-            )
+        report.status = ResponseStatus.REJECTED
+        owner = _record_decision(
+            self.db, response_id, reviewer_id, ResponseStatus.REJECTED, "REVIEW_CLOSED", reason
+        )
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
 
@@ -1193,9 +1204,9 @@ class Repository(SqlStore):
         """Rows for the research export, restricted to accounts that allow it.
 
         The caller passes the allowed set rather than this method reading the
-        consent table itself. Two reasons: the scoring database and the consent
-        table are separate concerns, and a caller holding an explicit set is
-        auditable -- you can print it, count it, and show it to an ethics
+        accounts itself. Two reasons: the scoring store and the accounts are
+        separate concerns, and a caller holding an explicit
+        set is auditable -- you can print it, count it, and show it to an ethics
         reviewer. A join hidden inside the query cannot be shown to anybody.
 
         Never returns the transcript. The export exists to analyse scores
@@ -1204,59 +1215,62 @@ class Repository(SqlStore):
         """
         if not allowed_account_ids:
             return []
-        # Loc TRONG SQL roi moi LIMIT. Truoc day LIMIT 5000 dong dau tien roi
-        # moi loc trong Python: khi co hon 5000 dong, bai moi hon cua nguoi da
-        # dong y roi mat im lang ma row_count van trong hop le. Chia ID thanh
-        # tung lo de khong vuot gioi han so tham so cua SQLite.
-        ids = sorted(allowed_account_ids)
-        out: list[dict] = []
-        with self._conn() as c:
-            for i in range(0, len(ids), 500):
-                chunk = ids[i : i + 500]
-                marks = ",".join("?" * len(chunk))
-                out += [
-                    dict(r)
-                    for r in c.execute(
-                        "SELECT response_id, speaker_id, task_id, status, overall_0_6,"
-                        " overall_band, teacher_verified, model_version, config_version,"
-                        f" created_at, account_id FROM response WHERE account_id IN ({marks})"
-                        # D023: practice attempts are constrained exercises (given
-                        # words, reading aloud), not free speech to compare with
-                        # teacher ratings.
-                        " AND purpose='assessment'",
-                        chunk,
-                    )
-                ]
-        out.sort(key=lambda r: r["created_at"])
-        return out[:limit]
+        # Filtered in the query, then limited: limiting first and filtering
+        # after would silently drop the newer responses of allowed learners
+        # once there were more than `limit` in all.
+        rows = self.col("response").find(
+            {
+                "account_id": {"$in": sorted(allowed_account_ids)},
+                # D023: practice attempts are constrained exercises (given
+                # words, reading aloud), not free speech to compare with
+                # teacher ratings.
+                "purpose": "assessment",
+            }
+        )
+        names = (
+            "response_id",
+            "speaker_id",
+            "task_id",
+            "status",
+            "overall_0_6",
+            "overall_band",
+            "teacher_verified",
+            "model_version",
+            "config_version",
+            "created_at",
+            "account_id",
+        )
+        out = [fields(r, names) for r in rows]
+        out.sort(key=lambda r: r["created_at"])  # type: ignore[index]
+        return out[:limit]  # type: ignore[return-value]
 
     # ---------- runtime configuration (FR-08, FR-36) ----------
     #
     # Settings that an administrator may change while the system is running live
     # here rather than in environment variables, for one reason: a change has to
-    # be attributable. The row carries who changed it, when, and under which
+    # be attributable. The document carries who changed it, when, and under which
     # version label -- an env var carries none of that, and "who raised the
     # silence threshold the week the results went strange" is a question that
     # will be asked.
 
     def set_config(self, key: str, value: str, version: str, actor_id: str) -> None:
-        with self._conn() as c:
-            c.execute(
-                "INSERT INTO app_config(key, value, version, updated_by, updated_at)"
-                " VALUES(?,?,?,?,?)"
-                " ON CONFLICT(key) DO UPDATE SET value=excluded.value,"
-                " version=excluded.version, updated_by=excluded.updated_by,"
-                " updated_at=excluded.updated_at",
-                (key, value, version, actor_id, _now()),
-            )
+        self.col(SYSTEM).update_one(
+            {"key": CONFIG + key},
+            {
+                "$set": {
+                    "value": value,
+                    "version": version,
+                    "updated_by": actor_id,
+                    "updated_at": _now(),
+                }
+            },
+            upsert=True,
+        )
 
     def get_config(self, key: str) -> AppConfig | None:
-        with self._conn() as c:
-            row = c.execute(
-                "SELECT key, value, version, updated_by, updated_at FROM app_config WHERE key=?",
-                (key,),
-            ).fetchone()
-        return AppConfig(**dict(row)) if row else None
+        row = self.col(SYSTEM).find_one({"key": CONFIG + key})
+        names = ("value", "version", "updated_by", "updated_at")
+        return AppConfig(key=key, **fields(row, names)) if row else None
 
     def write_audit(
         self, actor_id: str, action: str, target_id: str | None, detail: str | None
@@ -1268,43 +1282,25 @@ class Repository(SqlStore):
         caller passes it -- the log itself must not become a second copy of the
         personal data it is meant to protect.
         """
-        with self._conn() as c:
-            _audit(c, actor_id, action, target_id, detail)
+        _audit(self.db, actor_id, action, target_id, detail)
 
     def audit(self, limit: int = 100) -> list[dict]:
         """This service's latest audit entries, newest first, as `AuditLog.recent` gives them."""
-        with self._conn() as c:
-            rows = c.execute(
-                "SELECT id, actor_id, action, target_id, detail, created_at FROM audit_log"
-                " WHERE service='assessment' ORDER BY id DESC LIMIT ?",
-                (limit,),
-            ).fetchall()
-        return [dict(r) for r in rows]
+        return recent_entries(self.db, "assessment", limit)
 
     def stats(self) -> dict:
-        with self._conn() as c:
-            total = c.execute("SELECT COUNT(*) n FROM response").fetchone()["n"]
-            by_status = {
-                r["status"]: r["n"]
-                for r in c.execute(
-                    "SELECT status, COUNT(*) n FROM response GROUP BY status"
-                ).fetchall()
-            }
-            by_band = {
-                r["overall_band"]: r["n"]
-                for r in c.execute(
-                    "SELECT overall_band, COUNT(*) n FROM response"
-                    " WHERE overall_band IS NOT NULL GROUP BY overall_band"
-                ).fetchall()
-            }
-            verified = c.execute(
-                "SELECT COUNT(*) n FROM response WHERE teacher_verified=1"
-            ).fetchone()["n"]
+        rows = list(self.col("response").find({}, {"status": 1, "overall_band": 1}))
+        by_status: dict[str, int] = {}
+        by_band: dict[str, int] = {}
+        for r in rows:
+            by_status[r["status"]] = by_status.get(r["status"], 0) + 1
+            if r.get("overall_band") is not None:
+                by_band[r["overall_band"]] = by_band.get(r["overall_band"], 0) + 1
         return {
-            "total": total,
+            "total": len(rows),
             "by_status": by_status,
             "by_band": by_band,
-            "teacher_verified": verified,
+            "teacher_verified": self.col("response").count_documents({"teacher_verified": 1}),
         }
 
 
@@ -1337,18 +1333,22 @@ def _profile_row(row: dict) -> dict:
     return row
 
 
-def _claim_decision(c: Connection, response_id: str, new_status: Status) -> None:
-    """Chuyen REVIEW_REQUIRED -> new_status NGUYEN TU, trong transaction cua quyet dinh.
+def _claim_decision(db: Database, response_id: str, new_status: ResponseStatus) -> None:
+    """Chuyen REVIEW_REQUIRED -> new_status NGUYEN TU, truoc moi ghi khac cua quyet dinh.
 
     Kiem trang thai bang mot lan doc truoc do khong du: hai giang vien cung doc
     REVIEW_REQUIRED thi ca hai quyet dinh deu duoc chap nhan va cai sau de cai
-    truoc. UPDATE co dieu kien chi thanh cong cho mot nguoi; nguoi con lai nhan
-    loi va transaction cua ho bi huy, khong de lai dong review_action nao.
+    truoc. Cap nhat co dieu kien chi thanh cong cho mot nguoi; nguoi con lai nhan
+    loi truoc khi kip ghi review_action nao.
     """
-    claimed = c.execute(
-        "UPDATE response SET status=? WHERE response_id=? AND status=?",
-        (new_status.value, response_id, Status.REVIEW_REQUIRED.value),
-    ).rowcount
+    claimed = (
+        db["response"]
+        .update_one(
+            {"response_id": response_id, "status": ResponseStatus.REVIEW_REQUIRED.value},
+            {"$set": {"status": new_status.value}},
+        )
+        .modified_count
+    )
     if claimed == 0:
         raise InvalidStateError("bài vừa được giảng viên khác quyết định")
 
@@ -1360,11 +1360,12 @@ def _band_thresholds(model_version: str | None) -> dict[str, float]:
     Bai do giang vien tu cham ("teacher") hoac mo hinh khong con tren dia thi
     dung mo hinh mac dinh.
     """
+    from aicefr.scoring.band_map import thresholds_of
     from aicefr.scoring.scorer import ModelNotFoundError, load_model
 
     if model_version:
         try:
-            return load_model(model_version)["band_thresholds"]
+            return thresholds_of(load_model(model_version)["band_thresholds"])
         except (ModelNotFoundError, KeyError):
             pass
-    return load_model()["band_thresholds"]
+    return thresholds_of(load_model()["band_thresholds"])

@@ -22,7 +22,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import connect
+from dbutil import store
 from fastapi.testclient import TestClient
 
 PASSWORD = "matkhau-kiem-thu"
@@ -48,10 +48,7 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    c.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+    c.post("/api/v1/me/terms")
     return c
 
 
@@ -86,22 +83,19 @@ def _force_score(app, response_id: str, score: float, band: str = "B1") -> None:
     """
     import json
 
-    with connect() as c:
-        row = c.execute(
-            "SELECT report_json FROM response WHERE response_id=?", (response_id,)
-        ).fetchone()
-        report = json.loads(row[0])
-        assessment = report.get("assessment") or {}
-        assessment["overall_0_6"] = score
-        assessment["overall_band"] = band
-        for criterion in assessment.get("criteria", []):
-            criterion["score_0_6"] = score
-            criterion["band"] = band
-        report["assessment"] = assessment
-        c.execute(
-            "UPDATE response SET overall_0_6=?, overall_band=?, report_json=? WHERE response_id=?",
-            (score, band, json.dumps(report), response_id),
-        )
+    responses = store()["response"]
+    report = json.loads(responses.find_one({"response_id": response_id})["report_json"])
+    assessment = report.get("assessment") or {}
+    assessment["overall_0_6"] = score
+    assessment["overall_band"] = band
+    for criterion in assessment.get("criteria", []):
+        criterion["score_0_6"] = score
+        criterion["band"] = band
+    report["assessment"] = assessment
+    responses.update_one(
+        {"response_id": response_id},
+        {"$set": {"overall_0_6": score, "overall_band": band, "report_json": json.dumps(report)}},
+    )
 
 
 # ---------------------------------------------------------------- FR-27

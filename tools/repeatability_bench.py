@@ -113,8 +113,9 @@ def markdown(summaries: dict[str, dict], runs: int) -> str:
         lines.append(f"| {title} | " + " | ".join(str(summaries[n][key]) for n in names) + " |")
     lines += [
         "",
-        "Đặt cạnh: RMSE của mô hình so với nhãn người `cv_rmse = 0,5262` và bề rộng một band "
-        '= 1,0 điểm. Không gọi σ_r là SEM; không viết "tất định" khi lịch dự phòng còn chạy.',
+        "Đặt cạnh: RMSE của mô hình so với nhãn người (`cv_rmse` trong artifact) và bề rộng "
+        'một band = 1,0 điểm. Không gọi σ_r là SEM; không viết "tất định" khi lịch dự phòng '
+        "còn chạy.",
     ]
     return "\n".join(lines) + "\n"
 

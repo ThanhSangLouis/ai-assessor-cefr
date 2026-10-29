@@ -1,0 +1,65 @@
+{#- The goal of a composed path (D046): one form for the learner's practice page
+    and the teacher's path list. Values as lessons/composer.py reads them. -#}
+{% macro goal_fields(prefix, bands=true, max_length=15) %}
+<label for="{{ prefix }}-wish">Muốn luyện gì?</label>
+<input id="{{ prefix }}-wish" name="wish" maxlength="300" autocomplete="off"
+       placeholder="Ví dụ: kể chuyện du lịch, tập trung trôi chảy và âm cuối">
+{#- The learner's practice page never says "band" (D025). -#}
+<p class="field-hint">Viết tiếng Việt hoặc tiếng Anh. Hệ thống đọc ra chủ đề, tiêu chí, âm cần
+  luyện và {{ "band" if bands else "trình độ" }} trong câu; từ tiếng Anh còn được so với nội dung bài.</p>
+<fieldset class="goal-fieldset">
+  <legend>Chủ đề</legend>
+  <div class="goal-chips">
+    {%- for value, name in [("daily_life", "Đời sống hằng ngày"), ("education", "Giáo dục"),
+        ("travel", "Du lịch"), ("career", "Nghề nghiệp"), ("food", "Ẩm thực"),
+        ("health", "Sức khoẻ"), ("technology", "Công nghệ"), ("environment", "Môi trường"),
+        ("people", "Con người"), ("society", "Xã hội")] %}
+    <label class="chip-radio"><input type="checkbox" name="topics" value="{{ value }}"><span>{{ name }}</span></label>
+    {%- endfor %}
+  </div>
+</fieldset>
+<fieldset class="goal-fieldset">
+  <legend>Tiêu chí</legend>
+  <div class="goal-chips">
+    {%- for value, name in [("fluency", "Độ trôi chảy"), ("coherence", "Mạch lạc"),
+        ("range", "Vốn từ"), ("accuracy", "Ngữ pháp"), ("phonology", "Phát âm dễ nghe")] %}
+    <label class="chip-radio"><input type="checkbox" name="criteria" value="{{ value }}"><span>{{ name }}</span></label>
+    {%- endfor %}
+  </div>
+</fieldset>
+<fieldset class="goal-fieldset">
+  <legend>Âm cần luyện</legend>
+  <div class="goal-chips">
+    {%- for value, name in [("final_consonant", "Âm cuối"), ("ed_ending", "Đuôi -ed"),
+        ("s_ending", "Đuôi -s, -es"), ("th_sound", "Âm th"), ("cluster", "Cụm phụ âm đầu")] %}
+    <label class="chip-radio"><input type="checkbox" name="patterns" value="{{ value }}"><span>{{ name }}</span></label>
+    {%- endfor %}
+  </div>
+</fieldset>
+<div class="field-row{% if bands %} three{% endif %}">
+  {%- if bands %}
+  <div>
+    <label for="{{ prefix }}-band-from">Từ band</label>
+    <select id="{{ prefix }}-band-from" name="band_from">
+      <option value="">Không giới hạn</option>
+      <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+    </select>
+  </div>
+  <div>
+    <label for="{{ prefix }}-band-to">Đến band</label>
+    <select id="{{ prefix }}-band-to" name="band_to">
+      <option value="">Không giới hạn</option>
+      <option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option>
+    </select>
+  </div>
+  {%- endif %}
+  <div>
+    <label for="{{ prefix }}-length">Số bài</label>
+    <select id="{{ prefix }}-length" name="length">
+      {%- for n in range(3, max_length + 1) %}
+      <option value="{{ n }}"{% if n == 6 %} selected{% endif %}>{{ n }} bài</option>
+      {%- endfor %}
+    </select>
+  </div>
+</div>
+{% endmacro %}

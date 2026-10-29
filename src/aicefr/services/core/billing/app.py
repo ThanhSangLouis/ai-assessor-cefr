@@ -47,7 +47,13 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         gateways=gateways,
         audit=audit_log.write,
         gateway_problems=problems,
-    )
+        # D053: run packs are sold only where runs are counted.
+        credit=(
+            (lambda account_id, runs, order_id: peers.metering.credit(
+                account_id=account_id, runs=runs, order_id=order_id))
+            if settings.metering_enabled else None
+        ),
+    )  # fmt: skip
     facade = BillingFacade(service, audit_log)
     billing_api.configure(billing_api.Services(billing=service))
     return Parts(

@@ -17,7 +17,7 @@ import json
 import uuid
 
 import pytest
-from dbutil import connect
+from dbutil import store
 from test_lessons_integration import (  # noqa: F401  (the fixture `m` is used by name)
     REPEAT,
     SAMPLE,
@@ -36,27 +36,22 @@ MISHEARD = "I like my neighborhood becau the people are friendly"
 
 def _with_feedback(response_id: str, score: float = 3.4) -> None:
     """Give a submitted response a score and every kind of feedback the report carries."""
-    with connect() as c:
-        report = json.loads(
-            c.execute(
-                "SELECT report_json FROM response WHERE response_id=?", (response_id,)
-            ).fetchone()[0]
-        )
-        a = report.get("assessment") or {"model_version": "test"}
-        a.update(
-            overall_0_6=score,
-            overall_band="B1",
-            comments=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}],
-            priorities=[{"feature_name": "pause_rate", "text": "Bớt ngắt nghỉ.", "impact": 0.4}],
-            weakest_criteria=["fluency"],
-            evidence=[{"criterion": "fluency", "kind": "pause", "note": "ngắt 2 giây"}],
-        )
-        report["assessment"] = a
-        c.execute(
-            "UPDATE response SET overall_0_6=?, overall_band='B1', report_json=?"
-            " WHERE response_id=?",
-            (score, json.dumps(report), response_id),
-        )
+    responses = store()["response"]
+    report = json.loads(responses.find_one({"response_id": response_id})["report_json"])
+    a = report.get("assessment") or {"model_version": "test"}
+    a.update(
+        overall_0_6=score,
+        overall_band="B1",
+        comments=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}],
+        priorities=[{"feature_name": "pause_rate", "text": "Bớt ngắt nghỉ.", "impact": 0.4}],
+        weakest_criteria=["fluency"],
+        evidence=[{"criterion": "fluency", "kind": "pause", "note": "ngắt 2 giây"}],
+    )
+    report["assessment"] = a
+    responses.update_one(
+        {"response_id": response_id},
+        {"$set": {"overall_0_6": score, "overall_band": "B1", "report_json": json.dumps(report)}},
+    )
 
 
 # ================================================================= D039
@@ -119,8 +114,8 @@ def _start_study(m, n: int = 4):
     return admin, study_id, students, by_arm
 
 
-def test_study_enrols_consenting_students_half_in_each_arm(m):
-    login_as(m, "SV-NO", consent=False)
+def test_study_enrols_students_with_terms_half_in_each_arm(m):
+    login_as(m, "SV-NO", terms=False)
     login_as(m, "GV-01", "teacher")
     admin, study_id, students, _ = _start_study(m, n=5)
     people = m.studies.participants(study_id)
@@ -131,7 +126,7 @@ def test_study_enrols_consenting_students_half_in_each_arm(m):
     assert audit and "seed=" in audit[0]["detail"]
 
 
-def test_study_needs_enough_consenting_students(m):
+def test_study_needs_enough_students_with_terms(m):
     login_as(m, "SV-001")
     admin = login_as(m, "AD-01", "admin")
     r = admin.post("/api/v1/admin/studies", json={"name": "Quá ít"})
@@ -176,15 +171,6 @@ def test_leaving_the_study_or_closing_it_brings_feedback_back(m):
     closed = admin.post(f"/api/v1/admin/studies/{study_id}/status", json={"status": "closed"})
     assert closed.status_code == 200
     assert other.get("/api/v1/me/study").json() == {"enrolled": False}
-
-
-def test_withdrawing_research_consent_leaves_the_study(m):
-    _, _, _, arm = _start_study(m)
-    client = arm["score_only"]
-    rid = submit_assessment(client)
-    _with_feedback(rid)
-    client.post("/api/v1/me/consent/withdraw")
-    assert "feedback_withheld" not in client.get(f"/api/v1/responses/{rid}").json()
 
 
 def test_feedback_stays_held_back_through_the_survey_and_in_the_export(m):
@@ -253,8 +239,7 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     student = login_as(m, "SV-001")
     rid = submit_assessment(student)
     _with_feedback(rid)
-    with connect() as c:
-        c.execute("UPDATE response SET status='REVIEW_REQUIRED' WHERE response_id=?", (rid,))
+    store()["response"].update_one({"response_id": rid}, {"$set": {"status": "REVIEW_REQUIRED"}})
     teacher = login_as(m, "GV-01", "teacher")
 
     assert teacher.post(f"/api/v1/review/{rid}/lock").status_code == 200
@@ -263,9 +248,10 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     sessions = m.repo.review_sessions()
     assert len(sessions) == 1
     assert sessions[0]["action"] == "decision" and sessions[0]["decided_at"]
-    with connect() as c:
-        who = c.execute("SELECT response_id, reviewer_id FROM review_session").fetchone()
-    assert tuple(who) == (rid, account_id(m, "GV-01"))
+    visits = store()["response"].find_one({"response_id": rid})["review_visits"]
+    assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
+    # The decision carries when the teacher opened the response (D041, D060).
+    assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
 
 
 def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
@@ -274,18 +260,20 @@ def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
     assert body["review_with_machine"] == {"n": 0, "median_minutes": None, "idle_left_out": 0}
     assert body["time_saved"] is None and body["settled_alone"]["ci95"] is None
 
-    with connect() as c:
-        for minutes in (2, 3, 4, 5, 6, 45):
-            c.execute(
-                "INSERT INTO review_session(response_id, reviewer_id, opened_at, decided_at,"
-                " action) VALUES(?,?,?,?, 'decision')",
-                (
-                    uuid.uuid4().hex,
-                    "t",
-                    "2026-10-01T10:00:00+00:00",
-                    f"2026-10-01T10:{minutes:02d}:00+00:00",
-                ),
-            )
+    for minutes in (2, 3, 4, 5, 6, 45):
+        store()["response"].insert_one(
+            {
+                "response_id": uuid.uuid4().hex,
+                "review_visits": [
+                    {
+                        "reviewer_id": "t",
+                        "opened_at": "2026-10-01T10:00:00+00:00",
+                        "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
+                        "action": "decision",
+                    }
+                ],
+            }
+        )
     body = teacher.get("/api/v1/review/kpi").json()
     assert body["review_with_machine"] == {"n": 5, "median_minutes": 4.0, "idle_left_out": 1}
     assert login_as(m, "SV-001").get("/api/v1/review/kpi").status_code == 403

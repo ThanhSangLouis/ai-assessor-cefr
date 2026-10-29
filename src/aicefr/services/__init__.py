@@ -2,7 +2,7 @@
 
 | service | owns                                                           | store       |
 |---------|----------------------------------------------------------------|-------------|
-| core    | accounts, consent, responses, review, blind rating, the        | schema core |
+| core    | accounts, terms, responses, review, blind rating, the          | schema core |
 |         | feedback study, lessons, achievements, plans and payment       |             |
 | speech  | QC, recognition, features, scoring, lesson-step measuring      | none        |
 | web     | the pages, their static files, the sidebar's counts            | none        |
@@ -24,7 +24,7 @@ from fastapi import APIRouter
 from aicefr.config import Settings
 from aicefr.platform.rpc import remote
 
-PARTS = ("identity", "assessment", "learning", "billing")
+PARTS = ("identity", "assessment", "learning", "billing", "metering")
 
 
 @dataclass
@@ -36,6 +36,7 @@ class Peers:
     assessment: Any = None
     learning: Any = None
     billing: Any = None
+    metering: Any = None
 
     @classmethod
     def from_settings(cls, settings: Settings) -> Peers:

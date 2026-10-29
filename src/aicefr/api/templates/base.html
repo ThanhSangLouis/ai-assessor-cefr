@@ -48,7 +48,7 @@
     {{ logo() }}
     <span class="brand-text">
       <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
-      <span class="brand-sub">Luyện nói A2–B2</span>
+      <span class="brand-sub">Luyện nói A1–C2</span>
     </span>
   </a>
 
@@ -62,10 +62,15 @@
     {% if role == "student" %}
       <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("path") }}<span class="nav-label">Luyện tập</span>{{ badge("reviews_due") }}</a>
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
+      <a href="/my-assignments"{% if here == "assignments" %} aria-current="page"{% endif %}>{{ icon("target") }}<span class="nav-label">Bài được giao</span>{{ badge("assignments") }}</a>
       <a href="/my-responses"{% if here == "mine" %} aria-current="page"{% endif %}>{{ icon("folder") }}<span class="nav-label">Bài của tôi</span>{{ badge("results") }}</a>
       <a href="/my-progress"{% if here == "progress" %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Tiến độ</span></a>
+      {% if metered() %}
+      <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
+      {% endif %}
     {% else %}
       <a href="/review"{% if here == "queue" %} aria-current="page"{% endif %}>{{ icon("inbox") }}<span class="nav-label">Hàng đợi duyệt</span>{{ badge("queue") }}</a>
+      <a href="/teach/classes"{% if here == "classes" %} aria-current="page"{% endif %}>{{ icon("users") }}<span class="nav-label">Lớp học</span></a>
       <a href="/teach"{% if here == "teach" %} aria-current="page"{% endif %}>{{ icon("layers") }}<span class="nav-label">Lộ trình luyện</span></a>
       <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê lớp</span></a>
       <a href="/rate"{% if here == "rate" %} aria-current="page"{% endif %}>{{ icon("eye-off") }}<span class="nav-label">Chấm mù</span>{{ badge("ratings") }}</a>
@@ -77,7 +82,7 @@
 
   <div class="sidebar-foot">
     {#- The account folds into one menu at the foot of the sidebar: who is signed
-        in, consent, theme, sign out. -#}
+        in, terms, theme, sign out. -#}
     <details class="account-menu">
       <summary class="account-button" aria-label="Tài khoản {{ account.pseudonym }}, {{ role_names.get(role, role) }}">
         <span class="avatar avatar-{{ account.avatar_color or 'none' }}" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
@@ -91,7 +96,7 @@
         <p class="account-head">Đang đăng nhập là <b>{{ account.pseudonym }}</b><br>{{ role_names.get(role, role) }}</p>
         <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
         {% if role == "student" %}
-          <a href="/consent"{% if here == "consent" %} aria-current="page"{% endif %}>{{ icon("file-check") }}<span>Đồng thuận dữ liệu</span></a>
+          <a href="/terms"{% if here == "terms" %} aria-current="page"{% endif %}>{{ icon("file-check") }}<span>Điều khoản sử dụng</span></a>
         {% endif %}
         {% if role == "admin" and api_docs %}
           <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
@@ -110,7 +115,7 @@
     <a class="brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
       {{ logo() }}
       <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
-      <span class="brand-sub">Luyện nói A2–B2</span>
+      <span class="brand-sub">Luyện nói A1–C2</span>
     </a>
 
     <nav class="site-nav" aria-label="Điều hướng chính">
@@ -140,7 +145,7 @@
     <p><b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
       có giảng viên duyệt.</p>
     <p>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</p>
-    <p><a href="/bands">Band A2, B1, B2 nghĩa là gì, và máy đo được những gì</a></p>
+    <p><a href="/bands">Band A1 đến C2 nghĩa là gì, và máy đo được những gì</a></p>
   </div>
 </footer>
 

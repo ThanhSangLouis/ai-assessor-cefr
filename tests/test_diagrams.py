@@ -147,7 +147,8 @@ def test_every_adapter_of_a_port_appears_on_a_diagram() -> None:
 # Cu phap thanh vien UML: `+/-/# ten: Kieu` cho thuoc tinh,
 # `+/-/# ten(tham so: Kieu): KieuTra` cho thao tac. Tap hop viet
 # `List<X>`, anh xa viet `Map<K, V>`. KHONG ghi boi so trong thuoc
-# tinh -- boi so la khai niem cua DAU LIEN KET, nen no nam tren canh.
+# tinh -- boi so noi so luong giua HAI thuc the, la khai niem cua DAU LIEN
+# KET, nen no nam tren canh (chu du an nhac lai ngay 29/10/2026).
 MEMBER = re.compile(r"^[+\-#] \w+(\([^)]*\))?: \w+(<[\w, ]+>)?$")
 
 
@@ -349,6 +350,11 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
         if "swimlane" in (c.get("style") or "")
     }
     fields = fields_by_class()
+    # Owning is a relation of the model, so the owners are looked for among
+    # the classes drawn. A class of the code that only points at a part while
+    # it computes -- the path composer's `Candidate` holds the `Lesson` it
+    # scores -- does not own it.
+    drawn = set(names.values())
     bad = []
     for c in cells:
         if c.get("edge") != "1" or "diamondThin" not in (c.get("style") or ""):
@@ -359,7 +365,7 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
         owners = [
             cls
             for cls, fs in fields.items()
-            if cls != part and any(_mentions(t, part) for t in fs.values())
+            if cls != part and cls in drawn and any(_mentions(t, part) for t in fs.values())
         ]
         if len(owners) > 1:
             bad.append(f"{part} bị {len(owners)} lớp chứa: {owners}")
@@ -375,12 +381,9 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
 # FR-24, trong khi `EvidenceBuilder` cho toi da 10 (ba loai x max_per_kind=3,
 # cong mot muc lexical). Ve theo yeu cau la hua mot rang buoc he thong khong giu.
 BOUNDS_IN_CODE = {
-    ("Assessment", "CriterionCoverage"): "5",
-    ("FeatureSet", "Feature"): "1..*",
-    ("Assessment", "Evidence"): "0..10",
-    ("Assessment", "Comment"): "0..4",
-    ("Assessment", "Priority"): "0..2",
-    ("Assessment", "AnalysisWindow"): "0..10",
+    # `Lesson.steps` holds at most twelve (Field max_length), and the lesson
+    # lint refuses to publish a lesson without a step.
+    ("Lesson", "Step"): "1..12",
 }
 
 
@@ -482,7 +485,7 @@ def test_every_operation_on_the_diagram_has_a_caller(diagram: pathlib.Path) -> N
     `scoring/scorer.py`, con thuoc tinh do chi doc lai ma ly do.
 
     Tim theo TEN, khong theo kieu: mot `@property` duoc goi khong ngoac
-    (`account.is_teacher`), va phia JS doc no qua JSON cung bang chinh ten do.
+    (`account.is_staff`), va phia JS doc no qua JSON cung bang chinh ten do.
     """
     if diagram.suffix != ".drawio":
         pytest.skip("chi ap cho so do lop")

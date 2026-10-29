@@ -27,11 +27,28 @@ from aicefr.lessons.text import find_phrase, phrase_tokens, tokens
 
 # Words per minute a learner at each band can comfortably read aloud; used to
 # size the recording window of a reading step. Conservative on purpose.
-READING_WPM = {Band.A2: 80, Band.B1: 100, Band.B2: 120}
-PREP_SECONDS = {Band.A2: 60, Band.B1: 30, Band.B2: 15}
-OUTLINE_SECONDS = {Band.A2: (30, 60), Band.B1: (45, 75), Band.B2: (60, 90)}
-FREE_ROUNDS = {Band.A2: [45, 35, 25], Band.B1: [60, 45, 35], Band.B2: [90, 70, 50]}
+# D059: A1 reads slower and gets more time to prepare than A2; C1 and C2 read
+# faster, prepare less and speak longer than B2. Same shape, extended both ways.
+READING_WPM = {Band.A1: 60, Band.A2: 80, Band.B1: 100, Band.B2: 120, Band.C1: 135, Band.C2: 150}
+PREP_SECONDS = {Band.A1: 90, Band.A2: 60, Band.B1: 30, Band.B2: 15, Band.C1: 10, Band.C2: 5}
+OUTLINE_SECONDS = {
+    Band.A1: (20, 45),
+    Band.A2: (30, 60),
+    Band.B1: (45, 75),
+    Band.B2: (60, 90),
+    Band.C1: (75, 120),
+    Band.C2: (90, 150),
+}
+FREE_ROUNDS = {
+    Band.A1: [30, 25, 20],
+    Band.A2: [45, 35, 25],
+    Band.B1: [60, 45, 35],
+    Band.B2: [90, 70, 50],
+    Band.C1: [120, 90, 70],
+    Band.C2: [150, 120, 90],
+}
 MARKERS = {
+    Band.A1: [["first"], ["then", "and"], ["finally"]],
     Band.A2: [["first", "firstly"], ["then", "next", "after that"], ["finally", "in the end"]],
     Band.B1: [
         ["first", "to begin with"],
@@ -43,11 +60,34 @@ MARKERS = {
         ["on the other hand", "however", "although"],
         ["as a result", "in conclusion", "overall"],
     ],
+    Band.C1: [
+        ["to begin with", "first and foremost", "it is worth noting that"],
+        ["admittedly", "nevertheless", "on the contrary"],
+        ["consequently", "taking everything into account", "all things considered"],
+    ],
+    Band.C2: [
+        ["to set the scene", "first and foremost", "at the outset"],
+        ["granted", "be that as it may", "by the same token"],
+        ["in the final analysis", "it follows that", "all things considered"],
+    ],
 }
 OUTLINE_POINTS = {
+    Band.A1: ["Đó là gì", "Một hai chi tiết", "Bạn thích hay không"],
     Band.A2: ["Nói đó là gì, ở đâu", "Kể hai hay ba chi tiết", "Nói cảm nghĩ của bạn"],
     Band.B1: ["Mở đầu: chuyện gì, khi nào", "Diễn biến theo thứ tự", "Kết thúc và cảm nghĩ"],
     Band.B2: ["Nêu quan điểm", "Một lý do và một ví dụ", "Một ý phản biện", "Kết luận"],
+    Band.C1: [
+        "Đặt vấn đề và nêu lập trường",
+        "Hai lý lẽ có dẫn chứng",
+        "Phản biện và bác bỏ",
+        "Kết luận có hàm ý",
+    ],
+    Band.C2: [
+        "Đặt vấn đề trong bối cảnh rộng",
+        "Lập luận nhiều tầng, có sắc thái",
+        "Cân nhắc quan điểm trái chiều",
+        "Tổng hợp và kết luận thuyết phục",
+    ],
 }
 
 _SENTENCE = re.compile(r"(?<=[.!?])\s+")

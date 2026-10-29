@@ -4,18 +4,18 @@ Why this is a derivation and not a retrain
 ------------------------------------------
 
 `filler_ratio` is **constant in the training data**. The artifact says so in
-its own numbers: `feature_lo = feature_hi = 0.0`, `mean = 0.0002`. Whisper in
+its own numbers: `feature_lo = feature_hi = 0.0`, a mean of almost zero. Whisper in
 its standard configuration deletes hesitation markers -- "um", "uh" -- before
-they ever reach the transcript, so 876 training responses produced essentially
-876 zeros.
+they ever reach the transcript, so the training responses produced essentially
+nothing but zeros.
 
 A coefficient fitted on a constant column is **not identified**: the data
 contains no information about what that coefficient should be. Ridge shrinks it
-toward zero and lands on 0.0088, but that number describes the regulariser, not
+toward zero and lands on a small number, but that number describes the regulariser, not
 the speakers. Today it costs nothing, because the running recogniser also
 produces zeros. The day the project switches to a verbatim model -- which is a
 written plan, not a hypothetical -- a realistic `filler_ratio` of 0.02 becomes
-z = 4.5 and starts moving scores by about 0.04 points for a reason no data ever
+a large z and starts moving scores by a few hundredths for a reason no data ever
 supported.
 
 So this script removes the term rather than re-estimating it. Removing an
@@ -35,10 +35,13 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-MODEL_DIR = Path(__file__).resolve().parents[1] / "src" / "aicefr" / "scoring" / "models"
+# The real artifacts live outside Git (W7-S01, aicefr.scoring.artifacts).
+ROOT = Path(__file__).resolve().parents[1]
+MODEL_DIR = Path(os.getenv("AICEFR_MODEL_DIR") or ROOT.parent / "aicefr-models")
 SOURCE = MODEL_DIR / "ridge_resp_v1.json"
 TARGET = MODEL_DIR / "ridge_resp_v2.json"
 DROP = "filler_ratio"
@@ -68,8 +71,8 @@ def main() -> int:
     #
     # The term is `coef * (x - mean) / scale`. With x = 0 -- what the running
     # recogniser produces for every response -- it is a constant, and dropping a
-    # constant shifts every prediction by that amount. Small (about 0.0005
-    # points) but enough to move a score across a rounding boundary, which is
+    # constant shifts every prediction by that amount. Small (well under
+    # a hundredth of a point) but enough to move a score across a rounding boundary, which is
     # exactly the kind of "tiny" change that makes two artifacts disagree about
     # a band and nobody can say why.
     #

@@ -29,6 +29,7 @@ from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
     LiveServer,
     _free_port,
     browser,
+    e2e_store,
     login,
 )
 
@@ -37,13 +38,16 @@ pytestmark = pytest.mark.e2e
 
 def serve(root, **settings: str) -> Iterator[LiveServer]:
     """A server of its own, billing on and `settings` on top; stopped when the caller is done."""
-    db = root / "e2e.db"
+    db = e2e_store("billing")
     port = _free_port()
     env = {k: v for k, v in os.environ.items() if not k.startswith("AICEFR_")}
     env.update(
         AICEFR_DB=str(db),
         AICEFR_UPLOADS=str(root / "uploads"),
         AICEFR_JOB_MODE="inline",
+        # The synthetic scoring artifacts tests/conftest.py points at (W7-S01).
+        AICEFR_MODEL_DIR=os.environ["AICEFR_MODEL_DIR"],
+        AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
         AICEFR_LOGIN_RATE="1000",
         AICEFR_BILLING="on",
         AICEFR_TRIAL_SEATS="40",

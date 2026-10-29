@@ -36,20 +36,17 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", consent: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student", terms: bool = True) -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    return sign_in(m, pseudonym, PASSWORD, consent=consent)
+    return sign_in(m, pseudonym, PASSWORD, terms=terms)
 
 
-def sign_in(m, pseudonym: str, password: str, consent: bool = False) -> TestClient:
+def sign_in(m, pseudonym: str, password: str, terms: bool = False) -> TestClient:
     client = TestClient(m.app)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": password})
     assert r.status_code == 200, r.text
-    if consent:
-        client.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
+    if terms:
+        client.post("/api/v1/me/terms")
     return client
 
 

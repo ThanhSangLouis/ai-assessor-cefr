@@ -5,7 +5,7 @@ Moi test o day TAI HIEN dung kich ban da gay loi truoc khi sua.
 
 from __future__ import annotations
 
-from aicefr.contracts import Assessment, Band, Response, Status, Transcript, Word
+from aicefr.contracts import Assessment, Band, Response, ResponseStatus, Transcript, Word
 from aicefr.storage.repository import Repository
 
 # Dat mat khau thu vao hang so nhu cac file test khac: gitleaks bao nham
@@ -14,13 +14,13 @@ PASSWORD = "matkhau-kiem-thu"
 
 
 def _queued(rid: str) -> Response:
-    return Response(response_id=rid, status=Status.QUEUED, config_version="v1")
+    return Response(response_id=rid, status=ResponseStatus.QUEUED, config_version="v1")
 
 
 def _scored(rid: str, text: str = "my name is Nguyen Van A") -> Response:
     return Response(
         response_id=rid,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         asr=Transcript(
             text=text,
@@ -60,7 +60,7 @@ def test_a_worker_still_stores_its_result_normally(tmp_path) -> None:
     repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
     assert repo.save(_scored("r1"), "SV-001", "P3", must_exist=True) is True
     got = repo.get("r1")
-    assert got is not None and got.status is Status.COMPLETED
+    assert got is not None and got.status is ResponseStatus.COMPLETED
 
 
 def test_a_late_worker_does_not_overwrite_a_finished_response(tmp_path) -> None:
@@ -120,7 +120,7 @@ def test_the_container_does_not_trust_forwarded_headers_from_anyone() -> None:
 
 def test_the_login_counter_has_a_memory_ceiling() -> None:
     """Moi request mot IP gia khong duoc lam bo dem phinh mai."""
-    from aicefr.api.middleware import SlidingWindowCounter
+    from aicefr.infra.limits import SlidingWindowCounter
 
     w = SlidingWindowCounter(max_keys=100)
     for i in range(5_000):
@@ -129,7 +129,7 @@ def test_the_login_counter_has_a_memory_ceiling() -> None:
 
 
 def test_the_login_counter_still_limits_one_address() -> None:
-    from aicefr.api.middleware import SlidingWindowCounter
+    from aicefr.infra.limits import SlidingWindowCounter
 
     w = SlidingWindowCounter()
     assert all(w.allow("1.2.3.4", now=0.0 + i, limit=10) for i in range(10))
@@ -194,7 +194,7 @@ def _unscored(rid: str) -> Response:
 
     return Response(
         response_id=rid,
-        status=Status.REVIEW_REQUIRED,
+        status=ResponseStatus.REVIEW_REQUIRED,
         config_version="v1",
         reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
     )
@@ -204,7 +204,7 @@ def test_a_teacher_can_score_a_response_the_machine_could_not(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
     repo.save(_unscored("r1"), "SV-001", "P3", account_id="acc1")
     out = repo.apply_review("r1", "gv1", 3.0, None, "nghe lai: noi tieng Anh ro")
-    assert out is not None and out.status is Status.COMPLETED
+    assert out is not None and out.status is ResponseStatus.COMPLETED
     a = repo.get("r1").assessment
     assert a.model_version == "teacher" and a.teacher_verified
     assert a.overall_0_6 == 3.0 and a.overall_band is Band.B1
@@ -225,9 +225,9 @@ def test_a_teacher_can_close_an_unscorable_response(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
     repo.save(_unscored("r1"), "SV-001", "P3", account_id="acc1")
     out = repo.close_unscorable("r1", "gv1", "noi tieng Viet, moi nop lai")
-    assert out.status is Status.REJECTED
+    assert out.status is ResponseStatus.REJECTED
     got = repo.get("r1")
-    assert got.status is Status.REJECTED and got.assessment is None
+    assert got.status is ResponseStatus.REJECTED and got.assessment is None
     assert repo.cohort_stats()["agreement"]["band_kept"] == 0  # dong bai khong phai "dong y"
 
 
@@ -238,7 +238,7 @@ def test_closing_is_refused_for_a_scored_response(tmp_path) -> None:
 
     repo = Repository(tmp_path / "a.db")
     report = _scored("r1")
-    report.status = Status.REVIEW_REQUIRED
+    report.status = ResponseStatus.REVIEW_REQUIRED
     repo.save(report, "SV-001", "P3")
     with pytest.raises(InvalidStateError):
         repo.close_unscorable("r1", "gv1", "khong duoc dong bai da cham")
@@ -259,7 +259,7 @@ def test_the_close_endpoint_takes_an_unscored_response_out_of_the_queue(tmp_path
     c.post("/api/v1/auth/login", json={"pseudonym": "GV-01", "password": PASSWORD})
     r = c.post("/api/v1/review/r9/close", json={"reason": "khong phai tieng Anh"})
     assert r.status_code == 200
-    assert m.repo.get("r9").status is Status.REJECTED
+    assert m.repo.get("r9").status is ResponseStatus.REJECTED
 
 
 # ------------------------------------------------- muc 8: ty le dong thuan
@@ -269,34 +269,12 @@ def test_correcting_only_the_score_counts_as_a_band_change(tmp_path) -> None:
     """Sua 3,2 (B1) thanh 2,0 (A2): truoc day van tinh la 'giu nguyen band'."""
     repo = Repository(tmp_path / "a.db")
     report = _scored("r1")
-    report.status = Status.REVIEW_REQUIRED
+    report.status = ResponseStatus.REVIEW_REQUIRED
     repo.save(report, "SV-001", "P3")
     repo.apply_review("r1", "gv1", 2.0, None, "doc ngap ngung nhieu hon may nghe")
     agreement = repo.cohort_stats()["agreement"]
     assert agreement["band_changed"] == 1 and agreement["band_kept"] == 0
     assert repo.review_history("r1")[0].new_band is Band.A2
-
-
-def test_old_decisions_get_their_band_back(tmp_path) -> None:
-    """Dong cu chi luu tham so dau vao duoc dien lai khi mo CSDL."""
-    import sqlite3
-
-    db = tmp_path / "a.db"
-    repo = Repository(db)
-    report = _scored("r1")
-    report.status = Status.REVIEW_REQUIRED
-    repo.save(report, "SV-001", "P3")
-    with sqlite3.connect(db) as c:
-        c.execute(
-            "INSERT INTO review_action (response_id, reviewer_id, old_score, new_score,"
-            " old_band, new_band, reason, created_at) VALUES"
-            " ('r1','gv1',3.2,2.0,'B1',NULL,'cu',''),('r1','gv1',3.2,NULL,'B1',NULL,'giu','')"
-        )
-    agreement = Repository(db).cohort_stats()["agreement"]
-    assert agreement["band_changed"] == 1 and agreement["band_kept"] == 1
-
-
-# ------------------------------------------------- muc 9: job ket khi restart / treo
 
 
 def test_a_restart_fails_every_pending_job_not_only_old_ones(monkeypatch) -> None:
@@ -311,7 +289,7 @@ def test_a_restart_fails_every_pending_job_not_only_old_ones(monkeypatch) -> Non
     m.repo.save(_queued("moi-nop"), "SV-001", "P3")
     with TestClient(m.app):  # chay lifespan, nhu luc khoi dong
         pass
-    assert m.repo.get("moi-nop").status is Status.FAILED
+    assert m.repo.get("moi-nop").status is ResponseStatus.FAILED
 
 
 def test_a_job_running_past_the_timeout_is_closed_and_its_late_result_dropped(
@@ -332,10 +310,10 @@ def test_a_job_running_past_the_timeout_is_closed_and_its_late_result_dropped(
 
     later = datetime.now(UTC) + timedelta(seconds=61)
     assert scoring.sweep_overdue(later) == ["treo"]
-    assert m.repo.get("treo").status is Status.FAILED
+    assert m.repo.get("treo").status is ResponseStatus.FAILED
     # The speech service answers at last: the result is dropped, the response stays FAILED.
     assert m.repo.save(_scored("treo"), "SV-001", "P3", must_exist=True) is False
-    assert m.repo.get("treo").status is Status.FAILED
+    assert m.repo.get("treo").status is ResponseStatus.FAILED
 
 
 def test_a_job_within_the_timeout_is_left_alone(monkeypatch) -> None:
@@ -348,4 +326,4 @@ def test_a_job_within_the_timeout_is_left_alone(monkeypatch) -> None:
     m.repo.save(_queued("dang-chay"), "SV-001", "P3")
     assert m.repo.mark_running("dang-chay")
     assert scoring.sweep_overdue() == []
-    assert m.repo.get("dang-chay").status is Status.RUNNING
+    assert m.repo.get("dang-chay").status is ResponseStatus.RUNNING

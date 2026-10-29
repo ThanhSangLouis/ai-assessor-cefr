@@ -47,6 +47,16 @@ def asset(path: str) -> str:
 templates.env.globals["asset"] = asset
 
 
+# D053: the metered channel shows learners their runs; a school deployment does not.
+def _metered() -> bool:
+    from aicefr.config import get_settings
+
+    return get_settings().metering_enabled
+
+
+templates.env.globals["metered"] = _metered
+
+
 def mount_static(app) -> None:
     """Mount the static file directory onto the application."""
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
