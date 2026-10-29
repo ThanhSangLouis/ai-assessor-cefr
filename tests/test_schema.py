@@ -40,15 +40,25 @@ def test_a_fresh_store_matches_the_committed_snapshot():
 def test_every_identifier_a_table_had_as_key_is_unique():
     """What the SQL primary keys guaranteed, unique indexes still guarantee."""
     shape = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    # D060: one collection per aggregate root; a part embedded in its root
+    # (a review, a rating sheet, a lesson version) needs no key of its own.
     keys = {
         "response": ["response_id"],
         "account": ["account_id"],
-        "auth_sessions": ["token_hash"],
+        "session": ["token_hash"],
         "task": ["task_id"],
-        "billing_order": ["order_id"],
-        "research_rating": ["assignment_id"],
-        "lesson_version": ["lesson_id", "version"],
+        "order": ["order_id"],
+        "license": ["license_id"],
+        "rating_batch": ["batch_id"],
+        "study": ["study_id"],
+        "classroom": ["class_id"],
+        "path": ["path_id"],
+        "lesson": ["lesson_id"],
+        "attempt": ["attempt_id"],
         "learning_plan": ["plan_id"],
+        "wallet": ["user_ref"],
+        "ledger": ["key", "action"],
+        "system": ["key"],
     }
     for name, key in keys.items():
         assert any(i["keys"] == key and i["unique"] for i in shape[name]), name

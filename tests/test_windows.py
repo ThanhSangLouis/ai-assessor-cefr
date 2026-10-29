@@ -22,7 +22,7 @@ import random
 import numpy as np
 import pytest
 
-from aicefr.contracts import AnalysisWindow, ProcessingRequest, ReasonCode, Status
+from aicefr.contracts import AnalysisWindow, ProcessingRequest, ReasonCode, ResponseStatus
 from aicefr.scoring.windows import (
     MAX_WINDOW_S,
     MAX_WINDOWS,
@@ -367,7 +367,7 @@ def test_diem_gop_luon_qua_giang_vien() -> None:
     median across windows is a rule nobody has measured yet, so no long
     recording reaches a student as a finished result.
     """
-    assert _process(95.0).status is Status.REVIEW_REQUIRED
+    assert _process(95.0).status is ResponseStatus.REVIEW_REQUIRED
 
 
 def test_bai_dai_khong_con_bao_ngoai_phan_bo() -> None:

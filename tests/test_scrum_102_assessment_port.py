@@ -15,7 +15,7 @@ from aicefr.contracts import (
     QcResult,
     QcStatus,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
     Transcript,
     Word,
@@ -51,13 +51,13 @@ def test_assessment_api_registers_the_migrated_response_review_admin_and_class_r
 def test_class_assignment_query_omits_practice_and_handles_no_members(tmp_path):
     repo = Repository(tmp_path / "assessment.db")
     repo.save(
-        Response(response_id="assessment-1", status=Status.COMPLETED, config_version="v1"),
+        Response(response_id="assessment-1", status=ResponseStatus.COMPLETED, config_version="v1"),
         "SV-001",
         "P3",
         account_id="student-1",
     )
     repo.save(
-        Response(response_id="practice-1", status=Status.COMPLETED, config_version="v1"),
+        Response(response_id="practice-1", status=ResponseStatus.COMPLETED, config_version="v1"),
         "SV-001",
         "P3",
         account_id="student-1",
@@ -156,7 +156,7 @@ def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
         rid = accepted.json()["response_id"]
         saved = context.svc().repo.get(rid)
         assert saved is not None
-        assert saved.status is Status.QUEUED
+        assert saved.status is ResponseStatus.QUEUED
         assert context.svc().repo.owner_of(rid) == student.account_id
 
 
@@ -198,7 +198,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     )
     report = Response(
         response_id="report-1",
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         qc=QcResult(
             duration_ms=30_000,
             sample_rate_hz=16_000,
@@ -229,7 +229,7 @@ def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessme
     parts, settings = assessment_service
     report = Response(
         response_id="needs-review",
-        status=Status.REVIEW_REQUIRED,
+        status=ResponseStatus.REVIEW_REQUIRED,
         assessment=Assessment(
             overall_0_6=3.4,
             overall_band=Band.B1,

@@ -11,7 +11,7 @@ from enum import Enum
 from pydantic import AliasChoices, BaseModel, Field, computed_field, model_validator
 
 
-class Status(str, Enum):
+class ResponseStatus(str, Enum):
     """State of a single processing run.
 
     QUEUED and RUNNING are the two NOT-YET-FINISHED states, added for FR-05 and
@@ -31,7 +31,7 @@ class Status(str, Enum):
     @property
     def is_pending(self) -> bool:
         """Still processing; no final result yet."""
-        return self in (Status.QUEUED, Status.RUNNING)
+        return self in (ResponseStatus.QUEUED, ResponseStatus.RUNNING)
 
 
 class ReasonCode(str, Enum):
@@ -645,7 +645,11 @@ class Review(BaseModel):
     old_band: Band | None = None
     new_band: Band | None = None
     reason: str
-    created_at: str
+    created_at: str  # when the teacher decided
+    # D060: a review is part of its response's document; numbered in the order
+    # decisions were taken, and stamped with when the teacher opened it (D041).
+    review_id: int | None = None
+    opened_at: str | None = None
 
 
 class ReviewLock(BaseModel):
@@ -822,7 +826,7 @@ class Response(BaseModel):
     """The pipeline's single output."""
 
     response_id: str
-    status: Status
+    status: ResponseStatus
     qc: QcResult | None = None
     asr: Transcript | None = None
     features: FeatureSet | None = None
@@ -835,6 +839,10 @@ class Response(BaseModel):
     prompt_version: str | None = None
     # D023. Only on practice attempts; empty for assessment responses.
     practice: PracticeResult | None = None
+    # D060: the teachers' decisions on this response, oldest first. Part of the
+    # response (`Response ◆ Review`): they live and go with it. Kept out of the
+    # stored report -- the repository keeps them beside it and fills them in.
+    reviews: list[Review] = Field(default_factory=list)
 
     @property
     def was_scored(self) -> bool:
@@ -842,4 +850,4 @@ class Response(BaseModel):
 
     @property
     def needs_teacher(self) -> bool:
-        return self.status is Status.REVIEW_REQUIRED
+        return self.status is ResponseStatus.REVIEW_REQUIRED

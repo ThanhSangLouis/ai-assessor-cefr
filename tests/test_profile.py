@@ -286,7 +286,7 @@ def test_linking_then_signing_in_with_google(m, monkeypatch, tmp_path):
     assert audit(m, "account.google_link")[0].target_id == account_id(m, "SV-001")
 
     # Only a hash is kept: the email is nowhere in the identity service's store.
-    links = list(store()["account_identity"].find())
+    links = [i for a in store()["account"].find() for i in a.get("identities") or []]
     stored = links[0]["subject_hash"]
     assert stored == google.subject_hash("google-sub-1") and len(stored) == 64
     if not on_server:

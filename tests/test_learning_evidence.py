@@ -248,8 +248,10 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     sessions = m.repo.review_sessions()
     assert len(sessions) == 1
     assert sessions[0]["action"] == "decision" and sessions[0]["decided_at"]
-    who = store()["review_session"].find_one()
-    assert (who["response_id"], who["reviewer_id"]) == (rid, account_id(m, "GV-01"))
+    visits = store()["response"].find_one({"response_id": rid})["review_visits"]
+    assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
+    # The decision carries when the teacher opened the response (D041, D060).
+    assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
 
 
 def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
@@ -258,15 +260,18 @@ def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
     assert body["review_with_machine"] == {"n": 0, "median_minutes": None, "idle_left_out": 0}
     assert body["time_saved"] is None and body["settled_alone"]["ci95"] is None
 
-    for i, minutes in enumerate((2, 3, 4, 5, 6, 45), 1):
-        store()["review_session"].insert_one(
+    for minutes in (2, 3, 4, 5, 6, 45):
+        store()["response"].insert_one(
             {
-                "id": 1000 + i,
                 "response_id": uuid.uuid4().hex,
-                "reviewer_id": "t",
-                "opened_at": "2026-10-01T10:00:00+00:00",
-                "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
-                "action": "decision",
+                "review_visits": [
+                    {
+                        "reviewer_id": "t",
+                        "opened_at": "2026-10-01T10:00:00+00:00",
+                        "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
+                        "action": "decision",
+                    }
+                ],
             }
         )
     body = teacher.get("/api/v1/review/kpi").json()

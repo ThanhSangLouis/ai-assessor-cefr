@@ -183,7 +183,10 @@ def next_id(db: Database, name: str) -> int:
     return int(counter["seq"])
 
 
-IndexSpec = tuple[tuple[str, ...], bool]  # (fields, unique)
+# (fields, unique) or (fields, unique, partial filter): a unique index over an
+# array field of embedded parts must leave out the documents with no part, or
+# every one of them would count as the same missing value.
+IndexSpec = tuple
 
 _indexed: set[tuple[str, str]] = set()
 _indexed_lock = threading.Lock()
@@ -202,11 +205,13 @@ def ensure_indexes(db: Database, specs: Mapping[str, Sequence[IndexSpec]], owner
         if key in _indexed:
             return
         for collection, indexes in specs.items():
-            for keys, unique in indexes:
+            for keys, unique, *partial in indexes:
+                extra = {"partialFilterExpression": partial[0]} if partial else {}
                 db[collection].create_index(
                     [(k, ASCENDING) for k in keys],
                     unique=unique,
                     name=("u_" if unique else "i_") + "_".join(keys),
+                    **extra,
                 )
         _indexed.add(key)
 
@@ -243,3 +248,45 @@ def collection_exists(target: str | Path, name: str) -> bool:
     documents.
     """
     return name in database(target).list_collection_names()
+
+
+# ================================================================= system
+# One collection per database for what is not business data (D060): server
+# secrets, settings, one-off markers. A key names one setting; the part that
+# owns it prefixes it (`billing.organization`), so parts sharing a database
+# never read each other's keys by accident.
+
+SYSTEM = "system"
+SYSTEM_INDEXES = {SYSTEM: [(("key",), True)]}
+
+
+def ensure_system(db: Database) -> None:
+    ensure_indexes(db, SYSTEM_INDEXES, "system")
+
+
+def get_setting(db: Database, key: str) -> Any:
+    row = db[SYSTEM].find_one({"key": key})
+    return row["value"] if row else None
+
+
+def set_setting(db: Database, key: str, value: Any, by: str | None = None) -> None:
+    db[SYSTEM].update_one(
+        {"key": key},
+        {"$set": {"value": value, "updated_by": by, "updated_at": now_iso()}},
+        upsert=True,
+    )
+
+
+def setting_once(db: Database, key: str, value: Any) -> tuple[Any, bool]:
+    """Store `value` unless `key` has one; the value kept, and whether it was this call's.
+
+    A unique index lets only one writer put the key there, so two first callers
+    at once agree on one value.
+    """
+    try:
+        db[SYSTEM].insert_one(
+            {"key": key, "value": value, "updated_by": None, "updated_at": now_iso()}
+        )
+    except DuplicateKeyError:
+        return db[SYSTEM].find_one({"key": key})["value"], False
+    return value, True

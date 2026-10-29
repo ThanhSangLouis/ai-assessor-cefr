@@ -27,7 +27,7 @@ from collections.abc import Callable
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.audio.decoder import DecodeError, FirstMatchDecoder
 from aicefr.config import Settings
-from aicefr.contracts import ProcessingRequest, ReasonCode, Status
+from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
 from aicefr.observability import observe
 from aicefr.pipeline import ResponseProcessor
 from aicefr.ports import BlobStore
@@ -186,7 +186,7 @@ class SpeechWorker:
 
     def _score(self, job: dict) -> None:
         rid = job["response_id"]
-        self.report({"response_id": rid, "status": Status.RUNNING.value})
+        self.report({"response_id": rid, "status": ResponseStatus.RUNNING.value})
         try:
             # Decoding happens here, not where the recording was received:
             # transcoding a five-minute WebM through ffmpeg takes seconds, and

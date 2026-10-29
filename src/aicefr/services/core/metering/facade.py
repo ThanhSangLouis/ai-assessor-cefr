@@ -8,10 +8,10 @@ sentence to show, or None for "allowed".
 
 from __future__ import annotations
 
+from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import (
     DEFAULT_PRICES,
     UNITS_PER_RUN,
-    Action,
     PriceList,
     as_runs,
     hold_for,
@@ -47,8 +47,8 @@ class MeteringFacade:
         if not self.enabled:
             return None
         try:
-            units = hold_for(self.prices, Action(action), max_seconds)
-            self.store.hold(account_id, Action(action), key, units, self.prices.version)
+            units = hold_for(self.prices, TaskPurpose(action), max_seconds)
+            self.store.hold(account_id, TaskPurpose(action), key, units, self.prices.version)
         except InsufficientCredits as e:
             return (
                 f"bạn cần {as_runs(e.needed):g} lượt cho bài này nhưng chỉ còn"
@@ -71,8 +71,8 @@ class MeteringFacade:
         the whole hold is charged."""
         if self.enabled:
             usage = usage_of(seconds, output_tokens, words) if seconds is not None else None
-            charge = units_for(self.prices, Action(action), seconds) if usage else None
-            entry = self.store.settle(key, Action(action), result, charge, usage)
+            charge = units_for(self.prices, TaskPurpose(action), seconds) if usage else None
+            entry = self.store.settle(key, TaskPurpose(action), result, charge, usage)
             if entry is not None:
                 count("metering_units_total", entry["charged"], action=action, state=entry["state"])
 

@@ -14,7 +14,7 @@ from aicefr.contracts import (
     Evidence,
     EvidenceKind,
     Response,
-    Status,
+    ResponseStatus,
     Transcript,
     Word,
 )
@@ -25,7 +25,7 @@ from aicefr.storage.repository import InvalidStateError, Repository
 PASSWORD = "matkhau-kiem-thu"
 
 
-def _report(rid: str, status: Status = Status.COMPLETED) -> Response:
+def _report(rid: str, status: ResponseStatus = ResponseStatus.COMPLETED) -> Response:
     return Response(
         response_id=rid,
         status=status,
@@ -82,7 +82,7 @@ def test_retention_clears_the_audio_pointer_of_a_rejected_recording(tmp_path) ->
     audio = tmp_path / "x.wav"
     audio.write_bytes(b"RIFF")
     repo.save(
-        Response(response_id="r1", status=Status.REJECTED, config_version="v1"),
+        Response(response_id="r1", status=ResponseStatus.REJECTED, config_version="v1"),
         "SV-001",
         "P3",
         audio_path=str(audio),
@@ -120,7 +120,7 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
     repo = Repository(tmp_path / "t.db")
     for i in range(30):
-        repo.save(_report(f"r{i}", Status.REVIEW_REQUIRED), "SV-001", "P3")
+        repo.save(_report(f"r{i}", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
 
     def decide(args):
         rid, who = args
@@ -143,10 +143,10 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
 def test_a_score_and_a_band_that_disagree_are_refused(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1", Status.REVIEW_REQUIRED), "SV-001", "P3")
+    repo.save(_report("r1", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
     with pytest.raises(InvalidStateError):
         repo.apply_review("r1", "gv1", 5.5, "A2", "diem cao ma band thap")
-    assert repo.get("r1").status is Status.REVIEW_REQUIRED
+    assert repo.get("r1").status is ResponseStatus.REVIEW_REQUIRED
 
 
 # ------------------------------------------- muc 20: export cat truoc khi loc

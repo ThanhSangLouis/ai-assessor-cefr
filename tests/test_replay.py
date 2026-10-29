@@ -14,7 +14,7 @@ from aicefr.contracts import (
     Evidence,
     EvidenceKind,
     Response,
-    Status,
+    ResponseStatus,
     Transcript,
     Word,
 )
@@ -38,7 +38,7 @@ def report(response_id: str = "r-1", flagged: tuple[float, ...] = (5.0, 30.0)) -
     ]
     return Response(
         response_id=response_id,
-        status=Status.REVIEW_REQUIRED,
+        status=ResponseStatus.REVIEW_REQUIRED,
         asr=Transcript(text="…", words=words, engine="fake", model_version="fake"),
         assessment=Assessment(
             overall_0_6=3.0, overall_band=Band.B1, model_version="m", evidence=evidence

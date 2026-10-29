@@ -15,27 +15,17 @@
       "unique": true
     },
     {
-      "name": "u_pseudonym",
+      "name": "u_identities.provider_identities.subject_hash",
       "keys": [
-        "pseudonym"
-      ],
-      "unique": true
-    }
-  ],
-  "account_identity": [
-    {
-      "name": "u_account_id_provider",
-      "keys": [
-        "account_id",
-        "provider"
+        "identities.provider",
+        "identities.subject_hash"
       ],
       "unique": true
     },
     {
-      "name": "u_provider_subject_hash",
+      "name": "u_pseudonym",
       "keys": [
-        "provider",
-        "subject_hash"
+        "pseudonym"
       ],
       "unique": true
     }
@@ -50,28 +40,34 @@
       "unique": true
     }
   ],
-  "app_config": [
+  "attempt": [
     {
-      "name": "u_key",
+      "name": "i_account_id_lesson_id",
       "keys": [
-        "key"
-      ],
-      "unique": true
-    }
-  ],
-  "assignment": [
-    {
-      "name": "i_class_id_due_at",
-      "keys": [
-        "class_id",
-        "due_at"
+        "account_id",
+        "lesson_id"
       ],
       "unique": false
     },
     {
-      "name": "u_assignment_id",
+      "name": "i_created_at",
       "keys": [
-        "assignment_id"
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_lesson_id_step_id",
+      "keys": [
+        "lesson_id",
+        "step_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_attempt_id",
+      "keys": [
+        "attempt_id"
       ],
       "unique": true
     }
@@ -93,41 +89,118 @@
       "unique": true
     }
   ],
-  "auth_sessions": [
+  "classroom": [
     {
-      "name": "i_account_id",
+      "name": "i_assignments.assignment_id",
       "keys": [
-        "account_id"
+        "assignments.assignment_id"
       ],
       "unique": false
     },
     {
-      "name": "u_token_hash",
+      "name": "i_members",
       "keys": [
-        "token_hash"
+        "members"
       ],
-      "unique": true
-    }
-  ],
-  "billing_event": [
+      "unique": false
+    },
     {
-      "name": "u_event_id",
+      "name": "i_teacher_id",
       "keys": [
-        "event_id"
+        "teacher_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_class_id",
+      "keys": [
+        "class_id"
       ],
       "unique": true
     },
     {
-      "name": "u_order_id_kind_fingerprint",
+      "name": "u_code",
       "keys": [
-        "order_id",
-        "kind",
-        "fingerprint"
+        "code"
       ],
       "unique": true
     }
   ],
-  "billing_license": [
+  "learning_plan": [
+    {
+      "name": "i_account_id_active",
+      "keys": [
+        "account_id",
+        "active"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_plan_id",
+      "keys": [
+        "plan_id"
+      ],
+      "unique": true
+    }
+  ],
+  "ledger": [
+    {
+      "name": "i_state_created_at",
+      "keys": [
+        "state",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_user_ref_created_at",
+      "keys": [
+        "user_ref",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_entry_id",
+      "keys": [
+        "entry_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_key_action",
+      "keys": [
+        "key",
+        "action"
+      ],
+      "unique": true
+    }
+  ],
+  "lesson": [
+    {
+      "name": "i_media.media_key",
+      "keys": [
+        "media.media_key"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_unit_id_position",
+      "keys": [
+        "unit_id",
+        "position"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_lesson_id",
+      "keys": [
+        "lesson_id"
+      ],
+      "unique": true
+    }
+  ],
+  "license": [
     {
       "name": "i_installed_at",
       "keys": [
@@ -143,11 +216,19 @@
       "unique": true
     }
   ],
-  "billing_order": [
+  "order": [
     {
       "name": "i_created_at",
       "keys": [
         "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_created_by_kind",
+      "keys": [
+        "created_by",
+        "kind"
       ],
       "unique": false
     },
@@ -175,144 +256,14 @@
       "unique": true
     }
   ],
-  "billing_setting": [
+  "path": [
     {
-      "name": "u_key",
+      "name": "i_units.unit_id",
       "keys": [
-        "key"
-      ],
-      "unique": true
-    }
-  ],
-  "class_member": [
-    {
-      "name": "i_account_id",
-      "keys": [
-        "account_id"
+        "units.unit_id"
       ],
       "unique": false
     },
-    {
-      "name": "u_class_id_account_id",
-      "keys": [
-        "class_id",
-        "account_id"
-      ],
-      "unique": true
-    }
-  ],
-  "classroom": [
-    {
-      "name": "i_teacher_id",
-      "keys": [
-        "teacher_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_class_id",
-      "keys": [
-        "class_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_code",
-      "keys": [
-        "code"
-      ],
-      "unique": true
-    }
-  ],
-  "credit_grant": [
-    {
-      "name": "u_grant_id",
-      "keys": [
-        "grant_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_source_ref",
-      "keys": [
-        "source",
-        "ref"
-      ],
-      "unique": true
-    }
-  ],
-  "credit_wallet": [
-    {
-      "name": "u_user_ref",
-      "keys": [
-        "user_ref"
-      ],
-      "unique": true
-    }
-  ],
-  "free_quota": [
-    {
-      "name": "u_user_ref_period",
-      "keys": [
-        "user_ref",
-        "period"
-      ],
-      "unique": true
-    }
-  ],
-  "learning_plan": [
-    {
-      "name": "i_account_id_active",
-      "keys": [
-        "account_id",
-        "active"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_plan_id",
-      "keys": [
-        "plan_id"
-      ],
-      "unique": true
-    }
-  ],
-  "lesson": [
-    {
-      "name": "i_unit_id_position",
-      "keys": [
-        "unit_id",
-        "position"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_lesson_id",
-      "keys": [
-        "lesson_id"
-      ],
-      "unique": true
-    }
-  ],
-  "lesson_media": [
-    {
-      "name": "u_media_key",
-      "keys": [
-        "media_key"
-      ],
-      "unique": true
-    }
-  ],
-  "lesson_meta": [
-    {
-      "name": "u_key",
-      "keys": [
-        "key"
-      ],
-      "unique": true
-    }
-  ],
-  "lesson_path": [
     {
       "name": "u_path_id",
       "keys": [
@@ -321,123 +272,32 @@
       "unique": true
     }
   ],
-  "lesson_unit": [
-    {
-      "name": "i_path_id_position",
-      "keys": [
-        "path_id",
-        "position"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_unit_id",
-      "keys": [
-        "unit_id"
-      ],
-      "unique": true
-    }
-  ],
-  "lesson_version": [
-    {
-      "name": "u_lesson_id_version",
-      "keys": [
-        "lesson_id",
-        "version"
-      ],
-      "unique": true
-    }
-  ],
-  "machine_seen": [
-    {
-      "name": "i_response_id",
-      "keys": [
-        "response_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_account_id_response_id",
-      "keys": [
-        "account_id",
-        "response_id"
-      ],
-      "unique": true
-    }
-  ],
-  "rating_assignment": [
-    {
-      "name": "i_rater_id_batch_id",
-      "keys": [
-        "rater_id",
-        "batch_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_response_id",
-      "keys": [
-        "response_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_assignment_id",
-      "keys": [
-        "assignment_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_batch_id_response_id_rater_id",
-      "keys": [
-        "batch_id",
-        "response_id",
-        "rater_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_batch_id_response_id_slot",
-      "keys": [
-        "batch_id",
-        "response_id",
-        "slot"
-      ],
-      "unique": true
-    }
-  ],
   "rating_batch": [
+    {
+      "name": "i_ratings.assignment_id",
+      "keys": [
+        "ratings.assignment_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_ratings.rater_id",
+      "keys": [
+        "ratings.rater_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_ratings.response_id",
+      "keys": [
+        "ratings.response_id"
+      ],
+      "unique": false
+    },
     {
       "name": "u_batch_id",
       "keys": [
         "batch_id"
-      ],
-      "unique": true
-    }
-  ],
-  "replay_label": [
-    {
-      "name": "i_account_id",
-      "keys": [
-        "account_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_response_id_moment_id",
-      "keys": [
-        "response_id",
-        "moment_id"
-      ],
-      "unique": true
-    }
-  ],
-  "research_rating": [
-    {
-      "name": "u_assignment_id",
-      "keys": [
-        "assignment_id"
       ],
       "unique": true
     }
@@ -448,6 +308,20 @@
       "keys": [
         "account_id",
         "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_replay_labels.account_id",
+      "keys": [
+        "replay_labels.account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_reviews.created_at",
+      "keys": [
+        "reviews.created_at"
       ],
       "unique": false
     },
@@ -469,22 +343,6 @@
       "name": "u_response_id",
       "keys": [
         "response_id"
-      ],
-      "unique": true
-    }
-  ],
-  "review_action": [
-    {
-      "name": "i_response_id",
-      "keys": [
-        "response_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_id",
-      "keys": [
-        "id"
       ],
       "unique": true
     }
@@ -518,85 +376,30 @@
       "unique": true
     }
   ],
-  "review_lock": [
+  "session": [
     {
-      "name": "u_response_id",
+      "name": "i_account_id",
       "keys": [
-        "response_id"
-      ],
-      "unique": true
-    }
-  ],
-  "review_session": [
-    {
-      "name": "i_response_id_reviewer_id_decided_at",
-      "keys": [
-        "response_id",
-        "reviewer_id",
-        "decided_at"
+        "account_id"
       ],
       "unique": false
     },
     {
-      "name": "u_id",
+      "name": "u_token_hash",
       "keys": [
-        "id"
-      ],
-      "unique": true
-    }
-  ],
-  "seen_marker": [
-    {
-      "name": "u_account_id_marker",
-      "keys": [
-        "account_id",
-        "marker"
-      ],
-      "unique": true
-    }
-  ],
-  "server_secret": [
-    {
-      "name": "u_name",
-      "keys": [
-        "name"
-      ],
-      "unique": true
-    }
-  ],
-  "step_attempt": [
-    {
-      "name": "i_account_id_lesson_id",
-      "keys": [
-        "account_id",
-        "lesson_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_created_at",
-      "keys": [
-        "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_lesson_id_step_id",
-      "keys": [
-        "lesson_id",
-        "step_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_attempt_id",
-      "keys": [
-        "attempt_id"
+        "token_hash"
       ],
       "unique": true
     }
   ],
   "study": [
+    {
+      "name": "i_participants.account_id",
+      "keys": [
+        "participants.account_id"
+      ],
+      "unique": false
+    },
     {
       "name": "i_status_created_at",
       "keys": [
@@ -613,36 +416,11 @@
       "unique": true
     }
   ],
-  "study_participant": [
+  "system": [
     {
-      "name": "i_account_id",
+      "name": "u_key",
       "keys": [
-        "account_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_study_id_account_id",
-      "keys": [
-        "study_id",
-        "account_id"
-      ],
-      "unique": true
-    }
-  ],
-  "study_survey": [
-    {
-      "name": "i_account_id",
-      "keys": [
-        "account_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_study_id_account_id",
-      "keys": [
-        "study_id",
-        "account_id"
+        "key"
       ],
       "unique": true
     }
@@ -664,35 +442,11 @@
       "unique": true
     }
   ],
-  "usage_ledger": [
+  "wallet": [
     {
-      "name": "i_state_created_at",
+      "name": "u_user_ref",
       "keys": [
-        "state",
-        "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_user_ref_created_at",
-      "keys": [
-        "user_ref",
-        "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_entry_id",
-      "keys": [
-        "entry_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_key_action",
-      "keys": [
-        "key",
-        "action"
+        "user_ref"
       ],
       "unique": true
     }

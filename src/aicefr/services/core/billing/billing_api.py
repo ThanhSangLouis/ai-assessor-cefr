@@ -41,7 +41,7 @@ from aicefr.api.web import templates
 from aicefr.billing.gateways import SandboxGateway
 from aicefr.billing.keys import LicenseKeyError
 from aicefr.billing.payments import SETTLEABLE, Ack, GatewayError, Incoming, OrderStatus
-from aicefr.billing.plans import MAX_SEATS, MIN_SEATS, PLAN_NAMES, Plan, Quote, QuoteError
+from aicefr.billing.plans import MAX_SEATS, MIN_SEATS, PLAN_NAMES, Quote, QuoteError, ServicePlan
 from aicefr.billing.service import CREDITS, BillingOff, BillingService, PaymentUnavailable
 from aicefr.config import get_settings
 from aicefr.practice.streak import LOCAL_TZ
@@ -105,7 +105,7 @@ def _billing() -> BillingService:
 
 
 class PurchaseIn(BaseModel):
-    plan: Plan
+    plan: ServicePlan
     seats: int = Field(ge=MIN_SEATS, le=MAX_SEATS)
     months: int
     # One of the gateways offered; the first offered when not given (D035).

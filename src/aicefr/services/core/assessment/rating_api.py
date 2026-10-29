@@ -49,7 +49,7 @@ from aicefr.infra.blobs import audio_response
 from aicefr.research.agreement import (
     CRITERIA,
     RatedResponse,
-    Rating,
+    RaterScore,
     agreement_report,
 )
 from aicefr.services import Peers
@@ -230,13 +230,13 @@ def _half_point(value: float) -> bool:
     return abs(value * 2 - round(value * 2)) < 1e-9
 
 
-def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> Rating:
+def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> RaterScore:
     if body.unscorable:
         if not body.unscorable_reason:
             raise HTTPException(422, "cần chọn lý do không chấm được")
         if body.overall is not None or body.band is not None or body.criteria:
             raise HTTPException(422, "bài không chấm được thì không ghi điểm hay band")
-        return Rating(rater_id, None, None, {}, unscorable=True, adjudication=adjudication)
+        return RaterScore(rater_id, None, None, {}, unscorable=True, adjudication=adjudication)
     if body.overall is None or body.band is None:
         raise HTTPException(422, "cần điểm tổng và band")
     missing = sorted(set(CRITERIA) - set(body.criteria))
@@ -248,7 +248,7 @@ def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> Rating:
         raise HTTPException(422, "điểm theo thang 0–6, bước nửa điểm")
     if not body.reason or len(body.reason.strip()) < 3:
         raise HTTPException(422, "cần một dòng lý do")
-    return Rating(
+    return RaterScore(
         rater_id,
         body.overall,
         body.band,

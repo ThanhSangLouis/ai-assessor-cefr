@@ -126,6 +126,434 @@ def _terms(db: Database, target: str) -> None:
     db.drop_collection("consent")
 
 
+# ---------------------------------------------------------------- D060
+# One collection per aggregate root of the class diagram: the parts of an
+# aggregate move into its document. Each step copies first and drops the old
+# collection only after, and finds nothing to do the second time.
+
+
+def _has(db: Database, name: str) -> bool:
+    return name in db.list_collection_names()
+
+
+def _d060_classroom(db: Database) -> None:
+    """`class_member` and `assignment` become `classroom.members` / `.assignments`."""
+    if _has(db, "class_member") or _has(db, "assignment"):
+        for c in db["classroom"].find({}, {"class_id": 1}):
+            cid = c["class_id"]
+            members = [
+                m["account_id"]
+                for m in db["class_member"].find({"class_id": cid}).sort("joined_at", 1)
+            ]
+            assignments = [
+                {k: a.get(k) for k in _ASSIGNMENT_KEYS}
+                for a in db["assignment"].find({"class_id": cid}).sort("created_at", 1)
+            ]
+            db["classroom"].update_one(
+                {"_id": c["_id"]}, {"$set": {"members": members, "assignments": assignments}}
+            )
+        db.drop_collection("class_member")
+        db.drop_collection("assignment")
+    if _has(db, "classroom"):
+        for key in ("members", "assignments"):
+            db["classroom"].update_many({key: {"$exists": False}}, {"$set": {key: []}})
+    ensure_indexes(db, D060_INDEXES["classroom"], "migration-7-classroom")
+
+
+def _d060_study(db: Database) -> None:
+    """`study_participant` and `study_survey` become `study.participants`."""
+    if _has(db, "study_participant") or _has(db, "study_survey"):
+        for st in db["study"].find({}, {"study_id": 1}):
+            sid = st["study_id"]
+            surveys = {r["account_id"]: r for r in db["study_survey"].find({"study_id": sid})}
+            participants = []
+            for p in db["study_participant"].find({"study_id": sid}).sort("code", 1):
+                survey = surveys.get(p["account_id"])
+                participants.append(
+                    {
+                        "code": p["code"],
+                        "account_id": p["account_id"],
+                        "arm": p["arm"],
+                        "enrolled_at": p["enrolled_at"],
+                        "withdrawn_at": p.get("withdrawn_at"),
+                        "survey_answers": json.loads(survey["answers_json"]) if survey else None,
+                        "surveyed_at": survey.get("submitted_at") if survey else None,
+                    }
+                )
+            db["study"].update_one({"_id": st["_id"]}, {"$set": {"participants": participants}})
+        db.drop_collection("study_participant")
+        db.drop_collection("study_survey")
+    if _has(db, "study"):
+        db["study"].update_many(
+            {"participants": {"$exists": False}}, {"$set": {"participants": []}}
+        )
+
+
+def _rename(db: Database, old: str, new: str) -> None:
+    """Move every document of `old` into `new`, then drop `old`.
+
+    Copy rather than `rename`: `new` may exist already, made by a repository
+    of this release before the migration ran.
+    """
+    if not _has(db, old):
+        return
+    rows = list(db[old].find({}, {"_id": 0}))
+    if rows:
+        db[new].insert_many(rows)
+    db.drop_collection(old)
+
+
+def _settings(db: Database, old: str, prefix: str) -> None:
+    """A part's settings collection into `system`, its keys prefixed with the part."""
+    if not _has(db, old):
+        return
+    for r in db[old].find({}, {"_id": 0}):
+        db["system"].update_one(
+            {"key": prefix + r["key"]},
+            {"$setOnInsert": {"value": r.get("value"), "updated_by": r.get("updated_by"),
+                              "updated_at": r.get("updated_at")}},
+            upsert=True,
+        )  # fmt: skip
+    db.drop_collection(old)
+
+
+def _d060_billing(db: Database) -> None:
+    """`billing_order` + `billing_event` become `order`; `billing_license` becomes `license`."""
+    if _has(db, "billing_order"):
+        for o in db["billing_order"].find({}, {"_id": 0}):
+            events = [
+                {
+                    "kind": e["kind"],
+                    "fingerprint": e["fingerprint"],
+                    "detail": json.loads(e["detail_json"]),
+                    "created_at": e["created_at"],
+                    "repeats": e.get("repeats", 0),
+                    "last_at": e.get("last_at"),
+                }
+                for e in db["billing_event"].find({"order_id": o["order_id"]}).sort("event_id", 1)
+            ]
+            db["order"].update_one(
+                {"order_id": o["order_id"]}, {"$setOnInsert": {**o, "events": events}}, upsert=True
+            )
+        db.drop_collection("billing_order")
+    db.drop_collection("billing_event")
+    if _has(db, "order"):
+        # A pack of runs named its kind where the plan goes; it buys no plan.
+        db["order"].update_many({"plan": "credits"}, {"$set": {"plan": None}})
+    _rename(db, "billing_license", "license")
+    _settings(db, "billing_setting", "billing.")
+
+
+def _d060_metering(db: Database) -> None:
+    """`credit_wallet` + `free_quota` + `credit_grant` become `wallet`; `usage_ledger` `ledger`.
+
+    The ledger keeps the response's purpose from now on: `assess` becomes
+    `assessment`, as `TaskPurpose` says it. Of the free quota only the latest
+    cycle of each account matters -- earlier cycles are over.
+    """
+    if _has(db, "credit_wallet") or _has(db, "free_quota") or _has(db, "credit_grant"):
+        owners = {r["user_ref"] for r in db["credit_wallet"].find({}, {"user_ref": 1})}
+        owners |= {r["user_ref"] for r in db["free_quota"].find({}, {"user_ref": 1})}
+        owners |= {r["user_ref"] for r in db["credit_grant"].find({}, {"user_ref": 1})}
+        for who in sorted(owners):
+            w = db["credit_wallet"].find_one({"user_ref": who}) or {}
+            q = db["free_quota"].find_one({"user_ref": who}, sort=[("period", -1)]) or {}
+            grants = [
+                {k: g.get(k) for k in ("grant_id", "units", "source", "ref", "by", "created_at")}
+                for g in db["credit_grant"].find({"user_ref": who}).sort("created_at", 1)
+            ]
+            wallet = {
+                "balance": int(w.get("balance", 0)),
+                "period": q.get("period", ""),
+                "free_used": int(q.get("used", 0)),
+                "grants": grants,
+            }
+            db["wallet"].update_one({"user_ref": who}, {"$setOnInsert": wallet}, upsert=True)
+        for old in ("credit_wallet", "free_quota", "credit_grant"):
+            db.drop_collection(old)
+    if _has(db, "usage_ledger"):
+        for e in db["usage_ledger"].find({}, {"_id": 0}):
+            if e.get("action") == "assess":
+                e["action"] = "assessment"
+            db["ledger"].update_one(
+                {"key": e["key"], "action": e["action"]}, {"$setOnInsert": e}, upsert=True
+            )
+        db.drop_collection("usage_ledger")
+    # The metering repository makes no indexes of its own: the migration does.
+    ensure_indexes(db, D060_INDEXES["metering"], "migration-7-metering")
+
+
+def _d060_identity(db: Database) -> None:
+    """Outside identities and seen markers into `account`; sessions, secrets, settings move.
+
+    `account_identity` -> `account.identities`, `seen_marker` ->
+    `account.seen_markers`, `auth_sessions` -> `session`, `server_secret` and
+    `app_config` -> `system` (under `identity.secret.` and `assessment.`).
+    """
+    if _has(db, "account_identity"):
+        for link in db["account_identity"].find().sort("linked_at", 1):
+            item = {k: link[k] for k in ("provider", "subject_hash", "linked_at")}
+            db["account"].update_one(
+                {"account_id": link["account_id"],
+                 "identities.provider": {"$ne": link["provider"]}},
+                {"$push": {"identities": item}},
+            )  # fmt: skip
+        db.drop_collection("account_identity")
+    if _has(db, "seen_marker"):
+        for m in db["seen_marker"].find():
+            db["account"].update_one(
+                {"account_id": m["account_id"]},
+                {"$set": {f"seen_markers.{m['marker']}": m["seen_at"]}},
+            )
+        db.drop_collection("seen_marker")
+    if _has(db, "account"):
+        db["account"].update_many({"identities": {"$exists": False}}, {"$set": {"identities": []}})
+        db["account"].update_many(
+            {"seen_markers": {"$exists": False}}, {"$set": {"seen_markers": {}}}
+        )
+    _rename(db, "auth_sessions", "session")
+    if _has(db, "server_secret"):
+        for r in db["server_secret"].find():
+            db["system"].update_one(
+                {"key": "identity.secret." + r["name"]},
+                {"$setOnInsert": {"value": r["value_hex"], "updated_by": None,
+                                  "updated_at": r.get("created_at")}},
+                upsert=True,
+            )  # fmt: skip
+        db.drop_collection("server_secret")
+    if _has(db, "app_config"):
+        for r in db["app_config"].find({}, {"_id": 0}):
+            key = r.pop("key")
+            db["system"].update_one({"key": "assessment." + key}, {"$setOnInsert": r}, upsert=True)
+        db.drop_collection("app_config")
+
+
+def _d060_response(db: Database) -> None:
+    """Reviews, the lock, review visits and replay labels into `response`.
+
+    `review_action` -> `response.reviews` (numbered by the old id, stamped with
+    the opening of the visit it closed), `review_lock` -> `response.review_lock`,
+    `review_session` -> `response.review_visits`, `replay_label` ->
+    `response.replay_labels`.
+    """
+    if not _has(db, "response"):
+        return
+    if _has(db, "review_session"):
+        for v in db["review_session"].find().sort("id", 1):
+            visit = {k: v.get(k) for k in ("reviewer_id", "opened_at", "decided_at", "action")}
+            db["response"].update_one(
+                {"response_id": v["response_id"], "review_visits": {"$ne": visit}},
+                {"$push": {"review_visits": visit}},
+            )
+    if _has(db, "review_action"):
+        for r in db["review_action"].find().sort("id", 1):
+            visit = (
+                db["review_session"].find_one(
+                    {"response_id": r["response_id"], "reviewer_id": r["reviewer_id"],
+                     "decided_at": {"$gte": r["created_at"]}},
+                    sort=[("decided_at", 1)],
+                )
+                if _has(db, "review_session")
+                else None
+            )  # fmt: skip
+            review = {
+                "review_id": r["id"],
+                "reviewer_id": r["reviewer_id"],
+                "old_score": r.get("old_score"),
+                "new_score": r.get("new_score"),
+                "old_band": r.get("old_band"),
+                "new_band": r.get("new_band"),
+                "reason": r.get("reason") or "",
+                "created_at": r["created_at"],
+                "opened_at": visit["opened_at"] if visit else None,
+            }
+            db["response"].update_one(
+                {"response_id": r["response_id"], "reviews.review_id": {"$ne": r["id"]}},
+                {"$push": {"reviews": review}},
+            )
+        # Reviews are numbered on from where the old series stopped.
+        last = db["_counters"].find_one({"_id": "review_action"})
+        if last:
+            db["_counters"].update_one(
+                {"_id": "review"}, {"$max": {"seq": last["seq"]}}, upsert=True
+            )
+    if _has(db, "review_lock"):
+        for lock in db["review_lock"].find():
+            held = {k: lock[k] for k in ("reviewer_id", "reviewer_name", "locked_until")}
+            db["response"].update_one(
+                {"response_id": lock["response_id"]}, {"$set": {"review_lock": held}}
+            )
+    if _has(db, "replay_label"):
+        for x in db["replay_label"].find({}, {"_id": 0}).sort("moment_id", 1):
+            db["response"].update_one(
+                {
+                    "response_id": x["response_id"],
+                    "replay_labels.moment_id": {"$ne": x["moment_id"]},
+                },
+                {"$push": {"replay_labels": x}},
+            )
+    for old in ("review_session", "review_action", "review_lock", "replay_label"):
+        db.drop_collection(old)
+
+
+def _d060_rating(db: Database) -> None:
+    """Sheets and ratings into `rating_batch.ratings`; `machine_seen` into the response.
+
+    `rating_assignment` + `research_rating` -> `rating_batch.ratings` (a sheet
+    and its rating are one `Rating`), `rating_batch.status` -> `closed`,
+    `machine_seen` -> `response.machine_seen`.
+    """
+    if _has(db, "machine_seen"):
+        for m in db["machine_seen"].find().sort("first_seen", 1):
+            item = {"account_id": m["account_id"], "first_seen": m.get("first_seen"),
+                    "via": m.get("via")}  # fmt: skip
+            db["response"].update_one(
+                {
+                    "response_id": m["response_id"],
+                    "machine_seen.account_id": {"$ne": m["account_id"]},
+                },
+                {"$push": {"machine_seen": item}},
+            )
+        db.drop_collection("machine_seen")
+    if _has(db, "rating_assignment"):
+        given = (
+            {r["assignment_id"]: r for r in db["research_rating"].find({}, {"_id": 0})}
+            if _has(db, "research_rating")
+            else {}
+        )
+        for b in db["rating_batch"].find({}, {"batch_id": 1}):
+            sheets = []
+            for x in db["rating_assignment"].find({"batch_id": b["batch_id"]}).sort("position", 1):
+                rating = given.get(x["assignment_id"], {})
+                sheets.append(
+                    {
+                        "assignment_id": x["assignment_id"],
+                        "response_id": x["response_id"],
+                        "rater_id": x["rater_id"],
+                        "slot": x["slot"],
+                        "position": x["position"],
+                        "opened_at": x.get("opened_at"),
+                        **{k: rating.get(k) for k in _RATING_KEYS},
+                        "unscorable": rating.get("unscorable", 0),
+                    }
+                )
+            db["rating_batch"].update_one({"_id": b["_id"]}, {"$set": {"ratings": sheets}})
+        db.drop_collection("rating_assignment")
+        db.drop_collection("research_rating")
+    if _has(db, "rating_batch"):
+        for b in db["rating_batch"].find({"closed": {"$exists": False}}, {"status": 1}):
+            db["rating_batch"].update_one(
+                {"_id": b["_id"]},
+                {"$set": {"closed": b.get("status") == "closed"}, "$unset": {"status": ""}},
+            )
+        db["rating_batch"].update_many({"ratings": {"$exists": False}}, {"$set": {"ratings": []}})
+
+
+def _d060_learning(db: Database) -> None:
+    """Units into `path`, versions and media into `lesson`, attempts into `attempt`.
+
+    `lesson_path` + `lesson_unit` -> `path` (units embedded, in their order),
+    `lesson_version` -> `lesson.versions`, `lesson_media` -> the media of the
+    lesson whose step points at it (by the key the upload put in its file
+    name), `step_attempt` -> `attempt`, `lesson_meta` -> `system` (`learning.`).
+    """
+    if _has(db, "lesson_path"):
+        for p in db["lesson_path"].find({}, {"_id": 0}):
+            units = [
+                {k: v for k, v in u.items() if k not in ("_id", "path_id")}
+                for u in db["lesson_unit"].find({"path_id": p["path_id"]}).sort("position", 1)
+            ]
+            db["path"].update_one(
+                {"path_id": p["path_id"]}, {"$setOnInsert": {**p, "units": units}}, upsert=True
+            )
+        db.drop_collection("lesson_path")
+        db.drop_collection("lesson_unit")
+    if _has(db, "lesson_version"):
+        for v in db["lesson_version"].find({}, {"_id": 0}).sort("version", 1):
+            lid = v.pop("lesson_id")
+            db["lesson"].update_one(
+                {"lesson_id": lid, "versions.version": {"$ne": v["version"]}},
+                {"$push": {"versions": v}},
+            )
+        db.drop_collection("lesson_version")
+    if _has(db, "lesson_media"):
+        for m in db["lesson_media"].find({}, {"_id": 0}):
+            # Uploads are named `lesson-media-<lesson>-<step>-...`: the lesson
+            # they were made for. A file of another name is kept with no lesson
+            # rather than lost.
+            owner = None
+            blob = str(m.get("blob_key") or "")
+            if blob.startswith("lesson-media-"):
+                for row in db["lesson"].find({}, {"lesson_id": 1}):
+                    if blob.startswith(f"lesson-media-{row['lesson_id']}-"):
+                        owner = row["lesson_id"]
+                        break
+            if owner is None:
+                hit = db["lesson"].find_one({"draft_json": {"$regex": m["media_key"]}})
+                owner = hit["lesson_id"] if hit else None
+            if owner is not None:
+                db["lesson"].update_one(
+                    {"lesson_id": owner, "media.media_key": {"$ne": m["media_key"]}},
+                    {"$push": {"media": m}},
+                )
+        db.drop_collection("lesson_media")
+    if _has(db, "lesson"):
+        for key in ("versions", "media"):
+            db["lesson"].update_many({key: {"$exists": False}}, {"$set": {key: []}})
+    _rename(db, "step_attempt", "attempt")
+    _settings(db, "lesson_meta", "learning.")
+
+
+_RATING_KEYS = (
+    "score_range", "score_accuracy", "score_fluency", "score_coherence", "score_phonology",
+    "score_overall", "band", "unscorable_reason", "reason", "submitted_at",
+)  # fmt: skip
+
+_ASSIGNMENT_KEYS = (
+    "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
+)  # fmt: skip
+
+# The indexes of the D060 collections, by the aggregate that owns them.
+D060_INDEXES: dict[str, dict] = {
+    # usage: one entry per (response, purpose), so a charge is never taken twice.
+    "metering": {
+        "wallet": [(("user_ref",), True)],
+        "ledger": [
+            (("entry_id",), True),
+            (("key", "action"), True),
+            (("user_ref", "created_at"), False),
+            (("state", "created_at"), False),
+        ],
+    },
+    "classroom": {
+        "classroom": [
+            (("class_id",), True),
+            (("code",), True),
+            (("teacher_id",), False),
+            (("members",), False),
+            (("assignments.assignment_id",), False),
+        ]
+    },
+}
+
+D060_STEPS: tuple[Callable[[Database], None], ...] = (
+    _d060_classroom,
+    _d060_study,
+    _d060_billing,
+    _d060_metering,
+    _d060_identity,
+    _d060_response,
+    _d060_rating,
+    _d060_learning,
+)
+
+
+def _d060(db: Database, target: str) -> None:
+    """D060: the collections follow the class diagram (one per aggregate root)."""
+    for step in D060_STEPS:
+        step(db)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -137,6 +565,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(4, "classrooms: classes, members, assignments (D054)", _classrooms),
     Migration(5, "replay_label: guided listening with control moments (D056)", _replay),
     Migration(6, "terms: research consent replaced by account.terms_accepted_at (D058)", _terms),
+    Migration(7, "one collection per aggregate root of the class diagram (D060)", _d060),
 )
 
 LATEST = MIGRATIONS[-1].version

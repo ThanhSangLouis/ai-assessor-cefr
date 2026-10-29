@@ -11,7 +11,7 @@ from aicefr.contracts import (
     QcResult,
     QcStatus,
     ReasonCode,
-    Status,
+    ResponseStatus,
     Transcript,
     Word,
 )
@@ -86,7 +86,7 @@ def _assessment(score: float | None, reasons=None) -> Assessment:
 
 def test_failed_qc_rejects():
     d = ReviewRouter().route(_qc(False, [ReasonCode.AUDIO_TOO_LONG]), None, None)
-    assert d.status is Status.REJECTED
+    assert d.status is ResponseStatus.REJECTED
 
 
 def test_score_near_boundary_goes_to_teacher():
@@ -103,12 +103,12 @@ def test_low_asr_confidence_goes_to_teacher():
 
 def test_normal_case_completes():
     fs = feature_set({"asr_conf_mean": 0.9})
-    assert ReviewRouter().route(_qc(), _assessment(4.0), fs).status is Status.COMPLETED
+    assert ReviewRouter().route(_qc(), _assessment(4.0), fs).status is ResponseStatus.COMPLETED
 
 
 def test_unscorable_response_keeps_its_reasons():
     d = ReviewRouter().route(_qc(), _assessment(None, [ReasonCode.OUT_OF_DISTRIBUTION]), None)
-    assert d.status is Status.REVIEW_REQUIRED
+    assert d.status is ResponseStatus.REVIEW_REQUIRED
     assert d.reasons.count(ReasonCode.OUT_OF_DISTRIBUTION) == 1
 
 
@@ -120,5 +120,5 @@ def test_qc_review_level_goes_to_teacher():
     """
     qc = _qc(status=QcStatus.REVIEW, reasons=[ReasonCode.AUDIO_TOO_SHORT])
     d = ReviewRouter().route(qc, _assessment(3.20), _features())
-    assert d.status is Status.REVIEW_REQUIRED
+    assert d.status is ResponseStatus.REVIEW_REQUIRED
     assert d.needs_teacher

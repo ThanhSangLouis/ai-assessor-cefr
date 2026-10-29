@@ -21,7 +21,7 @@ from aicefr.research.agreement import (
     BANDS,
     CRITERIA,
     RatedResponse,
-    Rating,
+    RaterScore,
     agreement_report,
     cluster_bootstrap_ci,
     confusion,
@@ -39,18 +39,20 @@ from aicefr.research.agreement import (
 pytestmark = pytest.mark.unit
 
 
-def rate(rater: str, overall: float, band: str, *, adjudication: bool = False) -> Rating:
-    return Rating(rater, overall, band, dict.fromkeys(CRITERIA, overall), adjudication=adjudication)
+def rate(rater: str, overall: float, band: str, *, adjudication: bool = False) -> RaterScore:
+    return RaterScore(
+        rater, overall, band, dict.fromkeys(CRITERIA, overall), adjudication=adjudication
+    )
 
 
-def unscorable(rater: str, *, adjudication: bool = False) -> Rating:
-    return Rating(rater, None, None, {}, unscorable=True, adjudication=adjudication)
+def unscorable(rater: str, *, adjudication: bool = False) -> RaterScore:
+    return RaterScore(rater, None, None, {}, unscorable=True, adjudication=adjudication)
 
 
 def response(
     response_id: str,
     speaker_id: str,
-    *ratings: Rating,
+    *ratings: RaterScore,
     ai: float | None = None,
     ai_band: str | None = None,
     flagged: bool | None = None,
@@ -207,7 +209,7 @@ def test_per_band_recall_and_precision_on_a_hand_made_example():
         "both-unscorable",
     ],
 )
-def test_needs_adjudication(first: Rating, second: Rating, expected: bool):
+def test_needs_adjudication(first: RaterScore, second: RaterScore, expected: bool):
     assert needs_adjudication(first, second) is expected
 
 
@@ -265,15 +267,15 @@ def test_a_third_rating_that_was_not_needed_is_ignored():
 
 def test_rating_rejects_inconsistent_input():
     with pytest.raises(ValueError, match="unscorable"):
-        Rating("R1", 3.0, None, {}, unscorable=True)
+        RaterScore("R1", 3.0, None, {}, unscorable=True)
     with pytest.raises(ValueError, match="band"):
-        Rating("R1", 3.0, None, {})
+        RaterScore("R1", 3.0, None, {})
     with pytest.raises(ValueError, match="unknown band"):
-        Rating("R1", 3.0, "D1", {})
+        RaterScore("R1", 3.0, "D1", {})
     with pytest.raises(ValueError, match="within"):
-        Rating("R1", 6.5, "B2", {})
+        RaterScore("R1", 6.5, "B2", {})
     with pytest.raises(ValueError, match="unknown criteria"):
-        Rating("R1", 3.0, "B1", {"interaction": 3.0})
+        RaterScore("R1", 3.0, "B1", {"interaction": 3.0})
 
 
 def test_rated_response_rejects_a_repeated_rater_or_a_misplaced_adjudication():
@@ -406,7 +408,7 @@ STUDY = [
         "r8",
         "s6",
         rate("R1", 3.5, "B1"),
-        Rating("R2", 3.0, "B1", NO_PHONOLOGY),
+        RaterScore("R2", 3.0, "B1", NO_PHONOLOGY),
         ai=3.0,
         ai_band="B1",
         flagged=False,

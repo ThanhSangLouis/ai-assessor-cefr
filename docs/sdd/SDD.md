@@ -26,6 +26,8 @@
 
 >
 > **Bản 1.6 (07/10/2026)** ghi thêm hai việc. Nhiều cổng thanh toán (D035 — mục 4.16, ADR-12): cổng `PaymentGateway` đổi hình — mở thanh toán có thể gọi cổng trước, trang trả về có thể phải hỏi lại cổng, thông báo đến bằng GET hay POST và được trả lời theo kiểu từng cổng chờ — với hai bộ chuyển đổi mới `StripeGateway` và `MomoGateway` (hình 2b vẽ lại), `billing/registry.py` dựng các cổng từ cấu hình, `billing/transport.py` gọi HTTPS bằng thư viện chuẩn, hai cột mới của `billing_order`, sơ đồ tuần tự mới cho Stripe (hình 8). Luồng đăng nhập Google không giả được (D036 — mục 4.12a, ADR-13): cookie của luồng có chữ ký theo khoá của bản triển khai giữ trong bảng mới `server_secret`, cookie `__Host-` sau TLS, khung cấu hình cho quản trị viên, sơ đồ tuần tự của luồng PKCE (hình 7). Kèm theo: mục 5.4, mục 6.1 (141 đường dẫn), các dòng 84–93 của mục 7, phụ lục mục 10.
+>
+> **Bản 1.7 (29/10/2026)** — D060: sơ đồ lớp chỉ gồm thực thể và enum, quan hệ thể hiện qua thuộc tính; collection theo aggregate root (17 nghiệp vụ + `session`, `system`), xem `thiet-ke-gon-so-do-lop-va-collection.md` và `docs/db/TU_DIEN_DU_LIEU.md`. Hình 5, 5c, 5d vẽ lại theo document MongoDB. Các mục mô tả bảng SQLite ở phần sau (ví dụ mục 4.11, 4.13, 5.3) giữ nguyên làm lịch sử thiết kế của từng quyết định; nơi lưu hiện tại của mỗi bảng cũ ghi ở cột "Gộp từ" của mục 4 tài liệu thiết kế.
 
 ---
 
@@ -357,10 +359,11 @@ nào*, đúng tầng thiết kế của chúng.
 
 | Khung nhìn | Tệp nguồn | Định dạng | Nội dung |
 | --- | --- | --- | --- |
-| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | 7 thực thể, 8 đối tượng giá trị, 6 kiểu liệt kê, 31 quan hệ |
+| Lớp | `docs/sdd/diagrams/02_class.drawio` | draw.io | Mô hình nghiệp vụ ngày 28/10/2026: 7 thực thể, 1 lớp trừu tượng, 8 đối tượng giá trị, 4 kiểu liệt kê, 32 quan hệ (sinh bằng `tools/gen_class_diagram.py`). Ánh xạ từ bản 37 hộp và kế hoạch 42 → 18 collection: [`thiet-ke-gon-so-do-lop-va-collection.md`](thiet-ke-gon-so-do-lop-va-collection.md); code đang chuyển theo |
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
-| Kiến trúc | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | 8 cổng và 16 bộ chuyển đổi |
+| Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
+| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 19 bộ chuyển đổi, 13 kho kế thừa `MongoStore` |
 
 **Vì sao sơ đồ lớp dùng draw.io chứ không phải PlantUML.** PlantUML tự đặt vị
 trí các hộp; người đọc không sắp xếp lại được. Sơ đồ lớp là hình phải chỉnh tay
@@ -386,7 +389,7 @@ tính lại toàn bộ — đã hỏng ba lần vì lý do đó trước khi có
 thì sửa phần đặc tả ở đầu `tools/gen_class_diagram.py` rồi sinh lại, đừng sửa
 hai nơi.
 
-Hình kiến trúc giữ PlantUML vì nó nhỏ và bố cục tự động đã đủ dùng.
+Hai hình kiến trúc giữ PlantUML vì bố cục tự động đã đủ dùng. Hình 2b trả lời "hệ thống gồm những dịch vụ nào, nói với nhau thế nào, dữ liệu nằm đâu"; hình 2c trả lời "hệ thống cắm ra bên ngoài ở đâu và thay được những gì". Cổng `ResponseStore` cố ý không vẽ (xem docstring của nó).
 
 **Cú pháp thành viên: đủ kiểu, không rút gọn.** Mọi thuộc tính viết theo đúng
 dạng UML `visibility name: Type`, mọi thao tác viết đủ `name(tham số: Type):
@@ -582,8 +585,8 @@ chấm nói — nó là hệ quả của việc hệ thống có màn hình đă
 Cả bốn vẫn là lớp Pydantic thật, có luật đi kèm dữ liệu
 (`AuthSession.has_expired()`, `ReviewLock.has_expired()`) thay cho `dict` thô
 trả về từ SQL như trước — thay đổi đó được giữ lại. Chúng chỉ chuyển sang đúng
-hình: `auth_sessions` ở `05c_erd_identity.mmd`, còn `review_lock`, `audit_log`
-và `app_config` ở `05_erd.mmd`.
+hình: collection `session` ở `05c_erd_identity.mmd`, còn `response.review_lock`,
+`audit_log` và `system` ở `05_erd.mmd` (D060).
 
 **Hành vi về đúng chỗ dữ liệu.** `Word.is_uncertain` là ví dụ rõ nhất: luật
 "máy nghe không rõ" (`prob < 0.50`) trước đây được viết lại ở **ba nơi** —
@@ -596,9 +599,13 @@ thứ hai của một biểu thức chính quy trong `report.js`.
 
 *Hình 2. Các đối tượng nghiệp vụ. Nguồn: `diagrams/02_class.drawio`*
 
-![Hình 2b. Kiến trúc](images/02b_kien_truc.png)
+![Hình 2b. Kiến trúc tổng thể](images/02b_kien_truc.png)
 
-*Hình 2b. Cổng và bộ chuyển đổi. Nguồn: `diagrams/02b_kien_truc.puml`*
+*Hình 2b. Kiến trúc tổng thể: ba dịch vụ, bus và kho dữ liệu. Nguồn: `diagrams/02b_kien_truc.puml`*
+
+![Hình 2c. Cổng và bộ chuyển đổi](images/02c_cong_va_bo_chuyen_doi.png)
+
+*Hình 2c. Cổng và bộ chuyển đổi. Nguồn: `diagrams/02c_cong_va_bo_chuyen_doi.puml`*
 
 **Cách đọc sơ đồ lớp.** Hình thoi **đặc** (`◆`) là hợp thành: bộ phận thuộc về
 đúng một thể, sinh ra cùng thể và mất theo thể. Dùng nó cho `Response`
@@ -969,252 +976,201 @@ flowchart TD
 File: `docs/sdd/diagrams/05_erd.mmd`
 
 ```mermaid
-%% SDD - Diagram 05: ERD - phan cham diem cua lang do dang chay (SQLite, aicefr.db)
-%% Tach lam hai hinh vi gop chin bang vao mot hinh cho ty le 2,28 - qua rong,
-%% in A4 thi chu mat. Hinh 5c ve phan dinh danh, dong thuan va trang thai theo
-%% tai khoan; hinh 5d ve phan cham mu (D030).
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
+%% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
+%% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
+%% in A4: hinh 5c ve dinh danh, hinh 5d ve cham mu va thuc nghiem.
+%% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
-    account ||--o{ response : "nộp · account_id, chưa ràng buộc FK"
-    task ||--o{ response : "đề bài · task_id, chưa ràng buộc FK"
-    response ||--o{ review_action : "được sửa điểm (FK)"
-    response ||--o| review_lock : "đang có người duyệt (FK)"
+    account ||--o{ response : "nộp · account_id"
+    task ||--o{ response : "đề bài · task_id"
+    account ||--o{ classroom : "dạy · teacher_id, học · members"
+    classroom }o--o{ task : "giao · assignments.task_id"
 
     account {
-        TEXT account_id PK "chi tiết ở hình 5c"
+        string account_id PK "chi tiết ở hình 5c"
     }
 
     task {
-        TEXT task_id PK
-        TEXT title
-        TEXT prompt_text
-        TEXT prompt_version
-        TEXT part "phần thi, ví dụ P3"
-        INTEGER min_seconds
-        INTEGER max_seconds
-        INTEGER active
-        TEXT created_at
-        TEXT topic_keywords "từ khóa chủ đề tiếng Anh, rỗng là đề mở (D022)"
-        TEXT purpose "assessment · practice (D023)"
-        TEXT criterion "chỉ đề luyện tập"
-        TEXT band "chỉ đề luyện tập"
-        TEXT missions_json "chỉ đề luyện tập"
-        TEXT tips_json "chỉ đề luyện tập"
-        TEXT reference_text "đoạn đọc theo, chỉ đề luyện tập"
+        string task_id PK
+        string title
+        string prompt_text
+        string prompt_version
+        string part "phần thi, ví dụ P3"
+        int min_seconds
+        int max_seconds
+        string topic_keywords "từ khóa chủ đề, rỗng là đề mở (D022)"
+        string purpose "assessment · practice (D023)"
+        string criterion "chỉ đề luyện tập"
+        string band "chỉ đề luyện tập"
+        string reference_text "đoạn đọc theo, chỉ đề luyện tập"
     }
 
     response {
-        TEXT response_id PK
-        TEXT speaker_id "bút danh, sao lại lúc nộp"
-        TEXT task_id
-        TEXT status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
-        REAL overall_0_6 "NULL khi chưa chấm được"
-        TEXT overall_band "A2 · B1 · B2"
-        INTEGER teacher_verified
-        TEXT model_version
-        TEXT config_version
-        TEXT report_json "toàn bộ Response, nguồn sự thật của báo cáo"
-        TEXT created_at
-        TEXT account_id
-        TEXT audio_path
-        TEXT purpose "assessment · practice; bài luyện không vào hàng đợi duyệt (D023)"
+        string response_id PK
+        string account_id
+        string task_id
+        string status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
+        float overall_0_6 "null khi chưa chấm được"
+        string overall_band "A1 … C2 (D059)"
+        int teacher_verified
+        string report_json "toàn bộ báo cáo, nguồn sự thật"
+        string purpose "assessment · practice"
+        array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
+        object review_lock "ai đang duyệt, tới lúc nào"
+        array review_visits "mở bài, kết thúc, hành động (D041)"
+        array replay_labels "tự nghe lại (D056)"
+        array machine_seen "ai đã thấy điểm máy, qua đâu"
     }
 
-    review_action {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT response_id FK
-        TEXT reviewer_id "bút danh giảng viên, lấy từ phiên"
-        REAL old_score
-        REAL new_score
-        TEXT old_band
-        TEXT new_band
-        TEXT reason
-        TEXT created_at
-    }
-
-    review_lock {
-        TEXT response_id PK "đồng thời là FK"
-        TEXT reviewer_id
-        TEXT reviewer_name
-        TEXT locked_until "khóa hết hạn thì người khác giành được"
+    classroom {
+        string class_id PK
+        string code UK "mã tham gia"
+        string teacher_id
+        array members "mã tài khoản theo thứ tự vào lớp"
+        array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
 
     audit_log {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT actor_id
-        TEXT action
-        TEXT target_id "không ràng buộc FK - trỏ tới nhiều loại thực thể"
-        TEXT detail
-        TEXT created_at
+        int id PK "tự tăng"
+        string actor_id
+        string action
+        string target_id "trỏ tới nhiều loại thực thể"
+        string service
+        string created_at
     }
 
-    app_config {
-        TEXT key PK "active_model hoặc qc_thresholds"
-        TEXT value "giá trị hiện hành, dạng JSON với ngưỡng QC"
-        TEXT version "nhãn phiên bản, đi vào từng báo cáo sinh ra sau đó"
-        TEXT updated_by "bút danh người đổi — biến môi trường không mang được điều này"
-        TEXT updated_at
+    system {
+        string key PK "assessment.active_model, billing.organization, ..."
+        string value
+        string version "chỉ với cấu hình assessment.*"
     }
 ```
 
 ![Hình 5. Sơ đồ thực thể liên kết](images/05_erd.png)
 
-*Hình 5. Lược đồ đang chạy — phần chấm điểm và vận hành. Nguồn: `diagrams/05_erd.mmd`*
+*Hình 5. Các collection đang chạy (D060) — phần chấm điểm, lớp học và vận hành. Nguồn: `diagrams/05_erd.mmd`*
 
 #### 3.5a. Định danh, đồng thuận và trạng thái theo tài khoản
 
-Lược đồ đang chạy được vẽ thành ba hình: hình 5 ở trên (chấm điểm và vận hành), hình 5c dưới đây và hình 5d (chấm mù, mục 3.5b). Lý do tách vẫn như bản đầu: gộp chín bảng khi đó vào một hình đã cho tỷ lệ 2,28 — quá rộng, in A4 thì chữ mất — và nay số bảng được vẽ đã là mười lăm. Bảng dùng chung chỉ vẽ đầy đủ ở một hình: `account` đầy đủ ở hình 5c, ở hình 5 chỉ còn khoá chính; `response` đầy đủ ở hình 5, ở hình 5d chỉ còn khoá chính và bốn cột mà điều kiện chọn bài đọc tới. Nhờ vậy các hình nối được với nhau mà không hình nào phải vẽ lại toàn bộ.
+Các collection đang chạy (D060, mục 5.3a) được vẽ thành ba hình: hình 5 ở trên (chấm điểm, lớp học và vận hành), hình 5c dưới đây (định danh) và hình 5d (chấm mù và thực nghiệm, mục 3.5b). Tách ba hình để mỗi hình in A4 được (tỷ lệ không quá 2,0). Collection dùng chung chỉ vẽ đầy đủ ở một hình: `account` đầy đủ ở hình 5c, ở hai hình kia chỉ còn khoá chính; `response` đầy đủ ở hình 5, ở hình 5d chỉ còn khoá chính và danh sách người đã xem điểm máy. Lộ trình, bài học, gói dịch vụ và tính lượt vẽ ở `docs/db/erd_core.mmd`.
 
-Hình 5c vẽ ngang (`direction LR`) và giãn khoảng giữa hai cột (`rankSpacing`, khai trong dòng `%%{init}%%` của tệp nguồn): `account` nay có bốn bảng con, vẽ dọc thì bốn bảng con nằm trên một hàng và tỷ lệ vượt 2,0. Các cột thêm ở D028 (`must_change_password`, `last_login_at`, `password_changed_at`) và D029 (`avatar_icon`, `avatar_color`, `daily_goal_s` của `account`; `device`, `method` của `auth_sessions`) không nằm trong câu lệnh `CREATE TABLE`: `AuthRepository._upgrade_schema` thêm chúng bằng `ALTER TABLE … ADD COLUMN` mỗi lần khởi động nếu còn thiếu, nên cơ sở dữ liệu tạo từ bản cũ cũng có đủ.
+Từ D060 mỗi aggregate root của sơ đồ lớp là một collection, và phần hợp thành nằm trong document của gốc dưới dạng trường kiểu mảng hoặc document con: trong hình, `array` và `object` là những phần đó. Liên kết Google (`identities`) và mốc "đã xem" (`seen_markers`) nay nằm trong `account`; phiên đăng nhập vẫn là collection riêng `session` vì cần chỉ mục TTL tự xoá phiên hết hạn.
 
 File: `docs/sdd/diagrams/05c_erd_identity.mmd`
 
 ```mermaid
-%% SDD - Diagram 5c: ERD - dinh danh, dong thuan va trang thai theo tai khoan
-%% Phan con lai cua lang dang chay; phan cham diem o hinh 5, cham mu o hinh 5d.
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
-%% Ve ngang (direction LR) vi account co bon bang con: ve doc thi bon bang con
-%% nam tren mot hang, ty le vuot 2,0 va in A4 thi chu mat. rankSpacing gian
-%% khoang giua hai cot de nhan cua quan he khong de len chan qua.
-%% Cot them o D028 (must_change_password, last_login_at, password_changed_at)
-%% va D029 (avatar_icon, avatar_color, daily_goal_s; device, method cua
-%% auth_sessions) do _upgrade_schema them bang ALTER TABLE, khong nam trong
-%% cau lenh CREATE TABLE.
-%%{init: {"er": {"rankSpacing": 220}}}%%
+%% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
+%% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
+%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han.
 erDiagram
-    direction LR
-    account ||--o{ auth_sessions : "mở phiên (FK)"
-    account ||--o{ account_identity : "liên kết Google (FK)"
-    account ||--o{ seen_marker : "đã xem tới đâu"
+    account ||--o{ session : "đăng nhập · account_id"
 
     account {
-        TEXT account_id PK
-        TEXT pseudonym UK "bút danh, không chứa tên thật hay MSSV"
-        TEXT password_hash "bcrypt cost 12"
-        TEXT role "student · teacher · admin"
-        INTEGER failed_attempts "đếm để khóa tài khoản"
-        TEXT locked_until "NULL nếu không bị khóa"
-        INTEGER disabled "tắt thì mọi phiên kết thúc"
-        TEXT created_at
-        INTEGER must_change_password "1: mật khẩu tạm, chỉ đổi được mật khẩu"
-        TEXT last_login_at
-        TEXT password_changed_at
-        TEXT avatar_icon "một trong 15 biểu tượng"
-        TEXT avatar_color "một trong 10 màu"
-        INTEGER daily_goal_s "60 · 120 · 180 · 300 · 600 giây"
-        TEXT terms_accepted_at "NULL: chưa đồng ý điều khoản, chưa nộp bài được (D058)"
+        string account_id PK
+        string pseudonym UK
+        string password_hash "scrypt"
+        string role "student · teacher · admin"
+        int failed_attempts
+        string locked_until
+        int disabled
+        int must_change_password "D028"
+        string avatar_icon "D029"
+        string avatar_color "D029"
+        int daily_goal_s "D029"
+        string terms_accepted_at "D058"
+        array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
+        object seen_markers "tên dấu → lúc xem (D028)"
     }
 
-    auth_sessions {
-        TEXT token_hash PK "băm của cookie, bản gốc không lưu"
-        TEXT account_id FK
-        TEXT expires_at
-        TEXT created_at
-        TEXT device "tên thiết bị thô, ví dụ Chrome · macOS"
-        TEXT method "password hoặc google"
-    }
-
-    account_identity {
-        TEXT provider PK "hiện chỉ có google"
-        TEXT subject_hash PK "SHA-256 của định danh Google, không email"
-        TEXT account_id FK "UNIQUE cùng provider"
-        TEXT linked_at
-    }
-
-
-    seen_marker {
-        TEXT account_id PK "chưa ràng buộc FK"
-        TEXT marker PK "hiện chỉ có results"
-        TEXT seen_at "lần cuối mở Bài của tôi"
+    session {
+        string token_hash PK "băm của mã phiên"
+        string account_id
+        string expires_at
+        string device
+        string method "password · google"
     }
 ```
 
 ![Hình 5c. Định danh, đồng thuận và trạng thái theo tài khoản](images/05c_erd_identity.png)
 
-*Hình 5c. Định danh, phiên đăng nhập, liên kết Google, đồng thuận và mốc "đã xem". Nguồn: `diagrams/05c_erd_identity.mmd`*
+*Hình 5c. Tài khoản (liên kết Google và mốc "đã xem" nằm trong tài khoản) và phiên đăng nhập. Nguồn: `diagrams/05c_erd_identity.mmd`*
 
-**Cách đọc.** Ký hiệu chân quạ ở hai đầu quan hệ cho biết bội số: `||` là chính xác một, `o{` là không hoặc nhiều, `o|` là không hoặc một. `response ||--o| review_lock` đọc là một bài có **không hoặc một** khóa duyệt — khóa chỉ tồn tại trong lúc một giảng viên đang mở bài, và hết hạn thì người khác giành được. Kiểu dữ liệu ghi trong hình là kiểu SQLite **thật**: `TEXT`, `INTEGER`, `REAL`. SQLite không có kiểu `datetime` hay `boolean` riêng, nên thời điểm lưu dạng chuỗi ISO-8601 UTC và cờ đúng/sai lưu dạng `INTEGER` 0/1; vẽ đúng như vậy để người đọc không đi tìm một kiểu dữ liệu không tồn tại. Bảng `response` giữ toàn bộ báo cáo ở cột `report_json`, còn `overall_0_6`, `overall_band`, `status` là bản sao phẳng để truy vấn và sắp xếp mà không phải mở JSON. Không bảng nào có cột họ tên, email hay MSSV: `speaker_id` và `reviewer_id` đều là bút danh. Hai bảng mới ở hình 5c có khoá chính ghép, nên hai cột cùng mang `PK`: `account_identity` khoá theo (`provider`, `subject_hash`), `seen_marker` theo (`account_id`, `marker`). Quan hệ `account ||--o{ account_identity` vẽ theo lược đồ — một dòng cho mỗi nhà cung cấp, giữ bằng `UNIQUE (account_id, provider)`; hiện chỉ có Google nên mỗi tài khoản có nhiều nhất một dòng. `account_identity` không có cột email, tên hay ảnh: không phải hình bỏ bớt, mà bảng không có.
+**Cách đọc.** Ký hiệu chân quạ ở hai đầu quan hệ cho biết bội số: `||` là chính xác một, `o{` là không hoặc nhiều, `o|` là không hoặc một. Quan hệ giữa hai collection là tham chiếu do mã giữ (`account_id`, `task_id`): MongoDB không ép khoá ngoại. Kiểu ghi trong hình là kiểu của document (`string`, `int`, `float`, `bool`, `array`, `object`); thời điểm là chuỗi ISO-8601 UTC. `response` giữ toàn bộ báo cáo ở `report_json`, còn `overall_0_6`, `overall_band`, `status` là bản sao phẳng để truy vấn mà không phải mở JSON; lịch sử duyệt (`reviews`) nằm cạnh báo cáo chứ không trong nó. Không collection nào có trường họ tên, email hay MSSV; `identities` chỉ giữ băm của mã người dùng Google.
 
-**Ánh xạ sang mã nguồn.** Ba hình 5, 5c và 5d vẽ **mười lăm** trong hai mươi tám bảng đang tồn tại, lấy từ các câu lệnh `CREATE TABLE` trong mã: `response`, `review_action`, `review_lock`, `audit_log`, `app_config`, `seen_marker` ở `src/aicefr/storage/repository.py`; `account`, `auth_sessions`, `account_identity` ở `src/aicefr/storage/auth_repository.py`; `task` ở `src/aicefr/storage/task_repository.py`; `consent` ở `src/aicefr/storage/consent_repository.py` (FR-01, FR-35 — mỗi lần ký và mỗi lần rút là một dòng, không phải một cột đúng/sai, vì phải chứng minh được người tham gia đã đồng ý với **bản văn bản nào**); `rating_batch`, `rating_assignment`, `research_rating`, `machine_seen` ở `src/aicefr/storage/rating_repository.py` (hình 5d). `seen_marker` khai báo ở `repository.py`, cạnh `count_reviewed_since` là phép đếm dùng nó, dù hình 5c vẽ nó cạnh `account` vì nó là trạng thái của một tài khoản. Chín bảng còn lại ở `src/aicefr/storage/lesson_repository.py` — tám bảng của lộ trình bài học (D025) `lesson_path`, `lesson_unit`, `lesson`, `lesson_version`, `step_attempt`, `review_item`, `lesson_meta`, `lesson_media`, và bảng `achievement` (D032, mục 5.4) — cùng bốn bảng `billing_license`, `billing_order`, `billing_event`, `billing_setting` ở `src/aicefr/storage/billing_repository.py` (D034, mục 5.4) **chưa có hình ERD** trong tài liệu này. Hình 5 nay vẽ thêm cột `response.purpose` (D023) — cột mà hàng đợi duyệt, các con số trên thanh điều khiển và điều kiện chọn bài chấm mù đều lọc theo — và bảy cột thêm vào `task` ở D022, D023; ảnh của nó được kết xuất lại vì ảnh trước còn ghi `ProcessingReport` ở cột `report_json` trong khi tệp nguồn đã ghi `Response`. `app_config` giữ hai thứ đổi được lúc chạy: mô hình đang kích hoạt (FR-36) và bộ ngưỡng QC (FR-08); mỗi dòng mang theo người đổi và thời điểm, thứ mà biến môi trường không mang được. Lược đồ nghiên cứu đầy đủ — `speaker`, `audio_file`, `qc_result`, `transcript`, `feature_set`, `assessment`, `criterion_score`, `evidence` — **chưa hiện thực**, tách hẳn sang hình 5b. Bộ lớp SQLAlchemy `DeclarativeBase` và migration Alembic cũng **chưa hiện thực**; riêng chính sách lưu trữ thì **đã có**, ở `src/aicefr/retention.py` và `src/aicefr/maintenance_cli.py`.
+**Ánh xạ sang mã nguồn.** Mỗi collection có một lớp miền cùng tên với thực thể trên sơ đồ lớp và một repository: `response` ở `src/aicefr/storage/repository.py` (`Response.reviews: list[Review]`), `task` ở `task_repository.py`, `classroom` ở `classroom_repository.py` (`Classroom`, `Assignment`), `account` và `session` ở `auth_repository.py`, `rating_batch` ở `rating_repository.py` (`RatingBatch`, `Rating`), `study` ở `study_repository.py` (`Study`, `Participant`). Danh sách đầy đủ 19 collection, phần nhúng và khoá ở `docs/db/TU_DIEN_DU_LIEU.md`; dữ liệu của bản trước D060 chuyển sang bằng migration 7 (`src/aicefr/storage/migrations.py`). Lược đồ nghiên cứu đầy đủ — `speaker`, `audio_file`, `qc_result`, `transcript`, `feature_set`, `assessment`, `criterion_score`, `evidence` — **chưa hiện thực**, tách hẳn sang hình 5b.
 
 #### 3.5b. Chấm mù hai người (D030)
 
-Bốn bảng của khảo sát thực địa (mục 4.13). Chúng nằm trong cùng tệp CSDL với `response`, trỏ vào nó bằng khoá ngoại có `ON DELETE CASCADE`, và **không ghi gì** vào `response` hay `review_action`: luồng duyệt vận hành giữ nguyên, kể cả `teacher_verified`.
+Chấm mù của khảo sát thực địa (mục 4.13) và thực nghiệm phản hồi (D040). Mỗi đợt chấm là một document `rating_batch` chứa các phiếu `Rating`; mỗi thực nghiệm là một document `study` chứa người tham gia. Không collection nào ở đây ghi vào `response`: luồng duyệt vận hành giữ nguyên, kể cả `teacher_verified`.
 
 File: `docs/sdd/diagrams/05d_erd_rating.mmd`
 
 ```mermaid
-%% SDD - Diagram 5d: ERD - cham mu hai nguoi cho khao sat thuc dia (D030)
-%% Bon bang cua storage/rating_repository.py, cung tep CSDL voi response. Ca bon
-%% di theo response bang ON DELETE CASCADE: xoa bai cua mot nguoi hoc (FR-35)
-%% thi xoa luon phieu cham ve bai do. Khong bang nao ghi vao response hay
-%% review_action: luong duyet van hanh giu nguyen.
-%% response chi ve khoa chinh va bon cot ma dieu kien chon bai doc; day du o
-%% hinh 5.
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% SDD - Diagram 5d: ERD - cham mu hai nguoi (D030) va thuc nghiem phan hoi (D040)
+%% Moi phieu cham la mot Rating nam trong dot cua no (D060): phieu va diem la
+%% mot. Xoa bai cua mot nguoi hoc (FR-35) rut cac phieu ve bai do khoi dot.
+%% Khong collection nao o day ghi vao response: luong duyet van hanh giu nguyen.
+%% Rating va Participant ve thanh khoi rieng de doc duoc, nhung la phan nhung
+%% (mang ratings, participants) trong document cua dot va cua thuc nghiem.
 erDiagram
-    rating_batch ||--o{ rating_assignment : "gồm phiếu (FK, CASCADE)"
-    response ||--o{ rating_assignment : "được chấm mù (FK, CASCADE)"
-    rating_assignment ||--o| research_rating : "nộp một lần (FK, CASCADE)"
-    response ||--o{ machine_seen : "đã mở kết quả máy (FK, CASCADE)"
-
-    response {
-        TEXT response_id PK "chi tiết ở hình 5"
-        TEXT purpose "chỉ assessment mới vào đợt"
-        TEXT status "COMPLETED hoặc REVIEW_REQUIRED"
-        TEXT audio_path "phải còn tệp ghi âm"
-        TEXT account_id "chủ bài phải đang đồng thuận nghiên cứu"
-    }
+    rating_batch ||--|{ Rating : "nhúng trong ratings"
+    Rating }o--|| response : "response_id"
+    study ||--o{ Participant : "nhúng trong participants"
+    Participant }o--|| account : "account_id"
 
     rating_batch {
-        TEXT batch_id PK
-        TEXT name
-        INTEGER seed "một hạt giống quyết định mẫu bài và thứ tự"
-        TEXT status "open · closed"
-        TEXT created_by "account_id quản trị viên, chưa ràng buộc FK"
-        TEXT created_at
+        string batch_id PK
+        string name
+        int seed "hạt giống chia phiếu"
+        bool closed
     }
 
-    rating_assignment {
-        TEXT assignment_id PK "mã phiếu; bản ghi phát qua mã này"
-        TEXT batch_id FK
-        TEXT response_id FK "không bao giờ gửi tới giám khảo"
-        TEXT rater_id "account_id giám khảo, chưa ràng buộc FK"
-        INTEGER slot "1, 2: giám khảo chính · 3: phân xử"
-        INTEGER position "vị trí trong thứ tự riêng của giám khảo"
-        TEXT opened_at "lần mở đầu tiên, để đo thời gian chấm"
+    Rating {
+        string assignment_id
+        string response_id
+        string rater_id
+        int slot "1, 2 chấm chính; 3 trọng tài"
+        int position "thứ tự riêng của giám khảo"
+        string opened_at
+        float score_overall
+        string band
+        string unscorable_reason
+        string submitted_at "nộp một lần"
     }
 
-    machine_seen {
-        TEXT account_id PK "giảng viên hay quản trị viên, chưa ràng buộc FK"
-        TEXT response_id PK "đồng thời là FK"
-        TEXT first_seen "chỉ lần đầu"
-        TEXT via "report · history · review"
+    response {
+        string response_id PK "chi tiết ở hình 5"
+        array machine_seen "đã thấy điểm máy thì không còn mù"
     }
 
-    research_rating {
-        TEXT assignment_id PK "đồng thời là FK"
-        REAL score_range
-        REAL score_accuracy
-        REAL score_fluency
-        REAL score_coherence
-        REAL score_phonology
-        REAL score_overall "0–6, bước 0,5"
-        TEXT band "A2 · B1 · B2"
-        INTEGER unscorable "1 thì mọi điểm và band là NULL"
-        TEXT unscorable_reason "broken · inaudible · off_task"
-        TEXT reason "một dòng lý do"
-        TEXT submitted_at
+    study {
+        string study_id PK
+        string status "running · survey · closed"
+        int min_days
+        string measured_until
+    }
+
+    Participant {
+        string code "P001, cố định từ lúc vào"
+        string account_id
+        string arm "feedback · score_only"
+        string withdrawn_at
+        object survey_answers
+    }
+
+    account {
+        string account_id PK "chi tiết ở hình 5c"
     }
 ```
 
-![Hình 5d. Chấm mù hai người](images/05d_erd_rating.png)
+![Hình 5d. Chấm mù hai người và thực nghiệm phản hồi](images/05d_erd_rating.png)
 
-*Hình 5d. Đợt chấm, phiếu chấm, điểm của giám khảo và sổ "đã xem kết quả của máy". Nguồn: `diagrams/05d_erd_rating.mmd`*
+*Hình 5d. Đợt chấm với các phiếu `Rating` nhúng (phiếu và điểm là một), ai đã xem kết quả của máy, và thực nghiệm với người tham gia nhúng. Nguồn: `diagrams/05d_erd_rating.mmd`*
 
-**Cách đọc.** Một đợt (`rating_batch`) gồm nhiều phiếu (`rating_assignment`); mỗi phiếu là một cặp bài–giám khảo, mang `slot` 1 hoặc 2 cho hai giám khảo chính và 3 cho người phân xử, và `position` là chỗ của bài trong thứ tự **riêng** của giám khảo đó. `research_rating` lấy chính `assignment_id` làm khoá chính, nên một phiếu có **không hoặc một** lần chấm (`||--o|`) — đó là cách CSDL giữ luật "phiếu đã nộp là cuối cùng": lần nộp thứ hai vi phạm khoá chính. Hai ràng buộc không vẽ được trên hình: `UNIQUE (batch_id, response_id, slot)` — trong một đợt, mỗi chỗ chấm của một bài chỉ có một người — và `UNIQUE (batch_id, response_id, rater_id)` — một người không chấm cùng một bài hai lần trong một đợt. Khác `speaker_id` và `reviewer_id`, hai cột `rater_id` và `created_by` giữ `account_id` chứ không giữ bút danh, và không có khoá ngoại; mã không có đường xoá tài khoản (chỉ tắt), nên chúng không bị treo. Điểm từng tiêu chí, điểm tổng và band đều cho phép NULL: phiếu "không chấm được" để trống tất cả. `machine_seen` ghi ai đã mở kết quả của máy cho bài nào, một dòng cho lần đầu; cùng với `review_action.reviewer_id` nó quyết định ai không còn mù với một bài (mục 4.13, bất biến 4b).
+**Cách đọc.** Một đợt (`rating_batch`) gồm nhiều phiếu (`Rating`, nhúng trong `ratings`); mỗi phiếu là một cặp bài–giám khảo, mang `slot` 1 hoặc 2 cho hai giám khảo chính và 3 cho người phân xử, và `position` là chỗ của bài trong thứ tự **riêng** của giám khảo đó. Phiếu và điểm là một: phiếu chưa nộp có `submitted_at` rỗng, và lần nộp là một cập nhật có điều kiện "`submitted_at` còn rỗng", nên phiếu đã nộp là cuối cùng. Điểm từng tiêu chí, điểm tổng và band đều có thể rỗng: phiếu "không chấm được" để trống tất cả. `response.machine_seen` ghi ai đã mở kết quả của máy cho bài đó, lần đầu; cùng với người đã duyệt bài (`response.reviews`) nó quyết định ai không còn mù với một bài (mục 4.13, bất biến 4b).
 
-**Ánh xạ sang mã nguồn.** Lược đồ là hằng `SCHEMA` trong `src/aicefr/storage/rating_repository.py`; `RatingRepository` được tạo trong `src/aicefr/api/main.py` **sau** `Repository`, vì bảng của nó tham chiếu `response`. Bốn cột của `response` vẽ ở đây là bốn điều kiện của `RatingRepository.eligible`: `purpose = 'assessment'`, `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, `audio_path` khác NULL và tệp còn trên đĩa, `account_id` thuộc tập người đang đồng ý cho nghiên cứu (`ConsentRepository.accounts_allowing_research`). Điểm của máy dùng để so **không** có cột riêng: biểu thức `_MACHINE` đọc `old_score`, `old_band` của dòng `review_action` đầu tiên nếu bài đã được duyệt, nếu chưa thì đọc `response.overall_0_6`, `overall_band` — vì quyết định của giảng viên ghi đè hai cột đó, còn lần duyệt đầu giữ lại kết quả gốc của máy. Cùng biểu thức dựng cờ `flagged` (bài đang `REVIEW_REQUIRED` hoặc đã có lần duyệt) mà báo cáo dùng cho câu hỏi về định tuyến (RQ4).
+**Ánh xạ sang mã nguồn.** `RatingBatch` và `Rating` ở `src/aicefr/storage/rating_repository.py`; `Study` và `Participant` ở `study_repository.py`. Điều kiện chọn bài của `RatingRepository.eligible`: `purpose = 'assessment'`, `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, có bản ghi âm, chủ bài đã đồng ý điều khoản (D058). Điểm của máy dùng để so **không** có trường riêng: `_machine` đọc `old_score`, `old_band` của lần duyệt đầu trong `response.reviews` nếu bài đã được duyệt, nếu chưa thì đọc `overall_0_6`, `overall_band` — vì quyết định của giảng viên ghi đè hai trường đó. Cùng hàm dựng cờ `flagged` (bài đang `REVIEW_REQUIRED` hoặc đã có lần duyệt) mà báo cáo dùng cho câu hỏi về định tuyến (RQ4).
 
 #### 3.5c. Lược đồ nghiên cứu dự kiến (chưa hiện thực)
 
@@ -1440,9 +1396,9 @@ erDiagram
 File: `docs/sdd/diagrams/06_deployment.mmd`
 
 ```mermaid
-%% SDD - Diagram 06: Deployment diagram - sau D044
+%% SDD - Diagram 06: Deployment diagram - sau D044, D048, D050
 %% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
-%% (core, speech, web), PostgreSQL mot schema core, RabbitMQ, hai volume. Mot
+%% (core, speech, web), MongoDB mot database aicefr, Redis (BullMQ), hai volume. Mot
 %% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
 flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
@@ -1451,8 +1407,8 @@ flowchart TB
         CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
         WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
-        PG[("PostgreSQL 16<br/>schema core, một vai trò")]
-        MQ[["RabbitMQ<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        PG[("MongoDB 7.0<br/>database aicefr")]
+        MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]
         V2[("Volume models<br/>cache model Whisper")]
     end
@@ -1802,8 +1758,8 @@ trong cùng một Pull Request; người review Pull Request có trách nhiệm 
 
 **Thuật toán.** Thiết kế ban đầu dự kiến hai nhánh song song rồi hợp nhất. **Mã hiện tại chỉ có nhánh số**; các bước đánh dấu bên dưới **chưa hiện thực**.
 
-1. *Nhánh số (đã hiện thực):* `RidgeScorer` nạp một mô hình hồi quy tuyến tính đã hiệu chỉnh từ tệp JSON người đọc được (`src/aicefr/scoring/models/ridge_resp_v1.json`) thay vì tệp pickle, rồi chuẩn hóa z-score bằng `mean`/`scale` lưu ngay trong tệp đó. Cho ra `s_num`, kẹp về [1.0, 6.0]. Lớp `RidgeModel` riêng **chưa hiện thực** — trọng số, `feature_order`, ngưỡng band và mọi version provenance đều đọc từ tệp JSON.
-2. *Nhánh văn bản (**đã huấn luyện ngoài app, chưa tích hợp** — cập nhật 15/09/2026):* thiết kế ban đầu ghi `bert-base-uncased`, cắt ở 256 token. Mô hình thực tế đã huấn luyện là **`microsoft/deberta-v3-base`**, hồi quy một điểm đầu ra, `max_length = 512`, 3 epoch, lr `2e-5`, batch hiệu dụng 16, trên 12.218 mẫu train của P1/P3/P4/P5. PCC overall 0,8273 trên dev. Lớp `BertTextGrader` trong mã **chưa có**: mô hình mới sống trong `notebooks/`, chưa thành adapter của cổng `Scorer`. Cách đọc con số và những gì phải làm trước khi tích hợp: `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
+1. *Nhánh số (đã hiện thực):* `RidgeScorer` nạp một mô hình hồi quy tuyến tính đã hiệu chỉnh từ tệp JSON người đọc được (`$AICEFR_MODEL_DIR/ridge_resp_v1.json`, nằm ngoài repo và được kiểm SHA-256 ghim sẵn — W7-S01) thay vì tệp pickle, rồi chuẩn hóa z-score bằng `mean`/`scale` lưu ngay trong tệp đó. Cho ra `s_num`, kẹp về [1.0, 6.0]. Lớp `RidgeModel` riêng **chưa hiện thực** — trọng số, `feature_order`, ngưỡng band và mọi version provenance đều đọc từ tệp JSON.
+2. *Nhánh văn bản (**đã huấn luyện ngoài app, chưa tích hợp** — cập nhật 15/09/2026):* thiết kế ban đầu ghi `bert-base-uncased`, cắt ở 256 token. Mô hình thực tế đã huấn luyện là **`microsoft/deberta-v3-base`**, hồi quy một điểm đầu ra, `max_length = 512`, 3 epoch, lr `2e-5`, batch hiệu dụng 16, trên phần train của P1/P3/P4/P5; đã đánh giá trên dev (số đo không công bố khi CUP&A chưa cho phép). Lớp `BertTextGrader` trong mã **chưa có**: mô hình mới sống trong `notebooks/`, chưa thành adapter của cổng `Scorer`. Cách đọc con số và những gì phải làm trước khi tích hợp: `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
 3. *Hợp nhất (**chưa hiện thực**):* `s = w * s_num + (1 - w) * s_txt`, với `w = 0.6` (ưu tiên đặc trưng đo được vì giải thích được trước hội đồng). Hiện `s = s_num`.
 4. *Ánh xạ band (đã hiện thực):* hàm `to_band` đọc `band_thresholds` từ tệp mô hình: dưới ngưỡng `A2_B1` → A2; dưới `B1_B2` → B1; còn lại → B2.
 5. *Gần ranh giới (đã hiện thực):* hàm `near_boundary` gắn `SCORE_NEAR_BOUNDARY` khi `abs(s - ngưỡng) <= boundary_margin`. Trường `boundary_distance` dạng số **chưa hiện thực**.
@@ -2399,6 +2355,105 @@ sequenceDiagram
 
 **Một tiến trình.** `aicefr.api.main` dựng cả ba dịch vụ với facade cục bộ và bus trong tiến trình — cùng router, cùng quy tắc, chỉ khác dây nối. Kiểm thử chạy trên dạng này; `tests/test_services_split.py` chạy ba ứng dụng tách rời (web gọi core qua HTTP) sau một gateway giả lập; CI chạy thêm toàn bộ bộ kiểm thử trên PostgreSQL và bus trên RabbitMQ thật.
 
+### 4.19. Lược đồ có phiên bản — D045 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "chốt database" (14/10/2026). Đến D044, mỗi repository tự tạo bảng của mình bằng `CREATE TABLE IF NOT EXISTS` và tự thêm cột lúc khởi động (`add_columns`). Cách đó không biết kho đang ở phiên bản nào, và một lần sửa chuỗi `SCHEMA` có thể lọt qua không ai thấy.
+
+**Thiết kế.**
+- **Migration và cách áp dụng.** `src/aicefr/storage/migrations.py` giữ danh sách `MIGRATIONS` đánh số liên tục. Phiên bản 1 là lược đồ của D044, dựng bằng chính các repository. Từ phiên bản 2 trở đi là câu SQL kiểu SQLite, dịch sang PostgreSQL như mọi câu khác. Mỗi migration chạy trong một giao dịch: lấy khoá ghi của kho (`BEGIN IMMEDIATE`, khoá advisory trên PostgreSQL), kiểm lại xem còn chờ không, rồi ghi vào `schema_migrations`. Dịch vụ `core` chạy `migrate` trước khi dựng bốn phần. Repository của bảng mới (`PlanRepository`) gọi `ensure_current` thay vì tự tạo bảng.
+- **Bản chụp lược đồ.** Lược đồ chuẩn được commit ở `docs/db/schema_core.sql`, sinh bằng `python -m aicefr.db_cli snapshot`. `tests/test_schema.py` so kho mới với tệp này nên thay đổi thiếu migration sẽ làm kiểm thử đổ. Từ điển dữ liệu ở `docs/db/TU_DIEN_DU_LIEU.md`, sơ đồ ở `docs/db/erd_core.mmd`.
+- **Phiên bản 2.** Thêm bảng `learning_plan` cho D046.
+
+**Không dùng Alembic.** SDD từng dự kiến SQLAlchemy và Alembic. Chuyển sang ORM nghĩa là viết lại chín repository đang chạy trên hai phương ngữ (D043), rủi ro hồi quy lớn hơn lợi ích. Bộ chạy migration ở đây chỉ khoảng 150 dòng và dùng lại lớp dịch phương ngữ có sẵn.
+
+**Cập nhật theo D048 (21/10/2026, đề xuất).** Kho chuyển sang MongoDB. Thiết kế phiên bản giữ nguyên ý: sổ `schema_migrations` (một document mỗi phiên bản, chỉ mục duy nhất), phiên bản 1 dựng bằng repository, phiên bản 2 tạo chỉ mục của `learning_plan`. Khác với SQL: cấu trúc của một collection là các chỉ mục của nó, nên bản chụp chuẩn là `docs/db/schema_core.json` (collection và chỉ mục). Không còn khoá ghi hay giao dịch: mọi migration phải chạy lại được (tạo chỉ mục đã có là không làm gì), hai tiến trình cùng nâng thì cả hai chạy nhưng chỉ một ghi sổ. Đoạn "không dùng Alembic" ở trên không còn áp dụng.
+
+### 4.20. Model ghép lộ trình — D046 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "một model AI tạo lộ trình từ những lộ trình đã có, theo hướng giáo viên hoặc sinh viên muốn" (14/10/2026). D025 cam kết không model ngôn ngữ nào viết nội dung bài học. Vì vậy model **chọn và xếp thứ tự** bài đã xuất bản, không sinh câu chữ (BR-40).
+
+**Ba phần** (`src/aicefr/lessons/composer.py`, hàm thuần, tất định):
+1. **Mục tiêu.** Các ô của form, cộng một câu tự do. `parse_wish` đọc ra chủ đề, tiêu chí, âm cần luyện và band bằng một danh sách từ cố định, không phân biệt có dấu hay không. Cụm nhiều từ phải khớp nguyên từ, nên "ẩm thực" không bị hiểu là âm th.
+2. **Mức phù hợp.** Trung bình có trọng số (`WEIGHTS`) của sáu tín hiệu: band, tiêu chí, chủ đề, từ khớp (TF-IDF giữa mục tiêu và nội dung bài), âm cần luyện (tỷ lệ từ có cơ hội luyện âm đó, theo `pronunciation.vietnamese.opportunities`) và tiến độ của sinh viên. Tín hiệu mà mục tiêu không nhắc tới cho 0,5 với mọi bài nên không làm đổi thứ hạng. Bài trùng giữa hai lộ trình chỉ tính một lần. Bài giống nhau được trải ra bằng maximal marginal relevance. Bài ngoài band đã chọn chỉ dùng để bù khi thiếu, và có cảnh báo.
+3. **Thứ tự học từ lộ trình hiện có.** Mỗi cặp bài liền nhau trong một lộ trình là một ví dụ "bài này trước bài kia". Hồi quy logistic theo cặp, không hệ số tự do, chạy trên bốn đặc trưng: band, số bước, độ dài văn bản, độ khó. Độ khó lấy từ tỷ lệ đạt khi bài có ít nhất 10 lượt luyện. Model dùng quy tắc cố định (band rồi độ khó) khi chưa đủ 12 cặp, hoặc khi thứ tự học được không xếp đúng các cặp hiện có hơn quy tắc đó. Lộ trình nói rõ đã dùng cách nào và khớp bao nhiêu phần trăm.
+
+**Hai lối vào** (`services/core/learning/plans_api.py`):
+- **Người học** (FR-81). Ứng viên chỉ gồm bài đã xuất bản trong lộ trình đã xuất bản. Band bắt đầu từ bài đánh giá gần nhất. Tiêu chí yếu nhất đi qua cổng của thực nghiệm phản hồi (`study_api.latest_assessment`). Âm yếu lấy từ hồ sơ phát âm D039 (tỷ lệ lỗi ≥ 25 % khi đủ cơ hội). Lộ trình lưu trong `learning_plan`; mỗi người có một lộ trình đang dùng; nó có trong bản xuất cá nhân và bị xoá cùng dữ liệu.
+- **Giảng viên** (FR-82). Ứng viên là bài đã xuất bản của mọi lộ trình chưa lưu trữ. Đề xuất được lưu để chỉ người tạo mới lưu được. Lưu thành lộ trình **nháp** gồm bản sao (mã mới, giữ khoá âm thanh và hình của cùng bản cài), nhóm theo band, có nhật ký `lesson.path.compose`.
+
+**Giới hạn đã biết.** Trọng số relevance là hằng số có lý do, chưa được hiệu chỉnh trên dữ liệu người dùng thật. Tín hiệu từ khớp chỉ có ích khi mục tiêu chứa từ tiếng Anh có trong bài. Với lộ trình mẫu hiện có (31 bài, 30 cặp), thứ tự học được không tốt hơn quy tắc cố định nên model dùng quy tắc đó và nói rõ.
+
+### 4.21. Triển khai lên máy chủ — D047 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu "deploy web" (14/10/2026).
+
+**Thiết kế.**
+- **Cấu hình.** `docker-compose.prod.yml` chồng lên `docker-compose.yml`. Thêm Caddy làm lối vào duy nhất ở cổng 80 và 443, tự cấp chứng chỉ Let's Encrypt cho `AICEFR_DOMAIN`. Gateway không mở cổng nào và lấy địa chỉ người dùng từ Caddy (chỉ tin mạng nội bộ). `core` và `web` chạy với `AICEFR_HTTPS_ONLY=1` và `AICEFR_PUBLIC_URL` là địa chỉ https. Mọi dịch vụ xoay vòng nhật ký.
+- **Kịch bản trong `deploy/vps/`.** `bootstrap.sh` cài Docker, tường lửa và swap cho Ubuntu 24.04. `deploy.sh` rsync mã lên máy chủ, không bao giờ chép `.env` hay dữ liệu, rồi dựng lại. `backup.sh` và `restore.sh` sao lưu và khôi phục PostgreSQL cùng volume `uploads`, có checksum, giữ 14 ngày.
+- **Hướng dẫn:** `docs/plan/TRIEN_KHAI_VPS.md`.
+- **Giới hạn.** Chỉ dùng phi thương mại vì mô hình chấm học từ Speak & Improve theo giấy phép nghiên cứu. Không mở đăng ký. Không thu tiền thật.
+
+### 4.22. Tính lượt trên kênh NetID — D049 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án muốn đưa phần AI lên NetID và thu theo lượt bằng IDPoint (21/10/2026). Thu theo lượt ngược với BR-29, BR-30 và FR-W7 của bản dành cho trường, nên chỉ bật trên một bản triển khai riêng cho kênh NetID.
+
+**Thiết kế.**
+- **Dịch vụ `metering`** (`services/core/metering`): facade `hold` / `settle` / `is_enabled`, trang `GET /api/v1/me/credits`, `POST /api/v1/admin/credits/grant`. Kho riêng theo `AICEFR_METERING_DB`, mặc định dùng kho của `core`.
+- **Sổ lượt** (`storage/metering_repository.py`): `usage_ledger` duy nhất theo (`key`, `action`); `credit_wallet`; `free_quota` theo chu kỳ; `credit_grant` duy nhất theo (`source`, `ref`). Không có giao dịch nhiều document. Lượt miễn phí lấy bằng so-sánh-rồi-ghi trên số đã dùng; ví trừ bằng cập nhật có điều kiện `balance >= cần`. Chuyển `held` sang trạng thái khác bằng một cập nhật có điều kiện, nên chốt hai lần không đổi gì.
+- **Móc vào `assessment`:** giữ chỗ sau khi tệp ghi âm qua kiểm định dạng, trước khi lưu bài; hết lượt thì 402 và xoá tệp tạm. `scoring.settle_charge` chạy sau mọi kết cục (có kết quả, lỗi, quá hạn) và không bao giờ làm hỏng việc lưu kết quả. Một vòng quét hoàn các chỗ giữ cũ hơn hai lần thời gian chạy tối đa của job.
+- **Bảng giá** (`metering/pricing.py`): từ D057 là `price-v3-per-recording`, theo bài và phút, đo kèm token Whisper (mục 4.30); đơn vị là 1/1000 lượt, mỗi bút toán ghi phiên bản giá và số token.
+
+**Chưa làm:** adapter API IDPoint của NetID, đối soát mỗi ngày, tính lượt cho bước luyện trong bài học và lộ trình, lối vào API riêng cho NetID, Redis/BullMQ.
+
+### 4.23. Bus trên Redis và BullMQ — D050 (đề xuất)
+
+**Vì sao có mục này.** Chủ dự án yêu cầu dùng job worker BullMQ/Redis (21/10/2026). Redis còn dùng được cho giới hạn tần suất và bộ nhớ đệm, nên một hạ tầng thay được hai.
+
+**Thiết kế** (`platform/redis_bus.py`, cùng giao diện `MessageBus` với `InlineBus`):
+- **Việc** (`send` / `consume`): một hàng đợi BullMQ cho mỗi tên. Thử lại 3 lần, giãn cách mũ từ 2 giây. `jobId` là mã bài với `speech.score`, nên nộp lại không chấm hai lần. Ưu tiên 1 cho bài đánh giá, 5 cho bài luyện tập. Handler chạy trên luồng riêng để vòng lặp asyncio của BullMQ vẫn gia hạn khoá trong lúc Whisper chạy; worker chết thì khoá hết hạn và worker khác nhận việc. Việc xong giữ 1.000 cái gần nhất, việc hỏng giữ 5.000.
+- **Sự kiện** (`publish` / `subscribe`): mỗi chủ đề một Redis Stream, mỗi dịch vụ đăng ký là một consumer group, đọc xong thì `XACK`. Nhóm mới bắt đầu từ thời điểm đăng ký, không đọc lại lịch sử.
+- **Hỏi đáp** (`call` / `serve`): yêu cầu đẩy vào danh sách kèm hạn chót, máy trả lời đẩy kết quả vào khoá riêng có hạn 60 giây; quá giờ thì `BusTimeout`. Máy trả lời lỗi thì trả `{"error": "internal"}` ngay, không bắt người gọi chờ hết giờ.
+- **Triển khai:** `redis:7-alpine`, có mật khẩu, bật AOF để việc đang chờ còn sau khi khởi động lại, `maxmemory-policy noeviction` theo yêu cầu của BullMQ.
+
+### 4.24. Kho riêng cho từng dịch vụ, object storage, giám sát — D051 (đề xuất)
+
+**Kho dữ liệu riêng.** `learning` đọc `AICEFR_LEARNING_DB`, `metering` đọc `AICEFR_METERING_DB`; không đặt thì dùng kho của `core`. Compose dùng ba database `aicefr`, `aicefr_learning`, `aicefr_metering`. Người dùng `core` có `readWrite` trên ba database này và không có quyền ở đâu khác. Không dịch vụ nào đọc database của dịch vụ khác: xoá dữ liệu một người và xuất dữ liệu cá nhân đi qua facade như trước. `PlanRepository` tự tạo chỉ mục của mình, vì database riêng của `learning` không chạy migration của `core`. Sao lưu: một tệp `mongodump` cho mỗi database.
+
+**Object storage.** Cổng `BlobStore` có thêm `size` và `keys`. Mọi chỗ trước đây làm việc thẳng với tệp đều đi qua cổng này: nộp bài, nghe lại (dùng `FileResponse` khi có tệp cục bộ, gửi byte khi không có), chấm mù, xoá dữ liệu, lưu trữ có thời hạn, dọn tệp mồ côi. Bài nộp lưu đường dẫn tệp khi kho là thư mục, lưu khoá khi kho là object storage; `key_of` đọc khoá từ cả hai dạng, nên bản ghi cũ vẫn dùng được. `S3BlobStore` dùng thư viện `minio` và tạo bucket ở lần dùng đầu. Hai instance `core` hoặc `speech` đọc chung một bucket.
+
+**Giám sát.** `observability` có bộ đếm và histogram kèm nhãn, xuất theo định dạng Prometheus. Nhãn chỉ gồm giá trị hữu hạn, không có dữ liệu cá nhân: bước, hàng đợi, kết cục, route mẫu.
+- **Số đo:** thời gian mỗi bước pipeline (`qc`, `vad`, `asr`, `features`, `scoring`), thời gian chờ trong hàng đợi chấm, thời gian xử lý mỗi việc chấm theo mục đích (cơ sở đặt giá một lượt, mục 4 của thiết kế D049), độ trễ HTTP, số đơn vị đã thu và đã hoàn.
+- **Thu thập và hiển thị:** mỗi dịch vụ phục vụ `/metrics`; gateway trả 404 cho đường này. Prometheus có 4 luật cảnh báo: dịch vụ không trả lời, việc chấm lỗi, hàng đợi chậm, lỗi 5xx. Grafana có bảng dựng sẵn.
+
+### 4.25. Hiệu chuẩn band tuỳ chọn — D052 (đề xuất)
+
+Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình hiệu chuẩn vẫn là một mô hình ridge: hệ số nhân lambda, hệ số chặn dời theo mu. Vì vậy nó là một artifact bình thường (`ridge_resp_v2_cal.json`), đi qua `RidgeScorer` không đổi dòng nào; `contributions()` vẫn tính theo điểm hiển thị, và ngưỡng để kiểm điểm giảng viên sửa là ngưỡng của chính mô hình đã chấm. Khoảng CV+ đi kèm dùng năm mô hình fold giãn cùng lambda. Công cụ sinh: `tools/calibrate_bands.py`.
+
+### 4.26. Gói lượt — D053 (đề xuất)
+
+Đơn `kind = credits` dùng lại máy trạng thái đơn của D033/D035; khác ở bước cuối: thay vì cấp giấy phép, `BillingService.credit_order` gọi `metering.credit(account_id, runs, order_id)`. Metering cộng một lần nhờ chỉ mục duy nhất (`source`, `ref`) của `credit_grant`, còn billing ghi `credited_at` sau khi cộng xong. Nếu lời gọi lỗi, đơn vẫn đã thanh toán và được cộng ở lần gọi sau.
+
+### 4.27. Lớp học và giao bài — D054 (đề xuất)
+
+Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
+
+### 4.28. Nhắc việc — D055 (đề xuất)
+
+`GET /api/v1/me/nudges` ở dịch vụ web (gateway chuyển như `/api/v1/me/badges`), gom số liệu từ `assessment` (bài được giao, mục tiêu hôm nay), `learning` (ôn tập) và `metering` (lượt còn lại), rồi áp quy tắc thuần `practice/nudges.py`.
+
+### 4.29. Tự nghe lại có mốc đối chứng — D056 (đề xuất)
+
+`report/replay.py` chọn đoạn từ evidence có mốc thời gian và từ bản chép (đoạn đối chứng cần ít nhất 3 từ, cách mọi cờ 1 giây); hạt giống là băm của mã bài nên mỗi lần mở đều ra cùng các đoạn. Nhãn lưu trong `replay_label` (migration 5) kèm nguồn đoạn, để phân tích không phải tính lại. API: `GET/POST /api/v1/responses/{id}/replay[/{moment}]`, `GET /api/v1/me/replay-labels`, `GET /api/v1/admin/replay/report`.
+
+### 4.30. Bảng giá theo bài, đo kèm token — D057 (đề xuất)
+
+`PriceList` gồm lượt cho bài tới 1 phút, lượt cho mỗi phút thêm, hệ số bài luyện tập và số IDPoint mỗi lượt. Các giá trị đọc từ `AICEFR_PRICE_FIRST_MINUTE_RUNS`, `AICEFR_PRICE_EXTRA_MINUTE_RUNS`, `AICEFR_PRICE_PRACTICE_FACTOR`, `AICEFR_IDPOINT_PER_RUN` (mặc định 1,0 / 0,7 / 0,5 / 2.000 theo bảng giá team chốt ngày 24/10/2026) và được truyền vào `MeteringFacade`.
+
+- **Giữ chỗ:** `hold_for` tính theo thời lượng tối đa của đề; `GET /api/v1/me/credits/quote` trả giá đó để trang Nộp bài hiện trước khi ghi âm.
+- **Chốt:** `scoring.settle_charge` gửi thời lượng, `Transcript.output_tokens` và số từ. Facade thu theo thời lượng thật và ghi `input_tokens`, `output_tokens`, `usage_estimated` vào bút toán, dùng để tính giá vốn và đối soát với NetID.
+
+Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+
 ## 5. Thiết kế cơ sở dữ liệu
 
 ### 5.1. Bảng, khóa và ràng buộc
@@ -2649,7 +2704,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | 10 | `FeatureExtractor` | 02, 03, 04 | `src/aicefr/features/extract.py` | Lớp thật; 19 đặc trưng, `feature_version = "v3"` |
 | 11 | `Scorer` (port) | 02, 03, 04 | `src/aicefr/ports.py` | `Protocol`; lõi chỉ nhắc tên này |
 | 12 | `RidgeScorer` (adapter) | 02, 03, 04 | `src/aicefr/scoring/scorer.py` | Hồi quy tuyến tính hiệu chỉnh; `RidgeModel` riêng **chưa hiện thực** |
-| 13 | Trọng số mô hình | 04 | `src/aicefr/scoring/models/ridge_resp_v1.json` | JSON đọc được bằng mắt, không dùng pickle |
+| 13 | Trọng số mô hình | 04 | `$AICEFR_MODEL_DIR/ridge_resp_v1.json` (ngoài repo; SHA-256 ghim trong `src/aicefr/scoring/artifacts.py`) | JSON đọc được bằng mắt, không dùng pickle; test dùng bản tổng hợp `tests/fixtures/models` |
 | 14 | `BertTextGrader` | 04 | `notebooks/deberta_cefr_thang.ipynb` | **Chưa hiện thực trong app.** Mô hình DeBERTa đã huấn luyện và bàn giao (mục 4.5 bước 2), nhưng chưa có adapter nào của cổng `Scorer`; bước hợp nhất cũng chưa |
 | 15 | `EvidenceBuilder` | 02, 03, 04 | `src/aicefr/report/evidence.py` | Lớp thật; ngưỡng `lowProb`, `longPauseS`, `maxPerKind` |
 | 16 | `ReviewRouter` | 02, 03, 04 | `src/aicefr/review/router.py` | Lớp thật; ngưỡng duy nhất là thuộc tính `lowAsrConf` |
@@ -2751,9 +2806,9 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: mỗi điểm số truy ngược được tới các đặc trưng cụ thể; độ lệch giữa hai nhánh trở thành tín hiệu confidence hữu ích. Tiêu cực: trọng số cố định chưa tối ưu; (d) bị loại vì dữ liệu pilot quá nhỏ để học thêm một tầng nữa mà không overfit.
 - **Trạng thái hiện thực (cập nhật 15/09/2026).** Mã **đang chạy** vẫn chỉ có nhánh (a): `RidgeScorer` chạy hồi quy tuyến tính đã hiệu chỉnh, nạp từ tệp JSON. `confidence` của từng tiêu chí vì thế vẫn là tỷ lệ đặc trưng tính được, **không** phải độ lệch giữa hai nhánh như phương án (c) mô tả.
 
-  Nhánh (b) thì **đã có mô hình**: `deberta-v3-base` fine-tune trên bản chép lời, PCC overall 0,8273 trên dev (`docs/reports/deberta_cefr_finetune_thang.md`, hai notebook trong `notebooks/`). Trọng số và dự đoán từng mẫu **không** nằm trong repo — corpus Speak & Improve là phi thương mại, không được phát tán.
+  Nhánh (b) thì **đã có mô hình**: `deberta-v3-base` fine-tune trên bản chép lời, đã đánh giá trên dev (số đo không công bố khi CUP&A chưa cho phép; `docs/reports/deberta_cefr_finetune_thang.md`, hai notebook trong `notebooks/`). Trọng số và dự đoán từng mẫu **không** nằm trong repo — corpus Speak & Improve là phi thương mại, không được phát tán.
 
-  Bước hợp nhất vẫn **chưa hiện thực**, và không phải vì thiếu thời gian. Trọng số `w = 0.6` chỉ có nghĩa khi đo được hai nhánh trên **cùng một tập mà cả hai đều chưa từng thấy**, và tập đó hiện **không tồn tại**: `ridge_resp_v2` huấn luyện trên chính 876 mẫu dev P3+P4 mà DeBERTa dùng làm tập đánh giá. Chốt một trọng số trước khi có tập so sánh thứ ba là chốt một con số không ai kiểm chứng được. Phân tích đầy đủ ở `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
+  Bước hợp nhất vẫn **chưa hiện thực**, và không phải vì thiếu thời gian. Trọng số `w = 0.6` chỉ có nghĩa khi đo được hai nhánh trên **cùng một tập mà cả hai đều chưa từng thấy**, và tập đó hiện **không tồn tại**: `ridge_resp_v2` huấn luyện trên chính các mẫu dev P3+P4 mà DeBERTa dùng làm tập đánh giá. Chốt một trọng số trước khi có tập so sánh thứ ba là chốt một con số không ai kiểm chứng được. Phân tích đầy đủ ở `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
 
 ### ADR-03 — SQLite cho phát triển, PostgreSQL cho staging
 
@@ -2812,7 +2867,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 
 ### ADR-10 — Thành tựu ghi công sức, lưu khi đạt, không bảng xếp hạng
 
-- **Bối cảnh.** Chủ dự án muốn tăng mức gắn bó của người học bằng chuỗi ngày và thành tựu như các ứng dụng học phổ biến. Hai rủi ro đi kèm: thưởng theo điểm dạy người học rằng con số mới là mục tiêu, trong khi điểm của hệ thống có sai số cỡ nửa band (RMSE 0,53 trên thang 0–6); và so với bạn cùng lớp làm người đứng cuối nản lòng (Hanus và Fox 2015, khoá học có huy hiệu kèm bảng xếp hạng).
+- **Bối cảnh.** Chủ dự án muốn tăng mức gắn bó của người học bằng chuỗi ngày và thành tựu như các ứng dụng học phổ biến. Hai rủi ro đi kèm: thưởng theo điểm dạy người học rằng con số mới là mục tiêu, trong khi điểm của hệ thống có sai số cỡ nửa band trên thang 0–6; và so với bạn cùng lớp làm người đứng cuối nản lòng (Hanus và Fox 2015, khoá học có huy hiệu kèm bảng xếp hạng).
 - **Phương án.** (a) Tính thành tựu mỗi lần xem, không lưu. (b) Lưu khi đạt, không bao giờ lấy lại. (c) Điểm kinh nghiệm và bảng xếp hạng theo lớp.
 - **Chọn.** (b), chỉ trên dữ kiện công sức; loại (c).
 - **Hệ quả.** Tích cực: ngày đạt có thật để ghi; xoá một lượt luyện — quyền của người học — hay một lần giảng viên sửa nhận định không làm người học mất gì, nên không ai bị phạt vì trung thực. Tiêu cực: một bảng nữa phải xoá khi xoá dữ liệu người học (đã nằm trong `erase_account`); thành tựu có thể còn sau khi dữ kiện của nó không còn, và điều đó được nói rõ ở BR-28 thay vì giấu.
@@ -2866,6 +2921,30 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: còn hai tiến trình web và một vai trò cơ sở dữ liệu; lời gọi giữa tài khoản, bài nộp, bài học, gói thành lời gọi hàm; `speech` vẫn tách riêng với ảnh nặng và không giữ khoá. Tiêu cực: một lỗi trong `core` ảnh hưởng mọi API; vai trò PostgreSQL không còn chặn phần này đọc bảng phần kia — chỉ quy ước mã chặn. Giảm thiểu: facade và kiểm thử ranh giới giữ nguyên, tách lại chỉ là đổi dây nối.
 - **Trạng thái hiện thực.** Đã hiện thực ở D044 (mục 4.18, Hình 6).
 
+### ADR-17 — Lược đồ có phiên bản bằng bộ chạy migration nhỏ, không Alembic (đề xuất)
+
+- **Bối cảnh.** Phải "chốt database"; lược đồ do chín repository tự tạo, không có phiên bản (D045).
+- **Phương án.** (a) Chỉ ghi tài liệu. (b) SQLAlchemy và Alembic. (c) Bộ chạy migration riêng: phiên bản 1 là lược đồ hiện có, sau đó là các migration SQL đánh số, kèm bản chụp lược đồ được kiểm thử.
+- **Chọn.** (c). Đây là đề xuất, chờ chủ dự án xác nhận.
+- **Hệ quả.** Tích cực: biết kho ở phiên bản nào, tự nâng cấp khi khởi động, không đổi lược đồ lén được. Tiêu cực: phiên bản 1 vẫn dựng bằng repository nên chuỗi `SCHEMA` cũ không được sửa nữa; chưa có migration lùi phiên bản. Giảm thiểu: sao lưu trước khi nâng (D047).
+- **Trạng thái hiện thực.** Đã hiện thực (mục 4.19).
+
+### ADR-18 — Model lộ trình chọn và xếp bài, không viết bài (đề xuất)
+
+- **Bối cảnh.** Cần model tạo lộ trình theo ý giáo viên hoặc sinh viên. D025 cấm model ngôn ngữ viết nội dung bài; dự án ưu tiên chạy cục bộ và mô hình giải thích được (AGENTS.md).
+- **Phương án.** (a) Ghép từ bài có sẵn: chấm mức phù hợp giải thích được, thứ tự học từ lộ trình hiện có. (b) LLM cục bộ viết bài mới. (c) LLM qua API.
+- **Chọn.** (a): giữ D025, không thêm phụ thuộc hay dịch vụ ngoài (chỉ dùng `numpy` sẵn có), mỗi lựa chọn có lý do. Đây là đề xuất.
+- **Hệ quả.** Lộ trình chỉ tốt bằng kho bài hiện có; ít bài thì có cảnh báo, không bịa bài. Trọng số cần hiệu chỉnh khi có dữ liệu người dùng thật.
+- **Trạng thái hiện thực.** Đã hiện thực (mục 4.20).
+
+### ADR-19 — Một máy chủ, Docker Compose, Caddy cấp HTTPS (đề xuất)
+
+- **Bối cảnh.** Cần đưa hệ thống lên mạng cho GVHD, nhóm và sinh viên khảo sát (D047).
+- **Phương án.** (a) Một VPS chạy đúng bộ compose hiện có, Caddy phía trước. (b) Máy cá nhân cộng Cloudflare Tunnel. (c) PaaS (Render, Railway, Fly.io).
+- **Chọn.** (a): ít thay đổi nhất so với bộ đã kiểm (D044), chi phí dự đoán được, dữ liệu nằm trên một máy. Đây là đề xuất; nhà cung cấp và tên miền do chủ dự án chọn.
+- **Hệ quả.** Một điểm hỏng duy nhất; sao lưu nằm trên cùng máy cho tới khi có nơi lưu ngoài.
+- **Trạng thái hiện thực.** Bộ cấu hình và kịch bản đã có, đã chạy thử cục bộ; chưa triển khai lên máy chủ thật.
+
 ---
 
 ## 9. Rủi ro thiết kế và phương án dự phòng
@@ -2893,7 +2972,8 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/01b_usecase_giangvien.mmd` | Use case b | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/01c_usecase_quantri.mmd` | Use case c | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/02_class.drawio` | Sơ đồ lớp | draw.io |
-| `docs/sdd/diagrams/02b_kien_truc.puml` | Kiến trúc: cổng và bộ chuyển đổi | PlantUML |
+| `docs/sdd/diagrams/02b_kien_truc.puml` | Kiến trúc tổng thể | PlantUML |
+| `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | Cổng và bộ chuyển đổi | PlantUML |
 | `docs/sdd/diagrams/03_sequence.mmd` | Sequence | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/04_activity.mmd` | Activity | Mermaid `flowchart TD` |
 | `docs/sdd/diagrams/05_erd.mmd` | ERD chấm điểm và vận hành | Mermaid `erDiagram` |

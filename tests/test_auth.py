@@ -180,7 +180,7 @@ def test_database_never_stores_raw_session_token(app) -> None:
     lets nobody impersonate any session."""
     c = login_as(app, "SV-001", "student")
     token = c.cookies[COOKIE_NAME]
-    stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("auth_sessions").find()]
+    stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("session").find()]
     assert token not in stored_hashes
     assert len(stored_hashes) == 1
 
@@ -274,10 +274,10 @@ def test_another_users_status_returns_404(app) -> None:
 def test_stuck_running_response_marked_failed(app, monkeypatch) -> None:
     """NFR-11: if the process dies halfway, a response must not sit in RUNNING forever."""
     from aicefr.api import main as m
-    from aicefr.contracts import Response, Status
+    from aicefr.contracts import Response, ResponseStatus
 
     m.repo.save(
-        Response(response_id="ket001", status=Status.RUNNING, config_version="v1"),
+        Response(response_id="ket001", status=ResponseStatus.RUNNING, config_version="v1"),
         "SV-001",
         "P3",
     )

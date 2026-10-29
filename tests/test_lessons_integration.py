@@ -39,7 +39,7 @@ from aicefr.contracts import (
     QcStatus,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
 )
 from aicefr.lessons.model import (
     STEP_RULES_VERSION,
@@ -173,7 +173,7 @@ def submit_assessment(c: TestClient) -> str:
 def scored(response_id: str, band: Band, weakest: list[Criterion]) -> Response:
     return Response(
         response_id=response_id,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         assessment=Assessment(
             overall_0_6=3.2, overall_band=band, model_version="test", weakest_criteria=weakest
@@ -744,19 +744,18 @@ def _old_sample_path(db: Path) -> LessonRepository:
 
     every = {ls.lesson_id: ls for unit in sample_lessons().values() for ls in unit}
     repo = LessonRepository(db, seed=False)
-    # The documents of the time: no topic, no record of the layout.
-    repo.col("lesson_path").insert_one(
+    # The documents of the time (in the D060 layout): no topic, no record of the layout.
+    units = [
+        {"unit_id": uid, "title": f"Chặng cũ {band}", "function": "", "band": band,
+         "criterion": None, "position": pos, "created_at": "2026-10-01"}
+        for pos, (uid, band) in enumerate(OLD_SAMPLE_UNITS.items(), 1)
+    ]  # fmt: skip
+    repo.col("path").insert_one(
         {"path_id": SAMPLE_PATH_ID, "title": "Lộ trình mẫu cũ", "description": "Mô tả cũ",
          "band_from": "A2", "band_to": "B2", "status": "published", "sample": 1,
          "created_by": "system", "created_at": "2026-10-01T00:00:00+00:00",
-         "updated_at": "2026-10-01T00:00:00+00:00"}
+         "updated_at": "2026-10-01T00:00:00+00:00", "units": units}
     )  # fmt: skip
-    for pos, (uid, band) in enumerate(OLD_SAMPLE_UNITS.items(), 1):
-        repo.col("lesson_unit").insert_one(
-            {"unit_id": uid, "path_id": SAMPLE_PATH_ID, "title": f"Chặng cũ {band}",
-             "function": "", "band": band, "criterion": None, "position": pos,
-             "created_at": "2026-10-01"}
-        )  # fmt: skip
     by_band = {"A2": "unit-sample-a2", "B1": "unit-sample-b1", "B2": "unit-sample-b2"}
     for uid, ids in OLD_SAMPLE_LESSONS.items():
         for lid in ids:
@@ -1029,7 +1028,11 @@ def test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media(tmp_path):
     lessons = LessonRepository(db, seed=False)
     result = StepResult(step_id="s1", kind=StepKind.KEYWORDS, passed=True)
     lessons.add_attempt("acc-1", "lesson-x", 1, result, audio_key="lesson-audio-a1.wav")
-    lessons.add_media("image", "image/png", "lesson-media-l1-s1-x.png", "GV-01")
+    # Media belong to the lesson they were uploaded for (D060).
+    unit = lessons.add_unit(lessons.create_path("P"), "U")
+    lesson = next(iter(sample_lessons().values()))[0].model_copy(update={"lesson_id": "l1"})
+    lessons.add_lesson(unit, lesson)
+    lessons.add_media("l1", "image", "image/png", "lesson-media-l1-s1-x.png", "GV-01")
     for name in ("lesson-audio-a1.wav", "lesson-media-l1-s1-x.png", "nobody.wav"):
         (uploads / name).write_bytes(b"RIFF")
 

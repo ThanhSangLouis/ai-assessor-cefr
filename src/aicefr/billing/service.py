@@ -42,10 +42,11 @@ from aicefr.billing.plans import (
     QUOTA_PER_SEAT,
     TERMS,
     License,
-    Plan,
+    OrderKind,
     PlanFeature,
     Quote,
     QuoteError,
+    ServicePlan,
     Standing,
 )
 from aicefr.practice.streak import LOCAL_TZ
@@ -54,11 +55,11 @@ logger = logging.getLogger(__name__)
 
 WARN_AT = (80, 100)  # percent of the month's expected assessments
 # What a gateway sees as the order's description: plain ASCII, as VNPay asks.
-PLAN_ASCII = {Plan.STANDARD: "Chuan", Plan.ADVANCED: "Nang cao"}
+PLAN_ASCII = {ServicePlan.STANDARD: "Chuan", ServicePlan.ADVANCED: "Nang cao"}
 # A learner's run pack (D053): an order of this kind credits runs, not a licence.
-CREDITS = "credits"
+CREDITS = OrderKind.CREDITS.value
 # The plans compared on the administrator's tab, in the order of the ladder.
-LADDER = (Plan.FREE, Plan.STANDARD, Plan.ADVANCED)
+LADDER = (ServicePlan.FREE, ServicePlan.STANDARD, ServicePlan.ADVANCED)
 # An order's gateway by name, for orders whose gateway is no longer offered.
 GATEWAY_TITLES = {
     "none": "Không cần thanh toán",
@@ -162,10 +163,10 @@ class BillingService:
     def _stamp(self) -> str:
         return self.now().astimezone(UTC).isoformat(timespec="seconds")
 
-    def prices(self) -> dict[Plan, int]:
+    def prices(self) -> dict[ServicePlan, int]:
         return {
-            Plan.STANDARD: int(self.settings.price_standard),
-            Plan.ADVANCED: int(self.settings.price_advanced),
+            ServicePlan.STANDARD: int(self.settings.price_standard),
+            ServicePlan.ADVANCED: int(self.settings.price_advanced),
         }
 
     def organization(self) -> str:
@@ -186,7 +187,7 @@ class BillingService:
         return License(
             license_id="trial-" + uuid.uuid4().hex[:8],
             organization=self.organization() or "Dùng thử",
-            plan=Plan.TRIAL,
+            plan=ServicePlan.TRIAL,
             seats=max(1, int(self.settings.trial_seats)),
             valid_from=today,
             valid_to=today + timedelta(days=days - 1),
@@ -240,7 +241,7 @@ class BillingService:
         if active + n <= cap:
             return
         free = max(0, cap - active)
-        if current.plan is Plan.FREE:
+        if current.plan is ServicePlan.FREE:
             raise SeatLimit(
                 f"Gói Miễn phí dùng cho tối đa {FREE_SEATS} sinh viên; trường đang có {active}, "
                 f"còn {free}: không đủ cho {n} tài khoản mới. Tài khoản đang có vẫn học bình "
@@ -279,7 +280,7 @@ class BillingService:
 
     # ------------------------------------------------------------ buying
 
-    def quote(self, plan: Plan, seats: int, months: int) -> Quote:
+    def quote(self, plan: ServicePlan, seats: int, months: int) -> Quote:
         if not self.enabled:
             raise BillingOff
         price = self.prices().get(plan)
@@ -289,7 +290,7 @@ class BillingService:
 
     def place_order(
         self,
-        plan: Plan,
+        plan: ServicePlan,
         seats: int,
         months: int,
         by_account: str,
@@ -332,7 +333,7 @@ class BillingService:
                 "gross_vnd": q.gross,
                 "credit_vnd": q.credit,
                 "amount_vnd": q.amount,
-                "kind": q.kind,
+                "kind": q.kind.value,
                 "starts_on": q.starts_on.isoformat(),
                 "ends_on": q.ends_on.isoformat(),
                 "status": OrderStatus.PENDING.value,
@@ -343,7 +344,7 @@ class BillingService:
                 "expires_at": self._expiry(now),
             }
         )
-        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind})
+        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind.value})
         self._audit(
             by_pseudonym,
             "billing.order",
@@ -451,7 +452,7 @@ class BillingService:
         self.store.create_order(
             {
                 "order_id": order_id,
-                "plan": CREDITS,
+                "plan": None,  # a pack of runs buys no service plan
                 "seats": runs,
                 "months": 0,
                 "unit_price": round(price / runs),
@@ -515,7 +516,7 @@ class BillingService:
         return License(
             license_id="L-" + order["order_id"],
             organization=self.organization() or "(chưa đặt tên tổ chức)",
-            plan=Plan(order["plan"]),
+            plan=ServicePlan(order["plan"]),
             seats=order["seats"],
             valid_from=date.fromisoformat(order["starts_on"]),
             valid_to=date.fromisoformat(order["ends_on"]),
@@ -625,7 +626,7 @@ class BillingService:
             "order_id": order["order_id"],
             "plan": order["plan"],
             "plan_name": (
-                f"Gói {order['seats']} lượt" if credits else PLAN_NAMES[Plan(order["plan"])]
+                f"Gói {order['seats']} lượt" if credits else PLAN_NAMES[ServicePlan(order["plan"])]
             ),
             "credited": bool(order.get("credited_at")),
             "seats": order["seats"],
@@ -678,7 +679,9 @@ class BillingService:
                 "plan": p.value,
                 "name": PLAN_NAMES[p],
                 "price_per_student_month": prices.get(p, 0),
-                "students": FREE_SEATS if p is Plan.FREE else None,  # None: as many as bought
+                "students": FREE_SEATS
+                if p is ServicePlan.FREE
+                else None,  # None: as many as bought
                 "quota_per_student": QUOTA_PER_SEAT[p],
                 "features": sorted(f.value for f in PLAN_FEATURES[p]),
                 "for_sale": p in PURCHASABLE,

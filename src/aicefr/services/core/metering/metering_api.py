@@ -9,10 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
+from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import (
     MAX_SECONDS,
     UNITS_PER_RUN,
-    Action,
     PriceList,
     as_idpoint,
     as_runs,
@@ -80,9 +80,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
         "wallet_runs": as_runs(balance["wallet"]),
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
         # What a one-minute recording costs, for people to read (D057).
-        "one_minute": {
-            a.value: as_runs(hold_for(s.prices, a, 60.0)) for a in (Action.ASSESS, Action.PRACTICE)
-        },
+        "one_minute": {a.value: as_runs(hold_for(s.prices, a, 60.0)) for a in TaskPurpose},
         "history": [_entry(e, s.prices) for e in s.store.history(account.account_id, limit=20)],
     }
 
@@ -90,7 +88,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
 @router.get("/api/v1/me/credits/quote", tags=["student"])
 def quote(
     seconds: float = Query(gt=0, le=MAX_SECONDS),
-    action: Action = Action.ASSESS,
+    action: TaskPurpose = TaskPurpose.ASSESSMENT,
     account: Account = Depends(require_login),
 ) -> dict:
     """The most a recording of up to `seconds` costs: what the submission screen shows (D057)."""

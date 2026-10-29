@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 
 import pytest
 
+from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import (
     DEFAULT_PRICES,
-    Action,
     PriceList,
     TokenUsage,
     as_idpoint,
@@ -27,32 +27,32 @@ pytestmark = pytest.mark.unit
 
 def test_a_recording_up_to_a_minute_is_one_run():
     for seconds in (1, 35, 60):
-        units = units_for(DEFAULT_PRICES, Action.ASSESS, seconds)
+        units = units_for(DEFAULT_PRICES, TaskPurpose.ASSESSMENT, seconds)
         assert (as_runs(units), as_idpoint(DEFAULT_PRICES, units)) == (1.0, 2000)
 
 
 def test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five():
-    idp = [as_idpoint(DEFAULT_PRICES, units_for(DEFAULT_PRICES, Action.ASSESS, s))
+    idp = [as_idpoint(DEFAULT_PRICES, units_for(DEFAULT_PRICES, TaskPurpose.ASSESSMENT, s))
            for s in (61, 120, 121, 300, 900)]  # fmt: skip
     assert idp == [3400, 3400, 4800, 7600, 7600]
     assert minutes(0) == 1 and minutes(-3) == 1 and minutes(900) == 5
 
 
 def test_practice_pays_half():
-    units = units_for(DEFAULT_PRICES, Action.PRACTICE, 40)
+    units = units_for(DEFAULT_PRICES, TaskPurpose.PRACTICE, 40)
     assert (as_runs(units), as_idpoint(DEFAULT_PRICES, units)) == (0.5, 1000)
 
 
 def test_a_hold_is_the_longest_the_task_allows():
-    assert hold_for(DEFAULT_PRICES, Action.ASSESS, 90) == units_for(
-        DEFAULT_PRICES, Action.ASSESS, 90
+    assert hold_for(DEFAULT_PRICES, TaskPurpose.ASSESSMENT, 90) == units_for(
+        DEFAULT_PRICES, TaskPurpose.ASSESSMENT, 90
     )
-    assert hold_for(DEFAULT_PRICES, Action.ASSESS, 90) == 1700
+    assert hold_for(DEFAULT_PRICES, TaskPurpose.ASSESSMENT, 90) == 1700
 
 
 def test_the_seller_sets_the_prices():
     dearer = PriceList(first_minute_runs=1.5, extra_minute_runs=1.0, idpoint_per_run=1000)
-    units = units_for(dearer, Action.ASSESS, 100)
+    units = units_for(dearer, TaskPurpose.ASSESSMENT, 100)
     assert (units, as_idpoint(dearer, units)) == (2500, 2500)
     with pytest.raises(ValueError):
         PriceList(first_minute_runs=-1)

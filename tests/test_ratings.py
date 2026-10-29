@@ -302,9 +302,18 @@ def test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more
     rate(teacher, left)
 
 
+def all_sheets() -> list[dict]:
+    """Every sheet of every batch: sheets live in their batch's document (D060)."""
+    return [x for b in store()["rating_batch"].find() for x in b.get("ratings") or []]
+
+
+def seen_count() -> int:
+    """How many (person, response) openings of a machine result are noted."""
+    return sum(len(r.get("machine_seen") or []) for r in store()["response"].find())
+
+
 def raters_of(m, response_id: str) -> set[str]:
-    rows = store()["rating_assignment"].find({"response_id": response_id})
-    return {r["rater_id"] for r in rows}
+    return {x["rater_id"] for x in all_sheets() if x["response_id"] == response_id}
 
 
 def test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response(m):
@@ -357,9 +366,8 @@ def test_a_void_sheet_can_be_handed_to_another_rater(m):
     rids, teachers, admin = study(m, students=1, raters=("GV-01", "GV-02", "GV-03", "GV-04"))
     made = new_batch(m, admin, raters=("GV-01", "GV-02"))
     base = f"/api/v1/admin/ratings/batches/{made['batch_id']}"
-    slot_of_gv01 = store()["rating_assignment"].find_one({"rater_id": account_id(m, "GV-01")})[
-        "slot"
-    ]
+    gv01 = account_id(m, "GV-01")
+    slot_of_gv01 = next(x["slot"] for x in all_sheets() if x["rater_id"] == gv01)
     admin.post(f"{base}/close")
     assert teachers["GV-01"].get(f"/api/v1/responses/{rids[0]}").status_code == 200
     assert teachers["GV-04"].get(f"/api/v1/responses/{rids[0]}").status_code == 200
@@ -376,7 +384,8 @@ def test_a_void_sheet_can_be_handed_to_another_rater(m):
     assert hand_to("GV-04") == {"created": 0, "skipped_own": 0, "skipped_seen": 1}
     assert hand_to("GV-03") == {"created": 1, "skipped_own": 0, "skipped_seen": 0}
     assert sheets(teachers["GV-01"]) == []
-    taken = store()["rating_assignment"].find_one({"rater_id": account_id(m, "GV-03")})["slot"]
+    gv03 = account_id(m, "GV-03")
+    taken = next(x["slot"] for x in all_sheets() if x["rater_id"] == gv03)
     assert taken == slot_of_gv01
     batch = admin.get("/api/v1/admin/ratings/batches").json()[0]
     assert batch["voided"] == 0 and batch["assignments"] == 2
@@ -503,16 +512,16 @@ def test_a_review_decision_keeps_the_ratings_and_who_saw_the_machine(m):
     rate_all(teachers["GV-02"])
     reviewer = login_as(m, "GV-09", "teacher")
     reviewer.get(f"/api/v1/responses/{rids[0]}")
-    before = store()["machine_seen"].count_documents({})
+    before = seen_count()
 
     r = reviewer.post(
         f"/api/v1/review/{rids[0]}", json={"new_score": 4.0, "reason": "Nghe lại, tốt hơn."}
     )
     assert r.status_code == 200, r.text
 
-    assert store()["rating_assignment"].count_documents({}) == 4
-    assert store()["research_rating"].count_documents({}) == 4
-    assert store()["machine_seen"].count_documents({}) == before
+    assert len(all_sheets()) == 4
+    assert sum(x["submitted_at"] is not None for x in all_sheets()) == 4
+    assert seen_count() == before
     d = admin.get(f"/api/v1/admin/ratings/batches/{made['batch_id']}/report").json()
     assert d["report"]["counts"]["rated_twice"] == 2
 
@@ -544,8 +553,8 @@ def test_erasing_a_participant_erases_what_raters_said_about_them(m):
         ).status_code
         == 200
     )
-    left = store()["rating_assignment"].count_documents({"response_id": rids[0]})
-    ratings = store()["research_rating"].count_documents({})
+    left = sum(x["response_id"] == rids[0] for x in all_sheets())
+    ratings = sum(x["submitted_at"] is not None for x in all_sheets())
     assert left == 0
     assert ratings == 1  # GV-01's rating of SV-002 is all that is left
     batch = admin.get("/api/v1/admin/ratings/batches").json()[0]
