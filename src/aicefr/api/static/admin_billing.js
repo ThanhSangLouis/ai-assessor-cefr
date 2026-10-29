@@ -28,7 +28,7 @@
   const ALWAYS = [
     "Sinh viên: bài đánh giá có bằng chứng, lộ trình bài học, ôn tập, thành tựu, tiến độ, tải dữ liệu của mình",
     "Giảng viên: hàng đợi duyệt, sửa kết quả của máy có lý do",
-    "Lộ trình mẫu A1 → C2",
+    "Lộ trình mẫu 31 bài, A2 → B2",
   ];
   const SUPPORT = { free: "Tài liệu hướng dẫn", standard: "Giờ hành chính", advanced: "Đào tạo giảng viên, triển khai tại trường" };
   let data = null;

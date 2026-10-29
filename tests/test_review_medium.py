@@ -14,7 +14,7 @@ from aicefr.contracts import (
     Evidence,
     EvidenceKind,
     Response,
-    ResponseStatus,
+    Status,
     Transcript,
     Word,
 )
@@ -25,7 +25,7 @@ from aicefr.storage.repository import InvalidStateError, Repository
 PASSWORD = "matkhau-kiem-thu"
 
 
-def _report(rid: str, status: ResponseStatus = ResponseStatus.COMPLETED) -> Response:
+def _report(rid: str, status: Status = Status.COMPLETED) -> Response:
     return Response(
         response_id=rid,
         status=status,
@@ -82,7 +82,7 @@ def test_retention_clears_the_audio_pointer_of_a_rejected_recording(tmp_path) ->
     audio = tmp_path / "x.wav"
     audio.write_bytes(b"RIFF")
     repo.save(
-        Response(response_id="r1", status=ResponseStatus.REJECTED, config_version="v1"),
+        Response(response_id="r1", status=Status.REJECTED, config_version="v1"),
         "SV-001",
         "P3",
         audio_path=str(audio),
@@ -120,7 +120,7 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
     repo = Repository(tmp_path / "t.db")
     for i in range(30):
-        repo.save(_report(f"r{i}", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
+        repo.save(_report(f"r{i}", Status.REVIEW_REQUIRED), "SV-001", "P3")
 
     def decide(args):
         rid, who = args
@@ -143,10 +143,10 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
 def test_a_score_and_a_band_that_disagree_are_refused(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
+    repo.save(_report("r1", Status.REVIEW_REQUIRED), "SV-001", "P3")
     with pytest.raises(InvalidStateError):
         repo.apply_review("r1", "gv1", 5.5, "A2", "diem cao ma band thap")
-    assert repo.get("r1").status is ResponseStatus.REVIEW_REQUIRED
+    assert repo.get("r1").status is Status.REVIEW_REQUIRED
 
 
 # ------------------------------------------- muc 20: export cat truoc khi loc
@@ -211,6 +211,7 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
         audio_path="x",
         prompt_version="v7",
         config_version="v1",
+        consent_version="c2",
     )
     t = np.arange(16_000 * 40) / 16_000
     pcm = (0.2 * np.sin(2 * np.pi * 220 * t)).astype(np.float32)
@@ -218,22 +219,20 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
     r = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(req, pcm, 16_000)
     assert r.assessment is not None and r.assessment.overall_0_6 is None
     assert r.assessment.priorities == []
-    # muc 16: ban de di theo ket qua
-    assert r.prompt_version == "v7"
+    # muc 16: ban de va ban dong thuan di theo ket qua
+    assert (r.prompt_version, r.consent_version) == ("v7", "c2")
 
 
 # ------------------------------------------- muc 13: nguong band theo mo hinh cua bai
 
 
 def test_band_thresholds_follow_the_model_that_scored_the_response() -> None:
-    from aicefr.scoring.band_map import thresholds_of
     from aicefr.scoring.scorer import load_model
     from aicefr.storage.repository import _band_thresholds
 
-    old = thresholds_of(load_model("ridge_resp_v1")["band_thresholds"])
-    assert _band_thresholds("ridge_resp_v1") == old
-    assert _band_thresholds("teacher") == thresholds_of(load_model()["band_thresholds"])
-    assert _band_thresholds(None) == thresholds_of(load_model()["band_thresholds"])
+    assert _band_thresholds("ridge_resp_v1") == load_model("ridge_resp_v1")["band_thresholds"]
+    assert _band_thresholds("teacher") == load_model()["band_thresholds"]
+    assert _band_thresholds(None) == load_model()["band_thresholds"]
 
 
 def test_the_model_list_hides_the_calibration_artifact(tmp_path) -> None:

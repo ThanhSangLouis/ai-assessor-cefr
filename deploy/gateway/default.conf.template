@@ -32,27 +32,7 @@ server {
         return 404;
     }
 
-    # Prometheus scrapes each service inside the network (D051); the counters
-    # are not for the internet.
-    location = /metrics {
-        return 404;
-    }
-
     location /api/v1/me/badges {
-        auth_request /_session;
-        auth_request_set $aicefr_account $upstream_http_x_aicefr_account;
-        proxy_set_header X-Aicefr-Account $aicefr_account;
-        proxy_set_header X-Aicefr-Gateway "${AICEFR_GATEWAY_TOKEN}";
-        # The internal key is the services' own; a browser's copy is dropped.
-        proxy_set_header X-Aicefr-Internal "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        set $aicefr_upstream web:8000;
-        proxy_pass http://$aicefr_upstream;
-    }
-
-    location /api/v1/me/nudges {
         auth_request /_session;
         auth_request_set $aicefr_account $upstream_http_x_aicefr_account;
         proxy_set_header X-Aicefr-Account $aicefr_account;

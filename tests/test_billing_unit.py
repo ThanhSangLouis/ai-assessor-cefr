@@ -29,9 +29,9 @@ from aicefr.billing.plans import (
     QUOTA_PER_SEAT,
     License,
     LicenseState,
+    Plan,
     PlanFeature,
     QuoteError,
-    ServicePlan,
     add_months,
     quote,
     standing,
@@ -44,7 +44,7 @@ SECRET = b"khoa-ky-giay-phep-cua-bai-kiem-thu"
 
 
 def lic(
-    plan: ServicePlan = ServicePlan.STANDARD,
+    plan: Plan = Plan.STANDARD,
     seats: int = 100,
     start: date = TODAY,
     days: int = 182,
@@ -70,9 +70,9 @@ def lic(
 
 
 def test_the_licence_that_started_last_is_in_force():
-    trial = lic(ServicePlan.TRIAL, 50, TODAY, 90, "trial", 0, "2026-10-07T01:00:00+00:00", "trial")
+    trial = lic(Plan.TRIAL, 50, TODAY, 90, "trial", 0, "2026-10-07T01:00:00+00:00", "trial")
     bought = lic(installed="2026-10-07T01:00:00+00:00", name="L-bought")  # the same second
-    later = lic(ServicePlan.ADVANCED, start=TODAY + timedelta(days=182), name="L-next")
+    later = lic(Plan.ADVANCED, start=TODAY + timedelta(days=182), name="L-next")
 
     now = standing([trial, bought, later], TODAY)
 
@@ -81,17 +81,13 @@ def test_the_licence_that_started_last_is_in_force():
     assert [x.license_id for x in now.scheduled] == ["L-next"]
     # Before any licence has started: the free plan, with what is booked.
     free = standing([later], TODAY)
-    assert (free.plan, free.state, free.seat_cap) == (
-        ServicePlan.FREE,
-        LicenseState.FREE,
-        FREE_SEATS,
-    )
+    assert (free.plan, free.state, free.seat_cap) == (Plan.FREE, LicenseState.FREE, FREE_SEATS)
     assert free.scheduled == (later,)
     assert standing([], TODAY).features == frozenset()
 
 
 def test_a_paid_plan_runs_out_into_grace_then_the_free_plan():
-    current = lic(ServicePlan.ADVANCED, days=30)
+    current = lic(Plan.ADVANCED, days=30)
     end = current.valid_to
 
     assert standing([current], end).state is LicenseState.ACTIVE
@@ -101,43 +97,37 @@ def test_a_paid_plan_runs_out_into_grace_then_the_free_plan():
     assert grace.seat_cap == 100 and PlanFeature.BLIND_RATING in grace.features
     after = standing([current], end + timedelta(days=GRACE_DAYS + 1))
     # Back on the free plan: one class, no staff tools, the old licence named.
-    assert (after.plan, after.state, after.seat_cap) == (ServicePlan.FREE, LicenseState.FREE, 30)
+    assert (after.plan, after.state, after.seat_cap) == (Plan.FREE, LicenseState.FREE, 30)
     assert after.features == frozenset() and after.lapsed == current
     # A trial has no grace: the day after, the school is on the free plan.
-    trial = lic(ServicePlan.TRIAL, 50, days=30, source="trial", value=0)
-    assert standing([trial], trial.valid_to + timedelta(days=1)).plan is ServicePlan.FREE
+    trial = lic(Plan.TRIAL, 50, days=30, source="trial", value=0)
+    assert standing([trial], trial.valid_to + timedelta(days=1)).plan is Plan.FREE
 
 
 def test_each_step_up_adds_something_and_none_locks_learning():
     """BR-29: a plan opens staff tools only; adding one means rereading the rule."""
     assert {f.value for f in PlanFeature} == {"lesson_authoring", "class_insights", "blind_rating"}
-    free, standard, advanced = (
-        PLAN_FEATURES[p] for p in (ServicePlan.FREE, ServicePlan.STANDARD, ServicePlan.ADVANCED)
-    )
+    free, standard, advanced = (PLAN_FEATURES[p] for p in (Plan.FREE, Plan.STANDARD, Plan.ADVANCED))
     assert free == frozenset() and free < standard < advanced
-    assert PLAN_FEATURES[ServicePlan.TRIAL] == advanced  # a trial shows everything
-    assert (
-        QUOTA_PER_SEAT[ServicePlan.FREE]
-        < QUOTA_PER_SEAT[ServicePlan.STANDARD]
-        < QUOTA_PER_SEAT[ServicePlan.ADVANCED]
-    )
+    assert PLAN_FEATURES[Plan.TRIAL] == advanced  # a trial shows everything
+    assert QUOTA_PER_SEAT[Plan.FREE] < QUOTA_PER_SEAT[Plan.STANDARD] < QUOTA_PER_SEAT[Plan.ADVANCED]
 
 
 # ---------------------------------------------------------------- quotes
 
 
 def test_a_first_purchase_starts_today():
-    trial = standing([lic(ServicePlan.TRIAL, 50, source="trial", value=0, days=30)], TODAY)
+    trial = standing([lic(Plan.TRIAL, 50, source="trial", value=0, days=30)], TODAY)
 
-    q = quote(trial, ServicePlan.STANDARD, 120, 6, 10_000, TODAY)
+    q = quote(trial, Plan.STANDARD, 120, 6, 10_000, TODAY)
 
     assert (q.kind, q.starts_on, q.ends_on) == ("new", TODAY, date(2027, 4, 6))
     assert (q.list_price, q.discount, q.credit, q.amount) == (7_200_000, 0, 0, 7_200_000)
-    assert quote(standing([], TODAY), ServicePlan.ADVANCED, 10, 6, 15_000, TODAY).kind == "new"
+    assert quote(standing([], TODAY), Plan.ADVANCED, 10, 6, 15_000, TODAY).kind == "new"
 
 
 def test_a_school_year_paid_at_once_is_cheaper():
-    q = quote(standing([], TODAY), ServicePlan.STANDARD, 100, 12, 10_000, TODAY)
+    q = quote(standing([], TODAY), Plan.STANDARD, 100, 12, 10_000, TODAY)
 
     assert ANNUAL_DISCOUNT == 15
     assert (q.list_price, q.discount, q.gross, q.amount) == (
@@ -152,7 +142,7 @@ def test_a_school_year_paid_at_once_is_cheaper():
 def test_a_renewal_follows_the_current_licence():
     current = standing([lic()], TODAY + timedelta(days=100))
 
-    q = quote(current, ServicePlan.STANDARD, 100, 6, 10_000, TODAY + timedelta(days=100))
+    q = quote(current, Plan.STANDARD, 100, 6, 10_000, TODAY + timedelta(days=100))
 
     assert q.kind == "renewal"
     assert q.starts_on == lic().valid_to + timedelta(days=1)
@@ -164,55 +154,52 @@ def test_an_upgrade_starts_today_with_credit_for_the_unused_days():
     day = TODAY + timedelta(days=91)  # 91 of 182 days left, today included
     current = standing([held], day)
 
-    q = quote(current, ServicePlan.ADVANCED, 100, 6, 15_000, day)
+    q = quote(current, Plan.ADVANCED, 100, 6, 15_000, day)
 
     assert (q.kind, q.starts_on) == ("upgrade", day)
     assert q.credit == 3_000_000  # half the value, in whole thousands
     assert q.amount == 9_000_000 - 3_000_000
     # More seats on the same plan is an upgrade too.
-    assert quote(current, ServicePlan.STANDARD, 150, 6, 10_000, day).kind == "upgrade"
+    assert quote(current, Plan.STANDARD, 150, 6, 10_000, day).kind == "upgrade"
     # In grace nothing is left to credit.
     late = held.valid_to + timedelta(days=3)
-    assert quote(standing([held], late), ServicePlan.ADVANCED, 100, 6, 15_000, late).credit == 0
+    assert quote(standing([held], late), Plan.ADVANCED, 100, 6, 15_000, late).credit == 0
 
 
 def test_a_smaller_plan_waits_for_the_current_one_to_end():
-    current = standing([lic(ServicePlan.ADVANCED)], TODAY)
+    current = standing([lic(Plan.ADVANCED)], TODAY)
 
-    q = quote(current, ServicePlan.STANDARD, 100, 6, 10_000, TODAY)
+    q = quote(current, Plan.STANDARD, 100, 6, 10_000, TODAY)
 
     assert q.kind == "downgrade" and q.starts_on == lic().valid_to + timedelta(days=1)
-    assert (
-        quote(standing([lic()], TODAY), ServicePlan.STANDARD, 60, 6, 10_000, TODAY).kind
-        == "downgrade"
-    )
+    assert quote(standing([lic()], TODAY), Plan.STANDARD, 60, 6, 10_000, TODAY).kind == "downgrade"
 
 
 def test_a_quote_refuses_what_cannot_be_sold():
-    trial = standing([lic(ServicePlan.TRIAL, source="trial", value=0)], TODAY)
+    trial = standing([lic(Plan.TRIAL, source="trial", value=0)], TODAY)
     for plan, seats, months in (
-        (ServicePlan.TRIAL, 50, 6),
-        (ServicePlan.FREE, 50, 6),
-        (ServicePlan.STANDARD, 50, 3),
-        (ServicePlan.STANDARD, 5, 6),
-        (ServicePlan.STANDARD, 6000, 6),
+        (Plan.TRIAL, 50, 6),
+        (Plan.FREE, 50, 6),
+        (Plan.STANDARD, 50, 3),
+        (Plan.STANDARD, 5, 6),
+        (Plan.STANDARD, 6000, 6),
     ):
         with pytest.raises(QuoteError):
             quote(trial, plan, seats, months, 10_000, TODAY)
     booked = standing([lic(), lic(start=TODAY + timedelta(days=182), name="L-2")], TODAY)
     with pytest.raises(QuoteError, match="đặt trước"):
-        quote(booked, ServicePlan.ADVANCED, 100, 6, 15_000, TODAY)
+        quote(booked, Plan.ADVANCED, 100, 6, 15_000, TODAY)
 
 
 def test_a_difference_smaller_than_a_gateway_takes_is_waived():
     # 100 students for 6 months, bought today; an upgrade to fewer students on
     # the higher plan is covered by the credit, all but a few thousand dong.
     held = lic(seats=100, days=182, value=6_000_000)
-    q = quote(standing([held], TODAY), ServicePlan.ADVANCED, 67, 6, 14_950, TODAY)  # 6.009.900 đ
+    q = quote(standing([held], TODAY), Plan.ADVANCED, 67, 6, 14_950, TODAY)  # 6.009.900 đ
 
     assert q.kind == "upgrade" and 0 < q.gross - q.credit < MIN_CHARGE
     assert q.amount == 0
-    covered = quote(standing([held], TODAY), ServicePlan.ADVANCED, 10, 6, 15_000, TODAY)
+    covered = quote(standing([held], TODAY), Plan.ADVANCED, 10, 6, 15_000, TODAY)
     assert covered.credit == covered.gross and covered.amount == 0
 
 
@@ -227,14 +214,14 @@ def test_months_are_added_on_the_calendar():
 
 
 def test_a_licence_key_round_trips_and_any_change_breaks_it():
-    issued = lic(ServicePlan.ADVANCED, 300, source="key", value=0, name="HD-2026-001")
+    issued = lic(Plan.ADVANCED, 300, source="key", value=0, name="HD-2026-001")
     key = keys.issue(issued, SECRET, "2026-10-07T00:00:00+00:00")
 
     back = keys.read(key, SECRET)
 
     assert (back.license_id, back.plan, back.seats, back.source) == (
         "HD-2026-001",
-        ServicePlan.ADVANCED,
+        Plan.ADVANCED,
         300,
         "key",
     )
@@ -259,8 +246,8 @@ def test_a_licence_key_round_trips_and_any_change_breaks_it():
 
 def test_a_key_with_impossible_contents_is_refused():
     for wrong in (
-        lic(ServicePlan.TRIAL, source="key"),
-        lic(ServicePlan.FREE, source="key"),
+        lic(Plan.TRIAL, source="key"),
+        lic(Plan.FREE, source="key"),
         lic(seats=0, source="key"),
         lic(days=0, source="key"),  # ends the day before it starts
     ):

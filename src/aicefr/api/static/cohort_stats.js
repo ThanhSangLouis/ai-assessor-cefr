@@ -12,7 +12,7 @@
 // vào sẽ làm đẹp cho mô hình bằng chính những ca nó không trả lời.
 const panel = document.getElementById("stats-panel");
 
-const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const BAND_ORDER = ["A2", "B1", "B2"];
 
 fetch("/api/v1/review/stats")
   .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json()))
@@ -147,7 +147,7 @@ function build(d) {
   h += "</tbody></table>";
   h +=
     '<p class="muted">Phân bố này là band <b>máy ước lượng</b>. Trên dữ liệu kiểm định, ' +
-    "mô hình còn xếp sai band ở một phần đáng kể số bài và nhận ra mức A2 kém nhất, nên đừng đọc " +
+    "mô hình xếp sai band ở 26,6% số bài và chỉ nhận ra 16,7% số bài mức A2, nên đừng đọc " +
     "bảng này như bức tranh trình độ thật của lớp.</p>";
 
   h += '<h2 style="margin-top:var(--sp-6)">Theo đề bài</h2>';

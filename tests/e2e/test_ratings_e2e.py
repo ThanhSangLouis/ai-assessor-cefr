@@ -23,11 +23,11 @@ pytest.importorskip("playwright.sync_api")
 
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
-    accept_terms,
     browser,
     context,
     live_server,
     login,
+    sign_consent,
 )
 
 pytestmark = pytest.mark.e2e
@@ -43,7 +43,7 @@ def new_context(browser, live_server):
 
 
 def students_with_recordings(browser, live_server, count: int = 2) -> list[str]:
-    """Students who accepted the terms, each with one submitted recording."""
+    """Students who consent to research use, each with one submitted recording."""
     names = []
     for _ in range(count):
         ctx = new_context(browser, live_server)
@@ -51,7 +51,7 @@ def students_with_recordings(browser, live_server, count: int = 2) -> list[str]:
             page = ctx.new_page()
             name = live_server.account()
             login(page, live_server, name, "/practice")
-            accept_terms(page)
+            sign_consent(page)
             audio = (live_server.files / "full-35s.wav").read_bytes()
             r = page.request.post(
                 "/api/v1/responses",

@@ -2,7 +2,6 @@
 
 import os
 import uuid
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -11,19 +10,6 @@ import pytest
 # thread. Set before any import of the application, because the queue adapter is
 # chosen once at module import.
 os.environ.setdefault("AICEFR_JOB_MODE", "inline")
-
-# The real scoring artifacts stay outside Git (W7-S01). Tests always score with
-# the synthetic ones from tools/make_fake_models.py, pinned by their own hashes,
-# even when the machine running them has AICEFR_MODEL_DIR set to the real folder.
-os.environ["AICEFR_MODEL_DIR"] = str(Path(__file__).parent / "fixtures" / "models")
-os.environ["AICEFR_MODEL_PINS"] = ",".join(
-    f"{name.removesuffix('.json')}={digest}"
-    for digest, name in (
-        line.split()
-        for line in (Path(os.environ["AICEFR_MODEL_DIR"]) / "SHA256SUMS").read_text().splitlines()
-        if line
-    )
-)
 
 from aicefr.contracts import Feature, FeatureSet, ReasonCode, Word
 
@@ -43,15 +29,14 @@ def _isolated_environment(tmp_path, monkeypatch):
 
     monkeypatch.setenv("AICEFR_UPLOADS", str(tmp_path / "uploads"))
     # The core service's store (D044), which is also AICEFR_DB. With
-    # AICEFR_TEST_MONGO set (a mongodb:// URL), every test gets a database of
-    # its own on that server, dropped when the run ends; otherwise an
-    # in-memory one, named by this test's own path.
-    server = os.getenv(MONGO_ENV)
-    databases = []
-    if server:
-        name = f"t_{uuid.uuid4().hex[:12]}"
-        databases.append(name)
-        target = f"{server.rstrip('/')}/{name}"
+    # AICEFR_TEST_PG set (a PostgreSQL URL), every test gets a schema of its
+    # own there, dropped when the run ends; otherwise a SQLite file.
+    pg = os.getenv(PG_ENV)
+    schemas = []
+    if pg:
+        schema = f"t_{uuid.uuid4().hex[:12]}"
+        schemas.append(schema)
+        target = f"{pg}?schema={schema}"
     else:
         target = str(tmp_path / "aicefr.db")
     monkeypatch.setenv("AICEFR_DB", target)
@@ -61,26 +46,25 @@ def _isolated_environment(tmp_path, monkeypatch):
     config.get_settings.cache_clear()
     yield
     config.get_settings.cache_clear()
-    # Dropped now, not when the run ends: a server holding a database per test
-    # of a whole run -- some forty indexes each -- runs out of memory. A module
-    # that built the application at import and keeps using this database finds
-    # it recreated on its next write; the caches that skip index creation are
-    # cleared so its indexes come back with it.
-    if databases:
-        from pymongo import MongoClient
-
-        from aicefr.storage import db as storage_db
-        from aicefr.storage import migrations
-
-        with MongoClient(server) as client:
-            for name in databases:
-                client.drop_database(name)
-        storage_db.forget_indexes()
-        migrations.forget_current()
+    # Dropped when the run ends, not now: a module that builds the application
+    # once at import keeps using the schemas of the test that imported it, as
+    # the SQLite files of a test outlive it.
+    _SCHEMAS.extend(schemas)
 
 
-MONGO_ENV = "AICEFR_TEST_MONGO"
-on_server = bool(os.getenv(MONGO_ENV))
+PG_ENV = "AICEFR_TEST_PG"
+on_postgres = bool(os.getenv(PG_ENV))
+_SCHEMAS: list[str] = []
+
+
+def pytest_sessionfinish(session, exitstatus) -> None:
+    if not (_SCHEMAS and on_postgres):
+        return
+    import psycopg
+
+    with psycopg.connect(os.environ[PG_ENV], autocommit=True) as c:
+        for schema in _SCHEMAS:
+            c.execute(f"DROP SCHEMA IF EXISTS {schema} CASCADE")
 
 
 def feature_set(values: dict[str, float | None], version: str = "v3") -> FeatureSet:

@@ -23,7 +23,7 @@ from conftest import feature_set
 from fastapi.testclient import TestClient
 
 import aicefr
-from aicefr.contracts import FeatureSet, QcResult, QcStatus, Response, ResponseStatus
+from aicefr.contracts import FeatureSet, QcResult, QcStatus, Response, Status
 from aicefr.review.router import ReviewRouter
 from aicefr.scoring.scorer import RidgeScorer, load_model, near_boundary
 from aicefr.storage.auth_repository import Role
@@ -50,9 +50,15 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    # FR-01 (D058): recording requires the terms of use. Accepted through the real
-    # endpoint so the fixtures walk the same path as a student.
-    assert c.post("/api/v1/me/terms").status_code == 200
+    # FR-01: recording requires consent. Signed through the real endpoint so the
+    # fixtures walk the same path as a student.
+    assert (
+        c.post(
+            "/api/v1/me/consent",
+            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+        ).status_code
+        == 200
+    )
     return c
 
 
@@ -133,7 +139,7 @@ def test_a_score_on_a_band_boundary_reaches_the_teacher() -> None:
         qc_status=QcStatus.PASS,
     )
     decision = ReviewRouter().route(qc, assessment, fs)
-    assert decision.status is ResponseStatus.REVIEW_REQUIRED
+    assert decision.status is Status.REVIEW_REQUIRED
     assert decision.needs_teacher
 
 
@@ -153,9 +159,7 @@ def test_every_module_imports() -> None:
 # ------------------------------------------------------------------ state machine
 
 
-@pytest.mark.parametrize(
-    "status", [ResponseStatus.REJECTED, ResponseStatus.FAILED, ResponseStatus.COMPLETED]
-)
+@pytest.mark.parametrize("status", [Status.REJECTED, Status.FAILED, Status.COMPLETED])
 def test_only_a_response_awaiting_review_can_be_decided(app, status) -> None:
     """A rejected recording must not be approvable into a verified result."""
     from aicefr.api import main as m
@@ -176,7 +180,7 @@ def test_the_api_answers_409_for_an_undecidable_response(app) -> None:
     student = login_as(app, "SV-001", "student")
     rid = submit(student).json()["response_id"]
     report = m.repo.get(rid)
-    report.status = ResponseStatus.REJECTED
+    report.status = Status.REJECTED
     m.repo.save(report, "SV-001", "P3")
 
     teacher = login_as(app, "GV-01", "teacher")
@@ -196,7 +200,7 @@ def test_changing_the_score_moves_the_band_with_it(app) -> None:
     )
     if r.status_code == 409:
         pytest.skip("bài không ở trạng thái chờ duyệt trong lần chạy này")
-    assert r.json()["assessment"]["overall_band"] == "C1"  # D059: 5.5 is above B2/C1
+    assert r.json()["assessment"]["overall_band"] == "B2"
 
 
 # ------------------------------------------------------------------ state left behind
@@ -271,7 +275,7 @@ def test_only_one_teacher_wins_a_contested_lock(tmp_path) -> None:
     """
     repo = Repository(tmp_path / "t.db")
     repo.save(
-        Response(response_id="r1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1"),
+        Response(response_id="r1", status=Status.REVIEW_REQUIRED, config_version="v1"),
         "SV-001",
         "P3",
     )
@@ -295,7 +299,7 @@ def test_only_one_teacher_wins_a_contested_lock(tmp_path) -> None:
 def test_an_expired_lock_is_reclaimed(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
     repo.save(
-        Response(response_id="r1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1"),
+        Response(response_id="r1", status=Status.REVIEW_REQUIRED, config_version="v1"),
         "SV-001",
         "P3",
     )
@@ -325,7 +329,7 @@ def test_a_missing_audio_file_does_not_leave_the_job_running(app) -> None:
     rid = submit(student).json()["response_id"]
     audio = m.repo.audio_path_of(rid)
     _pathlib.Path(audio).unlink()
-    m.repo.set_status(rid, ResponseStatus.QUEUED)  # a job still waiting when its file vanished
+    m.repo.set_status(rid, Status.QUEUED)  # a job still waiting when its file vanished
 
     request = ProcessingRequest(
         response_id=rid,
@@ -463,7 +467,7 @@ def test_unscorable_responses_still_carry_their_flags() -> None:
 def test_the_boundary_margin_is_wide_enough_for_the_error() -> None:
     """A margin narrower than the model's own error catches too little.
 
-    With an RMSE around half a point and bands one point apart, a margin of 0.25 covered less
+    With RMSE 0.526 and bands one point apart, a margin of 0.25 covered less
     than half a standard deviation of error and caught 57.9% of misplaced
     responses; 0.50 catches 90.6%.
     """

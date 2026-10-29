@@ -13,7 +13,7 @@ from fastapi.responses import JSONResponse
 from aicefr.api.deps import STAFF_ONLY
 from aicefr.api.schemas import QueueItem, ReviewClose, ReviewDecision
 from aicefr.billing.plans import PlanFeature
-from aicefr.contracts import ResponseStatus, Review
+from aicefr.contracts import Review, Status
 from aicefr.research.teacher_time import kpi as teacher_time_kpi
 from aicefr.research.teacher_time import session_minutes
 from aicefr.services.core.assessment.context import blind, plan_allows, saw, svc
@@ -34,7 +34,7 @@ def review_queue(
     """
     s = svc()
     hidden = s.ratings.blinded_responses(account.account_id)
-    rows = s.repo.queue_with_locks(ResponseStatus.REVIEW_REQUIRED, limit + len(hidden))
+    rows = s.repo.queue_with_locks(Status.REVIEW_REQUIRED, limit + len(hidden))
     return [QueueItem(**r) for r in rows if r["response_id"] not in hidden][:limit]
 
 

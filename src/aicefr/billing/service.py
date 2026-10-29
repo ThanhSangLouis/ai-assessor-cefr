@@ -14,7 +14,6 @@ and the administrator's warning about the month's assessments, never a refusal.
 
 from __future__ import annotations
 
-import logging
 import secrets
 import uuid
 from collections.abc import Callable
@@ -42,24 +41,19 @@ from aicefr.billing.plans import (
     QUOTA_PER_SEAT,
     TERMS,
     License,
-    OrderKind,
+    Plan,
     PlanFeature,
     Quote,
     QuoteError,
-    ServicePlan,
     Standing,
 )
 from aicefr.practice.streak import LOCAL_TZ
 
-logger = logging.getLogger(__name__)
-
 WARN_AT = (80, 100)  # percent of the month's expected assessments
 # What a gateway sees as the order's description: plain ASCII, as VNPay asks.
-PLAN_ASCII = {ServicePlan.STANDARD: "Chuan", ServicePlan.ADVANCED: "Nang cao"}
-# A learner's run pack (D053): an order of this kind credits runs, not a licence.
-CREDITS = OrderKind.CREDITS.value
+PLAN_ASCII = {Plan.STANDARD: "Chuan", Plan.ADVANCED: "Nang cao"}
 # The plans compared on the administrator's tab, in the order of the ladder.
-LADDER = (ServicePlan.FREE, ServicePlan.STANDARD, ServicePlan.ADVANCED)
+LADDER = (Plan.FREE, Plan.STANDARD, Plan.ADVANCED)
 # An order's gateway by name, for orders whose gateway is no longer offered.
 GATEWAY_TITLES = {
     "none": "Không cần thanh toán",
@@ -128,9 +122,6 @@ class BillingService:
         audit: Callable[[str, str, str | None, str | None], None],
         clock: Callable[[], datetime] = lambda: datetime.now(UTC),
         gateway_problems: list[str] | None = None,
-        # D053: put runs in a learner's wallet once per order -- the metering
-        # service's `credit`; None where nothing is metered.
-        credit: Callable[[str, int, str], bool] | None = None,
     ) -> None:
         self.store = store
         self._students = students
@@ -142,7 +133,6 @@ class BillingService:
         self.gateway_problems = list(gateway_problems or [])
         self._audit = audit
         self._clock = clock
-        self._credit = credit
 
     # ------------------------------------------------------------ basics
 
@@ -163,10 +153,10 @@ class BillingService:
     def _stamp(self) -> str:
         return self.now().astimezone(UTC).isoformat(timespec="seconds")
 
-    def prices(self) -> dict[ServicePlan, int]:
+    def prices(self) -> dict[Plan, int]:
         return {
-            ServicePlan.STANDARD: int(self.settings.price_standard),
-            ServicePlan.ADVANCED: int(self.settings.price_advanced),
+            Plan.STANDARD: int(self.settings.price_standard),
+            Plan.ADVANCED: int(self.settings.price_advanced),
         }
 
     def organization(self) -> str:
@@ -187,7 +177,7 @@ class BillingService:
         return License(
             license_id="trial-" + uuid.uuid4().hex[:8],
             organization=self.organization() or "Dùng thử",
-            plan=ServicePlan.TRIAL,
+            plan=Plan.TRIAL,
             seats=max(1, int(self.settings.trial_seats)),
             valid_from=today,
             valid_to=today + timedelta(days=days - 1),
@@ -241,7 +231,7 @@ class BillingService:
         if active + n <= cap:
             return
         free = max(0, cap - active)
-        if current.plan is ServicePlan.FREE:
+        if current.plan is Plan.FREE:
             raise SeatLimit(
                 f"Gói Miễn phí dùng cho tối đa {FREE_SEATS} sinh viên; trường đang có {active}, "
                 f"còn {free}: không đủ cho {n} tài khoản mới. Tài khoản đang có vẫn học bình "
@@ -280,9 +270,9 @@ class BillingService:
 
     # ------------------------------------------------------------ buying
 
-    def quote(self, plan: ServicePlan, seats: int, months: int) -> Quote:
+    def quote(self, plan: Plan, seats: int, months: int) -> Quote:
         if not self.enabled:
-            raise BillingOff
+            raise BillingOff()
         price = self.prices().get(plan)
         if price is None:
             raise QuoteError("chỉ mua được gói Chuẩn hoặc Nâng cao")
@@ -290,7 +280,7 @@ class BillingService:
 
     def place_order(
         self,
-        plan: ServicePlan,
+        plan: Plan,
         seats: int,
         months: int,
         by_account: str,
@@ -312,15 +302,21 @@ class BillingService:
         gateway will not open the payment.
         """
         if not self.enabled:
-            raise BillingOff
+            raise BillingOff()
         now = self.now()
         self.store.expire_pending(self._stamp())
         q = self.quote(plan, seats, months)
-        gateway = self._chosen_gateway(gateway_name) if q.amount else None
+        gateway = None
+        if q.amount:
+            if not self.gateways:
+                raise QuoteError("cổng thanh toán chưa được cấu hình trên bản triển khai này")
+            gateway = self.gateways.get(gateway_name or next(iter(self.gateways)))
+            if gateway is None:
+                raise QuoteError("bản triển khai này không có cổng thanh toán đó")
         for waiting in self.store.orders(limit=20):
-            if waiting["status"] == OrderStatus.PENDING.value and waiting["kind"] != CREDITS:
+            if waiting["status"] == OrderStatus.PENDING.value:
                 self.store.retire(waiting["order_id"])
-        order_id = self._new_order_id("DH", now)
+        order_id = "DH" + now.astimezone(LOCAL_TZ).strftime("%y%m%d") + secrets.token_hex(3).upper()
         self.store.create_order(
             {
                 "order_id": order_id,
@@ -333,7 +329,7 @@ class BillingService:
                 "gross_vnd": q.gross,
                 "credit_vnd": q.credit,
                 "amount_vnd": q.amount,
-                "kind": q.kind.value,
+                "kind": q.kind,
                 "starts_on": q.starts_on.isoformat(),
                 "ends_on": q.ends_on.isoformat(),
                 "status": OrderStatus.PENDING.value,
@@ -341,10 +337,12 @@ class BillingService:
                 "live": int(bool(gateway and gateway.live)),
                 "created_by": by_account,
                 "created_at": self._stamp(),
-                "expires_at": self._expiry(now),
+                "expires_at": (now + timedelta(minutes=PENDING_MINUTES))
+                .astimezone(UTC)
+                .isoformat(timespec="seconds"),
             }
         )
-        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind.value})
+        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind})
         self._audit(
             by_pseudonym,
             "billing.order",
@@ -358,46 +356,11 @@ class BillingService:
         description = (
             f"Thanh toan don {order_id} goi {PLAN_ASCII[plan]} {seats} sinh vien {months} thang"
         )
-        url = self._open_checkout(gateway, order_id, q.amount, description, site, client_ip, now)
-        return self.store.order(order_id), url
-
-    def _chosen_gateway(self, name: str | None):
-        """The gateway asked for, or the first offered; QuoteError when there is none."""
-        if not self.gateways:
-            raise QuoteError("cổng thanh toán chưa được cấu hình trên bản triển khai này")
-        gateway = self.gateways.get(name or next(iter(self.gateways)))
-        if gateway is None:
-            raise QuoteError("bản triển khai này không có cổng thanh toán đó")
-        return gateway
-
-    @staticmethod
-    def _new_order_id(prefix: str, now: datetime) -> str:
-        """DH (a plan) or DL (a run pack), the local date, six random hex digits."""
-        return prefix + now.astimezone(LOCAL_TZ).strftime("%y%m%d") + secrets.token_hex(3).upper()
-
-    @staticmethod
-    def _expiry(now: datetime) -> str:
-        """When a pending order nobody paid expires (payments.PENDING_MINUTES)."""
-        return (
-            (now + timedelta(minutes=PENDING_MINUTES)).astimezone(UTC).isoformat(timespec="seconds")
-        )
-
-    def _open_checkout(
-        self,
-        gateway,
-        order_id: str,
-        amount: int,
-        description: str,
-        site: str,
-        client_ip: str,
-        now: datetime,
-    ) -> str:
-        """Open the gateway's payment for an order just created; the address to send the payer."""
         site = site.rstrip("/")
         try:
             checkout = gateway.checkout(
                 order_id,
-                amount,
+                q.amount,
                 description,
                 f"{site}/billing/return/{gateway.name}",
                 f"{site}/api/v1/billing/notify/{gateway.name}",
@@ -406,117 +369,18 @@ class BillingService:
             )
         except GatewayError as e:
             # Nothing was opened, so nothing can be paid: the order ends here.
-            refused = PaymentResult(order_id, OrderStatus.FAILED, amount, "", e.code, str(e))
+            refused = PaymentResult(order_id, OrderStatus.FAILED, q.amount, "", e.code, str(e))
             self.settle(refused, "checkout", gateway.name)
             raise PaymentUnavailable(f"{gateway.title}: {e}") from e
         if checkout.reference:
             self.store.set_checkout_ref(order_id, checkout.reference)
-        return checkout.url
-
-    # ------------------------------------------------------------ run packs (D053)
-
-    @property
-    def sells_credits(self) -> bool:
-        return self.enabled and self._credit is not None and bool(self.settings.credit_packs)
-
-    def credit_packs(self) -> list[dict]:
-        return [
-            {"runs": runs, "price_vnd": price, "per_run_vnd": round(price / runs)}
-            for runs, price in self.settings.credit_packs
-        ]
-
-    def place_credit_order(
-        self,
-        runs: int,
-        by_account: str,
-        by_pseudonym: str,
-        site: str,
-        client_ip: str,
-        gateway_name: str | None = None,
-    ) -> tuple[dict, str]:
-        """A learner's order for one run pack, and the address to pay it at.
-
-        The runs go to the account that ordered, never to another: the order
-        names its buyer, and only the payment's settlement credits them.
-        """
-        if not self.sells_credits:
-            raise BillingOff
-        price = dict(self.settings.credit_packs).get(runs)
-        if price is None:
-            raise QuoteError("không có gói lượt này")
-        gateway = self._chosen_gateway(gateway_name)
-        now = self.now()
-        self.store.expire_pending(self._stamp())
-        today = self.today().isoformat()
-        order_id = self._new_order_id("DL", now)
-        self.store.create_order(
-            {
-                "order_id": order_id,
-                "plan": None,  # a pack of runs buys no service plan
-                "seats": runs,
-                "months": 0,
-                "unit_price": round(price / runs),
-                "list_vnd": price,
-                "discount_vnd": 0,
-                "gross_vnd": price,
-                "credit_vnd": 0,
-                "amount_vnd": price,
-                "kind": CREDITS,
-                "starts_on": today,
-                "ends_on": today,
-                "status": OrderStatus.PENDING.value,
-                "gateway": gateway.name,
-                "live": int(bool(gateway.live)),
-                "created_by": by_account,
-                "created_at": self._stamp(),
-                "expires_at": self._expiry(now),
-            }
-        )
-        self.store.add_event(order_id, "created", {"amount": price, "kind": CREDITS})
-        self._audit(by_pseudonym, "billing.credit_order", order_id, f"runs={runs} amount={price}")
-        url = self._open_checkout(
-            gateway,
-            order_id,
-            price,
-            f"Thanh toan don {order_id} goi {runs} luot",
-            site,
-            client_ip,
-            now,
-        )
-        return self.store.order(order_id), url  # type: ignore[return-value]
-
-    def credit_order(self, order: dict) -> bool:
-        """Put a paid run pack in its buyer's wallet; True once it is there.
-
-        Safe to call any number of times: the metering service credits once
-        per order id, and a failure (the service unreachable) leaves the order
-        uncredited for the next call -- the return page, the learner's page,
-        or `credit_pending`.
-        """
-        if order["kind"] != CREDITS or order["status"] != OrderStatus.PAID.value:
-            return False
-        if order.get("credited_at"):
-            return True
-        if self._credit is None:
-            return False
-        try:
-            self._credit(order["created_by"], int(order["seats"]), order["order_id"])
-        except Exception:  # noqa: BLE001 - retried later; the payment itself is kept
-            logger.exception("crediting order %s failed; will retry", order["order_id"])
-            return False
-        if self.store.mark_credited(order["order_id"]):
-            self.store.add_event(order["order_id"], "credited", {"runs": order["seats"]})
-        return True
-
-    def credit_pending(self) -> list[str]:
-        """Credit every paid run pack that has not reached its wallet yet."""
-        return [o["order_id"] for o in self.store.uncredited(CREDITS) if self.credit_order(o)]
+        return self.store.order(order_id), checkout.url
 
     def _license_for(self, order: dict) -> License:
         return License(
             license_id="L-" + order["order_id"],
             organization=self.organization() or "(chưa đặt tên tổ chức)",
-            plan=ServicePlan(order["plan"]),
+            plan=Plan(order["plan"]),
             seats=order["seats"],
             valid_from=date.fromisoformat(order["starts_on"]),
             valid_to=date.fromisoformat(order["ends_on"]),
@@ -566,8 +430,7 @@ class BillingService:
             return "amount"
         changed = False
         if OrderStatus(order["status"]) in SETTLEABLE:
-            paid_plan = result.outcome is OrderStatus.PAID and order["kind"] != CREDITS
-            lic = self._license_for(order) if paid_plan else None
+            lic = self._license_for(order) if result.outcome is OrderStatus.PAID else None
             changed = self.store.settle(
                 order["order_id"],
                 result.outcome,
@@ -587,15 +450,13 @@ class BillingService:
             order["order_id"],
             f"amount={result.amount_vnd} ref={result.reference} code={result.code}",
         )
-        if result.outcome is OrderStatus.PAID and order["kind"] == CREDITS:
-            self.credit_order(self.store.order(order["order_id"]))
         return "ok"
 
     # ------------------------------------------------------------ keys
 
     def install_key(self, key: str, by_account: str, by_pseudonym: str) -> License:
         if not self.enabled:
-            raise BillingOff
+            raise BillingOff()
         if not self.settings.license_secret:
             raise keys.LicenseKeyError(
                 "bản triển khai này chưa đặt AICEFR_LICENSE_SECRET nên chưa cài được mã giấy phép"
@@ -620,15 +481,12 @@ class BillingService:
     # ------------------------------------------------------------ what the screens read
 
     def order_view(self, order: dict) -> dict:
+        plan = Plan(order["plan"])
         status = OrderStatus(order["status"])
-        credits = order["kind"] == CREDITS
         return {
             "order_id": order["order_id"],
-            "plan": order["plan"],
-            "plan_name": (
-                f"Gói {order['seats']} lượt" if credits else PLAN_NAMES[ServicePlan(order["plan"])]
-            ),
-            "credited": bool(order.get("credited_at")),
+            "plan": plan.value,
+            "plan_name": PLAN_NAMES[plan],
             "seats": order["seats"],
             "months": order["months"],
             "unit_price": order["unit_price"],
@@ -679,9 +537,7 @@ class BillingService:
                 "plan": p.value,
                 "name": PLAN_NAMES[p],
                 "price_per_student_month": prices.get(p, 0),
-                "students": FREE_SEATS
-                if p is ServicePlan.FREE
-                else None,  # None: as many as bought
+                "students": FREE_SEATS if p is Plan.FREE else None,  # None: as many as bought
                 "quota_per_student": QUOTA_PER_SEAT[p],
                 "features": sorted(f.value for f in PLAN_FEATURES[p]),
                 "for_sale": p in PURCHASABLE,
@@ -741,9 +597,7 @@ class BillingService:
                     "warning": usage.warning,
                     "month": usage.month,
                 },
-                "orders": [
-                    self.order_view(o) for o in self.store.orders(limit=40) if o["kind"] != CREDITS
-                ][:20],
+                "orders": [self.order_view(o) for o in self.store.orders(limit=20)],
             }
         )
         return out

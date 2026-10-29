@@ -117,9 +117,9 @@ class WhisperEngine:
     def transcribe(self, pcm: np.ndarray, sr: int) -> Transcript:
         try:
             if self.backend == "mlx":
-                words, text, tokens = self._mlx(pcm)
+                words, text = self._mlx(pcm)
             else:
-                words, text, tokens = self._ct2_transcribe(pcm)
+                words, text = self._ct2_transcribe(pcm)
         except ImportError as exc:
             raise AsrError(f"chưa cài backend {self.backend}: {exc}") from exc
         except Exception as exc:
@@ -131,10 +131,10 @@ class WhisperEngine:
             words=words,
             engine=self.name,
             model_version=self.model,
+            has_word_timestamps=bool(words),
             is_verbatim=self.is_verbatim,
             language=language[0] if language else None,
             language_probability=round(language[1], 4) if language else None,
-            output_tokens=tokens,
         )
 
     def detect_language(self, pcm: np.ndarray) -> tuple[str, float] | None:
@@ -183,7 +183,7 @@ class WhisperEngine:
         _, info = self._ct2.transcribe(pcm, language=None, word_timestamps=False)
         return info.language, float(info.language_probability)
 
-    def _mlx(self, pcm: np.ndarray) -> tuple[list[Word], str, int]:
+    def _mlx(self, pcm: np.ndarray) -> tuple[list[Word], str]:
         import mlx_whisper
 
         r = mlx_whisper.transcribe(
@@ -204,11 +204,9 @@ class WhisperEngine:
             for seg in r.get("segments", [])
             for w in seg.get("words", [])
         ]
-        # D057: what the decoder produced, the output side of the price.
-        tokens = sum(len(seg.get("tokens", [])) for seg in r.get("segments", []))
-        return words, r.get("text", "").strip(), tokens
+        return words, r.get("text", "").strip()
 
-    def _ct2_transcribe(self, pcm: np.ndarray) -> tuple[list[Word], str, int]:
+    def _ct2_transcribe(self, pcm: np.ndarray) -> tuple[list[Word], str]:
         from faster_whisper import WhisperModel
 
         if self._ct2 is None:
@@ -216,10 +214,9 @@ class WhisperEngine:
         segs, _ = self._ct2.transcribe(
             pcm, word_timestamps=True, language="en", **self._options(CT2_DECODE_OPTIONS)
         )
-        words, parts, tokens = [], [], 0
+        words, parts = [], []
         for seg in segs:
             parts.append(seg.text)
-            tokens += len(seg.tokens or [])
             for w in seg.words or []:
                 words.append(
                     Word(
@@ -229,4 +226,4 @@ class WhisperEngine:
                         prob=round(float(w.probability), 4),
                     )
                 )
-        return words, "".join(parts).strip(), tokens
+        return words, "".join(parts).strip()

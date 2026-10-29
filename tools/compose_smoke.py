@@ -2,13 +2,11 @@
 
     docker compose up -d --build
     python tools/compose_smoke.py            # against http://localhost:8000
-    python tools/compose_smoke.py --base-url https://cefr.example.org    # behind Caddy (D047)
-    python tools/compose_smoke.py --base-url https://localhost --insecure  # Caddy's local CA
 
 Creates two throwaway accounts with random passwords (kept in memory only),
 then checks that every service answers through the gateway and that the paths
 between them work (D044): a recording scored by the speech service over
-Redis, a lesson step measured by it, the pages and the sidebar (web) asking
+RabbitMQ, a lesson step measured by it, the pages and the sidebar (web) asking
 core, the personal export and erasure across responses and lesson attempts.
 And that the gateway does not trust what a browser says about itself.
 Exits 1 at the first check that fails.
@@ -23,7 +21,6 @@ import io
 import json
 import math
 import secrets
-import ssl
 import struct
 import subprocess
 import sys
@@ -49,17 +46,11 @@ def tone(seconds: float, rate: int = 16_000) -> bytes:
     return buf.getvalue()
 
 
-# Set by --insecure: accept a certificate no public CA signed (Caddy's internal
-# CA for AICEFR_DOMAIN=localhost). Never needed against a real domain.
-TLS_CONTEXT: ssl.SSLContext | None = None
-
-
 class Browser:
     def __init__(self, base: str) -> None:
         self.base = base.rstrip("/")
         self.opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()),
-            urllib.request.HTTPSHandler(context=TLS_CONTEXT),
+            urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar())
         )
 
     def call(self, method: str, path: str, body=None, headers=None, form=None, files=None):
@@ -124,24 +115,8 @@ def create_account(pseudonym: str, role: str) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument(
-        "--base-url",
-        "--base",
-        dest="base",
-        default="http://localhost:8000",
-        help="where the browser reaches the stack (default: %(default)s)",
-    )
-    ap.add_argument(
-        "--insecure",
-        action="store_true",
-        help="accept a self-signed certificate (https://localhost behind Caddy)",
-    )
+    ap.add_argument("--base", default="http://localhost:8000")
     args = ap.parse_args(argv)
-    if args.insecure:
-        global TLS_CONTEXT
-        TLS_CONTEXT = ssl.create_default_context()
-        TLS_CONTEXT.check_hostname = False
-        TLS_CONTEXT.verify_mode = ssl.CERT_NONE
     tag = secrets.token_hex(2).upper()
     student_id, admin_id = f"SV-{tag}", f"QT-{tag}"
     student_pw, admin_pw = create_account(student_id, "student"), create_account(admin_id, "admin")
@@ -160,8 +135,12 @@ def main(argv: list[str] | None = None) -> int:
     student = Browser(args.base).login(student_id, student_pw)
     status, me = student.call("GET", "/api/v1/me")
     check(status == 200 and me["pseudonym"] == student_id, "core: who am I")
-    status, terms = student.call("POST", "/api/v1/me/terms")
-    check(status == 200 and terms["may_submit"], "core: terms accepted")
+    status, consent = student.call(
+        "POST",
+        "/api/v1/me/consent",
+        form={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+    )
+    check(status == 200 and consent["may_submit"], "core: consent signed")
 
     status, sub = student.call(
         "POST", "/api/v1/responses", form={"task_id": "P3"},
@@ -177,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
         time.sleep(1)
     check(
         st.get("is_pending") is False and st["status"] != "FAILED",
-        "speech over Redis: the recording was scored",
+        "speech over RabbitMQ: the recording was scored",
         st,
     )
     status, report = student.call("GET", f"/api/v1/responses/{rid}")
@@ -195,14 +174,14 @@ def main(argv: list[str] | None = None) -> int:
     status, export = student.call("GET", "/api/v1/me/export.json")
     check(
         status == 200 and export["response_count"] == 1 and export["lesson_attempt_count"] == 1,
-        "core: the export gathers responses, terms and lesson attempts",
+        "core: the export gathers responses, consent and lesson attempts",
         export if status != 200 else None,
     )
 
     admin = Browser(args.base).login(admin_id, admin_pw)
     status, audit = admin.call("GET", "/api/v1/audit?limit=200")
     actions = {e["action"] for e in audit} if status == 200 else set()
-    check({"terms.accept", "export.personal"} <= actions, "core: the audit log")
+    check({"consent.sign", "export.personal"} <= actions, "core: the audit log")
     status, plan = admin.call("GET", "/api/v1/admin/billing")
     check(status == 200, "core: the plan screen", plan)
     status, erased = admin.call(
@@ -214,17 +193,16 @@ def main(argv: list[str] | None = None) -> int:
         erased,
     )
 
-    # The core user may write its own database and nothing else (D048).
+    # The core role owns its schema and nothing else.
     denied = subprocess.run(
-        ["docker", "compose", "exec", "-T", "mongo", "sh", "-c",
-         'mongosh --quiet "mongodb://core:$CORE_DB_PASSWORD@localhost:27017/aicefr'
-         '?authSource=aicefr" --eval \'db.getSiblingDB("other").smoke.insertOne({i: 1})\''],
+        ["docker", "compose", "exec", "-T", "postgres", "psql", "-U", "postgres", "-d", "aicefr",
+         "-c", "SET ROLE core; CREATE TABLE public.smoke (i int);"],
         capture_output=True,
         text=True,
     )  # fmt: skip
     check(
-        denied.returncode != 0 and "not authorized" in (denied.stdout + denied.stderr),
-        "mongo: the core user cannot write outside its database",
+        denied.returncode != 0 and "permission denied" in denied.stderr,
+        "postgres: the core role cannot write outside its schema",
         denied.stdout + denied.stderr,
     )
     status, page = student.call("GET", "/my-progress")

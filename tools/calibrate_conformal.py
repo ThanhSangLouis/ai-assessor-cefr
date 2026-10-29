@@ -3,11 +3,11 @@
 
     .venv/bin/python tools/calibrate_conformal.py [duong-dan-sandi-work]
 
-Dau ra: `$AICEFR_MODEL_DIR/conformal_resp_v2.json` (thu muc artifact ngoai repo, W7-S01).
+Dau ra: `src/aicefr/scoring/models/conformal_resp_v2.json`.
 
 VI SAO CV+ CHU KHONG PHAI SPLIT CONFORMAL. Split conformal can mot tap hieu
-chinh ma mo hinh CHUA THAY. Mo hinh dang chay da hoc tren toan bo tap, nen moi
-phan du tinh tren tap do la phan du trong mau -- qua nho, khoang qua hep,
+chinh ma mo hinh CHUA THAY. Mo hinh dang chay da hoc tren ca 876 bai, nen moi
+phan du tinh tren 876 bai do la phan du trong mau -- qua nho, khoang qua hep,
 bao dam mat. CV+ (Barber, Candes, Ramdas, Tibshirani 2021, "Predictive
 inference with the jackknife+") dung dung nam mo hinh theo fold da co san:
 
@@ -47,7 +47,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parent.parent
-MODELS = Path(os.getenv("AICEFR_MODEL_DIR") or ROOT.parent / "aicefr-models")
+MODELS = ROOT / "src/aicefr/scoring/models"
 MODEL_NAME = "ridge_resp_v2"
 OUT = MODELS / "conformal_resp_v2.json"
 WORK = Path(sys.argv[1] if len(sys.argv) > 1 else ROOT.parent / "sandi-work").resolve()
@@ -75,9 +75,9 @@ def fit_like_v2(X19: np.ndarray, y: np.ndarray, j_filler: int) -> dict:
     """Hoc nhu v1 (19 dac trung) roi bo `filler_ratio` dung nhu `derive_model_v2.py`.
 
     Hoc thang tren 18 dac trung KHONG cho ra mo hinh dang chay: `filler_ratio`
-    khac 0 o vai bai huan luyen, nen bo cot do truoc khi hoc lam RidgeCV
-    chon alpha khac va du doan lech di vai phan muoi diem. Phan du cua mot mo
-    hinh khac khong hieu chinh duoc mo hinh nay.
+    khac 0 o 5/876 bai huan luyen (toi da 0,123), nen bo cot do truoc khi hoc
+    lam RidgeCV chon alpha khac (11,9 thay vi 70,2) va du doan lech toi 0,24
+    diem. Phan du cua mot mo hinh khac khong hieu chinh duoc mo hinh nay.
     """
     m = fit(X19, y)
     shift = m["coef"][j_filler] * ((0.0 - m["mean"][j_filler]) / m["scale"][j_filler])

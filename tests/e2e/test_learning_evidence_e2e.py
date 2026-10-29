@@ -11,6 +11,7 @@ Run:  pytest -m e2e   (developer machines only; CI skips this layer)
 from __future__ import annotations
 
 import json
+import sqlite3
 
 import pytest
 
@@ -25,8 +26,6 @@ from test_lessons_e2e import (  # noqa: E402, F401  (fixtures are used by name)
     student,
 )
 from test_practice_e2e import login  # noqa: E402
-
-from aicefr.storage.db import database  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 
@@ -68,12 +67,17 @@ def test_progress_page_names_the_pronunciation_patterns(student, live_server):
 
 def test_a_score_only_learner_sees_why_and_can_leave(browser, live_server):
     from aicefr.storage.auth_repository import AuthRepository
+    from aicefr.storage.consent_repository import ConsentRepository
     from aicefr.storage.study_repository import StudyRepository
 
-    auth = AuthRepository(live_server.db_path)
+    auth, consent = AuthRepository(live_server.db_path), ConsentRepository(live_server.db_path)
     names = [live_server.account() for _ in range(4)]
     for name in names:
-        auth.accept_terms(auth.get_by_pseudonym(name)["account_id"])
+        consent.sign(
+            auth.get_by_pseudonym(name)["account_id"],
+            audio_storage_allowed=True,
+            research_use_allowed=True,
+        )
 
     admin = _page(browser, live_server, "/admin", "admin")
     admin.goto("/admin/study")
@@ -100,18 +104,20 @@ def test_a_score_only_learner_sees_why_and_can_leave(browser, live_server):
     )
     assert r.ok, r.text()
     rid = r.json()["response_id"]
-    responses = database(live_server.db_path)["response"]
-    report = json.loads(responses.find_one({"response_id": rid})["report_json"])
-    a = report.get("assessment") or {"model_version": "test"}
-    a.update(overall_0_6=3.4, overall_band="B1", weakest_criteria=["fluency"],
-             comments=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}])  # fmt: skip
-    report["assessment"] = a
-    report["status"] = "COMPLETED"
-    responses.update_one(
-        {"response_id": rid},
-        {"$set": {"status": "COMPLETED", "overall_0_6": 3.4, "overall_band": "B1",
-                  "report_json": json.dumps(report)}},
-    )  # fmt: skip
+    with sqlite3.connect(live_server.db_path) as c:
+        report = json.loads(
+            c.execute("SELECT report_json FROM response WHERE response_id=?", (rid,)).fetchone()[0]
+        )
+        a = report.get("assessment") or {"model_version": "test"}
+        a.update(overall_0_6=3.4, overall_band="B1", weakest_criteria=["fluency"],
+                 comments=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}])  # fmt: skip
+        report["assessment"] = a
+        report["status"] = "COMPLETED"
+        c.execute(
+            "UPDATE response SET status='COMPLETED', overall_0_6=3.4, overall_band='B1',"
+            " report_json=? WHERE response_id=?",
+            (json.dumps(report), rid),
+        )
 
     page.goto(f"/report/{rid}")
     expect(page.locator("#feedback-withheld")).to_contain_text("nhóm “Chỉ điểm”")

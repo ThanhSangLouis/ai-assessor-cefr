@@ -1,0 +1,1147 @@
+{"kind":"deck","id":"pr/dgx01u","name":"Deck"}
+{"kind":"layout","layoutId":"1e7b6b12-3bfa-4c56-9bc3-4a5a801da044","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"c3f4bde0-7edf-4fbc-a4ff-8760f2190cb6","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/ymkyaw","slide":1,"title":"ĐỀ CƯƠNG KHÓA LUẬN • BẢN GIẢI THÍCH DỄ HIỂU","textShapes":6}
+{"kind":"shape","id":"sh/fa94vu18","slide":1,"bbox":[0,0,650,720]}
+{"kind":"textbox","id":"sh/e9032p0n","slide":1,"text":"ĐỀ CƯƠNG KHÓA LUẬN • BẢN GIẢI THÍCH DỄ HIỂU","textPreview":"ĐỀ CƯƠNG KHÓA LUẬN • BẢN GIẢI THÍCH DỄ HIỂU","textChars":43,"textLines":1,"bbox":[58,44,560,26]}
+{"kind":"textbox","id":"sh/pgbm1oja","slide":1,"text":"AI hỗ trợ đánh giá\nSpeaking theo CEFR","textPreview":"AI hỗ trợ đánh giá | Speaking theo CEFR","textChars":37,"textLines":2,"bbox":[58,128,535,168]}
+{"kind":"textbox","id":"sh/of2l8jip","slide":1,"text":"Cho sinh viên đại học Việt Nam ở trình độ A2–B2","textPreview":"Cho sinh viên đại học Việt Nam ở trình độ A2–B2","textChars":47,"textLines":1,"bbox":[58,330,520,60]}
+{"kind":"shape","id":"sh/net4ze14","slide":1,"bbox":[58,416,430,5]}
+{"kind":"textbox","id":"sh/2d03690j","slide":1,"text":"Từ cách giảng viên chấm nói → bằng chứng AI quan sát → cách kiểm định kết quả","textPreview":"Từ cách giảng viên chấm nói → bằng chứng AI quan sát → cách kiểm định kết quả","textChars":77,"textLines":1,"bbox":[58,448,505,88]}
+{"kind":"textbox","id":"sh/5k7mpkj6","slide":1,"text":"Sinh viên: [Điền họ tên – MSSV]\nGiảng viên hướng dẫn: [Điền họ tên]","textPreview":"Sinh viên: [Điền họ tên – MSSV] | Giảng viên hướng dẫn: [Điền họ tên]","textChars":67,"textLines":2,"bbox":[58,630,500,48]}
+{"kind":"textbox","id":"sh/4jylwfil","slide":1,"text":"1","textPreview":"1","textChars":1,"textLines":1,"bbox":[1230,680,24,20]}
+{"kind":"image","id":"im/1kr21kz2","slide":1,"name":"","alt":"Sinh viên Việt Nam luyện nói tiếng Anh trước micro và máy tính phân tích giọng nói","bbox":[630,0,650,720]}
+{"kind":"notes","id":"nt/ymkyaw","slide":1,"text":"Mở đầu bằng một câu: đề tài không cố thay thế giảng viên; đề tài xây một trợ lý chấm sơ bộ, có bằng chứng và biết khi nào phải chuyển người thật xem lại.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- Hero image generated with OpenAI image generation for this presentation."}
+{"kind":"slide","id":"sl/q3atp3","slide":2,"title":"HIỂU TRONG 30 GIÂY","textShapes":16}
+{"kind":"textbox","id":"sh/qtcfipgn","slide":2,"text":"HIỂU TRONG 30 GIÂY","textPreview":"HIỂU TRONG 30 GIÂY","textChars":18,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/xwnet4ze","slide":2,"text":"Một bài nói đi vào, một hồ sơ năng lực có bằng chứng đi ra","textPreview":"Một bài nói đi vào, một hồ sơ năng lực có bằng chứng đi ra","textChars":58,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/cvexkzyt","slide":2,"text":"AI chấm sơ bộ theo rubric do giảng viên thiết lập; giảng viên quyết định cuối cùng.","textPreview":"AI chấm sơ bộ theo rubric do giảng viên thiết lập; giảng viên quyết định cuối cùng.","textChars":83,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/3qlwnahw","slide":2,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/2pcve5gr","slide":2,"text":"TÓM TẮT","textPreview":"TÓM TẮT","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/ps3epkz2","slide":2,"text":"2","textPreview":"2","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/orudgfyh","slide":2,"bbox":[281,294,16,6]}
+{"kind":"shape","id":"sh/f21wjah0","slide":2,"bbox":[291,289,9,16]}
+{"kind":"shape","id":"sh/e1sva5gf","slide":2,"bbox":[515,294,16,6]}
+{"kind":"shape","id":"sh/k7ul0bq1","slide":2,"bbox":[525,289,9,16]}
+{"kind":"shape","id":"sh/5832tgrm","slide":2,"bbox":[749,294,16,6]}
+{"kind":"shape","id":"sh/i5c3y18v","slide":2,"bbox":[759,289,9,16]}
+{"kind":"shape","id":"sh/j6lkr69g","slide":2,"bbox":[983,294,16,6]}
+{"kind":"shape","id":"sh/w3alwrqp","slide":2,"bbox":[993,289,9,16]}
+{"kind":"shape","id":"sh/x432pwra","slide":2,"bbox":[64,250,216,94]}
+{"kind":"textbox","id":"sh/a1s3uh8z","slide":2,"text":"Bài nói","textPreview":"Bài nói","textChars":7,"textLines":1,"bbox":[76,264,192,26]}
+{"kind":"textbox","id":"sh/v21knm9k","slide":2,"text":"Audio + nhiệm vụ","textPreview":"Audio + nhiệm vụ","textChars":16,"textLines":1,"bbox":[76,294,192,30]}
+{"kind":"shape","id":"sh/gzelsvq9","slide":2,"bbox":[298,250,216,94]}
+{"kind":"textbox","id":"sh/h0nm10ru","slide":2,"text":"AI quan sát","textPreview":"AI quan sát","textChars":11,"textLines":1,"bbox":[310,264,192,26]}
+{"kind":"textbox","id":"sh/pwj2lgzy","slide":2,"text":"Âm thanh, transcript, lượt nói","textPreview":"Âm thanh, transcript, lượt nói","textChars":30,"textLines":1,"bbox":[310,294,192,30]}
+{"kind":"shape","id":"sh/ovalcbid","slide":2,"bbox":[532,250,216,94]}
+{"kind":"textbox","id":"sh/3u1kjq1s","slide":2,"text":"Ước lượng","textPreview":"Ước lượng","textChars":9,"textLines":1,"bbox":[544,264,192,26]}
+{"kind":"textbox","id":"sh/2ts3al07","slide":2,"text":"A2 / B1 / B2 + 6 tiêu chí","textPreview":"A2 / B1 / B2 + 6 tiêu chí","textChars":25,"textLines":1,"bbox":[544,294,192,30]}
+{"kind":"shape","id":"sh/1sj2hgjm","slide":2,"bbox":[766,250,216,94]}
+{"kind":"textbox","id":"sh/gral8bi1","slide":2,"text":"Giải thích","textPreview":"Giải thích","textChars":10,"textLines":1,"bbox":[778,264,192,26]}
+{"kind":"textbox","id":"sh/fq1kf61w","slide":2,"text":"Timestamp, lỗi, pause, trích đoạn","textPreview":"Timestamp, lỗi, pause, trích đoạn","textChars":33,"textLines":1,"bbox":[778,294,192,30]}
+{"kind":"shape","id":"sh/ep83610b","slide":2,"bbox":[1000,250,216,94]}
+{"kind":"textbox","id":"sh/toz2dwjq","slide":2,"text":"Kiểm duyệt","textPreview":"Kiểm duyệt","textChars":10,"textLines":1,"bbox":[1012,264,192,26]}
+{"kind":"textbox","id":"sh/snq14ri5","slide":2,"text":"Ca bất định → giảng viên","textPreview":"Ca bất định → giảng viên","textChars":24,"textLines":1,"bbox":[1012,294,192,30]}
+{"kind":"shape","id":"sh/itozexg3","slide":2,"bbox":[140,436,1000,102]}
+{"kind":"textbox","id":"sh/jux0n2ho","slide":2,"text":"Giá trị chính không phải là một con số. Giá trị là phản hồi nhanh, truy vết được và dùng được để chọn bài luyện tiếp theo.","textPreview":"Giá trị chính không phải là một con số. Giá trị là phản hồi nhanh, truy vết được và dùng được để chọn bài luyện tiếp theo.","textChars":122,"textLines":1,"bbox":[160,450,960,74]}
+{"kind":"notes","id":"nt/q3atp3","slide":2,"text":"Giải thích theo năm bước từ trái sang phải. Nhấn mạnh đầu ra là profile có điểm, bằng chứng, confidence và cờ review, không phải chứng chỉ CEFR.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/f0xj0c","slide":3,"title":"BỐI CẢNH","textShapes":12}
+{"kind":"textbox","id":"sh/h83axkne","slide":3,"text":"BỐI CẢNH","textPreview":"BỐI CẢNH","textChars":8,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/u5sr25on","slide":3,"text":"Vấn đề không chỉ là chấm chậm, mà là thiếu phản hồi có thể hành động","textPreview":"Vấn đề không chỉ là chấm chậm, mà là thiếu phản hồi có thể hành động","textChars":68,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/v6lsva58","slide":3,"text":"Trong lớp đông, giảng viên khó nghe lại nhiều lần và chỉ ra bằng chứng cho từng sinh viên.","textPreview":"Trong lớp đông, giảng viên khó nghe lại nhiều lần và chỉ ra bằng chứng cho từng sinh viên.","textChars":90,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/83a90f6x","slide":3,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/t4jatkn2","slide":3,"text":"BỐI CẢNH","textPreview":"BỐI CẢNH","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/6hsry5or","slide":3,"text":"3","textPreview":"3","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/7i1sra5c","slide":3,"bbox":[68,232,330,5]}
+{"kind":"textbox","id":"sh/czetwz61","slide":3,"text":"Tốn công","textPreview":"Tốn công","textChars":8,"textLines":1,"bbox":[68,250,330,52]}
+{"kind":"textbox","id":"sh/d0na54nm","slide":3,"text":"Chấm Speaking cần nghe audio, đối chiếu rubric và viết nhận xét. Khối lượng tăng gần tuyến tính theo số sinh viên.","textPreview":"Chấm Speaking cần nghe audio, đối chiếu rubric và viết nhận xét. Khối lượng tăng gần tuyến tính theo số sinh viên.","textChars":114,"textLines":1,"bbox":[68,310,330,172]}
+{"kind":"shape","id":"sh/9w761cn6","slide":3,"bbox":[475,232,330,5]}
+{"kind":"textbox","id":"sh/8vy5s76l","slide":3,"text":"Khó nhất quán","textPreview":"Khó nhất quán","textChars":13,"textLines":1,"bbox":[475,250,330,52]}
+{"kind":"textbox","id":"sh/nupoz25g","slide":3,"text":"Điểm chịu ảnh hưởng bởi cách hiểu rubric, tải chấm, độ khó prompt và mức đồng thuận giữa người chấm.","textPreview":"Điểm chịu ảnh hưởng bởi cách hiểu rubric, tải chấm, độ khó prompt và mức đồng thuận giữa người chấm.","textChars":100,"textLines":1,"bbox":[475,310,330,172]}
+{"kind":"shape","id":"sh/mtgnqxov","slide":3,"bbox":[882,232,330,5]}
+{"kind":"textbox","id":"sh/l876xsna","slide":3,"text":"Phản hồi khó dùng","textPreview":"Phản hồi khó dùng","textChars":17,"textLines":1,"bbox":[882,250,330,52]}
+{"kind":"textbox","id":"sh/07y5on6p","slide":3,"text":"Một mức tổng quát không nói cho người học biết đoạn nào ngập ngừng, ý nào thiếu liên kết hoặc âm nào khó hiểu.","textPreview":"Một mức tổng quát không nói cho người học biết đoạn nào ngập ngừng, ý nào thiếu liên kết hoặc âm nào khó hiểu.","textChars":110,"textLines":1,"bbox":[882,310,330,172]}
+{"kind":"shape","id":"sh/z6pov254","slide":3,"bbox":[145,540,990,78]}
+{"kind":"textbox","id":"sh/y5wnmxoj","slide":3,"text":"Câu hỏi thực tế: AI có thể giảm phần việc lặp lại nhưng vẫn giữ chuẩn chấm và quyền quyết định của giảng viên không?","textPreview":"Câu hỏi thực tế: AI có thể giảm phần việc lặp lại nhưng vẫn giữ chuẩn chấm và quyền quyết định của giảng viên không?","textChars":116,"textLines":1,"bbox":[165,554,950,50]}
+{"kind":"notes","id":"nt/f0xj0c","slide":3,"text":"Không đưa ra con số tiết kiệm thời gian khi chưa đo. Chỉ mô tả cơ chế và vấn đề thực tế. Đây là nhu cầu formative/low-stakes, không phải thi chứng chỉ.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1"}
+{"kind":"slide","id":"sl/9uv9yq","slide":4,"title":"BÀI TOÁN NGHIÊN CỨU","textShapes":12}
+{"kind":"textbox","id":"sh/d43254ve","slide":4,"text":"BÀI TOÁN NGHIÊN CỨU","textPreview":"BÀI TOÁN NGHIÊN CỨU","textChars":19,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/q1c3upc3","slide":4,"text":"Hệ thống phải được kiểm định như một công cụ đo lường, không chỉ như một demo AI","textPreview":"Hệ thống phải được kiểm định như một công cụ đo lường, không chỉ như một demo AI","textChars":80,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/r2lk3udo","slide":4,"text":"Một giao diện chạy được chưa chứng minh rằng điểm số có ý nghĩa.","textPreview":"Một giao diện chạy được chưa chứng minh rằng điểm số có ý nghĩa.","textChars":64,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/4za1szux","slide":4,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/p03214vi","slide":4,"text":"BÀI TOÁN","textPreview":"BÀI TOÁN","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/2dsjqpcr","slide":4,"text":"4","textPreview":"4","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/3y1kzudc","slide":4,"bbox":[104,220,1072,116]}
+{"kind":"textbox","id":"sh/ovel4ju1","slide":4,"text":"Làm thế nào ước lượng mức Speaking A2–B2 theo sáu tiêu chí CEFR, kèm bằng chứng và độ tin cậy, trên dữ liệu người Việt được tách theo người nói?","textPreview":"Làm thế nào ước lượng mức Speaking A2–B2 theo sáu tiêu chí CEFR, kèm bằng chứng và độ tin cậy, trên dữ liệu người Việt được tách theo ngư...","textChars":144,"textLines":1,"bbox":[124,234,1032,88]}
+{"kind":"shape","id":"sh/9wn2dobm","slide":4,"bbox":[92,390,320,5]}
+{"kind":"textbox","id":"sh/9gjq547u","slide":4,"text":"1. Đúng construct?","textPreview":"1. Đúng construct?","textChars":18,"textLines":1,"bbox":[92,408,320,52]}
+{"kind":"textbox","id":"sh/ofa9czq9","slide":4,"text":"Tín hiệu máy có thực sự phản ánh Range, Accuracy, Fluency, Interaction, Coherence và Phonology?","textPreview":"Tín hiệu máy có thực sự phản ánh Range, Accuracy, Fluency, Interaction, Coherence và Phonology?","textChars":95,"textLines":1,"bbox":[92,468,320,102]}
+{"kind":"shape","id":"sh/ne183up4","slide":4,"bbox":[480,390,320,5]}
+{"kind":"textbox","id":"sh/mdsra98j","slide":4,"text":"2. Đồng thuận với người?","textPreview":"2. Đồng thuận với người?","textChars":24,"textLines":1,"bbox":[480,408,320,52]}
+{"kind":"textbox","id":"sh/1czq147y","slide":4,"text":"AI gần giảng viên đến đâu, và trần đồng thuận giữa hai giảng viên là bao nhiêu?","textPreview":"AI gần giảng viên đến đâu, và trần đồng thuận giữa hai giảng viên là bao nhiêu?","textChars":79,"textLines":1,"bbox":[480,468,320,102]}
+{"kind":"shape","id":"sh/0bq98zqd","slide":4,"bbox":[868,390,320,5]}
+{"kind":"textbox","id":"sh/zah8zups","slide":4,"text":"3. Biết khi nào không chắc?","textPreview":"3. Biết khi nào không chắc?","textChars":27,"textLines":1,"bbox":[868,408,320,52]}
+{"kind":"textbox","id":"sh/e98r6p87","slide":4,"text":"Confidence có phát hiện được audio lỗi, ASR sai và bài ở ranh giới hai band không?","textPreview":"Confidence có phát hiện được audio lỗi, ASR sai và bài ở ranh giới hai band không?","textChars":82,"textLines":1,"bbox":[868,468,320,102]}
+{"kind":"notes","id":"nt/9uv9yq","slide":4,"text":"Ba nhóm câu hỏi gom RQ1–RQ6 của đề cương: validity/agreement, giá trị multimodal và error/fairness, calibration/reliability.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html"}
+{"kind":"slide","id":"sl/g056x8","slide":5,"title":"PHẠM VI","textShapes":10}
+{"kind":"textbox","id":"sh/mdcrut0v","slide":5,"text":"PHẠM VI","textPreview":"PHẠM VI","textChars":7,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/9g3qpojm","slide":5,"text":"Khóa phạm vi để kết quả có thể bảo vệ trong 10 tuần","textPreview":"Khóa phạm vi để kết quả có thể bảo vệ trong 10 tuần","textChars":51,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/8fu9w3i1","slide":5,"text":"Tên đề tài chốt: Xây dựng và kiểm định hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR cho sinh viên đại học Việt Nam ở trình độ A2–B2.","textPreview":"Tên đề tài chốt: Xây dựng và kiểm định hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR cho sinh viên đại học Việt Nam ở trìn...","textChars":148,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/vi58ry1s","slide":5,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/ahcryt07","slide":5,"text":"PHẠM VI","textPreview":"PHẠM VI","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/x4nqt8ji","slide":5,"text":"5","textPreview":"5","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/w3e903id","slide":5,"bbox":[78,234,500,5]}
+{"kind":"textbox","id":"sh/bm18fe18","slide":5,"text":"Trong phạm vi","textPreview":"Trong phạm vi","textChars":13,"textLines":1,"bbox":[78,252,500,52]}
+{"kind":"textbox","id":"sh/qls7m903","slide":5,"text":"• Sinh viên Việt Nam từ 18 tuổi\n• Ba mức A2, B1, B2\n• Formative / low-stakes\n• Audio + transcript + interaction\n• Điểm sơ bộ, evidence, confidence\n• Hàng đợi giảng viên duyệt","textPreview":"• Sinh viên Việt Nam từ 18 tuổi | • Ba mức A2, B1, B2 | • Formative / low-stakes | • Audio + transcript + interaction | • Điểm sơ bộ, evi...","textChars":174,"textLines":6,"bbox":[78,312,500,222]}
+{"kind":"shape","id":"sh/07y587e9","slide":5,"bbox":[700,234,500,5]}
+{"kind":"textbox","id":"sh/l8rmhcvu","slide":5,"text":"Ngoài phạm vi","textPreview":"Ngoài phạm vi","textChars":13,"textLines":1,"bbox":[700,252,500,52]}
+{"kind":"textbox","id":"sh/y5gn6hwj","slide":5,"text":"• Cấp chứng chỉ CEFR chính thức\n• A1, C1, C2\n• Thi high-stakes hoặc chống gian lận\n• Chatbot hội thoại tự do\n• Suy luận cảm xúc, giới tính, tính cách\n• Thay thế hoàn toàn giảng viên","textPreview":"• Cấp chứng chỉ CEFR chính thức | • A1, C1, C2 | • Thi high-stakes hoặc chống gian lận | • Chatbot hội thoại tự do | • Suy luận cảm xúc, ...","textChars":181,"textLines":6,"bbox":[700,312,500,222]}
+{"kind":"shape","id":"sh/z6p4f2d4","slide":5,"bbox":[210,570,860,66]}
+{"kind":"textbox","id":"sh/8vi5crel","slide":5,"text":"Cách gọi an toàn: hệ thống AI hỗ trợ đánh giá theo CEFR trong bối cảnh luyện tập.","textPreview":"Cách gọi an toàn: hệ thống AI hỗ trợ đánh giá theo CEFR trong bối cảnh luyện tập.","textChars":81,"textLines":1,"bbox":[230,584,820,38]}
+{"kind":"notes","id":"nt/g056x8","slide":5,"text":"Phạm vi hẹp là điều kiện của tính khả thi. Hội đồng thường hỏi hệ thống có cấp chứng chỉ không; câu trả lời là không.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.coe.int/en/web/common-european-framework-reference-languages/relating-examinations-to-the-cefr"}
+{"kind":"slide","id":"sl/xn40nr","slide":6,"title":"ĐỊNH VỊ ĐỀ TÀI","textShapes":22}
+{"kind":"textbox","id":"sh/8na1wfax","slide":6,"text":"ĐỊNH VỊ ĐỀ TÀI","textPreview":"ĐỊNH VỊ ĐỀ TÀI","textChars":14,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/nm1k3utc","slide":6,"text":"Đề tài nằm đúng ô Speaking × Assess × AI Assessor của khung ALDM-L","textPreview":"Đề tài nằm đúng ô Speaking × Assess × AI Assessor của khung ALDM-L","textChars":66,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/mlsjups7","slide":6,"text":"D1–D8 giúp nói rõ đối tượng, năng lực, dữ liệu đầu ra và cách kết quả quay lại việc học.","textPreview":"D1–D8 giúp nói rõ đối tượng, năng lực, dữ liệu đầu ra và cách kết quả quay lại việc học.","textChars":88,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/xc3294bu","slide":6,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/wbal0za9","slide":6,"text":"ALDM-L","textPreview":"ALDM-L","textChars":6,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/va1k7uto","slide":6,"text":"6","textPreview":"6","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/a9sjyps3","slide":6,"bbox":[66,220,268,3]}
+{"kind":"textbox","id":"sh/dgz2x0ba","slide":6,"text":"D1 • Learner","textPreview":"D1 • Learner","textChars":12,"textLines":1,"bbox":[66,236,268,28]}
+{"kind":"textbox","id":"sh/cfq1ovup","slide":6,"text":"SV đại học Việt Nam, 18+, A2–B2","textPreview":"SV đại học Việt Nam, 18+, A2–B2","textChars":31,"textLines":1,"bbox":[66,272,268,72]}
+{"kind":"shape","id":"sh/yh0fatcz","slide":6,"bbox":[362,220,268,3]}
+{"kind":"textbox","id":"sh/zi9w3ytk","slide":6,"text":"D2 • Competency","textPreview":"D2 • Competency","textChars":15,"textLines":1,"bbox":[362,236,268,28]}
+{"kind":"textbox","id":"sh/kj2xc3u5","slide":6,"text":"Speaking, 6 tiêu chí CEFR","textPreview":"Speaking, 6 tiêu chí CEFR","textChars":25,"textLines":1,"bbox":[362,272,268,72]}
+{"kind":"shape","id":"sh/lkby58bq","slide":6,"bbox":[658,220,268,3]}
+{"kind":"textbox","id":"sh/mlkfedcb","slide":6,"text":"D3 • Stage","textPreview":"D3 • Stage","textChars":10,"textLines":1,"bbox":[658,236,268,28]}
+{"kind":"textbox","id":"sh/7mtg7itw","slide":6,"text":"Assess chính; Diagnose/Adapt phụ","textPreview":"Assess chính; Diagnose/Adapt phụ","textChars":32,"textLines":1,"bbox":[658,272,268,72]}
+{"kind":"shape","id":"sh/8n2xgnuh","slide":6,"bbox":[954,220,268,3]}
+{"kind":"textbox","id":"sh/9oby9sbm","slide":6,"text":"D4 • Activity","textPreview":"D4 • Activity","textChars":13,"textLines":1,"bbox":[954,236,268,28]}
+{"kind":"textbox","id":"sh/upkfidc7","slide":6,"text":"Task A kể; B quan điểm; C hội thoại","textPreview":"Task A kể; B quan điểm; C hội thoại","textChars":35,"textLines":1,"bbox":[954,272,268,72]}
+{"kind":"shape","id":"sh/vqdgbits","slide":6,"bbox":[66,382,268,3]}
+{"kind":"textbox","id":"sh/redwzi90","slide":6,"text":"D5 • AI role","textPreview":"D5 • AI role","textChars":12,"textLines":1,"bbox":[66,398,268,28]}
+{"kind":"textbox","id":"sh/6t4v6xsf","slide":6,"text":"Assessor chính; Feedbacker phụ","textPreview":"Assessor chính; Feedbacker phụ","textChars":30,"textLines":1,"bbox":[66,434,268,72]}
+{"kind":"shape","id":"sh/dgve1sr6","slide":6,"bbox":[362,382,268,3]}
+{"kind":"textbox","id":"sh/sfmx8nal","slide":6,"text":"D6 • Human role","textPreview":"D6 • Human role","textChars":15,"textLines":1,"bbox":[362,398,268,28]}
+{"kind":"textbox","id":"sh/jqdwvi9o","slide":6,"text":"GV sở hữu rubric và quyết định cuối","textPreview":"GV sở hữu rubric và quyết định cuối","textChars":35,"textLines":1,"bbox":[362,434,268,72]}
+{"kind":"shape","id":"sh/ipkv2dsj","slide":6,"bbox":[658,382,268,3]}
+{"kind":"textbox","id":"sh/5svexsru","slide":6,"text":"D7 • Learning data","textPreview":"D7 • Learning data","textChars":18,"textLines":1,"bbox":[658,398,268,28]}
+{"kind":"textbox","id":"sh/4rmd4na9","slide":6,"text":"speaking_profile + evidence + confidence","textPreview":"speaking_profile + evidence + confidence","textChars":40,"textLines":1,"bbox":[658,434,268,72]}
+{"kind":"shape","id":"sh/vmtwry9s","slide":6,"bbox":[954,382,268,3]}
+{"kind":"textbox","id":"sh/ulkvyds7","slide":6,"text":"D8 • Adaptation","textPreview":"D8 • Adaptation","textChars":15,"textLines":1,"bbox":[954,398,268,28]}
+{"kind":"textbox","id":"sh/kritszq5","slide":6,"text":"Gợi ý task tiếp; xuất profile cho module khác","textPreview":"Gợi ý task tiếp; xuất profile cho module khác","textChars":45,"textLines":1,"bbox":[954,434,268,72]}
+{"kind":"shape","id":"sh/lsru147q","slide":6,"bbox":[172,548,936,70]}
+{"kind":"textbox","id":"sh/ypgbq98z","slide":6,"text":"AI Level 2: AI là đối tác hỗ trợ đánh giá và phản hồi; chưa tự điều phối lộ trình dài hạn.","textPreview":"AI Level 2: AI là đối tác hỗ trợ đánh giá và phản hồi; chưa tự điều phối lộ trình dài hạn.","textChars":90,"textLines":1,"bbox":[192,562,896,42]}
+{"kind":"notes","id":"nt/xn40nr","slide":6,"text":"Đây là phần bổ sung theo nhận xét. D7 và D8 là điểm quan trọng: dữ liệu không dừng ở báo cáo mà trở thành profile có thể dùng cho nhiệm vụ luyện tiếp.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/4dwm8x","slide":7,"title":"HUMAN–AI COLLABORATION","textShapes":11}
+{"kind":"textbox","id":"sh/m54n61k3","slide":7,"text":"HUMAN–AI COLLABORATION","textPreview":"HUMAN–AI COLLABORATION","textChars":22,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/98v6hg3u","slide":7,"text":"AI làm phần lặp lại; giảng viên giữ chuẩn và quyết định sư phạm","textPreview":"AI làm phần lặp lại; giảng viên giữ chuẩn và quyết định sư phạm","textChars":63,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/87m58b29","slide":7,"text":"Ba vai trò phải được phân định ngay từ thiết kế.","textPreview":"Ba vai trò phải được phân định ngay từ thiết kế.","textChars":48,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/vaxojql0","slide":7,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/u94nalkf","slide":7,"text":"VAI TRÒ","textPreview":"VAI TRÒ","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/hcf6lg3q","slide":7,"text":"7","textPreview":"7","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/wb65cv25","slide":7,"bbox":[70,230,330,5]}
+{"kind":"textbox","id":"sh/bet47mlg","slide":7,"text":"AI","textPreview":"AI","textChars":2,"textLines":1,"bbox":[70,248,330,52]}
+{"kind":"textbox","id":"sh/qdknyh4v","slide":7,"text":"• Kiểm tra audio\n• Chuyển lời nói thành text\n• Trích đặc trưng\n• Ước lượng 6 tiêu chí\n• Gắn evidence và confidence\n• Đẩy ca rủi ro vào review","textPreview":"• Kiểm tra audio | • Chuyển lời nói thành text | • Trích đặc trưng | • Ước lượng 6 tiêu chí | • Gắn evidence và confidence | • Đẩy ca rủi...","textChars":141,"textLines":6,"bbox":[70,308,330,252]}
+{"kind":"shape","id":"sh/s3yt8ru9","slide":7,"bbox":[475,230,330,5]}
+{"kind":"textbox","id":"sh/t47u1wbu","slide":7,"text":"Giảng viên","textPreview":"Giảng viên","textChars":10,"textLines":1,"bbox":[475,248,330,52]}
+{"kind":"textbox","id":"sh/61gb6hcj","slide":7,"text":"• Thiết lập và sở hữu rubric\n• Chọn anchor và hiệu chuẩn rater\n• Chấm dữ liệu gold\n• Duyệt ca low-confidence\n• Phân xử bất đồng\n• Quyết định cuối cùng","textPreview":"• Thiết lập và sở hữu rubric | • Chọn anchor và hiệu chuẩn rater | • Chấm dữ liệu gold | • Duyệt ca low-confidence | • Phân xử bất đồng |...","textChars":150,"textLines":6,"bbox":[475,308,330,252]}
+{"kind":"shape","id":"sh/r2pczmto","slide":7,"bbox":[880,230,330,5]}
+{"kind":"textbox","id":"sh/gritcrul","slide":7,"text":"Sinh viên","textPreview":"Sinh viên","textChars":9,"textLines":1,"bbox":[880,248,330,52]}
+{"kind":"textbox","id":"sh/1sru5wb6","slide":7,"text":"• Thực hiện Task A/B/C\n• Đồng ý tham gia và thu hồi consent\n• Xem evidence\n• Tự đối chiếu bản ghi\n• Thực hiện nhiệm vụ luyện tiếp","textPreview":"• Thực hiện Task A/B/C | • Đồng ý tham gia và thu hồi consent | • Xem evidence | • Tự đối chiếu bản ghi | • Thực hiện nhiệm vụ luyện tiếp","textChars":129,"textLines":5,"bbox":[880,308,330,252]}
+{"kind":"notes","id":"nt/4dwm8x","slide":7,"text":"Nhấn mạnh rubric không do nhóm CNTT tự quyết. Nhóm CNTT vận hành hóa rubric thành feature, model và giao diện; giảng viên Ngoại ngữ chịu trách nhiệm chuẩn chấm.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/cc1nwx","slide":8,"title":"NỀN TẢNG ĐO LƯỜNG","textShapes":19}
+{"kind":"textbox","id":"sh/4nqd47ep","slide":8,"text":"NỀN TẢNG ĐO LƯỜNG","textPreview":"NỀN TẢNG ĐO LƯỜNG","textChars":17,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/j2hcb2x4","slide":8,"text":"CEFR mô tả năng lực; CEFR không cung cấp công thức chấm tự động","textPreview":"CEFR mô tả năng lực; CEFR không cung cấp công thức chấm tự động","textChars":63,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/i18v2xwj","slide":8,"text":"Dự án phải nối ba thứ: construct → nhiệm vụ → bằng chứng.","textPreview":"Dự án phải nối ba thứ: construct → nhiệm vụ → bằng chứng.","textChars":57,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/tsjuhwf6","slide":8,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/srad8rel","slide":8,"text":"CEFR","textPreview":"CEFR","textChars":4,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/rqhcfmx0","slide":8,"text":"8","textPreview":"8","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/6p8v6hwv","slide":8,"bbox":[284.6,292,16,6]}
+{"kind":"shape","id":"sh/9wfu5sf2","slide":8,"bbox":[294.6,287,9,16]}
+{"kind":"shape","id":"sh/8v6twneh","slide":8,"bbox":[516.2,292,16,6]}
+{"kind":"shape","id":"sh/2d8vi1ob","slide":8,"bbox":[526.2,287,9,16]}
+{"kind":"shape","id":"sh/3e1wr6pw","slide":8,"bbox":[747.8,292,16,6]}
+{"kind":"shape","id":"sh/ofadkb6h","slide":8,"bbox":[757.8,287,9,16]}
+{"kind":"shape","id":"sh/pgjetw7m","slide":8,"bbox":[979.4,292,16,6]}
+{"kind":"shape","id":"sh/qhsvm1o7","slide":8,"bbox":[989.4,287,9,16]}
+{"kind":"shape","id":"sh/bi1wv6ps","slide":8,"bbox":[70,245,213.6,100]}
+{"kind":"textbox","id":"sh/c3adob6d","slide":8,"text":"Construct","textPreview":"Construct","textChars":9,"textLines":1,"bbox":[82,259,189.6,26]}
+{"kind":"textbox","id":"sh/d4jexg7y","slide":8,"text":"Ta muốn đo năng lực nào?","textPreview":"Ta muốn đo năng lực nào?","textChars":24,"textLines":1,"bbox":[82,289,189.6,30]}
+{"kind":"shape","id":"sh/y5svqloj","slide":8,"bbox":[301.6,245,213.6,100]}
+{"kind":"textbox","id":"sh/z6lwzqp4","slide":8,"text":"Task","textPreview":"Task","textChars":4,"textLines":1,"bbox":[313.6,259,189.6,26]}
+{"kind":"textbox","id":"sh/valcnq5w","slide":8,"text":"Bài nói nào làm năng lực xuất hiện?","textPreview":"Bài nói nào làm năng lực xuất hiện?","textChars":35,"textLines":1,"bbox":[313.6,289,189.6,30]}
+{"kind":"shape","id":"sh/u9cvel4b","slide":8,"bbox":[533.2,245,213.6,100]}
+{"kind":"textbox","id":"sh/hc3up0n2","slide":8,"text":"Evidence","textPreview":"Evidence","textChars":8,"textLines":1,"bbox":[545.2,259,189.6,26]}
+{"kind":"textbox","id":"sh/wbudgvmh","slide":8,"text":"Con người/máy quan sát được gì?","textPreview":"Con người/máy quan sát được gì?","textChars":31,"textLines":1,"bbox":[545.2,289,189.6,30]}
+{"kind":"shape","id":"sh/n6lcj650","slide":8,"bbox":[764.8,245,213.6,100]}
+{"kind":"textbox","id":"sh/m5sval4f","slide":8,"text":"Score","textPreview":"Score","textChars":5,"textLines":1,"bbox":[776.8,259,189.6,26]}
+{"kind":"textbox","id":"sh/983ulgn6","slide":8,"text":"Quy tắc nào biến evidence thành mức?","textPreview":"Quy tắc nào biến evidence thành mức?","textChars":36,"textLines":1,"bbox":[776.8,289,189.6,30]}
+{"kind":"shape","id":"sh/87udcbml","slide":8,"bbox":[996.4,245,213.6,100]}
+{"kind":"textbox","id":"sh/zi1cf65o","slide":8,"text":"Validation","textPreview":"Validation","textChars":10,"textLines":1,"bbox":[1008.4,259,189.6,26]}
+{"kind":"textbox","id":"sh/yhsb614j","slide":8,"text":"Kết quả có đáng tin và công bằng?","textPreview":"Kết quả có đáng tin và công bằng?","textChars":33,"textLines":1,"bbox":[1008.4,289,189.6,30]}
+{"kind":"shape","id":"sh/4b6103y5","slide":8,"bbox":[186,420,908,80]}
+{"kind":"textbox","id":"sh/pcfit8za","slide":8,"text":"Một LLM đọc transcript rồi trả “B1” chưa đủ để tuyên bố chấm theo CEFR.","textPreview":"Một LLM đọc transcript rồi trả “B1” chưa đủ để tuyên bố chấm theo CEFR.","textChars":71,"textLines":1,"bbox":[206,434,868,52]}
+{"kind":"shape","id":"sh/29ojydgz","slide":8,"bbox":[245,544,9,9]}
+{"kind":"textbox","id":"sh/3ax0ryhk","slide":8,"text":"Rubric phải do giảng viên thiết lập.","textPreview":"Rubric phải do giảng viên thiết lập.","textChars":36,"textLines":1,"bbox":[267,535,778,30]}
+{"kind":"shape","id":"sh/cf614ny1","slide":8,"bbox":[245,579,9,9]}
+{"kind":"textbox","id":"sh/d0fixszm","slide":8,"text":"Nhiệm vụ phải tạo đủ bằng chứng cho tiêu chí.","textPreview":"Nhiệm vụ phải tạo đủ bằng chứng cho tiêu chí.","textChars":45,"textLines":1,"bbox":[267,570,778,30]}
+{"kind":"shape","id":"sh/qdoj2dgv","slide":8,"bbox":[245,614,9,9]}
+{"kind":"textbox","id":"sh/rex0vihg","slide":8,"text":"Điểm AI phải so với người chấm và có khoảng tin cậy.","textPreview":"Điểm AI phải so với người chấm và có khoảng tin cậy.","textChars":52,"textLines":1,"bbox":[267,605,778,30]}
+{"kind":"notes","id":"nt/cc1nwx","slide":8,"text":"Đây là logic Evidence-Centered Design. Construct là năng lực trừu tượng; feature chỉ là dấu hiệu. Validation là lập luận dựa trên dữ liệu, không phải một metric duy nhất.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/xkjdh3","slide":9,"title":"BA MỨC NGHIÊN CỨU","textShapes":12}
+{"kind":"textbox","id":"sh/kva5gbed","slide":9,"text":"BA MỨC NGHIÊN CỨU","textPreview":"BA MỨC NGHIÊN CỨU","textChars":17,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/zu14n6xs","slide":9,"text":"A2, B1 và B2 khác nhau ở mức độc lập, độ phát triển ý và khả năng kiểm soát","textPreview":"A2, B1 và B2 khác nhau ở mức độc lập, độ phát triển ý và khả năng kiểm soát","textChars":75,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/ytsne1w7","slide":9,"text":"Các câu dưới đây chỉ là ví dụ minh họa, không phải anchor chính thức.","textPreview":"Các câu dưới đây chỉ là ví dụ minh họa, không phải anchor chính thức.","textChars":69,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/xsjmlwfm","slide":9,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/cra5cre1","slide":9,"text":"CEFR","textPreview":"CEFR","textChars":4,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/bq14jmxg","slide":9,"text":"9","textPreview":"9","textChars":1,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/a5sna1wb","slide":9,"bbox":[70,230,330,5]}
+{"kind":"textbox","id":"sh/p4jmhwfq","slide":9,"text":"A2 • Nói về điều quen thuộc","textPreview":"A2 • Nói về điều quen thuộc","textChars":27,"textLines":1,"bbox":[70,248,330,52]}
+{"kind":"textbox","id":"sh/o3q58re5","slide":9,"text":"“I like my city because it is quiet. There are many parks.”\n\nCâu ngắn, từ quen thuộc, ý đơn giản nhưng người nghe vẫn theo được.","textPreview":"“I like my city because it is quiet. There are many parks.” |  | Câu ngắn, từ quen thuộc, ý đơn giản nhưng người nghe vẫn theo được.","textChars":128,"textLines":3,"bbox":[70,308,330,222]}
+{"kind":"shape","id":"sh/2lkfup0j","slide":9,"bbox":[475,230,330,5]}
+{"kind":"textbox","id":"sh/nmtg3uh4","slide":9,"text":"B1 • Giải thích và nối ý","textPreview":"B1 • Giải thích và nối ý","textChars":24,"textLines":1,"bbox":[475,248,330,52]}
+{"kind":"textbox","id":"sh/on2hwzip","slide":9,"text":"“I prefer living here because public transport is convenient, although it can be crowded.”\n\nCó lý do, đối lập và kết nối rõ hơn.","textPreview":"“I prefer living here because public transport is convenient, although it can be crowded.” |  | Có lý do, đối lập và kết nối rõ hơn.","textChars":128,"textLines":3,"bbox":[475,308,330,222]}
+{"kind":"shape","id":"sh/poby54za","slide":9,"bbox":[880,230,330,5]}
+{"kind":"textbox","id":"sh/exkfqp0n","slide":9,"text":"B2 • Phát triển lập luận","textPreview":"B2 • Phát triển lập luận","textChars":24,"textLines":1,"bbox":[880,248,330,52]}
+{"kind":"textbox","id":"sh/fitgzah8","slide":9,"text":"“Although the city is expensive, its opportunities often outweigh the disadvantages, especially for young professionals.”\n\nÝ được phát triển linh hoạt và chính xác hơn.","textPreview":"“Although the city is expensive, its opportunities often outweigh the disadvantages, especially for young professionals.” |  | Ý được phá...","textChars":168,"textLines":3,"bbox":[880,308,330,222]}
+{"kind":"shape","id":"sh/0j2xsfit","slide":9,"bbox":[260,570,760,62]}
+{"kind":"textbox","id":"sh/1kby1kzy","slide":9,"text":"Không được xếp mức chỉ từ một câu. Cần nhiều nhiệm vụ và nhiều tiêu chí.","textPreview":"Không được xếp mức chỉ từ một câu. Cần nhiều nhiệm vụ và nhiều tiêu chí.","textChars":72,"textLines":1,"bbox":[280,584,720,34]}
+{"kind":"notes","id":"nt/xkjdh3","slide":9,"text":"Giải thích đây là ví dụ tự tạo để phân biệt mức độ phức tạp, không phải mô tả chuẩn hay dữ liệu chấm. Anchor thật phải do giảng viên chọn từ bài nói thực tế.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf\n- https://www.cambridgeenglish.org/english-research-group/fitness-for-purpose/"}
+{"kind":"slide","id":"sl/fesglp","slide":10,"title":"SÁU TIÊU CHÍ","textShapes":18}
+{"kind":"textbox","id":"sh/bilora5c","slide":10,"text":"SÁU TIÊU CHÍ","textPreview":"SÁU TIÊU CHÍ","textChars":12,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/c3upkv6x","slide":10,"text":"CEFR nhìn bài nói như một hồ sơ, không phải một điểm duy nhất","textPreview":"CEFR nhìn bài nói như một hồ sơ, không phải một điểm duy nhất","textChars":61,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/d4n6t0ni","slide":10,"text":"Mỗi tiêu chí trả lời một câu hỏi khác nhau về năng lực giao tiếp.","textPreview":"Mỗi tiêu chí trả lời một câu hỏi khác nhau về năng lực giao tiếp.","textChars":65,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/2dc7elov","slide":10,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/3elonq5g","slide":10,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/ofupgv61","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/pg36p0nm","slide":10,"bbox":[78,220,340,4]}
+{"kind":"textbox","id":"sh/m9w7qpof","slide":10,"text":"Range","textPreview":"Range","textChars":5,"textLines":1,"bbox":[78,238,340,34]}
+{"kind":"textbox","id":"sh/na58zu5k","slide":10,"text":"Có đủ từ và cấu trúc để diễn đạt?","textPreview":"Có đủ từ và cấu trúc để diễn đạt?","textChars":33,"textLines":1,"bbox":[78,282,340,70]}
+{"kind":"shape","id":"sh/nipsn29s","slide":10,"bbox":[478,220,340,4]}
+{"kind":"textbox","id":"sh/mhgbuhs7","slide":10,"text":"Accuracy","textPreview":"Accuracy","textChars":8,"textLines":1,"bbox":[478,238,340,34]}
+{"kind":"textbox","id":"sh/94rupcri","slide":10,"text":"Kiểm soát ngữ pháp đến đâu?","textPreview":"Kiểm soát ngữ pháp đến đâu?","textChars":27,"textLines":1,"bbox":[478,282,340,70]}
+{"kind":"shape","id":"sh/8jitw7ad","slide":10,"bbox":[878,220,340,4]}
+{"kind":"textbox","id":"sh/v69crm9o","slide":10,"text":"Fluency","textPreview":"Fluency","textChars":7,"textLines":1,"bbox":[878,238,340,34]}
+{"kind":"textbox","id":"sh/u50byhs3","slide":10,"text":"Duy trì lời nói và ngắt nghỉ ra sao?","textPreview":"Duy trì lời nói và ngắt nghỉ ra sao?","textChars":36,"textLines":1,"bbox":[878,282,340,70]}
+{"kind":"shape","id":"sh/h8rutwru","slide":10,"bbox":[78,390,340,4]}
+{"kind":"textbox","id":"sh/w7it0ra9","slide":10,"text":"Coherence","textPreview":"Coherence","textChars":9,"textLines":1,"bbox":[78,408,340,34]}
+{"kind":"textbox","id":"sh/jatcvm90","slide":10,"text":"Ý có phát triển và liên kết không?","textPreview":"Ý có phát triển và liên kết không?","textChars":34,"textLines":1,"bbox":[78,452,340,70]}
+{"kind":"shape","id":"sh/i90b21sf","slide":10,"bbox":[478,390,340,4]}
+{"kind":"textbox","id":"sh/e54vu5cn","slide":10,"text":"Interaction","textPreview":"Interaction","textChars":11,"textLines":1,"bbox":[478,408,340,34]}
+{"kind":"textbox","id":"sh/f6dw3qt8","slide":10,"text":"Có phối hợp được trong hội thoại?","textPreview":"Có phối hợp được trong hội thoại?","textChars":33,"textLines":1,"bbox":[478,452,340,70]}
+{"kind":"shape","id":"sh/g7mxwvud","slide":10,"bbox":[878,390,340,4]}
+{"kind":"textbox","id":"sh/18ve50by","slide":10,"text":"Phonology","textPreview":"Phonology","textChars":9,"textLines":1,"bbox":[878,408,340,34]}
+{"kind":"textbox","id":"sh/61kvqlcb","slide":10,"text":"Thông điệp có dễ hiểu qua âm và ngữ điệu?","textPreview":"Thông điệp có dễ hiểu qua âm và ngữ điệu?","textChars":41,"textLines":1,"bbox":[878,452,340,70]}
+{"kind":"shape","id":"sh/r2dwzqtw","slide":10,"bbox":[175,570,930,64]}
+{"kind":"textbox","id":"sh/s3mdsvuh","slide":10,"text":"Overall chỉ được tạo sau khi xem profile 6 tiêu chí và bằng chứng của từng nhiệm vụ.","textPreview":"Overall chỉ được tạo sau khi xem profile 6 tiêu chí và bằng chứng của từng nhiệm vụ.","textChars":84,"textLines":1,"bbox":[195,584,890,36]}
+{"kind":"notes","id":"nt/fesglp","slide":10,"text":"Sáu tiêu chí dựa trên qualitative features of spoken language trong CEFR Companion Volume. Phonology được trình bày riêng trong phần phonological control.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf"}
+{"kind":"slide","id":"sl/14l4rl","slide":11,"title":"RANGE • PHẠM VI NGÔN NGỮ","textShapes":12}
+{"kind":"textbox","id":"sh/v2d0ratk","slide":11,"text":"RANGE • PHẠM VI NGÔN NGỮ","textPreview":"RANGE • PHẠM VI NGÔN NGỮ","textChars":24,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/w3mhkfu5","slide":11,"text":"Không hỏi “nói bao nhiêu từ”, mà hỏi “có đủ công cụ để diễn đạt ý không”","textPreview":"Không hỏi “nói bao nhiêu từ”, mà hỏi “có đủ công cụ để diễn đạt ý không”","textChars":72,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/h4vitkbq","slide":11,"text":"AI quan sát độ đa dạng từ, cấu trúc và khả năng diễn đạt lại.","textPreview":"AI quan sát độ đa dạng từ, cấu trúc và khả năng diễn đạt lại.","textChars":61,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/mxkze5c3","slide":11,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/7yt0nato","slide":11,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/8zmhgfu9","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/90vipkbu","slide":11,"bbox":[70,225,350,5]}
+{"kind":"textbox","id":"sh/y9kzalc7","slide":11,"text":"Con người nghe gì?","textPreview":"Con người nghe gì?","textChars":18,"textLines":1,"bbox":[70,243,350,52]}
+{"kind":"textbox","id":"sh/zatgjqtc","slide":11,"text":"• Từ vựng có đủ cho chủ đề\n• Có dùng câu ghép/mệnh đề phù hợp\n• Có paraphrase khi thiếu từ\n• Cụm từ có tự nhiên và đa dạng","textPreview":"• Từ vựng có đủ cho chủ đề | • Có dùng câu ghép/mệnh đề phù hợp | • Có paraphrase khi thiếu từ | • Cụm từ có tự nhiên và đa dạng","textChars":122,"textLines":4,"bbox":[70,303,350,222]}
+{"kind":"shape","id":"sh/ryhk3mx0","slide":11,"bbox":[470,225,350,5]}
+{"kind":"textbox","id":"sh/qx83uhwf","slide":11,"text":"Máy đo gì?","textPreview":"Máy đo gì?","textChars":10,"textLines":1,"bbox":[470,243,350,52]}
+{"kind":"textbox","id":"sh/d0z25wf6","slide":11,"text":"• Lexical profile theo tần suất/mức độ\n• MTLD hoặc HD-D cho lexical diversity\n• Độ đa dạng cấu trúc câu\n• N-gram/cụm từ và semantic coverage","textPreview":"• Lexical profile theo tần suất/mức độ | • MTLD hoặc HD-D cho lexical diversity | • Độ đa dạng cấu trúc câu | • N-gram/cụm từ và semantic...","textChars":140,"textLines":4,"bbox":[470,303,350,222]}
+{"kind":"shape","id":"sh/szqlwrel","slide":11,"bbox":[870,225,340,5]}
+{"kind":"textbox","id":"sh/f2hk76xc","slide":11,"text":"Máy dễ hiểu sai gì?","textPreview":"Máy dễ hiểu sai gì?","textChars":19,"textLines":1,"bbox":[870,243,340,52]}
+{"kind":"textbox","id":"sh/e183y1wr","slide":11,"text":"• Bài dài bị thưởng điểm\n• Tên riêng làm “từ hiếm” tăng giả\n• Transcript sai tạo từ lạ\n• Dùng từ khó nhưng sai nghĩa","textPreview":"• Bài dài bị thưởng điểm | • Tên riêng làm “từ hiếm” tăng giả | • Transcript sai tạo từ lạ | • Dùng từ khó nhưng sai nghĩa","textChars":116,"textLines":4,"bbox":[870,303,340,222]}
+{"kind":"shape","id":"sh/14jm9gf2","slide":11,"bbox":[150,558,980,74]}
+{"kind":"textbox","id":"sh/03ql0beh","slide":11,"text":"Nguyên tắc: chuẩn hóa theo độ dài và kiểm tra từ trong ngữ cảnh; không dùng word count làm điểm Range.","textPreview":"Nguyên tắc: chuẩn hóa theo độ dài và kiểm tra từ trong ngữ cảnh; không dùng word count làm điểm Range.","textChars":102,"textLines":1,"bbox":[170,572,940,46]}
+{"kind":"notes","id":"nt/14l4rl","slide":11,"text":"MTLD và HD-D là chỉ số đa dạng từ vựng ít nhạy với độ dài hơn type-token ratio, nhưng vẫn chỉ là proxy. Range còn gồm cấu trúc và khả năng diễn đạt linh hoạt.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf\n- https://aclanthology.org/2020.acl-main.206/"}
+{"kind":"slide","id":"sl/yx6sdn","slide":12,"title":"ACCURACY • ĐỘ CHÍNH XÁC","textShapes":15}
+{"kind":"textbox","id":"sh/qhs3axs3","slide":12,"text":"ACCURACY • ĐỘ CHÍNH XÁC","textPreview":"ACCURACY • ĐỘ CHÍNH XÁC","textChars":23,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/dkj2lcre","slide":12,"text":"Lỗi cần được tính theo mức kiểm soát, không phải đếm máy móc","textPreview":"Lỗi cần được tính theo mức kiểm soát, không phải đếm máy móc","textChars":60,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/sjalc7at","slide":12,"text":"Tự sửa là bằng chứng tích cực; lỗi ASR không được biến thành lỗi của sinh viên.","textPreview":"Tự sửa là bằng chứng tích cực; lỗi ASR không được biến thành lỗi của sinh viên.","textChars":79,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/3uhkfi9c","slide":12,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/it8j6dsr","slide":12,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/5gj2hsri","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/4fal8nax","slide":12,"bbox":[105,215,650,78]}
+{"kind":"textbox","id":"sh/nqlkrm9g","slide":12,"text":"“Yesterday I go… I mean, I went to school.”","textPreview":"“Yesterday I go… I mean, I went to school.”","textChars":43,"textLines":1,"bbox":[125,229,610,50]}
+{"kind":"textbox","id":"sh/2pc3ihsb","slide":12,"text":"Máy phải ghi nhận hai sự kiện","textPreview":"Máy phải ghi nhận hai sự kiện","textChars":29,"textLines":1,"bbox":[805,220,360,30]}
+{"kind":"shape","id":"sh/kv658vul","slide":12,"bbox":[815,273,9,9]}
+{"kind":"textbox","id":"sh/lwfm10b6","slide":12,"text":"Sai thì ở lần nói đầu","textPreview":"Sai thì ở lần nói đầu","textChars":21,"textLines":1,"bbox":[837,264,328,34]}
+{"kind":"shape","id":"sh/yton6lcv","slide":12,"bbox":[815,311,9,9]}
+{"kind":"textbox","id":"sh/zux4zqt0","slide":12,"text":"Tự phát hiện và sửa đúng","textPreview":"Tự phát hiện và sửa đúng","textChars":24,"textLines":1,"bbox":[837,302,328,34]}
+{"kind":"shape","id":"sh/crm54bup","slide":12,"bbox":[80,370,345,5]}
+{"kind":"textbox","id":"sh/xsfmxgba","slide":12,"text":"Đơn vị phân tích","textPreview":"Đơn vị phân tích","textChars":16,"textLines":1,"bbox":[80,388,345,52]}
+{"kind":"textbox","id":"sh/ap4n2lcj","slide":12,"text":"AS-unit và clause phù hợp hơn “câu viết” vì lời nói thường dang dở, có ngập ngừng và tự sửa.","textPreview":"AS-unit và clause phù hợp hơn “câu viết” vì lời nói thường dang dở, có ngập ngừng và tự sửa.","textChars":92,"textLines":1,"bbox":[80,448,345,92]}
+{"kind":"shape","id":"sh/bqd4vqt4","slide":12,"bbox":[470,370,345,5]}
+{"kind":"textbox","id":"sh/onm50bud","slide":12,"text":"Loại bằng chứng","textPreview":"Loại bằng chứng","textChars":15,"textLines":1,"bbox":[470,388,345,52]}
+{"kind":"textbox","id":"sh/povmtgby","slide":12,"text":"Agreement, tense, preposition, word form, clause accuracy, error-free unit và repair.","textPreview":"Agreement, tense, preposition, word form, clause accuracy, error-free unit và repair.","textChars":85,"textLines":1,"bbox":[470,448,345,92]}
+{"kind":"shape","id":"sh/583uh8jq","slide":12,"bbox":[860,370,345,5]}
+{"kind":"textbox","id":"sh/47ut83i5","slide":12,"text":"Guardrail bắt buộc","textPreview":"Guardrail bắt buộc","textChars":18,"textLines":1,"bbox":[860,388,345,52]}
+{"kind":"textbox","id":"sh/j6lcfy1k","slide":12,"text":"Token ASR confidence thấp không được dùng để kết luận lỗi; cần audit bằng transcript chép tay.","textPreview":"Token ASR confidence thấp không được dùng để kết luận lỗi; cần audit bằng transcript chép tay.","textChars":94,"textLines":1,"bbox":[860,448,345,92]}
+{"kind":"notes","id":"nt/yx6sdn","slide":12,"text":"AS-unit gồm một mệnh đề độc lập cùng các mệnh đề phụ gắn với nó. Không nên phạt disfluency giống lỗi ngữ pháp. Khi ASR không chắc, hệ thống phải giảm trọng số hoặc chuyển review.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://aclanthology.org/2020.acl-main.206/\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html"}
+{"kind":"slide","id":"sl/826t4h","slide":13,"title":"FLUENCY • ĐỘ TRÔI CHẢY","textShapes":12}
+{"kind":"textbox","id":"sh/2t0zidc7","slide":13,"text":"FLUENCY • ĐỘ TRÔI CHẢY","textPreview":"FLUENCY • ĐỘ TRÔI CHẢY","textChars":22,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/pwrytsby","slide":13,"text":"Nói nhanh không đồng nghĩa với nói trôi chảy","textPreview":"Nói nhanh không đồng nghĩa với nói trôi chảy","textChars":44,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/ovihknud","slide":13,"text":"Fluency là khả năng duy trì lời nói với nhịp và khoảng dừng phù hợp nhiệm vụ.","textPreview":"Fluency là khả năng duy trì lời nói với nhịp và khoảng dừng phù hợp nhiệm vụ.","textChars":77,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/byt0vit4","slide":13,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/ax0zmxcj","slide":13,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/xkbixsbu","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"textbox","id":"sh/cz2honup","slide":13,"text":"A • Nhanh nhưng vỡ vụn","textPreview":"A • Nhanh nhưng vỡ vụn","textChars":22,"textLines":1,"bbox":[75,222,320,28]}
+{"kind":"shape","id":"sh/r2pgjytk","slide":13,"bbox":[75,268,170,22]}
+{"kind":"shape","id":"sh/q1gzatcz","slide":13,"bbox":[250,268,65,22]}
+{"kind":"shape","id":"sh/obmpcjyx","slide":13,"bbox":[320,268,155,22]}
+{"kind":"shape","id":"sh/9cvqlofi","slide":13,"bbox":[480,268,95,22]}
+{"kind":"shape","id":"sh/m947a9gr","slide":13,"bbox":[580,268,120,22]}
+{"kind":"textbox","id":"sh/nad8jehc","slide":13,"text":"Nhiều pause giữa ý, lặp và restart","textPreview":"Nhiều pause giữa ý, lặp và restart","textChars":34,"textLines":1,"bbox":[75,302,625,30]}
+{"kind":"textbox","id":"sh/wf6pgjy9","slide":13,"text":"B • Chậm hơn nhưng ổn định","textPreview":"B • Chậm hơn nhưng ổn định","textChars":26,"textLines":1,"bbox":[75,370,360,28]}
+{"kind":"shape","id":"sh/xgfqpofu","slide":13,"bbox":[75,416,260,22]}
+{"kind":"shape","id":"sh/ado7etg3","slide":13,"bbox":[340,416,32,22]}
+{"kind":"shape","id":"sh/bex8nyxo","slide":13,"bbox":[377,416,310,22]}
+{"kind":"textbox","id":"sh/cj2p4zyp","slide":13,"text":"Pause ở ranh giới ý; mean run length dài hơn","textPreview":"Pause ở ranh giới ý; mean run length dài hơn","textChars":44,"textLines":1,"bbox":[75,450,625,30]}
+{"kind":"shape","id":"sh/dkb6d4za","slide":13,"bbox":[780,215,410,5]}
+{"kind":"textbox","id":"sh/t4jelwn2","slide":13,"text":"Tín hiệu AI quan sát","textPreview":"Tín hiệu AI quan sát","textChars":20,"textLines":1,"bbox":[780,233,410,52]}
+{"kind":"textbox","id":"sh/s3axsrmh","slide":13,"text":"• Articulation rate\n• Pause count / duration / ratio\n• Mean run length\n• Repetition và restart\n• Filled pause: um, uh, er","textPreview":"• Articulation rate | • Pause count / duration / ratio | • Mean run length | • Repetition và restart | • Filled pause: um, uh, er","textChars":121,"textLines":5,"bbox":[780,293,410,222]}
+{"kind":"shape","id":"sh/721wzm5w","slide":13,"bbox":[190,555,900,70]}
+{"kind":"textbox","id":"sh/61svqh4b","slide":13,"text":"Phải chuẩn hóa theo loại nhiệm vụ: kể chuyện, nêu quan điểm và hội thoại có nhịp tự nhiên khác nhau.","textPreview":"Phải chuẩn hóa theo loại nhiệm vụ: kể chuyện, nêu quan điểm và hội thoại có nhịp tự nhiên khác nhau.","textChars":100,"textLines":1,"bbox":[210,569,860,42]}
+{"kind":"notes","id":"nt/826t4h","slide":13,"text":"Articulation rate không tính khoảng im lặng; speech rate thường tính toàn thời lượng. Mean run length là số âm tiết/từ giữa các pause. Không dùng một ngưỡng chung cho mọi task.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html"}
+{"kind":"slide","id":"sl/ot6puz","slide":14,"title":"COHERENCE • TÍNH MẠCH LẠC","textShapes":20}
+{"kind":"textbox","id":"sh/sjq5sjm5","slide":14,"text":"COHERENCE • TÍNH MẠCH LẠC","textPreview":"COHERENCE • TÍNH MẠCH LẠC","textChars":25,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/7ihojelk","slide":14,"text":"Một bài đúng ngữ pháp vẫn có thể khó theo dõi nếu ý rời rạc","textPreview":"Một bài đúng ngữ pháp vẫn có thể khó theo dõi nếu ý rời rạc","textChars":59,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/6honqt4f","slide":14,"text":"Coherence nhìn cách ý được mở, phát triển, minh họa và kết lại.","textPreview":"Coherence nhìn cách ý được mở, phát triển, minh họa và kết lại.","textChars":63,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/hoz6p832","slide":14,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/gnq5w3mh","slide":14,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/fmhonylw","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/ul8nut4b","slide":14,"bbox":[281.6,294,16,6]}
+{"kind":"shape","id":"sh/pcj6t83y","slide":14,"bbox":[291.6,289,9,16]}
+{"kind":"shape","id":"sh/4ba503md","slide":14,"bbox":[515.2,294,16,6]}
+{"kind":"shape","id":"sh/up0rqtob","slide":14,"bbox":[525.2,289,9,16]}
+{"kind":"shape","id":"sh/vq98jy5w","slide":14,"bbox":[748.8,294,16,6]}
+{"kind":"shape","id":"sh/wri9s36h","slide":14,"bbox":[758.8,289,9,16]}
+{"kind":"shape","id":"sh/hsral8n2","slide":14,"bbox":[982.4,294,16,6]}
+{"kind":"shape","id":"sh/itkrudon","slide":14,"bbox":[992.4,289,9,16]}
+{"kind":"shape","id":"sh/jetsni5s","slide":14,"bbox":[65,245,215.6,104]}
+{"kind":"textbox","id":"sh/4f29w36d","slide":14,"text":"Nêu ý","textPreview":"Nêu ý","textChars":5,"textLines":1,"bbox":[77,259,191.6,26]}
+{"kind":"textbox","id":"sh/5gbap8ny","slide":14,"text":"I prefer online learning","textPreview":"I prefer online learning","textChars":24,"textLines":1,"bbox":[77,289,191.6,30]}
+{"kind":"shape","id":"sh/yxgri9o3","slide":14,"bbox":[298.6,245,215.6,104]}
+{"kind":"textbox","id":"sh/zip8be5o","slide":14,"text":"Lý do","textPreview":"Lý do","textChars":5,"textLines":1,"bbox":[310.6,259,191.6,26]}
+{"kind":"textbox","id":"sh/32lojalg","slide":14,"text":"because it saves travel time","textPreview":"because it saves travel time","textChars":28,"textLines":1,"bbox":[310.6,289,191.6,30]}
+{"kind":"shape","id":"sh/21cna54v","slide":14,"bbox":[532.2,245,215.6,104]}
+{"kind":"textbox","id":"sh/pon6lk3m","slide":14,"text":"Ví dụ","textPreview":"Ví dụ","textChars":5,"textLines":1,"bbox":[544.2,259,191.6,26]}
+{"kind":"textbox","id":"sh/o3e5cfm1","slide":14,"text":"for example, recorded lectures","textPreview":"for example, recorded lectures","textChars":30,"textLines":1,"bbox":[544.2,289,191.6,30]}
+{"kind":"shape","id":"sh/fylofalk","slide":14,"bbox":[765.8,245,215.6,104]}
+{"kind":"textbox","id":"sh/excn654z","slide":14,"text":"Giới hạn","textPreview":"Giới hạn","textChars":8,"textLines":1,"bbox":[777.8,259,191.6,26]}
+{"kind":"textbox","id":"sh/1036h03a","slide":14,"text":"however, interaction is weaker","textPreview":"however, interaction is weaker","textChars":30,"textLines":1,"bbox":[777.8,289,191.6,30]}
+{"kind":"shape","id":"sh/gzu58fmp","slide":14,"bbox":[999.4,245,215.6,104]}
+{"kind":"textbox","id":"sh/zuporulo","slide":14,"text":"Kết","textPreview":"Kết","textChars":3,"textLines":1,"bbox":[1011.4,259,191.6,26]}
+{"kind":"textbox","id":"sh/ytw7ip43","slide":14,"text":"so a blended model is better","textPreview":"so a blended model is better","textChars":28,"textLines":1,"bbox":[1011.4,289,191.6,30]}
+{"kind":"shape","id":"sh/wn6tw7y9","slide":14,"bbox":[110,410,450,5]}
+{"kind":"textbox","id":"sh/xofupsfu","slide":14,"text":"Máy quan sát","textPreview":"Máy quan sát","textChars":12,"textLines":1,"bbox":[110,428,450,52]}
+{"kind":"textbox","id":"sh/a1obuxgj","slide":14,"text":"Discourse markers, semantic continuity, idea progression, topic relevance và cấu trúc lập luận.","textPreview":"Discourse markers, semantic continuity, idea progression, topic relevance và cấu trúc lập luận.","textChars":95,"textLines":1,"bbox":[110,488,450,67]}
+{"kind":"shape","id":"sh/v2xcn2xo","slide":14,"bbox":[710,410,450,5]}
+{"kind":"textbox","id":"sh/krqd07yl","slide":14,"text":"Rủi ro","textPreview":"Rủi ro","textChars":6,"textLines":1,"bbox":[710,428,450,52]}
+{"kind":"textbox","id":"sh/5szutcf6","slide":14,"text":"Transcript mất từ nối hoặc nhận sai từ khóa có thể làm mô hình kết luận bài lạc ý.","textPreview":"Transcript mất từ nối hoặc nhận sai từ khóa có thể làm mô hình kết luận bài lạc ý.","textChars":82,"textLines":1,"bbox":[710,488,450,67]}
+{"kind":"shape","id":"sh/ipobyxgf","slide":14,"bbox":[195,570,890,62]}
+{"kind":"textbox","id":"sh/jqhcr2x0","slide":14,"text":"LLM có thể hỗ trợ đánh giá mạch lạc, nhưng phải bị ràng buộc bởi rubric và evidence đã lưu.","textPreview":"LLM có thể hỗ trợ đánh giá mạch lạc, nhưng phải bị ràng buộc bởi rubric và evidence đã lưu.","textChars":91,"textLines":1,"bbox":[215,584,850,34]}
+{"kind":"notes","id":"nt/ot6puz","slide":14,"text":"Coherence không phải chỉ đếm từ nối. Người học có thể dùng ít từ nối nhưng ý vẫn tiến triển tự nhiên. Semantic model cần được kiểm tra prompt sensitivity và ASR sensitivity.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf\n- https://aclanthology.org/2023.ranlp-1.83/"}
+{"kind":"slide","id":"sl/a04wjm","slide":15,"title":"INTERACTION • KHẢ NĂNG TƯƠNG TÁC","textShapes":11}
+{"kind":"textbox","id":"sh/9c7ulgjq","slide":15,"text":"INTERACTION • KHẢ NĂNG TƯƠNG TÁC","textPreview":"INTERACTION • KHẢ NĂNG TƯƠNG TÁC","textChars":32,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/m9wbql0z","slide":15,"text":"Không có hội thoại thì không có đủ bằng chứng để chấm Interaction","textPreview":"Không có hội thoại thì không có đủ bằng chứng để chấm Interaction","textChars":65,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/na5cjq1k","slide":15,"text":"Tiêu chí này chỉ được tính ở Task C có nhiều lượt nói được kiểm soát.","textPreview":"Tiêu chí này chỉ được tính ở Task C có nhiều lượt nói được kiểm soát.","textChars":69,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/07etobit","slide":15,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/18nuhgje","slide":15,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/e5wbm103","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/z65cf618","slide":15,"bbox":[90,220,510,78]}
+{"kind":"textbox","id":"sh/k3id0fid","slide":15,"text":"AI: Could you explain why you prefer studying at home?","textPreview":"AI: Could you explain why you prefer studying at home?","textChars":54,"textLines":1,"bbox":[112,242,466,36]}
+{"kind":"shape","id":"sh/l4rutkjy","slide":15,"bbox":[350,320,780,92]}
+{"kind":"textbox","id":"sh/psji5k72","slide":15,"text":"Sinh viên: I can focus better there. Do you mean compared with the library?","textPreview":"Sinh viên: I can focus better there. Do you mean compared with the library?","textChars":75,"textLines":1,"bbox":[375,343,730,50]}
+{"kind":"shape","id":"sh/orahcfqx","slide":15,"bbox":[90,435,610,78]}
+{"kind":"textbox","id":"sh/nq1g3apc","slide":15,"text":"AI: Yes. What makes the library less suitable for you?","textPreview":"AI: Yes. What makes the library less suitable for you?","textChars":54,"textLines":1,"bbox":[112,457,566,36]}
+{"kind":"shape","id":"sh/25sza58r","slide":15,"bbox":[760,435,390,5]}
+{"kind":"textbox","id":"sh/14jy1k76","slide":15,"text":"Máy có thể đo","textPreview":"Máy có thể đo","textChars":13,"textLines":1,"bbox":[760,453,390,52]}
+{"kind":"textbox","id":"sh/03qh8fql","slide":15,"text":"Latency phía client, hoàn thành lượt, relevance, clarification, repair và khả năng phản hồi follow-up.","textPreview":"Latency phía client, hoàn thành lượt, relevance, clarification, repair và khả năng phản hồi follow-up.","textChars":102,"textLines":1,"bbox":[760,513,390,67]}
+{"kind":"shape","id":"sh/f2hgzap0","slide":15,"bbox":[205,575,870,58]}
+{"kind":"textbox","id":"sh/e18z658f","slide":15,"text":"Nếu chỉ làm độc thoại: ghi “chưa đủ bằng chứng”, không tự cho 0 điểm.","textPreview":"Nếu chỉ làm độc thoại: ghi “chưa đủ bằng chứng”, không tự cho 0 điểm.","textChars":69,"textLines":1,"bbox":[225,589,830,30]}
+{"kind":"notes","id":"nt/a04wjm","slide":15,"text":"Task C dùng prompt tree cố định và audio ghi sẵn để mọi người gặp kích thích tương đương. Latency đo từ lúc prompt audio kết thúc; system latency log riêng.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf"}
+{"kind":"slide","id":"sl/o6awnl","slide":16,"title":"PHONOLOGY • PHÁT ÂM VÀ NGỮ ĐIỆU","textShapes":13}
+{"kind":"textbox","id":"sh/zuhsry58","slide":16,"text":"PHONOLOGY • PHÁT ÂM VÀ NGỮ ĐIỆU","textPreview":"PHONOLOGY • PHÁT ÂM VÀ NGỮ ĐIỆU","textChars":31,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/0vat0j6t","slide":16,"text":"Mục tiêu là dễ hiểu, không phải xóa giọng Việt","textPreview":"Mục tiêu là dễ hiểu, không phải xóa giọng Việt","textChars":46,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/lwjatone","slide":16,"text":"Đây là tiêu chí có construct coverage yếu nhất trong phiên bản 10 tuần.","textPreview":"Đây là tiêu chí có construct coverage yếu nhất trong phiên bản 10 tuần.","textChars":71,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/mxsb2toz","slide":16,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/ni1svy5k","slide":16,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/8jat4365","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/9kjax8na","slide":16,"bbox":[70,225,330,5]}
+{"kind":"textbox","id":"sh/alsb6dov","slide":16,"text":"1. Âm cục bộ","textPreview":"1. Âm cục bộ","textChars":12,"textLines":1,"bbox":[70,243,330,52]}
+{"kind":"textbox","id":"sh/vmlszi5g","slide":16,"text":"Forced alignment + GOP ước lượng âm nào khác xa mẫu; ví dụ phụ âm cuối hoặc nguyên âm dễ nhầm.","textPreview":"Forced alignment + GOP ước lượng âm nào khác xa mẫu; ví dụ phụ âm cuối hoặc nguyên âm dễ nhầm.","textChars":94,"textLines":1,"bbox":[70,303,330,182]}
+{"kind":"shape","id":"sh/nmp87i10","slide":16,"bbox":[475,225,330,5]}
+{"kind":"textbox","id":"sh/2lg7ydkf","slide":16,"text":"2. Prosody","textPreview":"2. Prosody","textChars":10,"textLines":1,"bbox":[475,243,330,52]}
+{"kind":"textbox","id":"sh/porq98j6","slide":16,"text":"F0 range, trọng âm, nhịp, độ dài và đường ngữ điệu giúp mô tả phần vượt ra ngoài từng âm riêng lẻ.","textPreview":"F0 range, trọng âm, nhịp, độ dài và đường ngữ điệu giúp mô tả phần vượt ra ngoài từng âm riêng lẻ.","textChars":98,"textLines":1,"bbox":[475,303,330,182]}
+{"kind":"shape","id":"sh/onip032l","slide":16,"bbox":[880,225,330,5]}
+{"kind":"textbox","id":"sh/fip83y1o","slide":16,"text":"3. Intelligibility","textPreview":"3. Intelligibility","textChars":18,"textLines":1,"bbox":[880,243,330,52]}
+{"kind":"textbox","id":"sh/ehg7utkj","slide":16,"text":"Điều CEFR quan tâm nhất: người nghe có hiểu không và cần cố gắng bao nhiêu để hiểu.","textPreview":"Điều CEFR quan tâm nhất: người nghe có hiểu không và cần cố gắng bao nhiêu để hiểu.","textChars":83,"textLines":1,"bbox":[880,303,330,182]}
+{"kind":"shape","id":"sh/1k7q58ju","slide":16,"bbox":[140,530,1000,82]}
+{"kind":"textbox","id":"sh/0jypw329","slide":16,"text":"GOP thấp ≠ phát âm kém. Có thể do accent, thiết bị, alignment hoặc dữ liệu huấn luyện không đại diện người Việt.","textPreview":"GOP thấp ≠ phát âm kém. Có thể do accent, thiết bị, alignment hoặc dữ liệu huấn luyện không đại diện người Việt.","textChars":112,"textLines":1,"bbox":[160,544,960,54]}
+{"kind":"textbox","id":"sh/zet8f218","slide":16,"text":"Guardrail: không phạt accent nếu thông điệp vẫn dễ hiểu; ca không chắc phải chuyển giảng viên.","textPreview":"Guardrail: không phạt accent nếu thông điệp vẫn dễ hiểu; ca không chắc phải chuyển giảng viên.","textChars":94,"textLines":1,"bbox":[180,627,920,30]}
+{"kind":"notes","id":"nt/o6awnl","slide":16,"text":"GOP là Goodness of Pronunciation. wav2vec2 có thể tạo biểu diễn âm thanh và hỗ trợ alignment. Nhưng phone accuracy và prosody metrics chưa bao phủ đầy đủ listener intelligibility; cần điểm người nghe và kiểm tra fairness trên giọng Việt.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://github.com/YuanGongND/gopt\n- https://www.openslr.org/101/\n- https://psi.engr.tamu.edu/l2-arctic-corpus/"}
+{"kind":"slide","id":"sl/oiet2h","slide":17,"title":"NGUYÊN TẮC QUAN TRỌNG","textShapes":13}
+{"kind":"textbox","id":"sh/zy5sjm1w","slide":17,"text":"NGUYÊN TẮC QUAN TRỌNG","textPreview":"NGUYÊN TẮC QUAN TRỌNG","textChars":21,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/0zetcr2h","slide":17,"text":"Feature là bằng chứng gián tiếp; feature không phải chính tiêu chí CEFR","textPreview":"Feature là bằng chứng gián tiếp; feature không phải chính tiêu chí CEFR","textChars":71,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/lknalwj2","slide":17,"text":"Mỗi chỉ số cần trả lời được: nó hỗ trợ kết luận nào, và khi nào nó không còn đáng tin?","textPreview":"Mỗi chỉ số cần trả lời được: nó hỗ trợ kết luận nào, và khi nào nó không còn đáng tin?","textChars":86,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/mlwbe1kn","slide":17,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/nm5sn618","slide":17,"text":"CÁCH CHẤM","textPreview":"CÁCH CHẤM","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/8netgb2t","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/9o7apgje","slide":17,"bbox":[75,225,330,5]}
+{"kind":"textbox","id":"sh/2pcr2xkj","slide":17,"text":"Máy đo trực tiếp","textPreview":"Máy đo trực tiếp","textChars":16,"textLines":1,"bbox":[75,243,330,52]}
+{"kind":"textbox","id":"sh/3qlsb2l4","slide":17,"text":"Tốc độ nói\nSố và độ dài pause\nĐộ đa dạng từ\nASR confidence\nF0 / rhythm\nTurn latency","textPreview":"Tốc độ nói | Số và độ dài pause | Độ đa dạng từ | ASR confidence | F0 / rhythm | Turn latency","textChars":83,"textLines":6,"bbox":[75,303,330,222]}
+{"kind":"shape","id":"sh/f6h87694","slide":17,"bbox":[445,335,150,48]}
+{"kind":"textbox","id":"sh/e587e18j","slide":17,"text":"diễn giải","textPreview":"diễn giải","textChars":9,"textLines":1,"bbox":[455,348,130,24]}
+{"kind":"shape","id":"sh/18zq9gra","slide":17,"bbox":[635,225,330,5]}
+{"kind":"textbox","id":"sh/07qpgbqp","slide":17,"text":"Construct cần kết luận","textPreview":"Construct cần kết luận","textChars":22,"textLines":1,"bbox":[635,243,330,52]}
+{"kind":"textbox","id":"sh/r2h83698","slide":17,"text":"Fluency\nRange\nAccuracy\nCoherence\nInteraction\nPhonology","textPreview":"Fluency | Range | Accuracy | Coherence | Interaction | Phonology","textChars":54,"textLines":6,"bbox":[635,303,330,222]}
+{"kind":"shape","id":"sh/q187a18n","slide":17,"bbox":[1010,225,200,5]}
+{"kind":"textbox","id":"sh/d4zq5wry","slide":17,"text":"Guardrails","textPreview":"Guardrails","textChars":10,"textLines":1,"bbox":[1010,243,200,52]}
+{"kind":"textbox","id":"sh/s3qpcbqd","slide":17,"text":"Task phù hợp\nASR risk\nAudio QC\nAccent audit\nConfidence\nTeacher review","textPreview":"Task phù hợp | ASR risk | Audio QC | Accent audit | Confidence | Teacher review","textChars":69,"textLines":6,"bbox":[1010,303,200,222]}
+{"kind":"shape","id":"sh/3ex8zm9w","slide":17,"bbox":[178,555,924,72]}
+{"kind":"textbox","id":"sh/ido76hsb","slide":17,"text":"Ví dụ: articulation rate cao chỉ cho biết nói nhanh; không đủ để kết luận Fluency cao.","textPreview":"Ví dụ: articulation rate cao chỉ cho biết nói nhanh; không đủ để kết luận Fluency cao.","textChars":86,"textLines":1,"bbox":[198,569,884,44]}
+{"kind":"notes","id":"nt/oiet2h","slide":17,"text":"Construct under-representation xảy ra khi feature bỏ sót phần quan trọng của năng lực; construct-irrelevant variance xảy ra khi điểm bị ảnh hưởng bởi noise, microphone hoặc accent không liên quan năng lực.\n\n[Sources]\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html"}
+{"kind":"slide","id":"sl/0cufzr","slide":18,"title":"TASK BLUEPRINT","textShapes":11}
+{"kind":"textbox","id":"sh/k7yp0zix","slide":18,"text":"TASK BLUEPRINT","textPreview":"TASK BLUEPRINT","textChars":14,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/jmpo7uhc","slide":18,"text":"Ba nhiệm vụ tạo ba loại bằng chứng bổ sung cho nhau","textPreview":"Ba nhiệm vụ tạo ba loại bằng chứng bổ sung cho nhau","textChars":51,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/ilg7yp0r","slide":18,"text":"Không có một task duy nhất đo tốt cả sáu tiêu chí.","textPreview":"Không có một task duy nhất đo tốt cả sáu tiêu chí.","textChars":50,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/xkn654z6","slide":18,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/wjepwzil","slide":18,"text":"NHIỆM VỤ","textPreview":"NHIỆM VỤ","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/vi5o3uhg","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/ahw7up0v","slide":18,"bbox":[70,225,335,5]}
+{"kind":"textbox","id":"sh/9gn61kza","slide":18,"text":"Task A • Kể / mô tả","textPreview":"Task A • Kể / mô tả","textChars":19,"textLines":1,"bbox":[70,243,335,52]}
+{"kind":"textbox","id":"sh/ofepsfip","slide":18,"text":"90–120 giây\nChủ đề quen thuộc\n2 prompt tương đương\n\nMạnh về: Range, Fluency, Coherence, Phonology\n\nKhông chấm Interaction","textPreview":"90–120 giây | Chủ đề quen thuộc | 2 prompt tương đương |  | Mạnh về: Range, Fluency, Coherence, Phonology |  | Không chấm Interaction","textChars":121,"textLines":7,"bbox":[70,303,335,262]}
+{"kind":"shape","id":"sh/qxo3adk7","slide":18,"bbox":[472,225,335,5]}
+{"kind":"textbox","id":"sh/byx43ilc","slide":18,"text":"Task B • Nêu quan điểm","textPreview":"Task B • Nêu quan điểm","textChars":22,"textLines":1,"bbox":[472,243,335,52]}
+{"kind":"textbox","id":"sh/czqlcn2x","slide":18,"text":"Khoảng 120 giây\n30 giây chuẩn bị\n3 bullet gợi ý cho A2\n\nMạnh về: Range, Accuracy, Coherence, relevance\n\nKiểm soát kiến thức nền","textPreview":"Khoảng 120 giây | 30 giây chuẩn bị | 3 bullet gợi ý cho A2 |  | Mạnh về: Range, Accuracy, Coherence, relevance |  | Kiểm soát kiến thức nền","textChars":127,"textLines":7,"bbox":[472,303,335,262]}
+{"kind":"shape","id":"sh/d0zm5s3i","slide":18,"bbox":[874,225,335,5]}
+{"kind":"textbox","id":"sh/29o36dkv","slide":18,"text":"Task C • Hội thoại","textPreview":"Task C • Hội thoại","textChars":18,"textLines":1,"bbox":[874,243,335,52]}
+{"kind":"textbox","id":"sh/3ux4zylg","slide":18,"text":"3 lượt nói\nPrompt tree cố định\nAudio câu hỏi ghi sẵn\n\nMạnh về: Interaction, Fluency, clarification\n\nPilot trên 25–30 người","textPreview":"3 lượt nói | Prompt tree cố định | Audio câu hỏi ghi sẵn |  | Mạnh về: Interaction, Fluency, clarification |  | Pilot trên 25–30 người","textChars":122,"textLines":7,"bbox":[874,303,335,262]}
+{"kind":"notes","id":"nt/0cufzr","slide":18,"text":"Hai prompt Task A hỗ trợ kiểm tra parallel-form reliability. Task C giới hạn ở subset vì tốn công thiết kế và thu thập; interlocutor tự do bị loại để tránh prompt difficulty và system latency trở thành confound.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1"}
+{"kind":"slide","id":"sl/d9p06v","slide":19,"title":"TRẢI NGHIỆM SỬ DỤNG","textShapes":17}
+{"kind":"textbox","id":"sh/ripcnups","slide":19,"text":"TRẢI NGHIỆM SỬ DỤNG","textPreview":"TRẢI NGHIỆM SỬ DỤNG","textChars":19,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/s3ydwzqx","slide":19,"text":"Sản phẩm là một vòng lặp học tập ngắn, không phải màn hình trả điểm","textPreview":"Sản phẩm là một vòng lặp học tập ngắn, không phải màn hình trả điểm","textChars":67,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/t47upk7i","slide":19,"text":"Elicit → Assess → Explain → Review → Practice.","textPreview":"Elicit → Assess → Explain → Review → Practice.","textChars":46,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/e50vyp83","slide":19,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/f69wrupo","slide":19,"text":"GIẢI PHÁP","textPreview":"GIẢI PHÁP","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/g7id0zq9","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/18ret47u","slide":19,"bbox":[281.6,295,16,6]}
+{"kind":"shape","id":"sh/u9wvm58z","slide":19,"bbox":[291.6,290,9,16]}
+{"kind":"shape","id":"sh/va5cfapk","slide":19,"bbox":[515.2,295,16,6]}
+{"kind":"shape","id":"sh/rilwfql8","slide":19,"bbox":[525.2,290,9,16]}
+{"kind":"shape","id":"sh/qxcfmlkn","slide":19,"bbox":[748.8,295,16,6]}
+{"kind":"shape","id":"sh/dk3eh03e","slide":19,"bbox":[758.8,290,9,16]}
+{"kind":"shape","id":"sh/cjuxov2t","slide":19,"bbox":[982.4,295,16,6]}
+{"kind":"shape","id":"sh/3ulwb6lw","slide":19,"bbox":[992.4,290,9,16]}
+{"kind":"shape","id":"sh/2tcvilkr","slide":19,"bbox":[65,245,215.6,106]}
+{"kind":"textbox","id":"sh/pw3edg32","slide":19,"text":"1. Elicit","textPreview":"1. Elicit","textChars":9,"textLines":1,"bbox":[77,259,191.6,26]}
+{"kind":"textbox","id":"sh/4vuxkb2h","slide":19,"text":"Sinh viên làm Task A/B/C","textPreview":"Sinh viên làm Task A/B/C","textChars":24,"textLines":1,"bbox":[77,289,191.6,30]}
+{"kind":"shape","id":"sh/vq1w76l0","slide":19,"bbox":[298.6,245,215.6,106]}
+{"kind":"textbox","id":"sh/upsve14f","slide":19,"text":"2. Assess","textPreview":"2. Assess","textChars":9,"textLines":1,"bbox":[310.6,259,191.6,26]}
+{"kind":"textbox","id":"sh/yl8fq1o7","slide":19,"text":"AI tạo điểm sơ bộ","textPreview":"AI tạo điểm sơ bộ","textChars":17,"textLines":1,"bbox":[310.6,289,191.6,30]}
+{"kind":"shape","id":"sh/jm1gz65s","slide":19,"bbox":[532.2,245,215.6,106]}
+{"kind":"textbox","id":"sh/knaxsb6d","slide":19,"text":"3. Explain","textPreview":"3. Explain","textChars":10,"textLines":1,"bbox":[544.2,259,191.6,26]}
+{"kind":"textbox","id":"sh/lojy1gny","slide":19,"text":"Hiện bằng chứng dễ hiểu","textPreview":"Hiện bằng chứng dễ hiểu","textChars":23,"textLines":1,"bbox":[544.2,289,191.6,30]}
+{"kind":"shape","id":"sh/6psfu1oj","slide":19,"bbox":[765.8,245,215.6,106]}
+{"kind":"textbox","id":"sh/7q1g3654","slide":19,"text":"4. Review","textPreview":"4. Review","textChars":9,"textLines":1,"bbox":[777.8,259,191.6,26]}
+{"kind":"textbox","id":"sh/8raxwb6p","slide":19,"text":"Giảng viên duyệt ca khó","textPreview":"Giảng viên duyệt ca khó","textChars":23,"textLines":1,"bbox":[777.8,289,191.6,30]}
+{"kind":"shape","id":"sh/tsjy5gnu","slide":19,"bbox":[999.4,245,215.6,106]}
+{"kind":"textbox","id":"sh/utsfylof","slide":19,"text":"5. Practice","textPreview":"5. Practice","textChars":11,"textLines":1,"bbox":[1011.4,259,191.6,26]}
+{"kind":"textbox","id":"sh/fulg7q50","slide":19,"text":"Một nhiệm vụ luyện tiếp","textPreview":"Một nhiệm vụ luyện tiếp","textChars":23,"textLines":1,"bbox":[1011.4,289,191.6,30]}
+{"kind":"shape","id":"sh/p07ad4be","slide":19,"bbox":[150,425,980,88]}
+{"kind":"textbox","id":"sh/ozy9kjut","slide":19,"text":"Ví dụ gợi ý: kể lại cùng chủ đề trong 90 giây, dùng ít nhất ba từ nối và giữ mỗi ý trong một cụm nói hoàn chỉnh.","textPreview":"Ví dụ gợi ý: kể lại cùng chủ đề trong 90 giây, dùng ít nhất ba từ nối và giữ mỗi ý trong một cụm nói hoàn chỉnh.","textChars":112,"textLines":1,"bbox":[170,439,940,60]}
+{"kind":"textbox","id":"sh/3y58bet8","slide":19,"text":"Chỉ sinh gợi ý khi có đủ evidence và confidence đạt ngưỡng.","textPreview":"Chỉ sinh gợi ý khi có đủ evidence và confidence đạt ngưỡng.","textChars":59,"textLines":1,"bbox":[205,555,870,34]}
+{"kind":"notes","id":"nt/d9p06v","slide":19,"text":"Đầu ra D8 phải quay lại việc học. Không cần xây full adaptive learning engine; MVP chỉ cần tạo một next_task_hint theo mẫu được giảng viên duyệt.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/o676pf","slide":20,"title":"KIẾN TRÚC TỔNG THỂ","textShapes":21}
+{"kind":"textbox","id":"sh/cjq5snu1","slide":20,"text":"KIẾN TRÚC TỔNG THỂ","textPreview":"KIẾN TRÚC TỔNG THỂ","textChars":18,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/rihozitg","slide":20,"text":"Pipeline tách dữ liệu gốc, bằng chứng, mô hình chấm và lớp phản hồi","textPreview":"Pipeline tách dữ liệu gốc, bằng chứng, mô hình chấm và lớp phản hồi","textChars":67,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/qh8nqdcb","slide":20,"text":"Tách lớp giúp chạy lại thí nghiệm và truy vết khi điểm bị sửa.","textPreview":"Tách lớp giúp chạy lại thí nghiệm và truy vết khi điểm bị sửa.","textChars":62,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/1oj65sby","slide":20,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/0na5wnud","slide":20,"text":"KIẾN TRÚC","textPreview":"KIẾN TRÚC","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/zmho3its","slide":20,"text":"20","textPreview":"20","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/el8nuxc7","slide":20,"bbox":[234,294,16,6]}
+{"kind":"shape","id":"sh/9cj69cbu","slide":20,"bbox":[244,289,9,16]}
+{"kind":"shape","id":"sh/orap07u9","slide":20,"bbox":[433,294,16,6]}
+{"kind":"shape","id":"sh/ipsvyxwf","slide":20,"bbox":[443,289,9,16]}
+{"kind":"shape","id":"sh/jq1w72d0","slide":20,"bbox":[632,294,16,6]}
+{"kind":"shape","id":"sh/krad07el","slide":20,"bbox":[642,289,9,16]}
+{"kind":"shape","id":"sh/5sje9cv6","slide":20,"bbox":[831,294,16,6]}
+{"kind":"shape","id":"sh/6tsf2hwr","slide":20,"bbox":[841,289,9,16]}
+{"kind":"shape","id":"sh/7u1wb2dc","slide":20,"bbox":[1030,294,16,6]}
+{"kind":"shape","id":"sh/sfax47ex","slide":20,"bbox":[1040,289,9,16]}
+{"kind":"shape","id":"sh/tg3edcv2","slide":20,"bbox":[52,245,181,104]}
+{"kind":"textbox","id":"sh/mx8vqdwn","slide":20,"text":"Thu bài","textPreview":"Thu bài","textChars":7,"textLines":1,"bbox":[64,259,157,26]}
+{"kind":"textbox","id":"sh/nyhwzids","slide":20,"text":"Recorder + metadata","textPreview":"Recorder + metadata","textChars":19,"textLines":1,"bbox":[64,289,157,30]}
+{"kind":"shape","id":"sh/b2dsretk","slide":20,"bbox":[251,245,181,104]}
+{"kind":"textbox","id":"sh/q14by9cf","slide":20,"text":"Quality gate","textPreview":"Quality gate","textChars":12,"textLines":1,"bbox":[263,259,157,26]}
+{"kind":"textbox","id":"sh/d4vatobq","slide":20,"text":"Noise, clipping, silence","textPreview":"Noise, clipping, silence","textChars":24,"textLines":1,"bbox":[263,289,157,30]}
+{"kind":"shape","id":"sh/c3mt0ju5","slide":20,"bbox":[450,245,181,104]}
+{"kind":"textbox","id":"sh/3ydsnuto","slide":20,"text":"Evidence","textPreview":"Evidence","textChars":8,"textLines":1,"bbox":[462,259,157,26]}
+{"kind":"textbox","id":"sh/2xkbu9c3","slide":20,"text":"Audio + text + turns","textPreview":"Audio + text + turns","textChars":20,"textLines":1,"bbox":[462,289,157,30]}
+{"kind":"shape","id":"sh/p0vap4bu","slide":20,"bbox":[649,245,181,104]}
+{"kind":"textbox","id":"sh/ozmtwzu9","slide":20,"text":"Scoring","textPreview":"Scoring","textChars":7,"textLines":1,"bbox":[661,259,157,26]}
+{"kind":"textbox","id":"sh/nuxczyts","slide":20,"text":"Models + late fusion","textPreview":"Models + late fusion","textChars":20,"textLines":1,"bbox":[661,289,157,30]}
+{"kind":"shape","id":"sh/mtob6tc7","slide":20,"bbox":[848,245,181,104]}
+{"kind":"textbox","id":"sh/k3yh4r6t","slide":20,"text":"Calibration","textPreview":"Calibration","textChars":11,"textLines":1,"bbox":[860,259,157,26]}
+{"kind":"textbox","id":"sh/lo7ydwny","slide":20,"text":"Confidence + thresholds","textPreview":"Confidence + thresholds","textChars":23,"textLines":1,"bbox":[860,289,157,30]}
+{"kind":"shape","id":"sh/y1gz21on","slide":20,"bbox":[1047,245,181,104]}
+{"kind":"textbox","id":"sh/j2pgbm58","slide":20,"text":"Report","textPreview":"Report","textChars":6,"textLines":1,"bbox":[1059,259,157,26]}
+{"kind":"textbox","id":"sh/sryh8b6p","slide":20,"text":"Profile + teacher queue","textPreview":"Profile + teacher queue","textChars":23,"textLines":1,"bbox":[1059,289,157,30]}
+{"kind":"shape","id":"sh/ts7ihgna","slide":20,"bbox":[120,410,450,5]}
+{"kind":"textbox","id":"sh/6pgz61oj","slide":20,"text":"Nguyên tắc version hóa","textPreview":"Nguyên tắc version hóa","textChars":22,"textLines":1,"bbox":[120,428,450,52]}
+{"kind":"textbox","id":"sh/7qp0f654","slide":20,"text":"audio_id, transcript_version, feature_version, rubric_version, model_version và calibration_version.","textPreview":"audio_id, transcript_version, feature_version, rubric_version, model_version và calibration_version.","textChars":100,"textLines":1,"bbox":[120,488,450,72]}
+{"kind":"shape","id":"sh/gvihcb6l","slide":20,"bbox":[710,410,450,5]}
+{"kind":"textbox","id":"sh/hwrilgn6","slide":20,"text":"Nguyên tắc truy vết","textPreview":"Nguyên tắc truy vết","textChars":19,"textLines":1,"bbox":[710,428,450,52]}
+{"kind":"textbox","id":"sh/14ji1grm","slide":20,"text":"Mỗi nhận xét phải trỏ về evidence_id, timestamp hoặc đoạn transcript cụ thể.","textPreview":"Mỗi nhận xét phải trỏ về evidence_id, timestamp hoặc đoạn transcript cụ thể.","textChars":76,"textLines":1,"bbox":[710,488,450,72]}
+{"kind":"notes","id":"nt/o676pf","slide":20,"text":"Evidence layer lưu dữ liệu có version; scoring layer tạo xác suất; feedback layer chỉ dùng evidence đã kiểm chứng. Thiết kế này hỗ trợ reproducibility và audit.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/23a09w","slide":21,"title":"TRÍCH XUẤT ĐẶC TRƯNG","textShapes":12}
+{"kind":"textbox","id":"sh/grmtwje1","slide":21,"text":"TRÍCH XUẤT ĐẶC TRƯNG","textPreview":"TRÍCH XUẤT ĐẶC TRƯNG","textChars":20,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/fqds3edg","slide":21,"text":"Ba nhánh bằng chứng được tạo độc lập trước khi kết hợp","textPreview":"Ba nhánh bằng chứng được tạo độc lập trước khi kết hợp","textChars":54,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/up4bu9wv","slide":21,"text":"Khi một nguồn sai, nhóm có thể biết mô hình đang dựa vào đâu.","textPreview":"Khi một nguồn sai, nhóm có thể biết mô hình đang dựa vào đâu.","textChars":61,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/pgfa9ovi","slide":21,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/4f6t0jex","slide":21,"text":"KIẾN TRÚC","textPreview":"KIẾN TRÚC","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/3eds7ydc","slide":21,"text":"21","textPreview":"21","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/2d4bytw7","slide":21,"bbox":[70,225,350,5]}
+{"kind":"textbox","id":"sh/dkfad8vu","slide":21,"text":"Audio","textPreview":"Audio","textChars":5,"textLines":1,"bbox":[70,243,350,52]}
+{"kind":"textbox","id":"sh/cj6t43e9","slide":21,"text":"Duration, voiced ratio, pause, articulation rate, F0, rhythm, GOP và chất lượng thu âm.\n\nDùng chủ yếu cho Fluency và Phonology.","textPreview":"Duration, voiced ratio, pause, articulation rate, F0, rhythm, GOP và chất lượng thu âm. |  | Dùng chủ yếu cho Fluency và Phonology.","textChars":127,"textLines":3,"bbox":[70,303,350,222]}
+{"kind":"shape","id":"sh/uh8n2ho7","slide":21,"bbox":[465,225,350,5]}
+{"kind":"textbox","id":"sh/fihob25s","slide":21,"text":"Transcript","textPreview":"Transcript","textChars":10,"textLines":1,"bbox":[465,243,350,52]}
+{"kind":"textbox","id":"sh/gjqp476d","slide":21,"text":"Từ vựng, cấu trúc, lỗi, từ nối, semantic relevance và self-repair.\n\nDùng chủ yếu cho Range, Accuracy và Coherence.","textPreview":"Từ vựng, cấu trúc, lỗi, từ nối, semantic relevance và self-repair. |  | Dùng chủ yếu cho Range, Accuracy và Coherence.","textChars":114,"textLines":3,"bbox":[465,303,350,222]}
+{"kind":"shape","id":"sh/hkz6dcny","slide":21,"bbox":[860,225,350,5]}
+{"kind":"textbox","id":"sh/2l876hoj","slide":21,"text":"Interaction","textPreview":"Interaction","textChars":11,"textLines":1,"bbox":[860,243,350,52]}
+{"kind":"textbox","id":"sh/3mhofm54","slide":21,"text":"Turn count, latency client-side, clarification, follow-up, relevance và completion.\n\nChỉ dùng khi Task C cung cấp đủ lượt nói.","textPreview":"Turn count, latency client-side, clarification, follow-up, relevance và completion. |  | Chỉ dùng khi Task C cung cấp đủ lượt nói.","textChars":126,"textLines":3,"bbox":[860,303,350,222]}
+{"kind":"shape","id":"sh/4nqp8r69","slide":21,"bbox":[135,555,1010,74]}
+{"kind":"textbox","id":"sh/poz6hwnu","slide":21,"text":"Quality là nhánh kiểm soát: noise, clipping và ASR risk quyết định reject/review; không được dùng trực tiếp làm điểm năng lực.","textPreview":"Quality là nhánh kiểm soát: noise, clipping và ASR risk quyết định reject/review; không được dùng trực tiếp làm điểm năng lực.","textChars":126,"textLines":1,"bbox":[155,569,970,46]}
+{"kind":"notes","id":"nt/23a09w","slide":21,"text":"Mô hình multimodal cho phép kết hợp audio và transcript, nhưng cần baseline audio-only và transcript-only để biết nhánh nào thực sự đóng góp.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://aclanthology.org/2023.ranlp-1.83/\n- https://aclanthology.org/2020.acl-main.206/"}
+{"kind":"slide","id":"sl/bwuf6p","slide":22,"title":"RỦI RO ASR","textShapes":17}
+{"kind":"textbox","id":"sh/onmx0fqx","slide":22,"text":"RỦI RO ASR","textPreview":"RỦI RO ASR","textChars":10,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/n2dgra9c","slide":22,"text":"Một từ nhận sai có thể tạo thành nhiều lỗi giả ở các bước phía sau","textPreview":"Một từ nhận sai có thể tạo thành nhiều lỗi giả ở các bước phía sau","textChars":66,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/214fy58r","slide":22,"text":"ASR là cảm biến không hoàn hảo, không phải ground truth.","textPreview":"ASR là cảm biến không hoàn hảo, không phải ground truth.","textChars":56,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/10vyp0rm","slide":22,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/0zmxwfq1","slide":22,"text":"KIẾN TRÚC","textPreview":"KIẾN TRÚC","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/fytgna9g","slide":22,"text":"22","textPreview":"22","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/exkfu58v","slide":22,"bbox":[357.5,282,16,6]}
+{"kind":"shape","id":"sh/lwfy147q","slide":22,"bbox":[367.5,277,9,16]}
+{"kind":"shape","id":"sh/kv6h8zq5","slide":22,"bbox":[632,282,16,6]}
+{"kind":"shape","id":"sh/ux0filwf","slide":22,"bbox":[642,277,9,16]}
+{"kind":"shape","id":"sh/fy9gbqd0","slide":22,"bbox":[906.5,282,16,6]}
+{"kind":"shape","id":"sh/gz2xkvel","slide":22,"bbox":[916.5,277,9,16]}
+{"kind":"shape","id":"sh/10byd0vq","slide":22,"bbox":[100,235,256.5,100]}
+{"kind":"textbox","id":"sh/690felw3","slide":22,"text":"Người học nói đúng","textPreview":"Người học nói đúng","textChars":18,"textLines":1,"bbox":[112,249,232.5,26]}
+{"kind":"textbox","id":"sh/7a9g7qxo","slide":22,"text":"“I went to school”","textPreview":"“I went to school”","textChars":18,"textLines":1,"bbox":[112,279,232.5,30]}
+{"kind":"shape","id":"sh/sbixgve9","slide":22,"bbox":[374.5,235,256.5,100]}
+{"kind":"textbox","id":"sh/twry9gfu","slide":22,"text":"ASR nhận sai","textPreview":"ASR nhận sai","textChars":12,"textLines":1,"bbox":[386.5,249,232.5,26]}
+{"kind":"textbox","id":"sh/q5kzq5wn","slide":22,"text":"“I want school”","textPreview":"“I want school”","textChars":15,"textLines":1,"bbox":[386.5,279,232.5,30]}
+{"kind":"shape","id":"sh/b6dgjad8","slide":22,"bbox":[649,235,256.5,100]}
+{"kind":"textbox","id":"sh/na5cb2dk","slide":22,"text":"NLP kết luận sai","textPreview":"NLP kết luận sai","textChars":16,"textLines":1,"bbox":[661,249,232.5,26]}
+{"kind":"textbox","id":"sh/m9wvixcz","slide":22,"text":"thiếu giới từ / sai nghĩa","textPreview":"thiếu giới từ / sai nghĩa","textChars":25,"textLines":1,"bbox":[661,279,232.5,30]}
+{"kind":"shape","id":"sh/9cnedcvq","slide":22,"bbox":[923.5,235,256.5,100]}
+{"kind":"textbox","id":"sh/8bedk7u5","slide":22,"text":"Điểm giảm giả","textPreview":"Điểm giảm giả","textChars":13,"textLines":1,"bbox":[935.5,249,232.5,26]}
+{"kind":"textbox","id":"sh/ve5wfmdg","slide":22,"text":"Accuracy + Coherence","textPreview":"Accuracy + Coherence","textChars":20,"textLines":1,"bbox":[935.5,279,232.5,30]}
+{"kind":"shape","id":"sh/adwvmhcv","slide":22,"bbox":[100,400,430,5]}
+{"kind":"textbox","id":"sh/xg7ehwbm","slide":22,"text":"Guardrails","textPreview":"Guardrails","textChars":10,"textLines":1,"bbox":[100,418,430,52]}
+{"kind":"textbox","id":"sh/wfydoru1","slide":22,"text":"• Lưu word/token confidence\n• So WER trên transcript chép tay\n• Giảm trọng số vùng không chắc\n• Log accent, thiết bị và noise\n• Chuyển review khi vượt ngưỡng","textPreview":"• Lưu word/token confidence | • So WER trên transcript chép tay | • Giảm trọng số vùng không chắc | • Log accent, thiết bị và noise | • C...","textChars":157,"textLines":5,"bbox":[100,478,430,112]}
+{"kind":"shape","id":"sh/j2pwjmts","slide":22,"bbox":[720,400,430,5]}
+{"kind":"textbox","id":"sh/ihgvqhc7","slide":22,"text":"Audit bắt buộc","textPreview":"Audit bắt buộc","textChars":14,"textLines":1,"bbox":[720,418,430,52]}
+{"kind":"textbox","id":"sh/g7id0ra5","slide":22,"text":"Chọn 15–20 bài đa dạng band, accent và thiết bị để chép tay hoàn toàn; so lỗi model trên ASR và transcript chuẩn.","textPreview":"Chọn 15–20 bài đa dạng band, accent và thiết bị để chép tay hoàn toàn; so lỗi model trên ASR và transcript chuẩn.","textChars":113,"textLines":1,"bbox":[720,478,430,112]}
+{"kind":"notes","id":"nt/bwuf6p","slide":22,"text":"Không sửa transcript bằng cách chỉ nhìn output ASR vì sẽ tạo confirmation bias. Manual subset phải chép từ audio, rồi mới so WER và downstream score sensitivity.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://aclanthology.org/2020.acl-main.206/\n- https://psi.engr.tamu.edu/l2-arctic-corpus/"}
+{"kind":"slide","id":"sl/m2quu2","slide":23,"title":"MÔ HÌNH CHẤM","textShapes":16}
+{"kind":"textbox","id":"sh/8zyp8fit","slide":23,"text":"MÔ HÌNH CHẤM","textPreview":"MÔ HÌNH CHẤM","textChars":12,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/7yp8fah8","slide":23,"text":"Late fusion giữ được nguồn bằng chứng và dễ kiểm tra hơn một mô hình hộp đen duy nhất","textPreview":"Late fusion giữ được nguồn bằng chứng và dễ kiểm tra hơn một mô hình hộp đen duy nhất","textChars":85,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/mxg7650n","slide":23,"text":"Mỗi nhánh tạo điểm/xác suất; bước cuối mới kết hợp và hiệu chỉnh confidence.","textPreview":"Mỗi nhánh tạo điểm/xác suất; bước cuối mới kết hợp và hiệu chỉnh confidence.","textChars":76,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/h4rqlkza","slide":23,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/w3i9cfip","slide":23,"text":"MÔ HÌNH","textPreview":"MÔ HÌNH","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/v298jah4","slide":23,"text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/u10rap0j","slide":23,"bbox":[350,292,160,6]}
+{"kind":"shape","id":"sh/d8nq90j6","slide":23,"bbox":[350,412,160,6]}
+{"kind":"shape","id":"sh/c7ep0vil","slide":23,"bbox":[350,532,160,6]}
+{"kind":"shape","id":"sh/apoz6xoz","slide":23,"bbox":[770,410,155,6]}
+{"kind":"shape","id":"sh/bqx0f2pk","slide":23,"bbox":[80,235,270,5]}
+{"kind":"textbox","id":"sh/crqh8765","slide":23,"text":"Audio model","textPreview":"Audio model","textChars":11,"textLines":1,"bbox":[80,253,270,52]}
+{"kind":"textbox","id":"sh/xszihc7a","slide":23,"text":"Fluency / Phonology probabilities","textPreview":"Fluency / Phonology probabilities","textChars":33,"textLines":1,"bbox":[80,313,270,34]}
+{"kind":"shape","id":"sh/yt8zaxov","slide":23,"bbox":[80,355,270,5]}
+{"kind":"textbox","id":"sh/zuh0j2pg","slide":23,"text":"Text model","textPreview":"Text model","textChars":10,"textLines":1,"bbox":[80,373,270,52]}
+{"kind":"textbox","id":"sh/kvqhc761","slide":23,"text":"Range / Accuracy / Coherence probabilities","textPreview":"Range / Accuracy / Coherence probabilities","textChars":42,"textLines":1,"bbox":[80,433,270,34]}
+{"kind":"shape","id":"sh/lgzilc7m","slide":23,"bbox":[80,475,270,5]}
+{"kind":"textbox","id":"sh/mh8zeho7","slide":23,"text":"Interaction model","textPreview":"Interaction model","textChars":17,"textLines":1,"bbox":[80,493,270,52]}
+{"kind":"textbox","id":"sh/7ih0nmps","slide":23,"text":"Interaction probability khi có Task C","textPreview":"Interaction probability khi có Task C","textChars":37,"textLines":1,"bbox":[80,553,270,34]}
+{"kind":"shape","id":"sh/jm1gbmlk","slide":23,"bbox":[510,315,260,190]}
+{"kind":"textbox","id":"sh/ilsz2h4z","slide":23,"text":"Late fusion","textPreview":"Late fusion","textChars":11,"textLines":1,"bbox":[540,344,200,38]}
+{"kind":"textbox","id":"sh/5ojydw3q","slide":23,"text":"Kết hợp xác suất + quality flags + missing criteria","textPreview":"Kết hợp xác suất + quality flags + missing criteria","textChars":51,"textLines":1,"bbox":[540,398,200,68]}
+{"kind":"shape","id":"sh/4nah4rm5","slide":23,"bbox":[925,315,260,190]}
+{"kind":"textbox","id":"sh/vihg72lo","slide":23,"text":"Calibration","textPreview":"Calibration","textChars":11,"textLines":1,"bbox":[955,344,200,38]}
+{"kind":"textbox","id":"sh/uh8zyh43","slide":23,"text":"Confidence phản ánh đúng xác suất trả lời đúng; đặt ngưỡng teacher review","textPreview":"Confidence phản ánh đúng xác suất trả lời đúng; đặt ngưỡng teacher review","textChars":73,"textLines":1,"bbox":[950,396,210,78]}
+{"kind":"shape","id":"sh/hkjy9c3u","slide":23,"bbox":[250,592,780,54]}
+{"kind":"textbox","id":"sh/wjah07m9","slide":23,"text":"Baseline bắt buộc: audio-only, transcript-only và frozen-rubric LLM local.","textPreview":"Baseline bắt buộc: audio-only, transcript-only và frozen-rubric LLM local.","textChars":74,"textLines":1,"bbox":[270,606,740,26]}
+{"kind":"notes","id":"nt/m2quu2","slide":23,"text":"Late fusion được chọn vì dữ liệu nhỏ và cần giải thích. Calibration có thể dùng temperature scaling hoặc isotonic regression tùy dữ liệu; phải fit trong training fold, không dùng test.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://aclanthology.org/2023.ranlp-1.83/\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/l5fcz4","slide":24,"title":"ĐẦU RA","textShapes":21}
+{"kind":"textbox","id":"sh/srqtknm9","slide":24,"text":"ĐẦU RA","textPreview":"ĐẦU RA","textChars":6,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/rqhcbilo","slide":24,"text":"Báo cáo phải cho biết điểm, lý do và mức độ đáng tin","textPreview":"Báo cáo phải cho biết điểm, lý do và mức độ đáng tin","textChars":52,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/6p8bid43","slide":24,"text":"Kết quả được chuẩn hóa thành speaking_profile để dùng cho phản hồi và module học tập phía sau.","textPreview":"Kết quả được chuẩn hóa thành speaking_profile để dùng cho phản hồi và module học tập phía sau.","textChars":94,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/54zu98ny","slide":24,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/436tg3md","slide":24,"text":"SẢN PHẨM","textPreview":"SẢN PHẨM","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/j2xc7i5s","slide":24,"text":"24","textPreview":"24","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/i1obed47","slide":24,"bbox":[70,220,540,365]}
+{"kind":"textbox","id":"sh/p0julc32","slide":24,"text":"Hồ sơ hiển thị cho sinh viên","textPreview":"Hồ sơ hiển thị cho sinh viên","textChars":28,"textLines":1,"bbox":[95,244,490,34]}
+{"kind":"textbox","id":"sh/ozads7mh","slide":24,"text":"Overall: B1 • confidence: trung bình","textPreview":"Overall: B1 • confidence: trung bình","textChars":36,"textLines":1,"bbox":[95,300,490,34]}
+{"kind":"shape","id":"sh/qt4bax4j","slide":24,"bbox":[95,350,120,48]}
+{"kind":"textbox","id":"sh/rudsj2l4","slide":24,"text":"Tiêu chí","textPreview":"Tiêu chí","textChars":8,"textLines":1,"bbox":[105,360,100,28]}
+{"kind":"shape","id":"sh/cv6tc7mp","slide":24,"bbox":[215,350,80,48]}
+{"kind":"textbox","id":"sh/dwfals3a","slide":24,"text":"Mức","textPreview":"Mức","textChars":3,"textLines":1,"bbox":[225,360,60,28]}
+{"kind":"shape","id":"sh/2p4b6d4n","slide":24,"bbox":[295,350,290,48]}
+{"kind":"textbox","id":"sh/3qdsfils","slide":24,"text":"Bằng chứng","textPreview":"Bằng chứng","textChars":10,"textLines":1,"bbox":[305,360,270,28]}
+{"kind":"shape","id":"sh/4rmt8nmd","slide":24,"bbox":[95,398,120,54]}
+{"kind":"textbox","id":"sh/psvahs3y","slide":24,"text":"Range","textPreview":"Range","textChars":5,"textLines":1,"bbox":[105,406,100,38]}
+{"kind":"shape","id":"sh/mlobih4r","slide":24,"bbox":[215,398,80,54]}
+{"kind":"textbox","id":"sh/nmhcrmlc","slide":24,"text":"B1","textPreview":"B1","textChars":2,"textLines":1,"bbox":[225,406,60,38]}
+{"kind":"shape","id":"sh/j698je1o","slide":24,"bbox":[295,398,290,54]}
+{"kind":"textbox","id":"sh/y507a9k3","slide":24,"text":"Từ đủ chủ đề; còn lặp","textPreview":"Từ đủ chủ đề; còn lặp","textChars":21,"textLines":1,"bbox":[305,406,270,38]}
+{"kind":"shape","id":"sh/5srqloju","slide":24,"bbox":[95,452,120,54]}
+{"kind":"textbox","id":"sh/k7ipcj29","slide":24,"text":"Fluency","textPreview":"Fluency","textChars":7,"textLines":1,"bbox":[105,460,100,38]}
+{"kind":"shape","id":"sh/7u98ne1k","slide":24,"bbox":[215,452,80,54]}
+{"kind":"textbox","id":"sh/6t07e9kf","slide":24,"text":"A2+","textPreview":"A2+","textChars":3,"textLines":1,"bbox":[225,460,60,38]}
+{"kind":"shape","id":"sh/twbqpojq","slide":24,"bbox":[295,452,290,54]}
+{"kind":"textbox","id":"sh/sv29gj25","slide":24,"text":"2 pause dài tại 00:38, 01:04","textPreview":"2 pause dài tại 00:38, 01:04","textChars":28,"textLines":1,"bbox":[305,460,270,38]}
+{"kind":"shape","id":"sh/fyt8ry1w","slide":24,"bbox":[95,506,120,54]}
+{"kind":"textbox","id":"sh/uxkritkb","slide":24,"text":"Interaction","textPreview":"Interaction","textChars":11,"textLines":1,"bbox":[105,514,100,38]}
+{"kind":"shape","id":"sh/c3mp83yp","slide":24,"bbox":[215,506,80,54]}
+{"kind":"textbox","id":"sh/d4vq18zu","slide":24,"text":"—","textPreview":"—","textChars":1,"textLines":1,"bbox":[225,514,60,38]}
+{"kind":"shape","id":"sh/q1k76tgj","slide":24,"bbox":[295,506,290,54]}
+{"kind":"textbox","id":"sh/r2dozyh4","slide":24,"text":"Chưa làm Task C","textPreview":"Chưa làm Task C","textChars":15,"textLines":1,"bbox":[305,514,270,38]}
+{"kind":"shape","id":"sh/4z2p4jyd","slide":24,"bbox":[690,220,500,365]}
+{"kind":"textbox","id":"sh/p0b6xozy","slide":24,"text":"speaking_profile.json","textPreview":"speaking_profile.json","textChars":21,"textLines":1,"bbox":[720,244,440,28]}
+{"kind":"textbox","id":"sh/2xk72tg7","slide":24,"text":"{\n  \"overall\": {\"band\":\"B1\", \"confidence\":0.67},\n  \"criteria\": {\n    \"range\":\"B1\", \"fluency\":\"A2+\",\n    \"interaction\":null\n  },\n  \"evidence_refs\":[\"e17\",\"e24\"],\n  \"weakest_criteria\":[\"fluency\"],\n  \"next_task_hint\":\"retell_with_connectors\",\n  \"teacher_verified\":false\n}","textPreview":"{ |   \"overall\": {\"band\":\"B1\", \"confidence\":0.67}, |   \"criteria\": { |     \"range\":\"B1\", \"fluency\":\"A2+\", |     \"interaction\":null |   },...","textChars":268,"textLines":11,"bbox":[720,295,440,250]}
+{"kind":"notes","id":"nt/l5fcz4","slide":24,"text":"Interaction null có nghĩa chưa đủ bằng chứng, không phải 0. Profile phải kèm rubric/model/calibration version trong triển khai thật, dù ví dụ trên rút gọn để dễ đọc.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/cbp5od","slide":25,"title":"KHẢO SÁT SẢN PHẨM VÀ NGHIÊN CỨU","textShapes":14}
+{"kind":"textbox","id":"sh/l8re1gjq","slide":25,"text":"KHẢO SÁT SẢN PHẨM VÀ NGHIÊN CỨU","textPreview":"KHẢO SÁT SẢN PHẨM VÀ NGHIÊN CỨU","textChars":31,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/y5gfqlkz","slide":25,"text":"Mỗi nguồn giải quyết tốt một phần, nhưng chưa khớp toàn bộ bài toán người Việt A2–B2","textPreview":"Mỗi nguồn giải quyết tốt một phần, nhưng chưa khớp toàn bộ bài toán người Việt A2–B2","textChars":84,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/j69wz61k","slide":25,"text":"Dùng các hệ thống này làm baseline, tham khảo kiến trúc hoặc học cách thiết kế trải nghiệm.","textPreview":"Dùng các hệ thống này làm baseline, tham khảo kiến trúc hoặc học cách thiết kế trải nghiệm.","textChars":91,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/w3yxob2t","slide":25,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/x47exgje","slide":25,"text":"KHOẢNG TRỐNG","textPreview":"KHOẢNG TRỐNG","textChars":12,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/a1gvm1kn","slide":25,"text":"25","textPreview":"25","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/b2pwv618","slide":25,"bbox":[55,220,275,5]}
+{"kind":"textbox","id":"sh/gz2x0v2d","slide":25,"text":"SpeechRater","textPreview":"SpeechRater","textChars":11,"textLines":1,"bbox":[55,238,275,52]}
+{"kind":"textbox","id":"sh/h0by90ji","slide":25,"text":"Hệ thống chấm nói tự động kinh điển; mạnh về construct, feature và validation.\n\nThiếu: mã nguồn/định hướng riêng cho người Việt.","textPreview":"Hệ thống chấm nói tự động kinh điển; mạnh về construct, feature và validation. |  | Thiếu: mã nguồn/định hướng riêng cho người Việt.","textChars":128,"textLines":3,"bbox":[55,298,275,232]}
+{"kind":"shape","id":"sh/xwby9cbu","slide":25,"bbox":[365,220,275,5]}
+{"kind":"textbox","id":"sh/wvixg7a9","slide":25,"text":"Speak & Improve","textPreview":"Speak & Improve","textChars":15,"textLines":1,"bbox":[365,238,275,52]}
+{"kind":"textbox","id":"sh/vu9g72to","slide":25,"text":"UX luyện nói và dữ liệu L2 lớn.\n\nThiếu: kiểm soát trực tiếp mô hình và xác nhận subset người Việt phù hợp.","textPreview":"UX luyện nói và dữ liệu L2 lớn. |  | Thiếu: kiểm soát trực tiếp mô hình và xác nhận subset người Việt phù hợp.","textChars":106,"textLines":3,"bbox":[365,298,275,232]}
+{"kind":"shape","id":"sh/a90fexsj","slide":25,"bbox":[675,220,275,5]}
+{"kind":"textbox","id":"sh/98ry5sby","slide":25,"text":"EvalYaks","textPreview":"EvalYaks","textChars":8,"textLines":1,"bbox":[675,238,275,52]}
+{"kind":"textbox","id":"sh/87ixcnad","slide":25,"text":"Mã nguồn/prompt cho đánh giá transcript theo B2.\n\nThiếu: audio, phát âm, fluency và các mức A2/B1.","textPreview":"Mã nguồn/prompt cho đánh giá transcript theo B2. |  | Thiếu: audio, phát âm, fluency và các mức A2/B1.","textChars":98,"textLines":3,"bbox":[675,298,275,232]}
+{"kind":"shape","id":"sh/n69g32ts","slide":25,"bbox":[985,220,240,5]}
+{"kind":"textbox","id":"sh/m50faxs7","slide":25,"text":"GOPT","textPreview":"GOPT","textChars":4,"textLines":1,"bbox":[985,238,240,52]}
+{"kind":"textbox","id":"sh/t4vyhwb2","slide":25,"text":"Baseline chấm phát âm nhiều mức.\n\nThiếu: domain shift Mandarin L1 + scripted khi áp lên người Việt nói tự nhiên.","textPreview":"Baseline chấm phát âm nhiều mức. |  | Thiếu: domain shift Mandarin L1 + scripted khi áp lên người Việt nói tự nhiên.","textChars":112,"textLines":3,"bbox":[985,298,240,232]}
+{"kind":"shape","id":"sh/s3mhorah","slide":25,"bbox":[120,568,1040,64]}
+{"kind":"textbox","id":"sh/s7u1kvit","slide":25,"text":"Khoảng trống nằm ở sự kết hợp: người Việt + audio tự nhiên + 6 tiêu chí + nhiều rater + confidence + teacher review.","textPreview":"Khoảng trống nằm ở sự kết hợp: người Việt + audio tự nhiên + 6 tiêu chí + nhiều rater + confidence + teacher review.","textChars":116,"textLines":1,"bbox":[140,582,1000,36]}
+{"kind":"notes","id":"nt/cbp5od","slide":25,"text":"Không tuyên bố chưa ai từng làm. Tuyên bố thận trọng: các nguồn công khai khảo sát được chưa cung cấp trọn bộ điều kiện cho đúng phạm vi đề tài.\n\n[Sources]\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html\n- https://www.repository.cam.ac.uk/items/611e9b8b-c5b2-4cbe-9b7a-036a48334118\n- https://github.com/Talking-Yak/EvalYaks\n- https://github.com/YuanGongND/gopt"}
+{"kind":"slide","id":"sl/rgzv96","slide":26,"title":"KHOẢNG TRỐNG NGHIÊN CỨU","textShapes":14}
+{"kind":"textbox","id":"sh/edon6d8v","slide":26,"text":"KHOẢNG TRỐNG NGHIÊN CỨU","textPreview":"KHOẢNG TRỐNG NGHIÊN CỨU","textChars":23,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/10z61s7m","slide":26,"text":"Điểm mới không nằm ở việc gọi một API, mà ở thiết kế đo lường và kiểm định","textPreview":"Điểm mới không nằm ở việc gọi một API, mà ở thiết kế đo lường và kiểm định","textChars":74,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/0zq58nq1","slide":26,"text":"Đề tài đóng góp bằng cách làm rõ mối nối giữa rubric, evidence, model và con người.","textPreview":"Đề tài đóng góp bằng cách làm rõ mối nối giữa rubric, evidence, model và con người.","textChars":83,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/rax4bypk","slide":26,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/q9on2t8z","slide":26,"text":"KHOẢNG TRỐNG","textPreview":"KHOẢNG TRỐNG","textChars":12,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/dcfmx87q","slide":26,"text":"26","textPreview":"26","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"textbox","id":"sh/cb6543q5","slide":26,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[90,225,48,48]}
+{"kind":"textbox","id":"sh/36d47yp8","slide":26,"text":"Rubric CEFR được vận hành hóa thành bằng chứng máy đo được","textPreview":"Rubric CEFR được vận hành hóa thành bằng chứng máy đo được","textChars":58,"textLines":1,"bbox":[148,225,462,58]}
+{"kind":"shape","id":"sh/254nyt83","slide":26,"bbox":[148,289,462,2]}
+{"kind":"textbox","id":"sh/kje1knmt","slide":26,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[670,225,48,48]}
+{"kind":"textbox","id":"sh/lkn2d8ne","slide":26,"text":"Dữ liệu người Việt có hai người chấm và phân xử","textPreview":"Dữ liệu người Việt có hai người chấm và phân xử","textChars":47,"textLines":1,"bbox":[728,225,462,58]}
+{"kind":"shape","id":"sh/yxcjid43","slide":26,"bbox":[728,289,462,2]}
+{"kind":"textbox","id":"sh/zilkbi58","slide":26,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[90,365,48,48]}
+{"kind":"textbox","id":"sh/cvu1g3mx","slide":26,"text":"So sánh audio-only, transcript-only và multimodal","textPreview":"So sánh audio-only, transcript-only và multimodal","textChars":49,"textLines":1,"bbox":[148,365,462,58]}
+{"kind":"shape","id":"sh/xw3298ni","slide":26,"bbox":[148,429,462,2]}
+{"kind":"textbox","id":"sh/atcjet4r","slide":26,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[670,365,48,48]}
+{"kind":"textbox","id":"sh/bulk7y5c","slide":26,"text":"Calibration, teacher queue và error audit theo accent/thiết bị","textPreview":"Calibration, teacher queue và error audit theo accent/thiết bị","textChars":62,"textLines":1,"bbox":[728,365,462,58]}
+{"kind":"shape","id":"sh/wryls7m1","slide":26,"bbox":[728,429,462,2]}
+{"kind":"shape","id":"sh/hs72lsnm","slide":26,"bbox":[125,545,1030,82]}
+{"kind":"textbox","id":"sh/p8325svq","slide":26,"text":"Tuyên bố khoa học phù hợp: PoC được kiểm định trong bối cảnh formative A2–B2; không tuyên bố tổng quát cho mọi kỳ thi và mọi accent.","textPreview":"Tuyên bố khoa học phù hợp: PoC được kiểm định trong bối cảnh formative A2–B2; không tuyên bố tổng quát cho mọi kỳ thi và mọi accent.","textChars":132,"textLines":1,"bbox":[145,559,990,54]}
+{"kind":"notes","id":"nt/rgzv96","slide":26,"text":"Khoảng trống được đóng bằng artifact và quy trình: rubric-to-feature map, corpus có rater, experiment protocol, error audit, speaking profile. Không cần sáng tạo foundation model mới.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html\n- https://aclanthology.org/2023.ranlp-1.83/"}
+{"kind":"slide","id":"sl/nw855g","slide":27,"title":"DỮ LIỆU CÔNG KHAI","textShapes":26}
+{"kind":"textbox","id":"sh/ilcf69s3","slide":27,"text":"DỮ LIỆU CÔNG KHAI","textPreview":"DỮ LIỆU CÔNG KHAI","textChars":17,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/5one1oru","slide":27,"text":"Dữ liệu có sẵn giúp dựng pipeline, nhưng không thay thế tập kiểm định người Việt","textPreview":"Dữ liệu có sẵn giúp dựng pipeline, nhưng không thay thế tập kiểm định người Việt","textChars":80,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/4nux8ja9","slide":27,"text":"Mỗi corpus chỉ nên dùng đúng vai trò mà nhãn và đối tượng của nó cho phép.","textPreview":"Mỗi corpus chỉ nên dùng đúng vai trò mà nhãn và đối tượng của nó cho phép.","textChars":74,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/ra5w3y90","slide":27,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/q9wfatsf","slide":27,"text":"DỮ LIỆU","textPreview":"DỮ LIỆU","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/dcne5orq","slide":27,"text":"27","textPreview":"27","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/sbexcja5","slide":27,"bbox":[60,220,190,48]}
+{"kind":"textbox","id":"sh/fe5w7y9w","slide":27,"text":"Nguồn","textPreview":"Nguồn","textChars":5,"textLines":1,"bbox":[70,230,170,28]}
+{"kind":"shape","id":"sh/edwfetsb","slide":27,"bbox":[250,220,250,48]}
+{"kind":"textbox","id":"sh/o3mhkve9","slide":27,"text":"Có người Việt?","textPreview":"Có người Việt?","textChars":14,"textLines":1,"bbox":[260,230,230,28]}
+{"kind":"shape","id":"sh/p4vyd0fu","slide":27,"bbox":[500,220,370,48]}
+{"kind":"textbox","id":"sh/214filw3","slide":27,"text":"Nhãn chính","textPreview":"Nhãn chính","textChars":10,"textLines":1,"bbox":[510,230,350,28]}
+{"kind":"shape","id":"sh/n2dgbqxo","slide":27,"bbox":[870,220,350,48]}
+{"kind":"textbox","id":"sh/crmhove5","slide":27,"text":"Vai trò phù hợp","textPreview":"Vai trò phù hợp","textChars":15,"textLines":1,"bbox":[880,230,330,28]}
+{"kind":"shape","id":"sh/xsfyh0fq","slide":27,"bbox":[60,268,190,78]}
+{"kind":"textbox","id":"sh/a54zm5wz","slide":27,"text":"L2-ARCTIC","textPreview":"L2-ARCTIC","textChars":9,"textLines":1,"bbox":[70,276,170,62]}
+{"kind":"shape","id":"sh/bqdgfqxk","slide":27,"bbox":[250,268,250,78]}
+{"kind":"textbox","id":"sh/kv6hsfeh","slide":27,"text":"4/24 người","textPreview":"4/24 người","textChars":10,"textLines":1,"bbox":[260,276,230,62]}
+{"kind":"shape","id":"sh/lwfylkf2","slide":27,"bbox":[500,268,370,78]}
+{"kind":"textbox","id":"sh/tcby5k76","slide":27,"text":"Transcript + lỗi phát âm; không CEFR","textPreview":"Transcript + lỗi phát âm; không CEFR","textChars":36,"textLines":1,"bbox":[510,276,350,62]}
+{"kind":"shape","id":"sh/8b2xwf6l","slide":27,"bbox":[870,268,350,78]}
+{"kind":"textbox","id":"sh/7atg3ap0","slide":27,"text":"ASR/accent/pronunciation sanity check","textPreview":"ASR/accent/pronunciation sanity check","textChars":37,"textLines":1,"bbox":[880,276,330,62]}
+{"kind":"shape","id":"sh/6pkfu5of","slide":27,"bbox":[60,346,190,78]}
+{"kind":"textbox","id":"sh/hgvy9k72","slide":27,"text":"Speak & Improve","textPreview":"Speak & Improve","textChars":15,"textLines":1,"bbox":[70,354,170,62]}
+{"kind":"shape","id":"sh/gfmh0f6h","slide":27,"bbox":[250,346,250,78]}
+{"kind":"textbox","id":"sh/vetg7apw","slide":27,"text":"Nhiều L1; cần kiểm tra subset","textPreview":"Nhiều L1; cần kiểm tra subset","textChars":29,"textLines":1,"bbox":[260,354,230,62]}
+{"kind":"shape","id":"sh/udkzy5ob","slide":27,"bbox":[500,346,370,78]}
+{"kind":"textbox","id":"sh/xkryxg7y","slide":27,"text":"Holistic score; transcript/error subset","textPreview":"Holistic score; transcript/error subset","textChars":39,"textLines":1,"bbox":[510,354,350,62]}
+{"kind":"shape","id":"sh/wjixov6d","slide":27,"bbox":[870,346,350,78]}
+{"kind":"textbox","id":"sh/mpgvyh4b","slide":27,"text":"Benchmark hoặc pretraining theo license","textPreview":"Benchmark hoặc pretraining theo license","textChars":39,"textLines":1,"bbox":[880,354,330,62]}
+{"kind":"shape","id":"sh/nqpw7m5g","slide":27,"bbox":[60,424,190,78]}
+{"kind":"textbox","id":"sh/oryd0rm1","slide":27,"text":"SpeechOcean762","textPreview":"SpeechOcean762","textChars":14,"textLines":1,"bbox":[70,432,170,62]}
+{"kind":"shape","id":"sh/9s7e9wnm","slide":27,"bbox":[250,424,250,78]}
+{"kind":"textbox","id":"sh/atgv2147","slide":27,"text":"Chủ yếu Mandarin L1","textPreview":"Chủ yếu Mandarin L1","textChars":19,"textLines":1,"bbox":[260,432,230,62]}
+{"kind":"shape","id":"sh/bupwb65s","slide":27,"bbox":[500,424,370,78]}
+{"kind":"textbox","id":"sh/wvyd4bmd","slide":27,"text":"Điểm phone/word/utterance","textPreview":"Điểm phone/word/utterance","textChars":25,"textLines":1,"bbox":[510,432,350,62]}
+{"kind":"shape","id":"sh/xgredgny","slide":27,"bbox":[870,424,350,78]}
+{"kind":"textbox","id":"sh/qxwvqx43","slide":27,"text":"Pronunciation baseline; không đại diện VN","textPreview":"Pronunciation baseline; không đại diện VN","textChars":41,"textLines":1,"bbox":[880,432,330,62]}
+{"kind":"shape","id":"sh/ry5cz25o","slide":27,"bbox":[60,502,190,78]}
+{"kind":"textbox","id":"sh/72dk7et0","slide":27,"text":"EvalYaks","textPreview":"EvalYaks","textChars":8,"textLines":1,"bbox":[70,510,170,62]}
+{"kind":"shape","id":"sh/6h4je9sf","slide":27,"bbox":[250,502,250,78]}
+{"kind":"textbox","id":"sh/t4v294b6","slide":27,"text":"Dữ liệu synthetic","textPreview":"Dữ liệu synthetic","textChars":17,"textLines":1,"bbox":[260,510,230,62]}
+{"kind":"shape","id":"sh/83m1gzal","slide":27,"bbox":[500,502,370,78]}
+{"kind":"textbox","id":"sh/v6dkbetc","slide":27,"text":"B2 transcript rubric","textPreview":"B2 transcript rubric","textChars":20,"textLines":1,"bbox":[510,510,350,62]}
+{"kind":"shape","id":"sh/u54ji9sr","slide":27,"bbox":[870,502,350,78]}
+{"kind":"textbox","id":"sh/h8f2dob2","slide":27,"text":"Baseline LLM cho nhánh text","textPreview":"Baseline LLM cho nhánh text","textChars":27,"textLines":1,"bbox":[880,510,330,62]}
+{"kind":"shape","id":"sh/g76lkjah","slide":27,"bbox":[145,606,990,46]}
+{"kind":"textbox","id":"sh/3axkfyt8","slide":27,"text":"Không có corpus công khai nào ở đây đồng thời đáp ứng: audio tự nhiên + nhiều người Việt + 6 tiêu chí CEFR + nhiều rater.","textPreview":"Không có corpus công khai nào ở đây đồng thời đáp ứng: audio tự nhiên + nhiều người Việt + 6 tiêu chí CEFR + nhiều rater.","textChars":121,"textLines":1,"bbox":[165,620,950,18]}
+{"kind":"notes","id":"nt/nw855g","slide":27,"text":"L2-ARCTIC có 4 người Việt và dữ liệu đọc là chính. SpeechOcean762 dùng CC BY 4.0 nhưng domain khác. Speak & Improve cần kiểm tra điều kiện non-commercial và subset trước khi dựa vào.\n\n[Sources]\n- https://psi.engr.tamu.edu/l2-arctic-corpus/\n- https://www.repository.cam.ac.uk/items/611e9b8b-c5b2-4cbe-9b7a-036a48334118\n- https://www.openslr.org/101/\n- https://github.com/Talking-Yak/EvalYaks"}
+{"kind":"slide","id":"sl/mpl5lh","slide":28,"title":"DỮ LIỆU PHẢI TỰ THU","textShapes":12}
+{"kind":"textbox","id":"sh/wv6lwn2d","slide":28,"text":"DỮ LIỆU PHẢI TỰ THU","textPreview":"DỮ LIỆU PHẢI TỰ THU","textChars":19,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/buxkn2ls","slide":28,"text":"Tập người Việt nhỏ nhưng được thiết kế đúng còn giá trị hơn dữ liệu lớn nhưng sai nhãn","textPreview":"Tập người Việt nhỏ nhưng được thiết kế đúng còn giá trị hơn dữ liệu lớn nhưng sai nhãn","textChars":86,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/ato3uxk7","slide":28,"text":"Mục tiêu 70–90 speaker; sàn khả thi 60; mọi split phải theo người nói.","textPreview":"Mục tiêu 70–90 speaker; sàn khả thi 60; mọi split phải theo người nói.","textChars":70,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/lkz2tc3u","slide":28,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/kj6l0729","slide":28,"text":"DỮ LIỆU","textPreview":"DỮ LIỆU","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/jyxkr2l4","slide":28,"text":"28","textPreview":"28","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/yxo3yxkj","slide":28,"bbox":[70,225,330,5]}
+{"kind":"textbox","id":"sh/tozmxc36","slide":28,"text":"Quy mô","textPreview":"Quy mô","textChars":6,"textLines":1,"bbox":[70,243,330,52]}
+{"kind":"textbox","id":"sh/8nqlo72l","slide":28,"text":"70–90 sinh viên\n140–180 response Task A/B\n25–30 người làm thêm Task C\n15–20 bài chép tay hoàn toàn","textPreview":"70–90 sinh viên | 140–180 response Task A/B | 25–30 người làm thêm Task C | 15–20 bài chép tay hoàn toàn","textChars":98,"textLines":4,"bbox":[70,303,330,192]}
+{"kind":"shape","id":"sh/utonylw3","slide":28,"bbox":[475,225,330,5]}
+{"kind":"textbox","id":"sh/fuxorqxo","slide":28,"text":"Metadata tối thiểu","textPreview":"Metadata tối thiểu","textChars":18,"textLines":1,"bbox":[475,243,330,52]}
+{"kind":"textbox","id":"sh/gv650ve9","slide":28,"text":"speaker_id giả\ntrình độ sàng lọc\nprompt/version\nthiết bị và môi trường\nthời lượng/noise\nconsent version","textPreview":"speaker_id giả | trình độ sàng lọc | prompt/version | thiết bị và môi trường | thời lượng/noise | consent version","textChars":103,"textLines":6,"bbox":[475,303,330,192]}
+{"kind":"shape","id":"sh/hwf6t0fe","slide":28,"bbox":[880,225,330,5]}
+{"kind":"textbox","id":"sh/2ho725wz","slide":28,"text":"Kiểm soát phân bố","textPreview":"Kiểm soát phân bố","textChars":17,"textLines":1,"bbox":[880,243,330,52]}
+{"kind":"textbox","id":"sh/3ixovqxk","slide":28,"text":"Theo dõi band, giới tính tự khai nếu được consent, prompt, thiết bị và noise. Không ép thu thuộc tính nhạy cảm không cần thiết.","textPreview":"Theo dõi band, giới tính tự khai nếu được consent, prompt, thiết bị và noise. Không ép thu thuộc tính nhạy cảm không cần thiết.","textChars":127,"textLines":1,"bbox":[880,303,330,192]}
+{"kind":"shape","id":"sh/4j6p4ve5","slide":28,"bbox":[180,545,920,74]}
+{"kind":"textbox","id":"sh/pkz6x0fq","slide":28,"text":"Speaker-level split: mọi bài của cùng một người chỉ nằm trong một nhóm dữ liệu, tránh học thuộc giọng.","textPreview":"Speaker-level split: mọi bài của cùng một người chỉ nằm trong một nhóm dữ liệu, tránh học thuộc giọng.","textChars":102,"textLines":1,"bbox":[200,559,880,46]}
+{"kind":"notes","id":"nt/mpl5lh","slide":28,"text":"Con số là mục tiêu quản trị dự án từ đề cương, không phải định mức chính thức. Nếu không đủ 60 speaker, chuyển kết luận sang pilot và mở rộng khoảng tin cậy thay vì che giấu hạn chế.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/l3qe5c","slide":29,"title":"NHÃN VÀ GOLD STANDARD","textShapes":19}
+{"kind":"textbox","id":"sh/fqxofmdo","slide":29,"text":"NHÃN VÀ GOLD STANDARD","textPreview":"NHÃN VÀ GOLD STANDARD","textChars":21,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/gb6p8re9","slide":29,"text":"Phải đo đồng thuận giữa người chấm trước khi đánh giá AI","textPreview":"Phải đo đồng thuận giữa người chấm trước khi đánh giá AI","textChars":56,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/1cf6hwvu","slide":29,"text":"Nếu hai giảng viên chưa thống nhất, không thể đòi AI khớp một nhãn tuyệt đối.","textPreview":"Nếu hai giảng viên chưa thống nhất, không thể đòi AI khớp một nhãn tuyệt đối.","textChars":77,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/6l4n2xw7","slide":29,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/rmdob2xs","slide":29,"text":"DỮ LIỆU","textPreview":"DỮ LIỆU","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/sn6547ed","slide":29,"text":"29","textPreview":"29","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/tof6dcfi","slide":29,"bbox":[281.6,283,16,6]}
+{"kind":"shape","id":"sh/ih4nyxwv","slide":29,"bbox":[291.6,278,9,16]}
+{"kind":"shape","id":"sh/jido72xg","slide":29,"bbox":[515.2,283,16,6]}
+{"kind":"shape","id":"sh/f6xgva5s","slide":29,"bbox":[525.2,278,9,16]}
+{"kind":"shape","id":"sh/e5ofm547","slide":29,"bbox":[748.8,283,16,6]}
+{"kind":"shape","id":"sh/18fyxkny","slide":29,"bbox":[758.8,278,9,16]}
+{"kind":"shape","id":"sh/g76xofmd","slide":29,"bbox":[982.4,283,16,6]}
+{"kind":"shape","id":"sh/3uhgzul4","slide":29,"bbox":[992.4,278,9,16]}
+{"kind":"shape","id":"sh/29ofqp4j","slide":29,"bbox":[65,235,215.6,102]}
+{"kind":"textbox","id":"sh/pwzy1k3u","slide":29,"text":"Rubric v1","textPreview":"Rubric v1","textChars":9,"textLines":1,"bbox":[77,249,191.6,26]}
+{"kind":"textbox","id":"sh/ovqxsfmp","slide":29,"text":"GV thiết lập mô tả A2/B1/B2","textPreview":"GV thiết lập mô tả A2/B1/B2","textChars":27,"textLines":1,"bbox":[77,279,191.6,30]}
+{"kind":"shape","id":"sh/jydwnq5k","slide":29,"bbox":[298.6,235,215.6,102]}
+{"kind":"textbox","id":"sh/id4fel4f","slide":29,"text":"Anchor","textPreview":"Anchor","textChars":6,"textLines":1,"bbox":[310.6,249,191.6,26]}
+{"kind":"textbox","id":"sh/65crixsz","slide":29,"text":"Bài mẫu cho từng band/tiêu chí","textPreview":"Bài mẫu cho từng band/tiêu chí","textChars":30,"textLines":1,"bbox":[310.6,279,191.6,30]}
+{"kind":"shape","id":"sh/765sb29k","slide":29,"bbox":[532.2,235,215.6,102]}
+{"kind":"textbox","id":"sh/87e9kna5","slide":29,"text":"Calibration","textPreview":"Calibration","textChars":11,"textLines":1,"bbox":[544.2,249,191.6,26]}
+{"kind":"textbox","id":"sh/t8nadsrq","slide":29,"text":"Chấm thử và thảo luận bất đồng","textPreview":"Chấm thử và thảo luận bất đồng","textChars":30,"textLines":1,"bbox":[544.2,279,191.6,30]}
+{"kind":"shape","id":"sh/y1creds3","slide":29,"bbox":[765.8,235,215.6,102]}
+{"kind":"textbox","id":"sh/j2ls7ito","slide":29,"text":"Double rating","textPreview":"Double rating","textChars":13,"textLines":1,"bbox":[777.8,249,191.6,26]}
+{"kind":"textbox","id":"sh/k3u9gnat","slide":29,"text":"Hai rater chấm độc lập","textPreview":"Hai rater chấm độc lập","textChars":22,"textLines":1,"bbox":[777.8,279,191.6,30]}
+{"kind":"shape","id":"sh/l43a9sbe","slide":29,"bbox":[999.4,235,215.6,102]}
+{"kind":"textbox","id":"sh/adsradsr","slide":29,"text":"Adjudication","textPreview":"Adjudication","textChars":12,"textLines":1,"bbox":[1011.4,249,191.6,26]}
+{"kind":"textbox","id":"sh/be183ytc","slide":29,"text":"Người thứ ba phân xử","textPreview":"Người thứ ba phân xử","textChars":20,"textLines":1,"bbox":[1011.4,279,191.6,30]}
+{"kind":"shape","id":"sh/dsru9gbu","slide":29,"bbox":[110,410,430,5]}
+{"kind":"textbox","id":"sh/sridgbu9","slide":29,"text":"Báo cáo human–human","textPreview":"Báo cáo human–human","textChars":19,"textLines":1,"bbox":[110,428,430,52]}
+{"kind":"textbox","id":"sh/rq9c76to","slide":29,"text":"Agreement, QWK + CI, confusion matrix và loại bất đồng theo tiêu chí/task.","textPreview":"Agreement, QWK + CI, confusion matrix và loại bất đồng theo tiêu chí/task.","textChars":74,"textLines":1,"bbox":[110,488,430,67]}
+{"kind":"shape","id":"sh/qpgve1cj","slide":29,"bbox":[740,410,430,5]}
+{"kind":"textbox","id":"sh/547u5wby","slide":29,"text":"Nhãn gold","textPreview":"Nhãn gold","textChars":9,"textLines":1,"bbox":[740,428,430,52]}
+{"kind":"textbox","id":"sh/43ytcrud","slide":29,"text":"Không dùng chính một rater để vừa làm gold vừa đại diện agreement. Adjudicator tạo nhãn cuối cho ca bất đồng.","textPreview":"Không dùng chính một rater để vừa làm gold vừa đại diện agreement. Adjudicator tạo nhãn cuối cho ca bất đồng.","textChars":109,"textLines":1,"bbox":[740,488,430,67]}
+{"kind":"notes","id":"nt/l3qe5c","slide":29,"text":"Rater calibration diễn ra trước main collection. Gold label phải tách logic với thống kê human-human. Lưu lịch sử rater và rubric version để audit.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.coe.int/en/web/common-european-framework-reference-languages/relating-examinations-to-the-cefr\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1"}
+{"kind":"slide","id":"sl/tncpks","slide":30,"title":"THIẾT KẾ THÍ NGHIỆM","textShapes":12}
+{"kind":"textbox","id":"sh/3ilc3mxg","slide":30,"text":"THIẾT KẾ THÍ NGHIỆM","textPreview":"THIẾT KẾ THÍ NGHIỆM","textChars":19,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/ojetcrel","slide":30,"text":"Đánh giá trên người nói chưa từng xuất hiện trong huấn luyện","textPreview":"Đánh giá trên người nói chưa từng xuất hiện trong huấn luyện","textChars":60,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/pknu5wf6","slide":30,"text":"Repeated GroupKFold là phân tích chính; confirmation set chỉ dùng một lần ở cuối.","textPreview":"Repeated GroupKFold là phân tích chính; confirmation set chỉ dùng một lần ở cuối.","textChars":81,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/edcb6hwj","slide":30,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/felszmx4","slide":30,"text":"KIỂM ĐỊNH","textPreview":"KIỂM ĐỊNH","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/gfut87ep","slide":30,"text":"30","textPreview":"30","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/1g3u1cfa","slide":30,"bbox":[70,220,345,5]}
+{"kind":"textbox","id":"sh/6psb2xwn","slide":30,"text":"Split đúng","textPreview":"Split đúng","textChars":10,"textLines":1,"bbox":[70,238,345,52]}
+{"kind":"textbox","id":"sh/rq1sv2x8","slide":30,"text":"Group theo speaker_id. Mọi response của một người đi cùng fold. Preprocessing, feature selection và calibration đều fit trong training fold.","textPreview":"Group theo speaker_id. Mọi response của một người đi cùng fold. Preprocessing, feature selection và calibration đều fit trong training fold.","textChars":140,"textLines":1,"bbox":[70,298,345,192]}
+{"kind":"shape","id":"sh/7a54nel4","slide":30,"bbox":[468,220,345,5]}
+{"kind":"textbox","id":"sh/69wnutkz","slide":30,"text":"So sánh công bằng","textPreview":"So sánh công bằng","textChars":17,"textLines":1,"bbox":[468,238,345,52]}
+{"kind":"textbox","id":"sh/tcnmpo3a","slide":30,"text":"B0 majority/ordinal baseline\nB1 audio-only\nB2 transcript-only\nB3 frozen-rubric LLM local\nM1 late fusion","textPreview":"B0 majority/ordinal baseline | B1 audio-only | B2 transcript-only | B3 frozen-rubric LLM local | M1 late fusion","textChars":103,"textLines":5,"bbox":[468,298,345,192]}
+{"kind":"shape","id":"sh/8be5wj2p","slide":30,"bbox":[866,220,345,5]}
+{"kind":"textbox","id":"sh/vy54ry1g","slide":30,"text":"Phân tích sai","textPreview":"Phân tích sai","textChars":13,"textLines":1,"bbox":[866,238,345,52]}
+{"kind":"textbox","id":"sh/uxwnytkv","slide":30,"text":"Theo band, task, prompt, noise, thiết bị, WER và accent proxy. Tách lỗi gross A2↔B2 khỏi lỗi liền kề.","textPreview":"Theo band, task, prompt, noise, thiết bị, WER và accent proxy. Tách lỗi gross A2↔B2 khỏi lỗi liền kề.","textChars":101,"textLines":1,"bbox":[866,298,345,192]}
+{"kind":"shape","id":"sh/h07mt8jm","slide":30,"bbox":[150,545,980,74]}
+{"kind":"textbox","id":"sh/gzy50321","slide":30,"text":"So hai mô hình bằng paired cluster bootstrap theo speaker; không so hai khoảng tin cậy độc lập.","textPreview":"So hai mô hình bằng paired cluster bootstrap theo speaker; không so hai khoảng tin cậy độc lập.","textChars":95,"textLines":1,"bbox":[170,559,940,46]}
+{"kind":"notes","id":"nt/tncpks","slide":30,"text":"Repeated GroupKFold giúp dùng dữ liệu nhỏ hiệu quả hơn. Confirmation set không dùng để tinh chỉnh. MDE của RQ2 là ΔQWK 0.16 theo đề cương và RQ2 được tuyên bố exploratory.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/jh5ydy","slide":31,"title":"TIÊU CHÍ ĐÁNH GIÁ MÔ HÌNH","textShapes":18}
+{"kind":"textbox","id":"sh/3e9cbuxw","slide":31,"text":"TIÊU CHÍ ĐÁNH GIÁ MÔ HÌNH","textPreview":"TIÊU CHÍ ĐÁNH GIÁ MÔ HÌNH","textChars":25,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/4fitkze1","slide":31,"text":"Không có một metric duy nhất đủ trả lời hệ thống có dùng được hay không","textPreview":"Không có một metric duy nhất đủ trả lời hệ thống có dùng được hay không","textChars":71,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/pgrud4fm","slide":31,"text":"Cần nhìn agreement, lỗi nghiêm trọng, calibration, reliability và nguyên nhân sai.","textPreview":"Cần nhìn agreement, lỗi nghiêm trọng, calibration, reliability và nguyên nhân sai.","textChars":82,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/upgbepwz","slide":31,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/fqpc7uxk","slide":31,"text":"KIỂM ĐỊNH","textPreview":"KIỂM ĐỊNH","textChars":9,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/grytgze5","slide":31,"text":"31","textPreview":"31","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/hc7u9kfq","slide":31,"bbox":[70,220,350,4]}
+{"kind":"textbox","id":"sh/elkvq9wj","slide":31,"text":"QWK + CI","textPreview":"QWK + CI","textChars":8,"textLines":1,"bbox":[70,238,350,32]}
+{"kind":"textbox","id":"sh/zmtcjexo","slide":31,"text":"Đồng thuận trên mức có thứ tự; A2→B2 bị phạt nặng hơn A2→B1.","textPreview":"Đồng thuận trên mức có thứ tự; A2→B2 bị phạt nặng hơn A2→B1.","textChars":60,"textLines":1,"bbox":[70,278,350,78]}
+{"kind":"shape","id":"sh/ry58fup0","slide":31,"bbox":[475,220,350,4]}
+{"kind":"textbox","id":"sh/6xw7mp8f","slide":31,"text":"Macro-F1","textPreview":"Macro-F1","textChars":8,"textLines":1,"bbox":[475,238,350,32]}
+{"kind":"textbox","id":"sh/t0nqh47q","slide":31,"text":"Không để band đông che khuất band ít.","textPreview":"Không để band đông che khuất band ít.","textChars":37,"textLines":1,"bbox":[475,278,350,78]}
+{"kind":"shape","id":"sh/szepozql","slide":31,"bbox":[880,220,350,4]}
+{"kind":"textbox","id":"sh/fmp8jupw","slide":31,"text":"Gross Error Rate","textPreview":"Gross Error Rate","textChars":16,"textLines":1,"bbox":[880,238,350,32]}
+{"kind":"textbox","id":"sh/elg7q98b","slide":31,"text":"Tỷ lệ nhảy hai band, ví dụ A2↔B2.","textPreview":"Tỷ lệ nhảy hai band, ví dụ A2↔B2.","textChars":33,"textLines":1,"bbox":[880,278,350,78]}
+{"kind":"shape","id":"sh/1o7ql472","slide":31,"bbox":[70,395,350,4]}
+{"kind":"textbox","id":"sh/gnypszqh","slide":31,"text":"Calibration","textPreview":"Calibration","textChars":11,"textLines":1,"bbox":[70,413,350,32]}
+{"kind":"textbox","id":"sh/3qp8nep8","slide":31,"text":"Confidence 70% có đúng khoảng 70% trường hợp không?","textPreview":"Confidence 70% có đúng khoảng 70% trường hợp không?","textChars":51,"textLines":1,"bbox":[70,453,350,78]}
+{"kind":"shape","id":"sh/2pgru98n","slide":31,"bbox":[475,395,350,4]}
+{"kind":"textbox","id":"sh/ylkbmdsv","slide":31,"text":"Reliability","textPreview":"Reliability","textChars":11,"textLines":1,"bbox":[475,413,350,32]}
+{"kind":"textbox","id":"sh/zmtsvi9g","slide":31,"text":"Cùng người, task tương đương hoặc chạy lại có ổn định không?","textPreview":"Cùng người, task tương đương hoặc chạy lại có ổn định không?","textChars":60,"textLines":1,"bbox":[475,453,350,78]}
+{"kind":"shape","id":"sh/0n2tonal","slide":31,"bbox":[880,395,350,4]}
+{"kind":"textbox","id":"sh/lobahsr6","slide":31,"text":"Error audit","textPreview":"Error audit","textChars":11,"textLines":1,"bbox":[880,413,350,32]}
+{"kind":"textbox","id":"sh/qh0bitsj","slide":31,"text":"Lỗi tập trung ở accent, WER, noise, prompt hay tiêu chí nào?","textPreview":"Lỗi tập trung ở accent, WER, noise, prompt hay tiêu chí nào?","textChars":60,"textLines":1,"bbox":[880,453,350,78]}
+{"kind":"shape","id":"sh/bi9sry94","slide":31,"bbox":[160,566,960,64]}
+{"kind":"textbox","id":"sh/cjitk3ap","slide":31,"text":"Mục tiêu hợp lý: AI tiến gần trần human–human và biết từ chối ca không chắc; không hứa “chính xác tuyệt đối”.","textPreview":"Mục tiêu hợp lý: AI tiến gần trần human–human và biết từ chối ca không chắc; không hứa “chính xác tuyệt đối”.","textChars":109,"textLines":1,"bbox":[180,580,920,36]}
+{"kind":"notes","id":"nt/jh5ydy","slide":31,"text":"Ngoài các metric này có thể báo MAE theo band. Metric phải có khoảng tin cậy. Acceptance threshold là mục tiêu quản trị dự án, không phải chuẩn CEFR chính thức.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1"}
+{"kind":"slide","id":"sl/hsrfh7","slide":32,"title":"TECH STACK","textShapes":26}
+{"kind":"textbox","id":"sh/axc765wj","slide":32,"text":"TECH STACK","textPreview":"TECH STACK","textChars":10,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/x03q1kvu","slide":32,"text":"Ưu tiên thành phần chạy local, mô hình tiền huấn luyện và công cụ dễ kiểm tra","textPreview":"Ưu tiên thành phần chạy local, mô hình tiền huấn luyện và công cụ dễ kiểm tra","textChars":77,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/czup8fe9","slide":32,"text":"Mục tiêu 10 tuần là một pipeline đo lường hoàn chỉnh, không phải huấn luyện foundation model.","textPreview":"Mục tiêu 10 tuần là một pipeline đo lường hoàn chỉnh, không phải huấn luyện foundation model.","textChars":93,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/z2l83ud0","slide":32,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/y1c7apwf","slide":32,"text":"KỸ THUẬT","textPreview":"KỸ THUẬT","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/lonq5kv6","slide":32,"text":"32","textPreview":"32","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/k3e9czel","slide":32,"bbox":[90,215,200,48]}
+{"kind":"textbox","id":"sh/7q587udw","slide":32,"text":"Lớp","textPreview":"Lớp","textChars":3,"textLines":1,"bbox":[100,225,180,28]}
+{"kind":"shape","id":"sh/mpwrepwb","slide":32,"bbox":[290,215,350,48]}
+{"kind":"textbox","id":"sh/4fq9orq9","slide":32,"text":"Lựa chọn","textPreview":"Lựa chọn","textChars":8,"textLines":1,"bbox":[300,225,330,28]}
+{"kind":"shape","id":"sh/5gzahwru","slide":32,"bbox":[640,215,550,48]}
+{"kind":"textbox","id":"sh/id8rmh8j","slide":32,"text":"Lý do","textPreview":"Lý do","textChars":5,"textLines":1,"bbox":[650,225,530,28]}
+{"kind":"shape","id":"sh/jehsfm9o","slide":32,"bbox":[90,263,200,64]}
+{"kind":"textbox","id":"sh/s3a9srql","slide":32,"text":"Web / API","textPreview":"Web / API","textChars":9,"textLines":1,"bbox":[100,271,180,48]}
+{"kind":"shape","id":"sh/t4jalwr6","slide":32,"bbox":[290,263,350,64]}
+{"kind":"textbox","id":"sh/6h8rq18f","slide":32,"text":"React hoặc Next.js + FastAPI","textPreview":"React hoặc Next.js + FastAPI","textChars":28,"textLines":1,"bbox":[300,271,330,48]}
+{"kind":"shape","id":"sh/rihsjm90","slide":32,"bbox":[640,263,550,64]}
+{"kind":"textbox","id":"sh/g7a9wbqh","slide":32,"text":"Tách UI thu âm và pipeline Python; dễ demo và test API","textPreview":"Tách UI thu âm và pipeline Python; dễ demo và test API","textChars":54,"textLines":1,"bbox":[650,271,530,48]}
+{"kind":"shape","id":"sh/18japgr2","slide":32,"bbox":[90,327,200,64]}
+{"kind":"textbox","id":"sh/pofa9gj6","slide":32,"text":"Lưu trữ","textPreview":"Lưu trữ","textChars":7,"textLines":1,"bbox":[100,335,180,48]}
+{"kind":"shape","id":"sh/o369gbil","slide":32,"bbox":[290,327,350,64]}
+{"kind":"textbox","id":"sh/n2xs7610","slide":32,"text":"PostgreSQL + object storage local","textPreview":"PostgreSQL + object storage local","textChars":33,"textLines":1,"bbox":[300,335,330,48]}
+{"kind":"shape","id":"sh/21ore10v","slide":32,"bbox":[640,327,550,64]}
+{"kind":"textbox","id":"sh/xszadgji","slide":32,"text":"Metadata có schema; audio tách khỏi bảng điểm","textPreview":"Metadata có schema; audio tách khỏi bảng điểm","textChars":45,"textLines":1,"bbox":[650,335,530,48]}
+{"kind":"shape","id":"sh/crq9kbix","slide":32,"bbox":[90,391,200,64]}
+{"kind":"textbox","id":"sh/bqhsb61c","slide":32,"text":"ASR","textPreview":"ASR","textChars":3,"textLines":1,"bbox":[100,399,180,48]}
+{"kind":"shape","id":"sh/apori10r","slide":32,"bbox":[290,391,350,64]}
+{"kind":"textbox","id":"sh/dwvq1wjy","slide":32,"text":"faster-whisper local","textPreview":"faster-whisper local","textChars":20,"textLines":1,"bbox":[300,399,330,48]}
+{"kind":"shape","id":"sh/svm98rid","slide":32,"bbox":[640,391,550,64]}
+{"kind":"textbox","id":"sh/i1k7idgb","slide":32,"text":"Baseline thực dụng, có timestamp; không gửi audio ra cloud","textPreview":"Baseline thực dụng, có timestamp; không gửi audio ra cloud","textChars":58,"textLines":1,"bbox":[650,399,530,48]}
+{"kind":"shape","id":"sh/32tobihw","slide":32,"bbox":[90,455,200,64]}
+{"kind":"textbox","id":"sh/432p4nyh","slide":32,"text":"Audio","textPreview":"Audio","textChars":5,"textLines":1,"bbox":[100,463,180,48]}
+{"kind":"shape","id":"sh/54b6dsz2","slide":32,"bbox":[290,455,350,64]}
+{"kind":"textbox","id":"sh/q5k76xgn","slide":32,"text":"librosa / Praat-Parselmouth","textPreview":"librosa / Praat-Parselmouth","textChars":27,"textLines":1,"bbox":[300,463,330,48]}
+{"kind":"shape","id":"sh/r6dof2hs","slide":32,"bbox":[640,455,550,64]}
+{"kind":"textbox","id":"sh/s7mp87yd","slide":32,"text":"Pause, rate, F0, rhythm và quality features","textPreview":"Pause, rate, F0, rhythm và quality features","textChars":43,"textLines":1,"bbox":[650,463,530,48]}
+{"kind":"shape","id":"sh/d8v6hczy","slide":32,"bbox":[90,519,200,64]}
+{"kind":"textbox","id":"sh/690natg3","slide":32,"text":"Text","textPreview":"Text","textChars":4,"textLines":1,"bbox":[100,527,180,48]}
+{"kind":"shape","id":"sh/7a9o3yho","slide":32,"bbox":[290,519,350,64]}
+{"kind":"textbox","id":"sh/nuhwra5g","slide":32,"text":"spaCy/Stanza + sentence-transformers","textPreview":"spaCy/Stanza + sentence-transformers","textChars":36,"textLines":1,"bbox":[300,527,330,48]}
+{"kind":"shape","id":"sh/2t8vi5ov","slide":32,"bbox":[640,519,550,64]}
+{"kind":"textbox","id":"sh/pgzet0n6","slide":32,"text":"Cấu trúc, lỗi, coherence và relevance","textPreview":"Cấu trúc, lỗi, coherence và relevance","textChars":37,"textLines":1,"bbox":[650,527,530,48]}
+{"kind":"shape","id":"sh/ovqdkv61","slide":32,"bbox":[90,583,200,64]}
+{"kind":"textbox","id":"sh/bi1wva5c","slide":32,"text":"Model","textPreview":"Model","textChars":5,"textLines":1,"bbox":[100,591,180,48]}
+{"kind":"shape","id":"sh/ah8vm5or","slide":32,"bbox":[290,583,350,64]}
+{"kind":"textbox","id":"sh/xkjexkni","slide":32,"text":"scikit-learn / PyTorch + calibration","textPreview":"scikit-learn / PyTorch + calibration","textChars":36,"textLines":1,"bbox":[300,591,330,48]}
+{"kind":"shape","id":"sh/wjadof6x","slide":32,"bbox":[640,583,550,64]}
+{"kind":"textbox","id":"sh/jm1wzu5o","slide":32,"text":"Baseline rõ, late fusion và thí nghiệm lặp lại","textPreview":"Baseline rõ, late fusion và thí nghiệm lặp lại","textChars":46,"textLines":1,"bbox":[650,591,530,48]}
+{"kind":"notes","id":"nt/hsrfh7","slide":32,"text":"Tên framework có thể điều chỉnh theo năng lực nhóm. Lý do chọn phải gắn với phạm vi: local-first, dữ liệu nhỏ, reproducibility và khả năng giải thích.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html\n- https://aclanthology.org/2023.ranlp-1.83/"}
+{"kind":"slide","id":"sl/psyihv","slide":33,"title":"PHÁP LÝ VÀ ĐẠO ĐỨC","textShapes":12}
+{"kind":"textbox","id":"sh/5oju5w76","slide":33,"text":"PHÁP LÝ VÀ ĐẠO ĐỨC","textPreview":"PHÁP LÝ VÀ ĐẠO ĐỨC","textChars":18,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/ilsvah8v","slide":33,"text":"Giọng nói là dữ liệu cá nhân; thiết kế an toàn phải có ngay từ lúc thu","textPreview":"Giọng nói là dữ liệu cá nhân; thiết kế an toàn phải có ngay từ lúc thu","textChars":70,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/jm1c3mp0","slide":33,"text":"Mục tiêu là tối thiểu hóa dữ liệu, giới hạn mục đích và giữ người thật trong vòng quyết định.","textPreview":"Mục tiêu là tối thiểu hóa dữ liệu, giới hạn mục đích và giữ người thật trong vòng quyết định.","textChars":93,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/srudgrqx","slide":33,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/ts3u9w7i","slide":33,"text":"ĐẠO ĐỨC","textPreview":"ĐẠO ĐỨC","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/6pcveh8r","slide":33,"text":"33","textPreview":"33","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/7qlc7mpc","slide":33,"bbox":[70,220,330,5]}
+{"kind":"textbox","id":"sh/gvudkbqt","slide":33,"text":"Trước khi thu","textPreview":"Trước khi thu","textChars":13,"textLines":1,"bbox":[70,238,330,52]}
+{"kind":"textbox","id":"sh/hw3udg7e","slide":33,"text":"Consent rõ mục đích\nNgười tham gia 18+\nQuyền từ chối/rút lui\nMô tả thời gian lưu\nKhông gắn tham gia với điểm học phần","textPreview":"Consent rõ mục đích | Người tham gia 18+ | Quyền từ chối/rút lui | Mô tả thời gian lưu | Không gắn tham gia với điểm học phần","textChars":117,"textLines":5,"bbox":[70,298,330,222]}
+{"kind":"shape","id":"sh/dsbi5k3e","slide":33,"bbox":[475,220,330,5]}
+{"kind":"textbox","id":"sh/cr21cfmt","slide":33,"text":"Trong khi xử lý","textPreview":"Trong khi xử lý","textChars":15,"textLines":1,"bbox":[475,238,330,52]}
+{"kind":"textbox","id":"sh/bqt03alo","slide":33,"text":"Pseudonymization\nMã hóa khi lưu/truyền\nPhân quyền truy cập\nLocal-first\nLog truy cập và phiên bản","textPreview":"Pseudonymization | Mã hóa khi lưu/truyền | Phân quyền truy cập | Local-first | Log truy cập và phiên bản","textChars":96,"textLines":5,"bbox":[475,298,330,222]}
+{"kind":"shape","id":"sh/qp0ja543","slide":33,"bbox":[880,220,330,5]}
+{"kind":"textbox","id":"sh/lwbi9k3q","slide":33,"text":"Khi báo cáo","textPreview":"Khi báo cáo","textChars":11,"textLines":1,"bbox":[880,238,330,52]}
+{"kind":"textbox","id":"sh/0v21gfm5","slide":33,"text":"Không suy luận cảm xúc/giới tính\nKhông xếp hạng công khai\nNêu uncertainty\nCho phép giảng viên sửa\nXóa dữ liệu theo chính sách","textPreview":"Không suy luận cảm xúc/giới tính | Không xếp hạng công khai | Nêu uncertainty | Cho phép giảng viên sửa | Xóa dữ liệu theo chính sách","textChars":125,"textLines":5,"bbox":[880,298,330,222]}
+{"kind":"shape","id":"sh/zut07ulk","slide":33,"bbox":[155,555,970,70]}
+{"kind":"textbox","id":"sh/ytkjep4z","slide":33,"text":"Fairness không phải “mọi nhóm cùng điểm”, mà là lỗi mô hình không tăng vô lý do accent, noise hoặc thiết bị.","textPreview":"Fairness không phải “mọi nhóm cùng điểm”, mà là lỗi mô hình không tăng vô lý do accent, noise hoặc thiết bị.","textChars":108,"textLines":1,"bbox":[175,569,930,42]}
+{"kind":"notes","id":"nt/psyihv","slide":33,"text":"Phần pháp lý cụ thể phải đối chiếu quy định trường và tư vấn của GVHD. Deck chỉ nêu nguyên tắc thiết kế: consent, purpose limitation, data minimization, security, human oversight và bias audit.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4"}
+{"kind":"slide","id":"sl/b9govw","slide":34,"title":"KẾ HOẠCH 10 TUẦN • PHẦN 1","textShapes":29}
+{"kind":"textbox","id":"sh/qpgz2t43","slide":34,"text":"KẾ HOẠCH 10 TUẦN • PHẦN 1","textPreview":"KẾ HOẠCH 10 TUẦN • PHẦN 1","textChars":25,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/dsrix8ne","slide":34,"text":"Tuần 1–5: chốt construct trước, thu dữ liệu sau","textPreview":"Tuần 1–5: chốt construct trước, thu dữ liệu sau","textChars":47,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/cryh43m9","slide":34,"text":"Mỗi tuần có một cổng nghiệm thu; nếu trễ, cắt tính năng chứ không bỏ kiểm định.","textPreview":"Mỗi tuần có một cổng nghiệm thu; nếu trễ, cắt tính năng chứ không bỏ kiểm định.","textChars":79,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/zu90zy5k","slide":34,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/et0z6t4z","slide":34,"text":"KẾ HOẠCH","textPreview":"KẾ HOẠCH","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/1wri18nq","slide":34,"text":"34","textPreview":"34","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/0vih83m5","slide":34,"bbox":[58,215,95,48]}
+{"kind":"textbox","id":"sh/ni903i5w","slide":34,"text":"Tuần","textPreview":"Tuần","textChars":4,"textLines":1,"bbox":[68,225,75,28]}
+{"kind":"shape","id":"sh/mx0zad4b","slide":34,"bbox":[153,215,235,48]}
+{"kind":"textbox","id":"sh/cna5knqd","slide":34,"text":"Trọng tâm","textPreview":"Trọng tâm","textChars":9,"textLines":1,"bbox":[163,225,215,28]}
+{"kind":"shape","id":"sh/doj6ts7y","slide":34,"bbox":[388,215,600,48]}
+{"kind":"textbox","id":"sh/qlsnix87","slide":34,"text":"Việc phải hoàn thành","textPreview":"Việc phải hoàn thành","textChars":20,"textLines":1,"bbox":[398,225,580,28]}
+{"kind":"shape","id":"sh/rm1or2ps","slide":34,"bbox":[988,215,235,48]}
+{"kind":"textbox","id":"sh/0bu5o7q9","slide":34,"text":"Cổng","textPreview":"Cổng","textChars":4,"textLines":1,"bbox":[998,225,215,28]}
+{"kind":"shape","id":"sh/1c36xc7u","slide":34,"bbox":[58,263,95,64]}
+{"kind":"textbox","id":"sh/epsnmx83","slide":34,"text":"W1","textPreview":"W1","textChars":2,"textLines":1,"bbox":[68,271,75,48]}
+{"kind":"shape","id":"sh/zq1ov2po","slide":34,"bbox":[153,263,235,64]}
+{"kind":"textbox","id":"sh/ofu5s7ql","slide":34,"text":"Scope + CEFR + pháp lý","textPreview":"Scope + CEFR + pháp lý","textChars":22,"textLines":1,"bbox":[163,271,215,48]}
+{"kind":"shape","id":"sh/9g361c7q","slide":34,"bbox":[388,263,600,64]}
+{"kind":"textbox","id":"sh/xwz6lcza","slide":34,"text":"Chốt tên/RQ/A2–B2; xác nhận rater; consent + data plan","textPreview":"Chốt tên/RQ/A2–B2; xác nhận rater; consent + data plan","textChars":54,"textLines":1,"bbox":[398,271,580,48]}
+{"kind":"shape","id":"sh/wbq5c7ip","slide":34,"bbox":[988,263,235,64]}
+{"kind":"textbox","id":"sh/vah4j2h4","slide":34,"text":"G1: GVHD duyệt phạm vi","textPreview":"G1: GVHD duyệt phạm vi","textChars":22,"textLines":1,"bbox":[998,271,215,48]}
+{"kind":"shape","id":"sh/a98nah0j","slide":34,"bbox":[58,327,95,64]}
+{"kind":"textbox","id":"sh/50j6pwz6","slide":34,"text":"W2","textPreview":"W2","textChars":2,"textLines":1,"bbox":[68,335,75,48]}
+{"kind":"shape","id":"sh/kza5gril","slide":34,"bbox":[153,327,235,64]}
+{"kind":"textbox","id":"sh/jy1onmh0","slide":34,"text":"Rubric + task","textPreview":"Rubric + task","textChars":13,"textLines":1,"bbox":[163,335,215,48]}
+{"kind":"shape","id":"sh/ixsneh0f","slide":34,"bbox":[388,327,600,64]}
+{"kind":"textbox","id":"sh/l4fmdsz2","slide":34,"text":"Rubric 6 tiêu chí; Task A/B/C; prompt bank; anchor","textPreview":"Rubric 6 tiêu chí; Task A/B/C; prompt bank; anchor","textChars":50,"textLines":1,"bbox":[398,335,580,48]}
+{"kind":"shape","id":"sh/03654nih","slide":34,"bbox":[988,327,235,64]}
+{"kind":"textbox","id":"sh/q943etgz","slide":34,"text":"G2: rater giải thích được điểm","textPreview":"G2: rater giải thích được điểm","textChars":30,"textLines":1,"bbox":[998,335,215,48]}
+{"kind":"shape","id":"sh/badknyxk","slide":34,"bbox":[58,391,95,64]}
+{"kind":"textbox","id":"sh/cbmlg3y5","slide":34,"text":"W3","textPreview":"W3","textChars":2,"textLines":1,"bbox":[68,399,75,48]}
+{"kind":"shape","id":"sh/dcv2p8fq","slide":34,"bbox":[153,391,235,64]}
+{"kind":"textbox","id":"sh/yd43idgb","slide":34,"text":"Vertical slice","textPreview":"Vertical slice","textChars":14,"textLines":1,"bbox":[163,399,215,48]}
+{"kind":"shape","id":"sh/zexkryxw","slide":34,"bbox":[388,391,600,64]}
+{"kind":"textbox","id":"sh/0f6lk3yh","slide":34,"text":"Recorder/upload; QC; ASR; feature cơ bản; report JSON","textPreview":"Recorder/upload; QC; ASR; feature cơ bản; report JSON","textChars":53,"textLines":1,"bbox":[398,399,580,48]}
+{"kind":"shape","id":"sh/lgf2t8f2","slide":34,"bbox":[988,391,235,64]}
+{"kind":"textbox","id":"sh/ehkj69g7","slide":34,"text":"G3: chạy end-to-end 1 bài","textPreview":"G3: chạy end-to-end 1 bài","textChars":25,"textLines":1,"bbox":[998,399,215,48]}
+{"kind":"shape","id":"sh/fitkfexc","slide":34,"bbox":[58,455,95,64]}
+{"kind":"textbox","id":"sh/v218n654","slide":34,"text":"W4","textPreview":"W4","textChars":2,"textLines":1,"bbox":[68,463,75,48]}
+{"kind":"shape","id":"sh/a1sru14j","slide":34,"bbox":[153,455,235,64]}
+{"kind":"textbox","id":"sh/xojqpgna","slide":34,"text":"Pilot + calibration","textPreview":"Pilot + calibration","textChars":19,"textLines":1,"bbox":[163,463,215,48]}
+{"kind":"shape","id":"sh/w3a9wbmp","slide":34,"bbox":[388,455,600,64]}
+{"kind":"textbox","id":"sh/jqlsrq50","slide":34,"text":"Thu 8–12 người; double-rate; sửa prompt/rubric; khóa v1","textPreview":"Thu 8–12 người; double-rate; sửa prompt/rubric; khóa v1","textChars":55,"textLines":1,"bbox":[398,463,580,48]}
+{"kind":"shape","id":"sh/ipsryl4v","slide":34,"bbox":[988,455,235,64]}
+{"kind":"textbox","id":"sh/5s3atg36","slide":34,"text":"G4: completion ≥85%; agreement dùng được","textPreview":"G4: completion ≥85%; agreement dùng được","textChars":40,"textLines":1,"bbox":[998,463,215,48]}
+{"kind":"shape","id":"sh/4ru90vml","slide":34,"bbox":[58,519,95,64]}
+{"kind":"textbox","id":"sh/rulsvqlc","slide":34,"text":"W5","textPreview":"W5","textChars":2,"textLines":1,"bbox":[68,527,75,48]}
+{"kind":"shape","id":"sh/6tcr2l4r","slide":34,"bbox":[153,519,235,64]}
+{"kind":"textbox","id":"sh/oze9cv25","slide":34,"text":"Main collection 1","textPreview":"Main collection 1","textChars":17,"textLines":1,"bbox":[163,527,215,48]}
+{"kind":"shape","id":"sh/p0nql0ja","slide":34,"bbox":[388,519,600,64]}
+{"kind":"textbox","id":"sh/2xw7alkz","slide":34,"text":"Thu 20–30 người; QC ngay; rater chấm cuốn chiếu","textPreview":"Thu 20–30 người; QC ngay; rater chấm cuốn chiếu","textChars":47,"textLines":1,"bbox":[398,527,580,48]}
+{"kind":"shape","id":"sh/3y58jq1k","slide":34,"bbox":[988,519,235,64]}
+{"kind":"textbox","id":"sh/gvup8v2t","slide":34,"text":"G5: metadata đầy đủ ≥90%","textPreview":"G5: metadata đầy đủ ≥90%","textChars":24,"textLines":1,"bbox":[998,527,215,48]}
+{"kind":"notes","id":"nt/b9govw","slide":34,"text":"Lane viết luận văn chạy song song từ W1. W4 là cổng quan trọng: không khóa rubric trước pilot. Completion và metadata thresholds là mục tiêu quản trị dự án.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/mk3eqf","slide":35,"title":"KẾ HOẠCH 10 TUẦN • PHẦN 2","textShapes":30}
+{"kind":"textbox","id":"sh/3edgzy94","slide":35,"text":"KẾ HOẠCH 10 TUẦN • PHẦN 2","textPreview":"KẾ HOẠCH 10 TUẦN • PHẦN 2","textChars":25,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/ofmh83ap","slide":35,"text":"Tuần 6–10: khóa dữ liệu, kiểm định, hoàn thiện sản phẩm và luận văn","textPreview":"Tuần 6–10: khóa dữ liệu, kiểm định, hoàn thiện sản phẩm và luận văn","textChars":67,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/pgvy18ra","slide":35,"text":"Không tinh chỉnh vô hạn trên confirmation set.","textPreview":"Không tinh chỉnh vô hạn trên confirmation set.","textChars":46,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/qhozudsv","slide":35,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/b2x03i9g","slide":35,"text":"KẾ HOẠCH","textPreview":"KẾ HOẠCH","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/c36hwna1","slide":35,"text":"35","textPreview":"35","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/d4fi5sr6","slide":35,"bbox":[58,215,95,48]}
+{"kind":"textbox","id":"sh/6lkzy9sb","slide":35,"text":"Tuần","textPreview":"Tuần","textChars":4,"textLines":1,"bbox":[68,225,75,28]}
+{"kind":"shape","id":"sh/r6tgretw","slide":35,"bbox":[153,215,235,48]}
+{"kind":"textbox","id":"sh/jydwna1o","slide":35,"text":"Trọng tâm","textPreview":"Trọng tâm","textChars":9,"textLines":1,"bbox":[163,225,215,28]}
+{"kind":"shape","id":"sh/yx4ve503","slide":35,"bbox":[388,215,600,48]}
+{"kind":"textbox","id":"sh/l0vep0ju","slide":35,"text":"Việc phải hoàn thành","textPreview":"Việc phải hoàn thành","textChars":20,"textLines":1,"bbox":[398,225,580,28]}
+{"kind":"shape","id":"sh/kzmxgvi9","slide":35,"bbox":[988,215,235,48]}
+{"kind":"textbox","id":"sh/butwjq1c","slide":35,"text":"Cổng","textPreview":"Cổng","textChars":4,"textLines":1,"bbox":[998,225,215,28]}
+{"kind":"shape","id":"sh/atkval07","slide":35,"bbox":[58,263,95,64]}
+{"kind":"textbox","id":"sh/xwvel0ji","slide":35,"text":"W6","textPreview":"W6","textChars":2,"textLines":1,"bbox":[68,271,75,48]}
+{"kind":"shape","id":"sh/wv2dcvix","slide":35,"bbox":[153,263,235,64]}
+{"kind":"textbox","id":"sh/n6twfq1g","slide":35,"text":"Main collection 2","textPreview":"Main collection 2","textChars":17,"textLines":1,"bbox":[163,271,215,48]}
+{"kind":"shape","id":"sh/m5kv6l0v","slide":35,"bbox":[388,263,600,64]}
+{"kind":"textbox","id":"sh/q10fyl4n","slide":35,"text":"Đạt sàn 60, mục tiêu 70–90; chốt Task C subset; adjudicate","textPreview":"Đạt sàn 60, mục tiêu 70–90; chốt Task C subset; adjudicate","textChars":58,"textLines":1,"bbox":[398,271,580,48]}
+{"kind":"shape","id":"sh/r29wr6l8","slide":35,"bbox":[988,263,235,64]}
+{"kind":"textbox","id":"sh/s3ix0bmt","slide":35,"text":"G6: đủ dữ liệu + nhãn","textPreview":"G6: đủ dữ liệu + nhãn","textChars":21,"textLines":1,"bbox":[998,271,215,48]}
+{"kind":"shape","id":"sh/d4retg3e","slide":35,"bbox":[58,327,95,64]}
+{"kind":"textbox","id":"sh/e5kf2l4z","slide":35,"text":"W7","textPreview":"W7","textChars":2,"textLines":1,"bbox":[68,335,75,48]}
+{"kind":"shape","id":"sh/z6tgvqlk","slide":35,"bbox":[153,327,235,64]}
+{"kind":"textbox","id":"sh/0r2x4vm5","slide":35,"text":"Baseline","textPreview":"Baseline","textChars":8,"textLines":1,"bbox":[163,335,215,48]}
+{"kind":"shape","id":"sh/1sbyx03a","slide":35,"bbox":[388,327,600,64]}
+{"kind":"textbox","id":"sh/mtkf654v","slide":35,"text":"Audio-only, transcript-only, LLM local; GroupKFold","textPreview":"Audio-only, transcript-only, LLM local; GroupKFold","textChars":50,"textLines":1,"bbox":[398,335,580,48]}
+{"kind":"shape","id":"sh/nutgzqlg","slide":35,"bbox":[988,327,235,64]}
+{"kind":"textbox","id":"sh/xofip4ni","slide":35,"text":"G7: bảng baseline có CI","textPreview":"G7: bảng baseline có CI","textChars":23,"textLines":1,"bbox":[998,335,215,48]}
+{"kind":"shape","id":"sh/wnmhwz6d","slide":35,"bbox":[58,391,95,64]}
+{"kind":"textbox","id":"sh/bmd0nu5s","slide":35,"text":"W8","textPreview":"W8","textChars":2,"textLines":1,"bbox":[68,399,75,48]}
+{"kind":"shape","id":"sh/al4zupo7","slide":35,"bbox":[153,391,235,64]}
+{"kind":"textbox","id":"sh/lsfit4nu","slide":35,"text":"Fusion + calibration","textPreview":"Fusion + calibration","textChars":20,"textLines":1,"bbox":[163,399,215,48]}
+{"kind":"shape","id":"sh/kr6h0z69","slide":35,"bbox":[388,391,600,64]}
+{"kind":"textbox","id":"sh/jqx0ru5o","slide":35,"text":"Late fusion; threshold teacher review; ablation","textPreview":"Late fusion; threshold teacher review; ablation","textChars":47,"textLines":1,"bbox":[398,399,580,48]}
+{"kind":"shape","id":"sh/ypozypo3","slide":35,"bbox":[988,391,235,64]}
+{"kind":"textbox","id":"sh/twzixonq","slide":35,"text":"G8: model freeze","textPreview":"G8: model freeze","textChars":16,"textLines":1,"bbox":[998,399,215,48]}
+{"kind":"shape","id":"sh/8v614j65","slide":35,"bbox":[58,455,95,64]}
+{"kind":"textbox","id":"sh/4balwnqd","slide":35,"text":"W9","textPreview":"W9","textChars":2,"textLines":1,"bbox":[68,463,75,48]}
+{"kind":"shape","id":"sh/5cj2p87y","slide":35,"bbox":[153,455,235,64]}
+{"kind":"textbox","id":"sh/ips3ud8n","slide":35,"text":"Evaluation + UX","textPreview":"Evaluation + UX","textChars":15,"textLines":1,"bbox":[163,463,215,48]}
+{"kind":"shape","id":"sh/3q1knip8","slide":35,"bbox":[388,455,600,64]}
+{"kind":"textbox","id":"sh/gnals3qh","slide":35,"text":"Error/fairness audit; teacher queue; usability test","textPreview":"Error/fairness audit; teacher queue; usability test","textChars":51,"textLines":1,"bbox":[398,463,580,48]}
+{"kind":"shape","id":"sh/hoj2l872","slide":35,"bbox":[988,455,235,64]}
+{"kind":"textbox","id":"sh/ul83qt8b","slide":35,"text":"G9: acceptance test","textPreview":"G9: acceptance test","textChars":19,"textLines":1,"bbox":[998,463,215,48]}
+{"kind":"shape","id":"sh/vmhkjypw","slide":35,"bbox":[58,519,95,64]}
+{"kind":"textbox","id":"sh/0jul476l","slide":35,"text":"W10","textPreview":"W10","textChars":3,"textLines":1,"bbox":[68,527,75,48]}
+{"kind":"shape","id":"sh/1k3mxc76","slide":35,"bbox":[153,519,235,64]}
+{"kind":"textbox","id":"sh/bepo3698","slide":35,"text":"Đóng gói","textPreview":"Đóng gói","textChars":8,"textLines":1,"bbox":[163,527,215,48]}
+{"kind":"shape","id":"sh/adwnu1s3","slide":35,"bbox":[388,519,600,64]}
+{"kind":"textbox","id":"sh/xg765wre","slide":35,"text":"Confirmation run; viết kết quả; slide/demo; archive artifact","textPreview":"Confirmation run; viết kết quả; slide/demo; archive artifact","textChars":60,"textLines":1,"bbox":[398,527,580,48]}
+{"kind":"shape","id":"sh/wfy5wbqt","slide":35,"bbox":[988,519,235,64]}
+{"kind":"textbox","id":"sh/j2po769k","slide":35,"text":"G10: tái lập được","textPreview":"G10: tái lập được","textChars":17,"textLines":1,"bbox":[998,527,215,48]}
+{"kind":"shape","id":"sh/y1gny18z","slide":35,"bbox":[240,610,800,42]}
+{"kind":"textbox","id":"sh/l4769grq","slide":35,"text":"W10 dùng để xác nhận và đóng gói, không dùng để bắt đầu viết luận văn.","textPreview":"W10 dùng để xác nhận và đóng gói, không dùng để bắt đầu viết luận văn.","textChars":70,"textLines":1,"bbox":[260,624,760,14]}
+{"kind":"notes","id":"nt/mk3eqf","slide":35,"text":"Model freeze trước confirmation run. Archive gồm code, environment, prompt/rubric/model versions, split manifest và báo cáo. Task C có thể cắt nếu pilot không ổn mà vẫn giữ MVP A/B.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/5zm8fe","slide":36,"title":"TÍNH KHẢ THI VÀ DỰ PHÒNG","textShapes":23}
+{"kind":"textbox","id":"sh/rq1sfu50","slide":36,"text":"TÍNH KHẢ THI VÀ DỰ PHÒNG","textPreview":"TÍNH KHẢ THI VÀ DỰ PHÒNG","textChars":24,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/sru98z6l","slide":36,"text":"Đề tài khả thi có điều kiện; rater và dữ liệu là đường găng","textPreview":"Đề tài khả thi có điều kiện; rater và dữ liệu là đường găng","textChars":59,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/ds3ah4n6","slide":36,"text":"Rủi ro được xử lý bằng cổng quyết định, không chờ đến cuối mới phát hiện.","textPreview":"Rủi ro được xử lý bằng cổng quyết định, không chờ đến cuối mới phát hiện.","textChars":73,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/i1sr25o3","slide":36,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/3218bapo","slide":36,"text":"KHẢ THI","textPreview":"KHẢ THI","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/43a94f69","slide":36,"text":"36","textPreview":"36","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/54jadk7u","slide":36,"bbox":[85,215,280,48]}
+{"kind":"textbox","id":"sh/ux8ry5o7","slide":36,"text":"Rủi ro","textPreview":"Rủi ro","textChars":6,"textLines":1,"bbox":[95,225,260,28]}
+{"kind":"shape","id":"sh/vyh87aps","slide":36,"bbox":[365,215,340,48]}
+{"kind":"textbox","id":"sh/7q9s3ytg","slide":36,"text":"Dấu hiệu sớm","textPreview":"Dấu hiệu sớm","textChars":12,"textLines":1,"bbox":[375,225,320,28]}
+{"kind":"shape","id":"sh/mp0butcv","slide":36,"bbox":[705,215,490,48]}
+{"kind":"textbox","id":"sh/9cru58b6","slide":36,"text":"Phương án dự phòng","textPreview":"Phương án dự phòng","textChars":18,"textLines":1,"bbox":[715,225,470,28]}
+{"kind":"shape","id":"sh/8bitw3ul","slide":36,"bbox":[85,263,280,76]}
+{"kind":"textbox","id":"sh/ve9c7ytc","slide":36,"text":"Không đủ rater","textPreview":"Không đủ rater","textChars":14,"textLines":1,"bbox":[95,271,260,60]}
+{"kind":"shape","id":"sh/ud0bydcr","slide":36,"bbox":[365,263,340,76]}
+{"kind":"textbox","id":"sh/hgbu98bi","slide":36,"text":"W1 chưa có cam kết thời gian","textPreview":"W1 chưa có cam kết thời gian","textChars":28,"textLines":1,"bbox":[375,271,320,60]}
+{"kind":"shape","id":"sh/gfit03ux","slide":36,"bbox":[705,263,490,76]}
+{"kind":"textbox","id":"sh/bipsvet8","slide":36,"text":"Giảm response/người; giữ double-rating; chuyển kết luận thành pilot","textPreview":"Giảm response/người; giữ double-rating; chuyển kết luận thành pilot","textChars":67,"textLines":1,"bbox":[715,271,470,60]}
+{"kind":"shape","id":"sh/ahgbm9cn","slide":36,"bbox":[85,339,280,76]}
+{"kind":"textbox","id":"sh/ed4vuhwb","slide":36,"text":"Không đủ 60 speaker","textPreview":"Không đủ 60 speaker","textChars":19,"textLines":1,"bbox":[95,347,260,60]}
+{"kind":"shape","id":"sh/fedw3mdg","slide":36,"bbox":[365,339,340,76]}
+{"kind":"textbox","id":"sh/0f6xwre1","slide":36,"text":"W5 dưới 25 người","textPreview":"W5 dưới 25 người","textChars":16,"textLines":1,"bbox":[375,347,320,60]}
+{"kind":"shape","id":"sh/1gfe5wvm","slide":36,"bbox":[705,339,490,76]}
+{"kind":"textbox","id":"sh/q94vqxwz","slide":36,"text":"Tăng kênh tuyển; khóa A/B; giảm Task C; báo CI rộng","textPreview":"Tăng kênh tuyển; khóa A/B; giảm Task C; báo CI rộng","textChars":51,"textLines":1,"bbox":[715,347,470,60]}
+{"kind":"shape","id":"sh/radwz2dk","slide":36,"bbox":[85,415,280,76]}
+{"kind":"textbox","id":"sh/sbmds7e5","slide":36,"text":"ASR sai giọng Việt","textPreview":"ASR sai giọng Việt","textChars":18,"textLines":1,"bbox":[95,423,260,60]}
+{"kind":"shape","id":"sh/dcve1cvq","slide":36,"bbox":[365,415,340,76]}
+{"kind":"textbox","id":"sh/i5kvmxw3","slide":36,"text":"WER/manual subset cao","textPreview":"WER/manual subset cao","textChars":21,"textLines":1,"bbox":[375,423,320,60]}
+{"kind":"shape","id":"sh/36twv2do","slide":36,"bbox":[705,415,490,76]}
+{"kind":"textbox","id":"sh/l0jy10f6","slide":36,"text":"Confidence masking; transcript audit; teacher review; phân tích riêng","textPreview":"Confidence masking; transcript audit; teacher review; phân tích riêng","textChars":69,"textLines":1,"bbox":[715,423,470,60]}
+{"kind":"shape","id":"sh/kzah8vyl","slide":36,"bbox":[85,491,280,76]}
+{"kind":"textbox","id":"sh/zy1gzqx0","slide":36,"text":"Phonology không ổn","textPreview":"Phonology không ổn","textChars":18,"textLines":1,"bbox":[95,499,260,60]}
+{"kind":"shape","id":"sh/yx8z6lgf","slide":36,"bbox":[365,491,340,76]}
+{"kind":"textbox","id":"sh/xwzyx0fu","slide":36,"text":"QWK thấp và bias accent","textPreview":"QWK thấp và bias accent","textChars":23,"textLines":1,"bbox":[375,499,320,60]}
+{"kind":"shape","id":"sh/cvqh4vy9","slide":36,"bbox":[705,491,490,76]}
+{"kind":"textbox","id":"sh/buhgvqxo","slide":36,"text":"Chỉ báo evidence; giảm trọng số; không dùng để quyết overall một mình","textPreview":"Chỉ báo evidence; giảm trọng số; không dùng để quyết overall một mình","textChars":69,"textLines":1,"bbox":[715,499,470,60]}
+{"kind":"shape","id":"sh/a98z2lgj","slide":36,"bbox":[85,567,280,76]}
+{"kind":"textbox","id":"sh/p8zytgfy","slide":36,"text":"Trễ tiến độ","textPreview":"Trễ tiến độ","textChars":11,"textLines":1,"bbox":[95,575,260,60]}
+{"kind":"shape","id":"sh/o7qh0byd","slide":36,"bbox":[365,567,340,76]}
+{"kind":"textbox","id":"sh/obip0fy9","slide":36,"text":"G3/G4 không đạt","textPreview":"G3/G4 không đạt","textChars":15,"textLines":1,"bbox":[375,575,320,60]}
+{"kind":"shape","id":"sh/pcrq9kfu","slide":36,"bbox":[705,567,490,76]}
+{"kind":"textbox","id":"sh/29g7ypg3","slide":36,"text":"Cắt chatbot, LMS, dashboard nâng cao; giữ data + validation","textPreview":"Cắt chatbot, LMS, dashboard nâng cao; giữ data + validation","textChars":59,"textLines":1,"bbox":[715,575,470,60]}
+{"kind":"notes","id":"nt/5zm8fe","slide":36,"text":"Khả thi khi 2 rater + 1 adjudicator cam kết khoảng 25 giờ/người, dùng pretrained models và không mở rộng phạm vi. Đường găng là rubric/rater/data, không phải giao diện.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx"}
+{"kind":"slide","id":"sl/dfalfl","slide":37,"title":"TIÊU CHÍ NGHIỆM THU","textShapes":15}
+{"kind":"textbox","id":"sh/p8felwri","slide":37,"text":"TIÊU CHÍ NGHIỆM THU","textPreview":"TIÊU CHÍ NGHIỆM THU","textChars":19,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/25ofq187","slide":37,"text":"Nghiệm thu theo năm lớp: chạy được, có dữ liệu, đo đúng, biết giới hạn và tái lập được","textPreview":"Nghiệm thu theo năm lớp: chạy được, có dữ liệu, đo đúng, biết giới hạn và tái lập được","textChars":86,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/36xwj69s","slide":37,"text":"Không dùng một ngưỡng accuracy duy nhất để quyết định thành công.","textPreview":"Không dùng một ngưỡng accuracy duy nhất để quyết định thành công.","textChars":65,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/g36xora1","slide":37,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/h4fehwrm","slide":37,"text":"NGHIỆM THU","textPreview":"NGHIỆM THU","textChars":10,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/uh4fmhsv","slide":37,"text":"37","textPreview":"37","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"textbox","id":"sh/fidwfm9g","slide":37,"text":"1 • Chức năng","textPreview":"1 • Chức năng","textChars":13,"textLines":1,"bbox":[90,215,235,34]}
+{"kind":"shape","id":"sh/0zqx0vq5","slide":37,"bbox":[340,229,20,3]}
+{"kind":"textbox","id":"sh/l0zytgrq","slide":37,"text":"Thu âm → ASR → evidence → score → report → teacher review chạy end-to-end.","textPreview":"Thu âm → ASR → evidence → score → report → teacher review chạy end-to-end.","textChars":74,"textLines":1,"bbox":[385,215,790,48]}
+{"kind":"textbox","id":"sh/5gvml07u","slide":37,"text":"2 • Dữ liệu","textPreview":"2 • Dữ liệu","textChars":11,"textLines":1,"bbox":[90,297,235,34]}
+{"kind":"shape","id":"sh/4v2lcv69","slide":37,"bbox":[340,311,20,3]}
+{"kind":"textbox","id":"sh/jut4jqpo","slide":37,"text":"Đạt sàn speaker, metadata đủ, consent hợp lệ, split theo người nói.","textPreview":"Đạt sàn speaker, metadata đủ, consent hợp lệ, split theo người nói.","textChars":67,"textLines":1,"bbox":[385,297,790,48]}
+{"kind":"textbox","id":"sh/itk3alo3","slide":37,"text":"3 • Đo lường","textPreview":"3 • Đo lường","textChars":12,"textLines":1,"bbox":[90,379,235,34]}
+{"kind":"shape","id":"sh/hsbmhg7y","slide":37,"bbox":[340,393,20,3]}
+{"kind":"textbox","id":"sh/wr2l8b6d","slide":37,"text":"Có human–human trước AI–human; QWK/CI, GER, macro-F1 và error analysis.","textPreview":"Có human–human trước AI–human; QWK/CI, GER, macro-F1 và error analysis.","textChars":71,"textLines":1,"bbox":[385,379,790,48]}
+{"kind":"textbox","id":"sh/vqt4f6ps","slide":37,"text":"4 • Tin cậy","textPreview":"4 • Tin cậy","textChars":11,"textLines":1,"bbox":[90,461,235,34]}
+{"kind":"shape","id":"sh/upk361o7","slide":37,"bbox":[340,475,20,3]}
+{"kind":"textbox","id":"sh/1ofmtk72","slide":37,"text":"Có calibration, confidence threshold, invalid/ASR-risk flags và audit accent/thiết bị.","textPreview":"Có calibration, confidence threshold, invalid/ASR-risk flags và audit accent/thiết bị.","textChars":86,"textLines":1,"bbox":[385,461,790,48]}
+{"kind":"textbox","id":"sh/gnm5kf6h","slide":37,"text":"5 • Tái lập","textPreview":"5 • Tái lập","textChars":11,"textLines":1,"bbox":[90,543,235,34]}
+{"kind":"shape","id":"sh/0rupwjet","slide":37,"bbox":[340,557,20,3]}
+{"kind":"textbox","id":"sh/1sn6pove","slide":37,"text":"Có version, manifest, seed, environment, rubric và script chạy lại kết quả.","textPreview":"Có version, manifest, seed, environment, rubric và script chạy lại kết quả.","textChars":75,"textLines":1,"bbox":[385,543,790,48]}
+{"kind":"notes","id":"nt/dfalfl","slide":37,"text":"Các ngưỡng chi tiết nằm trong đề cương và phải được công bố trước. Nghiệm thu cần bao gồm cả failure cases, không chỉ demo bài đẹp.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1"}
+{"kind":"slide","id":"sl/w5ii6v","slide":38,"title":"ĐÓNG GÓP KHOA HỌC VÀ KỸ THUẬT","textShapes":17}
+{"kind":"textbox","id":"sh/gbyd0f29","slide":38,"text":"ĐÓNG GÓP KHOA HỌC VÀ KỸ THUẬT","textPreview":"ĐÓNG GÓP KHOA HỌC VÀ KỸ THUẬT","textChars":29,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/vapcralo","slide":38,"text":"Đóng góp chính là một quy trình đánh giá có thể kiểm tra, không phải một mô hình “thần kỳ”","textPreview":"Đóng góp chính là một quy trình đánh giá có thể kiểm tra, không phải một mô hình “thần kỳ”","textChars":90,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/u9gvy5k3","slide":38,"text":"Mỗi đóng góp tạo ra một artifact có thể bàn giao.","textPreview":"Mỗi đóng góp tạo ra một artifact có thể bàn giao.","textChars":49,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/t87up03i","slide":38,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/87ydwv2x","slide":38,"text":"ĐÓNG GÓP","textPreview":"ĐÓNG GÓP","textChars":8,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/76pcnqlc","slide":38,"text":"38","textPreview":"38","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"textbox","id":"sh/65gvu5k7","slide":38,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[85,215,48,48]}
+{"kind":"textbox","id":"sh/lknul03m","slide":38,"text":"Bản đồ rubric → task → evidence → feature cho 6 tiêu chí","textPreview":"Bản đồ rubric → task → evidence → feature cho 6 tiêu chí","textChars":56,"textLines":1,"bbox":[143,215,462,58]}
+{"kind":"shape","id":"sh/kjedsv21","slide":38,"bbox":[143,279,462,2]}
+{"kind":"textbox","id":"sh/ed0zi1wn","slide":38,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[675,215,48,48]}
+{"kind":"textbox","id":"sh/fe90b6d8","slide":38,"text":"Tập dữ liệu pilot người Việt có double-rating và adjudication","textPreview":"Tập dữ liệu pilot người Việt có double-rating và adjudication","textChars":61,"textLines":1,"bbox":[733,215,462,58]}
+{"kind":"shape","id":"sh/0fihkbet","slide":38,"bbox":[733,279,462,2]}
+{"kind":"textbox","id":"sh/1gridgve","slide":38,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[85,355,48,48]}
+{"kind":"textbox","id":"sh/q9gzehwr","slide":38,"text":"Baseline và late-fusion protocol có speaker-level evaluation","textPreview":"Baseline và late-fusion protocol có speaker-level evaluation","textChars":60,"textLines":1,"bbox":[143,355,462,58]}
+{"kind":"shape","id":"sh/rapg7mdc","slide":38,"bbox":[143,419,462,2]}
+{"kind":"textbox","id":"sh/sbyhgreh","slide":38,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[675,355,48,48]}
+{"kind":"textbox","id":"sh/dcri9wv2","slide":38,"text":"Calibration, teacher-review policy và error/fairness audit","textPreview":"Calibration, teacher-review policy và error/fairness audit","textChars":58,"textLines":1,"bbox":[733,355,462,58]}
+{"kind":"shape","id":"sh/ilgzahwf","slide":38,"bbox":[733,419,462,2]}
+{"kind":"textbox","id":"sh/36pg3md0","slide":38,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[85,495,48,48]}
+{"kind":"textbox","id":"sh/7e1ovepg","slide":38,"text":"speaking_profile schema nối đánh giá với luyện tập thích ứng","textPreview":"speaking_profile schema nối đánh giá với luyện tập thích ứng","textChars":60,"textLines":1,"bbox":[143,495,462,58]}
+{"kind":"shape","id":"sh/mdsnm98b","slide":38,"bbox":[143,559,462,2]}
+{"kind":"textbox","id":"sh/9g36xo7m","slide":38,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[675,495,48,48]}
+{"kind":"textbox","id":"sh/8fu5ojq1","slide":38,"text":"Bộ tài liệu tái lập: code, version, split manifest, rubric, model card","textPreview":"Bộ tài liệu tái lập: code, version, split manifest, rubric, model card","textChars":70,"textLines":1,"bbox":[733,495,462,58]}
+{"kind":"shape","id":"sh/v2lozyps","slide":38,"bbox":[733,559,462,2]}
+{"kind":"notes","id":"nt/w5ii6v","slide":38,"text":"Đây là cách trả lời câu hỏi 'đóng góp khoa học là gì' khi không huấn luyện mô hình nền tảng mới. Giá trị nằm ở construct validity, data design, evaluation protocol và human-in-the-loop.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}
+{"kind":"slide","id":"sl/ij0sew","slide":39,"title":"CÂU HỎI HỘI ĐỒNG THƯỜNG GẶP","textShapes":17}
+{"kind":"textbox","id":"sh/cbqpc3qd","slide":39,"text":"CÂU HỎI HỘI ĐỒNG THƯỜNG GẶP","textPreview":"CÂU HỎI HỘI ĐỒNG THƯỜNG GẶP","textChars":27,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/bah83y9s","slide":39,"text":"Trả lời bằng phạm vi, bằng chứng và giới hạn, không trả lời bằng khẩu hiệu AI","textPreview":"Trả lời bằng phạm vi, bằng chứng và giới hạn, không trả lời bằng khẩu hiệu AI","textChars":77,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/q987at87","slide":39,"text":"Bốn câu dưới đây bao phủ phần dễ bị hỏi nhất.","textPreview":"Bốn câu dưới đây bao phủ phần dễ bị hỏi nhất.","textChars":45,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/p8zq1orm","slide":39,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/o76p8jq1","slide":39,"text":"HỎI ĐÁP","textPreview":"HỎI ĐÁP","textChars":7,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/36xoze9w","slide":39,"text":"39","textPreview":"39","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/25o7698b","slide":39,"bbox":[70,205,370,48]}
+{"kind":"textbox","id":"sh/14f6x4rq","slide":39,"text":"Câu hỏi","textPreview":"Câu hỏi","textChars":7,"textLines":1,"bbox":[80,215,350,28]}
+{"kind":"shape","id":"sh/g36p4jq5","slide":39,"bbox":[440,205,770,48]}
+{"kind":"textbox","id":"sh/ul8vu98r","slide":39,"text":"Cách trả lời ngắn","textPreview":"Cách trả lời ngắn","textChars":17,"textLines":1,"bbox":[450,215,750,28]}
+{"kind":"shape","id":"sh/vmhcne9c","slide":39,"bbox":[70,253,370,82]}
+{"kind":"textbox","id":"sh/wnqdwjqx","slide":39,"text":"Tại sao gọi là theo CEFR?","textPreview":"Tại sao gọi là theo CEFR?","textChars":25,"textLines":1,"bbox":[80,261,350,66]}
+{"kind":"shape","id":"sh/hozupor2","slide":39,"bbox":[440,253,770,82]}
+{"kind":"textbox","id":"sh/mhovq98f","slide":39,"text":"Vì rubric/task/evidence bám 6 tiêu chí CEFR và điểm được kiểm định với rater; không phải vì LLM tự ghi nhãn CEFR.","textPreview":"Vì rubric/task/evidence bám 6 tiêu chí CEFR và điểm được kiểm định với rater; không phải vì LLM tự ghi nhãn CEFR.","textChars":113,"textLines":1,"bbox":[450,261,750,66]}
+{"kind":"shape","id":"sh/7ixcje90","slide":39,"bbox":[70,335,370,82]}
+{"kind":"textbox","id":"sh/8jqdszql","slide":39,"text":"AI có thay giảng viên không?","textPreview":"AI có thay giảng viên không?","textChars":28,"textLines":1,"bbox":[80,343,350,66]}
+{"kind":"shape","id":"sh/9kzul4r6","slide":39,"bbox":[440,335,770,82]}
+{"kind":"textbox","id":"sh/ytobmpsj","slide":39,"text":"Không. AI chấm sơ bộ; GV sở hữu rubric, duyệt ca bất định và quyết định cuối cùng.","textPreview":"Không. AI chấm sơ bộ; GV sở hữu rubric, duyệt ca bất định và quyết định cuối cùng.","textChars":82,"textLines":1,"bbox":[450,343,750,66]}
+{"kind":"shape","id":"sh/zuxcfu94","slide":39,"bbox":[70,417,370,82]}
+{"kind":"textbox","id":"sh/nytsnqpw","slide":39,"text":"Dữ liệu người Việt có đủ không?","textPreview":"Dữ liệu người Việt có đủ không?","textChars":31,"textLines":1,"bbox":[80,425,350,66]}
+{"kind":"shape","id":"sh/2xkrul8b","slide":39,"bbox":[440,417,770,82]}
+{"kind":"textbox","id":"sh/p0vap072","slide":39,"text":"Đủ cho PoC có CI và error analysis nếu đạt sàn; không đủ để tuyên bố tổng quát cho mọi người Việt.","textPreview":"Đủ cho PoC có CI và error analysis nếu đạt sàn; không đủ để tuyên bố tổng quát cho mọi người Việt.","textChars":98,"textLines":1,"bbox":[450,425,750,66]}
+{"kind":"shape","id":"sh/oz29wv6h","slide":39,"bbox":[70,499,370,82]}
+{"kind":"textbox","id":"sh/bmdsraps","slide":39,"text":"Phát âm chấm thế nào?","textPreview":"Phát âm chấm thế nào?","textChars":21,"textLines":1,"bbox":[80,507,350,66]}
+{"kind":"shape","id":"sh/al4ry5o7","slide":39,"bbox":[440,499,770,82]}
+{"kind":"textbox","id":"sh/xovat07y","slide":39,"text":"Kết hợp GOP, prosody và intelligibility; không phạt accent; Phonology được công bố là tiêu chí rủi ro nhất.","textPreview":"Kết hợp GOP, prosody và intelligibility; không phạt accent; Phonology được công bố là tiêu chí rủi ro nhất.","textChars":107,"textLines":1,"bbox":[450,507,750,66]}
+{"kind":"shape","id":"sh/cnm90v6d","slide":39,"bbox":[70,581,370,82]}
+{"kind":"textbox","id":"sh/rq98f6po","slide":39,"text":"Vì sao không chỉ dùng LLM?","textPreview":"Vì sao không chỉ dùng LLM?","textChars":26,"textLines":1,"bbox":[80,589,350,66]}
+{"kind":"shape","id":"sh/6p0rm183","slide":39,"bbox":[440,581,770,82]}
+{"kind":"textbox","id":"sh/wvypw761","slide":39,"text":"Transcript không chứa đầy đủ pause, rhythm, intelligibility và interaction; ASR error còn có thể tạo lỗi ngữ pháp giả.","textPreview":"Transcript không chứa đầy đủ pause, rhythm, intelligibility và interaction; ASR error còn có thể tạo lỗi ngữ pháp giả.","textChars":118,"textLines":1,"bbox":[450,589,750,66]}
+{"kind":"notes","id":"nt/ij0sew","slide":39,"text":"Câu bổ sung: nếu mô hình không vượt baseline thì sao? Vẫn có đóng góp nếu phân tích được nguồn sai, công bố giới hạn và bàn giao pipeline/rubric/data protocol tái lập được.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html\n- https://aclanthology.org/2023.ranlp-1.83/"}
+{"kind":"slide","id":"sl/7wdlp0","slide":40,"title":"NGUỒN NỀN TẢNG","textShapes":10}
+{"kind":"textbox","id":"sh/8natc3qh","slide":40,"text":"NGUỒN NỀN TẢNG","textPreview":"NGUỒN NỀN TẢNG","textChars":14,"textLines":1,"bbox":[58,32,720,24]}
+{"kind":"textbox","id":"sh/7m1c3ypw","slide":40,"text":"Ưu tiên tài liệu chính thức, bài báo gốc, kho dữ liệu và mã nguồn của tác giả","textPreview":"Ưu tiên tài liệu chính thức, bài báo gốc, kho dữ liệu và mã nguồn của tác giả","textChars":77,"textLines":1,"bbox":[58,68,1164,102]}
+{"kind":"textbox","id":"sh/mlsbat8b","slide":40,"text":"Các URL đầy đủ được đặt trong speaker notes của từng slide.","textPreview":"Các URL đầy đủ được đặt trong speaker notes của từng slide.","textChars":59,"textLines":1,"bbox":[58,178,1164,32]}
+{"kind":"shape","id":"sh/hsju987y","slide":40,"bbox":[58,676,1164,1]}
+{"kind":"textbox","id":"sh/gratg36d","slide":40,"text":"NGUỒN","textPreview":"NGUỒN","textChars":5,"textLines":1,"bbox":[58,686,500,18]}
+{"kind":"textbox","id":"sh/vq1c7yp8","slide":40,"text":"40","textPreview":"40","textChars":2,"textLines":1,"bbox":[1180,684,42,20]}
+{"kind":"shape","id":"sh/upsbed8n","slide":40,"bbox":[70,215,520,5]}
+{"kind":"textbox","id":"sh/5g3uds7a","slide":40,"text":"Chuẩn và kiểm định","textPreview":"Chuẩn và kiểm định","textChars":18,"textLines":1,"bbox":[70,233,520,52]}
+{"kind":"textbox","id":"sh/4futkn6p","slide":40,"text":"• CEFR Companion Volume 2020\n• Council of Europe: Relating Examinations to CEFR\n• Manual for Language Test Development, 2026\n• Cambridge Speaking Assessment Criteria\n• ETS SpeechRater\n• ETS Evidence-Centered Design","textPreview":"• CEFR Companion Volume 2020 | • Council of Europe: Relating Examinations to CEFR | • Manual for Language Test Development, 2026 | • Camb...","textChars":214,"textLines":6,"bbox":[70,293,520,252]}
+{"kind":"shape","id":"sh/ilgvalkb","slide":40,"bbox":[690,215,520,5]}
+{"kind":"textbox","id":"sh/3mpw3q1g","slide":40,"text":"Mô hình, mã nguồn và dữ liệu","textPreview":"Mô hình, mã nguồn và dữ liệu","textChars":28,"textLines":1,"bbox":[690,233,520,52]}
+{"kind":"textbox","id":"sh/4nydcv21","slide":40,"text":"• Multimodal Speaking Assessment, RANLP 2023\n• Transcript-based grading, ACL 2020\n• GOPT official repository\n• L2-ARCTIC\n• Speak & Improve Corpus 2025\n• SpeechOcean762 và EvalYaks","textPreview":"• Multimodal Speaking Assessment, RANLP 2023 | • Transcript-based grading, ACL 2020 | • GOPT official repository | • L2-ARCTIC | • Speak ...","textChars":179,"textLines":6,"bbox":[690,293,520,252]}
+{"kind":"shape","id":"sh/5o7e50jm","slide":40,"bbox":[160,575,960,62]}
+{"kind":"textbox","id":"sh/qpgvelk7","slide":40,"text":"Nguyên tắc sử dụng nguồn: corpus khác miền chỉ dùng làm baseline; dữ liệu người Việt tự thu mới dùng cho kết luận chính.","textPreview":"Nguyên tắc sử dụng nguồn: corpus khác miền chỉ dùng làm baseline; dữ liệu người Việt tự thu mới dùng cho kết luận chính.","textChars":120,"textLines":1,"bbox":[180,589,920,34]}
+{"kind":"notes","id":"nt/7wdlp0","slide":40,"text":"Danh mục rút gọn trên slide. Xem source-notes và speaker notes từng trang để truy cập URL trực tiếp.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.coe.int/en/web/common-european-framework-reference-languages/relating-examinations-to-the-cefr\n- https://www.coe.int/en/web/education/-/manual-for-language-test-development-and-examining-1\n- https://www.cambridgeenglish.org/in/Images/702771-listening-speaking-assessment-criteria.pdf\n- https://www.cambridgeenglish.org/english-research-group/fitness-for-purpose/\n- https://www.ets.org/research/policy_research_reports/publications/report/2008/hukv.html\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html\n- https://aclanthology.org/2023.ranlp-1.83/\n- https://aclanthology.org/2020.acl-main.206/\n- https://github.com/YuanGongND/gopt\n- https://psi.engr.tamu.edu/l2-arctic-corpus/\n- https://www.repository.cam.ac.uk/items/611e9b8b-c5b2-4cbe-9b7a-036a48334118\n- https://www.openslr.org/101/\n- https://github.com/Talking-Yak/EvalYaks"}
+{"kind":"slide","id":"sl/rheh5w","slide":41,"title":"KẾT LUẬN CHỐT","textShapes":7}
+{"kind":"textbox","id":"sh/jmdozap8","slide":41,"text":"KẾT LUẬN CHỐT","textPreview":"KẾT LUẬN CHỐT","textChars":13,"textLines":1,"bbox":[70,62,400,26]}
+{"kind":"textbox","id":"sh/4nmp8fqt","slide":41,"text":"Đề tài khả thi khi xem AI là một công cụ đo lường có kiểm soát","textPreview":"Đề tài khả thi khi xem AI là một công cụ đo lường có kiểm soát","textChars":62,"textLines":1,"bbox":[70,125,1110,118]}
+{"kind":"textbox","id":"sh/5ov61k7y","slide":41,"text":"Thành công không được định nghĩa bởi việc AI luôn đưa ra điểm. Thành công là AI đưa ra điểm có bằng chứng khi đủ tin cậy, và biết chuyển người thật xem lại khi không đủ bằng chứng.","textPreview":"Thành công không được định nghĩa bởi việc AI luôn đưa ra điểm. Thành công là AI đưa ra điểm có bằng chứng khi đủ tin cậy, và biết chuyển ...","textChars":180,"textLines":1,"bbox":[70,285,1070,100]}
+{"kind":"shape","id":"sh/uxk7258b","slide":41,"bbox":[70,435,1120,2]}
+{"kind":"textbox","id":"sh/vytovapw","slide":41,"text":"Chốt triển khai","textPreview":"Chốt triển khai","textChars":15,"textLines":1,"bbox":[70,475,240,28]}
+{"kind":"textbox","id":"sh/wzmp4fqh","slide":41,"text":"A2–B2 • low-stakes • 6 tiêu chí • 2 rater + 1 adjudicator • speaker-level validation • human-in-the-loop","textPreview":"A2–B2 • low-stakes • 6 tiêu chí • 2 rater + 1 adjudicator • speaker-level validation • human-in-the-loop","textChars":104,"textLines":1,"bbox":[70,525,1090,54]}
+{"kind":"textbox","id":"sh/h0v6x072","slide":41,"text":"AI chấm sơ bộ. Giảng viên giữ chuẩn và quyết định cuối cùng.","textPreview":"AI chấm sơ bộ. Giảng viên giữ chuẩn và quyết định cuối cùng.","textChars":60,"textLines":1,"bbox":[70,630,950,32]}
+{"kind":"textbox","id":"sh/mtk7yl8f","slide":41,"text":"41","textPreview":"41","textChars":2,"textLines":1,"bbox":[1190,676,32,18]}
+{"kind":"notes","id":"nt/rheh5w","slide":41,"text":"Kết thúc bằng quyết định phạm vi và nguyên tắc human-in-the-loop. Không kết thúc bằng lời hứa accuracy; kết thúc bằng điều kiện để hệ thống có ích và có trách nhiệm.\n\n[Sources]\n- De_cuong_AI_Assessor_CEFR_v3.1_ALDM-L.docx\n- https://rm.coe.int/cefr-companion-volume-with-new-descriptors-2020/16809ea0d4\n- https://www.ets.org/research/policy_research_reports/publications/article/2022/kepg.html"}

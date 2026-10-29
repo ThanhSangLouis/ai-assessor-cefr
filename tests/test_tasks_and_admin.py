@@ -6,6 +6,7 @@ Covers FR-01 (prompt versions), FR-04, FR-35, FR-36, FR-38, FR-39.
 from __future__ import annotations
 
 import io
+import sqlite3
 import subprocess
 
 import numpy as np
@@ -37,9 +38,15 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    # FR-01 (D058): recording requires the terms of use. Accepted through the real
-    # endpoint so the fixtures walk the same path as a student.
-    assert c.post("/api/v1/me/terms").status_code == 200
+    # FR-01: recording requires consent. Signed through the real endpoint so the
+    # fixtures walk the same path as a student.
+    assert (
+        c.post(
+            "/api/v1/me/consent",
+            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+        ).status_code
+        == 200
+    )
     return c
 
 
@@ -81,7 +88,8 @@ def test_de_bai_them_sau_van_den_duoc_co_so_du_lieu_da_co_san(tmp_path) -> None:
     """
     db = tmp_path / "t.db"
     TaskRepository(db)
-    TaskRepository(db).col("task").delete_one({"task_id": "P5"})
+    with sqlite3.connect(db) as c:
+        c.execute("DELETE FROM task WHERE task_id='P5'")
 
     assert "P5" in [t.task_id for t in TaskRepository(db).list_active()]
 
@@ -90,9 +98,8 @@ def test_seed_khong_ghi_de_len_de_bai_giang_vien_da_sua(tmp_path) -> None:
     """Filling gaps must not become rewriting what an administrator edited."""
     db = tmp_path / "t.db"
     TaskRepository(db)
-    TaskRepository(db).col("task").update_one(
-        {"task_id": "P3"}, {"$set": {"title": "Đề đã sửa tay"}}
-    )
+    with sqlite3.connect(db) as c:
+        c.execute("UPDATE task SET title='Đề đã sửa tay' WHERE task_id='P3'")
 
     again = {t.task_id: t for t in TaskRepository(db).list_active()}
     assert again["P3"].title == "Đề đã sửa tay"
@@ -426,7 +433,11 @@ def test_approving_a_review_does_not_orphan_the_report(app) -> None:
 
     from aicefr.api import main as m
 
-    row = m.repo.col("response").find_one({"response_id": rid})
+    with m.repo._conn() as c:  # noqa: SLF001
+        row = c.execute(
+            "SELECT speaker_id, task_id, account_id FROM response WHERE response_id=?",
+            (rid,),
+        ).fetchone()
     assert row["speaker_id"] == "SV-001"
     assert row["task_id"] == "P4"
     assert row["account_id"] is not None
@@ -441,8 +452,8 @@ def test_approving_a_review_does_not_orphan_the_report(app) -> None:
 def test_scorer_refuses_a_model_with_no_declared_unit_of_inference() -> None:
     """The guard against repeating the worst bug this project has had.
 
-    `ridge_v3` was fitted on whole exam sittings, several minutes each. This
-    system scores one response, about a minute.
+    `ridge_v3` was fitted on whole exam sittings: a median of 474 words and 289
+    seconds. This system scores one response, about 98 words and 60 seconds.
     Feeding a single response to that model returned 1.00 (A2) for a submission
     an expert had marked 4.00 (B2), and reported success while doing it.
     """
@@ -459,7 +470,7 @@ def test_the_model_in_use_loads_fine() -> None:
 
 
 def test_admin_model_list_marks_the_incompatible_artifact(app) -> None:
-    """It reports a HIGHER correlation than the model in use.
+    """It reports a HIGHER correlation than the model in use: 0.814 vs 0.697.
 
     The two numbers describe different tasks and must never be compared. Listing
     them side by side without saying so invites an administrator to activate the

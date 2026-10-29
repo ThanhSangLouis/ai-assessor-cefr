@@ -10,14 +10,14 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import deque
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from aicefr.config import get_settings
-from aicefr.infra.limits import InMemoryRateLimiter
-from aicefr.observability import count, new_request_id, observe, request_id_var
+from aicefr.observability import count, new_request_id, request_id_var
 
 logger = logging.getLogger("aicefr.access")
 
@@ -38,25 +38,6 @@ CSP = (
     "form-action 'self'; "
     "frame-ancestors 'none'"
 )
-
-
-def _apply_security_headers(request: Request, response: Response) -> Response:
-    response.headers.setdefault("Content-Security-Policy", CSP)
-    response.headers.setdefault("X-Content-Type-Options", "nosniff")
-    response.headers.setdefault("X-Frame-Options", "DENY")
-    response.headers.setdefault("Referrer-Policy", "same-origin")
-    # The microphone is needed by this origin only; everything else is off.
-    response.headers.setdefault(
-        "Permissions-Policy", "microphone=(self), camera=(), geolocation=()"
-    )
-    if get_settings().https_only:
-        response.headers.setdefault(
-            "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
-        )
-    # Reports and audio are personal data; no shared cache may keep them.
-    if request.url.path.startswith("/api/"):
-        response.headers.setdefault("Cache-Control", "private, no-store")
-    return response
 
 
 class RequestContextMiddleware(BaseHTTPMiddleware):
@@ -86,7 +67,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
             # module layout.
             response = JSONResponse({"detail": "lỗi nội bộ, vui lòng thử lại"}, status_code=500)
             response.headers["x-request-id"] = rid
-            _apply_security_headers(request, response)
             request_id_var.reset(token)
             return response
 
@@ -106,11 +86,6 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         count("requests_total")
         if response.status_code >= 500:
             count("requests_failed_total")
-        if not request.url.path.startswith("/static/"):
-            # The route's template, never the path itself: a path holds ids.
-            route = getattr(request.scope.get("route"), "path", None) or "unmatched"
-            observe("http_request_seconds", duration / 1000, method=request.method, route=route,
-                    status=f"{response.status_code // 100}xx")  # fmt: skip
         request_id_var.reset(token)
         return response
 
@@ -120,7 +95,59 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
-        return _apply_security_headers(request, response)
+        response.headers.setdefault("Content-Security-Policy", CSP)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "same-origin")
+        # The microphone is needed by this origin only; everything else is off.
+        response.headers.setdefault(
+            "Permissions-Policy", "microphone=(self), camera=(), geolocation=()"
+        )
+        if get_settings().https_only:
+            response.headers.setdefault(
+                "Strict-Transport-Security", "max-age=31536000; includeSubDomains"
+            )
+        # Reports and audio are personal data; no shared cache may keep them.
+        if request.url.path.startswith("/api/"):
+            response.headers.setdefault("Cache-Control", "private, no-store")
+        return response
+
+
+class SlidingWindowCounter:
+    """So lan thu trong 60 giay gan nhat theo tung khoa, bo nho CO TRAN.
+
+    Truoc day la mot `defaultdict` khong gioi han: moi dia chi gia la mot khoa
+    moi, nen ke tan cong doi IP lien tuc lam bo nho phinh mai. Vuot `max_keys`
+    thi bo khoa het han truoc, roi bo khoa cu nhat.
+    """
+
+    def __init__(self, window_s: float = 60.0, max_keys: int = 10_000) -> None:
+        self.window_s = window_s
+        self.max_keys = max_keys
+        self._hits: dict[str, deque[float]] = {}
+
+    def allow(self, key: str, now: float, limit: int) -> bool:
+        hits = self._hits.get(key)
+        if hits is None:
+            self._make_room(now)
+            hits = self._hits[key] = deque()
+        while hits and now - hits[0] > self.window_s:
+            hits.popleft()
+        if len(hits) >= limit:
+            return False
+        hits.append(now)
+        return True
+
+    def _make_room(self, now: float) -> None:
+        if len(self._hits) < self.max_keys:
+            return
+        for key in [k for k, h in self._hits.items() if not h or now - h[-1] > self.window_s]:
+            del self._hits[key]
+        while len(self._hits) >= self.max_keys:
+            del self._hits[next(iter(self._hits))]
+
+    def __len__(self) -> int:
+        return len(self._hits)
 
 
 class LoginRateLimitMiddleware(BaseHTTPMiddleware):
@@ -136,7 +163,7 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app) -> None:
         super().__init__(app)
-        self._limiter = InMemoryRateLimiter()
+        self._window = SlidingWindowCounter()
 
     async def dispatch(self, request: Request, call_next):
         if request.url.path != self.PATH or request.method != "POST":
@@ -144,7 +171,7 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
 
         limit = get_settings().login_attempts_per_minute
         who = request.client.host if request.client else "unknown"
-        if not self._limiter.hit(who, limit):
+        if not self._window.allow(who, time.time(), limit):
             count("login_rate_limited_total")
             logger.warning("login rate limit hit", extra={"event": "rate_limit"})
             return JSONResponse(

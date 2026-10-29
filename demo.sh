@@ -7,9 +7,6 @@ PY=.venv/bin/python
 
 # Khoa va cau hinh rieng cua may nay, neu co (khong commit; xem .env.example).
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
-# Artifact cham diem nam ngoai repo (W7-S01): mac dinh thu muc anh em ../aicefr-models.
-export AICEFR_MODEL_DIR="${AICEFR_MODEL_DIR:-$(cd .. && pwd)/aicefr-models}"
-[ -d "$AICEFR_MODEL_DIR" ] || echo "Canh bao: khong thay $AICEFR_MODEL_DIR -- bai nop se khong co diem (MODEL_VERSION_MISSING)." >&2
 [ -x "$PY" ] || { echo "Chua co .venv. Chay: python3.12 -m venv .venv && .venv/bin/pip install -e '.[dev]'" >&2; exit 1; }
 
 if [ ! -f aicefr.db ]; then

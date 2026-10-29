@@ -236,7 +236,7 @@ if (mainEl && "MutationObserver" in window) {
     ASR_HALLUCINATION: "Máy sinh ra chữ không có trong tiếng",
     ASR_VERSION_MISMATCH: "Khác bộ nhận dạng lúc huấn luyện",
     VAD_VERSION_MISMATCH: "Khác bộ tách tiếng lúc huấn luyện",
-    TERMS_NOT_ACCEPTED: "Chưa đồng ý điều khoản",
+    CONSENT_MISSING: "Chưa ký đồng thuận",
     LANGUAGE_NOT_ENGLISH: "Không phải tiếng Anh",
     OFF_TOPIC_SUSPECTED: "Nghi lạc đề",
     PROMPT_COPY_SUSPECTED: "Nghi đọc lại đề bài",
@@ -355,13 +355,14 @@ if (mainEl && "MutationObserver" in window) {
     reasonName: (code) => REASON_NAMES[code] || code,
 
     // The practice task that trains one aspect at one band, e.g. PR-RAN-B1. Same
-    // id scheme as practice/bank.py, which covers A1 to C2 (D059).
+    // id scheme as practice/bank.py; bands outside the practice bank (A2 to B2)
+    // are clamped to its nearest end.
     practiceTaskFor(criterion, band) {
       const codes = { fluency: "FLU", coherence: "COH", range: "RAN", accuracy: "ACC", phonology: "PHO" };
       if (!codes[criterion]) return null;
       const order = ["A1", "A2", "B1", "B2", "C1", "C2"];
       const i = order.indexOf(band);
-      return `PR-${codes[criterion]}-${i < 0 ? "A2" : order[i]}`;
+      return `PR-${codes[criterion]}-${i < 0 ? "A2" : order[Math.min(3, Math.max(1, i))]}`;
     },
 
     // "06/10/2026 18:30", the way a Vietnamese reader writes it.
@@ -468,7 +469,6 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
     ratings: "phiếu chấm mù chưa làm",
-    assignments: "bài được giao chưa nộp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {

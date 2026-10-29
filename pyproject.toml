@@ -23,17 +23,13 @@ dependencies = [
   # "studies" for "study". Pure Python, no dependencies, data bundled in the
   # wheel, runs offline; MIT licence. Approved by the project owner with D025.
   "simplemma>=2.0,<3",
-  # D048: the store is MongoDB. pymongo is the official driver, Apache-2.0,
-  # pure Python with an optional C extension; it ships bson for Extended JSON.
-  "pymongo>=4.8,<5",
 ]
 
 [project.optional-dependencies]
-# D050, the services apart: Redis carries their work (BullMQ, MIT), events
-# (Streams) and calls, through redis-py (MIT). D051: recordings in S3-compatible
-# object storage through the minio client (Apache-2.0). Not needed on one
-# machine, where the bus is in-process and recordings are files.
-services = ["bullmq>=3.4,<4", "redis>=6.2,<9", "minio>=7.2,<8"]
+# D043, the services apart: PostgreSQL through psycopg 3 (LGPL-3.0, used as a
+# library, unmodified) and RabbitMQ through pika (BSD-3-Clause). Not needed on
+# one machine, where the stores are SQLite files and the bus is in-process.
+services = ["psycopg[binary]>=3.2", "pika>=1.3"]
 asr = ["mlx-whisper>=0.4; sys_platform == 'darwin'", "faster-whisper>=1.0; sys_platform != 'darwin'"]
 vad = ["silero-vad>=5.1", "torch>=2.2"]
 dev = [
@@ -43,8 +39,6 @@ dev = [
   # TestClient cua Starlette doi httpx2. Thieu goi nay thi pytest khong thu thap
   # duoc tests/test_api.py va CI hong ngay o buoc thu thap, khong phai o buoc chay.
   "httpx2>=0.1",
-  # D048: an in-memory MongoDB for the tests and quick local runs, ISC licence.
-  "mongomock>=4.3,<5",
 ]
 # E2E layer (D023): runs on developer machines only; CI does not install it,
 # so those tests skip themselves there.
@@ -82,6 +76,7 @@ aicefr = [
   # Roboto, served by the app itself (D031), and its licence.
   "api/static/fonts/*.woff2",
   "api/static/fonts/*.txt",
+  "scoring/models/*.json",
 ]
 
 [tool.ruff]
@@ -124,11 +119,9 @@ extend-immutable-calls = [
 "tests/e2e/test_google_setup_e2e.py" = ["F811"]
 "tests/e2e/test_art_e2e.py" = ["F811"]
 "tests/e2e/test_learning_evidence_e2e.py" = ["F811"]
-"tests/e2e/test_learning_plans_e2e.py" = ["F811"]
 # The achievement tests reuse the lesson tests' app fixture `m` the same way.
 "tests/test_achievements.py" = ["F811"]
 "tests/test_learning_evidence.py" = ["F811"]
-"tests/test_learning_plans.py" = ["F811"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -136,6 +129,6 @@ addopts = "-q --cov=aicefr --cov-report=term-missing"
 markers = [
   "slow: can model that hoac audio that, khong chay trong CI",
   "unit: layer 1, pure logic, no database, no HTTP, no audio",
-  "integration: layer 2, real pipeline + MongoDB (in memory, or AICEFR_TEST_MONGO) + API through TestClient",
+  "integration: layer 2, real pipeline + real SQLite + API through TestClient",
   "e2e: layer 3, real browser (Playwright) against a local uvicorn server; needs extra e2e",
 ]

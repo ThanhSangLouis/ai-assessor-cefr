@@ -45,7 +45,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from aicefr.contracts import ProcessingRequest, ResponseStatus  # noqa: E402
+from aicefr.contracts import ProcessingRequest, Status  # noqa: E402
 
 SR = 16_000
 MUST_REFUSE = (
@@ -122,7 +122,7 @@ def run(root: Path, processor, task_id: str = "P4") -> dict:
                     "clip": clip.name,
                     "status": r.status.value,
                     "scored": scored,
-                    "issued": r.status is ResponseStatus.COMPLETED and scored,
+                    "issued": r.status is Status.COMPLETED and scored,
                     "reasons": [x.value for x in r.reasons],
                 }
             )
@@ -131,7 +131,7 @@ def run(root: Path, processor, task_id: str = "P4") -> dict:
     valid = [x for x in rows if x["category"] in VALID]
     leaked = sum(x["issued"] for x in refuse)
     wrongly_refused = sum(not x["scored"] for x in valid)
-    to_teacher = sum(x["status"] == ResponseStatus.REVIEW_REQUIRED.value for x in valid)
+    to_teacher = sum(x["status"] == Status.REVIEW_REQUIRED.value for x in valid)
     per_cat = {}
     for x in rows:
         c = per_cat.setdefault(x["category"], {"n": 0, "issued": 0, "scored": 0})

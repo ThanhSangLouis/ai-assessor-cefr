@@ -20,20 +20,10 @@
     </header>
     <dl class="pay-facts receipt-parties">
       <dt>Bên bán</dt><dd>AI Assessor CEFR</dd>
-      <dt>Bên mua</dt><dd>{% if order.kind == "credits" %}{{ account.pseudonym }}{% else %}{{ organization }}{% endif %}</dd>
+      <dt>Bên mua</dt><dd>{{ organization }}</dd>
     </dl>
     <div class="table-scroll">
       <table class="receipt-lines">
-        {% if order.kind == "credits" %}
-        <thead><tr><th>Nội dung</th><th class="num">Số lượt</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>{{ order.plan_name }} chấm bài nói</td>
-            <td class="num">{{ order.seats }}</td>
-            <td class="num">{{ order.unit_price | vnd }}</td>
-            <td class="num">{{ order.list_vnd | vnd }}</td>
-          </tr>
-        {% else %}
         <thead><tr><th>Nội dung</th><th class="num">Sinh viên</th><th class="num">Tháng</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead>
         <tbody>
           <tr>
@@ -43,7 +33,6 @@
             <td class="num">{{ order.unit_price | vnd }}</td>
             <td class="num">{{ order.list_vnd | vnd }}</td>
           </tr>
-        {% endif %}
           {% if order.discount_vnd %}
           <tr>
             <td colspan="4">Giảm khi trả theo năm học</td>
@@ -57,7 +46,7 @@
           </tr>
           {% endif %}
         </tbody>
-        <tfoot><tr><th colspan="{{ 3 if order.kind == "credits" else 4 }}">Đã thanh toán</th><th class="num">{{ order.amount_vnd | vnd }}</th></tr></tfoot>
+        <tfoot><tr><th colspan="4">Đã thanh toán</th><th class="num">{{ order.amount_vnd | vnd }}</th></tr></tfoot>
       </table>
     </div>
     <dl class="pay-facts">

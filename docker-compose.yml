@@ -5,15 +5,14 @@
 #   docker compose exec core python -m aicefr.accounts_cli them --but-danh QT-01 --vai-tro admin
 #
 # Then open http://localhost:8000. Only the gateway publishes a port; the
-# services, MongoDB and Redis are reachable from each other only.
+# services, PostgreSQL and RabbitMQ are reachable from each other only.
 #
 # The real recogniser is off by default: AICEFR_ASR=whisper downloads about
 # 1.5 GB of model on first use, which should be a deliberate choice.
 
 x-bus: &bus
   AICEFR_ENV: production
-  # D050: Redis carries the work (BullMQ), the events (Streams) and the calls.
-  AICEFR_BUS: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
+  AICEFR_BUS: amqp://${RABBITMQ_USER:-aicefr}:${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}@rabbitmq:5672/
   AICEFR_MAX_JOBS: "2"
 
 x-env: &env
@@ -47,7 +46,7 @@ services:
     restart: unless-stopped
 
   # Accounts, consent, responses, review, blind rating, the feedback study,
-  # lessons, achievements, plans and payment: every collection, one database (D048).
+  # lessons, achievements, plans and payment: every table, one schema.
   core:
     build:
       context: .
@@ -59,11 +58,7 @@ services:
     environment:
       <<: *env
       AICEFR_SERVICE: core
-      AICEFR_CORE_DB: mongodb://core:${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}@mongo:27017/aicefr?authSource=aicefr
-      # D051: a database per service. The learning part and the metering
-      # ledger write only their own; the core user may write the three.
-      AICEFR_LEARNING_DB: mongodb://core:${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}@mongo:27017/aicefr_learning?authSource=aicefr
-      AICEFR_METERING_DB: mongodb://core:${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}@mongo:27017/aicefr_metering?authSource=aicefr
+      AICEFR_CORE_DB: postgresql://core:${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}@postgres:5432/aicefr?schema=core
       AICEFR_GOOGLE_DOMAIN: ${AICEFR_GOOGLE_DOMAIN:-}
       AICEFR_BILLING: ${AICEFR_BILLING:-}
       AICEFR_PAYMENT_GATEWAYS: ${AICEFR_PAYMENT_GATEWAYS:-sandbox}
@@ -78,18 +73,14 @@ services:
       AICEFR_VNPAY_TMN_CODE: ${AICEFR_VNPAY_TMN_CODE:-}
       AICEFR_VNPAY_HASH_SECRET: ${AICEFR_VNPAY_HASH_SECRET:-}
       AICEFR_VNPAY_URL: ${AICEFR_VNPAY_URL:-}
-      AICEFR_MODEL_DIR: /models
     volumes:
       # Recordings: written here, read by the speech service. Personal data:
       # keep it on a named volume, back it up, never bake it into an image.
       - uploads:/data/uploads
-      # Scoring artifacts (W7-S01): Speak & Improve statistics, kept outside
-      # Git and the image, read only, checked against pinned SHA-256 values.
-      - ${AICEFR_MODEL_HOST_DIR:-../aicefr-models}:/models:ro
     depends_on:
-      mongo:
+      postgres:
         condition: service_healthy
-      redis:
+      rabbitmq:
         condition: service_healthy
 
   # The pages and their static files; it asks core for what a page quotes.
@@ -118,15 +109,13 @@ services:
       # shows a warning that the scores are meaningless.
       AICEFR_ASR: ${AICEFR_ASR:-fake}
       AICEFR_FAKE_TRANSCRIPT: ${AICEFR_FAKE_TRANSCRIPT:-}
-      AICEFR_MODEL_DIR: /models
     volumes:
       # Read only: the speech service reads recordings, never writes or deletes one.
       - uploads:/data/uploads:ro
-      - ${AICEFR_MODEL_HOST_DIR:-../aicefr-models}:/models:ro
       # Model cache, so a restart does not re-download 1.5 GB.
       - models:/home/aicefr/.cache/huggingface
     depends_on:
-      redis:
+      rabbitmq:
         condition: service_healthy
     security_opt:
       - no-new-privileges:true
@@ -137,45 +126,39 @@ services:
           # mid-transcription and the response is closed as FAILED.
           memory: 6G
 
-  mongo:
-    # 7.0, not 8.x: MongoDB 8 refuses to start on Linux kernels 6.19-7.0.13
-    # (SERVER-121912), which current cloud images ship. 7.0 is supported to 2027.
-    image: mongo:7.0
+  postgres:
+    image: postgres:16-alpine
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+      POSTGRES_DB: aicefr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       CORE_DB_PASSWORD: ${CORE_DB_PASSWORD:?set CORE_DB_PASSWORD in .env}
     volumes:
-      - mongodata:/data/db
-      - ./deploy/mongo/init-core-user.js:/docker-entrypoint-initdb.d/10-core-user.js:ro
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init-services.sh:/docker-entrypoint-initdb.d/10-services.sh:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d aicefr"]
       interval: 5s
       timeout: 5s
       retries: 20
     restart: unless-stopped
 
-  # D050. Jobs waiting to be scored must survive a restart: append-only file on.
-  # BullMQ needs `noeviction`: an evicted key is a lost job.
-  redis:
-    image: redis:7-alpine
-    command:
-      - sh
-      - -c
-      - exec redis-server --appendonly yes --maxmemory-policy noeviction --requirepass "$$REDIS_PASSWORD"
+  rabbitmq:
+    image: rabbitmq:4-management-alpine
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-aicefr}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?set RABBITMQ_PASSWORD in .env}
     volumes:
-      - redisdata:/data
+      - rabbitmq:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
-      interval: 5s
-      timeout: 5s
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
       retries: 20
     restart: unless-stopped
 
 volumes:
   uploads:
   models:
-  mongodata:
-  redisdata:
+  pgdata:
+  rabbitmq:

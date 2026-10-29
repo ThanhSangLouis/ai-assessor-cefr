@@ -36,7 +36,6 @@ import subprocess
 import sys
 import time
 import urllib.request
-import uuid
 from collections.abc import Iterator
 from pathlib import Path
 from urllib.parse import urlparse
@@ -72,7 +71,7 @@ def write_wav(path: Path, seconds: float) -> Path:
 class LiveServer:
     password = PASSWORD
 
-    def __init__(self, base_url: str, db_path: str, files: Path) -> None:
+    def __init__(self, base_url: str, db_path: Path, files: Path) -> None:
         self.base_url = base_url
         self.db_path = db_path
         self.files = files
@@ -89,31 +88,16 @@ class LiveServer:
         return pseudonym
 
 
-def e2e_store(label: str) -> str:
-    """A database of its own on the MongoDB server the run was given (D048).
-
-    The server under test is another process, so an in-memory store would be
-    one it cannot see: E2E needs a real server, named by AICEFR_TEST_MONGO.
-    """
-    server = os.getenv("AICEFR_TEST_MONGO")
-    if not server:
-        pytest.skip("E2E cần một MongoDB thật: đặt AICEFR_TEST_MONGO=mongodb://...")
-    return f"{server.rstrip('/')}/e2e_{label}_{uuid.uuid4().hex[:8]}"
-
-
 @pytest.fixture(scope="session")
 def live_server(tmp_path_factory) -> Iterator[LiveServer]:
     root = tmp_path_factory.mktemp("e2e")
-    db = e2e_store("practice")
+    db = root / "e2e.db"
     port = _free_port()
     env = {k: v for k, v in os.environ.items() if not k.startswith("AICEFR_")}
     env.update(
         AICEFR_DB=str(db),
         AICEFR_UPLOADS=str(root / "uploads"),
         AICEFR_JOB_MODE="inline",
-        # The synthetic scoring artifacts tests/conftest.py points at (W7-S01).
-        AICEFR_MODEL_DIR=os.environ["AICEFR_MODEL_DIR"],
-        AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
         AICEFR_FAKE_TRANSCRIPT=COH_TEXT,
         # Every test logs in once from the same 127.0.0.1; the real limit
         # (10 per minute) is tested in tests/test_security.py, not by this layer.
@@ -215,18 +199,21 @@ def wait_until(page, expression: str, timeout_s: float = 10.0) -> None:
     raise AssertionError(f"timed out waiting for: {expression}")
 
 
-def accept_terms(page) -> None:
-    """Accept the terms through the API with the browser's own session cookie."""
-    r = page.request.post("/api/v1/me/terms")
+def sign_consent(page) -> None:
+    """Sign consent through the API with the browser's own session cookie."""
+    r = page.request.post(
+        "/api/v1/me/consent",
+        form={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+    )
     assert r.ok, r.text()
 
 
 @pytest.fixture
 def student(context, live_server):
-    """A new student, logged in and with the terms accepted, on the practice home."""
+    """A new student, logged in and with consent, on the practice home."""
     page = context.new_page()
     login(page, live_server, live_server.account())
-    accept_terms(page)
+    sign_consent(page)
     page.goto("/practice")
     return page
 
@@ -319,11 +306,11 @@ def test_fake_microphone_recording_is_submitted_and_processed(student):
     expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
 
 
-def test_without_the_terms_a_warning_shows_and_submit_is_disabled(context, live_server):
+def test_without_consent_a_warning_shows_and_submit_is_disabled(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), "/practice/PR-COH-A2")
-    expect(page.locator("#terms-gate")).to_be_visible()
-    expect(page.locator("#terms-gate")).to_contain_text("Chưa đồng ý điều khoản")
+    expect(page.locator("#consent-gate")).to_be_visible()
+    expect(page.locator("#consent-gate")).to_contain_text("Chưa có đồng thuận")
     # Both ways in are closed before a minute is spent recording: the record
     # button and the file picker. The server refuses the upload as well.
     expect(page.locator("#rec-button")).to_be_disabled()
@@ -373,7 +360,7 @@ def test_phone_layout_of_a_task_has_no_horizontal_scroll(context, live_server):
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account())
-    accept_terms(page)
+    sign_consent(page)
     page.goto("/practice/PR-COH-A2")
     expect(page.locator("#practice-form")).to_be_visible()
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")

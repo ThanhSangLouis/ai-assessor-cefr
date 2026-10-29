@@ -6,7 +6,7 @@ Each test replays the scenario that went wrong before the fix.
 from __future__ import annotations
 
 from aicefr import maintenance_cli
-from aicefr.contracts import Assessment, Band, Response, ResponseStatus
+from aicefr.contracts import Assessment, Band, Response, Status
 from aicefr.pronunciation.vietnamese import Pattern, opportunities
 from aicefr.research.reliable_change import retest_pairs
 from aicefr.research.teacher_time import kpi, session_minutes
@@ -27,7 +27,7 @@ def test_orphan_cleanup_refuses_a_store_without_its_tables(tmp_path, capsys) -> 
     )
 
     assert code == 2
-    assert "chưa có collection" in capsys.readouterr().err
+    assert "chưa có bảng" in capsys.readouterr().err
     assert recording.exists()
 
 
@@ -47,13 +47,13 @@ def test_orphan_cleanup_runs_on_the_real_store(tmp_path, capsys) -> None:
 
 
 def _queued(rid: str) -> Response:
-    return Response(response_id=rid, status=ResponseStatus.QUEUED, config_version="v1")
+    return Response(response_id=rid, status=Status.QUEUED, config_version="v1")
 
 
 def _completed(rid: str, score: float) -> Response:
     return Response(
         response_id=rid,
-        status=ResponseStatus.COMPLETED,
+        status=Status.COMPLETED,
         config_version="v1",
         assessment=Assessment(overall_0_6=score, overall_band=Band.B1, model_version="m"),
     )
@@ -64,21 +64,17 @@ def test_the_overdue_sweep_does_not_fail_a_response_that_just_finished(tmp_path)
     repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
     repo.save(_completed("r1", 3.0), "SV-001", "P3", account_id="acc1", must_exist=True)
 
-    changed = repo.set_status(
-        "r1", ResponseStatus.FAILED, only_from=(ResponseStatus.QUEUED, ResponseStatus.RUNNING)
-    )
+    changed = repo.set_status("r1", Status.FAILED, only_from=(Status.QUEUED, Status.RUNNING))
 
     assert changed is False
-    assert repo.get("r1").status == ResponseStatus.COMPLETED
+    assert repo.get("r1").status == Status.COMPLETED
 
 
 def test_the_sweep_still_fails_a_response_that_waits(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
     repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
-    assert repo.set_status(
-        "r1", ResponseStatus.FAILED, only_from=(ResponseStatus.QUEUED, ResponseStatus.RUNNING)
-    )
-    assert repo.get("r1").status == ResponseStatus.FAILED
+    assert repo.set_status("r1", Status.FAILED, only_from=(Status.QUEUED, Status.RUNNING))
+    assert repo.get("r1").status == Status.FAILED
 
 
 def test_a_second_worker_result_does_not_replace_the_first(tmp_path) -> None:

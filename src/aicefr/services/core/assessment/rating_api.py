@@ -1,7 +1,7 @@
 """Blind double rating in the app (D030): raters score without seeing the machine.
 
 Part of the assessment service (D043): the ratings sit beside the responses
-they rate. Raters' names and who accepted the terms (D058) come from identity;
+they rate. Raters' names and research consent come from the identity service;
 the rating pages are drawn by the web service.
 
 The field study needs human scores that nothing has anchored
@@ -23,7 +23,7 @@ An administrator creates batches (two raters per response, a random order per
 rater, one seed recorded), sends disagreements to a third rater, and reads the
 agreement report -- human-human agreement first, machine-human after -- or
 downloads every rating as CSV for the analysis. Only responses whose owner
-accepted the terms of use are rated, reported or exported.
+consents to research use are rated, reported or exported.
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ import io
 import secrets
 import statistics
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
@@ -45,11 +46,10 @@ from aicefr.api.deps import (
     require_plan,
 )
 from aicefr.billing.plans import PlanFeature
-from aicefr.infra.blobs import audio_response
 from aicefr.research.agreement import (
     CRITERIA,
     RatedResponse,
-    RaterScore,
+    Rating,
     agreement_report,
 )
 from aicefr.services import Peers
@@ -79,8 +79,6 @@ class Services:
     # (identity); whether the plan in force allows a new batch (billing) -- a
     # batch already started always finishes. No billing: no plans.
     peers: Peers
-    # D051: where the recordings are, to stream one to its rater.
-    blobs: object = None
 
     def research_allowed(self) -> set[str]:
         return set(self.peers.identity.research_allowed())
@@ -210,9 +208,11 @@ def my_sheet(assignment_id: str, account: Account = STAFF_ONLY) -> dict:
 def sheet_audio(assignment_id: str, account: Account = STAFF_ONLY) -> FileResponse:
     """The recording, under the assignment and with a neutral file name."""
     view = _mine(assignment_id, account)
-    response = audio_response(svc().blobs, view["audio_path"], f"bai-{view['position']}.wav")
+    path = view["audio_path"]
+    if not path or not Path(path).is_file():
+        raise HTTPException(404, "không còn tệp ghi âm của bài này")
     svc().repo.write_audit(account.account_id, "AUDIO_ACCESS", view["response_id"], "blind_rating")
-    return response
+    return FileResponse(path, media_type="audio/wav", filename=f"bai-{view['position']}.wav")
 
 
 class RatingIn(BaseModel):
@@ -221,7 +221,7 @@ class RatingIn(BaseModel):
     unscorable: bool = False
     unscorable_reason: Literal["broken", "inaudible", "off_task"] | None = None
     overall: float | None = Field(None, ge=0, le=6)
-    band: Literal["A1", "A2", "B1", "B2", "C1", "C2"] | None = None
+    band: Literal["A2", "B1", "B2"] | None = None
     criteria: dict[str, float] = Field(default_factory=dict)
     reason: str | None = Field(None, max_length=300)
 
@@ -230,13 +230,13 @@ def _half_point(value: float) -> bool:
     return abs(value * 2 - round(value * 2)) < 1e-9
 
 
-def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> RaterScore:
+def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> Rating:
     if body.unscorable:
         if not body.unscorable_reason:
             raise HTTPException(422, "cần chọn lý do không chấm được")
         if body.overall is not None or body.band is not None or body.criteria:
             raise HTTPException(422, "bài không chấm được thì không ghi điểm hay band")
-        return RaterScore(rater_id, None, None, {}, unscorable=True, adjudication=adjudication)
+        return Rating(rater_id, None, None, {}, unscorable=True, adjudication=adjudication)
     if body.overall is None or body.band is None:
         raise HTTPException(422, "cần điểm tổng và band")
     missing = sorted(set(CRITERIA) - set(body.criteria))
@@ -248,7 +248,7 @@ def _to_rating(body: RatingIn, rater_id: str, adjudication: bool) -> RaterScore:
         raise HTTPException(422, "điểm theo thang 0–6, bước nửa điểm")
     if not body.reason or len(body.reason.strip()) < 3:
         raise HTTPException(422, "cần một dòng lý do")
-    return RaterScore(
+    return Rating(
         rater_id,
         body.overall,
         body.band,
@@ -510,8 +510,8 @@ def batch_export(
     """Every submitted rating of the batch, one row each, for the analysis outside the app.
 
     Raters appear under their pseudonyms; the machine's score is its own
-    output, from before any teacher decision. Owners who have not accepted the
-    terms, or were erased, are left out.
+    output, from before any teacher decision. Owners who withdrew consent are
+    left out.
     """
     _batch_or_404(batch_id)
     _not_while_owed(batch_id, account)

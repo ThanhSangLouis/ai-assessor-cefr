@@ -96,7 +96,7 @@ def can_view_response(account: Account, owner_account_id: str | None) -> bool:
     Legacy responses with no owner yet (empty account_id) are readable by
     teachers and admins only.
     """
-    if account.is_staff:
+    if account.is_teacher:
         return True
     return owner_account_id is not None and owner_account_id == account.account_id
 

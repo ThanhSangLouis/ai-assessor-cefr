@@ -154,26 +154,8 @@ function chooseTask(task) {
     `<p class="eyebrow">Đề ${escapeHtml(task.task_id)} · ${escapeHtml(task.title)}</p>` +
     `<p class="prompt-text">${escapeHtml(task.prompt_text)}</p>` +
     `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây · ` +
-    `phiên bản đề <code>${escapeHtml(task.prompt_version)}</code></p>` +
-    '<p class="muted small" id="price-note" hidden></p>';
+    `phiên bản đề <code>${escapeHtml(task.prompt_version)}</code></p>`;
   recorder.repaint();
-  showPrice(task);
-}
-
-// D057: on a metered deployment, what this task can cost at most, before the
-// learner records. Nothing on a school deployment.
-async function showPrice(task) {
-  const r = await fetch(`/api/v1/me/credits/quote?seconds=${Number(task.max_seconds)}`);
-  if (!r.ok) return;
-  const q = await r.json();
-  const note = document.getElementById("price-note");
-  if (!q.metering || !note || chosenTask !== task) return;
-  const left = q.free_runs_left + q.wallet_runs;
-  const n = (x) => Number(x).toLocaleString("vi-VN", { maximumFractionDigits: 3 });
-  note.innerHTML =
-    `Bài này tối đa <b>${n(q.runs)} lượt</b> (${n(q.idpoint)} IDPoint), tính theo thời lượng thật; ` +
-    `bạn còn ${n(left)} lượt. <a href="/credits">Lượt của tôi</a>`;
-  note.hidden = false;
 }
 
 fetch("/api/v1/tasks")
@@ -192,46 +174,43 @@ fetch("/api/v1/tasks")
       '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
       tasks.map(taskCard).join("") +
       "</div>";
-    const inputs = taskListEl.querySelectorAll('input[name="task-choice"]');
-    const mark = (input) => {
-      taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
-      input.closest(".task").classList.add("chosen");
-    };
-    inputs.forEach((input, i) => {
+    taskListEl.querySelectorAll('input[name="task-choice"]').forEach((input, i) => {
       input.addEventListener("change", () => {
-        mark(input);
+        taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
+        input.closest(".task").classList.add("chosen");
         chooseTask(tasks[i]);
       });
     });
-    // D054: "Làm bài" on an assignment opens this page on the assigned task.
-    const wanted = new URLSearchParams(window.location.search).get("task");
-    const first = Math.max(0, tasks.findIndex((t) => t.task_id === wanted));
-    inputs[first].checked = true;
-    mark(inputs[first]);
-    chooseTask(tasks[first]);
+    chooseTask(tasks[0]);
   })
   .catch(() => {
     window.clearBusy(taskListEl);
     taskListEl.innerHTML = '<p class="error">Không tải được danh sách đề bài.</p>';
   });
 
-// ---------------------------------------------------------------- terms
-// The server refuses a submission before the terms are accepted (D058), and
+// ---------------------------------------------------------------- consent
+// The server refuses a submission without consent to store recordings, and
 // rightly so. Saying it at page load, before a minute of recording, is the
 // courtesy layer; the protection itself stays on the server.
-fetch("/api/v1/me/terms")
+fetch("/api/v1/me/consent")
   .then((r) => (r.ok ? r.json() : null))
   .then((state) => {
     if (!state || state.may_submit) return;
     maySubmit = false;
-    const box = document.getElementById("terms-gate");
-    box.innerHTML =
-      "<b>Chưa nộp bài được: bạn chưa đồng ý điều khoản sử dụng.</b> " +
-      "Bản ghi giọng nói là dữ liệu cá nhân, nên hệ thống không lưu gì trước khi bạn đồng ý. " +
-      '<a href="/terms">Đồng ý điều khoản ở đây</a> rồi quay lại.';
+    // "Never signed" and "signed but refused audio storage" are different: the
+    // second is a deliberate choice and must not be worded as if forgotten.
+    const signedButRefused = state.signed && !state.audio_storage_allowed;
+    const box = document.getElementById("consent-gate");
+    box.innerHTML = signedButRefused
+      ? "<b>Bạn đã ký đồng thuận nhưng không cho phép lưu bản ghi âm.</b> " +
+        "Hệ thống vì thế không nhận bài nói. Nếu đổi ý, " +
+        '<a href="/consent">vào trang đồng thuận</a> và tích mục cho phép lưu bản ghi.'
+      : "<b>Chưa nộp bài được: bạn chưa ký đồng thuận.</b> " +
+        "Bản ghi giọng nói là dữ liệu cá nhân, nên hệ thống không lưu gì trước khi bạn đồng ý. " +
+        '<a href="/consent">Ký đồng thuận ở đây</a> rồi quay lại; bạn rút lại lúc nào cũng được.';
     box.hidden = false;
     prepEl.hidden = true;
-    recorder.block("Cần đồng ý điều khoản trước khi ghi âm và nộp bài.");
+    recorder.block("Cần ký đồng thuận trước khi ghi âm và nộp bài.");
   })
   // A transient network error is no reason to block; the server still decides.
   .catch(() => {});

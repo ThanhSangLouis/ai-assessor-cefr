@@ -21,11 +21,13 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from aicefr.infra.blobs import LocalBlobStore, key_of
+from aicefr.config import get_settings
 from aicefr.storage.lesson_repository import LessonRepository
 from aicefr.storage.repository import Repository, _now
 
@@ -35,6 +37,9 @@ logger = logging.getLogger(__name__)
 # short enough that nothing accumulates between cohorts.
 DEFAULT_RETENTION_DAYS = 180
 
+
+# File .part moi hon nguong nay co the dang duoc upload, khong phai mo coi.
+PART_GRACE_S = 3600
 
 # Loai bang chung co trich nguyen van loi noi trong ghi chu (report/evidence.py).
 QUOTING_KINDS = {"filler", "low_confidence_word"}
@@ -89,28 +94,24 @@ def apply_retention(
     Covers lesson attempts (D025) too, through the learning service's store
     (`lessons`; the same store as `repo` unless given, as on one machine);
     their recordings are files in `upload_dir`, the settings' unless given.
-    Recordings live in the blob store (D051): the repository's, or the upload
-    folder named here.
     """
-    blobs = LocalBlobStore(upload_dir) if upload_dir else repo.blobs
     cutoff = (datetime.now(UTC) - timedelta(days=days)).isoformat(timespec="seconds")
 
-    responses = repo.col("response")  # retention is part of the storage layer
-    rows = list(
-        responses.find(
-            {"created_at": {"$lt": cutoff}}, {"response_id": 1, "audio_path": 1, "report_json": 1}
-        )
-    )
+    with repo._conn() as c:  # noqa: SLF001 - retention is part of the storage layer
+        rows = c.execute(
+            "SELECT response_id, audio_path, report_json FROM response WHERE created_at < ?",
+            (cutoff,),
+        ).fetchall()
 
     audio_deleted = transcripts_cleared = bytes_freed = 0
 
     for row in rows:
-        size = _recording_size(blobs, row.get("audio_path"))
-        if size is not None:
-            bytes_freed += size
+        path = Path(row["audio_path"]) if row["audio_path"] else None
+        if path and path.is_file():
+            bytes_freed += path.stat().st_size
             audio_deleted += 1
             if not dry_run:
-                _drop_recording(blobs, row.get("audio_path"))
+                path.unlink(missing_ok=True)
 
         report = json.loads(row["report_json"])
         changed = False
@@ -137,20 +138,16 @@ def apply_retention(
                 changed = True
         # Con tro audio phai bo moi khi file da bi xoa (hoac da mat), ke ca bai QC
         # tu choi khong co transcript -- truoc day chi bo trong nhanh co transcript.
-        if not dry_run and (changed or row.get("audio_path")):
-            responses.update_one(
-                {"response_id": row["response_id"]},
-                {
-                    "$set": {
-                        "report_json": json.dumps(report, ensure_ascii=False),
-                        "audio_path": None,
-                    }
-                },
-            )
+        if not dry_run and (changed or row["audio_path"]):
+            with repo._conn() as c:  # noqa: SLF001
+                c.execute(
+                    "UPDATE response SET report_json=?, audio_path=NULL WHERE response_id=?",
+                    (json.dumps(report, ensure_ascii=False), row["response_id"]),
+                )
 
     lessons = lessons or LessonRepository(repo.db_path, seed=False)
     attempts, lesson_audio, lesson_cleared, lesson_freed = lessons.forget_older_than(
-        cutoff, blobs, dry_run
+        cutoff, Path(upload_dir or get_settings().upload_dir), dry_run
     )
     audio_deleted += lesson_audio
     transcripts_cleared += lesson_cleared
@@ -180,92 +177,61 @@ def apply_retention(
     )
 
 
-def _legacy_file(audio_path: str | None) -> Path | None:
-    """The file a response saved before D051 names by its absolute path, if it exists."""
-    if audio_path and Path(audio_path).is_absolute() and Path(audio_path).is_file():
-        return Path(audio_path)
-    return None
-
-
-def _recording_size(blobs, audio_path: str | None) -> int | None:
-    legacy = _legacy_file(audio_path)
-    if legacy is not None:
-        return legacy.stat().st_size
-    key = key_of(audio_path)
-    return blobs.size(key) if key else None
-
-
-def _drop_recording(blobs, audio_path: str | None) -> None:
-    legacy = _legacy_file(audio_path)
-    if legacy is not None:
-        legacy.unlink(missing_ok=True)
-    key = key_of(audio_path)
-    if key:
-        blobs.delete(key)
-
-
 def orphaned_recordings(
-    repo: Repository, upload_dir: Path | None = None, lessons: LessonRepository | None = None
+    repo: Repository, upload_dir: Path, lessons: LessonRepository | None = None
 ) -> list[Path]:
-    """Recordings in the blob store that no document points at.
+    """Files on disk that no row points at.
 
     These are the dangerous ones: nothing lists them, no erasure request finds
     them, and they are somebody's voice. They appear whenever a submission fails
-    after the recording is stored. Returns each as a path: the file when the
-    store is a folder, the bare key when it is object storage (D051).
+    after the file is written.
     """
-    blobs = LocalBlobStore(upload_dir) if upload_dir else repo.blobs
-    if upload_dir is not None and not Path(upload_dir).is_dir():
+    with repo._conn() as c:  # noqa: SLF001
+        known = {
+            row["audio_path"]
+            for row in c.execute("SELECT audio_path FROM response WHERE audio_path IS NOT NULL")
+        }
+    if not upload_dir.is_dir():
         return []
-    # Keys on both sides: a response keeps its recording's key, one saved
-    # before D051 a path (absolute or relative) whose last part is that key.
-    known = {
-        key_of(p)
-        for p in repo.col("response").distinct("audio_path", {"audio_path": {"$ne": None}})
-    }
+    # So duong dan DA CHUAN HOA o ca hai phia. audio_path luu nguyen dang luc ghi
+    # (tuong doi "uploads/x.wav" o che do dev), nen so chuoi voi duong dan tuyet
+    # doi tung liet ke -- va `orphans --delete` xoa -- ca ghi am dang dung.
+    known_resolved = {str(Path(k).resolve()) for k in known}
     # The lesson path keeps its recordings and the teachers' model audio and
-    # pictures in the same store, under flat keys. Leaving them out listed
+    # pictures in the same folder, under flat keys. Leaving them out listed
     # every one of them here -- and `orphans --delete` deleted them.
     lessons = lessons or LessonRepository(repo.db_path, seed=False)
-    known |= set(lessons.blob_keys())
-    return [blobs.local_path(k) or Path(k) for k in sorted(blobs.keys()) if k not in known]
+    known_resolved |= {str((upload_dir / k).resolve()) for k in lessons.blob_keys()}
+    fresh = time.time() - PART_GRACE_S
+    return [
+        p
+        for p in upload_dir.iterdir()
+        if p.is_file()
+        and str(p.resolve()) not in known_resolved
+        # File .part dang duoc ghi boi mot luot upload chua xong.
+        and not (p.suffix == ".part" and p.stat().st_mtime > fresh)
+    ]
 
 
 def backup(repo: Repository, destination: Path) -> Path:
-    """Write every collection of the store to one JSON file, stamped with the time.
+    """Copy the database while it is in use, using SQLite's own backup API.
 
-    For a store small enough to copy while it runs: Extended JSON keeps the
-    types MongoDB stores, so `restore_backup` puts back exactly what was read.
-    A server in production is backed up with `mongodump`, which this does not
-    replace (deploy/vps/backup.sh).
+    Copying the file with `cp` while a writer is mid-transaction produces a
+    corrupt copy that looks fine until the day it is needed. The backup API
+    takes a consistent snapshot instead.
     """
-    from bson import json_util
 
+    if repo.on_postgres:
+        raise ValueError("a PostgreSQL store is backed up with pg_dump, not with this command")
     destination.parent.mkdir(parents=True, exist_ok=True)
     stamped = destination.with_name(
         f"{destination.stem}-{_now().replace(':', '').replace('-', '')}{destination.suffix}"
     )
-    db = repo.db
-    dump = {name: list(db[name].find()) for name in sorted(db.list_collection_names())}
-    stamped.write_text(json_util.dumps(dump, ensure_ascii=False), encoding="utf-8")
+    source = sqlite3.connect(repo.db_path)
+    target = sqlite3.connect(stamped)
+    try:
+        source.backup(target)
+    finally:
+        target.close()
+        source.close()
     return stamped
-
-
-def restore_backup(repo: Repository, source: Path) -> int:
-    """Put a `backup` file back into an EMPTY store; the documents restored.
-
-    Refuses a store that already holds data: merging a backup into live data
-    would bring erased recordings' reports back.
-    """
-    from bson import json_util
-
-    db = repo.db
-    if any(db[name].estimated_document_count() for name in db.list_collection_names()):
-        raise ValueError("kho đích đã có dữ liệu: chỉ khôi phục vào kho rỗng")
-    dump = json_util.loads(source.read_text(encoding="utf-8"))
-    total = 0
-    for name, documents in dump.items():
-        if documents:
-            db[name].insert_many(documents)
-            total += len(documents)
-    return total

@@ -21,7 +21,6 @@ from __future__ import annotations
 # address, and a client must not choose its own.
 PREFIXES: dict[str, str] = {
     "/api/v1/me/badges": "web",
-    "/api/v1/me/nudges": "web",
     "/api/": "core",
     "/auth/google/": "core",
     "/billing/": "core",
@@ -80,12 +79,6 @@ server {{
 
     # Service-to-service only: never from outside.
     location /internal/ {{
-        return 404;
-    }}
-
-    # Prometheus scrapes each service inside the network (D051); the counters
-    # are not for the internet.
-    location = /metrics {{
         return 404;
     }}
 {locations}

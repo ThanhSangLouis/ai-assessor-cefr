@@ -1,7 +1,7 @@
 // Một người học nhìn kết quả của chính mình theo thời gian. FR-27.
 //
 // Cái khó của màn hình này không phải vẽ biểu đồ mà là KHÔNG nói quá.
-// `ridge_resp_v2` có sai số cỡ nửa điểm trên chính tập kiểm định của nó, nên chênh lệch
+// `ridge_resp_v2` có RMSE 0,53 trên chính tập kiểm định của nó, nên chênh lệch
 // 0,2 điểm giữa hai bài nằm gọn trong sai số của dụng cụ đo. Một mũi tên đi lên
 // vẽ trên chênh lệch đó là đang nói với sinh viên rằng họ tiến bộ, trong khi thứ
 // duy nhất thay đổi là hôm ghi âm. Vì vậy ngưỡng để gọi là xu hướng do máy chủ
@@ -360,19 +360,3 @@ fetch("/api/v1/me/study")
 Promise.allSettled([progressDone, achievementsDone]).then(() => {
   if (location.hash === "#achievements") achPanel.scrollIntoView({ block: "start" });
 });
-
-// D056: what I said when listening back, newest last, linked to the report.
-(async function replayNotes() {
-  const r = await fetch("/api/v1/me/replay-labels");
-  if (!r.ok) return;
-  const notes = await r.json();
-  if (!notes.length) return;
-  const mmss = window.ui.mmss;
-  document.getElementById("replay-notes-body").innerHTML = `<ul class="plain-list">${notes
-    .map(
-      (n) => `<li><a href="/report/${encodeURIComponent(n.response_id)}">${new Date(n.created_at).toLocaleDateString("vi-VN")} · đoạn ${mmss(n.start_s)}–${mmss(n.end_s)}</a>
-        — ${window.escapeHtml(n.answer)}${n.intended ? `<div class="small">Bạn định nói: “${window.escapeHtml(n.intended)}”</div>` : ""}</li>`,
-    )
-    .join("")}</ul>`;
-  document.getElementById("replay-notes").hidden = false;
-})();

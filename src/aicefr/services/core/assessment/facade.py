@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from aicefr.platform.rpc import exposed
 from aicefr.qc import audio_qc
-from aicefr.scoring.band_map import thresholds_of
 from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import PREP_SECONDS, active_model_name, active_qc
 from aicefr.storage.rating_repository import RatingRepository
@@ -39,28 +38,15 @@ class AssessmentFacade:
     @exposed
     def student_badges(self, account_id: str) -> dict:
         """Teacher decisions on this student's responses since they last looked (D028)."""
-        from aicefr.services.core.assessment.context import svc
-
-        seen = svc().peers.identity.seen_at(account_id=account_id, marker="results")
+        seen = self.repo.seen_at(account_id, "results")
         return {
             "results": self.repo.count_reviewed_since(account_id, seen),
             "results_seen_at": seen,
         }
 
     @exposed
-    def assignments_for(self, account_id: str) -> dict:
-        """A student's class assignments, to do and done (D054)."""
-        from aicefr.services.core.assessment.classes_api import assignments_for
-
-        return assignments_for(account_id)
-
-    @exposed
-    def practice_daily(self, account_id: str) -> dict:
-        """Today's practice against the daily goal, and the streak (D023), for reminders."""
-        from aicefr.services.core.assessment.responses_api import _daily_view, _practice_state
-
-        _bank, attempts, _progress = _practice_state(account_id)
-        return _daily_view(attempts)
+    def mark_seen(self, account_id: str, marker: str) -> str:
+        return self.repo.mark_seen(account_id, marker)
 
     @exposed
     def staff_badges(self, account_id: str) -> dict:
@@ -85,7 +71,8 @@ class AssessmentFacade:
             "max_size_mib": audio_qc.MAX_BYTES // (1024 * 1024),
             "sample_rate_hz": audio_qc.TARGET_SR,
             "prep_seconds": PREP_SECONDS,
-            "band_thresholds": thresholds_of(model["band_thresholds"]),
+            "a2_b1": model["band_thresholds"]["A2_B1"],
+            "b1_b2": model["band_thresholds"]["B1_B2"],
             "model_version": model["model_version"],
         }
 

@@ -42,9 +42,15 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200
-    # FR-01 (D058): recording requires the terms of use. Accepted through the real
-    # endpoint so the fixtures walk the same path as a student.
-    assert c.post("/api/v1/me/terms").status_code == 200
+    # FR-01: recording requires consent. Signed through the real endpoint so the
+    # fixtures walk the same path as a student.
+    assert (
+        c.post(
+            "/api/v1/me/consent",
+            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+        ).status_code
+        == 200
+    )
     return c
 
 
@@ -226,7 +232,7 @@ def test_health_details_require_a_session(app) -> None:
 
 
 def test_runtime_assets_are_declared_as_package_data() -> None:
-    """Templates and static files must ship in the wheel.
+    """Templates, static files and the scoring artifact must ship in the wheel.
 
     They are not .py files, so setuptools leaves them out unless told. An
     editable install hides this completely: it points at the source tree. The
@@ -235,8 +241,5 @@ def test_runtime_assets_are_declared_as_package_data() -> None:
     with "Directory ... does not exist".
     """
     config = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
-    for pattern in ("api/templates/*.html", "api/static/*.js"):
+    for pattern in ("api/templates/*.html", "api/static/*.js", "scoring/models/*.json"):
         assert pattern in config, f"thiếu {pattern} trong package-data"
-    # The scoring artifacts are the opposite: corpus statistics that must never
-    # ship (W7-S01). They are read from AICEFR_MODEL_DIR at run time.
-    assert "scoring/models" not in config

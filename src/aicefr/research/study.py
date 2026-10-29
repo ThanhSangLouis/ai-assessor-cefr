@@ -24,23 +24,12 @@ import math
 import random
 from collections.abc import Iterable, Mapping, Sequence
 from datetime import datetime, timedelta
-from enum import Enum
 from statistics import mean, stdev
 
 STUDY_VERSION = "feedback-study-v1"
 ARMS = ("feedback", "score_only")
 ARM_NAMES = {"feedback": "Phản hồi đầy đủ", "score_only": "Chỉ điểm"}
-
-
-class StudyStatus(str, Enum):
-    """Where a study is: measuring, collecting the closing survey, or over."""
-
-    RUNNING = "running"
-    SURVEY = "survey"
-    CLOSED = "closed"
-
-
-STATUSES = tuple(s.value for s in StudyStatus)
+STATUSES = ("running", "survey", "closed")
 MIN_PARTICIPANTS = 4
 BOOTSTRAP_REPS = 2000
 

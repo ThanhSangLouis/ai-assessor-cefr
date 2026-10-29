@@ -16,7 +16,7 @@
     coherence: "Mạch lạc",
     phonology: "Phát âm dễ nghe",
   };
-  const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const BANDS = ["A2", "B1", "B2"];
   let raters = [];
 
   const call = window.apiJson;

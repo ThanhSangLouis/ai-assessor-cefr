@@ -24,14 +24,6 @@ STEP_RULES_VERSION = "step-v1"
 GAP_PATTERN = re.compile(r"_{3,}")
 
 
-class PathStatus(str, Enum):
-    """A path is drafted, then published to learners, and archived when retired."""
-
-    DRAFT = "draft"
-    PUBLISHED = "published"
-    ARCHIVED = "archived"
-
-
 class StepKind(str, Enum):
     READ_ALOUD = "read_aloud"  # read a given text aloud, hint words highlighted
     REPEAT = "repeat"  # listen to a model sentence, then repeat it
@@ -89,7 +81,7 @@ TEXT_KINDS = frozenset({StepKind.READ_ALOUD, StepKind.REPEAT, StepKind.LOOK_UP, 
 
 
 class Topic(str, Enum):
-    """What a unit talks about (D027). The path runs A1 → C2 (D059), and within each
+    """What a unit talks about (D027). The path runs A2 → B1 → B2, and within each
     level the units change topic, so practice stays varied as the level rises."""
 
     DAILY_LIFE = "daily_life"
@@ -122,6 +114,13 @@ class Strictness(str, Enum):
     EASY = "easy"
     NORMAL = "normal"
     STRICT = "strict"
+
+
+STRICTNESS_NAMES = {
+    Strictness.EASY: "Dễ",
+    Strictness.NORMAL: "Vừa",
+    Strictness.STRICT: "Chặt",
+}
 
 
 def new_id(prefix: str) -> str:

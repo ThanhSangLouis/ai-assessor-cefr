@@ -18,29 +18,50 @@ from pathlib import Path
 
 from aicefr.contracts import Band, Criterion, Mission, TaskPart, TaskPurpose
 from aicefr.practice.bank import PRACTICE_TASKS
-from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes
+from aicefr.storage.db import DbRow, SqlStore, add_columns
 from aicefr.storage.db import now_iso as _now
 
-# One document per task. min_seconds/max_seconds default to 40-60, not 60-180:
-# the scoring model was trained on responses of 26.7-60.7 seconds, and a task
-# added without its own durations takes these, so they sit inside that range.
-# topic_keywords: ENGLISH topic words, comma separated (D022) -- the prompt is in
-# Vietnamese while the learner speaks English, so speech is compared with this
-# list; empty means an open prompt (P5), never checked for being off topic.
-# purpose, criterion, band, missions_json, tips_json, reference_text: D023,
-# filled on practice tasks only.
-INDEXES = {"task": [(("task_id",), True), (("purpose", "active"), False)]}
+SCHEMA_TASK = """
+CREATE TABLE IF NOT EXISTS task (
+    task_id         TEXT PRIMARY KEY,
+    title           TEXT NOT NULL,
+    prompt_text     TEXT NOT NULL,
+    prompt_version  TEXT NOT NULL,
+    part            TEXT NOT NULL,
+    -- 40-60 giay, khong phai 60-180. Mo hinh cham diem duoc huan luyen tren
+    -- bai dai 26,7-60,7 giay; mot de bai moi them vao ma khong ghi ro thoi
+    -- luong se lay gia tri mac dinh nay, nen gia tri mac dinh phai nam trong
+    -- dai huan luyen chu khong phai ngoai no.
+    min_seconds     INTEGER NOT NULL DEFAULT 40,
+    max_seconds     INTEGER NOT NULL DEFAULT 60,
+    active          INTEGER NOT NULL DEFAULT 1,
+    created_at      TEXT NOT NULL,
+    -- Tu khoa chu de TIENG ANH, cach nhau dau phay (D022). De bai viet bang
+    -- tieng Viet con sinh vien noi tieng Anh, nen khong so loi noi voi de duoc;
+    -- so voi danh sach nay. Rong = de mo (P5), khong kiem lac de.
+    topic_keywords  TEXT NOT NULL DEFAULT '',
+    -- D023. Practice tasks: criterion, band, missions, tips, read-aloud passage.
+    -- Assessment tasks leave these columns empty.
+    purpose         TEXT NOT NULL DEFAULT 'assessment',
+    criterion       TEXT,
+    band            TEXT,
+    missions_json   TEXT NOT NULL DEFAULT '[]',
+    tips_json       TEXT NOT NULL DEFAULT '[]',
+    reference_text  TEXT
+);
+"""
 
-_NEW_TASK = {
-    "active": 1,
-    "topic_keywords": "",
-    "purpose": "assessment",
-    "criterion": None,
-    "band": None,
-    "missions_json": "[]",
-    "tips_json": "[]",
-    "reference_text": None,
-}
+# Columns added after the table already held data. CREATE IF NOT EXISTS does not
+# add columns to an existing table, so every new column needs a line here.
+_ADDED_COLUMNS = (
+    ("topic_keywords", "TEXT NOT NULL DEFAULT ''"),
+    ("purpose", "TEXT NOT NULL DEFAULT 'assessment'"),
+    ("criterion", "TEXT"),
+    ("band", "TEXT"),
+    ("missions_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("tips_json", "TEXT NOT NULL DEFAULT '[]'"),
+    ("reference_text", "TEXT"),
+)
 
 # Recommended durations come from the SCORING MODEL's training distribution,
 # not from the SRS. The SRS suggests 60-180 seconds and the quality check passes
@@ -124,7 +145,7 @@ class Task:
     """One speaking prompt.
 
     An ENTITY, not a value object as this docstring used to say: it has its own
-    identity (`task_id`), its own document, and it is looked up by that id. Two
+    identity (`task_id`), its own table, and it is looked up by that id. Two
     prompts with identical wording are still two different prompts. The class
     diagram marks it «entity»; this line used to contradict it.
     """
@@ -150,91 +171,86 @@ class Task:
         return self.purpose is TaskPurpose.PRACTICE
 
 
-class TaskRepository(MongoStore):
+class TaskRepository(SqlStore):
     def __init__(self, db_path: str | Path = "aicefr.db") -> None:
         self.db_path = str(db_path)
-        ensure_indexes(self.db, INDEXES, "task")
+        with self._conn() as c:
+            c.executescript(SCHEMA_TASK)
+            # Databases created before D022/D023 lack these columns.
+            add_columns(c, "task", _ADDED_COLUMNS)
         self.seed_defaults()
         self.seed_practice()
 
     def seed_defaults(self) -> None:
-        """Insert the built-in prompts that are missing.
+        """Insert the two built-in prompts if the table is empty.
 
         Inserts only the prompts that are MISSING, never touching one that is
         already there. The difference matters twice over. Re-seeding everything
         on each start would overwrite whatever an administrator had edited and
         would quietly change the prompt version under reports that already
-        reference it. But skipping the whole seed whenever the collection is
-        non-empty -- what this did before -- means a store created last month
+        reference it. But skipping the whole seed whenever the table is
+        non-empty -- what this did before -- means a database created last month
         never learns about a prompt added this month, so P5 would exist only on
         fresh installs and the long-recording path would be unreachable on
         exactly the machines that have real data on them.
         """
-        tasks = self.col("task")
-        for task_id, title, prompt, version, part, low, high in DEFAULT_TASKS:
-            tasks.update_one(
-                {"task_id": task_id},
-                {
-                    "$setOnInsert": {
-                        **_NEW_TASK,
-                        "title": title,
-                        "prompt_text": prompt,
-                        "prompt_version": version,
-                        "part": part,
-                        "min_seconds": low,
-                        "max_seconds": high,
-                        "created_at": _now(),
-                    }
-                },
-                upsert=True,
+        with self._conn() as c:
+            c.executemany(
+                "INSERT OR IGNORE INTO task(task_id,title,prompt_text,prompt_version,part,"
+                "min_seconds,max_seconds,created_at) VALUES(?,?,?,?,?,?,?,?)",
+                [(*t, _now()) for t in DEFAULT_TASKS],
             )
-        # Chi dien vao de CHUA co tu khoa: khong de len thu admin da sua.
-        for task_id, keywords in DEFAULT_TOPIC_KEYWORDS.items():
-            if keywords:
-                tasks.update_one(
-                    {"task_id": task_id, "topic_keywords": ""},
-                    {"$set": {"topic_keywords": keywords}},
-                )
+            # Chi dien vao de CHUA co tu khoa: khong de len thu admin da sua.
+            c.executemany(
+                "UPDATE task SET topic_keywords=? WHERE task_id=? AND topic_keywords=''",
+                [(kw, tid) for tid, kw in DEFAULT_TOPIC_KEYWORDS.items() if kw],
+            )
 
     def seed_practice(self) -> None:
-        """Load the practice task bank into the `task` collection. D023.
+        """Load the practice task bank into the `task` table. D023.
 
         Differs from `seed_defaults` on one point, on purpose: practice tasks are
         decided by the bank in code and nobody edits them on screen, so when the bank
-        bumps a task's `prompt_version` the document is updated to match. Documents
-        with the same version are left alone -- earlier results keep pointing at the
-        wording that produced them, because `prompt_version` is copied onto every
+        bumps a task's `prompt_version` the row in the database is updated to match.
+        Rows with the same version are left alone -- earlier results keep pointing at
+        the wording that produced them, because `prompt_version` is copied onto every
         submission.
         """
-        tasks = self.col("task")
-        for t in PRACTICE_TASKS:
-            content = {
-                "title": t.title,
-                "prompt_text": t.prompt_text,
-                "prompt_version": t.prompt_version,
-                "part": t.part.value,
-                "min_seconds": t.min_seconds,
-                "max_seconds": t.max_seconds,
-                "purpose": TaskPurpose.PRACTICE.value,
-                "criterion": t.criterion.value,
-                "band": t.band.value,
-                "missions_json": json.dumps(
-                    [m.model_dump(mode="json") for m in t.missions], ensure_ascii=False
-                ),
-                "tips_json": json.dumps(list(t.tips), ensure_ascii=False),
-                "reference_text": t.reference_text,
-            }
-            try:
-                tasks.update_one(
-                    {"task_id": t.task_id, "prompt_version": {"$ne": t.prompt_version}},
-                    {
-                        "$set": content,
-                        "$setOnInsert": {"active": 1, "topic_keywords": "", "created_at": _now()},
-                    },
-                    upsert=True,
-                )
-            except IntegrityError:
-                pass  # there already, at this version: left alone
+        rows = [
+            (
+                t.task_id,
+                t.title,
+                t.prompt_text,
+                t.prompt_version,
+                t.part.value,
+                t.min_seconds,
+                t.max_seconds,
+                _now(),
+                TaskPurpose.PRACTICE.value,
+                t.criterion.value,
+                t.band.value,
+                json.dumps([m.model_dump(mode="json") for m in t.missions], ensure_ascii=False),
+                json.dumps(list(t.tips), ensure_ascii=False),
+                t.reference_text,
+            )
+            for t in PRACTICE_TASKS
+        ]
+        with self._conn() as c:
+            c.executemany(
+                """INSERT INTO task(task_id,title,prompt_text,prompt_version,part,min_seconds,
+                       max_seconds,created_at,purpose,criterion,band,missions_json,tips_json,
+                       reference_text)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                   ON CONFLICT(task_id) DO UPDATE SET
+                       title=excluded.title, prompt_text=excluded.prompt_text,
+                       prompt_version=excluded.prompt_version, part=excluded.part,
+                       min_seconds=excluded.min_seconds, max_seconds=excluded.max_seconds,
+                       purpose=excluded.purpose, criterion=excluded.criterion,
+                       band=excluded.band, missions_json=excluded.missions_json,
+                       tips_json=excluded.tips_json, reference_text=excluded.reference_text
+                   WHERE task.prompt_version != excluded.prompt_version""",
+                rows,
+            )
 
     def list_active(self, purpose: TaskPurpose = TaskPurpose.ASSESSMENT) -> list[Task]:
         """Active tasks for one purpose. Assessment by default.
@@ -243,15 +259,20 @@ class TaskRepository(MongoStore):
         screen and every older caller want assessment tasks only, and a practice task
         slipping into that list could be picked as an exam task.
         """
-        rows = self.col("task").find({"active": 1, "purpose": purpose.value}).sort("task_id", 1)
+        with self._conn() as c:
+            rows = c.execute(
+                "SELECT * FROM task WHERE active=1 AND purpose=? ORDER BY task_id",
+                (purpose.value,),
+            ).fetchall()
         return [self._to_task(r) for r in rows]
 
     def get(self, task_id: str) -> Task | None:
-        row = self.col("task").find_one({"task_id": task_id})
+        with self._conn() as c:
+            row = c.execute("SELECT * FROM task WHERE task_id=?", (task_id,)).fetchone()
         return self._to_task(row) if row else None
 
     @staticmethod
-    def _to_task(row: dict) -> Task:
+    def _to_task(row: DbRow) -> Task:
         return Task(
             task_id=row["task_id"],
             title=row["title"],
@@ -261,16 +282,14 @@ class TaskRepository(MongoStore):
             min_seconds=row["min_seconds"],
             max_seconds=row["max_seconds"],
             topic_keywords=tuple(
-                k.strip() for k in (row.get("topic_keywords") or "").split(",") if k.strip()
+                k.strip() for k in (row["topic_keywords"] or "").split(",") if k.strip()
             ),
-            purpose=TaskPurpose(row.get("purpose") or TaskPurpose.ASSESSMENT.value),
-            criterion=Criterion(row["criterion"]) if row.get("criterion") else None,
-            band=Band(row["band"]) if row.get("band") else None,
-            missions=tuple(
-                Mission.model_validate(m) for m in json.loads(row.get("missions_json") or "[]")
-            ),
-            tips=tuple(json.loads(row.get("tips_json") or "[]")),
-            reference_text=row.get("reference_text"),
+            purpose=TaskPurpose(row["purpose"]),
+            criterion=Criterion(row["criterion"]) if row["criterion"] else None,
+            band=Band(row["band"]) if row["band"] else None,
+            missions=tuple(Mission.model_validate(m) for m in json.loads(row["missions_json"])),
+            tips=tuple(json.loads(row["tips_json"])),
+            reference_text=row["reference_text"],
         )
 
 

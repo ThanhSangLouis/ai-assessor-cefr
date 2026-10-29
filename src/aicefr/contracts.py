@@ -11,7 +11,7 @@ from enum import Enum
 from pydantic import AliasChoices, BaseModel, Field, computed_field, model_validator
 
 
-class ResponseStatus(str, Enum):
+class Status(str, Enum):
     """State of a single processing run.
 
     QUEUED and RUNNING are the two NOT-YET-FINISHED states, added for FR-05 and
@@ -31,7 +31,7 @@ class ResponseStatus(str, Enum):
     @property
     def is_pending(self) -> bool:
         """Still processing; no final result yet."""
-        return self in (ResponseStatus.QUEUED, ResponseStatus.RUNNING)
+        return self in (Status.QUEUED, Status.RUNNING)
 
 
 class ReasonCode(str, Enum):
@@ -59,7 +59,7 @@ class ReasonCode(str, Enum):
     AUDIO_TOO_LARGE = "AUDIO_TOO_LARGE"
     AUDIO_TOO_LONG = "AUDIO_TOO_LONG"
     AUDIO_TOO_SHORT = "AUDIO_TOO_SHORT"
-    TERMS_NOT_ACCEPTED = "TERMS_NOT_ACCEPTED"
+    CONSENT_MISSING = "CONSENT_MISSING"
     # Chat luong am thanh
     HIGH_SILENCE_RATIO = "HIGH_SILENCE_RATIO"
     CLIPPING_DETECTED = "CLIPPING_DETECTED"
@@ -114,19 +114,9 @@ class Criterion(str, Enum):
 
 
 class Band(str, Enum):
-    """The six CEFR levels, lowest first (D059). The order is meaningful."""
-
-    A1 = "A1"
     A2 = "A2"
     B1 = "B1"
     B2 = "B2"
-    C1 = "C1"
-    C2 = "C2"
-
-    @property
-    def rank(self) -> int:
-        """0 for A1 up to 5 for C2: what "higher band" and "lower band" compare."""
-        return list(Band).index(self)
 
 
 class EvidenceKind(str, Enum):
@@ -273,14 +263,16 @@ class Transcript(BaseModel):
     words: list[Word] = Field(default_factory=list)
     engine: str
     model_version: str
+    has_word_timestamps: bool = False
     is_verbatim: bool = False
     # Ngon ngu bo nhan dang phat hien tren 30 giay dau (D022). Rong khi engine
     # khong phat hien duoc -- vi du model chi tieng Anh, hoac ban gia lap.
     language: str | None = None
     language_probability: float | None = Field(default=None, ge=0.0, le=1.0)
-    # D057: text tokens the decoder produced, counted by the recogniser; None
-    # when it cannot count them (the test double) or for a report made earlier.
-    output_tokens: int | None = Field(default=None, ge=0)
+
+    @property
+    def word_count(self) -> int:
+        return len(self.words)
 
     def is_foreign(self, min_probability: float) -> bool:
         """Confidently not English (D022). A recogniser forced into English
@@ -626,6 +618,12 @@ class ProcessingRequest(BaseModel):
     audio_path: str
     prompt_version: str
     config_version: str
+    # Which wording of the consent form the speaker had signed when this
+    # recording was made. Optional in the type so existing fixtures keep
+    # working, but the API never submits without it: FR-01 requires the
+    # provenance, and a recording whose consent cannot be shown is a recording
+    # that cannot be used for research later.
+    consent_version: str | None = None
 
 
 class Review(BaseModel):
@@ -645,11 +643,7 @@ class Review(BaseModel):
     old_band: Band | None = None
     new_band: Band | None = None
     reason: str
-    created_at: str  # when the teacher decided
-    # D060: a review is part of its response's document; numbered in the order
-    # decisions were taken, and stamped with when the teacher opened it (D041).
-    review_id: int | None = None
-    opened_at: str | None = None
+    created_at: str
 
 
 class ReviewLock(BaseModel):
@@ -826,23 +820,20 @@ class Response(BaseModel):
     """The pipeline's single output."""
 
     response_id: str
-    status: ResponseStatus
+    status: Status
     qc: QcResult | None = None
     asr: Transcript | None = None
     features: FeatureSet | None = None
     assessment: Assessment | None = None
     reasons: list[ReasonCode] = Field(default_factory=list)
     config_version: str
-    # Ban de sinh vien da thay khi nop (truy vet). Co tren ProcessingRequest
-    # tu lau nhung khong duoc luu vao ket qua, nen bao cao khong noi duoc sinh
-    # vien da tra loi ban de nao. Rong o ban ghi cu.
+    # Ban de va ban dong thuan sinh vien da thay khi nop (truy vet). Co tren
+    # ProcessingRequest tu lau nhung khong duoc luu vao ket qua, nen bao cao
+    # khong noi duoc sinh vien da tra loi ban de nao. Rong o ban ghi cu.
     prompt_version: str | None = None
+    consent_version: str | None = None
     # D023. Only on practice attempts; empty for assessment responses.
     practice: PracticeResult | None = None
-    # D060: the teachers' decisions on this response, oldest first. Part of the
-    # response (`Response ◆ Review`): they live and go with it. Kept out of the
-    # stored report -- the repository keeps them beside it and fills them in.
-    reviews: list[Review] = Field(default_factory=list)
 
     @property
     def was_scored(self) -> bool:
@@ -850,4 +841,4 @@ class Response(BaseModel):
 
     @property
     def needs_teacher(self) -> bool:
-        return self.status is ResponseStatus.REVIEW_REQUIRED
+        return self.status is Status.REVIEW_REQUIRED

@@ -1,6 +1,6 @@
 """The sample path shipped with a fresh install (D025, laid out by topic in D027).
 
-Six levels (A1 to C2, D059), each going through units on different topics. The
+Three levels (A2, B1, B2), each going through units on different topics. The
 lessons are sixteen written in full -- three here, thirteen in `seed_topics` --
 and fifteen built from the fifteen D023 practice tasks, so nothing a learner
 already practised disappears. All of it is SAMPLE content: written by the
@@ -15,7 +15,7 @@ stored attempt keeps pointing at its step.
 from __future__ import annotations
 
 from aicefr.contracts import Band, MissionKind
-from aicefr.lessons.generate import MARKERS, OUTLINE_POINTS, PREP_SECONDS
+from aicefr.lessons.generate import MARKERS, OUTLINE_POINTS
 from aicefr.lessons.model import Lesson, Step, StepKind, Strictness, Topic
 from aicefr.lessons.seed_topics import topic_lessons
 from aicefr.practice.bank import PRACTICE_TASKS, PracticeSeed
@@ -24,18 +24,17 @@ SAMPLE_PATH_ID = "path-sample"
 # Bump when SAMPLE_UNITS or the lessons in them change, so an installation made
 # with an older layout is brought up to date once (LessonRepository.seed_sample).
 # 1: one unit per band (D025). 2: units by topic within each band (D027).
-# 3: the path covers A1 to C2 (D059).
-SAMPLE_LAYOUT = 3
+SAMPLE_LAYOUT = 2
 SAMPLE_PATH = {
     "path_id": SAMPLE_PATH_ID,
-    "title": "Lộ trình mẫu: Nói tiếng Anh A1 → C2",
+    "title": "Lộ trình mẫu: Nói tiếng Anh A2 → B2",
     "description": (
-        "Sáu bậc từ Làm quen tới Thành thạo; mỗi bậc đi qua nhiều chủ đề như giáo dục, du "
+        "Ba phần Cơ bản, Trung cấp, Nâng cao; mỗi phần đi qua nhiều chủ đề như giáo dục, du "
         "lịch, nghề nghiệp, công nghệ. Mỗi bài đi từ đọc theo văn bản có từ gợi ý tới nói tự "
         "do. Nội dung mẫu, chờ giảng viên Khoa Ngoại ngữ duyệt."
     ),
-    "band_from": Band.A1,
-    "band_to": Band.C2,
+    "band_from": Band.A2,
+    "band_to": Band.B2,
 }
 
 
@@ -47,20 +46,6 @@ def _unit(unit_id: str, band: Band, topic: Topic, title: str, function: str) -> 
 # level rises steadily while the subject keeps changing. The three units of the
 # first layout keep their ids, so attempts made against them stay in place.
 SAMPLE_UNITS = [
-    _unit(
-        "unit-a1-basics",
-        Band.A1,
-        Topic.DAILY_LIFE,
-        "Làm quen",
-        "Giới thiệu bản thân, căn phòng và buổi sáng của bạn",
-    ),
-    _unit(
-        "unit-a1-people",
-        Band.A1,
-        Topic.PEOPLE,
-        "Gia đình và bạn bè",
-        "Nói về người thân, bạn bè và những gì họ thích",
-    ),
     _unit(
         "unit-sample-a2",
         Band.A2,
@@ -169,41 +154,11 @@ SAMPLE_UNITS = [
         "Sức khoẻ tinh thần",
         "Nói về áp lực học tập và cách vượt qua",
     ),
-    _unit(
-        "unit-c1-society",
-        Band.C1,
-        Topic.SOCIETY,
-        "Lập luận về xã hội",
-        "Trình bày, phân tích nguyên nhân và hệ quả, bảo vệ lập trường",
-    ),
-    _unit(
-        "unit-c1-environment",
-        Band.C1,
-        Topic.ENVIRONMENT,
-        "Môi trường và trách nhiệm",
-        "Dùng từ chính xác và câu điều kiện để cân nhắc lựa chọn",
-    ),
-    _unit(
-        "unit-c2-ideas",
-        Band.C2,
-        Topic.TECHNOLOGY,
-        "Ý tưởng và sắc thái",
-        "Tổng hợp quan điểm, diễn đạt sắc thái nghĩa tinh tế",
-    ),
-    _unit(
-        "unit-c2-reflection",
-        Band.C2,
-        Topic.PEOPLE,
-        "Suy ngẫm và trải nghiệm",
-        "Kể và bình luận với cấu trúc nhấn mạnh, đọc văn chính luận",
-    ),
 ]
 
 # Which lessons go in which unit, in order. Written lessons first, then the
 # lessons built from the D023 practice tasks on the same theme.
 SAMPLE_LAYOUT_LESSONS: dict[str, list[str]] = {
-    "unit-a1-basics": ["lesson-pr-flu-a1", "lesson-pr-ran-a1", "lesson-pr-acc-a1"],
-    "unit-a1-people": ["lesson-pr-coh-a1", "lesson-pr-pho-a1"],
     "unit-sample-a2": [
         "lesson-a2-neighborhood",
         "lesson-pr-flu-a2",
@@ -227,10 +182,6 @@ SAMPLE_LAYOUT_LESSONS: dict[str, list[str]] = {
     "unit-b2-career": ["lesson-b2-remote", "lesson-pr-acc-b2"],
     "unit-b2-society": ["lesson-pr-coh-b2", "lesson-pr-pho-b2"],
     "unit-b2-health": ["lesson-b2-stress"],
-    "unit-c1-society": ["lesson-pr-flu-c1", "lesson-pr-coh-c1", "lesson-pr-pho-c1"],
-    "unit-c1-environment": ["lesson-pr-ran-c1", "lesson-pr-acc-c1"],
-    "unit-c2-ideas": ["lesson-pr-flu-c2", "lesson-pr-coh-c2", "lesson-pr-ran-c2"],
-    "unit-c2-reflection": ["lesson-pr-acc-c2", "lesson-pr-pho-c2"],
 }
 
 
@@ -580,7 +531,7 @@ def from_practice_task(seed: PracticeSeed) -> Lesson:
                     text=prompt,
                     outline=OUTLINE_POINTS[seed.band],
                     markers=MARKERS[seed.band],
-                    prep_seconds=PREP_SECONDS[seed.band],
+                    prep_seconds={Band.A2: 60, Band.B1: 30, Band.B2: 15}[seed.band],
                     min_seconds=seed.min_seconds,
                     max_seconds=seed.max_seconds,
                 )

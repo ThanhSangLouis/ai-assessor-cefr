@@ -28,7 +28,7 @@ from datetime import date, timedelta
 from enum import Enum
 
 
-class ServicePlan(str, Enum):
+class Plan(str, Enum):
     FREE = "free"
     TRIAL = "trial"
     STANDARD = "standard"
@@ -54,33 +54,28 @@ class LicenseState(str, Enum):
 
 
 PLAN_NAMES = {
-    ServicePlan.FREE: "Miễn phí",
-    ServicePlan.TRIAL: "Dùng thử",
-    ServicePlan.STANDARD: "Chuẩn",
-    ServicePlan.ADVANCED: "Nâng cao",
+    Plan.FREE: "Miễn phí",
+    Plan.TRIAL: "Dùng thử",
+    Plan.STANDARD: "Chuẩn",
+    Plan.ADVANCED: "Nâng cao",
 }
 FEATURE_NAMES = {
     PlanFeature.LESSON_AUTHORING: "Soạn lộ trình riêng của trường",
     PlanFeature.CLASS_INSIGHTS: "Thống kê lớp và theo dõi từng bài học",
     PlanFeature.BLIND_RATING: "Chấm mù kép và báo cáo đồng thuận giữa giảng viên",
 }
-PLAN_FEATURES: dict[ServicePlan, frozenset[PlanFeature]] = {
-    ServicePlan.FREE: frozenset(),
+PLAN_FEATURES: dict[Plan, frozenset[PlanFeature]] = {
+    Plan.FREE: frozenset(),
     # A trial shows everything, so a school can judge all of it.
-    ServicePlan.TRIAL: frozenset(PlanFeature),
-    ServicePlan.STANDARD: frozenset({PlanFeature.LESSON_AUTHORING, PlanFeature.CLASS_INSIGHTS}),
-    ServicePlan.ADVANCED: frozenset(PlanFeature),
+    Plan.TRIAL: frozenset(PlanFeature),
+    Plan.STANDARD: frozenset({PlanFeature.LESSON_AUTHORING, PlanFeature.CLASS_INSIGHTS}),
+    Plan.ADVANCED: frozenset(PlanFeature),
 }
 # Assessments a student is expected to need a month. A soft figure (BR-30):
 # going over warns the administrator, it never refuses a student.
-QUOTA_PER_SEAT = {
-    ServicePlan.FREE: 2,
-    ServicePlan.TRIAL: 8,
-    ServicePlan.STANDARD: 4,
-    ServicePlan.ADVANCED: 8,
-}
-TIER = {ServicePlan.FREE: 0, ServicePlan.TRIAL: 0, ServicePlan.STANDARD: 1, ServicePlan.ADVANCED: 2}
-PURCHASABLE = (ServicePlan.STANDARD, ServicePlan.ADVANCED)
+QUOTA_PER_SEAT = {Plan.FREE: 2, Plan.TRIAL: 8, Plan.STANDARD: 4, Plan.ADVANCED: 8}
+TIER = {Plan.FREE: 0, Plan.TRIAL: 0, Plan.STANDARD: 1, Plan.ADVANCED: 2}
+PURCHASABLE = (Plan.STANDARD, Plan.ADVANCED)
 FREE_SEATS = 30  # student accounts on the free plan: one class
 TERMS = (6, 12)  # months: a semester, a school year
 ANNUAL_DISCOUNT = 15  # percent off a school year paid at once
@@ -93,21 +88,11 @@ ROUND_TO = 1000
 MIN_CHARGE = 10_000
 
 
-class OrderKind(str, Enum):
-    """What an order buys: a licence (four ways to start one), or a pack of runs (D053)."""
-
-    NEW = "new"
-    RENEWAL = "renewal"
-    UPGRADE = "upgrade"
-    DOWNGRADE = "downgrade"
-    CREDITS = "credits"
-
-
 @dataclass(frozen=True)
 class License:
     license_id: str
     organization: str
-    plan: ServicePlan
+    plan: Plan
     seats: int  # student accounts it covers
     valid_from: date
     valid_to: date  # the last day covered
@@ -127,10 +112,6 @@ class License:
     def days(self) -> int:
         return (self.valid_to - self.valid_from).days + 1
 
-    def is_active(self, today: date) -> bool:
-        """Whether `today` is one of the days the licence covers (the grace after it is not)."""
-        return self.valid_from <= today <= self.valid_to
-
 
 @dataclass(frozen=True)
 class Standing:
@@ -143,8 +124,8 @@ class Standing:
     lapsed: License | None = None  # the licence that ran out, back on the free plan
 
     @property
-    def plan(self) -> ServicePlan:
-        return self.license.plan if self.license else ServicePlan.FREE
+    def plan(self) -> Plan:
+        return self.license.plan if self.license else Plan.FREE
 
     @property
     def grace_until(self) -> date | None:
@@ -190,7 +171,7 @@ def standing(licenses: Iterable[License], today: date) -> Standing:
     if not started:
         return Standing(None, LicenseState.FREE, today, later)
     _, current = max(started, key=lambda ix: (ix[1].valid_from, ix[1].installed_at, ix[0]))
-    if current.is_active(today):
+    if today <= current.valid_to:
         return Standing(current, LicenseState.ACTIVE, today, later)
     if current.paid and today <= current.valid_to + timedelta(days=GRACE_DAYS):
         return Standing(current, LicenseState.GRACE, today, later)
@@ -210,11 +191,11 @@ class QuoteError(ValueError):
 
 @dataclass(frozen=True)
 class Quote:
-    plan: ServicePlan
+    plan: Plan
     seats: int
     months: int
     unit_price: int  # VND per student per month
-    kind: OrderKind  # never CREDITS: a quote prices a licence
+    kind: str  # "new" | "renewal" | "upgrade" | "downgrade"
     starts_on: date
     ends_on: date
     list_price: int  # students x months x unit price
@@ -234,7 +215,7 @@ class Quote:
 
 def quote(
     current: Standing,
-    plan: ServicePlan,
+    plan: Plan,
     seats: int,
     months: int,
     unit_price: int,
@@ -266,14 +247,14 @@ def quote(
     held = current.license
     credit = 0
     if held is None or not held.paid:
-        kind, start = OrderKind.NEW, today
+        kind, start = "new", today
     elif TIER[plan] > TIER[held.plan] or (plan == held.plan and seats > held.seats):
-        kind, start = OrderKind.UPGRADE, today
+        kind, start = "upgrade", today
         if current.state is LicenseState.ACTIVE:
             credit = _credit(held, today)
     else:
         down = TIER[plan] < TIER[held.plan] or seats < held.seats
-        kind = OrderKind.DOWNGRADE if down else OrderKind.RENEWAL
+        kind = "downgrade" if down else "renewal"
         start = held.valid_to + timedelta(days=1)
     end = add_months(start, months) - timedelta(days=1)
     worth = list_price - discount

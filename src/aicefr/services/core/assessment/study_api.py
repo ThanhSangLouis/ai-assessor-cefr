@@ -1,7 +1,7 @@
 """The feedback study in the app (D040): full feedback vs the score alone.
 
-An administrator starts one study at a time. Every student who accepted the
-terms of use (D058) at that moment is assigned to an arm at random (a seed is stored, so the
+An administrator starts one study at a time. Every student who allowed research
+use at that moment is assigned to an arm at random (a seed is stored, so the
 assignment can be reproduced); nobody else is enrolled. While the study runs,
 a participant in the `score_only` arm gets the report of their own assessments
 with the score, band and interval only -- comments, evidence, priorities, the
@@ -11,7 +11,7 @@ full report, and lessons and practice attempts are never gated.
 
 A participant can leave at any time from their progress page; from then on
 they see full feedback again and their data are left out of the analysis.
-Being erased has the same effect. When the
+Withdrawing research consent, or being erased, has the same effect. When the
 study moves to `survey`, participants answer five short questions, still
 without the held-back feedback, and scores from then on no longer count as
 outcomes; when it is closed, every learner gets full feedback again and the
@@ -63,8 +63,8 @@ WITHHELD_FIELDS = (
 class Services:
     studies: StudyRepository
     repo: object  # aicefr.storage.repository.Repository: scored_assessments, write_audit
-    # The other services (D043): enabled students and who accepted the terms
-    # from identity, lesson attempts from learning.
+    # The other services (D043): enabled students and research consent from
+    # identity, lesson attempts from learning.
     peers: Peers
 
     def students(self) -> set[str]:
@@ -102,6 +102,14 @@ def arm_of(account_id: str) -> str | None:
     m = s.studies.membership(account_id)
     if not m or m["withdrawn_at"] or m["status"] not in GATED_STATUSES:
         return None
+    if m["arm"] == "score_only":
+        # Withdrawing research consent takes a learner out (D040). The event
+        # that says so can be lost between services, so consent is asked here
+        # too before anything is held back -- and a missed withdrawal is caught up.
+        consent = s.peers.identity.consent(account_id=account_id)
+        if not (consent and consent["research_use_allowed"]):
+            s.studies.withdraw(account_id)
+            return None
     return m["arm"]
 
 
@@ -170,10 +178,6 @@ def create_study(body: StudyIn, account: Account = ADMIN_ONLY) -> dict:
     """Enrol every student who allows research use, at random, half in each arm. FR-77."""
     if svc().studies.active():
         raise HTTPException(409, "đang có một thực nghiệm chưa đóng")
-    metering = getattr(svc().peers, "metering", None)
-    if metering is not None and metering.is_enabled():
-        # D049: people who pay per use are not study participants (BR-30).
-        raise HTTPException(409, "bản triển khai tính lượt không chạy thực nghiệm nghiên cứu")
     eligible = svc().research_allowed() & svc().students()
     if len(eligible) < MIN_PARTICIPANTS:
         raise HTTPException(

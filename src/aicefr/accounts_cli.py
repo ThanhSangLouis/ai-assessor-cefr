@@ -13,9 +13,8 @@ from __future__ import annotations
 
 import argparse
 import getpass
+import sqlite3
 import sys
-
-from pymongo.errors import PyMongoError
 
 from aicefr.auth.pseudonyms import validate_pseudonym
 from aicefr.config import get_settings
@@ -55,7 +54,12 @@ def _add(args: argparse.Namespace) -> int:
 
 
 def _list(args: argparse.Namespace) -> int:
-    rows = AuthRepository(args.db).list_accounts()
+    repo = AuthRepository(args.db)
+    with repo._conn() as c:  # noqa: SLF001 - admin tool, reading directly is enough
+        rows = c.execute(
+            "SELECT pseudonym, role, failed_attempts, locked_until, disabled"
+            " FROM account ORDER BY role, pseudonym"
+        ).fetchall()
     if not rows:
         print("Chưa có tài khoản nào.")
         return 0
@@ -71,7 +75,13 @@ def _list(args: argparse.Namespace) -> int:
 
 def _unlock(args: argparse.Namespace) -> int:
     """Unlock an account that was locked after too many failed logins."""
-    if not AuthRepository(args.db).unlock_pseudonym(args.pseudonym):
+    repo = AuthRepository(args.db)
+    with repo._conn() as c:  # noqa: SLF001
+        cur = c.execute(
+            "UPDATE account SET failed_attempts=0, locked_until=NULL WHERE pseudonym=?",
+            (args.pseudonym,),
+        )
+    if cur.rowcount == 0:
         print(f"Không có tài khoản {args.pseudonym!r}.", file=sys.stderr)
         return 1
     print(f"Đã gỡ khóa {args.pseudonym}.")
@@ -86,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--db",
         default=get_settings().store("core"),
-        help="kho dữ liệu của dịch vụ tài khoản (URL mongodb://)",
+        help="cơ sở dữ liệu của dịch vụ tài khoản (đường dẫn SQLite hoặc URL PostgreSQL)",
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
@@ -123,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     try:
         return args.func(args)
-    except PyMongoError as e:
+    except sqlite3.Error as e:
         print(f"Lỗi cơ sở dữ liệu: {e}", file=sys.stderr)
         return 2
     except ValueError as e:

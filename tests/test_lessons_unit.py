@@ -77,7 +77,9 @@ def transcript(text: str, step: float = 0.5, probs: list[float] | None = None) -
         )
         for i, w in enumerate(text.split())
     ]
-    return Transcript(text=text, words=words, engine="test", model_version="test-v1")
+    return Transcript(
+        text=text, words=words, engine="test", model_version="test-v1", has_word_timestamps=True
+    )
 
 
 def timed(*words: tuple[str, float, float]) -> Transcript:
@@ -87,6 +89,7 @@ def timed(*words: tuple[str, float, float]) -> Transcript:
         words=[Word(text=w, start_s=s, end_s=e, prob=0.9) for w, s, e in words],
         engine="test",
         model_version="test-v1",
+        has_word_timestamps=True,
     )
 
 
@@ -800,17 +803,17 @@ def test_sample_path_runs_by_level_and_topic_with_one_lesson_per_practice_task()
     lessons = [lesson for unit in by_unit.values() for lesson in unit]
 
     assert list(by_unit) == [u["unit_id"] for u in SAMPLE_UNITS]
-    assert len(lessons) == 46
+    assert len(lessons) == 31
     ids = {lesson.lesson_id for lesson in lessons}
     written = {"lesson-a2-neighborhood", "lesson-b1-trip", "lesson-b2-online", *topic_lessons()}
     assert len(written) == 16 and written <= ids
     assert {f"lesson-{t.task_id.lower()}" for t in PRACTICE_TASKS} <= ids
-    # Six levels in order (D059), and within each level a different topic per unit.
-    levels = [u["band"] for u in SAMPLE_UNITS]
-    assert levels == sorted(levels, key=lambda b: b.rank) and set(levels) == set(Band)
-    for band in Band:
+    # Three levels in order, and within each level a different topic per unit.
+    levels = [u["band"].value for u in SAMPLE_UNITS]
+    assert levels == sorted(levels, key=["A2", "B1", "B2"].index)
+    for band in (Band.A2, Band.B1, Band.B2):
         topics = [u["topic"] for u in SAMPLE_UNITS if u["band"] is band]
-        assert len(topics) == len(set(topics)) >= 2
+        assert len(topics) == len(set(topics)) >= 5
     for unit in SAMPLE_UNITS:
         assert all(lesson.band is unit["band"] for lesson in by_unit[unit["unit_id"]])
     for lesson in lessons:

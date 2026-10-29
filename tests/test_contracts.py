@@ -10,7 +10,7 @@ from aicefr.contracts import (
     FeatureSet,
     ReasonCode,
     Response,
-    ResponseStatus,
+    Status,
 )
 
 
@@ -19,14 +19,12 @@ def test_exactly_five_criteria():
     assert "interaction" not in {c.value for c in Criterion}
 
 
-def test_six_bands_within_scope():
-    """D059: the whole CEFR scale, A1 to C2, in order."""
-    assert [b.value for b in Band] == ["A1", "A2", "B1", "B2", "C1", "C2"]
-    assert [b.rank for b in Band] == list(range(6))
+def test_three_bands_within_scope():
+    assert {b.value for b in Band} == {"A2", "B1", "B2"}
 
 
 def test_minimal_report_is_valid():
-    r = Response(response_id="r1", status=ResponseStatus.FAILED, config_version="v1")
+    r = Response(response_id="r1", status=Status.FAILED, config_version="v1")
     assert r.assessment is None
     assert r.reasons == []
 

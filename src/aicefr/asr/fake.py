@@ -52,6 +52,7 @@ class FakeAsrEngine:
             words=words,
             engine=self.name,
             model_version="fake-v1",
+            has_word_timestamps=True,
             is_verbatim=False,
             language=self._language,
             language_probability=self._language_probability,

@@ -1,9 +1,9 @@
-"""The D028..D049 test plans and their test code must name the same test cases.
+"""The D028..D042 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
 directions. It also checks the other promise of the SRS: every acceptance
-criterion of FR-51..FR-85 names a test, and that test exists.
+criterion of FR-51..FR-80 names a test, and that test exists.
 """
 
 from __future__ import annotations
@@ -75,7 +75,7 @@ PLANS = [
             "TC-BR-E": ROOT / "tests" / "e2e" / "test_ratings_e2e.py",
         },
         "6[1-4]",
-        20,  # AC-64.2 (withdrawn consent) dropped with D058
+        21,
     ),
     Plan(
         "D032",
@@ -130,30 +130,7 @@ PLANS = [
             "TC-LE-E": ROOT / "tests" / "e2e" / "test_learning_evidence_e2e.py",
         },
         "7[5-9]|80",
-        33,  # AC-77.6 (withdrawing research consent) dropped with D058
-    ),
-    Plan(
-        "D045-D047",
-        ROOT / "docs" / "test" / "TEST_PLAN_D045_D047.md",
-        {
-            "TC-LP-U": ROOT / "tests" / "test_path_composer_unit.py",
-            "TC-LP-I": ROOT / "tests" / "test_learning_plans.py",
-            "TC-LP-E": ROOT / "tests" / "e2e" / "test_learning_plans_e2e.py",
-            "TC-DB-I": ROOT / "tests" / "test_schema.py",
-            "TC-DP-U": ROOT / "tests" / "test_deploy_config.py",
-        },
-        "8[1-4]",
-        26,
-    ),
-    Plan(
-        "D049",
-        ROOT / "docs" / "test" / "TEST_PLAN_D049.md",
-        {
-            "TC-ME-U": ROOT / "tests" / "test_metering_unit.py",
-            "TC-ME-I": ROOT / "tests" / "test_metering.py",
-        },
-        "85",
-        10,
+        34,
     ),
 ]
 LAYERS = [(plan, prefix) for plan in PLANS for prefix in plan.layers]

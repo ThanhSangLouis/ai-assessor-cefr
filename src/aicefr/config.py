@@ -43,23 +43,6 @@ def _names(name: str, default: str) -> tuple[str, ...]:
     return tuple(n.strip().lower() for n in raw.split(",") if n.strip())
 
 
-def _packs(name: str, default: str) -> tuple[tuple[int, int], ...]:
-    """Run packs "runs:price_vnd,..." -> ((10, 19000), ...); malformed entries are dropped."""
-    out = []
-    for item in ((os.getenv(name) or "").strip() or default).split(","):
-        runs, _, price = item.partition(":")
-        if runs.strip().isdigit() and price.strip().isdigit() and int(runs) > 0:
-            out.append((int(runs), int(price)))
-    return tuple(sorted(set(out)))
-
-
-def _float(name: str, default: float) -> float:
-    try:
-        return float(os.getenv(name, ""))
-    except ValueError:
-        return default
-
-
 def _int(name: str, default: int) -> int:
     try:
         return int(os.getenv(name, ""))
@@ -76,14 +59,8 @@ class Settings:
     version: str = "0.1.0"
 
     # --- storage ---
-    # A mongodb:// URL (D048). A plain path, the default, is an in-memory store
-    # for a quick local run: its documents go when the process ends, and
-    # production refuses it (`aicefr.storage.db.database`).
     db_path: str = field(default_factory=lambda: os.getenv("AICEFR_DB", "aicefr.db"))
     upload_dir: Path = field(default_factory=lambda: Path(os.getenv("AICEFR_UPLOADS", "uploads")))
-    # D051: `s3://bucket` keeps recordings in object storage, which every
-    # instance of a service can read; unset, the upload folder above.
-    blob_url: str = field(default_factory=lambda: os.getenv("AICEFR_BLOBS", ""))
 
     # --- speech recognition ---
     asr_engine: str = field(default_factory=lambda: os.getenv("AICEFR_ASR", "fake").lower())
@@ -189,44 +166,14 @@ class Settings:
     trial_days: int = field(default_factory=lambda: _int("AICEFR_TRIAL_DAYS", 30))
 
     # --- services (D043, D044) ---
-    # Where the core service keeps its documents: a mongodb:// URL naming its
-    # database (D048). Unset, AICEFR_DB, as on one machine. The speech and web
-    # services keep none.
+    # Where the core service keeps its rows: a SQLite path or a PostgreSQL URL
+    # with `?schema=core`. Unset, AICEFR_DB, as on one machine. The speech and
+    # web services keep none.
     stores: dict[str, str] = field(
-        default_factory=lambda: {
-            "core": os.getenv("AICEFR_CORE_DB", ""),
-            # D049, D051: the ledger and the learning part may each have a
-            # database of their own (database per service); unset, the core's.
-            "metering": os.getenv("AICEFR_METERING_DB", "") or os.getenv("AICEFR_CORE_DB", ""),
-            "learning": os.getenv("AICEFR_LEARNING_DB", "") or os.getenv("AICEFR_CORE_DB", ""),
-        }
+        default_factory=lambda: {"core": os.getenv("AICEFR_CORE_DB", "")}
     )
-    # D049: charge per use. Only the deployment for the NetID channel turns it
-    # on; the school and research deployment never does (BR-29, BR-30).
-    metering_enabled: bool = field(default_factory=lambda: _flag("AICEFR_METERING"))
-    # D056: guided listening with random control moments. Off unless switched
-    # on; labels are analysed only for learners who accepted the terms (D058).
-    guided_replay: bool = field(default_factory=lambda: _flag("AICEFR_GUIDED_REPLAY"))
-    # D057: the seller's prices, in runs: a recording up to one minute, every
-    # further started minute, the share a practice attempt pays, and what one
-    # run is in IDPoint on NetID (team decision 24/10/2026, 1 IDPoint = 1 VND).
-    price_first_minute_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_FIRST_MINUTE_RUNS", 1.0)
-    )
-    price_extra_minute_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.7)
-    )
-    price_practice_factor: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PRACTICE_FACTOR", 0.5)
-    )
-    idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
-    # Run packs a learner buys on the metered channel (D053): runs and price in
-    # VND. Paid through the billing gateways, credited to the learner's wallet.
-    credit_packs: tuple[tuple[int, int], ...] = field(
-        default_factory=lambda: _packs("AICEFR_CREDIT_PACKS", "10:19000,30:49000,100:149000")
-    )
-    # "inline" runs events, work and calls in this process; a redis:// URL
-    # sends them through Redis: BullMQ for work, Streams for events (D050).
+    # "inline" runs events, work and calls in this process; an amqp:// URL
+    # sends them through RabbitMQ.
     bus_url: str = field(default_factory=lambda: os.getenv("AICEFR_BUS", "inline"))
     # The key internal calls and the gateway's account header carry. Must be
     # the same long random string on every service of a deployment.

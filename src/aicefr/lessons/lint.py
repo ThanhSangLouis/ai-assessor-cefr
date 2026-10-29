@@ -14,11 +14,11 @@ from dataclasses import asdict, dataclass
 
 from aicefr.contracts import Band
 from aicefr.lessons.generate import READING_WPM, sentences
-from aicefr.lessons.model import GAP_PATTERN, TEXT_KINDS, Lesson, Stage, Step, StepKind
+from aicefr.lessons.model import GAP_PATTERN, TEXT_KINDS, Lesson, Stage, StepKind
 from aicefr.lessons.text import BRITISH, find_phrase, lemma, phrase_tokens, tokens
 
 # Longest sentence, in words, that a learner at the band reads comfortably.
-SENTENCE_WORDS = {Band.A1: 10, Band.A2: 14, Band.B1: 20, Band.B2: 28, Band.C1: 34, Band.C2: 40}
+SENTENCE_WORDS = {Band.A2: 14, Band.B1: 20, Band.B2: 28}
 
 # Words that sound like another word: a key word or a gap answer from this list
 # cannot be told apart by listening.
@@ -123,17 +123,10 @@ def _text_issues(text: str, band: Band, step_id: str | None, field: str) -> list
 
 
 def lint_lesson(lesson: Lesson) -> list[Issue]:
-    if not lesson.steps:
-        return [Issue("warn", "Bài học chưa có bước nào.")]
-    out = _lesson_issues(lesson)
-    for step in lesson.steps:
-        out += _step_issues(lesson, step)
-    return out
-
-
-def _lesson_issues(lesson: Lesson) -> list[Issue]:
-    """What concerns the lesson as a whole: its free step, the order of stages, the model text."""
     out: list[Issue] = []
+    if not lesson.steps:
+        out.append(Issue("warn", "Bài học chưa có bước nào."))
+        return out
     if not lesson.free_step_ids:
         out.append(
             Issue(
@@ -166,180 +159,135 @@ def _lesson_issues(lesson: Lesson) -> list[Issue]:
                     "keywords",
                 )
             )
-    return out
 
+    for step in lesson.steps:
+        sid = step.step_id
+        if step.kind in TEXT_KINDS and step.text.strip() and step.text != lesson.model_text:
+            out += _text_issues(step.text, lesson.band, sid, "text")
+        if step.kind in TEXT_KINDS and not step.text.strip():
+            out.append(Issue("warn", "Bước này chưa có văn bản.", sid, "text"))
 
-# Steps a learner speaks freely from a prompt: each needs one.
-PROMPTED_KINDS = (StepKind.FREE, StepKind.OUTLINE, StepKind.STARTER, StepKind.PICTURE)
+        if step.kind is StepKind.READ_ALOUD:
+            said = tokens(step.text)
+            absent = [w for w in step.hint_words if find_phrase(said, phrase_tokens(w)) is None]
+            if absent:
+                out.append(
+                    Issue(
+                        "warn",
+                        f"Từ gợi ý không có trong văn bản: {', '.join(absent)}.",
+                        sid,
+                        "hint_words",
+                    )
+                )
+            seconds = len(said) / READING_WPM[lesson.band] * 60
+            if seconds > step.max_seconds:
+                out.append(
+                    Issue(
+                        "warn",
+                        f"Đọc hết đoạn này mất khoảng {round(seconds)} giây ở mức "
+                        f"{lesson.band.value}, lâu hơn thời gian ghi tối đa "
+                        f"{step.max_seconds} giây.",
+                        sid,
+                        "max_seconds",
+                    )
+                )
 
-
-def _step_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    """One step: its text, the checks of its kind, its prompt."""
-    sid = step.step_id
-    out: list[Issue] = []
-    if step.kind in TEXT_KINDS and step.text.strip() and step.text != lesson.model_text:
-        out += _text_issues(step.text, lesson.band, sid, "text")
-    if step.kind in TEXT_KINDS and not step.text.strip():
-        out.append(Issue("warn", "Bước này chưa có văn bản.", sid, "text"))
-    by_kind = _KIND_CHECKS.get(step.kind)
-    if by_kind is not None:
-        out += by_kind(lesson, step)
-    if step.kind in PROMPTED_KINDS and not step.text.strip():
-        out.append(Issue("warn", "Bước này chưa có đề hay câu hỏi.", sid, "text"))
-    return out
-
-
-def _read_aloud_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    sid = step.step_id
-    out: list[Issue] = []
-    said = tokens(step.text)
-    absent = [w for w in step.hint_words if find_phrase(said, phrase_tokens(w)) is None]
-    if absent:
-        out.append(
-            Issue(
-                "warn",
-                f"Từ gợi ý không có trong văn bản: {', '.join(absent)}.",
-                sid,
-                "hint_words",
-            )
-        )
-    seconds = len(said) / READING_WPM[lesson.band] * 60
-    if seconds > step.max_seconds:
-        out.append(
-            Issue(
-                "warn",
-                f"Đọc hết đoạn này mất khoảng {round(seconds)} giây ở mức "
-                f"{lesson.band.value}, lâu hơn thời gian ghi tối đa "
-                f"{step.max_seconds} giây.",
-                sid,
-                "max_seconds",
-            )
-        )
-    return out
-
-
-def _repeat_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    if step.model_audio:
-        return []
-    return [
-        Issue(
-            "info",
-            "Chưa có giọng mẫu: sinh viên sẽ đọc câu thay vì nghe rồi nhắc lại.",
-            step.step_id,
-            "model_audio",
-        )
-    ]
-
-
-def _gap_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    sid = step.step_id
-    out: list[Issue] = []
-    blanks = len(GAP_PATTERN.findall(step.text))
-    if blanks == 0:
-        out.append(Issue("warn", "Đoạn văn chưa có chỗ trống (viết ___).", sid, "text"))
-    if blanks != len(step.answers):
-        out.append(
-            Issue(
-                "warn",
-                f"Có {blanks} chỗ trống nhưng {len(step.answers)} đáp án.",
-                sid,
-                "answers",
-            )
-        )
-    bank = {w.lower() for w in step.hint_words}
-    absent = [a for a in step.answers if a.lower() not in bank]
-    if absent:
-        out.append(
-            Issue(
-                "warn",
-                f"Đáp án không có trong ngân hàng từ: {', '.join(absent)}.",
-                sid,
-                "hint_words",
-            )
-        )
-    if len(step.hint_words) <= blanks:
-        out.append(
-            Issue("info", "Thêm ít nhất một từ gây nhiễu vào ngân hàng từ.", sid, "hint_words")
-        )
-    lemmas: dict[str, list[str]] = {}
-    for w in step.hint_words:
-        lemmas.setdefault(lemma(w.lower()), []).append(w)
-    twins = [ws for ws in lemmas.values() if len(ws) > 1]
-    if twins:
-        out.append(
-            Issue(
-                "warn",
-                f"Từ chỉ khác đuôi ({' / '.join(twins[0])}): máy khó nghe ra khác biệt, "
-                "nên dùng các từ khác hẳn nhau.",
-                sid,
-                "hint_words",
-            )
-        )
-    for a in step.answers:
-        group = _homophone(a)
-        if group:
+        if step.kind is StepKind.REPEAT and not step.model_audio:
             out.append(
                 Issue(
-                    "warn",
-                    f"Đáp án «{a}» đồng âm với {', '.join(sorted(group - {a.lower()}))}: "
-                    "nghe không phân biệt được.",
+                    "info",
+                    "Chưa có giọng mẫu: sinh viên sẽ đọc câu thay vì nghe rồi nhắc lại.",
                     sid,
-                    "answers",
+                    "model_audio",
                 )
             )
-        if " " in a.strip():
-            out.append(Issue("warn", f"Đáp án «{a}» nên là một từ.", sid, "answers"))
-    return out
 
-
-def _keywords_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    sid = step.step_id
-    out: list[Issue] = []
-    if not step.keywords:
-        out.append(Issue("warn", "Bước ghép câu chưa có từ khóa.", sid, "keywords"))
-    for k in step.keywords:
-        group = _homophone(k)
-        if group:
-            out.append(
-                Issue(
-                    "warn",
-                    f"Từ khóa «{k}» đồng âm với {', '.join(sorted(group - {k.lower()}))}.",
-                    sid,
-                    "keywords",
+        if step.kind is StepKind.GAP:
+            blanks = len(GAP_PATTERN.findall(step.text))
+            if blanks == 0:
+                out.append(Issue("warn", "Đoạn văn chưa có chỗ trống (viết ___).", sid, "text"))
+            if blanks != len(step.answers):
+                out.append(
+                    Issue(
+                        "warn",
+                        f"Có {blanks} chỗ trống nhưng {len(step.answers)} đáp án.",
+                        sid,
+                        "answers",
+                    )
                 )
-            )
+            bank = {w.lower() for w in step.hint_words}
+            absent = [a for a in step.answers if a.lower() not in bank]
+            if absent:
+                out.append(
+                    Issue(
+                        "warn",
+                        f"Đáp án không có trong ngân hàng từ: {', '.join(absent)}.",
+                        sid,
+                        "hint_words",
+                    )
+                )
+            if len(step.hint_words) <= blanks:
+                out.append(
+                    Issue(
+                        "info", "Thêm ít nhất một từ gây nhiễu vào ngân hàng từ.", sid, "hint_words"
+                    )
+                )
+            lemmas: dict[str, list[str]] = {}
+            for w in step.hint_words:
+                lemmas.setdefault(lemma(w.lower()), []).append(w)
+            twins = [ws for ws in lemmas.values() if len(ws) > 1]
+            if twins:
+                out.append(
+                    Issue(
+                        "warn",
+                        f"Từ chỉ khác đuôi ({' / '.join(twins[0])}): máy khó nghe ra khác biệt, "
+                        "nên dùng các từ khác hẳn nhau.",
+                        sid,
+                        "hint_words",
+                    )
+                )
+            for a in step.answers:
+                group = _homophone(a)
+                if group:
+                    out.append(
+                        Issue(
+                            "warn",
+                            f"Đáp án «{a}» đồng âm với {', '.join(sorted(group - {a.lower()}))}: "
+                            "nghe không phân biệt được.",
+                            sid,
+                            "answers",
+                        )
+                    )
+                if " " in a.strip():
+                    out.append(Issue("warn", f"Đáp án «{a}» nên là một từ.", sid, "answers"))
+
+        if step.kind is StepKind.KEYWORDS:
+            if not step.keywords:
+                out.append(Issue("warn", "Bước ghép câu chưa có từ khóa.", sid, "keywords"))
+            for k in step.keywords:
+                group = _homophone(k)
+                if group:
+                    out.append(
+                        Issue(
+                            "warn",
+                            f"Từ khóa «{k}» đồng âm với {', '.join(sorted(group - {k.lower()}))}.",
+                            sid,
+                            "keywords",
+                        )
+                    )
+
+        if step.kind is StepKind.STARTER and not step.starter.strip():
+            out.append(Issue("warn", "Bước này chưa có khung câu.", sid, "starter"))
+        if step.kind is StepKind.PICTURE:
+            if not step.image:
+                out.append(Issue("warn", "Bước mô tả tranh chưa có ảnh.", sid, "image"))
+            if not step.hint_words:
+                out.append(
+                    Issue("info", "Chưa có ngân hàng từ cho bước mô tả tranh.", sid, "hint_words")
+                )
+        if step.kind is StepKind.OUTLINE and not step.markers:
+            out.append(Issue("warn", "Bước nói theo dàn ý chưa có từ nối.", sid, "markers"))
+        if step.kind in (StepKind.FREE, StepKind.OUTLINE, StepKind.STARTER, StepKind.PICTURE):
+            if not step.text.strip():
+                out.append(Issue("warn", "Bước này chưa có đề hay câu hỏi.", sid, "text"))
     return out
-
-
-def _starter_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    if step.starter.strip():
-        return []
-    return [Issue("warn", "Bước này chưa có khung câu.", step.step_id, "starter")]
-
-
-def _picture_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    out: list[Issue] = []
-    if not step.image:
-        out.append(Issue("warn", "Bước mô tả tranh chưa có ảnh.", step.step_id, "image"))
-    if not step.hint_words:
-        out.append(
-            Issue("info", "Chưa có ngân hàng từ cho bước mô tả tranh.", step.step_id, "hint_words")
-        )
-    return out
-
-
-def _outline_issues(lesson: Lesson, step: Step) -> list[Issue]:
-    if step.markers:
-        return []
-    return [Issue("warn", "Bước nói theo dàn ý chưa có từ nối.", step.step_id, "markers")]
-
-
-_KIND_CHECKS = {
-    StepKind.READ_ALOUD: _read_aloud_issues,
-    StepKind.REPEAT: _repeat_issues,
-    StepKind.GAP: _gap_issues,
-    StepKind.KEYWORDS: _keywords_issues,
-    StepKind.STARTER: _starter_issues,
-    StepKind.PICTURE: _picture_issues,
-    StepKind.OUTLINE: _outline_issues,
-}

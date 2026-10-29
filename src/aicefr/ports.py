@@ -18,7 +18,7 @@ no business code at all.
 
 from __future__ import annotations
 
-from collections.abc import Iterator, Mapping
+from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
@@ -26,7 +26,7 @@ from typing import Protocol, runtime_checkable
 import numpy as np
 
 from aicefr.billing.payments import Ack, Checkout, Incoming, PaymentResult
-from aicefr.contracts import Assessment, FeatureSet, Response, ResponseStatus, Transcript
+from aicefr.contracts import Assessment, FeatureSet, Response, Status, Transcript
 
 
 @runtime_checkable
@@ -117,12 +117,6 @@ class BlobStore(Protocol):
 
     def exists(self, key: str) -> bool: ...
 
-    def size(self, key: str) -> int | None: ...
-
-    def keys(self) -> Iterator[str]:
-        """Every stored key, for the orphan sweep."""
-        ...
-
 
 @runtime_checkable
 class JobQueue(Protocol):
@@ -173,9 +167,8 @@ class ResponseStore(Protocol):
       hon hai muoi phuong thuc khac khong nam trong cong nay: apply_review,
       queue_with_locks, cohort_stats, erase_speaker, write_audit...
 
-    Nghia la doi kho du lieu khong phai "viet mot bo chuyen doi ba phuong thuc"
-    ma la viet lai gan nhu toan bo `Repository` -- dung nhu D048 da lam khi
-    chuyen sang MongoDB. So do kien truc
+    Nghia la doi SQLite sang PostgreSQL khong phai "viet mot bo chuyen doi ba
+    phuong thuc" ma la viet lai gan nhu toan bo `Repository`. So do kien truc
     vi the KHONG ve cong nay nhu mot seam -- ve nhu the la hua mot thu chua co.
 
     Doi chung cho mot cong that su dung duoc: `BlobStore`, duoc khai kieu
@@ -193,9 +186,7 @@ class ResponseStore(Protocol):
 
     def get(self, response_id: str) -> Response | None: ...
 
-    def set_status(
-        self, response_id: str, status: ResponseStatus, reasons: list | None = None
-    ) -> None: ...
+    def set_status(self, response_id: str, status: Status, reasons: list | None = None) -> None: ...
 
 
 @runtime_checkable

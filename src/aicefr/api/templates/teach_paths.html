@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% from "_plan_goal.html" import goal_fields %}
 {% block title %}Lộ trình luyện · AI Assessor CEFR{% endblock %}
 {% block content %}
 {#- Teachers author paths, units and lessons (D025, M16). Students see a path
@@ -17,7 +16,6 @@
   </div>
   <div class="button-row teach-tools">
     <button type="button" id="new-path">{{ icon("plus") }}<span>Tạo lộ trình</span></button>
-    <button type="button" class="secondary" id="compose-path">{{ icon("sparkle") }}<span>Ghép từ bài có sẵn</span></button>
     <button type="button" class="secondary" id="import-path">{{ icon("upload") }}<span>Nhập từ tệp JSON</span></button>
     <input type="file" id="import-file" accept="application/json,.json" hidden>
     <a class="button secondary" href="/teach/insights">{{ icon("chart") }}<span>Thống kê luyện tập</span></a>
@@ -162,30 +160,5 @@
     </div>
   </form>
 </dialog>
-
-{#- D046: the path model proposes, the teacher keeps what they want and saves a draft. -#}
-<dialog class="sheet wide" id="compose-dialog" aria-labelledby="compose-h">
-  <form id="compose-form">
-    <h2 id="compose-h">Ghép lộ trình từ bài có sẵn</h2>
-    <p class="muted">Model chọn trong các bài đã xuất bản của mọi lộ trình, xếp thứ tự theo cách các
-      lộ trình hiện có đang xếp, và nói lý do chọn từng bài. Bạn bỏ bớt bài, đặt tên, rồi lưu thành
-      một lộ trình <b>nháp</b> gồm bản sao các bài; sinh viên chỉ thấy khi bạn xuất bản.</p>
-    {{ goal_fields("tc", bands=true, max_length=30) }}
-    <div class="button-row">
-      <button type="submit">{{ icon("sparkle") }}<span>Xem đề xuất</span></button>
-      <button type="button" class="secondary" data-close="compose-dialog">Đóng</button>
-    </div>
-  </form>
-  <form id="compose-save" hidden>
-    <div id="compose-result" aria-live="polite"></div>
-    <label for="compose-title">Tên lộ trình</label>
-    <input id="compose-title" name="title" required maxlength="160" autocomplete="off">
-    <div class="button-row">
-      <button type="submit">Lưu thành lộ trình nháp</button>
-      <button type="button" class="secondary" id="compose-back">Sửa mục tiêu</button>
-    </div>
-  </form>
-</dialog>
 {% endblock %}
-{% block scripts %}<script src="{{ asset('teach_paths.js') }}"></script>
-<script src="{{ asset('path_plans.js') }}"></script>{% endblock %}
+{% block scripts %}<script src="{{ asset('teach_paths.js') }}"></script>{% endblock %}

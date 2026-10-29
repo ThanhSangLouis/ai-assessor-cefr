@@ -170,6 +170,7 @@ def test_bao_cao_that_co_nhan_xet_va_uu_tien(tone, sr) -> None:
             audio_path="x.wav",
             prompt_version="v1",
             config_version="v1",
+            consent_version="dt-v1",
         ),
         tone,
         sr,

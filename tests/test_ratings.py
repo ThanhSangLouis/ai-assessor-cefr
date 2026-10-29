@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import store
+from dbutil import connect
 from fastapi.testclient import TestClient
 
 from aicefr.storage.auth_repository import Role
@@ -47,13 +47,16 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student", research: bool = True) -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
     if role == "student":
-        c.post("/api/v1/me/terms")
+        c.post(
+            "/api/v1/me/consent",
+            data={"audio_storage_allowed": "true", "research_use_allowed": str(research).lower()},
+        )
     return c
 
 
@@ -87,11 +90,11 @@ def machine_scored(m, response_id: str, score: float, band: str) -> None:
     report.assessment = assessment.model_copy(
         update={"overall_0_6": score, "overall_band": Band(band)}
     )
-    store()["response"].update_one(
-        {"response_id": response_id},
-        {"$set": {"overall_0_6": score, "overall_band": band,
-                  "report_json": report.model_dump_json()}},
-    )  # fmt: skip
+    with connect() as c:
+        c.execute(
+            "UPDATE response SET overall_0_6=?, overall_band=?, report_json=? WHERE response_id=?",
+            (score, band, report.model_dump_json(), response_id),
+        )
 
 
 def account_id(m, pseudonym: str) -> str:
@@ -138,6 +141,8 @@ def rate_all(teacher: TestClient, **changes) -> None:
 
 def test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order(m):
     rids, teachers, admin = study(m)
+    # Consented to storing the recording, not to research use: never rated.
+    submit(login_as(m, "SV-100", research=False))
     setup = admin.get("/api/v1/admin/ratings/setup").json()
     assert setup["eligible_new"] == 3
     assert {r["pseudonym"] for r in setup["raters"]} >= {"GV-01", "GV-02"}
@@ -259,7 +264,7 @@ def test_a_rating_follows_the_rating_sheet_rules(m):
         {**GOOD, "criteria": {"range": 3}},
         {**GOOD, "overall": 6.5},
         {**GOOD, "overall": 3.25},
-        {**GOOD, "band": "D1"},
+        {**GOOD, "band": "C1"},
         {**GOOD, "reason": ""},
         {"unscorable": True, "unscorable_reason": "broken", "overall": 2.0},
         {"unscorable": True},
@@ -302,18 +307,12 @@ def test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more
     rate(teacher, left)
 
 
-def all_sheets() -> list[dict]:
-    """Every sheet of every batch: sheets live in their batch's document (D060)."""
-    return [x for b in store()["rating_batch"].find() for x in b.get("ratings") or []]
-
-
-def seen_count() -> int:
-    """How many (person, response) openings of a machine result are noted."""
-    return sum(len(r.get("machine_seen") or []) for r in store()["response"].find())
-
-
 def raters_of(m, response_id: str) -> set[str]:
-    return {x["rater_id"] for x in all_sheets() if x["response_id"] == response_id}
+    with connect() as c:
+        rows = c.execute(
+            "SELECT rater_id FROM rating_assignment WHERE response_id=?", (response_id,)
+        ).fetchall()
+    return {r[0] for r in rows}
 
 
 def test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response(m):
@@ -366,8 +365,10 @@ def test_a_void_sheet_can_be_handed_to_another_rater(m):
     rids, teachers, admin = study(m, students=1, raters=("GV-01", "GV-02", "GV-03", "GV-04"))
     made = new_batch(m, admin, raters=("GV-01", "GV-02"))
     base = f"/api/v1/admin/ratings/batches/{made['batch_id']}"
-    gv01 = account_id(m, "GV-01")
-    slot_of_gv01 = next(x["slot"] for x in all_sheets() if x["rater_id"] == gv01)
+    with connect() as c:
+        slot_of_gv01 = c.execute(
+            "SELECT slot FROM rating_assignment WHERE rater_id=?", (account_id(m, "GV-01"),)
+        ).fetchone()[0]
     admin.post(f"{base}/close")
     assert teachers["GV-01"].get(f"/api/v1/responses/{rids[0]}").status_code == 200
     assert teachers["GV-04"].get(f"/api/v1/responses/{rids[0]}").status_code == 200
@@ -384,8 +385,10 @@ def test_a_void_sheet_can_be_handed_to_another_rater(m):
     assert hand_to("GV-04") == {"created": 0, "skipped_own": 0, "skipped_seen": 1}
     assert hand_to("GV-03") == {"created": 1, "skipped_own": 0, "skipped_seen": 0}
     assert sheets(teachers["GV-01"]) == []
-    gv03 = account_id(m, "GV-03")
-    taken = next(x["slot"] for x in all_sheets() if x["rater_id"] == gv03)
+    with connect() as c:
+        taken = c.execute(
+            "SELECT slot FROM rating_assignment WHERE rater_id=?", (account_id(m, "GV-03"),)
+        ).fetchone()[0]
     assert taken == slot_of_gv01
     batch = admin.get("/api/v1/admin/ratings/batches").json()[0]
     assert batch["voided"] == 0 and batch["assignments"] == 2
@@ -512,18 +515,42 @@ def test_a_review_decision_keeps_the_ratings_and_who_saw_the_machine(m):
     rate_all(teachers["GV-02"])
     reviewer = login_as(m, "GV-09", "teacher")
     reviewer.get(f"/api/v1/responses/{rids[0]}")
-    before = seen_count()
+    with connect() as c:
+        before = c.execute("SELECT COUNT(*) FROM machine_seen").fetchone()[0]
 
     r = reviewer.post(
         f"/api/v1/review/{rids[0]}", json={"new_score": 4.0, "reason": "Nghe lại, tốt hơn."}
     )
     assert r.status_code == 200, r.text
 
-    assert len(all_sheets()) == 4
-    assert sum(x["submitted_at"] is not None for x in all_sheets()) == 4
-    assert seen_count() == before
+    with connect() as c:
+        assert c.execute("SELECT COUNT(*) FROM rating_assignment").fetchone()[0] == 4
+        assert c.execute("SELECT COUNT(*) FROM research_rating").fetchone()[0] == 4
+        assert c.execute("SELECT COUNT(*) FROM machine_seen").fetchone()[0] == before
     d = admin.get(f"/api/v1/admin/ratings/batches/{made['batch_id']}/report").json()
     assert d["report"]["counts"]["rated_twice"] == 2
+
+
+def test_withdrawn_consent_takes_a_response_out_of_report_and_export(m):
+    rids, teachers, admin = study(m, students=2)
+    made = new_batch(m, admin)
+    rate_all(teachers["GV-01"])
+    rate_all(teachers["GV-02"])
+    student = TestClient(m.app)
+    student.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
+    student.post("/api/v1/me/consent/withdraw")
+    d = admin.get(f"/api/v1/admin/ratings/batches/{made['batch_id']}/report").json()
+    assert d["withdrawn"] == 1 and d["report"]["counts"]["responses"] == 1
+    rows = list(
+        csv.DictReader(
+            io.StringIO(
+                admin.get(
+                    f"/api/v1/admin/ratings/batches/{made['batch_id']}/export.csv"
+                ).text.lstrip("﻿")
+            )
+        )
+    )
+    assert {r["speaker_id"] for r in rows} == {"SV-002"}
 
 
 def test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score(m):
@@ -553,8 +580,11 @@ def test_erasing_a_participant_erases_what_raters_said_about_them(m):
         ).status_code
         == 200
     )
-    left = sum(x["response_id"] == rids[0] for x in all_sheets())
-    ratings = sum(x["submitted_at"] is not None for x in all_sheets())
+    with connect() as c:
+        left = c.execute(
+            "SELECT COUNT(*) FROM rating_assignment WHERE response_id=?", (rids[0],)
+        ).fetchone()[0]
+        ratings = c.execute("SELECT COUNT(*) FROM research_rating").fetchone()[0]
     assert left == 0
     assert ratings == 1  # GV-01's rating of SV-002 is all that is left
     batch = admin.get("/api/v1/admin/ratings/batches").json()[0]

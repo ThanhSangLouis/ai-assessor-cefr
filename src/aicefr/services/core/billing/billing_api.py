@@ -35,14 +35,13 @@ from aicefr.api.deps import (
     ADMIN_ONLY,
     STAFF_ONLY,
     optional_account,
-    require_login,
 )
 from aicefr.api.web import templates
 from aicefr.billing.gateways import SandboxGateway
 from aicefr.billing.keys import LicenseKeyError
 from aicefr.billing.payments import SETTLEABLE, Ack, GatewayError, Incoming, OrderStatus
-from aicefr.billing.plans import MAX_SEATS, MIN_SEATS, PLAN_NAMES, Quote, QuoteError, ServicePlan
-from aicefr.billing.service import CREDITS, BillingOff, BillingService, PaymentUnavailable
+from aicefr.billing.plans import MAX_SEATS, MIN_SEATS, PLAN_NAMES, Plan, Quote, QuoteError
+from aicefr.billing.service import BillingOff, BillingService, PaymentUnavailable
 from aicefr.config import get_settings
 from aicefr.practice.streak import LOCAL_TZ
 from aicefr.storage.auth_repository import Account, Role
@@ -105,7 +104,7 @@ def _billing() -> BillingService:
 
 
 class PurchaseIn(BaseModel):
-    plan: ServicePlan
+    plan: Plan
     seats: int = Field(ge=MIN_SEATS, le=MAX_SEATS)
     months: int
     # One of the gateways offered; the first offered when not given (D035).
@@ -187,60 +186,6 @@ def billing_order(body: PurchaseIn, request: Request, account: Account = ADMIN_O
         raise HTTPException(422, str(e)) from e
     except PaymentUnavailable as e:
         # The gateway refused or was unreachable; the order is already marked failed.
-        raise HTTPException(502, str(e)) from e
-    return {"order": billing.order_view(order), "checkout_url": url}
-
-
-# ================================================================= run packs (D053)
-
-
-class CreditOrderIn(BaseModel):
-    runs: int = Field(ge=1, le=10_000)
-    gateway: str | None = Field(default=None, max_length=20)
-
-
-@router.get("/api/v1/me/credit-packs", tags=["student"])
-def my_credit_packs(account: Account = Depends(require_login)) -> dict:
-    """The run packs on sale, the gateways, and this account's own pack orders."""
-    billing = _billing()
-    if not billing.sells_credits:
-        return {"on_sale": False}
-    billing.store.expire_pending(billing._stamp())
-    mine = billing.store.orders_by(account.account_id, CREDITS)
-    for order in mine:
-        billing.credit_order(order)  # a pack paid while the metering service was away
-    return {
-        "on_sale": True,
-        "packs": billing.credit_packs(),
-        "gateways": [
-            {"name": g.name, "title": g.title, "live": g.live} for g in billing.gateways.values()
-        ],
-        "orders": [
-            billing.order_view(o) for o in billing.store.orders_by(account.account_id, CREDITS)
-        ],
-    }
-
-
-@router.post("/api/v1/me/credit-orders", tags=["student"])
-def my_credit_order(
-    body: CreditOrderIn, request: Request, account: Account = Depends(require_login)
-) -> dict:
-    """Order one run pack; the answer carries the address of the gateway's payment page."""
-    billing = _billing()
-    try:
-        order, url = billing.place_credit_order(
-            body.runs,
-            account.account_id,
-            account.pseudonym,
-            _site(request),
-            request.client.host if request.client else "127.0.0.1",
-            body.gateway,
-        )
-    except BillingOff:
-        raise HTTPException(409, "bản triển khai này không bán gói lượt") from None
-    except QuoteError as e:
-        raise HTTPException(422, str(e)) from e
-    except PaymentUnavailable as e:
         raise HTTPException(502, str(e)) from e
     return {"order": billing.order_view(order), "checkout_url": url}
 
@@ -358,7 +303,7 @@ def billing_return(
     query = dict(request.query_params)
     context: dict = {
         "account": account,
-        "nav_here": "credits" if account and account.role is Role.STUDENT else "admin",
+        "nav_here": "admin",
         "test": not gw.live,
         "gateway": gw.title,
         "order": None,
@@ -469,20 +414,18 @@ def billing_receipt(
     """A printable receipt for a paid order. Not a VAT invoice, and it says so."""
     if account is None:
         return RedirectResponse(f"/login?next=/billing/orders/{order_id}/receipt", status_code=303)
+    if account.role is not Role.ADMIN:
+        raise HTTPException(403, "chỉ quản trị viên xem được biên nhận")
     billing = _billing()
     order = billing.store.order(order_id)
     if order is None or order["status"] != OrderStatus.PAID.value:
         raise HTTPException(404, "không có biên nhận cho đơn này")
-    # A run pack's receipt is its buyer's too (D053); a plan's is the administrator's.
-    buyer = order["kind"] == CREDITS and order["created_by"] == account.account_id
-    if account.role is not Role.ADMIN and not buyer:
-        raise HTTPException(403, "chỉ quản trị viên xem được biên nhận")
     return templates.TemplateResponse(
         request,
         "billing_receipt.html",
         {
             "account": account,
-            "nav_here": "credits" if order["kind"] == CREDITS else "admin",
+            "nav_here": "admin",
             "order": billing.order_view(order),
             "organization": billing.organization() or "(chưa đặt tên tổ chức)",
             "test": not order["live"] and order["gateway"] != "none",

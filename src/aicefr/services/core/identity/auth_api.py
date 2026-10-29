@@ -1,16 +1,18 @@
-"""Sign-in, the terms of use, the merged audit log, and the gateway's session check (D043).
+"""Sign-in, consent, the merged audit log, and the session check the gateway makes (D043).
 
-FR-32 (sign-in), FR-01 (terms of use, D058), FR-36 (audit). The terms are
-checked where a recording is made, not at login: the account the gateway
-forwards carries `terms_accepted_at`, so the assessment and learning services
-decide without asking this one.
+FR-32 (sign-in), FR-01 and FR-35 (consent), FR-36 (audit). Consent is checked
+where a recording is made -- the assessment and learning services ask this one
+-- not at login: a student may still read an old report after withdrawing; what
+withdrawal stops is making new recordings and using existing ones for research.
+A change of consent is announced on the bus (`consent.changed`), so a learner
+who no longer allows research use leaves the feedback study at once (D040).
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Request
 from fastapi import Response as HttpResponse
 
 from aicefr.api.deps import ADMIN_ONLY, ROLE_HOME, require_login, set_session_cookie
@@ -18,19 +20,25 @@ from aicefr.api.schemas import LoginRequest
 from aicefr.auth.sessions import COOKIE_NAME, device_label
 from aicefr.contracts import AuditEntry
 from aicefr.observability import count
+from aicefr.platform.bus import MessageBus
 from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_account
 from aicefr.platform.rpc import RemoteError, same_key
 from aicefr.services import Peers
 from aicefr.storage.audit_repository import AuditLog, merge
 from aicefr.storage.auth_repository import Account, AccountLocked, AuthRepository, Role
+from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION, ConsentRepository
 
 router = APIRouter()
+
+CONSENT_CHANGED = "consent.changed"
 
 
 @dataclass
 class Services:
     auth: AuthRepository
+    consents: ConsentRepository
     audit_log: AuditLog
+    bus: MessageBus
     gateway_token: str
     # The other services, whose audit logs the administrator reads here
     # together with this one's.
@@ -135,35 +143,79 @@ def session_for_gateway(
     return {"signed_in": account is not None}
 
 
-# ================================================================= terms of use
+# ================================================================= consent
 
 
-def terms_state(account: Account, accepted_at: str | None = None) -> dict:
-    accepted_at = accepted_at or account.terms_accepted_at
+def consent_state(consent, account: Account) -> dict:
     return {
-        "accepted": accepted_at is not None,
-        "accepted_at": accepted_at,
-        "may_submit": accepted_at is not None,
+        "signed": consent is not None,
+        "consent_version": consent.consent_version if consent else CURRENT_CONSENT_VERSION,
+        "current_version": CURRENT_CONSENT_VERSION,
+        "audio_storage_allowed": bool(consent and consent.audio_storage_allowed),
+        "research_use_allowed": bool(consent and consent.research_use_allowed),
+        "signed_at": consent.signed_at if consent else None,
+        "may_submit": bool(consent and consent.may_submit),
         "role": account.role.value,
     }
 
 
-@router.get("/api/v1/me/terms", tags=["student"])
-def my_terms(account: Account = Depends(require_login)) -> dict:
-    """Whether the current user accepted the terms of use, and when."""
-    return terms_state(account)
+@router.get("/api/v1/me/consent", tags=["student"])
+def my_consent(account: Account = Depends(require_login)) -> dict:
+    """What the current user has agreed to, if anything."""
+    return consent_state(svc().consents.current(account.account_id), account)
 
 
-@router.post("/api/v1/me/terms", tags=["student"])
-def accept_terms(account: Account = Depends(require_login)) -> dict:
-    """Accept the terms of use (D058). Accepting again keeps the first date."""
+@router.post("/api/v1/me/consent", tags=["student"])
+def sign_consent(
+    audio_storage_allowed: bool = Form(False),
+    research_use_allowed: bool = Form(False),
+    account: Account = Depends(require_login),
+) -> dict:
+    """Record a signature. The two permissions are separate on purpose.
+
+    A single "I agree" button would make it impossible to tell afterwards
+    whether somebody meant "you may keep my recording" or "you may publish
+    numbers derived from it". They are different questions and they are asked
+    separately.
+    """
     s = svc()
-    first = account.terms_accepted_at is None
-    accepted_at = s.auth.accept_terms(account.account_id)
-    if first:
-        s.audit_log.write(account.pseudonym, "terms.accept", account.account_id, None)
-        count("terms_accepted_total")
-    return terms_state(account, accepted_at)
+    c = s.consents.sign(
+        account.account_id,
+        audio_storage_allowed=audio_storage_allowed,
+        research_use_allowed=research_use_allowed,
+    )
+    s.audit_log.write(
+        account.pseudonym,
+        "consent.sign",
+        c.consent_id,
+        f"version={c.consent_version} audio={int(c.audio_storage_allowed)}"
+        f" research={int(c.research_use_allowed)}",
+    )
+    s.bus.publish(
+        CONSENT_CHANGED,
+        {"account_id": account.account_id, "research_use_allowed": c.research_use_allowed},
+    )
+    count("consent_signed_total")
+    return consent_state(c, account)
+
+
+@router.post("/api/v1/me/consent/withdraw", tags=["student"])
+def withdraw_consent(account: Account = Depends(require_login)) -> dict:
+    """Withdraw consent. The student does this themselves, FR-35.
+
+    Needing to email an administrator is not a right, it is a queue. Results
+    already produced stay readable by their owner until the retention job
+    removes them; what stops immediately is new recording and research use.
+    """
+    s = svc()
+    withdrawn = s.consents.withdraw(account.account_id)
+    s.bus.publish(
+        CONSENT_CHANGED, {"account_id": account.account_id, "research_use_allowed": False}
+    )
+    if withdrawn:
+        s.audit_log.write(account.pseudonym, "consent.withdraw", account.account_id, None)
+        count("consent_withdrawn_total")
+    return {"withdrawn": withdrawn, **consent_state(None, account)}
 
 
 # ================================================================= audit

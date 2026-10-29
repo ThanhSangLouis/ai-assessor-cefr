@@ -22,9 +22,7 @@ from aicefr.ports import BlobStore
 from aicefr.qc import audio_qc
 from aicefr.services import Peers
 from aicefr.storage.auth_repository import Account
-from aicefr.storage.classroom_repository import ClassroomRepository
 from aicefr.storage.rating_repository import RatingRepository
-from aicefr.storage.replay_repository import ReplayRepository
 from aicefr.storage.repository import Repository
 from aicefr.storage.study_repository import StudyRepository
 from aicefr.storage.task_repository import TaskRepository
@@ -64,8 +62,6 @@ class Services:
     blobs: BlobStore
     bus: MessageBus
     peers: Peers
-    classrooms: ClassroomRepository | None = None  # D054
-    replays: ReplayRepository | None = None  # D056
 
     @property
     def upload_dir(self) -> Path:
@@ -100,7 +96,7 @@ def blind(account: Account, response_id: str) -> None:
     Seeing the machine's score first is exactly the anchoring the blind rating
     exists to avoid; once the rating is submitted, the response opens again.
     """
-    if account.is_staff and svc().ratings.has_open(account.account_id, response_id):
+    if account.is_teacher and svc().ratings.has_open(account.account_id, response_id):
         raise HTTPException(
             403,
             "bài này đang trong đợt chấm mù của bạn: chấm xong ở trang Chấm mù rồi mới xem"
@@ -115,7 +111,7 @@ def saw(account: Account, response_id: str, via: str) -> None:
     in a later batch, and a sheet of theirs that is still owed -- in a batch
     closed for now -- stops taking a rating. Students are never raters.
     """
-    if account.is_staff:
+    if account.is_teacher:
         svc().ratings.saw_machine(account.account_id, response_id, via)
 
 

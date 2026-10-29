@@ -8,30 +8,31 @@ UNIT OF INFERENCE: one spoken response, that is, one audio file. This is the
 unit the project works with. The model was trained on parts P3 and P4 of Speak &
 Improve because in those parts each exam response is a single file.
 
-Cross-validated with GroupKFold, 5 folds grouped by speaker; the figures are
-in the artifact (`cv_pcc`, `cv_rmse`), which lives outside the repository
-because it is corpus statistics (W7-S01). They are LOWER than at whole-exam
-level, which is exactly what to expect: a 60-second response carries less
-information than a five-minute whole exam. The two numbers must not be
-compared as though they came from the same problem.
+GroupKFold results with 5 folds grouped by speaker: PCC 0.697, RMSE 0.526.
+These numbers are LOWER than at whole-exam level (PCC 0.814), which is exactly
+what to expect: a 60-second response carries less information than a five-minute
+whole exam. The two numbers must not be compared as though they came from the
+same problem.
 """
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from functools import lru_cache
+from pathlib import Path
 
 from aicefr.contracts import (
     Assessment,
+    Band,
     Criterion,
     CriterionCoverage,
     FeatureSet,
     ReasonCode,
 )
-from aicefr.scoring import artifacts
-from aicefr.scoring.band_map import BAND_MAP_VERSION, near_boundary, thresholds_of, to_band
 from aicefr.scoring.conformal import ConformalCalibrator, weakest
 
+MODEL_DIR = Path(__file__).parent / "models"
 # ridge_resp_v2 is ridge_resp_v1 with one term removed: `filler_ratio`, whose
 # coefficient was fitted on a column that is constant zero in the training data
 # and therefore carries no information. Scores are identical on every input the
@@ -66,13 +67,13 @@ class IncompatibleModelError(ValueError):
 
     This is the guard against repeating the worst bug this project has had. An
     earlier model was fitted on whole exam sittings -- four parts concatenated,
-    several minutes of speech per sample. This system scores ONE response:
-    about a minute. Feeding a single response to that
+    a median of 474 words and 289 seconds per sample. This system scores ONE
+    response: about 98 words and 60 seconds. Feeding a single response to that
     model produced 1.00 (A2) for a submission an expert had marked 4.00 (B2),
     and reported success while doing it.
 
     That artifact is still on disk, and it reports a HIGHER cross-validated
-    correlation than the model actually in use. The two
+    correlation than the model actually in use (0.814 against 0.697). The two
     numbers describe different tasks and must never be compared. An
     administrator reading a table of models would reasonably pick the higher
     one, so the refusal has to live in the code, not in a caption.
@@ -83,18 +84,25 @@ class ModelNotFoundError(FileNotFoundError):
     """The model artifact is missing. The pipeline must return MODEL_VERSION_MISSING."""
 
 
+@lru_cache(maxsize=4)
 def load_model(name: str = DEFAULT_MODEL) -> dict:
-    """The artifact `name` from AICEFR_MODEL_DIR, checked against its pinned SHA-256 (W7-S01)."""
-    try:
-        return _load_model(name, str(artifacts.model_dir()))
-    except artifacts.ArtifactError as e:
-        raise ModelNotFoundError(str(e)) from e
+    path = MODEL_DIR / f"{name}.json"
+    if not path.exists():
+        raise ModelNotFoundError(f"không tìm thấy mô hình {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
 
 
-@lru_cache(maxsize=8)
-def _load_model(name: str, folder: str) -> dict:
-    # Keyed by the folder too: tests point AICEFR_MODEL_DIR somewhere else.
-    return artifacts.read_json(name)
+def to_band(score: float, thresholds: dict[str, float]) -> Band:
+    if score < thresholds["A2_B1"]:
+        return Band.A2
+    if score < thresholds["B1_B2"]:
+        return Band.B1
+    return Band.B2
+
+
+def near_boundary(score: float, thresholds: dict[str, float], margin: float) -> bool:
+    """A score close to the boundary between two bands should go to a teacher."""
+    return any(abs(score - t) <= margin for t in thresholds.values())
 
 
 def out_of_distribution(features: FeatureSet, model: dict) -> list[str]:
@@ -103,7 +111,7 @@ def out_of_distribution(features: FeatureSet, model: dict) -> list[str]:
     Why this function exists: a linear regression still returns a number for ANY
     input, including a meaningless one. Without this guard the system would
     silently hand out wrong scores. A case we actually hit: a model trained at
-    whole-exam level was given a one-minute response and
+    whole-exam level (median 474 words) was given a 98-word response and
     returned the floor score of 1.0 for a response that was really a 4.0.
     """
     return [item["feature"] for item in out_of_distribution_detail(features, model)]
@@ -154,7 +162,7 @@ def predict_overall(features: FeatureSet, model: dict) -> tuple[float | None, li
         return None, [ReasonCode.OUT_OF_DISTRIBUTION]
 
     z = [
-        (x - m) / (s or 1.0)
+        (x - m) / (s if s else 1.0)
         for x, m, s in zip(
             features.vector(model["feature_order"]), model["mean"], model["scale"], strict=True
         )
@@ -189,13 +197,11 @@ class RidgeScorer:
         self._refuse_if_wrong_unit(model_name, self._model)
         self.model_version: str = self._model["model_version"]
         self.feature_version = self._model.get("feature_version")
-        # D059: the band map lives in the code (six bands, five boundaries); the
-        # artifact contributes its own boundaries, not the version.
-        self.band_map_version = BAND_MAP_VERSION
+        self.band_map_version = self._model.get("band_map_version")
         self.calibration_version = self._model.get("calibration_version")
         # Exposed so the window aggregation maps its median to a band with the
         # same thresholds the artifact declares, instead of a second copy.
-        self.band_thresholds: dict = thresholds_of(self._model["band_thresholds"])
+        self.band_thresholds: dict = self._model["band_thresholds"]
         # Which recogniser and detector produced the features this model was
         # fitted on. The pipeline compares them with what is actually running.
         self.trained_with: dict = self._model.get("trained_with", {})
@@ -253,7 +259,7 @@ class RidgeScorer:
         """
         model = self._model
         overall, reasons = predict_overall(features, model)
-        th = self.band_thresholds
+        th = model["band_thresholds"]
 
         criteria: list[CriterionCoverage] = []
         for crit, feats in CRITERION_FEATURES.items():

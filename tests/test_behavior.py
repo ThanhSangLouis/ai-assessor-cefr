@@ -22,7 +22,7 @@ import pytest
 
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.asr.vad import EnergyVad
-from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus, Word
+from aicefr.contracts import ProcessingRequest, ReasonCode, Status, Word
 from aicefr.features.extract import FeatureExtractor
 from aicefr.features.relevance import validity_flags
 from aicefr.pipeline import ResponseProcessor
@@ -70,7 +70,7 @@ def has_band(r) -> bool:
 
 
 def issued_without_teacher(r) -> bool:
-    return r.status is ResponseStatus.COMPLETED and has_band(r)
+    return r.status is Status.COMPLETED and has_band(r)
 
 
 # ----------------------------------------------------------------------- MFT
@@ -78,12 +78,12 @@ def issued_without_teacher(r) -> bool:
 
 def test_mft_silence_is_never_scored(req) -> None:
     r = run(np.zeros(SR * 40, dtype=np.float32), req)
-    assert r.status is ResponseStatus.REJECTED and not has_band(r)
+    assert r.status is Status.REJECTED and not has_band(r)
 
 
 def test_mft_a_recording_too_short_is_never_scored(req) -> None:
     r = run(speechish(5), req)
-    assert r.status is ResponseStatus.REJECTED and not has_band(r)
+    assert r.status is Status.REJECTED and not has_band(r)
     assert ReasonCode.AUDIO_TOO_SHORT in r.reasons
 
 

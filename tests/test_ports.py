@@ -14,7 +14,7 @@ import numpy as np
 
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.asr.vad import EnergyVad
-from aicefr.contracts import ProcessingRequest, ResponseStatus
+from aicefr.contracts import ProcessingRequest, Status
 from aicefr.pipeline import ResponseProcessor
 from aicefr.ports import AsrEngine, ResponseStore, Scorer, VoiceActivityDetector
 from aicefr.scoring.scorer import RidgeScorer
@@ -53,7 +53,7 @@ def test_processor_runs_on_injected_doubles_alone(tone, sr) -> None:
         config_version="v1",
     )
     report = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(request, tone, sr)
-    assert report.status is not ResponseStatus.FAILED
+    assert report.status is not Status.FAILED
     assert report.qc is not None
 
 

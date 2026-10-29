@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from dataclasses import dataclass
 
 import pytest
@@ -9,7 +10,7 @@ import pytest
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.asr.vad import EnergyVad
 from aicefr.asr.whisper_adapter import WhisperEngine
-from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
+from aicefr.contracts import ProcessingRequest, ReasonCode, Status
 from aicefr.features.relevance import (
     MIN_WORDS_FOR_OFF_TOPIC,
     is_english,
@@ -114,7 +115,7 @@ def _run(engine, request_obj, tone, sr, task=P4):
 
 def test_speech_detected_as_vietnamese_is_not_scored(request_obj, tone, sr) -> None:
     r = _run(FakeAsrEngine(language="vi", language_probability=0.92), request_obj, tone, sr)
-    assert r.status is ResponseStatus.REVIEW_REQUIRED
+    assert r.status is Status.REVIEW_REQUIRED
     assert r.reasons == [ReasonCode.LANGUAGE_NOT_ENGLISH]
     assert r.assessment is None
 
@@ -135,7 +136,7 @@ def test_off_topic_keeps_the_score_and_goes_to_a_teacher(request_obj, tone, sr) 
     off = _run(FakeAsrEngine(transcript=FOOTBALL), request_obj, tone, sr)
     assert ReasonCode.OFF_TOPIC_SUSPECTED not in on.reasons
     assert ReasonCode.OFF_TOPIC_SUSPECTED in off.reasons
-    assert off.status is ResponseStatus.REVIEW_REQUIRED
+    assert off.status is Status.REVIEW_REQUIRED
     if off.assessment is not None and off.assessment.overall_0_6 is not None:
         # Khong tru diem: co chi la co.
         assert off.assessment.overall_0_6 > 0
@@ -169,9 +170,21 @@ def test_default_tasks_carry_topic_keywords(tmp_path) -> None:
     assert repo.get("P5").topic_keywords == ()
 
 
+def test_an_old_database_gains_the_keyword_column(tmp_path) -> None:
+    db = tmp_path / "old.db"
+    with sqlite3.connect(db) as c:
+        c.execute(
+            "CREATE TABLE task (task_id TEXT PRIMARY KEY, title TEXT NOT NULL,"
+            " prompt_text TEXT NOT NULL, prompt_version TEXT NOT NULL, part TEXT NOT NULL,"
+            " min_seconds INTEGER NOT NULL DEFAULT 40, max_seconds INTEGER NOT NULL DEFAULT 60,"
+            " active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL)"
+        )
+    assert TaskRepository(db).get("P4").topic_keywords
+
+
 def test_keywords_an_admin_edited_are_kept(tmp_path) -> None:
     db = tmp_path / "t.db"
-    TaskRepository(db).col("task").update_one(
-        {"task_id": "P4"}, {"$set": {"topic_keywords": "robot, factory"}}
-    )
+    TaskRepository(db)
+    with sqlite3.connect(db) as c:
+        c.execute("UPDATE task SET topic_keywords='robot, factory' WHERE task_id='P4'")
     assert TaskRepository(db).get("P4").topic_keywords == ("robot", "factory")

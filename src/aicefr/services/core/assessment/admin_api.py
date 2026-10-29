@@ -42,6 +42,7 @@ from aicefr.services.core.assessment.context import (
     svc,
 )
 from aicefr.storage.auth_repository import Account
+from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -72,32 +73,36 @@ def stats_summary(account: Account = ADMIN_ONLY) -> dict:
 @router.get("/api/v1/admin/models", tags=["admin"])
 def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
     """Scoring artifacts on disk, with the metrics each one reports. FR-36."""
-    from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer, load_model
+    from aicefr.scoring.scorer import (
+        MODEL_DIR,
+        IncompatibleModelError,
+        RidgeScorer,
+        load_model,
+    )
 
     active = active_model_name()
     out = []
-    for stem in artifacts.available():
+    for path in sorted(MODEL_DIR.glob("*.json")):
         # The CV+ calibration artifact (D022) sits in the same folder but is not a
         # scoring model; listing it as "incompatible" would mean nothing.
-        if stem.startswith("conformal_"):
+        if path.stem.startswith("conformal_"):
             continue
         try:
-            m = load_model(stem)
+            m = load_model(path.stem)
         except Exception as e:  # noqa: BLE001 - a broken artifact must be listed, not hidden
-            out.append({"name": stem, "usable": False, "error": str(e)})
+            out.append({"name": path.stem, "usable": False, "error": str(e)})
             continue
         # An artifact can load fine and still be unusable here: `ridge_v3` was
         # fitted on whole exam sittings and reports a higher correlation for a
         # different task. Saying so stops an administrator activating it.
         try:
-            RidgeScorer(stem)
+            RidgeScorer(path.stem)
             compatible, why = True, None
         except IncompatibleModelError as e:
             compatible, why = False, str(e)
         out.append(
             {
-                "name": stem,
+                "name": path.stem,
                 "usable": True,
                 "model_version": m.get("model_version"),
                 "feature_version": m.get("feature_version"),
@@ -108,7 +113,7 @@ def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
                 "train_n": m.get("train_n"),
                 "compatible": compatible,
                 "incompatible_reason": why,
-                "active": stem == active,
+                "active": path.stem == active,
             }
         )
     return out
@@ -122,10 +127,9 @@ def activate_model(name: str, account: Account = ADMIN_ONLY) -> dict:
     touch results already stored, and it is audited. The speech service builds
     the new pipeline on the next job, since every job names its model.
     """
-    from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer
+    from aicefr.scoring.scorer import MODEL_DIR, IncompatibleModelError, RidgeScorer
 
-    if name not in artifacts.available():
+    if not (MODEL_DIR / f"{name}.json").is_file():
         raise HTTPException(404, f"không có tệp mô hình tên {name!r}")
     try:
         scorer = RidgeScorer(name)
@@ -232,7 +236,7 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
 
 @router.get("/api/v1/admin/export/research.json", tags=["admin"])
 def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
-    """Export the analysis set: only speakers who accepted the terms of use (D058).
+    """Export the analysis set: only speakers whose standing consent allows it.
 
     The export carries the size of the allowed set alongside the rows, so a
     reviewer can check the filter did something, and no transcript.
@@ -258,10 +262,11 @@ def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
     return JSONResponse(
         {
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "accounts_with_terms": len(allowed),
+            "consent_version": CURRENT_CONSENT_VERSION,
+            "accounts_allowing_research": len(allowed),
             "row_count": len(rows),
             "note": (
-                "Chỉ gồm bài của người đã đồng ý điều khoản sử dụng (D058)."
+                "Chỉ gồm bài của người đã đồng thuận cho nghiên cứu và chưa rút."
                 " Không chứa bản chép lời."
             ),
             "rows": rows,
@@ -311,10 +316,6 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
                 " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
             ) from e
         s.studies.erase_account(who["account_id"])
-        if s.classrooms is not None:
-            s.classrooms.forget_account(who["account_id"])
-        if s.replays is not None:
-            s.replays.forget_account(who["account_id"])
     result["cutoff_note"] = (
         "Đã xóa bản ghi và báo cáo. Dữ liệu đã dùng để huấn luyện các mô hình phát hành "
         "trước thời điểm này KHÔNG bị gỡ khỏi mô hình đó; việc gỡ chỉ áp dụng cho các "

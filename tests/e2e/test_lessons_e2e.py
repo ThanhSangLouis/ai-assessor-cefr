@@ -36,10 +36,9 @@ from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
     LiveServer,
     _free_port,
-    accept_terms,
     browser,
-    e2e_store,
     login,
+    sign_consent,
     write_wav,
 )
 
@@ -69,16 +68,13 @@ BOOT = (
 @pytest.fixture(scope="module")
 def live_server(tmp_path_factory) -> Iterator[LiveServer]:
     root = tmp_path_factory.mktemp("e2e-lessons")
-    db = e2e_store("lessons")
+    db = root / "e2e.db"
     port = _free_port()
     env = {k: v for k, v in os.environ.items() if not k.startswith("AICEFR_")}
     env.update(
         AICEFR_DB=str(db),
         AICEFR_UPLOADS=str(root / "uploads"),
         AICEFR_JOB_MODE="inline",
-        # The synthetic scoring artifacts tests/conftest.py points at (W7-S01).
-        AICEFR_MODEL_DIR=os.environ["AICEFR_MODEL_DIR"],
-        AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
         AICEFR_FAKE_TRANSCRIPT=HEARD,
         AICEFR_LOGIN_RATE="1000",
     )
@@ -124,10 +120,10 @@ def context(browser, live_server):
 
 @pytest.fixture
 def student(context, live_server):
-    """A new student, logged in, the terms accepted, on the lesson path."""
+    """A new student, logged in, with consent, on the lesson path."""
     page = context.new_page()
     login(page, live_server, live_server.account())
-    accept_terms(page)
+    sign_consent(page)
     page.goto("/practice")
     return page
 
@@ -155,10 +151,6 @@ def answer(page, live_server, name: str = "full-35s.wav") -> None:
     expect(page.locator("#step-feedback")).to_be_visible()
 
 
-# The first lesson of the sample path, A1 fluency (D059).
-FIRST_TITLE = "Giới thiệu bản thân thật liền"
-
-
 def open_step(page, title: str) -> None:
     page.locator(".rail-step", has_text=title).click()
     expect(page.locator("#step-h")).to_have_text(title)
@@ -168,11 +160,10 @@ def open_step(page, title: str) -> None:
 
 
 def test_new_learner_sees_the_path_and_the_first_lesson_next(student):
-    # D059: the sample path starts at A1.
-    expect(student.locator(".next-card h2")).to_have_text(FIRST_TITLE)
-    expect(student.locator(".lesson-node")).to_have_count(46)
-    expect(student.locator(".lesson-node.new")).to_have_count(46)
-    expect(student.locator(".path-part")).to_have_count(6)  # A1 to C2
+    expect(student.locator(".next-card h2")).to_have_text("Khu phố của tôi")
+    expect(student.locator(".lesson-node")).to_have_count(31)
+    expect(student.locator(".lesson-node.new")).to_have_count(31)
+    expect(student.locator(".path-part")).to_have_count(3)  # A2, B1, B2
     expect(student.locator(".lesson-node.next .node-flag")).to_have_text("Bắt đầu")
     expect(student.locator(".today-card .goal-ring")).to_contain_text("0/180 giây")
     expect(student.locator(".review-count")).to_contain_text("0")
@@ -218,12 +209,10 @@ def test_completing_a_lesson_marks_it_done_on_the_path(student, live_server):
     expect(student.locator("#step-h")).to_have_text("Nói tự do")
     answer(student, live_server)
     student.goto("/practice")
-    done = student.locator(
-        ".lesson-node", has=student.locator(f'.node-coin[data-lesson="{LESSON}"]')
-    )
-    expect(done).to_have_class(re.compile(r"\bcompleted\b"))
-    expect(done.locator(".lesson-state")).to_have_text("Đã hoàn thành")
-    expect(student.locator(".overall")).to_contain_text("1/46 bài đã hoàn thành")
+    first = student.locator(".lesson-node").first
+    expect(first).to_have_class(re.compile(r"\bcompleted\b"))
+    expect(first.locator(".lesson-state")).to_have_text("Đã hoàn thành")
+    expect(student.locator(".overall")).to_contain_text("1/31 bài đã hoàn thành")
     expect(student.locator(".today-card .goal-ring")).not_to_contain_text("0/180")
     expect(student.locator(".next-card h2")).not_to_have_text("Khu phố của tôi")
 
@@ -233,14 +222,13 @@ def test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson(student):
     coin.click()
     card = student.locator("#node-card")
     expect(card).to_be_visible()
-    expect(card.locator("h3")).to_have_text(FIRST_TITLE)
+    expect(card.locator("h3")).to_have_text("Khu phố của tôi")
     expect(coin).to_have_attribute("aria-expanded", "true")
     student.keyboard.press("Escape")
     expect(card).to_have_count(0)
     coin.click()
     card.get_by_role("link", name="Bắt đầu").click()
-    first = "/practice/lessons/lesson-pr-flu-a1"
-    student.wait_for_url(lambda url: urlparse(url).path == first)
+    student.wait_for_url(lambda url: urlparse(url).path == f"/practice/lessons/{LESSON}")
 
 
 def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
@@ -251,17 +239,17 @@ def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
     main = student.locator("main").bounding_box()
     assert main and main["x"] >= box["width"] - 1  # the page starts after the sidebar
     links = sidebar.locator(".site-nav a")
-    expect(links).to_have_count(5)  # D054 added "Bài được giao"
+    expect(links).to_have_count(4)
     expect(links.first.locator("svg use")).to_have_attribute(
         "href", re.compile(r"icons\.svg.*#i-path$")
     )
     expect(sidebar.locator(".site-nav a[aria-current='page']")).to_have_text("Luyện tập")
 
 
-def test_learner_without_the_terms_cannot_record_a_step(context, live_server):
+def test_learner_without_consent_cannot_record_a_step(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), f"/practice/lessons/{LESSON}")
-    expect(page.locator("#terms-gate")).to_be_visible()
+    expect(page.locator("#consent-gate")).to_be_visible()
     expect(page.locator("#rec-button")).to_be_disabled()
     expect(page.locator("#audio")).to_be_disabled()
 
@@ -282,7 +270,7 @@ def test_phone_layout_of_the_path_and_a_lesson_has_no_sideways_scroll(context, l
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account())
-    accept_terms(page)
+    sign_consent(page)
     for path in ("/practice", f"/practice/lessons/{LESSON}"):
         page.goto(path)
         page.wait_for_load_state("networkidle")

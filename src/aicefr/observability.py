@@ -21,12 +21,9 @@ import json
 import logging
 import re
 import sys
-import threading
 import time
 import uuid
 from collections import Counter
-from collections.abc import Iterator
-from contextlib import contextmanager
 from contextvars import ContextVar
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
@@ -90,62 +87,16 @@ def new_request_id() -> str:
 
 
 # --- counters ------------------------------------------------------------
-# In-process counters and histograms, exposed in Prometheus text format and
-# scraped by Prometheus (D051, docker-compose.observability.yml). Labels carry
-# only bounded, non-personal values: a stage, a queue, a status, a route
-# template -- never an account, a response id or a transcript.
+# A tiny in-process counter set, exposed in Prometheus text format. Not a
+# replacement for a real metrics backend, but enough to answer "is anything
+# being submitted, and is anything failing?" without reading logs.
 
-Labels = tuple[tuple[str, str], ...]
-
-_counters: Counter[tuple[str, Labels]] = Counter()
-_histograms: dict[tuple[str, Labels], list[float]] = {}
-_lock = threading.Lock()
+_counters: Counter[str] = Counter()
 _started_at = time.time()
 
-# Seconds: a request, a pipeline stage, a recogniser call, a job in a queue.
-BUCKETS = (0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0, 120.0, 300.0)
 
-
-def _labels(labels: dict[str, object]) -> Labels:
-    return tuple(sorted((k, str(v)) for k, v in labels.items()))
-
-
-def count(name: str, value: int = 1, **labels: object) -> None:
-    with _lock:
-        _counters[(name, _labels(labels))] += value
-
-
-def observe(name: str, seconds: float, **labels: object) -> None:
-    """One observation of a duration, into a histogram with fixed buckets."""
-    key = (name, _labels(labels))
-    with _lock:
-        cells = _histograms.setdefault(key, [0.0] * (len(BUCKETS) + 2))
-        for i, bound in enumerate(BUCKETS):
-            if seconds <= bound:
-                cells[i] += 1
-        cells[-2] += seconds  # sum
-        cells[-1] += 1  # count
-
-
-@contextmanager
-def timed(name: str, **labels: object) -> Iterator[None]:
-    """Observe how long the block took, whether it returned or raised."""
-    start = time.perf_counter()
-    try:
-        yield
-    finally:
-        observe(name, time.perf_counter() - start, **labels)
-
-
-def _render_labels(labels: Labels, extra: tuple[str, str] | None = None) -> str:
-    pairs = [*labels, *([extra] if extra else [])]
-    if not pairs:
-        return ""
-    inner = ",".join(
-        f'{k}="{v.replace(chr(92), chr(92) * 2).replace(chr(34), chr(92) + chr(34))}"'
-        for k, v in pairs
-    )
-    return "{" + inner + "}"
+def count(name: str, value: int = 1) -> None:
+    _counters[name] += value
 
 
 def render_metrics() -> str:
@@ -154,24 +105,7 @@ def render_metrics() -> str:
         "# TYPE aicefr_uptime_seconds gauge",
         f"aicefr_uptime_seconds {time.time() - _started_at:.0f}",
     ]
-    with _lock:
-        counters = dict(_counters)
-        histograms = {k: list(v) for k, v in _histograms.items()}
-    typed: set[str] = set()
-    for (name, labels), value in sorted(counters.items()):
-        metric = f"aicefr_{name}"
-        if metric not in typed:
-            lines.append(f"# TYPE {metric} counter")
-            typed.add(metric)
-        lines.append(f"{metric}{_render_labels(labels)} {value}")
-    for (name, labels), cells in sorted(histograms.items()):
-        metric = f"aicefr_{name}"
-        if metric not in typed:
-            lines.append(f"# TYPE {metric} histogram")
-            typed.add(metric)
-        for bound, n in zip(BUCKETS, cells, strict=False):
-            lines.append(f"{metric}_bucket{_render_labels(labels, ('le', str(bound)))} {n:.0f}")
-        lines.append(f"{metric}_bucket{_render_labels(labels, ('le', '+Inf'))} {cells[-1]:.0f}")
-        lines.append(f"{metric}_sum{_render_labels(labels)} {cells[-2]:.6f}")
-        lines.append(f"{metric}_count{_render_labels(labels)} {cells[-1]:.0f}")
+    for key in sorted(_counters):
+        metric = f"aicefr_{key}"
+        lines += [f"# TYPE {metric} counter", f"{metric} {_counters[key]}"]
     return "\n".join(lines) + "\n"

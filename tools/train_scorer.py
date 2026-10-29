@@ -38,9 +38,7 @@ from sklearn.model_selection import GroupKFold
 from sklearn.preprocessing import StandardScaler
 
 ROOT = Path(__file__).resolve().parents[1]
-# The real artifacts live outside Git (W7-S01, aicefr.scoring.artifacts).
-MODEL_DIR = Path(os.getenv("AICEFR_MODEL_DIR") or ROOT.parent / "aicefr-models")
-DEFAULT_OUT = MODEL_DIR / "ridge_resp_v1.json"
+DEFAULT_OUT = ROOT / "src/aicefr/scoring/models/ridge_resp_v1.json"
 
 ALPHAS = np.logspace(-2, 4, 40)
 OOD_PCT = (1.0, 99.0)  # nguong coi la ngoai phan bo huan luyen

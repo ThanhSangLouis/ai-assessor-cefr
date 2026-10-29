@@ -41,9 +41,15 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    # FR-01 (D058): recording requires the terms of use. Accepted through the real
-    # endpoint so the fixtures walk the same path as a student.
-    assert c.post("/api/v1/me/terms").status_code == 200
+    # FR-01: recording requires consent. Signed through the real endpoint so the
+    # fixtures walk the same path as a student.
+    assert (
+        c.post(
+            "/api/v1/me/consent",
+            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
+        ).status_code
+        == 200
+    )
     return c
 
 
@@ -180,7 +186,10 @@ def test_database_never_stores_raw_session_token(app) -> None:
     lets nobody impersonate any session."""
     c = login_as(app, "SV-001", "student")
     token = c.cookies[COOKIE_NAME]
-    stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("session").find()]
+    with app.state.auth_repo._conn() as conn:  # noqa: SLF001
+        stored_hashes = [
+            r["token_hash"] for r in conn.execute("SELECT token_hash FROM auth_sessions")
+        ]
     assert token not in stored_hashes
     assert len(stored_hashes) == 1
 
@@ -274,10 +283,10 @@ def test_another_users_status_returns_404(app) -> None:
 def test_stuck_running_response_marked_failed(app, monkeypatch) -> None:
     """NFR-11: if the process dies halfway, a response must not sit in RUNNING forever."""
     from aicefr.api import main as m
-    from aicefr.contracts import Response, ResponseStatus
+    from aicefr.contracts import Response, Status
 
     m.repo.save(
-        Response(response_id="ket001", status=ResponseStatus.RUNNING, config_version="v1"),
+        Response(response_id="ket001", status=Status.RUNNING, config_version="v1"),
         "SV-001",
         "P3",
     )

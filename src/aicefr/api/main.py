@@ -1,7 +1,7 @@
 """Every service in one process: the tests, and a single machine (D043, D044).
 
 The system is three services (`aicefr.services`) -- core, speech, web -- each
-its own container in a deployment, talking over HTTP and Redis. This module
+its own container in a deployment, talking over HTTP and RabbitMQ. This module
 builds all three into one FastAPI application instead: the web service gets
 the core's facades as plain objects, and the bus delivers in this process.
 The routes, the rules and the store are the same code; only the wiring differs.
@@ -68,7 +68,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="AI Assessor CEFR",
     description=(
-        "AI-assisted assessment of English speaking against CEFR A1-C2.\n\n"
+        "AI-assisted assessment of English speaking against CEFR A2-B2.\n\n"
         "A study aid, not a certification service: the system produces an "
         "**estimate**, and a teacher makes the final decision. Every report "
         "carries the versions of the model, features and thresholds that "
@@ -94,7 +94,7 @@ mount_static(app)
 # The administrator's account menu links to /docs only where the docs are served.
 templates.env.globals["api_docs"] = app.docs_url is not None
 
-for key in ("auth_repo", "callers", "plans"):
+for key in ("auth_repo", "consent_repo", "callers"):
     setattr(app.state, key, core_parts.state[key])
 for parts in (core_parts, speech_parts, web_parts):
     for router in parts.routers:

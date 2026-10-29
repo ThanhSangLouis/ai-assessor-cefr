@@ -5,7 +5,6 @@ from conftest import feature_set
 
 from aicefr.contracts import Band, FeatureSet, ReasonCode
 from aicefr.ports import Scorer
-from aicefr.scoring.band_map import thresholds_of
 from aicefr.scoring.scorer import (
     DEFAULT_MODEL,
     RidgeScorer,
@@ -46,13 +45,10 @@ def test_normal_input_is_scored(typical):
 
 
 def test_band_mapping_by_threshold():
-    th = thresholds_of({"A2_B1": 2.75, "B1_B2": 3.75})
-    assert to_band(1.0, th) is Band.A1
+    th = {"A2_B1": 2.75, "B1_B2": 3.75}
     assert to_band(2.0, th) is Band.A2
     assert to_band(3.0, th) is Band.B1
-    assert to_band(4.5, th) is Band.B2
-    assert to_band(5.0, th) is Band.C1
-    assert to_band(6.0, th) is Band.C2
+    assert to_band(5.0, th) is Band.B2
 
 
 def test_missing_features_prevent_scoring(typical):

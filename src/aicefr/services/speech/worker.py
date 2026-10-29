@@ -21,14 +21,12 @@ from __future__ import annotations
 import logging
 import os
 import threading
-import time
 from collections.abc import Callable
 
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.audio.decoder import DecodeError, FirstMatchDecoder
 from aicefr.config import Settings
-from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
-from aicefr.observability import observe
+from aicefr.contracts import ProcessingRequest, ReasonCode, Status
 from aicefr.pipeline import ResponseProcessor
 from aicefr.ports import BlobStore
 from aicefr.qc import audio_qc
@@ -157,19 +155,10 @@ class SpeechWorker:
         for a page that never changes.
         """
         rid = job["response_id"]
-        purpose = "practice" if job.get("priority", 1) > 1 else "assessment"
-        # D051: how long the job waited for a free worker -- the number to watch
-        # when deciding to run a second speech instance.
-        if isinstance(job.get("enqueued_at"), (int, float)):
-            observe("job_queue_wait_seconds", max(0.0, time.time() - job["enqueued_at"]),
-                    queue="speech.score", purpose=purpose)  # fmt: skip
         with self.slots:
-            start = time.perf_counter()
-            outcome = "ok"
             try:
                 self._score(job)
             except BaseException:
-                outcome = "error"
                 # A missing recording raises FileNotFoundError, which is not a
                 # DecodeError; whatever it is, the response is closed out.
                 logger.exception("scoring failed for %s", rid)
@@ -179,14 +168,10 @@ class SpeechWorker:
                     )
                 except Exception:  # noqa: BLE001 - the assessment service's sweep closes it
                     logger.exception("could not report the failure of %s", rid)
-            finally:
-                # What one run costs in time, the base of its price (D049, D051).
-                observe("job_seconds", time.perf_counter() - start, queue="speech.score",
-                        purpose=purpose, outcome=outcome)  # fmt: skip
 
     def _score(self, job: dict) -> None:
         rid = job["response_id"]
-        self.report({"response_id": rid, "status": ResponseStatus.RUNNING.value})
+        self.report({"response_id": rid, "status": Status.RUNNING.value})
         try:
             # Decoding happens here, not where the recording was received:
             # transcoding a five-minute WebM through ffmpeg takes seconds, and

@@ -718,7 +718,7 @@ ENUMS = [
             "PROMPT_COPY_SUSPECTED",
         ],
     ),
-    ("Band", "«enumeration»" + BR + "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
+    ("Band", "«enumeration»" + BR + "Band", ["A2", "B1", "B2"]),
     (
         "Criterion",
         "«enumeration»" + BR + "Criterion",

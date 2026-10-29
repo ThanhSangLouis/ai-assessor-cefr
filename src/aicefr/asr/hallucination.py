@@ -153,7 +153,7 @@ def _phrase_loop(tokens: list[str]) -> tuple[int, int, str] | None:
     for k in range(MAX_PHRASE_LEN, MIN_PHRASE_LEN - 1, -1):
         if n < k * MIN_PHRASE_REPEATS:
             continue
-        for start in range(n - k * MIN_PHRASE_REPEATS + 1):
+        for start in range(0, n - k * MIN_PHRASE_REPEATS + 1):
             phrase = tokens[start : start + k]
             if not all(phrase):
                 continue
