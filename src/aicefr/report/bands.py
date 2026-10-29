@@ -8,8 +8,8 @@ Europe, Companion Volume 2020); they are not a translation of the official
 scales and are waiting for review by the Foreign Languages teachers (A-03).
 
 Every aspect carries one of three labels, so the page cannot imply that the
-machine heard grammar or cohesion when its eighteen measurements are lengths,
-counts, word variety, recogniser confidence and pause statistics:
+machine heard grammar when its measurements are lengths, counts, word variety,
+the kinds of connectors used (D061), recogniser confidence and pause statistics:
 
 * measured indirectly -- some measurement touches this aspect;
 * not measured        -- the machine has no measurement of it at all;
@@ -61,13 +61,19 @@ ASPECTS: tuple[Aspect, ...] = (
         "số từ khác nhau, độ đa dạng từ, độ dài trung bình của từ",
         "không biết từ dùng có đúng ngữ cảnh không, không đo độ phong phú của cấu trúc câu",
     ),
+    # D061: an automatic grammar checker run over transcripts was tried and
+    # left out -- its error counts barely followed the errors examiners
+    # corrected, on machine and on human transcripts alike. A number that does
+    # not track grammar must not be shown as grammar.
     Aspect(
         "accuracy",
         "Ngữ pháp (Accuracy)",
         Provenance.NOT_MEASURED,
         "",
-        "không có phép đo nào về lỗi ngữ pháp hay lỗi dùng từ; độ chắc chắn của máy nhận dạng "
-        "chỉ cho biết máy nghe rõ tới đâu, không cho biết câu đúng hay sai",
+        "không có phép đo nào về lỗi ngữ pháp hay lỗi dùng từ. Nhóm đã thử chạy bộ kiểm tra ngữ "
+        "pháp tự động trên bản chép lời và so với lỗi do người sửa: kết quả gần như không khớp, "
+        'một phần có thể vì máy nhận dạng tự "sửa" câu nói sai thành câu đúng. Vì vậy hệ thống '
+        "không đưa ra con số ngữ pháp; giảng viên nghe bài mới đánh giá được tiêu chí này",
     ),
     Aspect(
         "fluency",
@@ -79,10 +85,12 @@ ASPECTS: tuple[Aspect, ...] = (
     Aspect(
         "coherence",
         "Mạch lạc (Coherence)",
-        Provenance.NOT_MEASURED,
-        "",
-        "không đo từ nối, cách sắp xếp ý hay sự liên kết giữa các câu; độ dài bài nói không phải "
-        "là mạch lạc",
+        Provenance.MEASURED_INDIRECTLY,
+        'số kiểu từ nối khác nhau trong bản chép lời (ví dụ "because", "for example", "however", '
+        '"on the other hand")',
+        "chỉ đếm từ nối, không biết từ nối có nối đúng ý không, không đánh giá cách sắp xếp ý "
+        "của cả bài; máy nhận dạng nghe sót từ nào thì từ đó không được đếm. Độ dài bài nói "
+        "không phải là mạch lạc",
     ),
     Aspect(
         "phonology",
@@ -97,14 +105,33 @@ ASPECTS: tuple[Aspect, ...] = (
         "Tương tác (Interaction)",
         Provenance.NOT_ASSESSED,
         "",
-        "bài nói là độc thoại nên không có bằng chứng về lượt lời, hỏi lại hay phản hồi; hệ thống "
-        "không suy ra tiêu chí này",
+        "tương tác là khả năng nói chuyện qua lại với người khác: giữ và nhường lượt lời, hỏi lại "
+        "khi chưa hiểu, đáp lại ý người kia. Bài nói ở đây là độc thoại, một mình người học nói "
+        "theo đề, nên không có lượt lời nào để quan sát. Hệ thống không suy ra tiêu chí này; "
+        "cần một bài hội thoại với người thật mới đánh giá được",
     ),
 )
 
 # Paraphrased descriptors, one line per aspect and band. Interaction is left
 # out on purpose: the page says why in its own row of ASPECTS.
 DESCRIPTORS: dict[Band, dict[str, str]] = {
+    Band.A1: {
+        "range": (
+            "Dùng được một số từ và cụm từ rất đơn giản về bản thân và những thứ cụ thể quanh mình."
+        ),
+        "accuracy": (
+            "Kiểm soát rất hạn chế vài cấu trúc đơn giản đã học thuộc; lỗi cơ bản xuất hiện thường "
+            "xuyên."
+        ),
+        "fluency": (
+            "Nói những câu rất ngắn, rời rạc, thường dừng lâu để tìm từ hoặc phát âm từ lạ."
+        ),
+        "coherence": 'Nối từ hay cụm từ bằng những từ nối rất cơ bản như "and", "then".',
+        "phonology": (
+            "Phát âm một số ít từ đã học; người nghe quen với người học tiếng Việt mới hiểu được, "
+            "phải cố gắng nhiều."
+        ),
+    },
     Band.A2: {
         "range": (
             "Dùng các mẫu câu cơ bản và cụm từ quen thuộc để nói về bản thân, gia đình, việc "
@@ -156,6 +183,47 @@ DESCRIPTORS: dict[Band, dict[str, str]] = {
         "phonology": (
             "Phát âm và ngữ điệu rõ, người nghe không phải cố gắng; giọng không phải vấn đề khi đã "
             "dễ hiểu."
+        ),
+    },
+    Band.C1: {
+        "range": (
+            "Vốn từ rộng, chọn được cách diễn đạt phù hợp để nói trôi chảy về chủ đề phức tạp mà "
+            "hầu như không phải giới hạn điều muốn nói."
+        ),
+        "accuracy": "Giữ độ chính xác ngữ pháp cao một cách ổn định; lỗi hiếm và khó nhận ra.",
+        "fluency": (
+            "Diễn đạt trôi chảy, tự nhiên, gần như không phải dừng; chỉ chủ đề khó về khái niệm "
+            "mới làm mạch nói chậm lại."
+        ),
+        "coherence": (
+            "Bài nói rõ ràng, chặt chẽ, dùng thành thạo các cách tổ chức ý, từ nối và phương tiện "
+            "liên kết."
+        ),
+        "phonology": (
+            "Thay đổi ngữ điệu và trọng âm câu đúng để diễn tả sắc thái nghĩa; giọng gốc gần như "
+            "không ảnh hưởng tới việc hiểu."
+        ),
+    },
+    Band.C2: {
+        "range": (
+            "Nắm vững thành ngữ và cách nói thông tục, diễn đạt chính xác những sắc thái nghĩa "
+            "tinh tế một cách linh hoạt."
+        ),
+        "accuracy": (
+            "Kiểm soát ngữ pháp nhất quán ngay cả khi tập trung vào việc khác như lên kế hoạch hay "
+            "theo dõi phản ứng người nghe."
+        ),
+        "fluency": (
+            "Nói dài, tự nhiên, không ngập ngừng; chỉ dừng để chọn đúng từ diễn đạt ý tưởng, người "
+            "nghe khó nhận ra."
+        ),
+        "coherence": (
+            "Bài nói mạch lạc, có cấu trúc logic giúp người nghe nhận ra và nhớ các điểm "
+            "quan trọng."
+        ),
+        "phonology": (
+            "Dùng toàn bộ các đặc điểm âm vị để diễn đạt chính xác ý muốn nói; luôn rõ ràng, dễ "
+            "hiểu."
         ),
     },
 }

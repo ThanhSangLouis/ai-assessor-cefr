@@ -5,6 +5,9 @@
 {#- D033, D035. Where the gateway sends the browser back. The route has applied
     the result the gateway vouched for already; this page says what the
     order's state now is. -#}
+{%- set credits = order and order.kind == "credits" -%}
+{%- set back = "/credits" if (credits or (account and account.role.value == "student")) else "/admin#billing" -%}
+{%- set back_label = "Về trang Lượt của tôi" if back == "/credits" else "Về trang Gói dịch vụ" -%}
 <div class="pay-page">
   {% if test %}
   <div class="notice notice-warn pay-banner" role="note">
@@ -15,11 +18,18 @@
     {% if state == "paid" %}
       <div class="pay-mark ok" aria-hidden="true">{{ icon("check-circle") }}</div>
       <h1 id="result-h">Thanh toán thành công</h1>
+      {% if credits %}
+      <p class="pay-lede">
+        <b>{{ order.seats }} lượt</b> {% if order.credited %}đã được cộng vào ví của bạn.{% else %}sẽ được cộng vào ví trong ít phút.{% endif %}
+        Lượt mua không hết hạn theo chu kỳ; lượt miễn phí của chu kỳ vẫn được dùng trước.
+      </p>
+      {% else %}
       <p class="pay-lede">
         Gói <b>{{ order.plan_name }}</b> cho <b>{{ order.seats }}</b> sinh viên, từ {{ order.starts_on | dmy }}
         đến {{ order.ends_on | dmy }}.
         {% if order.kind in ("renewal", "downgrade") %}Gói này bắt đầu khi gói đang dùng kết thúc.{% else %}Đã có hiệu lực.{% endif %}
       </p>
+      {% endif %}
       <dl class="pay-facts">
         <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
         <dt>Đã thanh toán</dt><dd>{{ order.amount_vnd | vnd }}</dd>
@@ -27,37 +37,37 @@
         <dt>Lúc</dt><dd>{{ order.settled_at | vn_time }}</dd>
       </dl>
       <div class="button-row">
-        <a class="button" href="/admin#billing">Về trang Gói dịch vụ</a>
+        <a class="button" href="{{ back }}">{{ back_label }}</a>
         <a class="button secondary" href="/billing/orders/{{ order.order_id }}/receipt">Xem biên nhận</a>
       </div>
     {% elif state in ("failed", "cancelled", "expired") %}
       <div class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</div>
       <h1 id="result-h">{% if state == "cancelled" %}Đã huỷ giao dịch{% elif state == "expired" %}Đơn đã hết hạn chờ{% else %}Thanh toán không thành công{% endif %}</h1>
       {% if message %}<p class="pay-lede">{{ message }}</p>{% endif %}
-      <p>Gói đang dùng không thay đổi và không có khoản nào bị ghi nhận. Có thể đặt lại đơn ở trang Gói dịch vụ.</p>
+      <p>{% if credits %}Ví lượt không thay đổi{% else %}Gói đang dùng không thay đổi{% endif %} và không có khoản nào bị ghi nhận. Có thể đặt lại đơn.</p>
       <dl class="pay-facts">
         <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
         <dt>Số tiền</dt><dd>{{ order.amount_vnd | vnd }}</dd>
       </dl>
-      <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% elif state == "pending" %}
       <div class="pay-mark" aria-hidden="true">{{ icon("hourglass") }}</div>
       <h1 id="result-h">Đang chờ cổng thanh toán xác nhận</h1>
       {% if message %}<p class="pay-lede">{{ message }}</p>{% endif %}
-      <p>Đơn <code>{{ order.order_id }}</code> chưa có kết quả. Trang Gói dịch vụ sẽ cập nhật khi cổng báo về.</p>
-      <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+      <p>Đơn <code>{{ order.order_id }}</code> chưa có kết quả. Trang sẽ cập nhật khi cổng báo về.</p>
+      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% elif state == "left" %}
       <div class="pay-mark" aria-hidden="true">{{ icon("info") }}</div>
       <h1 id="result-h">Bạn đã rời trang thanh toán</h1>
-      <p class="pay-lede">Chưa có khoản nào được trả qua {{ gateway }}, và gói đang dùng không thay đổi.</p>
-      <p>Phiên thanh toán tự hết hạn sau ít phút. Muốn mua, hãy đặt lại đơn ở trang Gói dịch vụ.</p>
-      <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+      <p class="pay-lede">Chưa có khoản nào được trả qua {{ gateway }}, và không có gì thay đổi.</p>
+      <p>Phiên thanh toán tự hết hạn sau ít phút. Muốn mua, hãy đặt lại đơn.</p>
+      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% elif state == "unconfirmed" %}
       <div class="pay-mark" aria-hidden="true">{{ icon("hourglass") }}</div>
       <h1 id="result-h">Chưa xác nhận được với {{ gateway }}</h1>
       <p class="pay-lede">Hệ thống chưa hỏi được {{ gateway }} về khoản thanh toán này.</p>
-      <p>Nếu bạn đã trả, đơn sẽ được ghi nhận khi {{ gateway }} báo về. Xem lại trang Gói dịch vụ sau ít phút.</p>
-      <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+      <p>Nếu bạn đã trả, đơn sẽ được ghi nhận khi {{ gateway }} báo về. Xem lại sau ít phút.</p>
+      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% else %}
       <div class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</div>
       <h1 id="result-h">Không xác nhận được kết quả thanh toán</h1>
@@ -66,7 +76,7 @@
         {% else %}Địa chỉ trả về không có chữ ký hợp lệ hoặc không khớp đơn nào, nên không có gì thay đổi.{% endif %}
         Nếu tài khoản đã bị trừ tiền, hãy liên hệ bộ phận hỗ trợ kèm mã giao dịch của ngân hàng.
       </p>
-      <div class="button-row"><a class="button" href="/admin#billing">Về trang Gói dịch vụ</a></div>
+      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% endif %}
   </section>
 </div>

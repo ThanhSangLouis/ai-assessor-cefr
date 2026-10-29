@@ -41,7 +41,9 @@ const ASPECT_MEASURES = {
   range: "Số từ khác nhau, độ đa dạng từ vựng, độ dài trung bình của từ.",
   accuracy: "Mức độ máy nghe rõ từng từ.",
   fluency: "Tốc độ nói, số lần và độ dài các quãng ngừng.",
-  coherence: "Tổng số từ, độ dài các đoạn nói liền mạch, tổng thời lượng.",
+  coherence:
+    "Số kiểu từ nối khác nhau trong bản chép lời. Mức đủ dữ liệu tính theo tổng số từ, " +
+    "độ dài các đoạn nói liền mạch và tổng thời lượng.",
   phonology: "Mức độ máy nghe rõ và tỷ lệ im lặng trong bản ghi.",
 };
 
@@ -54,6 +56,9 @@ const ASPECT_CAVEATS = {
   phonology:
     "Hệ thống không chấm phát âm theo âm vị. Chỉ số này suy ra từ việc máy nghe rõ đến đâu, " +
     "nên chịu ảnh hưởng của chất lượng bản ghi.",
+  coherence:
+    "Máy chỉ đếm từ nối, không biết từ nối có nối đúng ý hay cả bài có được sắp xếp " +
+    "rõ ràng không.",
 };
 
 const EVIDENCE_KIND_NAMES = {
@@ -61,6 +66,7 @@ const EVIDENCE_KIND_NAMES = {
   filler: "từ ngập ngừng",
   low_confidence_word: "từ máy nghe không rõ",
   lexical: "vốn từ",
+  connector: "từ nối",
 };
 
 // "Day du du lieu": the share of the measurements for one aspect that the
@@ -93,6 +99,8 @@ fetch(`/api/v1/responses/${ID}`)
     reportEl.innerHTML = buildReport(d);
     wirePlayer();
     wireKaraoke(d);
+    // D056: guided listening adds its card once the player is on the page.
+    document.dispatchEvent(new CustomEvent("report:ready"));
   })
   .catch(() => {
     window.clearBusy(reportEl);
@@ -376,15 +384,15 @@ function flagBlock(d) {
   return h;
 }
 
-// D031: where the estimate stands among the three bands, drawn as the blocks
+// D031, D059: where the estimate stands among the six bands, drawn as the blocks
 // of the product's mark. The estimated band takes the accent colour; a band
 // the confidence interval also reaches is a shade darker than the rest.
 // Decorative: the band is written beside it.
 function bandPodium(a) {
   const reach = new Set((a.interval && a.interval.band_set) || []);
-  const heights = { A2: 46, B1: 70, B2: 94 };
+  const heights = { A1: 34, A2: 46, B1: 58, B2: 70, C1: 82, C2: 94 };
   return window.ui.cubes(
-    ["A2", "B1", "B2"].map((b) => ({
+    Object.keys(heights).map((b) => ({
       label: b,
       h: heights[b],
       cls: b === a.overall_band ? "is-band" : reach.has(b) ? "is-possible" : "is-dim",
@@ -742,7 +750,6 @@ function provenanceBlock(d, a) {
     ["Hiệu chuẩn", a.calibration_version],
     ["Bộ ngưỡng QC", d.qc ? d.qc.qc_config_version : null],
     ["Phiên bản đề", d.prompt_version],
-    ["Phiên bản đồng thuận", d.consent_version],
     ["Thời điểm chấm", a.scored_at],
   ];
   let h = '<h3 class="block-title">Nguồn gốc kết quả</h3><table class="kv"><tbody>';

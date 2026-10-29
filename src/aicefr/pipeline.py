@@ -30,19 +30,21 @@ from aicefr.contracts import (
     QcResult,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
     Transcript,
 )
 from aicefr.features.extract import FeatureExtractor
 from aicefr.features.relevance import TaskLike, validity_flags
+from aicefr.observability import timed
 from aicefr.ports import AsrEngine, Scorer, VoiceActivityDetector
 from aicefr.practice.missions import MissionChecker
 from aicefr.qc.audio_qc import AudioQualityChecker
 from aicefr.report.comments import CommentBuilder
 from aicefr.report.evidence import EvidenceBuilder
 from aicefr.review.router import ReviewRouter
-from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer, to_band
+from aicefr.scoring.band_map import thresholds_of, to_band
+from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer
 from aicefr.scoring.windows import clip_segments, plan_windows
 
 
@@ -219,10 +221,7 @@ class ResponseProcessor:
 
         median = statistics.median(values)
         spread = max(values) - min(values)
-        thresholds = getattr(self.scorer, "band_thresholds", None) or {
-            "A2_B1": 2.75,
-            "B1_B2": 3.75,
-        }
+        thresholds = thresholds_of(getattr(self.scorer, "band_thresholds", None))
 
         merged = self.scorer.score(whole)
         merged.overall_0_6 = round(median, 2)
@@ -282,7 +281,7 @@ class ResponseProcessor:
         result = self.mission_checker.check(task, asr, segments)
         return Response(
             **base,
-            status=Status.COMPLETED,
+            status=ResponseStatus.COMPLETED,
             qc=qc,
             asr=asr,
             features=features,
@@ -305,20 +304,20 @@ class ResponseProcessor:
         # its reason, so the learner knows why and can try again instead of
         # waiting for someone who will never come.
         is_practice = getattr(task, "purpose", None) is TaskPurpose.PRACTICE
-        needs_teacher = Status.REJECTED if is_practice else Status.REVIEW_REQUIRED
+        needs_teacher = ResponseStatus.REJECTED if is_practice else ResponseStatus.REVIEW_REQUIRED
         base = {
             "response_id": request.response_id,
             "config_version": request.config_version,
             "prompt_version": request.prompt_version,
-            "consent_version": request.consent_version,
         }
 
         # Pass the real channel count and byte size: without them the report
         # claimed every recording was mono, and the AUDIO_TOO_LARGE branch was
         # unreachable from the pipeline.
-        qc = self.quality_checker.check(pcm, sr, channels=channels, size_bytes=size_bytes)
+        with timed("pipeline_stage_seconds", stage="qc"):
+            qc = self.quality_checker.check(pcm, sr, channels=channels, size_bytes=size_bytes)
         if not qc.passed:
-            return Response(**base, status=Status.REJECTED, qc=qc, reasons=qc.reasons)
+            return Response(**base, status=ResponseStatus.REJECTED, qc=qc, reasons=qc.reasons)
 
         # Voice activity detection runs BEFORE recognition, not after.
         #
@@ -342,13 +341,17 @@ class ResponseProcessor:
         # delays spanning 0.3 to 5.5 seconds, so it received the same wrong
         # number every time and shifted every score by the same amount.
         total_dur_s = pcm.size / sr
-        segments = self.vad.segments(pcm, sr)
+        with timed("pipeline_stage_seconds", stage="vad"):
+            segments = self.vad.segments(pcm, sr)
         trimmed, offset_s = trim_to_speech(pcm, sr, segments)
 
         try:
-            asr = self.asr_engine.transcribe(trimmed, sr)
+            with timed("pipeline_stage_seconds", stage="asr"):
+                asr = self.asr_engine.transcribe(trimmed, sr)
         except AsrError:
-            return Response(**base, status=Status.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED])
+            return Response(
+                **base, status=ResponseStatus.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED]
+            )
         if not asr.text.strip():
             return Response(
                 **base,
@@ -385,7 +388,8 @@ class ResponseProcessor:
         # so a word at 12.4 s in the report is at 12.4 s in the audio player.
         asr = asr.shifted(offset_s)
 
-        features = self.extractor.extract(asr.words, segments, total_dur_s)
+        with timed("pipeline_stage_seconds", stage="features"):
+            features = self.extractor.extract(asr.words, segments, total_dur_s)
         if is_practice:
             return self._practice(base, task, qc, asr, features, segments, extra_reasons)
 
@@ -398,13 +402,15 @@ class ResponseProcessor:
 
         try:
             if len(windows) > 1:
-                assessment = self._score_windows(asr, segments, windows, features)
+                with timed("pipeline_stage_seconds", stage="scoring"):
+                    assessment = self._score_windows(asr, segments, windows, features)
             else:
-                assessment = self.scorer.score(features)
+                with timed("pipeline_stage_seconds", stage="scoring"):
+                    assessment = self.scorer.score(features)
         except ModelNotFoundError:
             return Response(
                 **base,
-                status=Status.REVIEW_REQUIRED,
+                status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
                 features=features,

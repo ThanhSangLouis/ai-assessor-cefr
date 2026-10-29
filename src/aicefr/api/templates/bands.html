@@ -7,7 +7,7 @@
     scoring model in force, so the page and the scorer cannot disagree. -#}
 <div class="page-head">
   <p class="eyebrow">Đọc kết quả</p>
-  <h1><span class="head-icon">{{ icon("target") }}</span>Band A2, B1, B2 nghĩa là gì</h1>
+  <h1><span class="head-icon">{{ icon("target") }}</span>Band A1 đến C2 nghĩa là gì</h1>
   <p class="lede">
     Mỗi band mô tả một kiểu nói. Trang này cho biết từng band nghĩa là gì, và với mỗi mặt của
     kỹ năng nói, máy thật sự đo được phần nào, phần nào chỉ giảng viên nghe ra được.
@@ -17,16 +17,26 @@
 <section class="card band-scale" aria-labelledby="scale-h">
   <h2 id="scale-h">Từ điểm sang band</h2>
   <p>
-    Máy đưa ra <b>một điểm tổng ước lượng</b> trên thang 0–6, rồi quy ra band theo hai ngưỡng
-    của mô hình đang dùng (<code>{{ model_version }}</code>):
+    Máy đưa ra <b>một điểm tổng ước lượng</b> trên thang 0–6, rồi quy ra một trong sáu band
+    theo năm ngưỡng của mô hình đang dùng (<code>{{ model_version }}</code>):
   </p>
-  {#- D031: the three bands as the blocks of the product's mark. -#}
-  <div class="cube-stage" aria-hidden="true"><div class="cube-row">{{ cube("A2", "tone-1", 64) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "is-solid", 128) }}</div></div>
+  {#- D031: the bands as the blocks of the product's mark, growing with the level. -#}
+  <div class="cube-stage" aria-hidden="true"><div class="cube-row">
+    {%- for s in spans %}{{ cube(s.band, "is-solid" if loop.index > 4 else ("tone-2" if loop.index > 2 else "tone-1"), 40 + 16 * loop.index0) }}{% endfor -%}
+  </div></div>
   <ol class="band-ladder">
-    <li><span class="band-name">A2</span><span>điểm dưới {{ "%.2f" | format(a2_b1) }}</span></li>
-    <li><span class="band-name">B1</span><span>từ {{ "%.2f" | format(a2_b1) }} đến dưới {{ "%.2f" | format(b1_b2) }}</span></li>
-    <li><span class="band-name">B2</span><span>từ {{ "%.2f" | format(b1_b2) }} trở lên</span></li>
+    {%- for s in spans %}
+    <li><span class="band-name">{{ s.band }}</span><span>
+      {%- if s.low is none %}điểm dưới {{ "%.2f" | format(s.high) }}
+      {%- elif s.high is none %}từ {{ "%.2f" | format(s.low) }} trở lên
+      {%- else %}từ {{ "%.2f" | format(s.low) }} đến dưới {{ "%.2f" | format(s.high) }}{% endif -%}
+    </span></li>
+    {%- endfor %}
   </ol>
+  <p class="muted">
+    Ngưỡng A1/A2, B2/C1 và C1/C2 kéo theo quy ước nửa điểm của hai ngưỡng giữa và chưa được
+    hiệu chuẩn: dữ liệu huấn luyện có ít bài ở hai đầu thang, nên máy kém chắc chắn nhất ở đó.
+  </p>
   <p class="muted">
     Bài có điểm sát ranh giới hai band luôn được chuyển giảng viên nghe lại. Máy <b>không chấm
     riêng năm tiêu chí</b>: các mục bên dưới chỉ cho biết phép đo của máy chạm tới đâu.

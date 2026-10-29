@@ -197,79 +197,146 @@ class MissionChecker:
         tokens: list[tuple[str, float | None, int]],
         segments: Sequence[tuple[float, float]],
     ) -> MissionCheck:
-        if m.kind is MissionKind.SPEAK_SECONDS:
-            span = _speaking_span(segments, transcript)
-            if span is None:
-                return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
-            return _measured(m, span, span >= m.target, [])
+        rule = _RULES.get(m.kind)
+        if rule is None:  # pragma: no cover
+            raise ValueError(f"no rule measures mission {m.kind.value}")
+        return rule(m, task, transcript, tokens, segments)
 
-        if m.kind is MissionKind.MAX_PAUSE:
-            if not segments:
-                return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
-            gap, at = _longest_gap(segments)
-            hits = (
-                [MissionHit(text=f"Khoảng lặng dài nhất {_num(gap)} giây", start_s=at)]
-                if at is not None
-                else []
-            )
-            return _measured(m, gap, gap <= m.target, hits)
 
-        if m.kind is MissionKind.USE_WORDS:
-            hits: list[MissionHit] = []
-            for item in m.words:
-                found, at = _find_phrase(tokens, normalize(item))
-                if found:
-                    hits.append(MissionHit(text=item, start_s=at))
-            return _measured(m, len(hits), len(hits) >= m.target, hits)
+# One rule per mission kind. Each takes the mission, the task, the transcript,
+# its timed tokens and the speech segments, and measures one thing.
+Tokens = list[tuple[str, float | None, int]]
+Segments = Sequence[tuple[float, float]]
 
-        if m.kind is MissionKind.UNIQUE_WORDS:
-            distinct = {t for t, _, _ in tokens if t not in FILLERS}
-            return _measured(m, len(distinct), len(distinct) >= m.target, [])
 
-        if m.kind is MissionKind.PAST_VERBS:
-            seen: dict[str, float | None] = {}
-            for tok, at, _ in tokens:
-                if tok in seen:
-                    continue
-                regular = len(tok) >= 4 and tok.endswith("ed") and tok not in ED_NOT_PAST
-                if tok in IRREGULAR_PAST or regular:
-                    seen[tok] = at
-            hits = [MissionHit(text=t, start_s=at) for t, at in seen.items()]
-            return _measured(m, len(seen), len(seen) >= m.target, hits)
+def _speak_seconds(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    span = _speaking_span(segments, transcript)
+    if span is None:
+        return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
+    return _measured(m, span, span >= m.target, [])
 
-        if m.kind is MissionKind.CONDITIONALS:
-            words = [t for t, _, _ in tokens]
-            hits = []
-            for i, (tok, at, sentence) in enumerate(tokens):
-                if tok != "if":
-                    continue
-                lo, hi = max(0, i - CONDITIONAL_WINDOW), i + CONDITIONAL_WINDOW + 1
-                around = [
-                    w for j, (w, _, s) in enumerate(tokens[lo:hi], lo) if j != i and s == sentence
-                ]
-                if any(w in MODALS or w.endswith(("'ll", "'d")) for w in around):
-                    snippet = " ".join(words[i : min(len(words), i + 8)])
-                    hits.append(MissionHit(text=f"{snippet}…", start_s=at))
-            return _measured(m, len(hits), len(hits) >= m.target, hits)
 
-        if m.kind is MissionKind.READ_ALOUD:
-            reference = normalize(task.reference_text or "")
-            if not reference:
-                return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
-            said = [t for t, _, _ in tokens]
-            sm = difflib.SequenceMatcher(a=reference, b=said, autojunk=False)
-            covered = [False] * len(reference)
-            for block in sm.get_matching_blocks():
-                for k in range(block.a, block.a + block.size):
-                    covered[k] = True
-            ratio = sum(covered) / len(reference)
-            missed: list[MissionHit] = []
-            for word, ok in zip(reference, covered, strict=True):
-                if not ok and all(h.text != word for h in missed):
-                    missed.append(MissionHit(text=word))
-            return _measured(m, ratio, ratio >= m.target, missed)
+def _max_pause(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    if not segments:
+        return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
+    gap, at = _longest_gap(segments)
+    hits = (
+        [MissionHit(text=f"Khoảng lặng dài nhất {_num(gap)} giây", start_s=at)]
+        if at is not None
+        else []
+    )
+    return _measured(m, gap, gap <= m.target, hits)
 
-        raise ValueError(f"no rule measures mission {m.kind.value}")  # pragma: no cover
+
+def _use_words(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    hits: list[MissionHit] = []
+    for item in m.words:
+        found, at = _find_phrase(tokens, normalize(item))
+        if found:
+            hits.append(MissionHit(text=item, start_s=at))
+    return _measured(m, len(hits), len(hits) >= m.target, hits)
+
+
+def _unique_words(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    distinct = {t for t, _, _ in tokens if t not in FILLERS}
+    return _measured(m, len(distinct), len(distinct) >= m.target, [])
+
+
+def _past_verbs(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    seen: dict[str, float | None] = {}
+    for tok, at, _ in tokens:
+        if tok in seen:
+            continue
+        regular = len(tok) >= 4 and tok.endswith("ed") and tok not in ED_NOT_PAST
+        if tok in IRREGULAR_PAST or regular:
+            seen[tok] = at
+    hits = [MissionHit(text=t, start_s=at) for t, at in seen.items()]
+    return _measured(m, len(seen), len(seen) >= m.target, hits)
+
+
+def _conditionals(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    words = [t for t, _, _ in tokens]
+    hits = []
+    for i, (tok, at, sentence) in enumerate(tokens):
+        if tok != "if":
+            continue
+        lo, hi = max(0, i - CONDITIONAL_WINDOW), i + CONDITIONAL_WINDOW + 1
+        around = [w for j, (w, _, s) in enumerate(tokens[lo:hi], lo) if j != i and s == sentence]
+        if any(w in MODALS or w.endswith(("'ll", "'d")) for w in around):
+            snippet = " ".join(words[i : min(len(words), i + 8)])
+            hits.append(MissionHit(text=f"{snippet}…", start_s=at))
+    return _measured(m, len(hits), len(hits) >= m.target, hits)
+
+
+def _read_aloud(
+    m: Mission,
+    task: PracticeTaskLike,
+    transcript: Transcript,
+    tokens: Tokens,
+    segments: Segments,
+) -> MissionCheck:
+    reference = normalize(task.reference_text or "")
+    if not reference:
+        return _unmeasured(m, ReasonCode.FEATURE_NOT_COMPUTABLE)
+    said = [t for t, _, _ in tokens]
+    sm = difflib.SequenceMatcher(a=reference, b=said, autojunk=False)
+    covered = [False] * len(reference)
+    for block in sm.get_matching_blocks():
+        for k in range(block.a, block.a + block.size):
+            covered[k] = True
+    ratio = sum(covered) / len(reference)
+    missed: list[MissionHit] = []
+    for word, ok in zip(reference, covered, strict=True):
+        if not ok and all(h.text != word for h in missed):
+            missed.append(MissionHit(text=word))
+    return _measured(m, ratio, ratio >= m.target, missed)
+
+
+_RULES = {
+    MissionKind.SPEAK_SECONDS: _speak_seconds,
+    MissionKind.MAX_PAUSE: _max_pause,
+    MissionKind.USE_WORDS: _use_words,
+    MissionKind.UNIQUE_WORDS: _unique_words,
+    MissionKind.PAST_VERBS: _past_verbs,
+    MissionKind.CONDITIONALS: _conditionals,
+    MissionKind.READ_ALOUD: _read_aloud,
+}
 
 
 def describe_measure(check: MissionCheck) -> str:

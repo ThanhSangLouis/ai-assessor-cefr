@@ -6,13 +6,15 @@ This module runs them as the containers do -- a FastAPI application per
 service, the web service reaching the core's facades through `RemoteFacade`,
 the account forwarded in the gateway's header -- with two stand-ins: a
 `TestClient` per service instead of a socket, and the in-process bus instead
-of RabbitMQ (the bus itself is tested against a real broker in
-`test_bus_rabbitmq.py`).
+of Redis (the bus itself is tested against a real server in
+`test_bus_redis.py`; `over_redis` wires the services to one).
 """
 
 from __future__ import annotations
 
 import io
+import os
+from contextlib import ExitStack
 from http.cookies import SimpleCookie
 
 import numpy as np
@@ -53,8 +55,20 @@ class Gateway:
         self.clients = clients
         self.cookies: dict[str, str] = {}
 
+    def _client(self, service: str) -> TestClient:
+        """The service's client with an empty cookie jar: this browser's cookies only.
+
+        The clients are shared by every Gateway of a test, and httpx keeps the
+        cookies of each response in the client. Whether a request's own
+        `cookies=` then wins over the jar depends on the httpx version (httpx2
+        2.16 sent the last login's session instead), so the jar is cleared.
+        """
+        client = self.clients[service]
+        client.cookies.clear()
+        return client
+
     def _account_header(self) -> str:
-        r = self.clients["core"].get(
+        r = self._client("core").get(
             "/internal/identity/session",
             headers={GATEWAY_HEADER: GATEWAY_TOKEN},
             cookies=self.cookies,
@@ -72,7 +86,7 @@ class Gateway:
             GATEWAY_HEADER: GATEWAY_TOKEN,
             INTERNAL_HEADER: "",  # nginx drops whatever the browser sent
         }
-        r = self.clients[service].request(
+        r = self._client(service).request(
             method, path, headers=headers, cookies=self.cookies, **kwargs
         )
         for value in r.headers.get_list("set-cookie"):
@@ -95,9 +109,12 @@ class Gateway:
         return self
 
 
-@pytest.fixture
-def system(monkeypatch, tmp_path):
-    """Three applications, wired the way docker-compose wires the containers."""
+def _system(monkeypatch, bus_for):
+    """Three applications, wired the way docker-compose wires the containers.
+
+    `bus_for(name)` is each service's bus: one in-process bus shared by all
+    (`system`), or a Redis bus of each service's own (`over_redis`, D050).
+    """
     from aicefr.services import PARTS
     from aicefr.services.core import app as core
     from aicefr.services.runtime import standalone
@@ -117,17 +134,17 @@ def system(monkeypatch, tmp_path):
         r = clients["core"].request(method, path, json=body, headers={INTERNAL_HEADER: TOKEN})
         return r.status_code, r.json()
 
-    bus = InlineBus(InlineJobQueue())  # stands in for RabbitMQ: one bus, every service on it
     apps = {
-        "core": standalone("core", core.build, settings, peers=Peers(), bus=bus,
+        "core": standalone("core", core.build, settings, peers=Peers(), bus=bus_for("core"),
                            login_rate_limit=True),
-        "speech": standalone("speech", speech.build, settings, peers=Peers(), bus=bus),
+        "speech": standalone("speech", speech.build, settings, peers=Peers(),
+                             bus=bus_for("speech")),
         "web": standalone(
             "web",
             web.build,
             settings,
             peers=Peers(**{part: RemoteFacade(part, to_core) for part in PARTS}),
-            bus=bus,
+            bus=bus_for("web"),
             static=True,
         ),
     }  # fmt: skip
@@ -140,7 +157,37 @@ def system(monkeypatch, tmp_path):
         ("QT-01", Role.ADMIN),
     ):
         auth.create_account(pseudonym, PASSWORD, role)
-    yield {"apps": apps, "clients": clients, "settings": settings}
+    return {"apps": apps, "clients": clients, "settings": settings}
+
+
+@pytest.fixture
+def system(monkeypatch, tmp_path):
+    bus = InlineBus(InlineJobQueue())  # one in-process bus, every service on it
+    yield _system(monkeypatch, lambda _name: bus)
+    config.get_settings.cache_clear()
+
+
+REDIS = os.getenv("AICEFR_TEST_REDIS")
+
+
+@pytest.fixture
+def over_redis(monkeypatch, tmp_path):
+    """Each service with a Redis bus of its own, started as its container starts it."""
+    if not REDIS:
+        pytest.skip("AICEFR_TEST_REDIS is not set")
+    import redis
+
+    from aicefr.platform.redis_bus import RedisBus
+
+    redis.Redis.from_url(REDIS).flushdb()  # a test server: queues of earlier runs go
+    buses = {}
+    built = _system(monkeypatch, lambda name: buses.setdefault(name, RedisBus(REDIS)))
+    with ExitStack() as stack:
+        # Entering a client runs the application's lifespan, which starts its bus.
+        built["clients"] = {
+            name: stack.enter_context(TestClient(app)) for name, app in built["apps"].items()
+        }
+        yield built
     config.get_settings.cache_clear()
 
 
@@ -150,7 +197,7 @@ def system(monkeypatch, tmp_path):
 def test_every_route_of_every_service_reaches_that_service_through_the_gateway(system):
     for name, app in system["apps"].items():
         for route in app.routes:
-            if not isinstance(route, APIRoute) or route.path in ("/healthz", "/readyz"):
+            if not isinstance(route, APIRoute) or route.path in ("/healthz", "/readyz", "/metrics"):
                 continue
             path = route.path.replace("{", "").replace("}", "")
             expected = None if path.startswith("/internal/") else name
@@ -220,11 +267,8 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     student = Gateway(clients).login("SV-001")
     assert student.get("/api/v1/me").json()["pseudonym"] == "SV-001"
 
-    # identity: consent; assessment hears of it on the bus (D040).
-    r = student.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+    # identity: the terms of use (D058).
+    r = student.post("/api/v1/me/terms")
     assert r.json()["may_submit"] is True
 
     # core -> speech (bus) -> core: the response is scored and saved.
@@ -238,7 +282,7 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     status = student.get(f"/api/v1/responses/{rid}/status").json()
     assert status["is_pending"] is False and status["status"] != "FAILED"
 
-    # learning -> speech (request-reply) -> learning, with consent asked of identity.
+    # learning -> speech (request-reply) -> learning; the forwarded account carries the terms.
     lesson = "lesson-a2-neighborhood"
     r = student.post(
         f"/api/v1/learn/lessons/{lesson}/steps/{lesson}-s5/attempts",
@@ -247,25 +291,27 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     assert r.status_code == 200, r.text
     assert r.json()["result"]["missing"] == []
 
-    # web: the sidebar asks assessment and learning.
+    # web: the sidebar asks assessment and learning; reminders ask metering too (D055).
     assert set(student.get("/api/v1/me/badges").json()) == {
+        "assignments",
         "results",
         "results_seen_at",
         "reviews_due",
     }
+    assert student.get("/api/v1/me/nudges").status_code == 200
     # web: a page drawn with the limits assessment applies.
     page = student.get("/practice/lessons/lesson-a2-neighborhood")
     assert page.status_code == 200 and "SV-001" in page.text
 
-    # assessment: the export gathers identity's consent and learning's attempts.
+    # assessment: the export gathers the account's terms and learning's attempts.
     export = student.get("/api/v1/me/export.json").json()
     assert export["response_count"] == 1 and export["lesson_attempt_count"] == 1
-    assert export["consent"][0]["research_use_allowed"] is True
+    assert export["terms_accepted_at"]
 
     admin = Gateway(clients).login("QT-01")
     # identity merges every service's audit log.
     actions = [e["action"] for e in admin.get("/api/v1/audit").json()]
-    assert {"auth.login", "consent.sign", "export.personal"} <= set(actions)
+    assert {"auth.login", "terms.accept", "export.personal"} <= set(actions)
 
     # assessment erases, and reaches learning for the lesson attempts.
     preview = admin.get("/api/v1/admin/erase/SV-001").json()
@@ -278,22 +324,48 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     assert student.get("/api/v1/me/export.json").json()["lesson_attempt_count"] == 0
 
 
-def test_withdrawing_research_consent_reaches_the_study_over_the_bus(system):
-    clients = system["clients"]
-    students = []
-    auth = system["apps"]["core"].state.auth_repo
-    for i in range(2, 6):
-        auth.create_account(f"SV-00{i}", PASSWORD, Role.STUDENT)
-    for name in ("SV-001", "SV-002", "SV-003", "SV-004", "SV-005"):
-        g = Gateway(clients).login(name)
-        g.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
-        students.append(g)
-    admin = Gateway(clients).login("QT-01")
-    assert admin.post("/api/v1/admin/studies", json={"name": "Thử tách dịch vụ"}).status_code == 200
-    first = students[0]
-    assert first.get("/api/v1/me/study").json()["withdrawn"] is False
-    first.post("/api/v1/me/consent/withdraw")
-    assert first.get("/api/v1/me/study").json()["withdrawn"] is True
+# ================================================================= over Redis (D050)
+
+
+def test_a_submission_is_scored_and_a_step_measured_through_redis(over_redis):
+    """core -> BullMQ -> speech -> BullMQ -> core, and a lesson step by request-reply."""
+    import time
+
+    student = Gateway(over_redis["clients"]).login("SV-001")
+    student.post("/api/v1/me/terms")
+    r = student.post(
+        "/api/v1/responses",
+        files={"audio": ("a.wav", _wav(35), "audio/wav")},
+        data={"task_id": "P3"},
+    )
+    assert r.status_code == 202, r.text
+    rid = r.json()["response_id"]
+    deadline = time.monotonic() + 60
+    status = {}
+    while time.monotonic() < deadline:
+        status = student.get(f"/api/v1/responses/{rid}/status").json()
+        if not status["is_pending"]:
+            break
+        time.sleep(0.5)
+    assert status["is_pending"] is False and status["status"] != "FAILED", status
+
+    lesson = "lesson-a2-neighborhood"
+    r = student.post(
+        f"/api/v1/learn/lessons/{lesson}/steps/{lesson}-s5/attempts",
+        files={"audio": ("s.wav", _wav(4), "audio/wav")},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["result"]["missing"] == []
+
+
+def test_each_service_serves_metrics_and_the_gateway_never_forwards_them(system):
+    """D051: Prometheus scrapes inside the network; the gateway answers 404 outside."""
+    from pathlib import Path
+
+    for name, client in system["clients"].items():
+        body = client.get("/metrics")
+        assert body.status_code == 200 and "aicefr_uptime_seconds" in body.text, name
+    conf = (
+        Path(__file__).resolve().parents[1] / "deploy/gateway/default.conf.template"
+    ).read_text()
+    assert "location = /metrics {\n        return 404;" in conf

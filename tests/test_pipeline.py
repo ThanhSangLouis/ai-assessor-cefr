@@ -6,7 +6,7 @@ import pytest
 from aicefr.asr.base import AsrError
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.asr.vad import EnergyVad
-from aicefr.contracts import ProcessingRequest, ReasonCode, Status
+from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
 from aicefr.pipeline import ResponseProcessor
 
 
@@ -40,7 +40,7 @@ def test_full_pipeline_returns_a_report(request_obj, tone, sr):
     r = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(request_obj, tone, sr)
     assert r.response_id == "r1"
     assert r.qc is not None and r.asr is not None and r.features is not None
-    assert r.status in set(Status)
+    assert r.status in set(ResponseStatus)
 
 
 def test_broken_audio_rejected_without_calling_asr(request_obj, sr):
@@ -53,19 +53,19 @@ def test_broken_audio_rejected_without_calling_asr(request_obj, sr):
     r = ResponseProcessor(MustNotRun(), vad=EnergyVad()).process(
         request_obj, np.zeros(sr * 400, dtype=np.float32), sr
     )
-    assert r.status is Status.REJECTED
+    assert r.status is ResponseStatus.REJECTED
     assert r.asr is None
 
 
 def test_asr_error_reports_failure(request_obj, tone, sr):
     r = ResponseProcessor(BrokenAsr(), vad=EnergyVad()).process(request_obj, tone, sr)
-    assert r.status is Status.FAILED
+    assert r.status is ResponseStatus.FAILED
     assert ReasonCode.ASR_FAILED in r.reasons
 
 
 def test_empty_transcript_goes_to_teacher(request_obj, tone, sr):
     r = ResponseProcessor(EmptyAsr(), vad=EnergyVad()).process(request_obj, tone, sr)
-    assert r.status is Status.REVIEW_REQUIRED
+    assert r.status is ResponseStatus.REVIEW_REQUIRED
     assert ReasonCode.ASR_EMPTY_TRANSCRIPT in r.reasons
 
 
@@ -78,7 +78,15 @@ def test_never_returns_teacher_verified_true(request_obj, tone, sr):
 def test_deterministic_result(request_obj, tone, sr):
     a = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(request_obj, tone, sr)
     b = ResponseProcessor(FakeAsrEngine(), vad=EnergyVad()).process(request_obj, tone, sr)
-    assert a.model_dump(mode="json") == b.model_dump(mode="json")
+
+    def without_clock(r) -> dict:
+        # `scored_at` is when, not what: two runs a second apart differ there only.
+        d = r.model_dump(mode="json")
+        if d.get("assessment"):
+            d["assessment"].pop("scored_at", None)
+        return d
+
+    assert without_clock(a) == without_clock(b)
 
 
 def test_moc_thoi_gian_tu_nam_tren_dong_ho_cua_ban_ghi_goc(sr) -> None:
@@ -115,7 +123,6 @@ def test_moc_thoi_gian_tu_nam_tren_dong_ho_cua_ban_ghi_goc(sr) -> None:
             audio_path="x.wav",
             prompt_version="v1",
             config_version="v1",
-            consent_version="dt-v1",
         ),
         pcm,
         sr,
@@ -157,7 +164,6 @@ def test_do_tre_truoc_khi_noi_khong_bi_phan_cat_lam_phang(sr) -> None:
             audio_path="x.wav",
             prompt_version="v1",
             config_version="v1",
-            consent_version="dt-v1",
         ),
         pcm,
         sr,

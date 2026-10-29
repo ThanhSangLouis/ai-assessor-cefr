@@ -4,8 +4,8 @@ What earns one, and what never does:
 
 * **Effort only.** Seconds spoken, days practised, lessons finished, a step
   tried again until it passed, a review done, an assessment taken. Never a
-  score, a band or a pass rate: those are estimates whose error is half a band
-  (RMSE 0.53 on a 0-6 scale), and a medal for a number the learner does not
+  score, a band or a pass rate: those are estimates whose error is about half
+  a band on a 0-6 scale, and a medal for a number the learner does not
   control teaches that the number is the goal. Praise for the process keeps
   learners trying after a setback; praise for ability does the opposite
   (Mueller and Dweck 1998).
@@ -122,7 +122,7 @@ def count(
 
 
 @dataclass(frozen=True)
-class Achievement:
+class AchievementRule:
     code: str
     group: str
     title: str
@@ -141,8 +141,8 @@ GROUPS = {
     "assessment": "Đánh giá",
 }
 
-CATALOG: tuple[Achievement, ...] = (
-    Achievement(
+CATALOG: tuple[AchievementRule, ...] = (
+    AchievementRule(
         "streak_3",
         "habit",
         "Ba ngày liền",
@@ -152,7 +152,7 @@ CATALOG: tuple[Achievement, ...] = (
         "ngày",
         lambda f: f.best_streak,
     ),
-    Achievement(
+    AchievementRule(
         "streak_7",
         "habit",
         "Tròn một tuần",
@@ -162,7 +162,7 @@ CATALOG: tuple[Achievement, ...] = (
         "ngày",
         lambda f: f.best_streak,
     ),
-    Achievement(
+    AchievementRule(
         "streak_30",
         "habit",
         "Ba mươi ngày",
@@ -172,7 +172,7 @@ CATALOG: tuple[Achievement, ...] = (
         "ngày",
         lambda f: f.best_streak,
     ),
-    Achievement(
+    AchievementRule(
         "goal_1",
         "habit",
         "Đủ mục tiêu ngày",
@@ -182,7 +182,7 @@ CATALOG: tuple[Achievement, ...] = (
         "ngày",
         lambda f: f.goal_days,
     ),
-    Achievement(
+    AchievementRule(
         "goal_10",
         "habit",
         "Mười ngày đủ mục tiêu",
@@ -192,7 +192,7 @@ CATALOG: tuple[Achievement, ...] = (
         "ngày",
         lambda f: f.goal_days,
     ),
-    Achievement(
+    AchievementRule(
         "comeback",
         "habit",
         "Quay lại",
@@ -202,7 +202,7 @@ CATALOG: tuple[Achievement, ...] = (
         "lần",
         lambda f: f.comebacks,
     ),
-    Achievement(
+    AchievementRule(
         "take_1",
         "voice",
         "Lượt nói đầu tiên",
@@ -212,7 +212,7 @@ CATALOG: tuple[Achievement, ...] = (
         "lượt",
         lambda f: f.takes,
     ),
-    Achievement(
+    AchievementRule(
         "minutes_10",
         "voice",
         "Mười phút",
@@ -222,7 +222,7 @@ CATALOG: tuple[Achievement, ...] = (
         "phút",
         lambda f: f.speaking_s // 60,
     ),
-    Achievement(
+    AchievementRule(
         "minutes_60",
         "voice",
         "Một giờ",
@@ -232,7 +232,7 @@ CATALOG: tuple[Achievement, ...] = (
         "phút",
         lambda f: f.speaking_s // 60,
     ),
-    Achievement(
+    AchievementRule(
         "lesson_1",
         "path",
         "Bài học đầu tiên",
@@ -242,7 +242,7 @@ CATALOG: tuple[Achievement, ...] = (
         "bài",
         lambda f: f.lessons_completed,
     ),
-    Achievement(
+    AchievementRule(
         "lesson_10",
         "path",
         "Mười bài học",
@@ -252,7 +252,7 @@ CATALOG: tuple[Achievement, ...] = (
         "bài",
         lambda f: f.lessons_completed,
     ),
-    Achievement(
+    AchievementRule(
         "unit_1",
         "path",
         "Xong một chặng",
@@ -262,7 +262,7 @@ CATALOG: tuple[Achievement, ...] = (
         "chặng",
         lambda f: f.units_completed,
     ),
-    Achievement(
+    AchievementRule(
         "free_1",
         "persistence",
         "Nói tự do",
@@ -272,7 +272,7 @@ CATALOG: tuple[Achievement, ...] = (
         "lượt",
         lambda f: f.free_takes,
     ),
-    Achievement(
+    AchievementRule(
         "retry_1",
         "persistence",
         "Thử lại và qua",
@@ -282,7 +282,7 @@ CATALOG: tuple[Achievement, ...] = (
         "bước",
         lambda f: f.retried_steps,
     ),
-    Achievement(
+    AchievementRule(
         "review_10",
         "persistence",
         "Mười lượt ôn",
@@ -292,7 +292,7 @@ CATALOG: tuple[Achievement, ...] = (
         "lượt",
         lambda f: f.reviews,
     ),
-    Achievement(
+    AchievementRule(
         "assessment_1",
         "assessment",
         "Bài đánh giá đầu tiên",
@@ -302,7 +302,7 @@ CATALOG: tuple[Achievement, ...] = (
         "bài",
         lambda f: f.assessments,
     ),
-    Achievement(
+    AchievementRule(
         "assessment_5",
         "assessment",
         "Đủ để thấy xu hướng",
@@ -321,7 +321,7 @@ BY_CODE = {a.code: a for a in CATALOG}
 class Standing:
     """How far the learner is towards one achievement, by the facts of today."""
 
-    achievement: Achievement
+    achievement: AchievementRule
     value: int  # capped at the target: "45/30 ngày" says nothing more than "30/30"
 
     @property
@@ -353,6 +353,6 @@ def nearest(facts: Facts, unlocked: Iterable[str]) -> Standing | None:
     open_ = [
         s
         for s in standings(facts)
-        if s.achievement.code not in done and 0 < s.value and not s.reached
+        if s.achievement.code not in done and s.value > 0 and not s.reached
     ]
     return max(open_, key=lambda s: s.share, default=None)

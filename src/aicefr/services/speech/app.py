@@ -8,7 +8,7 @@ only here, so only this image carries them.
 from __future__ import annotations
 
 from aicefr.config import Settings, get_settings
-from aicefr.infra.blobs import LocalBlobStore
+from aicefr.infra.blobs import blob_store
 from aicefr.platform.bus import MessageBus
 from aicefr.services import Parts, Peers
 from aicefr.services.speech.worker import (
@@ -25,7 +25,7 @@ HEALTH_QUEUE = "speech.health"
 def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     worker = SpeechWorker(
         settings,
-        LocalBlobStore(settings.upload_dir),
+        blob_store(settings),
         report=lambda message: bus.send(RESULT_QUEUE, message),
     )
     # As many messages at once as the worker has recogniser slots.

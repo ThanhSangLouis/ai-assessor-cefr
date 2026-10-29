@@ -26,8 +26,9 @@ mới cần chặng B.
 
 ## 1. Cài sẵn trên máy (trước mọi thứ khác)
 
-Cần đúng ba thứ: **Python 3.10 trở lên** (nhóm đang dùng 3.12), **git**, và
-**ffmpeg**.
+Cần bốn thứ: **Python 3.10 trở lên** (nhóm đang dùng 3.12), **git**,
+**ffmpeg** và **Docker** (Docker Desktop trên macOS/Windows). Docker dùng để chạy
+MongoDB: từ D048 hệ thống lưu dữ liệu trong MongoDB, không còn tệp `aicefr.db`.
 
 `ffmpeg` không phải thư viện Python, phải cài ở mức hệ điều hành. Nó là bắt
 buộc chứ không phải tùy chọn: trình duyệt ghi âm ra định dạng WebM/Opus, mà
@@ -136,11 +137,12 @@ Bước này mất 3–8 phút tùy mạng. Nhìn thấy `Successfully installed
 .venv/bin/python -m pytest -q
 ```
 
-Phải thấy **415 passed**. Nếu số test khác đi mà vẫn xanh hết thì cũng không
-sao — nghĩa là mã đã đi tiếp từ lúc tài liệu này viết. Điều quan trọng là
+Phải thấy khoảng **1500 passed** (ngày 29/10/2026). Nếu số test khác đi mà vẫn
+xanh hết thì cũng không sao — nghĩa là mã đã đi tiếp từ lúc tài liệu này viết. Điều quan trọng là
 **không có dòng FAILED nào**.
 
-Bộ test này chạy hoàn toàn bằng ASR giả lập, không cần mạng, không cần model.
+Bộ test này chạy hoàn toàn bằng ASR giả lập và artifact mô hình giả lập
+(`tests/fixtures/models`), không cần mạng, không cần MongoDB, không cần model.
 Nó xanh tức là môi trường Python của bạn đã đúng.
 
 ### A.4. Chạy web
@@ -149,8 +151,17 @@ Nó xanh tức là môi trường Python của bạn đã đúng.
 ./demo.sh
 ```
 
-Lần chạy đầu tiên script tự tạo cơ sở dữ liệu `aicefr.db` và bốn tài khoản demo
-(mật khẩu đều là `matkhau123`):
+Script tự làm ba việc rồi mới mở máy chủ:
+
+1. **MongoDB:** nếu bạn chưa đặt `AICEFR_DB`, script chạy MongoDB 7 trong Docker
+   (container `aicefr-demo-mongo`, cổng 27019, dữ liệu giữ trong volume
+   `aicefr-demo-mongo`). Docker chưa chạy thì script dừng và báo.
+2. **Artifact mô hình chấm:** đọc ở thư mục `../aicefr-models` (cạnh thư mục
+   repo). Chưa có thư mục này thì script **dùng artifact giả lập** của bộ test và
+   in cảnh báo: web chạy trọn vòng nhưng điểm và band **vô nghĩa**. Xem mục
+   [Lấy artifact mô hình thật](#lấy-artifact-mô-hình-thật).
+3. **Tài khoản demo:** tạo bốn tài khoản (mật khẩu đều là `matkhau123`); chạy lại
+   script thì tài khoản đã có được giữ nguyên:
 
 | Bút danh | Vai trò | Dùng để xem |
 |---|---|---|
@@ -166,6 +177,23 @@ Nếu bạn muốn chạy tay thay vì qua script:
 ```bash
 .venv/bin/uvicorn aicefr.api.main:app --reload --port 8000
 ```
+
+### Lấy artifact mô hình thật
+
+Mô hình chấm là thống kê suy ra từ Speak & Improve Corpus 2025. Giấy phép cấm
+công bố, nên artifact **không nằm trong repo nào** (W7-S01) — repo nộp bài là
+công khai. Xin Sang thư mục `aicefr-models` qua kênh riêng của nhóm, đặt cạnh
+thư mục repo:
+
+```
+Project/
+├── ai-assessor-cefr/      ← repo
+└── aicefr-models/         ← ridge_resp_v2.json, conformal_resp_v2.json, ...
+```
+
+Code chỉ nạp tệp có SHA-256 khớp giá trị ghim trong
+`src/aicefr/scoring/artifacts.py`. **Không** commit thư mục này, không chép các
+tệp `*.json` của nó vào repo.
 
 ### A.5. Kiểm tra hệ thống tự báo là sẵn sàng
 
@@ -294,6 +322,13 @@ AICEFR_ASR=whisper AICEFR_WHISPER_MODEL=mlx-community/whisper-small ./demo.sh
 Dùng khi bạn không muốn cài Python và ffmpeg lên máy, hoặc khi cài mãi không
 được.
 
+Trước tiên chép `.env.example` thành `.env` và điền năm biến bắt buộc của phần
+dịch vụ (`AICEFR_INTERNAL_TOKEN`, `AICEFR_GATEWAY_TOKEN`, `MONGO_ROOT_PASSWORD`,
+`CORE_DB_PASSWORD`, `REDIS_PASSWORD`; mỗi biến một chuỗi ngẫu nhiên, ví dụ
+`python3 -c "import secrets; print(secrets.token_hex(32))"`). Thiếu biến nào
+`docker compose` từ chối chạy và nói tên biến đó. Chưa có `../aicefr-models` thì
+bỏ dấu `#` ở hai dòng artifact giả lập trong `.env`.
+
 ```bash
 docker compose up --build
 ```
@@ -341,22 +376,23 @@ trách nhiệm của bạn khi đặt bút danh. Cứ theo mẫu `SV-001`, `GV-0
 ### Làm lại từ đầu khi dữ liệu thử rối
 
 ```bash
-rm -f aicefr.db && rm -rf uploads/
+docker rm -f aicefr-demo-mongo && docker volume rm aicefr-demo-mongo && rm -rf uploads/
 ./demo.sh
 ```
 
-An toàn: cả hai đều đã nằm trong `.gitignore` và **không bao giờ** được đẩy lên
-git — chúng chứa file ghi âm giọng nói, là dữ liệu cá nhân theo
+An toàn: dữ liệu MongoDB nằm trong volume Docker, còn `uploads/` đã nằm trong
+`.gitignore`; cả hai **không bao giờ** được đẩy lên git — chúng chứa file ghi âm giọng nói, là dữ liệu cá nhân theo
 Luật 91/2025/QH15.
 
 ### Trước mỗi lần push
 
 ```bash
-./kiemtra.sh
+.venv/bin/ruff format --check src tests tools && .venv/bin/ruff check src tests tools
+.venv/bin/python -m pytest -q --ignore=tests/e2e
 ```
 
-Chạy định dạng, lint và toàn bộ test. CI đang tạm tắt nên script này chính là
-CI của nhóm — đừng bỏ qua.
+Định dạng, lint và toàn bộ test đơn vị — đúng những gì CI chạy trên mỗi PR.
+Đẩy thẳng lên `main` thì CI chỉ báo đỏ sau khi đã muộn: luôn đi qua PR.
 
 ### Các biến môi trường hay dùng
 
@@ -364,7 +400,8 @@ CI của nhóm — đừng bỏ qua.
 |---|---|---|
 | `AICEFR_ASR` | `fake` | `whisper` để chấm thật |
 | `AICEFR_WHISPER_MODEL` | theo nền tảng | đổi sang model nhỏ hơn cho nhanh |
-| `AICEFR_DB` | `aicefr.db` | đường dẫn cơ sở dữ liệu |
+| `AICEFR_DB` | `demo.sh` tự đặt `mongodb://localhost:27019/aicefr` | địa chỉ MongoDB; một đường dẫn tệp nghĩa là kho trong bộ nhớ, mất khi tắt tiến trình |
+| `AICEFR_MODEL_DIR` | `../aicefr-models` | thư mục artifact mô hình chấm (ngoài Git) |
 | `AICEFR_UPLOADS` | `uploads` | thư mục chứa file ghi âm |
 | `AICEFR_MAX_UPLOAD` | 25 MiB | giới hạn kích thước tệp |
 | `AICEFR_JOB_MODE` | `threadpool` | `inline` để chấm đồng bộ, tiện gỡ lỗi |
