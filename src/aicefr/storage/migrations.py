@@ -160,6 +160,35 @@ def _d060_classroom(db: Database) -> None:
     ensure_indexes(db, D060_INDEXES["classroom"], "migration-7-classroom")
 
 
+def _d060_study(db: Database) -> None:
+    """`study_participant` and `study_survey` become `study.participants`."""
+    if _has(db, "study_participant") or _has(db, "study_survey"):
+        for st in db["study"].find({}, {"study_id": 1}):
+            sid = st["study_id"]
+            surveys = {r["account_id"]: r for r in db["study_survey"].find({"study_id": sid})}
+            participants = []
+            for p in db["study_participant"].find({"study_id": sid}).sort("code", 1):
+                survey = surveys.get(p["account_id"])
+                participants.append(
+                    {
+                        "code": p["code"],
+                        "account_id": p["account_id"],
+                        "arm": p["arm"],
+                        "enrolled_at": p["enrolled_at"],
+                        "withdrawn_at": p.get("withdrawn_at"),
+                        "survey_answers": json.loads(survey["answers_json"]) if survey else None,
+                        "surveyed_at": survey.get("submitted_at") if survey else None,
+                    }
+                )
+            db["study"].update_one({"_id": st["_id"]}, {"$set": {"participants": participants}})
+        db.drop_collection("study_participant")
+        db.drop_collection("study_survey")
+    if _has(db, "study"):
+        db["study"].update_many(
+            {"participants": {"$exists": False}}, {"$set": {"participants": []}}
+        )
+
+
 _ASSIGNMENT_KEYS = (
     "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
 )  # fmt: skip
@@ -177,7 +206,7 @@ D060_INDEXES: dict[str, dict] = {
     },
 }
 
-D060_STEPS: tuple[Callable[[Database], None], ...] = (_d060_classroom,)
+D060_STEPS: tuple[Callable[[Database], None], ...] = (_d060_classroom, _d060_study)
 
 
 def _d060(db: Database, target: str) -> None:

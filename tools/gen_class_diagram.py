@@ -260,6 +260,7 @@ CLASSES = [
             "- enrolledAt: datetime",
             "- withdrawnAt: datetime",
             "- surveyAnswers: List<str>",
+            "- surveyedAt: datetime",
         ],
     ),
     _e(
