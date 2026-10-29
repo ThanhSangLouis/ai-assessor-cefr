@@ -42,7 +42,7 @@ const ASPECT_MEASURES = {
   accuracy: "Mức độ máy nghe rõ từng từ.",
   fluency: "Tốc độ nói, số lần và độ dài các quãng ngừng.",
   coherence:
-    "Số kiểu từ nối khác nhau trong bản chép lời (D061). Mức đủ dữ liệu tính theo tổng số từ, " +
+    "Số kiểu từ nối khác nhau trong bản chép lời. Mức đủ dữ liệu tính theo tổng số từ, " +
     "độ dài các đoạn nói liền mạch và tổng thời lượng.",
   phonology: "Mức độ máy nghe rõ và tỷ lệ im lặng trong bản ghi.",
 };
