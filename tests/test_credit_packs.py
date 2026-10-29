@@ -105,7 +105,7 @@ def test_a_learner_reads_their_own_receipt_but_not_anothers(m):
 
 def test_learner_packs_stay_off_the_administrators_order_list(m):
     pay(login_as(m, "SV-001"), 10)
-    admin = login_as(m, "QT-01", "admin", terms=False)
+    admin = login_as(m, "QT-01", "admin")
     orders = admin.get("/api/v1/admin/billing").json()["orders"]
     assert all(o["kind"] != "credits" for o in orders)
 

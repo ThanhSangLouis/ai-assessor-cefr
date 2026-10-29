@@ -72,7 +72,7 @@ def m(tmp_path, monkeypatch):
 
 
 def admin_of(m) -> TestClient:
-    return login_as(m, "QT-01", "admin", terms=False)
+    return login_as(m, "QT-01", "admin")
 
 
 def at(m, moment: datetime) -> None:
@@ -133,7 +133,7 @@ def test_with_billing_off_nothing_changes(tmp_path, monkeypatch):
     assert off["enabled"] is False and "license" not in off
     assert [p["plan"] for p in off["ladder"]] == ["free", "standard", "advanced"]
     assert students(admin, 200) == 200  # no limit on students
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     assert teacher.post("/api/v1/teach/paths", json={"title": "Lộ trình riêng"}).status_code == 200
     assert teacher.get("/api/v1/review/stats").status_code == 200
     assert teacher.get("/api/v1/plan").json()["enabled"] is False
@@ -196,19 +196,19 @@ def test_the_plan_limits_new_student_accounts_only(m):
 def test_assessments_over_the_monthly_figure_only_warn(m):
     admin = admin_of(m)
     assert overview(admin)["usage"]["quota"] == 24  # 3 students x 8 on the trial
-    learner = login_as(m, "SV-001", terms=True)  # accepted the terms: research data (D058)
-    plain = login_as(m, "SV-002", terms=False)
-    save_assessments(m, "SV-002", "p", 20)
+    learner = login_as(m, "SV-001")
+    plain = login_as(m, "SV-002")
+    save_assessments(m, "SV-002", "p", 16)
     save_assessments(m, "SV-001", "r", 4)
 
     usage = overview(admin)["usage"]
 
-    assert (usage["assessments"], usage["research_assessments"]) == (20, 4)  # BR-30
+    # D064: every learner's assessments count; there is no research exemption.
+    assert usage["assessments"] == 20 and "research_assessments" not in usage
     assert (usage["percent"], usage["warning"]) == (83, 80)
     save_assessments(m, "SV-002", "q", 4)
     assert overview(admin)["usage"]["warning"] == 100
     # A warning, never a refusal: both learners still submit.
-    plain.post("/api/v1/me/terms")
     for client in (learner, plain):
         r = client.post(
             "/api/v1/responses",
@@ -220,7 +220,7 @@ def test_assessments_over_the_monthly_figure_only_warn(m):
 
 def test_after_the_trial_the_free_plan_closes_staff_tools_but_never_learning(m):
     admin = admin_of(m)
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     learner = login_as(m, "SV-001")
     trial_end = date.fromisoformat(overview(admin)["license"]["valid_to"])
     at(m, morning(trial_end + timedelta(days=1)))
@@ -440,8 +440,8 @@ def test_a_new_order_retires_the_one_still_waiting(m):
 
 def test_each_plan_opens_its_staff_tools(m):
     admin = admin_of(m)
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
-    login_as(m, "GV-02", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
+    login_as(m, "GV-02", "teacher")
     raters = [m.app.state.auth_repo.get_by_pseudonym(n)["account_id"] for n in ("GV-01", "GV-02")]
     batch = {"name": "Đợt thử", "rater_ids": raters}
 
@@ -562,7 +562,7 @@ def test_vnpay_is_redirected_to_and_its_messages_are_checked(tmp_path, monkeypat
 
 
 def test_only_an_administrator_deals_with_plans(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     learner = login_as(m, "SV-001")
     guest = TestClient(m.app)
     assert teacher.get("/api/v1/plan").status_code == 200

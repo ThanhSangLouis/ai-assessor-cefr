@@ -173,7 +173,7 @@ def test_only_the_owner_listens_and_the_analysis_counts_the_labels(m):
     from test_lessons_integration import login_as, submit_assessment
 
     owner, other = login_as(m, "SV-001"), login_as(m, "SV-002")
-    admin = login_as(m, "QT-01", "admin", terms=False)
+    admin = login_as(m, "QT-01", "admin")
     rid = submit_assessment(owner)
     _with_moments(m, rid)
     assert other.get(f"/api/v1/responses/{rid}/replay").status_code == 404

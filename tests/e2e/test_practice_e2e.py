@@ -215,18 +215,11 @@ def wait_until(page, expression: str, timeout_s: float = 10.0) -> None:
     raise AssertionError(f"timed out waiting for: {expression}")
 
 
-def accept_terms(page) -> None:
-    """Accept the terms through the API with the browser's own session cookie."""
-    r = page.request.post("/api/v1/me/terms")
-    assert r.ok, r.text()
-
-
 @pytest.fixture
 def student(context, live_server):
-    """A new student, logged in and with the terms accepted, on the practice home."""
+    """A new student, logged in, on the practice home."""
     page = context.new_page()
     login(page, live_server, live_server.account())
-    accept_terms(page)
     page.goto("/practice")
     return page
 
@@ -319,17 +312,6 @@ def test_fake_microphone_recording_is_submitted_and_processed(student):
     expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
 
 
-def test_without_the_terms_a_warning_shows_and_submit_is_disabled(context, live_server):
-    page = context.new_page()
-    login(page, live_server, live_server.account(), "/practice/PR-COH-A2")
-    expect(page.locator("#terms-gate")).to_be_visible()
-    expect(page.locator("#terms-gate")).to_contain_text("Chưa đồng ý điều khoản")
-    # Both ways in are closed before a minute is spent recording: the record
-    # button and the file picker. The server refuses the upload as well.
-    expect(page.locator("#rec-button")).to_be_disabled()
-    expect(page.locator("#audio")).to_be_disabled()
-
-
 def test_another_learner_cannot_see_your_result(student, live_server, browser):
     submit_file(student, live_server, "PR-COH-A2")
     url = student.url
@@ -373,7 +355,6 @@ def test_phone_layout_of_a_task_has_no_horizontal_scroll(context, live_server):
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account())
-    accept_terms(page)
     page.goto("/practice/PR-COH-A2")
     expect(page.locator("#practice-form")).to_be_visible()
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")

@@ -92,7 +92,6 @@ def test_the_drawings_are_inert_and_small():
 def test_every_page_stands_on_the_ground(m):
     guest = TestClient(m.app)
     student = signed_in(m, "SV-ART", "student")
-    student.post("/api/v1/me/terms")
     pages = [
         (guest, "/bands", "guest"),
         (student, "/practice", "student"),

@@ -209,7 +209,7 @@ def test_the_learning_part_writes_its_own_database_and_is_erased_there(tmp_path,
     assert LessonRepository(learning_db, seed=False).count_attempts(who) == 1
     assert LessonRepository(core_db, seed=False).count_attempts(who) == 0
 
-    admin = login_as(main, "QT-01", "admin", terms=False)
+    admin = login_as(main, "QT-01", "admin")
     erased = admin.post(
         "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
     )

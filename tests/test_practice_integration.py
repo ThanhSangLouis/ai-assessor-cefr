@@ -297,15 +297,13 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", terms: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200
-    if terms:
-        c.post("/api/v1/me/terms")
     return c
 
 
@@ -409,10 +407,10 @@ def test_completing_the_suggested_task_moves_the_suggestion_on(m):
     assert first == "PR-FLU-A2" and after["task_id"] == "PR-FLU-B1"
 
 
-def test_practice_without_the_terms_is_refused(m):
-    student = login_as(m, "SV-001", terms=False)
-    submit(student, "PR-COH-A2", expect=403)
-    assert student.get("/api/v1/me/responses").json() == []
+def test_practice_is_accepted_straight_after_signing_in(m):
+    """D064: no terms step; a new learner's first practice is taken."""
+    student = login_as(m, "SV-001")
+    assert submit(student, "PR-COH-A2") is not None
 
 
 def test_submission_to_an_unknown_task_is_refused(m):

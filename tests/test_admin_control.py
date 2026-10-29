@@ -38,7 +38,6 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    assert c.post("/api/v1/me/terms").status_code == 200
     return c
 
 
@@ -96,15 +95,16 @@ def test_moi_truong_du_lieu_deu_co_giai_thich_muc_dich(app) -> None:
     body = c.get("/api/v1/me/export.json").json()
 
     fields = body["fields"]
-    for key in ("speaker_id", "terms_accepted_at", "transcript", "features", "review_history"):
+    for key in ("speaker_id", "transcript", "features", "review_history"):
         assert key in fields and fields[key].strip()
 
 
-def test_xuat_du_lieu_co_thoi_diem_dong_y_dieu_khoan(app) -> None:
+def test_xuat_du_lieu_khong_con_moc_dieu_khoan(app) -> None:
+    """D064: there is no terms step, so the export has no acceptance date."""
     c = login_as(app, "SV-001", "student")
     body = c.get("/api/v1/me/export.json").json()
 
-    assert body["terms_accepted_at"]
+    assert "terms_accepted_at" not in body and "terms_accepted_at" not in body["fields"]
 
 
 def test_khong_dang_nhap_thi_khong_xuat_duoc(app) -> None:

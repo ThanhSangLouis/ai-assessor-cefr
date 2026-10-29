@@ -38,12 +38,6 @@ def _login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    # FR-01 (D058): submitting requires the terms of use. Accept them through the
-    # real endpoint so these fixtures exercise the same path a student walks,
-    # instead of bypassing a rule the product depends on. `tests/test_terms.py`
-    # covers what happens when they are missing.
-    s = c.post("/api/v1/me/terms")
-    assert s.status_code == 200, s.text
     return c
 
 

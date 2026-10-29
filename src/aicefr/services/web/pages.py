@@ -20,7 +20,6 @@ from aicefr.auth import google, passwords
 from aicefr.config import Settings
 from aicefr.research.agreement import BANDS, CRITERIA
 from aicefr.services import Peers
-from aicefr.services.core.identity.auth_api import terms_state
 from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
     AVATAR_ICONS,
@@ -155,17 +154,11 @@ def page_bands(request: Request, account: Account | None = Depends(optional_acco
     )
 
 
-@router.get("/terms", response_class=HTMLResponse, tags=["web"])
-def page_terms(request: Request, account: Account | None = Depends(optional_account)):
-    """The terms of use (D058). The account says whether they were accepted."""
-    state = terms_state(account) if account is not None else None
-    return _page(request, "terms.html", account, "terms", terms=state)
-
-
+@router.get("/terms", include_in_schema=False)
 @router.get("/consent", include_in_schema=False)
-def page_consent() -> RedirectResponse:
-    """The old address of the consent screen, which the terms replaced."""
-    return RedirectResponse("/terms", status_code=301)
+def page_terms_gone() -> RedirectResponse:
+    """The terms page and the consent screen before it are gone (D064); old links go home."""
+    return RedirectResponse("/", status_code=301)
 
 
 @router.get("/account", response_class=HTMLResponse, tags=["web"])

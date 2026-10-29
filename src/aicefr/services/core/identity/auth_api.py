@@ -1,9 +1,7 @@
-"""Sign-in, the terms of use, the merged audit log, and the gateway's session check (D043).
+"""Sign-in, the merged audit log, and the gateway's session check (D043).
 
-FR-32 (sign-in), FR-01 (terms of use, D058), FR-36 (audit). The terms are
-checked where a recording is made, not at login: the account the gateway
-forwards carries `terms_accepted_at`, so the assessment and learning services
-decide without asking this one.
+FR-32 (sign-in), FR-36 (audit). There is no terms-of-use step any more (D064):
+a signed-in learner records straight away.
 """
 
 from __future__ import annotations
@@ -17,7 +15,6 @@ from aicefr.api.deps import ADMIN_ONLY, ROLE_HOME, require_login, set_session_co
 from aicefr.api.schemas import LoginRequest
 from aicefr.auth.sessions import COOKIE_NAME, device_label
 from aicefr.contracts import AuditEntry
-from aicefr.observability import count
 from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_account
 from aicefr.platform.rpc import RemoteError, same_key
 from aicefr.services import Peers
@@ -133,37 +130,6 @@ def session_for_gateway(
     account = s.auth.account_for_token(request.cookies.get(COOKIE_NAME))
     response.headers[ACCOUNT_HEADER] = encode_account(account)
     return {"signed_in": account is not None}
-
-
-# ================================================================= terms of use
-
-
-def terms_state(account: Account, accepted_at: str | None = None) -> dict:
-    accepted_at = accepted_at or account.terms_accepted_at
-    return {
-        "accepted": accepted_at is not None,
-        "accepted_at": accepted_at,
-        "may_submit": accepted_at is not None,
-        "role": account.role.value,
-    }
-
-
-@router.get("/api/v1/me/terms", tags=["student"])
-def my_terms(account: Account = Depends(require_login)) -> dict:
-    """Whether the current user accepted the terms of use, and when."""
-    return terms_state(account)
-
-
-@router.post("/api/v1/me/terms", tags=["student"])
-def accept_terms(account: Account = Depends(require_login)) -> dict:
-    """Accept the terms of use (D058). Accepting again keeps the first date."""
-    s = svc()
-    first = account.terms_accepted_at is None
-    accepted_at = s.auth.accept_terms(account.account_id)
-    if first:
-        s.audit_log.write(account.pseudonym, "terms.accept", account.account_id, None)
-        count("terms_accepted_total")
-    return terms_state(account, accepted_at)
 
 
 # ================================================================= audit

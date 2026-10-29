@@ -156,7 +156,7 @@ def build(db: str, batch_id: str) -> tuple[dict, dict]:
     batch = ratings.batch(batch_id)
     if batch is None:
         raise SystemExit(f"không có đợt {batch_id!r}")
-    allowed = AuthRepository(db).accounts_with_terms()
+    allowed = AuthRepository(db).active_account_ids()
     everyone = ratings.analysis_rows(batch_id, allowed=None)
     rows = ratings.analysis_rows(batch_id, allowed)
     times = ratings.times_to_rate(batch_id)

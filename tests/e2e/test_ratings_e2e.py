@@ -23,7 +23,6 @@ pytest.importorskip("playwright.sync_api")
 
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
-    accept_terms,
     browser,
     context,
     live_server,
@@ -51,7 +50,6 @@ def students_with_recordings(browser, live_server, count: int = 2) -> list[str]:
             page = ctx.new_page()
             name = live_server.account()
             login(page, live_server, name, "/practice")
-            accept_terms(page)
             audio = (live_server.files / "full-35s.wav").read_bytes()
             r = page.request.post(
                 "/api/v1/responses",

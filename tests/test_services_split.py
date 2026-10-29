@@ -267,10 +267,6 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     student = Gateway(clients).login("SV-001")
     assert student.get("/api/v1/me").json()["pseudonym"] == "SV-001"
 
-    # identity: the terms of use (D058).
-    r = student.post("/api/v1/me/terms")
-    assert r.json()["may_submit"] is True
-
     # core -> speech (bus) -> core: the response is scored and saved.
     r = student.post(
         "/api/v1/responses",
@@ -282,7 +278,7 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     status = student.get(f"/api/v1/responses/{rid}/status").json()
     assert status["is_pending"] is False and status["status"] != "FAILED"
 
-    # learning -> speech (request-reply) -> learning; the forwarded account carries the terms.
+    # learning -> speech (request-reply) -> learning.
     lesson = "lesson-a2-neighborhood"
     r = student.post(
         f"/api/v1/learn/lessons/{lesson}/steps/{lesson}-s5/attempts",
@@ -303,15 +299,14 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     page = student.get("/practice/lessons/lesson-a2-neighborhood")
     assert page.status_code == 200 and "SV-001" in page.text
 
-    # assessment: the export gathers the account's terms and learning's attempts.
+    # assessment: the export gathers the account's responses and learning's attempts.
     export = student.get("/api/v1/me/export.json").json()
     assert export["response_count"] == 1 and export["lesson_attempt_count"] == 1
-    assert export["terms_accepted_at"]
 
     admin = Gateway(clients).login("QT-01")
     # identity merges every service's audit log.
     actions = [e["action"] for e in admin.get("/api/v1/audit").json()]
-    assert {"auth.login", "terms.accept", "export.personal"} <= set(actions)
+    assert {"auth.login", "export.personal"} <= set(actions)
 
     # assessment erases, and reaches learning for the lesson attempts.
     preview = admin.get("/api/v1/admin/erase/SV-001").json()
@@ -332,7 +327,6 @@ def test_a_submission_is_scored_and_a_step_measured_through_redis(over_redis):
     import time
 
     student = Gateway(over_redis["clients"]).login("SV-001")
-    student.post("/api/v1/me/terms")
     r = student.post(
         "/api/v1/responses",
         files={"audio": ("a.wav", _wav(35), "audio/wav")},

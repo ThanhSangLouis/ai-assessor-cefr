@@ -160,7 +160,6 @@ def test_a_profile_takes_only_listed_avatars_and_goals(m):
 
 def test_the_daily_goal_sets_the_target_on_the_path_page(m):
     c = login_as(m, "SV-001")
-    c.post("/api/v1/me/terms")
     assert c.get("/api/v1/learn").json()["today"]["goal_seconds"] == 180
     c.patch("/api/v1/me/profile", json={"daily_goal_s": 600})
     assert c.get("/api/v1/learn").json()["today"]["goal_seconds"] == 600
@@ -318,7 +317,7 @@ def test_an_unlinked_google_account_signs_up_as_a_student(m, monkeypatch):
     browser = TestClient(m.app)
     _, flow = start(browser)
     r, _ = finish(monkeypatch, browser, flow, sub="first-time-here")
-    assert r.headers["location"] == "/terms"
+    assert r.headers["location"] == "/practice"  # D064: no terms step
     me = browser.get("/api/v1/me").json()
     assert me["role"] == "student" and me["pseudonym"].startswith("SV-G")
     row = m.app.state.auth_repo.account_by_identity(
@@ -332,7 +331,6 @@ def test_an_unlinked_google_account_signs_up_as_a_student(m, monkeypatch):
     again = TestClient(m.app)
     _, flow = start(again)
     r, _ = finish(monkeypatch, again, flow, sub="first-time-here")
-    assert r.headers["location"] != "/terms"
     assert again.get("/api/v1/me").json()["pseudonym"] == me["pseudonym"]
     assert len(m.app.state.auth_repo.list_accounts()) == count
 

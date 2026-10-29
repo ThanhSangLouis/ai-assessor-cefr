@@ -19,7 +19,7 @@ const TABS = ["profile", "security", "activity", "data"]
   .map((key) => ({ key, button: document.getElementById(`tab-${key}`), panel: document.getElementById(`panel-${key}`) }))
   .filter((t) => t.button && t.panel);
 const loaded = new Set();
-const LOADERS = { security: loadSessions, activity: loadActivity, data: loadData };
+const LOADERS = { security: loadSessions, activity: loadActivity };
 
 function showTab(tab) {
   TABS.forEach((t) => {
@@ -416,21 +416,6 @@ function loadActivity() {
         : '<li class="muted">Chưa có hoạt động nào được ghi.</li>';
     })
     .catch(() => window.clearBusy(activityList));
-}
-
-// ---------------------------------------------------------------- data
-function loadData() {
-  const el = document.getElementById("terms-state");
-  if (!el) return;
-  fetch("/api/v1/me/terms")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((t) => {
-      if (!t) return;
-      el.textContent = t.accepted
-        ? `Đã đồng ý điều khoản lúc ${window.ui.localTime(t.accepted_at)}.`
-        : "Bạn chưa đồng ý điều khoản, nên hệ thống chưa lưu bản ghi âm nào của bạn.";
-    })
-    .catch(() => {});
 }
 
 // FR-34. Through fetch first, so an expired session goes to the login page

@@ -98,8 +98,7 @@ def plans_with(feature: PlanFeature) -> str:
 @dataclass(frozen=True)
 class Usage:
     students: int  # enabled student accounts
-    assessments: int  # this month, research participants left out (BR-30)
-    research_assessments: int  # this month, by research participants
+    assessments: int  # this month, every learner's (D064: no research exemption)
     quota: int  # what the plan expects a month
     month: str  # "10/2026"
 
@@ -118,11 +117,10 @@ class BillingService:
         self,
         store,  # aicefr.storage.billing_repository.BillingRepository
         # D043: what the plan counts lives in other services, asked through
-        # these three: enabled student accounts (identity), assessments per
-        # account in [since, until) (assessment), research participants (identity).
+        # these two: enabled student accounts (identity) and assessments per
+        # account in [since, until) (assessment).
         students: Callable[[], int],
         assessments: Callable[[str, str], dict[str, int]],
-        research: Callable[[], set[str]],
         settings,  # aicefr.config.Settings
         gateways,  # {name: aicefr.ports.PaymentGateway}, in the order offered; may be empty
         audit: Callable[[str, str, str | None, str | None], None],
@@ -135,7 +133,6 @@ class BillingService:
         self.store = store
         self._students = students
         self._assessments = assessments
-        self._research = research
         self.settings = settings
         self.gateways = dict(gateways)
         # Why a gateway the settings ask for is off, for the administrator's tab.
@@ -220,11 +217,9 @@ class BillingService:
     def usage(self, current: Standing) -> Usage:
         since, until, label = self._month()
         per_account = self._assessments(since, until)
-        research = self._research()
         return Usage(
             students=self._students(),
-            assessments=sum(n for acc, n in per_account.items() if acc not in research),
-            research_assessments=sum(n for acc, n in per_account.items() if acc in research),
+            assessments=sum(per_account.values()),
             quota=current.quota,
             month=label,
         )
@@ -735,7 +730,6 @@ class BillingService:
                 "usage": {
                     "students": usage.students,
                     "assessments": usage.assessments,
-                    "research_assessments": usage.research_assessments,
                     "quota": usage.quota,
                     "percent": usage.percent,
                     "warning": usage.warning,

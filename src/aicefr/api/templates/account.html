@@ -171,7 +171,7 @@
         {% if google_enabled %}
         <p id="google-state" class="muted">Đang kiểm tra…</p>
         <div class="button-row">
-          <a class="button secondary" id="google-link" href="/auth/google/start?mode=link" hidden>{{ icon("plus") }} Liên kết tài khoản Google</a>
+          <a class="button secondary" id="google-link" href="/auth/google/start?mode=link" hidden>{% include "_google_logo.html" %} Liên kết tài khoản Google</a>
           <button type="button" class="secondary" id="google-unlink" hidden>{{ icon("x") }} Gỡ liên kết</button>
         </div>
         <p class="muted small-note">
@@ -209,20 +209,15 @@
 {% if is_student %}
 <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" tabindex="0" hidden>
   <div class="account-grid">
-    <div class="card" aria-labelledby="terms-h">
-      <h2 id="terms-h">{{ icon("file-check") }} Điều khoản sử dụng</h2>
-      <p id="terms-state" class="muted">Đang kiểm tra…</p>
-      <div class="button-row"><a class="button secondary" href="/terms">Xem điều khoản</a></div>
-    </div>
     <div class="card" aria-labelledby="export-h">
       <h2 id="export-h">{{ icon("download") }} Dữ liệu của tôi</h2>
-      <p>Tải về mọi thứ hệ thống giữ về bạn: các bài đã nộp, bản chép lời, phép đo, điểm, lịch sử duyệt và
-        đồng thuận, kèm lời giải thích từng trường dùng để làm gì.</p>
+      <p>Tải về mọi thứ hệ thống giữ về bạn: các bài đã nộp, bản chép lời, phép đo, điểm và lịch sử duyệt,
+        kèm lời giải thích từng trường dùng để làm gì.</p>
       <div class="button-row">
         <button type="button" id="export-all">{{ icon("download") }} Tải toàn bộ dữ liệu (JSON)</button>
       </div>
-      <p class="muted small-note">Muốn xoá: xoá từng bài ở "Bài của tôi", hoặc rút đồng thuận để hệ thống ngừng dùng
-        dữ liệu cho nghiên cứu và xoá theo chính sách lưu trữ; cần xoá ngay toàn bộ thì báo quản trị viên.</p>
+      <p class="muted small-note">Muốn xoá: xoá từng bài ở "Bài của tôi"; cần xoá ngay toàn bộ thì báo quản trị
+        viên.</p>
     </div>
   </div>
 </section>

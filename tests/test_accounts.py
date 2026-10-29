@@ -36,17 +36,15 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", terms: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    return sign_in(m, pseudonym, PASSWORD, terms=terms)
+    return sign_in(m, pseudonym, PASSWORD)
 
 
-def sign_in(m, pseudonym: str, password: str, terms: bool = False) -> TestClient:
+def sign_in(m, pseudonym: str, password: str) -> TestClient:
     client = TestClient(m.app)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": password})
     assert r.status_code == 200, r.text
-    if terms:
-        client.post("/api/v1/me/terms")
     return client
 
 

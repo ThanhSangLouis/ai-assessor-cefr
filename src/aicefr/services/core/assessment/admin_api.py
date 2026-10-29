@@ -258,10 +258,10 @@ def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
     return JSONResponse(
         {
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "accounts_with_terms": len(allowed),
+            "accounts": len(allowed),
             "row_count": len(rows),
             "note": (
-                "Chỉ gồm bài của người đã đồng ý điều khoản sử dụng (D058)."
+                "Gồm bài của mọi tài khoản đang dùng; tài khoản đã tắt bị bỏ ra (D064)."
                 " Không chứa bản chép lời."
             ),
             "rows": rows,

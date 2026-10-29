@@ -21,7 +21,6 @@ pytest.importorskip("playwright.sync_api")
 
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
-    accept_terms,
     browser,
     context,
     live_server,
@@ -129,7 +128,6 @@ def scored(live_server, response_id: str) -> None:
 def test_the_report_marks_the_estimated_band_among_the_six(context, live_server):
     page = context.new_page()
     login(page, live_server, live_server.account(), "/practice")
-    accept_terms(page)
     audio = (live_server.files / "full-35s.wav").read_bytes()
     r = page.request.post(
         "/api/v1/responses",

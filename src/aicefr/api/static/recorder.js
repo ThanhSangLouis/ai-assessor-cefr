@@ -373,7 +373,7 @@
       },
       repaint: paintWindow,
       // Refuse both paths up front, for a page that must not take a recording
-      // yet (terms not accepted). The server refuses too; this saves a wasted minute.
+      // yet. The server refuses too; this saves a wasted minute.
       block(reason) {
         blocked = true;
         if (recorder && recorder.state === "recording") stop();

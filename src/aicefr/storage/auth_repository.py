@@ -78,7 +78,6 @@ ACCOUNT_FIELDS = (
     "avatar_icon",
     "avatar_color",
     "daily_goal_s",
-    "terms_accepted_at",
     "identities",
     "seen_markers",
 )
@@ -141,10 +140,6 @@ class Account:
     avatar_icon: str | None = None
     avatar_color: str | None = None
     daily_goal_s: int = DEFAULT_DAILY_GOAL
-    # D058: when the learner accepted the terms of use, None until then. It
-    # replaces the research consent form: the voice-collection round is over,
-    # and accepting the terms is what lets a recording be stored and used.
-    terms_accepted_at: str | None = None
     # D060: the providers of the outside identities linked to the account, and
     # when its owner last looked at what can change behind their back (D028).
     identities: tuple[str, ...] = ()
@@ -153,11 +148,6 @@ class Account:
     @property
     def is_staff(self) -> bool:
         return self.role in (Role.TEACHER, Role.ADMIN)
-
-    @property
-    def may_submit(self) -> bool:
-        """A recording is stored only for someone who accepted the terms."""
-        return self.terms_accepted_at is not None
 
 
 class AccountLocked(Exception):
@@ -228,7 +218,6 @@ class AuthRepository(MongoStore):
             "avatar_icon": None,
             "avatar_color": None,
             "daily_goal_s": DEFAULT_DAILY_GOAL,
-            "terms_accepted_at": None,
             "identities": [],
             "seen_markers": {},
         }
@@ -495,7 +484,6 @@ class AuthRepository(MongoStore):
             avatar_icon=row["avatar_icon"],
             avatar_color=row["avatar_color"],
             daily_goal_s=row["daily_goal_s"] or DEFAULT_DAILY_GOAL,
-            terms_accepted_at=row["terms_accepted_at"],
             identities=tuple(i["provider"] for i in row["identities"] or []),
             seen_markers=dict(row["seen_markers"] or {}),
         )
@@ -661,28 +649,9 @@ class AuthRepository(MongoStore):
             return
         self.col("account").update_one({"account_id": account_id}, {"$set": changes})
 
-    # ---------- terms of use (D058) ----------
-
-    def accept_terms(self, account_id: str) -> str:
-        """Record that the account accepted the terms; the first time stays.
-
-        Returns the time of acceptance. Accepting again changes nothing, so a
-        double click or a retried request does not move the date.
-        """
-        self.col("account").update_one(
-            {"account_id": account_id, "terms_accepted_at": None},
-            {"$set": {"terms_accepted_at": _now()}},
-        )
-        row = self.col("account").find_one({"account_id": account_id}, {"terms_accepted_at": 1})
-        if row is None:
-            raise KeyError(account_id)
-        return row["terms_accepted_at"]
-
-    def accounts_with_terms(self) -> set[str]:
-        """Accounts whose data may be used in research: those that accepted the terms."""
-        rows = self.col("account").find(
-            {"terms_accepted_at": {"$ne": None}, "disabled": 0}, {"account_id": 1}
-        )
+    def active_account_ids(self) -> set[str]:
+        """Accounts that are switched on: whose data research may use (D064)."""
+        rows = self.col("account").find({"disabled": 0}, {"account_id": 1})
         return {r["account_id"] for r in rows}
 
     def set_role(self, account_id: str, role: Role) -> str:

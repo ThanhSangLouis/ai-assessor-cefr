@@ -78,16 +78,6 @@ async def submit_response(
     # let a student submit under somebody else's pseudonym.
     speaker_id = account.pseudonym
 
-    # FR-01 (D058): no accepted terms, no recording. Checked before a single
-    # byte is written to disk -- storing the audio first and asking afterwards
-    # is the wrong order for personal data.
-    if not account.may_submit:
-        raise HTTPException(
-            403,
-            "chưa đồng ý điều khoản sử dụng. Vào trang /terms để đồng ý"
-            f" ({ReasonCode.TERMS_NOT_ACCEPTED.value})",
-        )
-
     task = s.tasks.get(task_id)
     if task is None:
         raise HTTPException(422, "đề bài không tồn tại")
@@ -348,7 +338,6 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
 # export, reachable without asking an administrator.
 FIELD_PURPOSES: dict[str, str] = {
     "speaker_id": "Bút danh gắn bài nói với tài khoản. Không chứa họ tên hay MSSV.",
-    "terms_accepted_at": "Thời điểm bạn đồng ý điều khoản sử dụng; từ đó hệ thống mới lưu bản ghi.",
     "response_id": "Mã bài nói, dùng để tra cứu và để xoá đúng bản ghi khi bạn yêu cầu.",
     "task_id": "Đề bài đã nói, để so sánh các bài cùng đề.",
     "status": "Trạng thái xử lý của bài.",
@@ -422,7 +411,6 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "speaker_id": account.pseudonym,
             "fields": FIELD_PURPOSES,
-            "terms_accepted_at": account.terms_accepted_at,
             "response_count": len(responses),
             "responses": responses,
             "lesson_attempt_count": len(lesson_attempts),

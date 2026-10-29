@@ -1327,8 +1327,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | Acceptance Criteria |
 | --- |
 | **AC-77.1** — *Given* 11 tài khoản, *When* chia nhóm hai lần với cùng hạt giống theo hai thứ tự khác nhau, *Then* kết quả như nhau, hai nhóm lệch nhau tối đa 1 người, hạt giống khác cho kết quả khác (`test_assignment_is_balanced_and_reproducible_from_the_seed`). |
-| **AC-77.2** — *Given* 5 sinh viên đồng ý, 1 sinh viên không đồng ý, 1 giảng viên, *When* quản trị viên mở thực nghiệm, *Then* đúng 5 sinh viên được chia 2–3, mở thực nghiệm thứ hai bị 409, nhật ký ghi hạt giống (`test_study_enrols_students_with_terms_half_in_each_arm`). |
-| **AC-77.3** — *Given* chỉ 1 sinh viên đồng ý, *When* mở thực nghiệm, *Then* 422 và lý do nói cần ít nhất bao nhiêu người (`test_study_needs_enough_students_with_terms`). |
+| **AC-77.2** — *Given* 5 sinh viên đồng ý, 1 sinh viên không đồng ý, 1 giảng viên, *When* quản trị viên mở thực nghiệm, *Then* đúng 5 sinh viên được chia 2–3, mở thực nghiệm thứ hai bị 409, nhật ký ghi hạt giống (`test_study_enrols_active_students_half_in_each_arm`). |
+| **AC-77.3** — *Given* chỉ 1 sinh viên đồng ý, *When* mở thực nghiệm, *Then* 422 và lý do nói cần ít nhất bao nhiêu người (`test_study_needs_enough_students`). |
 | **AC-77.4** — *Given* hai bài có đủ nhận xét, bằng chứng, ưu tiên của hai sinh viên ở hai nhóm, *When* mỗi người mở báo cáo của mình và giảng viên mở bài của nhóm "Chỉ điểm", *Then* người nhóm "Chỉ điểm" thấy điểm 3,4 và B1, `feedback_withheld`, mọi danh sách phản hồi rỗng; người nhóm kia và giảng viên thấy đủ (`test_score_only_arm_gets_the_score_and_nothing_more`). |
 | **AC-77.5** — *Given* người nhóm "Chỉ điểm", *When* họ rời thực nghiệm, rồi quản trị viên đóng thực nghiệm, *Then* báo cáo hiện đủ ngay, trạng thái ghi đã rời, và sau khi đóng không ai còn trong thực nghiệm (`test_leaving_the_study_or_closing_it_brings_feedback_back`). |
 | **AC-77.7** — *Given* một người trong thực nghiệm, *When* quản trị viên xoá dữ liệu của họ, *Then* họ không còn trong danh sách tham gia (`test_erasure_takes_the_learner_out_of_every_study`). |

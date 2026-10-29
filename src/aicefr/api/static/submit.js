@@ -7,7 +7,6 @@ const taskIdEl = document.getElementById("task_id");
 const promptEl = document.getElementById("chosen-prompt");
 
 let chosenTask = null;
-let maySubmit = true;
 // How long a recording the scoring model can take in one pass. Read from the
 // server, which reads it from the model artifact, so this number cannot drift
 // away from the rule applied after submission.
@@ -109,7 +108,7 @@ fetch("/api/v1/health")
     recorder.enable(!!h.recording_enabled);
     // The countdown ends by starting the microphone, so it only makes sense
     // where recording in the page works.
-    prepEl.hidden = !(maySubmit && recorder.canRecordLive());
+    prepEl.hidden = !recorder.canRecordLive();
   })
   .catch(() => recorder.enable(false));
 
@@ -215,33 +214,8 @@ fetch("/api/v1/tasks")
     taskListEl.innerHTML = '<p class="error">Không tải được danh sách đề bài.</p>';
   });
 
-// ---------------------------------------------------------------- terms
-// The server refuses a submission before the terms are accepted (D058), and
-// rightly so. Saying it at page load, before a minute of recording, is the
-// courtesy layer; the protection itself stays on the server.
-fetch("/api/v1/me/terms")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((state) => {
-    if (!state || state.may_submit) return;
-    maySubmit = false;
-    const box = document.getElementById("terms-gate");
-    box.innerHTML =
-      "<b>Chưa nộp bài được: bạn chưa đồng ý điều khoản sử dụng.</b> " +
-      "Bản ghi giọng nói là dữ liệu cá nhân, nên hệ thống không lưu gì trước khi bạn đồng ý. " +
-      '<a href="/terms">Đồng ý điều khoản ở đây</a> rồi quay lại.';
-    box.hidden = false;
-    prepEl.hidden = true;
-    recorder.block("Cần đồng ý điều khoản trước khi ghi âm và nộp bài.");
-  })
-  // A transient network error is no reason to block; the server still decides.
-  .catch(() => {});
-
 // ---------------------------------------------------------------- submit
 async function submit(audio, name) {
-  if (!maySubmit) {
-    window.toast("Cần ký đồng thuận trước khi nộp bài.", "error");
-    return;
-  }
   const body = new FormData();
   body.append("task_id", taskIdEl.value);
   body.append("audio", audio, name);

@@ -133,8 +133,6 @@ CLASSES = [
             "- dailyGoalS: int",
             "- identities: List<str>",
             "- seenMarkers: List<str>",
-            "- termsAcceptedAt: datetime",
-            "+ maySubmit(): bool",
             "+ isStaff(): bool",
         ],
     ),
