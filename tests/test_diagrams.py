@@ -350,6 +350,11 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
         if "swimlane" in (c.get("style") or "")
     }
     fields = fields_by_class()
+    # Owning is a relation of the model, so the owners are looked for among
+    # the classes drawn. A class of the code that only points at a part while
+    # it computes -- the path composer's `Candidate` holds the `Lesson` it
+    # scores -- does not own it.
+    drawn = set(names.values())
     bad = []
     for c in cells:
         if c.get("edge") != "1" or "diamondThin" not in (c.get("style") or ""):
@@ -360,7 +365,7 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
         owners = [
             cls
             for cls, fs in fields.items()
-            if cls != part and any(_mentions(t, part) for t in fs.values())
+            if cls != part and cls in drawn and any(_mentions(t, part) for t in fs.values())
         ]
         if len(owners) > 1:
             bad.append(f"{part} bị {len(owners)} lớp chứa: {owners}")

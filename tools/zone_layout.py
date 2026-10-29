@@ -30,7 +30,7 @@ CORRIDOR = 90  # between the top row of zones and the bottom row
 
 # Costs of the router, in grid steps.
 BEND = 10
-SAME_AXIS = 40  # running on top of another edge
+SAME_AXIS = 300  # running on top of another edge: go round instead
 NEXT_TO = (20, 6)  # running one / two cells beside another edge
 CROSS = 3
 FOREIGN_ZONE = 2
@@ -235,6 +235,29 @@ def route(edges, geo, zone_of, frames, width):
             else:
                 used_v[x0][y0] += 1
                 used_v[x1][y1] += 1
+
+    def reserve(p, side):
+        """Mark the short run from a port out to its first grid point as used.
+
+        Every edge's runs are reserved before any edge is routed: otherwise an
+        edge routed early lays its line right where a later edge has to leave
+        its box, and the two share that run.
+        """
+        gx, gy = stub(p, side)
+        if side in "LR":
+            x0 = int(p[0] // GRID)
+            for x in range(min(x0, gx), max(x0, gx) + 1):
+                if 0 <= x < nx and 0 <= gy < ny:
+                    used_h[x][gy] += 1
+        else:
+            y0 = int(p[1] // GRID)
+            for y in range(min(y0, gy), max(y0, gy) + 1):
+                if 0 <= gx < nx and 0 <= y < ny:
+                    used_v[gx][y] += 1
+
+    for i in range(len(edges)):
+        reserve(port[(i, 0)], sides[i][0])
+        reserve(port[(i, 1)], sides[i][1])
 
     order = sorted(
         range(len(edges)),
