@@ -279,8 +279,8 @@ def _d060_metering(db: Database) -> None:
                 {"key": e["key"], "action": e["action"]}, {"$setOnInsert": e}, upsert=True
             )
         db.drop_collection("usage_ledger")
-    if _has(db, "wallet") or _has(db, "ledger"):
-        ensure_indexes(db, D060_INDEXES["metering"], "migration-7-metering")
+    # The metering repository makes no indexes of its own: the migration does.
+    ensure_indexes(db, D060_INDEXES["metering"], "migration-7-metering")
 
 
 def _d060_identity(db: Database) -> None:

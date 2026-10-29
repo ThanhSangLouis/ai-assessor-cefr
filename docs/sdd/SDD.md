@@ -583,8 +583,8 @@ chấm nói — nó là hệ quả của việc hệ thống có màn hình đă
 Cả bốn vẫn là lớp Pydantic thật, có luật đi kèm dữ liệu
 (`AuthSession.has_expired()`, `ReviewLock.has_expired()`) thay cho `dict` thô
 trả về từ SQL như trước — thay đổi đó được giữ lại. Chúng chỉ chuyển sang đúng
-hình: `auth_sessions` ở `05c_erd_identity.mmd`, còn `review_lock`, `audit_log`
-và `app_config` ở `05_erd.mmd`.
+hình: collection `session` ở `05c_erd_identity.mmd`, còn `response.review_lock`,
+`audit_log` và `system` ở `05_erd.mmd` (D060).
 
 **Hành vi về đúng chỗ dữ liệu.** `Word.is_uncertain` là ví dụ rõ nhất: luật
 "máy nghe không rõ" (`prob < 0.50`) trước đây được viết lại ở **ba nơi** —
@@ -974,97 +974,80 @@ flowchart TD
 File: `docs/sdd/diagrams/05_erd.mmd`
 
 ```mermaid
-%% SDD - Diagram 05: ERD - phan cham diem cua lang do dang chay (SQLite, aicefr.db)
-%% Tach lam hai hinh vi gop chin bang vao mot hinh cho ty le 2,28 - qua rong,
-%% in A4 thi chu mat. Hinh 5c ve phan dinh danh, dong thuan va trang thai theo
-%% tai khoan; hinh 5d ve phan cham mu (D030).
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
+%% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
+%% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
+%% in A4: hinh 5c ve dinh danh, hinh 5d ve cham mu va thuc nghiem.
+%% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
-    account ||--o{ response : "nộp · account_id, chưa ràng buộc FK"
-    task ||--o{ response : "đề bài · task_id, chưa ràng buộc FK"
-    response ||--o{ review_action : "được sửa điểm (FK)"
-    response ||--o| review_lock : "đang có người duyệt (FK)"
+    account ||--o{ response : "nộp · account_id"
+    task ||--o{ response : "đề bài · task_id"
+    account ||--o{ classroom : "dạy · teacher_id, học · members"
+    classroom }o--o{ task : "giao · assignments.task_id"
 
     account {
-        TEXT account_id PK "chi tiết ở hình 5c"
+        string account_id PK "chi tiết ở hình 5c"
     }
 
     task {
-        TEXT task_id PK
-        TEXT title
-        TEXT prompt_text
-        TEXT prompt_version
-        TEXT part "phần thi, ví dụ P3"
-        INTEGER min_seconds
-        INTEGER max_seconds
-        INTEGER active
-        TEXT created_at
-        TEXT topic_keywords "từ khóa chủ đề tiếng Anh, rỗng là đề mở (D022)"
-        TEXT purpose "assessment · practice (D023)"
-        TEXT criterion "chỉ đề luyện tập"
-        TEXT band "chỉ đề luyện tập"
-        TEXT missions_json "chỉ đề luyện tập"
-        TEXT tips_json "chỉ đề luyện tập"
-        TEXT reference_text "đoạn đọc theo, chỉ đề luyện tập"
+        string task_id PK
+        string title
+        string prompt_text
+        string prompt_version
+        string part "phần thi, ví dụ P3"
+        int min_seconds
+        int max_seconds
+        string topic_keywords "từ khóa chủ đề, rỗng là đề mở (D022)"
+        string purpose "assessment · practice (D023)"
+        string criterion "chỉ đề luyện tập"
+        string band "chỉ đề luyện tập"
+        string reference_text "đoạn đọc theo, chỉ đề luyện tập"
     }
 
     response {
-        TEXT response_id PK
-        TEXT speaker_id "bút danh, sao lại lúc nộp"
-        TEXT task_id
-        TEXT status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
-        REAL overall_0_6 "NULL khi chưa chấm được"
-        TEXT overall_band "A2 · B1 · B2"
-        INTEGER teacher_verified
-        TEXT model_version
-        TEXT config_version
-        TEXT report_json "toàn bộ Response, nguồn sự thật của báo cáo"
-        TEXT created_at
-        TEXT account_id
-        TEXT audio_path
-        TEXT purpose "assessment · practice; bài luyện không vào hàng đợi duyệt (D023)"
+        string response_id PK
+        string account_id
+        string task_id
+        string status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
+        float overall_0_6 "null khi chưa chấm được"
+        string overall_band "A1 … C2 (D059)"
+        int teacher_verified
+        string report_json "toàn bộ báo cáo, nguồn sự thật"
+        string purpose "assessment · practice"
+        array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
+        object review_lock "ai đang duyệt, tới lúc nào"
+        array review_visits "mở bài, kết thúc, hành động (D041)"
+        array replay_labels "tự nghe lại (D056)"
+        array machine_seen "ai đã thấy điểm máy, qua đâu"
     }
 
-    review_action {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT response_id FK
-        TEXT reviewer_id "bút danh giảng viên, lấy từ phiên"
-        REAL old_score
-        REAL new_score
-        TEXT old_band
-        TEXT new_band
-        TEXT reason
-        TEXT created_at
-    }
-
-    review_lock {
-        TEXT response_id PK "đồng thời là FK"
-        TEXT reviewer_id
-        TEXT reviewer_name
-        TEXT locked_until "khóa hết hạn thì người khác giành được"
+    classroom {
+        string class_id PK
+        string code UK "mã tham gia"
+        string teacher_id
+        array members "mã tài khoản theo thứ tự vào lớp"
+        array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
 
     audit_log {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT actor_id
-        TEXT action
-        TEXT target_id "không ràng buộc FK - trỏ tới nhiều loại thực thể"
-        TEXT detail
-        TEXT created_at
+        int id PK "tự tăng"
+        string actor_id
+        string action
+        string target_id "trỏ tới nhiều loại thực thể"
+        string service
+        string created_at
     }
 
-    app_config {
-        TEXT key PK "active_model hoặc qc_thresholds"
-        TEXT value "giá trị hiện hành, dạng JSON với ngưỡng QC"
-        TEXT version "nhãn phiên bản, đi vào từng báo cáo sinh ra sau đó"
-        TEXT updated_by "bút danh người đổi — biến môi trường không mang được điều này"
-        TEXT updated_at
+    system {
+        string key PK "assessment.active_model, billing.organization, ..."
+        string value
+        string version "chỉ với cấu hình assessment.*"
     }
 ```
 
 ![Hình 5. Sơ đồ thực thể liên kết](images/05_erd.png)
 
-*Hình 5. Lược đồ đang chạy — phần chấm điểm và vận hành. Nguồn: `diagrams/05_erd.mmd`*
+*Hình 5. Các collection đang chạy (D060) — phần chấm điểm, lớp học và vận hành. Nguồn: `diagrams/05_erd.mmd`*
 
 #### 3.5a. Định danh, đồng thuận và trạng thái theo tài khoản
 
@@ -1075,68 +1058,41 @@ Hình 5c vẽ ngang (`direction LR`) và giãn khoảng giữa hai cột (`rankS
 File: `docs/sdd/diagrams/05c_erd_identity.mmd`
 
 ```mermaid
-%% SDD - Diagram 5c: ERD - dinh danh, dong thuan va trang thai theo tai khoan
-%% Phan con lai cua lang dang chay; phan cham diem o hinh 5, cham mu o hinh 5d.
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
-%% Ve ngang (direction LR) vi account co bon bang con: ve doc thi bon bang con
-%% nam tren mot hang, ty le vuot 2,0 va in A4 thi chu mat. rankSpacing gian
-%% khoang giua hai cot de nhan cua quan he khong de len chan qua.
-%% Cot them o D028 (must_change_password, last_login_at, password_changed_at)
-%% va D029 (avatar_icon, avatar_color, daily_goal_s; device, method cua
-%% auth_sessions) do _upgrade_schema them bang ALTER TABLE, khong nam trong
-%% cau lenh CREATE TABLE.
-%%{init: {"er": {"rankSpacing": 220}}}%%
+%% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
+%% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
+%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han.
 erDiagram
-    direction LR
-    account ||--o{ auth_sessions : "mở phiên (FK)"
-    account ||--o{ account_identity : "liên kết Google (FK)"
-    account ||--o{ seen_marker : "đã xem tới đâu"
+    account ||--o{ session : "đăng nhập · account_id"
 
     account {
-        TEXT account_id PK
-        TEXT pseudonym UK "bút danh, không chứa tên thật hay MSSV"
-        TEXT password_hash "bcrypt cost 12"
-        TEXT role "student · teacher · admin"
-        INTEGER failed_attempts "đếm để khóa tài khoản"
-        TEXT locked_until "NULL nếu không bị khóa"
-        INTEGER disabled "tắt thì mọi phiên kết thúc"
-        TEXT created_at
-        INTEGER must_change_password "1: mật khẩu tạm, chỉ đổi được mật khẩu"
-        TEXT last_login_at
-        TEXT password_changed_at
-        TEXT avatar_icon "một trong 15 biểu tượng"
-        TEXT avatar_color "một trong 10 màu"
-        INTEGER daily_goal_s "60 · 120 · 180 · 300 · 600 giây"
-        TEXT terms_accepted_at "NULL: chưa đồng ý điều khoản, chưa nộp bài được (D058)"
+        string account_id PK
+        string pseudonym UK
+        string password_hash "scrypt"
+        string role "student · teacher · admin"
+        int failed_attempts
+        string locked_until
+        int disabled
+        int must_change_password "D028"
+        string avatar_icon "D029"
+        string avatar_color "D029"
+        int daily_goal_s "D029"
+        string terms_accepted_at "D058"
+        array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
+        object seen_markers "tên dấu → lúc xem (D028)"
     }
 
-    auth_sessions {
-        TEXT token_hash PK "băm của cookie, bản gốc không lưu"
-        TEXT account_id FK
-        TEXT expires_at
-        TEXT created_at
-        TEXT device "tên thiết bị thô, ví dụ Chrome · macOS"
-        TEXT method "password hoặc google"
-    }
-
-    account_identity {
-        TEXT provider PK "hiện chỉ có google"
-        TEXT subject_hash PK "SHA-256 của định danh Google, không email"
-        TEXT account_id FK "UNIQUE cùng provider"
-        TEXT linked_at
-    }
-
-
-    seen_marker {
-        TEXT account_id PK "chưa ràng buộc FK"
-        TEXT marker PK "hiện chỉ có results"
-        TEXT seen_at "lần cuối mở Bài của tôi"
+    session {
+        string token_hash PK "băm của mã phiên"
+        string account_id
+        string expires_at
+        string device
+        string method "password · google"
     }
 ```
 
 ![Hình 5c. Định danh, đồng thuận và trạng thái theo tài khoản](images/05c_erd_identity.png)
 
-*Hình 5c. Định danh, phiên đăng nhập, liên kết Google, đồng thuận và mốc "đã xem". Nguồn: `diagrams/05c_erd_identity.mmd`*
+*Hình 5c. Tài khoản (liên kết Google và mốc "đã xem" nằm trong tài khoản) và phiên đăng nhập. Nguồn: `diagrams/05c_erd_identity.mmd`*
 
 **Cách đọc.** Ký hiệu chân quạ ở hai đầu quan hệ cho biết bội số: `||` là chính xác một, `o{` là không hoặc nhiều, `o|` là không hoặc một. `response ||--o| review_lock` đọc là một bài có **không hoặc một** khóa duyệt — khóa chỉ tồn tại trong lúc một giảng viên đang mở bài, và hết hạn thì người khác giành được. Kiểu dữ liệu ghi trong hình là kiểu SQLite **thật**: `TEXT`, `INTEGER`, `REAL`. SQLite không có kiểu `datetime` hay `boolean` riêng, nên thời điểm lưu dạng chuỗi ISO-8601 UTC và cờ đúng/sai lưu dạng `INTEGER` 0/1; vẽ đúng như vậy để người đọc không đi tìm một kiểu dữ liệu không tồn tại. Bảng `response` giữ toàn bộ báo cáo ở cột `report_json`, còn `overall_0_6`, `overall_band`, `status` là bản sao phẳng để truy vấn và sắp xếp mà không phải mở JSON. Không bảng nào có cột họ tên, email hay MSSV: `speaker_id` và `reviewer_id` đều là bút danh. Hai bảng mới ở hình 5c có khoá chính ghép, nên hai cột cùng mang `PK`: `account_identity` khoá theo (`provider`, `subject_hash`), `seen_marker` theo (`account_id`, `marker`). Quan hệ `account ||--o{ account_identity` vẽ theo lược đồ — một dòng cho mỗi nhà cung cấp, giữ bằng `UNIQUE (account_id, provider)`; hiện chỉ có Google nên mỗi tài khoản có nhiều nhất một dòng. `account_identity` không có cột email, tên hay ảnh: không phải hình bỏ bớt, mà bảng không có.
 
@@ -1149,73 +1105,66 @@ Bốn bảng của khảo sát thực địa (mục 4.13). Chúng nằm trong c�
 File: `docs/sdd/diagrams/05d_erd_rating.mmd`
 
 ```mermaid
-%% SDD - Diagram 5d: ERD - cham mu hai nguoi cho khao sat thuc dia (D030)
-%% Bon bang cua storage/rating_repository.py, cung tep CSDL voi response. Ca bon
-%% di theo response bang ON DELETE CASCADE: xoa bai cua mot nguoi hoc (FR-35)
-%% thi xoa luon phieu cham ve bai do. Khong bang nao ghi vao response hay
-%% review_action: luong duyet van hanh giu nguyen.
-%% response chi ve khoa chinh va bon cot ma dieu kien chon bai doc; day du o
-%% hinh 5.
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% SDD - Diagram 5d: ERD - cham mu hai nguoi (D030) va thuc nghiem phan hoi (D040)
+%% Moi phieu cham la mot Rating nam trong dot cua no (D060): phieu va diem la
+%% mot. Xoa bai cua mot nguoi hoc (FR-35) rut cac phieu ve bai do khoi dot.
+%% Khong collection nao o day ghi vao response: luong duyet van hanh giu nguyen.
+%% Rating va Participant ve thanh khoi rieng de doc duoc, nhung la phan nhung
+%% (mang ratings, participants) trong document cua dot va cua thuc nghiem.
 erDiagram
-    rating_batch ||--o{ rating_assignment : "gồm phiếu (FK, CASCADE)"
-    response ||--o{ rating_assignment : "được chấm mù (FK, CASCADE)"
-    rating_assignment ||--o| research_rating : "nộp một lần (FK, CASCADE)"
-    response ||--o{ machine_seen : "đã mở kết quả máy (FK, CASCADE)"
-
-    response {
-        TEXT response_id PK "chi tiết ở hình 5"
-        TEXT purpose "chỉ assessment mới vào đợt"
-        TEXT status "COMPLETED hoặc REVIEW_REQUIRED"
-        TEXT audio_path "phải còn tệp ghi âm"
-        TEXT account_id "chủ bài phải đang đồng thuận nghiên cứu"
-    }
+    rating_batch ||--|{ Rating : "nhúng trong ratings"
+    Rating }o--|| response : "response_id"
+    study ||--o{ Participant : "nhúng trong participants"
+    Participant }o--|| account : "account_id"
 
     rating_batch {
-        TEXT batch_id PK
-        TEXT name
-        INTEGER seed "một hạt giống quyết định mẫu bài và thứ tự"
-        TEXT status "open · closed"
-        TEXT created_by "account_id quản trị viên, chưa ràng buộc FK"
-        TEXT created_at
+        string batch_id PK
+        string name
+        int seed "hạt giống chia phiếu"
+        bool closed
     }
 
-    rating_assignment {
-        TEXT assignment_id PK "mã phiếu; bản ghi phát qua mã này"
-        TEXT batch_id FK
-        TEXT response_id FK "không bao giờ gửi tới giám khảo"
-        TEXT rater_id "account_id giám khảo, chưa ràng buộc FK"
-        INTEGER slot "1, 2: giám khảo chính · 3: phân xử"
-        INTEGER position "vị trí trong thứ tự riêng của giám khảo"
-        TEXT opened_at "lần mở đầu tiên, để đo thời gian chấm"
+    Rating {
+        string assignment_id
+        string response_id
+        string rater_id
+        int slot "1, 2 chấm chính; 3 trọng tài"
+        int position "thứ tự riêng của giám khảo"
+        string opened_at
+        float score_overall
+        string band
+        string unscorable_reason
+        string submitted_at "nộp một lần"
     }
 
-    machine_seen {
-        TEXT account_id PK "giảng viên hay quản trị viên, chưa ràng buộc FK"
-        TEXT response_id PK "đồng thời là FK"
-        TEXT first_seen "chỉ lần đầu"
-        TEXT via "report · history · review"
+    response {
+        string response_id PK "chi tiết ở hình 5"
+        array machine_seen "đã thấy điểm máy thì không còn mù"
     }
 
-    research_rating {
-        TEXT assignment_id PK "đồng thời là FK"
-        REAL score_range
-        REAL score_accuracy
-        REAL score_fluency
-        REAL score_coherence
-        REAL score_phonology
-        REAL score_overall "0–6, bước 0,5"
-        TEXT band "A2 · B1 · B2"
-        INTEGER unscorable "1 thì mọi điểm và band là NULL"
-        TEXT unscorable_reason "broken · inaudible · off_task"
-        TEXT reason "một dòng lý do"
-        TEXT submitted_at
+    study {
+        string study_id PK
+        string status "running · survey · closed"
+        int min_days
+        string measured_until
+    }
+
+    Participant {
+        string code "P001, cố định từ lúc vào"
+        string account_id
+        string arm "feedback · score_only"
+        string withdrawn_at
+        object survey_answers
+    }
+
+    account {
+        string account_id PK "chi tiết ở hình 5c"
     }
 ```
 
-![Hình 5d. Chấm mù hai người](images/05d_erd_rating.png)
+![Hình 5d. Chấm mù hai người và thực nghiệm phản hồi](images/05d_erd_rating.png)
 
-*Hình 5d. Đợt chấm, phiếu chấm, điểm của giám khảo và sổ "đã xem kết quả của máy". Nguồn: `diagrams/05d_erd_rating.mmd`*
+*Hình 5d. Đợt chấm với các phiếu `Rating` nhúng (phiếu và điểm là một), ai đã xem kết quả của máy, và thực nghiệm với người tham gia nhúng. Nguồn: `diagrams/05d_erd_rating.mmd`*
 
 **Cách đọc.** Một đợt (`rating_batch`) gồm nhiều phiếu (`rating_assignment`); mỗi phiếu là một cặp bài–giám khảo, mang `slot` 1 hoặc 2 cho hai giám khảo chính và 3 cho người phân xử, và `position` là chỗ của bài trong thứ tự **riêng** của giám khảo đó. `research_rating` lấy chính `assignment_id` làm khoá chính, nên một phiếu có **không hoặc một** lần chấm (`||--o|`) — đó là cách CSDL giữ luật "phiếu đã nộp là cuối cùng": lần nộp thứ hai vi phạm khoá chính. Hai ràng buộc không vẽ được trên hình: `UNIQUE (batch_id, response_id, slot)` — trong một đợt, mỗi chỗ chấm của một bài chỉ có một người — và `UNIQUE (batch_id, response_id, rater_id)` — một người không chấm cùng một bài hai lần trong một đợt. Khác `speaker_id` và `reviewer_id`, hai cột `rater_id` và `created_by` giữ `account_id` chứ không giữ bút danh, và không có khoá ngoại; mã không có đường xoá tài khoản (chỉ tắt), nên chúng không bị treo. Điểm từng tiêu chí, điểm tổng và band đều cho phép NULL: phiếu "không chấm được" để trống tất cả. `machine_seen` ghi ai đã mở kết quả của máy cho bài nào, một dòng cho lần đầu; cùng với `review_action.reviewer_id` nó quyết định ai không còn mù với một bài (mục 4.13, bất biến 4b).
 

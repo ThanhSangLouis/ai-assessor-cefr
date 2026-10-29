@@ -1,6 +1,6 @@
 # Mô hình thực thể: 23 thực thể, 12 enum và 17 collection nghiệp vụ
 
-**Trạng thái:** thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026. Code chuyển theo ở D060 (gộp collection, migration 6).
+**Trạng thái:** thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026. Code đã chuyển theo ở D060 (gộp collection, migration 7); `tests/test_diagrams.py` và `tests/test_d060_collections.py` giữ hai bên khớp nhau.
 **Người soạn:** Sang.
 **Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
 
@@ -113,8 +113,8 @@ Code vẫn giữ các enum này để kiểm đầu vào. Sơ đồ chỉ không
 | core | `account` | `account`, `account_identity`, `seen_marker` | danh tính, dấu đã xem |
 | | `audit_log` | `audit_log` | |
 | | `task` | `task` | |
-| | `response` | `response`, `replay_label`, `review_action`, `review_lock`, `review_session` | `Review`, nhãn nghe lại, khoá duyệt |
-| | `rating_batch` | `rating_batch`, `rating_assignment`, `research_rating`, `machine_seen` | `Rating` |
+| | `response` | `response`, `replay_label`, `review_action`, `review_lock`, `review_session`, `machine_seen` | `Review`, nhãn nghe lại, khoá duyệt, lượt mở bài, người đã xem điểm máy |
+| | `rating_batch` | `rating_batch`, `rating_assignment`, `research_rating` | `Rating` (phiếu và điểm là một) |
 | | `study` | `study`, `study_participant`, `study_survey` | `Participant` |
 | | `classroom` | `classroom`, `class_member`, `assignment` | thành viên, `Assignment` |
 | | `order` | `billing_order`, `billing_event` | sự kiện cổng thanh toán |
@@ -145,7 +145,7 @@ Code vẫn giữ các enum này để kiểm đầu vào. Sơ đồ chỉ không
 
 `consent` đã bỏ ở D058 nên không có trong bảng.
 
-Dữ liệu cũ chuyển bằng migration 6 trong `storage/migrations.py`:
+Dữ liệu cũ chuyển bằng migration 7 trong `storage/migrations.py`:
 - chạy lại được;
 - chép xong một collection cũ thì mới xoá nó.
 
