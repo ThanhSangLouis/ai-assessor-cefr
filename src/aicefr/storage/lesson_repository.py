@@ -151,8 +151,8 @@ class Unit:
     unit_id: str
     title: str
     function: str = ""
-    band: str | None = None
-    criterion: str | None = None
+    band: Band | None = None
+    criterion: Criterion | None = None
     topic: str | None = None
     position: int = 0
     created_at: str = ""
@@ -160,11 +160,16 @@ class Unit:
 
     @classmethod
     def from_doc(cls, doc: dict) -> Unit:
-        return cls(**{k: doc[k] for k in UNIT_FIELDS if k in doc and k != "path_id"})
+        found = {k: doc[k] for k in UNIT_FIELDS if k in doc and k != "path_id"}
+        found["band"] = Band(doc["band"]) if doc.get("band") else None
+        found["criterion"] = Criterion(doc["criterion"]) if doc.get("criterion") else None
+        return cls(**found)
 
     def to_doc(self) -> dict:
         doc = asdict(self)
         doc.pop("lessons")
+        doc["band"] = self.band.value if self.band else None
+        doc["criterion"] = self.criterion.value if self.criterion else None
         return doc
 
 
@@ -173,8 +178,8 @@ class LessonPath:
     path_id: str
     title: str
     description: str = ""
-    band_from: str | None = None
-    band_to: str | None = None
+    band_from: Band | None = None
+    band_to: Band | None = None
     status: PathStatus = PathStatus.DRAFT
     sample: int = 0
     created_by: str | None = None
@@ -184,8 +189,11 @@ class LessonPath:
 
     @classmethod
     def from_doc(cls, doc: dict) -> LessonPath:
+        found = {k: doc[k] for k in PATH_FIELDS if k in doc and k != "status"}
+        for key in ("band_from", "band_to"):
+            found[key] = Band(doc[key]) if doc.get(key) else None
         return cls(
-            **{k: doc[k] for k in PATH_FIELDS if k in doc and k != "status"},
+            **found,
             status=PathStatus(doc["status"]),
             units=sorted(
                 (Unit.from_doc(u) for u in doc.get("units") or []), key=lambda u: u.position
@@ -193,14 +201,15 @@ class LessonPath:
         )
 
     def to_doc(self) -> dict:
-        return {
-            **{k: getattr(self, k) for k in PATH_FIELDS},
-            "status": self.status.value,
-            "units": [u.to_doc() for u in self.units],
-        }
+        return {**self.view(), "units": [u.to_doc() for u in self.units]}
 
     def view(self) -> dict:
-        return {**{k: getattr(self, k) for k in PATH_FIELDS}, "status": self.status.value}
+        return {
+            **{k: getattr(self, k) for k in PATH_FIELDS},
+            "band_from": self.band_from.value if self.band_from else None,
+            "band_to": self.band_to.value if self.band_to else None,
+            "status": self.status.value,
+        }
 
     def unit(self, unit_id: str) -> Unit | None:
         return next((u for u in self.units if u.unit_id == unit_id), None)
@@ -372,8 +381,8 @@ class LessonRepository(MongoStore):
             path_id=path_id or new_id("p"),
             title=title,
             description=description,
-            band_from=band_from.value if band_from else None,
-            band_to=band_to.value if band_to else None,
+            band_from=Band(band_from) if band_from else None,
+            band_to=Band(band_to) if band_to else None,
             status=PathStatus(status),
             sample=int(sample),
             created_by=by,
@@ -446,9 +455,9 @@ class LessonRepository(MongoStore):
             unit_id=unit_id or new_id("u"),
             title=title,
             function=function,
-            band=band.value if band else None,
-            criterion=criterion.value if criterion else None,
-            topic=topic.value if topic else None,
+            band=Band(band) if band else None,
+            criterion=Criterion(criterion) if criterion else None,
+            topic=Topic(topic).value if topic else None,
             position=max((u.position for u in owner.units), default=0) + 1,
             created_at=_now(),
         )

@@ -237,6 +237,9 @@ def _d060_billing(db: Database) -> None:
             )
         db.drop_collection("billing_order")
     db.drop_collection("billing_event")
+    if _has(db, "order"):
+        # A pack of runs named its kind where the plan goes; it buys no plan.
+        db["order"].update_many({"plan": "credits"}, {"$set": {"plan": None}})
     _rename(db, "billing_license", "license")
     _settings(db, "billing_setting", "billing.")
 

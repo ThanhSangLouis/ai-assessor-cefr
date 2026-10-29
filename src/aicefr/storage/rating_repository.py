@@ -32,6 +32,7 @@ from pathlib import Path
 from pymongo import DESCENDING
 from pymongo.database import Database
 
+from aicefr.contracts import Band
 from aicefr.infra.blobs import key_of
 from aicefr.research import assign
 from aicefr.research.agreement import (
@@ -92,11 +93,19 @@ class Rating:
     score_coherence: float | None = None
     score_phonology: float | None = None
     score_overall: float | None = None
-    band: str | None = None
+    band: Band | None = None
     unscorable: int = 0
     unscorable_reason: str | None = None
     reason: str | None = None
     submitted_at: str | None = None
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> Rating:
+        band = doc.get("band")
+        return cls(**{**doc, "band": Band(band) if band else None})
+
+    def to_doc(self) -> dict:
+        return {**asdict(self), "band": self.band.value if self.band else None}
 
 
 @dataclass
@@ -118,11 +127,11 @@ class RatingBatch:
             created_by=doc["created_by"],
             created_at=doc["created_at"],
             closed=bool(doc.get("closed", False)),
-            ratings=[Rating(**r) for r in doc.get("ratings", [])],
+            ratings=[Rating.from_doc(r) for r in doc.get("ratings", [])],
         )
 
     def to_doc(self) -> dict:
-        return asdict(self)
+        return {**asdict(self), "ratings": [r.to_doc() for r in self.ratings]}
 
     @property
     def status(self) -> str:
@@ -142,7 +151,7 @@ def _sheets(db: Database, query: dict | None = None, **match) -> list[dict]:
     out = []
     for b in _batches(db, query):
         for r in b.ratings:
-            sheet = {**asdict(r), "batch_id": b.batch_id}
+            sheet = {**r.to_doc(), "batch_id": b.batch_id}
             if all(sheet.get(k) == v for k, v in match.items()):
                 out.append(sheet)
     return out
@@ -301,7 +310,7 @@ class RatingRepository(MongoStore):
             return
         db["rating_batch"].update_one(
             {"batch_id": batch_id},
-            {"$push": {"ratings": {"$each": [asdict(_sheet(p)) for p in planned]}}},
+            {"$push": {"ratings": {"$each": [_sheet(p).to_doc() for p in planned]}}},
         )
 
     def batch(self, batch_id: str) -> dict | None:
@@ -426,11 +435,11 @@ class RatingRepository(MongoStore):
         if not found:
             return None
         b = found[0]
-        x = next(asdict(y) for y in b.ratings if y.assignment_id == assignment_id)
+        x = next(y.to_doc() for y in b.ratings if y.assignment_id == assignment_id)
         r = db["response"].find_one({"response_id": x["response_id"]})
         if r is None:
             return None
-        mine = [asdict(y) for y in b.ratings if y.rater_id == x["rater_id"]]
+        mine = [y.to_doc() for y in b.ratings if y.rater_id == x["rater_id"]]
         rated = _rated(mine)
         seen = _seen(db, list({y["response_id"] for y in mine}))
         following = sorted(

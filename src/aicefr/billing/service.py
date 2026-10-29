@@ -452,7 +452,7 @@ class BillingService:
         self.store.create_order(
             {
                 "order_id": order_id,
-                "plan": CREDITS,
+                "plan": None,  # a pack of runs buys no service plan
                 "seats": runs,
                 "months": 0,
                 "unit_price": round(price / runs),

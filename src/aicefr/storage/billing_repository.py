@@ -64,7 +64,7 @@ class Order:
     """One purchase: a licence for the school, or a pack of runs for a learner."""
 
     order_id: str
-    plan: str | None
+    plan: ServicePlan | None
     seats: int
     months: int | None
     unit_price: int | None
@@ -95,10 +95,16 @@ class Order:
         found = {k: v for k, v in doc.items() if k in known}
         found["kind"] = OrderKind(doc["kind"])
         found["status"] = OrderStatus(doc["status"])
+        found["plan"] = ServicePlan(doc["plan"]) if doc.get("plan") else None
         return cls(**found)
 
     def to_doc(self) -> dict:
-        return {**asdict(self), "kind": self.kind.value, "status": self.status.value}
+        return {
+            **asdict(self),
+            "plan": self.plan.value if self.plan else None,
+            "kind": self.kind.value,
+            "status": self.status.value,
+        }
 
     def view(self) -> dict:
         """The order as the screens and the service read it, without its events."""
