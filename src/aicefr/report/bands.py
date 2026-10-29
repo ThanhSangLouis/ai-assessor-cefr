@@ -8,8 +8,8 @@ Europe, Companion Volume 2020); they are not a translation of the official
 scales and are waiting for review by the Foreign Languages teachers (A-03).
 
 Every aspect carries one of three labels, so the page cannot imply that the
-machine heard grammar or cohesion when its eighteen measurements are lengths,
-counts, word variety, recogniser confidence and pause statistics:
+machine heard grammar when its measurements are lengths, counts, word variety,
+the kinds of connectors used (D061), recogniser confidence and pause statistics:
 
 * measured indirectly -- some measurement touches this aspect;
 * not measured        -- the machine has no measurement of it at all;
@@ -61,13 +61,19 @@ ASPECTS: tuple[Aspect, ...] = (
         "số từ khác nhau, độ đa dạng từ, độ dài trung bình của từ",
         "không biết từ dùng có đúng ngữ cảnh không, không đo độ phong phú của cấu trúc câu",
     ),
+    # D061: an automatic grammar checker run over transcripts was tried and
+    # left out -- its error counts barely followed the errors examiners
+    # corrected, on machine and on human transcripts alike. A number that does
+    # not track grammar must not be shown as grammar.
     Aspect(
         "accuracy",
         "Ngữ pháp (Accuracy)",
         Provenance.NOT_MEASURED,
         "",
-        "không có phép đo nào về lỗi ngữ pháp hay lỗi dùng từ; độ chắc chắn của máy nhận dạng "
-        "chỉ cho biết máy nghe rõ tới đâu, không cho biết câu đúng hay sai",
+        "không có phép đo nào về lỗi ngữ pháp hay lỗi dùng từ. Nhóm đã thử chạy bộ kiểm tra ngữ "
+        "pháp tự động trên bản chép lời và so với lỗi do người sửa: kết quả gần như không khớp, "
+        'một phần có thể vì máy nhận dạng tự "sửa" câu nói sai thành câu đúng. Vì vậy hệ thống '
+        "không đưa ra con số ngữ pháp; giảng viên nghe bài mới đánh giá được tiêu chí này",
     ),
     Aspect(
         "fluency",
@@ -79,10 +85,12 @@ ASPECTS: tuple[Aspect, ...] = (
     Aspect(
         "coherence",
         "Mạch lạc (Coherence)",
-        Provenance.NOT_MEASURED,
-        "",
-        "không đo từ nối, cách sắp xếp ý hay sự liên kết giữa các câu; độ dài bài nói không phải "
-        "là mạch lạc",
+        Provenance.MEASURED_INDIRECTLY,
+        'số kiểu từ nối khác nhau trong bản chép lời (ví dụ "because", "for example", "however", '
+        '"on the other hand")',
+        "chỉ đếm từ nối, không biết từ nối có nối đúng ý không, không đánh giá cách sắp xếp ý "
+        "của cả bài; máy nhận dạng nghe sót từ nào thì từ đó không được đếm. Độ dài bài nói "
+        "không phải là mạch lạc",
     ),
     Aspect(
         "phonology",
@@ -97,8 +105,10 @@ ASPECTS: tuple[Aspect, ...] = (
         "Tương tác (Interaction)",
         Provenance.NOT_ASSESSED,
         "",
-        "bài nói là độc thoại nên không có bằng chứng về lượt lời, hỏi lại hay phản hồi; hệ thống "
-        "không suy ra tiêu chí này",
+        "tương tác là khả năng nói chuyện qua lại với người khác: giữ và nhường lượt lời, hỏi lại "
+        "khi chưa hiểu, đáp lại ý người kia. Bài nói ở đây là độc thoại, một mình người học nói "
+        "theo đề, nên không có lượt lời nào để quan sát. Hệ thống không suy ra tiêu chí này; "
+        "cần một bài hội thoại với người thật mới đánh giá được",
     ),
 )
 

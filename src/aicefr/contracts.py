@@ -130,7 +130,7 @@ class Band(str, Enum):
 
 
 class EvidenceKind(str, Enum):
-    """The four kinds of evidence the builder can produce.
+    """The kinds of evidence the builder can produce.
 
     Was a plain `str` with the four values written out at each construction
     site in `report/evidence.py`. That is the same primitive obsession that
@@ -146,6 +146,8 @@ class EvidenceKind(str, Enum):
     FILLER = "filler"
     LOW_CONFIDENCE_WORD = "low_confidence_word"
     LEXICAL = "lexical"
+    # D061: the different linking words the transcript contains (Coherence).
+    CONNECTOR = "connector"
 
 
 class TaskPart(str, Enum):

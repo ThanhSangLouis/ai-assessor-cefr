@@ -206,7 +206,8 @@ class CommentBuilder:
             if any_ref:
                 out.append(
                     Comment(
-                        criterion=Criterion.COHERENCE,
+                        # Speed is fluency. Length is not coherence (D061).
+                        criterion=Criterion.FLUENCY,
                         text=(
                             f"Bài dài {dur:.0f} giây với {words:.0f} từ,"
                             f" tốc độ khoảng {wps:.1f} từ mỗi giây."
@@ -214,6 +215,23 @@ class CommentBuilder:
                         evidence_refs=any_ref[:1],
                     )
                 )
+
+        # D061: the kinds of connectors, never their rate, and no claim about
+        # whether they join the right ideas -- the machine cannot hear that.
+        conn_refs = _refs(evidence, EvidenceKind.CONNECTOR)
+        if conn_refs:
+            out.append(
+                Comment(
+                    criterion=Criterion.COHERENCE,
+                    text=(
+                        "Từ nối cho người nghe biết các ý liên quan với nhau thế nào. Thử thêm"
+                        ' những kiểu bạn chưa dùng, như "for example" để minh hoạ,'
+                        ' "however" để nêu ý trái lại, "as a result" để nói hệ quả.'
+                        " Máy chỉ đếm từ nối, không biết bạn dùng có đúng ý hay không."
+                    ),
+                    evidence_refs=conn_refs,
+                )
+            )
 
         conf_refs = _refs(evidence, EvidenceKind.LOW_CONFIDENCE_WORD)
         if confidence is not None and confidence < self.low_confidence:
