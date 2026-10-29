@@ -38,7 +38,9 @@ jobs:
   kiem-tra:
     name: Dinh dang, lint, kiem thu
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Gan 1500 test chay kem do phu mat hon 15 phut tren runner; bang voi job
+    # MongoDB (30) de khong bi huy giua chung.
+    timeout-minutes: 30
     steps:
       - name: Lay ma nguon
         uses: actions/checkout@v4
