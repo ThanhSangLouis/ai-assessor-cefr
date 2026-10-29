@@ -588,7 +588,7 @@ ZONES = [
     ("assessment", "Đánh giá", 1,
      [(1, ["Task"]), (2, ["Resp", "Review"]), (3, ["Purpose", "Status", "Band", "Criterion"])]),
     ("learning", "Học tập", 1,
-     [(4, ["Plan", "RevItem", "Attempt", "Achv"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+     [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["PathSt", ("StepKind", "Step")])]),
 ]  # fmt: skip
 COLUMNS = []
