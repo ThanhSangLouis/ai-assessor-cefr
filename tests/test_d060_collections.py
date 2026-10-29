@@ -80,3 +80,27 @@ def test_participants_and_their_surveys_move_into_the_study(db):
     assert by["b"]["survey_answers"] == {"trusted": 4} and by["b"]["surveyed_at"] == "2026-10-09"
     assert by["a"]["survey_answers"] is None and by["a"]["withdrawn_at"] == "2026-10-05"
     assert not {"study_participant", "study_survey"} & set(db.list_collection_names())
+
+
+def test_payment_events_move_into_their_order_and_settings_into_system(db):
+    db["billing_order"].insert_one({"order_id": "o-1", "kind": "credits", "status": "paid"})
+    db["billing_event"].insert_many(
+        [
+            {"event_id": 2, "order_id": "o-1", "kind": "return", "fingerprint": "{}",
+             "detail_json": '{"code": "00"}', "created_at": "t2", "repeats": 3},
+            {"event_id": 1, "order_id": "o-1", "kind": "created", "fingerprint": "{}",
+             "detail_json": "{}", "created_at": "t1", "repeats": 0},
+        ]
+    )  # fmt: skip
+    db["billing_license"].insert_one({"license_id": "lic-1", "source": "trial"})
+    db["billing_setting"].insert_one({"key": "organization", "value": "Trường A"})
+
+    _twice(migrations._d060_billing, db)
+
+    order = db["order"].find_one({"order_id": "o-1"})
+    assert [e["kind"] for e in order["events"]] == ["created", "return"]
+    assert order["events"][1]["detail"] == {"code": "00"} and order["events"][1]["repeats"] == 3
+    assert db["license"].count_documents({}) == 1
+    assert db["system"].find_one({"key": "billing.organization"})["value"] == "Trường A"
+    gone = {"billing_order", "billing_event", "billing_license", "billing_setting"}
+    assert not gone & set(db.list_collection_names())

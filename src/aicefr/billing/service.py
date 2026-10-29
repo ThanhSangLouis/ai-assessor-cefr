@@ -42,6 +42,7 @@ from aicefr.billing.plans import (
     QUOTA_PER_SEAT,
     TERMS,
     License,
+    OrderKind,
     PlanFeature,
     Quote,
     QuoteError,
@@ -56,7 +57,7 @@ WARN_AT = (80, 100)  # percent of the month's expected assessments
 # What a gateway sees as the order's description: plain ASCII, as VNPay asks.
 PLAN_ASCII = {ServicePlan.STANDARD: "Chuan", ServicePlan.ADVANCED: "Nang cao"}
 # A learner's run pack (D053): an order of this kind credits runs, not a licence.
-CREDITS = "credits"
+CREDITS = OrderKind.CREDITS.value
 # The plans compared on the administrator's tab, in the order of the ladder.
 LADDER = (ServicePlan.FREE, ServicePlan.STANDARD, ServicePlan.ADVANCED)
 # An order's gateway by name, for orders whose gateway is no longer offered.
@@ -332,7 +333,7 @@ class BillingService:
                 "gross_vnd": q.gross,
                 "credit_vnd": q.credit,
                 "amount_vnd": q.amount,
-                "kind": q.kind,
+                "kind": q.kind.value,
                 "starts_on": q.starts_on.isoformat(),
                 "ends_on": q.ends_on.isoformat(),
                 "status": OrderStatus.PENDING.value,
@@ -343,7 +344,7 @@ class BillingService:
                 "expires_at": self._expiry(now),
             }
         )
-        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind})
+        self.store.add_event(order_id, "created", {"amount": q.amount, "kind": q.kind.value})
         self._audit(
             by_pseudonym,
             "billing.order",

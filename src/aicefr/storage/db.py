@@ -243,3 +243,45 @@ def collection_exists(target: str | Path, name: str) -> bool:
     documents.
     """
     return name in database(target).list_collection_names()
+
+
+# ================================================================= system
+# One collection per database for what is not business data (D060): server
+# secrets, settings, one-off markers. A key names one setting; the part that
+# owns it prefixes it (`billing.organization`), so parts sharing a database
+# never read each other's keys by accident.
+
+SYSTEM = "system"
+SYSTEM_INDEXES = {SYSTEM: [(("key",), True)]}
+
+
+def ensure_system(db: Database) -> None:
+    ensure_indexes(db, SYSTEM_INDEXES, "system")
+
+
+def get_setting(db: Database, key: str) -> Any:
+    row = db[SYSTEM].find_one({"key": key})
+    return row["value"] if row else None
+
+
+def set_setting(db: Database, key: str, value: Any, by: str | None = None) -> None:
+    db[SYSTEM].update_one(
+        {"key": key},
+        {"$set": {"value": value, "updated_by": by, "updated_at": now_iso()}},
+        upsert=True,
+    )
+
+
+def setting_once(db: Database, key: str, value: Any) -> tuple[Any, bool]:
+    """Store `value` unless `key` has one; the value kept, and whether it was this call's.
+
+    A unique index lets only one writer put the key there, so two first callers
+    at once agree on one value.
+    """
+    try:
+        db[SYSTEM].insert_one(
+            {"key": key, "value": value, "updated_by": None, "updated_at": now_iso()}
+        )
+    except DuplicateKeyError:
+        return db[SYSTEM].find_one({"key": key})["value"], False
+    return value, True

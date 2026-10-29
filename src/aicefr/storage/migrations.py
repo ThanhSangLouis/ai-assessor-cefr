@@ -189,6 +189,58 @@ def _d060_study(db: Database) -> None:
         )
 
 
+def _rename(db: Database, old: str, new: str) -> None:
+    """Move every document of `old` into `new`, then drop `old`.
+
+    Copy rather than `rename`: `new` may exist already, made by a repository
+    of this release before the migration ran.
+    """
+    if not _has(db, old):
+        return
+    rows = list(db[old].find({}, {"_id": 0}))
+    if rows:
+        db[new].insert_many(rows)
+    db.drop_collection(old)
+
+
+def _settings(db: Database, old: str, prefix: str) -> None:
+    """A part's settings collection into `system`, its keys prefixed with the part."""
+    if not _has(db, old):
+        return
+    for r in db[old].find({}, {"_id": 0}):
+        db["system"].update_one(
+            {"key": prefix + r["key"]},
+            {"$setOnInsert": {"value": r.get("value"), "updated_by": r.get("updated_by"),
+                              "updated_at": r.get("updated_at")}},
+            upsert=True,
+        )  # fmt: skip
+    db.drop_collection(old)
+
+
+def _d060_billing(db: Database) -> None:
+    """`billing_order` + `billing_event` become `order`; `billing_license` becomes `license`."""
+    if _has(db, "billing_order"):
+        for o in db["billing_order"].find({}, {"_id": 0}):
+            events = [
+                {
+                    "kind": e["kind"],
+                    "fingerprint": e["fingerprint"],
+                    "detail": json.loads(e["detail_json"]),
+                    "created_at": e["created_at"],
+                    "repeats": e.get("repeats", 0),
+                    "last_at": e.get("last_at"),
+                }
+                for e in db["billing_event"].find({"order_id": o["order_id"]}).sort("event_id", 1)
+            ]
+            db["order"].update_one(
+                {"order_id": o["order_id"]}, {"$setOnInsert": {**o, "events": events}}, upsert=True
+            )
+        db.drop_collection("billing_order")
+    db.drop_collection("billing_event")
+    _rename(db, "billing_license", "license")
+    _settings(db, "billing_setting", "billing.")
+
+
 _ASSIGNMENT_KEYS = (
     "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
 )  # fmt: skip
@@ -206,7 +258,11 @@ D060_INDEXES: dict[str, dict] = {
     },
 }
 
-D060_STEPS: tuple[Callable[[Database], None], ...] = (_d060_classroom, _d060_study)
+D060_STEPS: tuple[Callable[[Database], None], ...] = (
+    _d060_classroom,
+    _d060_study,
+    _d060_billing,
+)
 
 
 def _d060(db: Database, target: str) -> None:

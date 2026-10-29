@@ -93,6 +93,16 @@ ROUND_TO = 1000
 MIN_CHARGE = 10_000
 
 
+class OrderKind(str, Enum):
+    """What an order buys: a licence (four ways to start one), or a pack of runs (D053)."""
+
+    NEW = "new"
+    RENEWAL = "renewal"
+    UPGRADE = "upgrade"
+    DOWNGRADE = "downgrade"
+    CREDITS = "credits"
+
+
 @dataclass(frozen=True)
 class License:
     license_id: str
@@ -116,6 +126,10 @@ class License:
     @property
     def days(self) -> int:
         return (self.valid_to - self.valid_from).days + 1
+
+    def is_active(self, today: date) -> bool:
+        """Whether `today` is one of the days the licence covers (the grace after it is not)."""
+        return self.valid_from <= today <= self.valid_to
 
 
 @dataclass(frozen=True)
@@ -176,7 +190,7 @@ def standing(licenses: Iterable[License], today: date) -> Standing:
     if not started:
         return Standing(None, LicenseState.FREE, today, later)
     _, current = max(started, key=lambda ix: (ix[1].valid_from, ix[1].installed_at, ix[0]))
-    if today <= current.valid_to:
+    if current.is_active(today):
         return Standing(current, LicenseState.ACTIVE, today, later)
     if current.paid and today <= current.valid_to + timedelta(days=GRACE_DAYS):
         return Standing(current, LicenseState.GRACE, today, later)
@@ -200,7 +214,7 @@ class Quote:
     seats: int
     months: int
     unit_price: int  # VND per student per month
-    kind: str  # "new" | "renewal" | "upgrade" | "downgrade"
+    kind: OrderKind  # never CREDITS: a quote prices a licence
     starts_on: date
     ends_on: date
     list_price: int  # students x months x unit price
@@ -252,14 +266,14 @@ def quote(
     held = current.license
     credit = 0
     if held is None or not held.paid:
-        kind, start = "new", today
+        kind, start = OrderKind.NEW, today
     elif TIER[plan] > TIER[held.plan] or (plan == held.plan and seats > held.seats):
-        kind, start = "upgrade", today
+        kind, start = OrderKind.UPGRADE, today
         if current.state is LicenseState.ACTIVE:
             credit = _credit(held, today)
     else:
         down = TIER[plan] < TIER[held.plan] or seats < held.seats
-        kind = "downgrade" if down else "renewal"
+        kind = OrderKind.DOWNGRADE if down else OrderKind.RENEWAL
         start = held.valid_to + timedelta(days=1)
     end = add_months(start, months) - timedelta(days=1)
     worth = list_price - discount
