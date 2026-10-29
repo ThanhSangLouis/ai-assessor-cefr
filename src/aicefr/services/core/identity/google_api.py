@@ -161,15 +161,32 @@ def google_callback(
         audit(account.pseudonym, "account.google_link", account.account_id, None)
         return _back("/account", "linked")
 
-    opened = auth.login_with_identity(
-        google.PROVIDER, identity.subject_hash, device_label(request.headers.get("user-agent"))
-    )
+    device = device_label(request.headers.get("user-agent"))
+    opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
+    signed_up = False
     if opened is None:
         linked = auth.account_by_identity(google.PROVIDER, identity.subject_hash)
-        return _back("/login", "disabled" if linked is not None else "not_linked")
+        if linked is not None:
+            return _back("/login", "disabled")
+        if not get_settings().google_signup:
+            return _back("/login", "not_linked")
+        # D063: first time this Google account is seen, it becomes a student.
+        try:
+            aid = auth.create_with_identity(google.PROVIDER, identity.subject_hash)
+        except IdentityTaken:
+            aid = None  # a second callback of the same person won the race
+        opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
+        if opened is None:
+            return _back("/login", "not_linked")
+        signed_up = aid is not None
+        if signed_up:
+            audit(opened[1]["pseudonym"], "account.google_signup", aid, None)
     token, row = opened
     audit(row["pseudonym"], "auth.login", row["account_id"], "method=google")
-    if row["must_change_password"]:
+    if signed_up:
+        # A new account has accepted nothing yet; the terms come first (D058).
+        target = "/terms"
+    elif row["must_change_password"]:
         # Google proves who is signing in; it does not make a password an
         # administrator has seen any less known. The D028 rule still applies.
         target = "/account?first=1"

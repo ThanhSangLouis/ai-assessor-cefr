@@ -122,6 +122,7 @@ def page_login(request: Request):
         {
             "nav_here": "login",
             "google_enabled": svc().settings.google_enabled,
+            "google_signup": svc().settings.google_signup,
             "google_error": google.MESSAGES.get(request.query_params.get("google", "")),
         },
     )

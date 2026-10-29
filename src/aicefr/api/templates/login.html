@@ -46,14 +46,21 @@
       {#- The one place a failed login is announced; a toast as well would read it twice. -#}
       <div id="tb" role="alert"></div>
     </form>
-    {#- D029. Google signs in an account that has been linked to it from the
-        account page; it never creates one. -#}
+    {#- D029, D063. Google signs in the account linked to it; with sign-up on, a
+        Google account linked to none becomes a new student account. -#}
     {% if google_enabled %}
     <div class="auth-or" aria-hidden="true"><span>hoặc</span></div>
     <a class="button secondary google-button" id="google-login" href="/auth/google/start?mode=login">
-      {{ icon("user") }} Đăng nhập bằng Google
+      {{ icon("user") }} {% if google_signup %}Đăng nhập hoặc đăng ký bằng Google{% else %}Đăng nhập bằng Google{% endif %}
     </a>
+    {% if google_signup %}
+    <p class="field-hint">
+      Lần đầu dùng Google, hệ thống tạo cho bạn một tài khoản sinh viên với bút danh ngẫu nhiên.
+      Hệ thống không lưu tên hay email Google của bạn.
+    </p>
+    {% else %}
     <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
+    {% endif %}
     {% endif %}
     <details class="auth-help">
       <summary>Quên mật khẩu?</summary>
