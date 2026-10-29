@@ -4,8 +4,8 @@ What earns one, and what never does:
 
 * **Effort only.** Seconds spoken, days practised, lessons finished, a step
   tried again until it passed, a review done, an assessment taken. Never a
-  score, a band or a pass rate: those are estimates whose error is half a band
-  (RMSE 0.53 on a 0-6 scale), and a medal for a number the learner does not
+  score, a band or a pass rate: those are estimates whose error is about half
+  a band on a 0-6 scale, and a medal for a number the learner does not
   control teaches that the number is the goal. Praise for the process keeps
   learners trying after a setback; praise for ability does the opposite
   (Mueller and Dweck 1998).

@@ -15,12 +15,12 @@ Mô hình đang chạy có ba điểm yếu mà không một dòng mã nào ch�
 
 | Điểm yếu | Con số | Hệ quả |
 |---|---|---|
-| Huấn luyện trên người học **không phải người Việt** | Speak & Improve 2025, 876 bài / 438 người nói | Không ai biết nó có giữ độ chính xác trên giọng Việt hay không |
+| Huấn luyện trên người học **không phải người Việt** | Speak & Improve 2025 (phần P3, P4) | Không ai biết nó có giữ độ chính xác trên giọng Việt hay không |
 | **Chưa hiệu chuẩn** | `calibration_version = "chua-hieu-chuan"` | Điểm số có thể lệch hệ thống cả nửa band mà vẫn tương quan tốt |
-| **Kém nhất đúng ở band thấp** | A2 chỉ nhận đúng 16,7%; xếp sai band 26,6% | Nhóm sinh viên cần giúp nhất lại bị chấm sai nhiều nhất |
+| **Kém nhất đúng ở band thấp** | Recall của A2 thấp nhất trong ba band (số đo trên Speak & Improve, gỡ theo W7-S01; bản đầy đủ ở hồ sơ nội bộ của chủ báo cáo) | Nhóm sinh viên cần giúp nhất lại bị chấm sai nhiều nhất |
 
-Tương quan chéo hiện tại là PCC 0,6966 và RMSE 0,5262 (GroupKFold 5 theo người
-nói). Đó là con số trên tập nước ngoài. **Chưa có một con số nào trên sinh viên
+Tương quan chéo hiện tại (PCC, RMSE, GroupKFold 5 theo người nói) nằm trong
+artifact ngoài repo (số đo trên Speak & Improve, gỡ theo W7-S01; bản đầy đủ ở hồ sơ nội bộ của chủ báo cáo). Đó là con số trên tập nước ngoài. **Chưa có một con số nào trên sinh viên
 Việt Nam.** Khảo sát này sinh ra con số đó.
 
 ---
