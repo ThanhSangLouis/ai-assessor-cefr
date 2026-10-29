@@ -53,6 +53,12 @@ docker compose up -d --build
 Hướng dẫn đầy đủ, từng bước có lệnh kiểm tra: [docs/plan/CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md)
 (cho AI agent) và [docs/plan/CHAY_TREN_LOCALHOST.md](docs/plan/CHAY_TREN_LOCALHOST.md) (cho người đọc).
 
+### Production
+
+Bản chạy thật ở https://52-64-179-250.sslip.io (AWS EC2). Merge vào `main` và CI xanh là tự triển khai.
+Cấu trúc, luồng deploy, việc thường gặp và lỗi hay gặp: [docs/plan/TRIEN_KHAI_CHO_AI.md](docs/plan/TRIEN_KHAI_CHO_AI.md).
+Dựng lại máy chủ từ đầu: [docs/plan/TRIEN_KHAI_EC2.md](docs/plan/TRIEN_KHAI_EC2.md).
+
 ---
 
 ## Quản lý tài khoản (CLI)

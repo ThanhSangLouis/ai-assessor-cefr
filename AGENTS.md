@@ -10,6 +10,12 @@ Tóm tắt: `./demo.sh` (cần Docker cho MongoDB); artifact mô hình nằm ngo
 `../aicefr-models`, thiếu thì `demo.sh` dùng artifact giả lập và điểm vô nghĩa; không
 commit artifact, `.env`, dữ liệu ghi âm; không đẩy thẳng lên `main`.
 
+Hỏi về production, EC2/AWS, GitHub Actions, CI, deploy, `.env` máy chủ hay sao lưu: đọc
+[docs/plan/TRIEN_KHAI_CHO_AI.md](docs/plan/TRIEN_KHAI_CHO_AI.md) trước. Tóm tắt: merge vào
+`main` + CI xanh là tự deploy lên EC2 (runner của GitHub SSH vào máy chủ, không có
+self-hosted runner); `main` có branch protection; AI agent không SSH, không gọi AWS, không
+đụng secret.
+
 ## 1. Quy trình 8 bước chuẩn (co giãn theo loại task)
 
 Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. Với thay đổi code, bug fix hoặc liên module, thực hiện đầy đủ theo trình tự:
