@@ -211,7 +211,7 @@ ENUMS = [
         "«enumeration»" + BR + "Status",
         ["QUEUED", "RUNNING", "COMPLETED", "REVIEW_REQUIRED", "REJECTED", "FAILED"],
     ),
-    ("Band", "«enumeration»" + BR + "Band", ["A2", "B1", "B2"]),
+    ("Band", "«enumeration»" + BR + "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
     ("Plan", "«enumeration»" + BR + "Plan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
 ]
 

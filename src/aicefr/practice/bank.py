@@ -1,4 +1,4 @@
-"""The practice task bank: 5 criteria x 3 bands = 15 tasks. D023.
+"""The practice task bank: 5 criteria x 6 bands = 30 tasks. D023, D059.
 
 How a task is written, and why:
 
@@ -49,7 +49,7 @@ PATH_ORDER: tuple[Criterion, ...] = (
     Criterion.PHONOLOGY,
 )
 
-BAND_ORDER: tuple[Band, ...] = (Band.A2, Band.B1, Band.B2)
+BAND_ORDER: tuple[Band, ...] = tuple(Band)
 
 CRITERION_NAMES: dict[Criterion, str] = {
     Criterion.FLUENCY: "Độ trôi chảy",
@@ -116,6 +116,27 @@ def _read(ratio: float) -> Mission:
 PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
     # ------------------------------------------------------------ fluency
     PracticeSeed(
+        task_id="PR-FLU-A1",
+        criterion=Criterion.FLUENCY,
+        band=Band.A1,
+        title="Giới thiệu bản thân thật liền",
+        prompt_text=(
+            "Giới thiệu bản thân: tên, tuổi, bạn sống ở đâu, bạn thích gì. Câu rất ngắn cũng được, "
+            "cố đừng dừng lâu."
+        ),
+        missions=(
+            _speak(20),
+            _max_pause(4.0),
+        ),
+        tips=(
+            "Mỗi câu chỉ cần một ý: “I am a student. I like music.”",
+            "Quên từ thì nói tiếp câu khác thay vì im lặng.",
+        ),
+        min_seconds=30,
+        max_seconds=45,
+        part=TaskPart.P4,
+    ),
+    PracticeSeed(
         task_id="PR-FLU-A2",
         criterion=Criterion.FLUENCY,
         band=Band.A2,
@@ -169,7 +190,67 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         max_seconds=90,
         part=TaskPart.P3,
     ),
+    PracticeSeed(
+        task_id="PR-FLU-C1",
+        criterion=Criterion.FLUENCY,
+        band=Band.C1,
+        title="Trình bày liền mạch một vấn đề phức tạp",
+        prompt_text=(
+            "Công nghệ trí tuệ nhân tạo nên được dùng trong giáo dục đại học đến mức nào? Trình "
+            "bày quan điểm có lập luận, giữ mạch nói liên tục."
+        ),
+        missions=(
+            _speak(75),
+            _max_pause(1.2),
+        ),
+        tips=(
+            "Chia bài thành ba phần và chuyển ý bằng cụm nối thay vì dừng lại.",
+            "Khi cần thời gian nghĩ, dùng “to put it another way…” để giữ nhịp.",
+        ),
+        min_seconds=75,
+        max_seconds=120,
+        part=TaskPart.P3,
+    ),
+    PracticeSeed(
+        task_id="PR-FLU-C2",
+        criterion=Criterion.FLUENCY,
+        band=Band.C2,
+        title="Ứng biến trôi chảy trước câu hỏi khó",
+        prompt_text=(
+            "Có nên đánh đổi một phần quyền riêng tư để đổi lấy an ninh chung không? Nói như đang "
+            "trả lời phỏng vấn, tự nhiên và không ngắt quãng."
+        ),
+        missions=(
+            _speak(90),
+            _max_pause(1.0),
+        ),
+        tips=(
+            "Mở đầu bằng một nhận định gọn, rồi phát triển dần các sắc thái.",
+            "Dùng cụm câu giờ tự nhiên của người nói thành thạo: “that being said…”, “mind you…”.",
+        ),
+        min_seconds=90,
+        max_seconds=150,
+        part=TaskPart.P3,
+    ),
     # ------------------------------------------------------------ coherence
+    PracticeSeed(
+        task_id="PR-COH-A1",
+        criterion=Criterion.COHERENCE,
+        band=Band.A1,
+        title="Nối ý bằng and và then",
+        prompt_text=("Nói về buổi sáng của bạn: bạn làm gì trước, làm gì sau."),
+        missions=(
+            _use(2, ("and", "then", "first", "after"), "từ nối khác nhau"),
+            _speak(20),
+        ),
+        tips=(
+            "Nối hai việc bằng “and”: “I wake up and I wash my face.”",
+            "Việc tiếp theo bắt đầu bằng “then”.",
+        ),
+        min_seconds=30,
+        max_seconds=45,
+        part=TaskPart.P4,
+    ),
     PracticeSeed(
         task_id="PR-COH-A2",
         criterion=Criterion.COHERENCE,
@@ -236,7 +317,114 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         max_seconds=90,
         part=TaskPart.P3,
     ),
+    PracticeSeed(
+        task_id="PR-COH-C1",
+        criterion=Criterion.COHERENCE,
+        band=Band.C1,
+        title="Dẫn dắt một bài phân tích có cấu trúc",
+        prompt_text=(
+            "Phân tích nguyên nhân và hệ quả của việc nhiều người trẻ rời quê lên thành phố làm "
+            "việc. Trình bày có mở đầu, thân bài và kết luận."
+        ),
+        missions=(
+            _use(
+                3,
+                (
+                    "furthermore",
+                    "consequently",
+                    "nevertheless",
+                    "in addition",
+                    "as a result",
+                    "admittedly",
+                ),
+                "cụm liên kết khác nhau",
+            ),
+            _use(
+                1,
+                (
+                    "all things considered",
+                    "taking everything into account",
+                    "in the final analysis",
+                ),
+                "cụm kết luận",
+            ),
+            _speak(70),
+        ),
+        tips=(
+            "Báo trước bố cục: “I would like to look at the causes first, and then at the "
+            "effects.”",
+            "Mỗi ý mới mở bằng một cụm liên kết chỉ rõ quan hệ với ý trước.",
+        ),
+        min_seconds=70,
+        max_seconds=120,
+        part=TaskPart.P3,
+    ),
+    PracticeSeed(
+        task_id="PR-COH-C2",
+        criterion=Criterion.COHERENCE,
+        band=Band.C2,
+        title="Tổng hợp nhiều quan điểm thành một lập luận",
+        prompt_text=(
+            "Có ý kiến cho rằng thành công phụ thuộc vào may mắn nhiều hơn nỗ lực. Tổng hợp các "
+            "quan điểm khác nhau rồi đưa ra lập luận của riêng bạn."
+        ),
+        missions=(
+            _use(
+                3,
+                (
+                    "be that as it may",
+                    "by the same token",
+                    "granted",
+                    "it follows that",
+                    "conversely",
+                    "notwithstanding",
+                ),
+                "cụm liên kết khác nhau",
+            ),
+            _speak(90),
+        ),
+        tips=(
+            "Gom các quan điểm theo nhóm trước khi phản biện từng nhóm.",
+            "Kết bài bằng một câu tổng hợp nối lại với câu mở đầu.",
+        ),
+        min_seconds=90,
+        max_seconds=150,
+        part=TaskPart.P3,
+    ),
     # ------------------------------------------------------------ range
+    PracticeSeed(
+        task_id="PR-RAN-A1",
+        criterion=Criterion.RANGE,
+        band=Band.A1,
+        title="Tả gia đình bạn",
+        prompt_text=("Tả gia đình bạn: có những ai, mỗi người làm gì, trông thế nào."),
+        missions=(
+            _use(
+                4,
+                (
+                    "mother",
+                    "father",
+                    "brother",
+                    "sister",
+                    "family",
+                    "tall",
+                    "young",
+                    "happy",
+                    "kind",
+                    "teacher",
+                ),
+                "từ trong danh sách gợi ý",
+            ),
+            Mission(kind=MissionKind.UNIQUE_WORDS, target=20, label="Dùng ít nhất 20 từ khác nhau"),
+        ),
+        tips=(
+            "Mỗi người một câu: “My mother is kind.”",
+            "Thêm một từ chỉ màu sắc hay kích thước để câu cụ thể hơn.",
+        ),
+        min_seconds=30,
+        max_seconds=45,
+        part=TaskPart.P4,
+    ),
     PracticeSeed(
         task_id="PR-RAN-A2",
         criterion=Criterion.RANGE,
@@ -347,7 +535,102 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         max_seconds=90,
         part=TaskPart.P3,
     ),
+    PracticeSeed(
+        task_id="PR-RAN-C1",
+        criterion=Criterion.RANGE,
+        band=Band.C1,
+        title="Bàn về biến đổi khí hậu và trách nhiệm cá nhân",
+        prompt_text=(
+            "Mỗi cá nhân có trách nhiệm đến đâu trong việc giảm biến đổi khí hậu so với chính phủ "
+            "và doanh nghiệp? Dùng từ ngữ chính xác."
+        ),
+        missions=(
+            _use(
+                5,
+                (
+                    "sustainable",
+                    "emission",
+                    "accountability",
+                    "incentive",
+                    "regulation",
+                    "consumption",
+                    "mitigate",
+                    "inevitable",
+                    "collective",
+                    "substantial",
+                    "unprecedented",
+                ),
+                "từ trong danh sách gợi ý",
+            ),
+            Mission(kind=MissionKind.UNIQUE_WORDS, target=95, label="Dùng ít nhất 95 từ khác nhau"),
+        ),
+        tips=(
+            "Thay động từ chung chung bằng động từ chính xác: “reduce” → “mitigate”, “cut back "
+            "on”.",
+            "Dùng danh từ trừu tượng để khái quát: “accountability”, “consumption”.",
+        ),
+        min_seconds=70,
+        max_seconds=120,
+        part=TaskPart.P3,
+    ),
+    PracticeSeed(
+        task_id="PR-RAN-C2",
+        criterion=Criterion.RANGE,
+        band=Band.C2,
+        title="Sắc thái nghĩa: nghệ thuật và công nghệ",
+        prompt_text=(
+            "Liệu trí tuệ nhân tạo có thể thực sự sáng tạo nghệ thuật không? Trình bày với vốn từ "
+            "phong phú, có thành ngữ và sắc thái nghĩa tinh tế."
+        ),
+        missions=(
+            _use(
+                5,
+                (
+                    "nuance",
+                    "authenticity",
+                    "derivative",
+                    "ingenuity",
+                    "ambiguous",
+                    "profound",
+                    "intrinsically",
+                    "a double-edged sword",
+                    "push the boundaries",
+                    "beg the question",
+                    "subtle",
+                ),
+                "từ trong danh sách gợi ý",
+            ),
+            Mission(
+                kind=MissionKind.UNIQUE_WORDS, target=110, label="Dùng ít nhất 110 từ khác nhau"
+            ),
+        ),
+        tips=(
+            "Dùng thành ngữ đúng chỗ: “it is a double-edged sword”.",
+            "Phân biệt các từ gần nghĩa: “original”, “novel”, “authentic”.",
+        ),
+        min_seconds=90,
+        max_seconds=150,
+        part=TaskPart.P3,
+    ),
     # ------------------------------------------------------------ accuracy
+    PracticeSeed(
+        task_id="PR-ACC-A1",
+        criterion=Criterion.ACCURACY,
+        band=Band.A1,
+        title="Câu đơn với to be và have",
+        prompt_text=("Nói về con vật hoặc đồ vật bạn thích: nó là gì, nó có gì, nó ở đâu."),
+        missions=(
+            _use(3, ("is", "are", "has", "have", "am"), "dạng của to be hoặc have"),
+            _speak(20),
+        ),
+        tips=(
+            "“It is…”, “It has…”: số ít dùng “is” và “has”.",
+            "“They are…”, “They have…”: số nhiều dùng “are” và “have”.",
+        ),
+        min_seconds=30,
+        max_seconds=45,
+        part=TaskPart.P4,
+    ),
     PracticeSeed(
         task_id="PR-ACC-A2",
         criterion=Criterion.ACCURACY,
@@ -421,7 +704,78 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         max_seconds=90,
         part=TaskPart.P4,
     ),
+    PracticeSeed(
+        task_id="PR-ACC-C1",
+        criterion=Criterion.ACCURACY,
+        band=Band.C1,
+        title="Câu điều kiện hỗn hợp: nhìn lại một lựa chọn",
+        prompt_text=(
+            "Nhìn lại một lựa chọn quan trọng trong quá khứ: nếu bạn đã chọn khác thì cuộc sống "
+            "bây giờ ra sao, và nếu tình huống lặp lại bạn sẽ làm gì?"
+        ),
+        missions=(
+            Mission(
+                kind=MissionKind.CONDITIONALS,
+                target=3,
+                label="Dùng ít nhất 3 câu điều kiện có “if” đi kèm will, would hoặc could",
+            ),
+            _speak(70),
+        ),
+        tips=(
+            "Điều kiện hỗn hợp: “If I had chosen medicine, I would be a doctor now.”",
+            "Giữ đúng thì của từng vế; tự sửa ngay nếu nói nhầm.",
+        ),
+        min_seconds=70,
+        max_seconds=120,
+        part=TaskPart.P3,
+    ),
+    PracticeSeed(
+        task_id="PR-ACC-C2",
+        criterion=Criterion.ACCURACY,
+        band=Band.C2,
+        title="Đảo ngữ và cấu trúc nhấn mạnh",
+        prompt_text=(
+            "Kể về một bài học bạn chỉ nhận ra sau một thất bại. Dùng các cấu trúc nhấn mạnh và "
+            "đảo ngữ một cách tự nhiên."
+        ),
+        missions=(
+            _use(
+                3,
+                ("not only", "never before", "only when", "no sooner", "what", "it was", "rarely"),
+                "cấu trúc nhấn mạnh khác nhau",
+            ),
+            _speak(90),
+        ),
+        tips=(
+            "Đảo ngữ: “Only when I failed did I realise…”, “Never before had I…”.",
+            "Câu chẻ: “What I learned was…”, “It was then that…”.",
+        ),
+        min_seconds=90,
+        max_seconds=150,
+        part=TaskPart.P4,
+    ),
     # ------------------------------------------------------------ phonology
+    PracticeSeed(
+        task_id="PR-PHO-A1",
+        criterion=Criterion.PHONOLOGY,
+        band=Band.A1,
+        title="Đọc to: căn phòng của tôi",
+        prompt_text=("Đọc to, chậm và rõ đoạn văn ngắn dưới đây."),
+        missions=(_read(0.75),),
+        tips=(
+            "Đọc từng từ thật rõ, không cần nhanh.",
+            "Chú ý âm cuối: “books”, “chairs”.",
+        ),
+        min_seconds=30,
+        max_seconds=60,
+        part=TaskPart.P4,
+        reference_text=(
+            "This is my room. It is small but nice. "
+            "There is a bed, a desk and a big window. "
+            "I have many books on the desk. "
+            "My room is quiet, and I like to read there."
+        ),
+    ),
     PracticeSeed(
         task_id="PR-PHO-A2",
         criterion=Criterion.PHONOLOGY,
@@ -491,9 +845,60 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
             "difference within a few weeks."
         ),
     ),
+    PracticeSeed(
+        task_id="PR-PHO-C1",
+        criterion=Criterion.PHONOLOGY,
+        band=Band.C1,
+        title="Đọc to: bài phát biểu ngắn",
+        prompt_text=(
+            "Đọc to đoạn phát biểu dưới đây với ngữ điệu thuyết phục, nhấn đúng từ quan trọng."
+        ),
+        missions=(_read(0.92),),
+        tips=(
+            "Nhấn trọng âm câu vào từ mang ý mới: “not *whether*, but *how*”.",
+            "Hạ giọng ở cuối câu khẳng định, lên giọng ở câu hỏi tu từ.",
+        ),
+        min_seconds=40,
+        max_seconds=100,
+        part=TaskPart.P4,
+        reference_text=(
+            "Good evening, everyone. The question before us tonight is not whether "
+            "technology will change the way we learn, but how we intend to shape that change. "
+            "If we simply hand every decision to machines, we risk losing the very curiosity "
+            "that education is meant to nurture. On the other hand, if we refuse to adapt, "
+            "we deny our students tools that could open doors we cannot yet imagine. "
+            "Our task, therefore, is to remain thoughtful rather than fearful."
+        ),
+    ),
+    PracticeSeed(
+        task_id="PR-PHO-C2",
+        criterion=Criterion.PHONOLOGY,
+        band=Band.C2,
+        title="Đọc to: đoạn văn chính luận",
+        prompt_text=(
+            "Đọc to đoạn văn chính luận dưới đây, thể hiện rõ cấu trúc câu dài bằng ngắt nhịp và "
+            "ngữ điệu."
+        ),
+        missions=(_read(0.94),),
+        tips=(
+            "Ngắt nhịp theo cụm nghĩa, không theo hơi thở.",
+            "Giữ rõ âm cuối trong cụm phụ âm: “acknowledged”, “strengths”.",
+        ),
+        min_seconds=40,
+        max_seconds=120,
+        part=TaskPart.P4,
+        reference_text=(
+            "It is often acknowledged, though rarely examined, that the strengths we admire "
+            "in others are frequently the very qualities we struggle to cultivate in ourselves. "
+            "Patience, for instance, appears effortless in those who possess it, "
+            "yet it is seldom innate; more often, it is the quiet consequence of countless "
+            "small decisions to wait rather than react. Understanding this does not make "
+            "such virtues easier to acquire, but it does make them considerably less mysterious."
+        ),
+    ),
 )
 
 
 def practice_task_id(criterion: Criterion, band: Band) -> str:
-    """Practice task id for one criterion at one band. The bank fills all 15 cells."""
+    """Practice task id for one criterion at one band. The bank fills all 30 cells."""
     return next(t.task_id for t in PRACTICE_TASKS if t.criterion is criterion and t.band is band)

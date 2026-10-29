@@ -1,10 +1,11 @@
-"""Operational commands: retention, orphan cleanup, backup.
+"""Operational commands: retention, orphan cleanup, backup and restore.
 
 Run:
     python -m aicefr.maintenance_cli retention --days 180          # xem trước
     python -m aicefr.maintenance_cli retention --days 180 --apply  # thực hiện
     python -m aicefr.maintenance_cli orphans
-    python -m aicefr.maintenance_cli backup --to backups/aicefr.db
+    python -m aicefr.maintenance_cli backup --to backups/aicefr.json
+    python -m aicefr.maintenance_cli restore --from backups/aicefr-20261021T000000+0000.json
 """
 
 from __future__ import annotations
@@ -14,13 +15,15 @@ import sys
 from pathlib import Path
 
 from aicefr.config import get_settings
+from aicefr.infra.blobs import LocalBlobStore
 from aicefr.retention import (
     DEFAULT_RETENTION_DAYS,
     apply_retention,
     backup,
     orphaned_recordings,
+    restore_backup,
 )
-from aicefr.storage.db import table_exists
+from aicefr.storage.db import collection_exists
 from aicefr.storage.lesson_repository import LessonRepository
 from aicefr.storage.repository import Repository
 
@@ -30,19 +33,22 @@ class WrongStore(Exception):
 
 
 def _stores(args: argparse.Namespace) -> tuple[Repository, LessonRepository]:
-    """The core service's store (D044), refused unless it already holds its tables.
+    """The core service's store (D044), refused unless it already holds its collections.
 
     Retention and orphan cleanup read the responses and the lesson attempts,
     whose recordings share the upload folder. Opening a repository creates its
-    tables, so a wrong address would look like an empty store -- and to
+    collections, so a wrong address would look like an empty store -- and to
     `orphans --delete` every recording an empty store does not list is an
-    orphan. So the store must already hold both tables.
+    orphan. So the store must already hold both collections.
     """
     target = args.db or get_settings().store("core")
-    for table in ("response", "step_attempt"):
-        if not table_exists(target, table):
-            raise WrongStore(f"kho {target!r} chưa có bảng {table}: kiểm tra lại địa chỉ kho")
-    return Repository(target), LessonRepository(target, seed=False)
+    # D051: lesson attempts are in the learning part's store, which may be
+    # its own database; on one machine, or with --db, the same store.
+    learning = args.db or get_settings().store("learning")
+    for store, name in ((target, "response"), (learning, "attempt")):
+        if not collection_exists(store, name):
+            raise WrongStore(f"kho {store!r} chưa có collection {name}: kiểm tra lại địa chỉ kho")
+    return Repository(target), LessonRepository(learning, seed=False)
 
 
 def _retention(args: argparse.Namespace) -> int:
@@ -62,11 +68,12 @@ def _retention(args: argparse.Namespace) -> int:
 
 def _orphans(args: argparse.Namespace) -> int:
     repo, lessons = _stores(args)
-    files = orphaned_recordings(repo, Path(args.uploads or get_settings().upload_dir), lessons)
+    blobs = LocalBlobStore(args.uploads) if args.uploads else repo.blobs
+    files = orphaned_recordings(repo, Path(args.uploads) if args.uploads else None, lessons)
     if not files:
         print("Không có tệp ghi âm mồ côi.")
         return 0
-    total = sum(f.stat().st_size for f in files)
+    total = sum(blobs.size(f.name) or 0 for f in files)
     print(f"Có {len(files)} tệp ghi âm không có bản ghi nào trỏ tới ({total / 1048576:.1f} MiB):")
     for f in files[:20]:
         print(f"  {f}")
@@ -74,7 +81,7 @@ def _orphans(args: argparse.Namespace) -> int:
         print(f"  … và {len(files) - 20} tệp nữa")
     if args.delete:
         for f in files:
-            f.unlink(missing_ok=True)
+            blobs.delete(f.name)
         print(f"Đã xoá {len(files)} tệp.")
     else:
         print("Thêm --delete để xoá. Đây là giọng nói của người thật, không tệp nào được")
@@ -88,12 +95,18 @@ def _backup(args: argparse.Namespace) -> int:
     return 0
 
 
+def _restore(args: argparse.Namespace) -> int:
+    n = restore_backup(Repository(args.db or get_settings().store("core")), Path(args.source))
+    print(f"Đã khôi phục {n} bản ghi từ {args.source}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Bảo trì hệ thống AI Assessor CEFR")
     ap.add_argument(
         "--db",
         default=None,
-        help="kho của dịch vụ core (đường dẫn SQLite hoặc URL PostgreSQL);"
+        help="kho của dịch vụ core (URL mongodb://);"
         " mặc định AICEFR_CORE_DB, hoặc AICEFR_DB trên một máy",
     )
     sub = ap.add_subparsers(dest="command", required=True)
@@ -109,9 +122,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--delete", action="store_true")
     p.set_defaults(func=_orphans)
 
-    p = sub.add_parser("backup", help="sao lưu cơ sở dữ liệu an toàn khi đang chạy")
-    p.add_argument("--to", default="backups/aicefr.db")
+    p = sub.add_parser("backup", help="sao lưu mọi collection ra một tệp JSON")
+    p.add_argument("--to", default="backups/aicefr.json")
     p.set_defaults(func=_backup)
+
+    p = sub.add_parser("restore", help="khôi phục tệp sao lưu vào một kho rỗng")
+    p.add_argument("--from", dest="source", required=True)
+    p.set_defaults(func=_restore)
 
     args = ap.parse_args(argv)
     try:

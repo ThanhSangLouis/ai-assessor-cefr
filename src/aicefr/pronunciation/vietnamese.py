@@ -29,7 +29,6 @@ PRONUNCIATION_VERSION = "vi-pron-v1"
 MIN_OPPORTUNITIES = 8
 MAX_EXAMPLES = 5
 
-VOWELS = frozenset("aeiou")
 CONSONANTS = frozenset("bcdfghjklmnpqrstvwxz")
 # Two- and three-letter onsets Vietnamese has no counterpart for.
 CLUSTERS = (

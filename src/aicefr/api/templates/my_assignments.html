@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Bài được giao · AI Assessor CEFR{% endblock %}
+{% block content %}
+{#- D054. What a student's classes set them, and joining a class by its code. -#}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("target") }}</span>Bài được giao</h1>
+  <p class="lede">Đề giảng viên giao cho lớp của bạn, kèm hạn nộp. Bấm “Làm bài” để mở đúng đề ở trang Nộp bài.</p>
+</div>
+
+<section class="card" aria-labelledby="todo-h">
+  <div class="card-head"><h2 id="todo-h">Cần làm</h2></div>
+  <div id="todo" aria-busy="true"></div>
+</section>
+
+<section class="card" aria-labelledby="done-h">
+  <div class="card-head"><h2 id="done-h">Đã nộp</h2></div>
+  <div id="done"></div>
+</section>
+
+<section class="card" aria-labelledby="join-h">
+  <div class="card-head"><h2 id="join-h">Vào lớp bằng mã</h2></div>
+  <p class="muted" id="my-classes"></p>
+  <form id="join-form" class="inline-form">
+    <label class="field"><span>Mã lớp (6 ký tự)</span>
+      <input id="join-code" name="code" autocomplete="off" maxlength="12" required></label>
+    <button type="submit" class="button">Vào lớp</button>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('my_assignments.js') }}"></script>{% endblock %}

@@ -13,7 +13,7 @@ Cach tinh, cho mot bai moi x (xem `tools/calibrate_conformal.py`):
 
 voi f_{-k} la nam mo hinh theo fold va R_i la phan du out-of-fold cua bai
 hieu chinh i. Bao dam ly thuyet >= 1 - 2*alpha; muc phu DO DUOC tren S&I nam
-trong `alpha_curve` cua artifact (alpha 0,10 -> 0,899).
+trong `alpha_curve` cua artifact.
 
 Artifact gan voi DUNG MOT mo hinh qua SHA-256: hieu chinh cua mot mo hinh
 khong dung duoc cho mo hinh khac, va dung nham thi khoang van tron tria ma sai.
@@ -22,28 +22,18 @@ khong dung duoc cho mo hinh khac, va dung nham thi khoang van tron tria ma sai.
 from __future__ import annotations
 
 import hashlib
-import json
 import math
 from pathlib import Path
 
-from aicefr.contracts import Band, Criterion, CriterionIndicator, FeatureSet, ScoreInterval
+from aicefr.contracts import Criterion, CriterionIndicator, FeatureSet, ScoreInterval
+from aicefr.scoring import artifacts
+from aicefr.scoring.band_map import bands_between
 
-MODEL_DIR = Path(__file__).parent / "models"
 SCORE_MIN, SCORE_MAX = 1.0, 6.0
 
 
 class CalibrationMismatchError(ValueError):
     """Artifact hieu chinh khong thuoc mo hinh dang nap."""
-
-
-def bands_between(low: float, high: float, thresholds: dict[str, float]) -> list[Band]:
-    """Moi band co mot phan nam trong [low, high], theo thu tu A2 -> B2."""
-    edges = [
-        (Band.A2, -math.inf, thresholds["A2_B1"]),
-        (Band.B1, thresholds["A2_B1"], thresholds["B1_B2"]),
-        (Band.B2, thresholds["B1_B2"], math.inf),
-    ]
-    return [b for b, lo, hi in edges if low < hi and high >= lo]
 
 
 class ConformalCalibrator:
@@ -76,12 +66,14 @@ class ConformalCalibrator:
         dieu do qua `ScoreInterval` rong. Khong nap duoc vi SHA lech thi BAO
         LOI: im lang dung luat cu se che mat mot artifact hong.
         """
-        name = model_name.removeprefix("ridge_")
-        path = MODEL_DIR / f"conformal_{name}.json"
-        if not path.exists():
+        name = "conformal_" + model_name.removeprefix("ridge_")
+        try:
+            if not artifacts.artifact_path(name).exists():
+                return None
+        except artifacts.ArtifactError:
             return None
-        artifact = json.loads(path.read_text(encoding="utf-8"))
-        return cls(artifact, MODEL_DIR / f"{model_name}.json", alpha)
+        artifact = artifacts.read_json(name)
+        return cls(artifact, artifacts.artifact_path(model_name), alpha)
 
     # ------------------------------------------------------------------ khoang
 
@@ -92,7 +84,7 @@ class ConformalCalibrator:
         out = []
         for f in self._folds:
             raw = f["intercept"] + sum(
-                c * ((v - m) / (s if s else 1.0))
+                c * ((v - m) / (s or 1.0))
                 for v, m, s, c in zip(x, f["mean"], f["scale"], f["coef"], strict=True)
             )
             out.append(min(max(raw, SCORE_MIN), SCORE_MAX))

@@ -38,13 +38,7 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    assert (
-        c.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        ).status_code
-        == 200
-    )
+    assert c.post("/api/v1/me/terms").status_code == 200
     return c
 
 
@@ -102,17 +96,15 @@ def test_moi_truong_du_lieu_deu_co_giai_thich_muc_dich(app) -> None:
     body = c.get("/api/v1/me/export.json").json()
 
     fields = body["fields"]
-    for key in ("speaker_id", "consent", "transcript", "features", "review_history", "audio"):
+    for key in ("speaker_id", "terms_accepted_at", "transcript", "features", "review_history"):
         assert key in fields and fields[key].strip()
 
 
-def test_xuat_du_lieu_co_ca_lich_su_dong_thuan(app) -> None:
+def test_xuat_du_lieu_co_thoi_diem_dong_y_dieu_khoan(app) -> None:
     c = login_as(app, "SV-001", "student")
-    c.post("/api/v1/me/consent/withdraw")
     body = c.get("/api/v1/me/export.json").json()
 
-    assert len(body["consent"]) == 1
-    assert body["consent"][0]["withdrawn_at"] is not None
+    assert body["terms_accepted_at"]
 
 
 def test_khong_dang_nhap_thi_khong_xuat_duoc(app) -> None:
@@ -136,10 +128,6 @@ def test_kich_hoat_mo_hinh_sai_don_vi_suy_luan_bi_tu_choi(app) -> None:
     It also reports a *higher* correlation, which is exactly why activating it
     has to be refused rather than left to an administrator's judgement.
     """
-    from aicefr.scoring.scorer import MODEL_DIR
-
-    if not (MODEL_DIR / "ridge_v3.json").is_file():
-        pytest.skip("không có artifact ridge_v3 trong repo")
     admin = login_as(app, "QT-01", "admin")
     assert admin.post("/api/v1/admin/models/ridge_v3/activate").status_code == 409
 

@@ -1,7 +1,7 @@
 # Two images from one file (D043):
 #
 #   target `service` -- identity, assessment, learning, billing, web. Python and
-#                       the services extra (PostgreSQL, RabbitMQ); which service
+#                       the services extra (Redis/BullMQ; MongoDB via pymongo); which service
 #                       runs is AICEFR_SERVICE.
 #   target `speech`  -- the speech worker: adds ffmpeg and the recogniser, the
 #                       only image that carries them.

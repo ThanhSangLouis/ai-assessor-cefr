@@ -35,7 +35,7 @@ from aicefr import config
 from aicefr.asr.vad import EnergyVad
 from aicefr.billing import keys
 from aicefr.billing.gateways import VnpayGateway
-from aicefr.billing.plans import GRACE_DAYS, License, Plan
+from aicefr.billing.plans import GRACE_DAYS, License, ServicePlan
 from aicefr.contracts import Band, Criterion
 from aicefr.storage.auth_repository import Role
 
@@ -72,7 +72,7 @@ def m(tmp_path, monkeypatch):
 
 
 def admin_of(m) -> TestClient:
-    return login_as(m, "QT-01", "admin", consent=False)
+    return login_as(m, "QT-01", "admin", terms=False)
 
 
 def at(m, moment: datetime) -> None:
@@ -133,7 +133,7 @@ def test_with_billing_off_nothing_changes(tmp_path, monkeypatch):
     assert off["enabled"] is False and "license" not in off
     assert [p["plan"] for p in off["ladder"]] == ["free", "standard", "advanced"]
     assert students(admin, 200) == 200  # no limit on students
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
     assert teacher.post("/api/v1/teach/paths", json={"title": "Lộ trình riêng"}).status_code == 200
     assert teacher.get("/api/v1/review/stats").status_code == 200
     assert teacher.get("/api/v1/plan").json()["enabled"] is False
@@ -196,13 +196,8 @@ def test_the_plan_limits_new_student_accounts_only(m):
 def test_assessments_over_the_monthly_figure_only_warn(m):
     admin = admin_of(m)
     assert overview(admin)["usage"]["quota"] == 24  # 3 students x 8 on the trial
-    learner = login_as(m, "SV-001", consent=True)  # consents to research too
-    plain = login_as(m, "SV-002", consent=False)
-    m.app.state.consent_repo.sign(
-        m.app.state.auth_repo.get_by_pseudonym("SV-002")["account_id"],
-        audio_storage_allowed=True,
-        research_use_allowed=False,
-    )
+    learner = login_as(m, "SV-001", terms=True)  # accepted the terms: research data (D058)
+    plain = login_as(m, "SV-002", terms=False)
     save_assessments(m, "SV-002", "p", 20)
     save_assessments(m, "SV-001", "r", 4)
 
@@ -213,6 +208,7 @@ def test_assessments_over_the_monthly_figure_only_warn(m):
     save_assessments(m, "SV-002", "q", 4)
     assert overview(admin)["usage"]["warning"] == 100
     # A warning, never a refusal: both learners still submit.
+    plain.post("/api/v1/me/terms")
     for client in (learner, plain):
         r = client.post(
             "/api/v1/responses",
@@ -224,7 +220,7 @@ def test_assessments_over_the_monthly_figure_only_warn(m):
 
 def test_after_the_trial_the_free_plan_closes_staff_tools_but_never_learning(m):
     admin = admin_of(m)
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
     learner = login_as(m, "SV-001")
     trial_end = date.fromisoformat(overview(admin)["license"]["valid_to"])
     at(m, morning(trial_end + timedelta(days=1)))
@@ -444,8 +440,8 @@ def test_a_new_order_retires_the_one_still_waiting(m):
 
 def test_each_plan_opens_its_staff_tools(m):
     admin = admin_of(m)
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
-    login_as(m, "GV-02", "teacher", consent=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    login_as(m, "GV-02", "teacher", terms=False)
     raters = [m.app.state.auth_repo.get_by_pseudonym(n)["account_id"] for n in ("GV-01", "GV-02")]
     batch = {"name": "Đợt thử", "rater_ids": raters}
 
@@ -472,7 +468,7 @@ def test_a_licence_key_is_installed_once(m):
     contract = License(
         license_id="HD-2026-07",
         organization="Trung tâm Ngoại ngữ",
-        plan=Plan.ADVANCED,
+        plan=ServicePlan.ADVANCED,
         seats=400,
         valid_from=today,
         valid_to=today + timedelta(days=364),
@@ -566,7 +562,7 @@ def test_vnpay_is_redirected_to_and_its_messages_are_checked(tmp_path, monkeypat
 
 
 def test_only_an_administrator_deals_with_plans(m):
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
     learner = login_as(m, "SV-001")
     guest = TestClient(m.app)
     assert teacher.get("/api/v1/plan").status_code == 200

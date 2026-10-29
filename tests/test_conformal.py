@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from conftest import feature_set
 
 from aicefr.contracts import Band, Criterion, CriterionIndicator, ReasonCode
+from aicefr.scoring import artifacts
 from aicefr.scoring.conformal import (
-    MODEL_DIR,
     CalibrationMismatchError,
     ConformalCalibrator,
     bands_between,
@@ -21,7 +19,7 @@ TH = {"A2_B1": 2.75, "B1_B2": 3.75}
 
 
 def _artifact() -> dict:
-    return json.loads((MODEL_DIR / "conformal_resp_v2.json").read_text(encoding="utf-8"))
+    return artifacts.read_json("conformal_resp_v2")
 
 
 def _typical() -> dict[str, float]:
@@ -40,7 +38,7 @@ def _typical() -> dict[str, float]:
         (2.75, 3.5, [Band.B1]),  # 2,75 la can duoi cua B1, khong thuoc A2
         (2.74, 2.75, [Band.A2, Band.B1]),
         (3.0, 3.75, [Band.B1, Band.B2]),
-        (1.0, 6.0, [Band.A2, Band.B1, Band.B2]),
+        (1.0, 6.0, list(Band)),
     ],
 )
 def test_band_set_is_every_band_the_interval_touches(low, high, expected) -> None:
@@ -52,7 +50,7 @@ def test_calibration_is_bound_to_the_exact_model() -> None:
     art = _artifact()
     art["model_sha256"] = "0" * 64
     with pytest.raises(CalibrationMismatchError):
-        ConformalCalibrator(art, MODEL_DIR / "ridge_resp_v2.json")
+        ConformalCalibrator(art, artifacts.artifact_path("ridge_resp_v2"))
 
 
 def test_interval_is_ordered_and_contains_the_point_estimate() -> None:
@@ -76,7 +74,7 @@ def test_a_larger_alpha_gives_a_narrower_interval() -> None:
 
 def test_alpha_outside_the_sane_range_is_refused() -> None:
     with pytest.raises(ValueError):
-        ConformalCalibrator(_artifact(), MODEL_DIR / "ridge_resp_v2.json", alpha=0.6)
+        ConformalCalibrator(_artifact(), artifacts.artifact_path("ridge_resp_v2"), alpha=0.6)
 
 
 def test_an_interval_touching_two_bands_goes_to_a_teacher() -> None:
@@ -96,24 +94,23 @@ def _strong(frac: float) -> dict[str, float]:
     }
 
 
-def test_a_clearly_strong_response_gets_its_band_without_a_teacher() -> None:
-    """Khoang 90% nam gon trong B2 thi may duoc phat band, khong co co bien."""
+def test_a_strong_response_lands_in_the_upper_bands() -> None:
+    """D059: band rong mot diem, khoang 90% rong gan hai diem, nen bai manh cham B2..C2."""
     a = RidgeScorer().score(feature_set(_strong(0.9)))
-    assert a.interval.band_set == [Band.B2] and a.overall_band is Band.B2
-    assert ReasonCode.SCORE_NEAR_BOUNDARY not in a.reasons
+    assert a.overall_band is Band.C1
+    assert a.interval.band_set == [Band.B2, Band.C1, Band.C2]
 
 
 def test_the_same_response_at_a_looser_alpha_can_be_auto_banded() -> None:
-    """Cung bai: alpha 0,10 cham B1 va B2, alpha 0,30 chi con B2.
+    """Cung bai: alpha 0,10 cham B1, B2, C1; alpha 0,30 chi con B2, C1.
 
     Doi alpha la doi tai giang vien -- day la nut dieu chinh, khong phai mot hang so.
     """
     fs = feature_set(_strong(0.75))
     strict, loose = RidgeScorer(alpha=0.10).score(fs), RidgeScorer(alpha=0.30).score(fs)
-    assert strict.interval.band_set == [Band.B1, Band.B2]
+    assert strict.interval.band_set == [Band.B1, Band.B2, Band.C1]
     assert ReasonCode.SCORE_NEAR_BOUNDARY in strict.reasons
-    assert loose.interval.band_set == [Band.B2]
-    assert ReasonCode.SCORE_NEAR_BOUNDARY not in loose.reasons
+    assert loose.interval.band_set == [Band.B2, Band.C1]
 
 
 def test_without_a_calibration_the_old_margin_rule_still_runs() -> None:
@@ -138,7 +135,7 @@ def test_measured_coverage_matches_the_nominal_level() -> None:
     """Muc phu DO DUOC (CV long nhau, S&I) phai sat 1 - alpha.
 
     Ghim lai de mot artifact hong hoac mot lan hieu chinh sai khong lot qua im
-    lang. So do: alpha 0,10 -> 0,899.
+    lang.
     """
     curve = {row["alpha"]: row for row in _artifact()["alpha_curve"]}
     for alpha, row in curve.items():

@@ -38,14 +38,11 @@ def _login_as(app, pseudonym: str, role: str) -> TestClient:
     c = TestClient(app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    # FR-01: submitting requires consent. Sign it through the real endpoint so
-    # these fixtures exercise the same path a student walks, instead of
-    # bypassing a rule the product depends on. `tests/test_consent.py` covers
-    # what happens when it is missing.
-    s = c.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
+    # FR-01 (D058): submitting requires the terms of use. Accept them through the
+    # real endpoint so these fixtures exercise the same path a student walks,
+    # instead of bypassing a rule the product depends on. `tests/test_terms.py`
+    # covers what happens when they are missing.
+    s = c.post("/api/v1/me/terms")
     assert s.status_code == 200, s.text
     return c
 
@@ -186,7 +183,7 @@ def test_invalid_band_rejected(app):
     teacher = _login_as(app, "GV-01", "teacher")
     r = teacher.post(
         f"/api/v1/review/{rid}",
-        json={"new_band": "C1", "reason": "thu band ngoai pham vi"},
+        json={"new_band": "D1", "reason": "thu band ngoai pham vi"},
     )
     assert r.status_code == 422
 
@@ -230,7 +227,6 @@ def test_the_database_and_upload_paths_come_from_the_environment(tmp_path, monke
         assert assessment().tasks.db_path == m.repo.db_path
         # D043: a service with no store of its own uses the shared one.
         assert m.app.state.auth_repo.db_path == m.settings.store("core")
-        assert m.app.state.consent_repo.db_path == m.settings.store("core")
         assert m.settings.upload_dir == tmp_path / "rieng" / "up"
         assert not (tmp_path / "aicefr.db").exists()
     finally:

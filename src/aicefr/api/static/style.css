@@ -527,7 +527,7 @@ audio { width: 100%; }
 }
 .header-button.primary:hover { background: var(--brand-strong); color: var(--brand-fg); }
 
-/* The account menu: who is signed in, consent, theme, sign out. A <details>
+/* The account menu: who is signed in, terms, theme, sign out. A <details>
    element, so it opens with Enter or a click and needs no script to work;
    common.js only closes it on a click outside or Escape. */
 .account-menu { position: relative; }
@@ -1934,9 +1934,7 @@ button.evidence:hover {
 .fold { margin-top: var(--sp-4); }
 .fold[open] > summary { margin-bottom: var(--sp-2); }
 
-/* --- consent: one checkbox per choice ----------------------------------------
-   Each choice is its own box with its own explanation; there is no "agree to
-   all" button. */
+/* --- checkbox rows: one box per choice, each with its own explanation -------- */
 .check {
   margin: 0;
   font-size: var(--t-md);
@@ -1960,7 +1958,7 @@ button.evidence:hover {
   padding: 0;
   accent-color: var(--brand);
 }
-.consent-points { display: grid; gap: var(--sp-2); }
+.terms-points { display: grid; gap: var(--sp-2); }
 
 /* --- word marks ---------------------------------------------------------------
    Heard, unsure, missed: the colours a learner reads after speaking. Shared by
@@ -3934,7 +3932,9 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   font-weight: 700;
 }
 .band-b1 .part-badge { background: var(--accent); }
-.band-b2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
+.band-b2 .part-badge,
+.band-c1 .part-badge,
+.band-c2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
 .part-count { margin-left: auto; font-size: var(--t-sm); color: var(--fg-muted); white-space: nowrap; }
 
 /* A unit: one topic, a banner and its trail. */
@@ -5486,3 +5486,59 @@ button:not(:disabled):hover,
 .survey-scale label { display: inline-flex; align-items: center; gap: var(--sp-1); }
 .kpi-arms { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--sp-4); }
 .kpi-arm h3 { margin: 0; }
+
+/* ===================================================== 9. composed paths (D046) */
+.plan-card { margin-top: var(--sp-5); display: grid; gap: var(--sp-4); }
+.plan-head h2 { margin: 0 0 var(--sp-1); }
+.plan-head .eyebrow { display: flex; align-items: center; gap: var(--sp-2); margin: 0 0 var(--sp-1); }
+.plan-head p { margin: 0; max-width: 70ch; }
+.plan-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.plan-summary p { margin: 0; }
+.plan-warnings p { margin: 0 0 var(--sp-1); }
+.plan-unit { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--t-base); }
+.plan-list { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-3); }
+.plan-item { padding-left: var(--sp-1); }
+.plan-item-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); }
+.plan-item.status-completed .plan-item-head b { color: var(--fg-muted); }
+.plan-meta { margin: var(--sp-1) 0 0; font-size: var(--t-sm); }
+.plan-reasons { margin: var(--sp-1) 0 0; padding-left: var(--sp-4); font-size: var(--t-sm); color: var(--fg-muted); }
+.plan-model { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); margin: var(--sp-3) 0 0; }
+.plan-form summary { cursor: pointer; display: flex; align-items: center; gap: var(--sp-2); }
+.plan-form form { margin-top: var(--sp-3); }
+.plan-keep { display: flex; gap: var(--sp-2); align-items: baseline; margin: 0; font-weight: 400; }
+.plan-keep input { width: auto; margin: 0; }
+.goal-fieldset { border: 0; padding: 0; margin: var(--sp-3) 0 0; }
+.goal-fieldset legend { font-weight: 600; padding: 0; }
+.goal-fieldset .goal-chips { margin-top: var(--sp-2); }
+#compose-result h3 { margin-top: 0; }
+
+/* ================================================================= my runs (D053) */
+.plain-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-2); font-size: var(--t-md); }
+.pack-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--sp-3); margin: var(--sp-3) 0; }
+.pack { display: grid; gap: var(--sp-1); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-sm); background: var(--bg-elevated); }
+.pack-runs { font-size: var(--t-xl); font-weight: 700; }
+.pack-price { font-variant-numeric: tabular-nums; }
+.pack .button { justify-self: start; margin-top: var(--sp-2); }
+
+/* ================================================================= classes and assignments (D054) */
+.assign-row { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--border); }
+.assign-row:last-child { border-bottom: 0; }
+.band-spread { display: inline-flex; flex-wrap: wrap; gap: var(--sp-2); }
+.band-chip { font-variant-numeric: tabular-nums; }
+.join-code { font-size: var(--t-lg); letter-spacing: 0.12em; }
+
+/* ================================================================= reminders (D055) */
+.nudges { display: grid; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.nudges[hidden] { display: none; }
+.nudge { display: grid; gap: 2px; padding: var(--sp-3) var(--sp-4); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--r-sm); background: var(--bg-elevated); color: inherit; text-decoration: none; }
+.nudge:hover { background: var(--bg-hover); }
+.nudge:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.nudge-urgent { border-left-color: var(--warn); }
+.nudge-kind { font-size: var(--t-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-muted); }
+
+/* ================================================================= guided listening (D056) */
+.replay-list { counter-reset: none; }
+.replay-moment { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
+.replay-moment:last-child { border-bottom: 0; }
+.replay-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
+.replay-moment fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
