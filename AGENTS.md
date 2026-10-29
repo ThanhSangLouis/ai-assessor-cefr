@@ -2,6 +2,14 @@
 
 Áp dụng cho toàn repo và mọi agent. Làm theo yêu cầu mới nhất của chủ dự án. Quy trình dưới đây kết hợp kỷ luật kiểm soát bối cảnh, phụ thuộc kỹ thuật, kiểm thử tập trung và cơ chế dừng an toàn (`BLOCKED`), nhưng vẫn linh hoạt theo quy mô để không biến việc nhỏ thành chuỗi thủ tục.
 
+## 0. Chạy dự án
+
+Được nhờ chạy project, cài môi trường hay chạy test: làm theo
+[docs/plan/CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md) trước khi thử cách khác.
+Tóm tắt: `./demo.sh` (cần Docker cho MongoDB); artifact mô hình nằm ngoài repo ở
+`../aicefr-models`, thiếu thì `demo.sh` dùng artifact giả lập và điểm vô nghĩa; không
+commit artifact, `.env`, dữ liệu ghi âm; không đẩy thẳng lên `main`.
+
 ## 1. Quy trình 8 bước chuẩn (co giãn theo loại task)
 
 Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. Với thay đổi code, bug fix hoặc liên module, thực hiện đầy đủ theo trình tự:

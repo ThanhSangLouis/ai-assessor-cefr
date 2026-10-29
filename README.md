@@ -32,38 +32,26 @@ source .venv/bin/activate
 pip install -e '.[dev,services]'
 ```
 
-### Chạy bằng Docker Compose (Khuyến nghị)
-
-Khởi động toàn bộ stack ba dịch vụ (`gateway`, `core`, `speech`, `web`, `mongodb`, `redis`):
+### Chạy cục bộ (khuyến nghị khi phát triển)
 
 ```bash
-docker compose up -d
+./demo.sh                      # cần Docker: tự chạy MongoDB, tạo tài khoản demo, mở http://localhost:8000
+AICEFR_ASR=whisper ./demo.sh   # chấm thật bằng Whisper (pip install -e ".[dev,asr,vad]")
 ```
 
-Mở trình duyệt: `http://localhost:8000/login`
+Artifact mô hình chấm nằm ngoài repo ở `../aicefr-models` (giấy phép Speak & Improve);
+thiếu thì `demo.sh` dùng artifact giả lập và điểm không có nghĩa.
 
-### Chạy cục bộ (Development)
+### Chạy ba dịch vụ bằng Docker Compose
 
-Chạy kịch bản khởi tạo và máy chủ cục bộ:
+Chép `.env.example` thành `.env`, điền năm biến bắt buộc của phần dịch vụ, rồi:
 
 ```bash
-./demo.sh
+docker compose up -d --build
 ```
 
-Hoặc chạy lệnh trực tiếp:
-
-```bash
-# 1. Chạy di trú dữ liệu
-python -m aicefr.cli db migrate
-
-# 2. Tạo tài khoản thử nghiệm
-python -m aicefr.accounts_cli them --but-danh SV-001 --vai-tro student --mat-khau matkhau123
-python -m aicefr.accounts_cli them --but-danh GV-01  --vai-tro teacher --mat-khau matkhau123
-python -m aicefr.accounts_cli them --but-danh QT-01  --vai-tro admin   --mat-khau matkhau123
-
-# 3. Khởi động ứng dụng
-python -m aicefr.cli serve --port 8000
-```
+Hướng dẫn đầy đủ, từng bước có lệnh kiểm tra: [docs/plan/CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md)
+(cho AI agent) và [docs/plan/CHAY_TREN_LOCALHOST.md](docs/plan/CHAY_TREN_LOCALHOST.md) (cho người đọc).
 
 ---
 
