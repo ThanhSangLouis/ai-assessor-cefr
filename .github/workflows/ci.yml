@@ -154,6 +154,17 @@ jobs:
         run: docker build --target service -t aicefr-service:ci .
       - name: Anh speech
         run: docker build --target speech -t aicefr-speech:ci .
+      # The `models` volume mounts over HF_HOME. Docker seeds a new volume from
+      # the image, so a cache dir the image lacks comes up owned by root and
+      # Whisper cannot download into it: every response then FAILED on EC2.
+      - name: Thu muc cache model cua anh speech thuoc aicefr
+        run: |
+          docker run --rm --entrypoint sh aicefr-speech:ci -c '
+            d=/home/aicefr/.cache/huggingface
+            [ -d "$d" ] || { echo "::error::$d khong ton tai trong anh speech"; exit 1; }
+            owner=$(stat -c %u "$d")
+            [ "$owner" = 10001 ] || { echo "::error::$d thuoc uid $owner, phai la 10001 (aicefr)"; exit 1; }
+            echo "$d ton tai, thuoc uid 10001"'
 
   quet-bi-mat:
     name: Quet lo khoa bi mat

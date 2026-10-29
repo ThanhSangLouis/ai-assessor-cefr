@@ -61,5 +61,9 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=builder-speech /opt/venv /opt/venv
 ENV HF_HOME=/home/aicefr/.cache/huggingface
+# The `models` volume mounts here. A new named volume takes the owner of the
+# image's directory; without it Docker creates the path as root and Whisper
+# cannot download its model ("Permission denied", every response FAILED).
+RUN mkdir -p "$HF_HOME" && chown -R aicefr:aicefr /home/aicefr/.cache
 USER aicefr
 CMD ["uvicorn", "--factory", "aicefr.services.speech.app:create_app", "--host", "0.0.0.0", "--port", "8000"]
