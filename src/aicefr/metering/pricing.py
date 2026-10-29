@@ -25,7 +25,8 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from enum import Enum
+
+from aicefr.contracts import TaskPurpose
 
 PRICE_VERSION = "price-v3-per-recording"
 UNITS_PER_RUN = 1000
@@ -40,11 +41,6 @@ TOKENS_PER_WORD = 4 / 3
 # The longest recording the price covers; QC refuses anything longer anyway.
 MAX_MINUTES = 5
 MAX_SECONDS = MAX_MINUTES * 60.0
-
-
-class Action(str, Enum):
-    ASSESS = "assess"
-    PRACTICE = "practice"
 
 
 @dataclass(frozen=True)
@@ -106,16 +102,16 @@ def minutes(seconds: float) -> int:
     return max(1, min(MAX_MINUTES, math.ceil(max(0.0, seconds) / 60)))
 
 
-def units_for(prices: PriceList, action: Action, seconds: float) -> int:
+def units_for(prices: PriceList, action: TaskPurpose, seconds: float) -> int:
     """The charge for a recording of `seconds`, in thousandths of a run."""
     runs = prices.first_minute_runs + prices.extra_minute_runs * (minutes(seconds) - 1)
-    if action is Action.PRACTICE:
+    if action is TaskPurpose.PRACTICE:
         runs *= prices.practice_factor
     # A hair under the next thousandth is float noise, not a reason to round up.
     return math.ceil(round(runs * UNITS_PER_RUN, 6))
 
 
-def hold_for(prices: PriceList, action: Action, max_seconds: float) -> int:
+def hold_for(prices: PriceList, action: TaskPurpose, max_seconds: float) -> int:
     """What to hold when a recording is submitted: the longest its task allows."""
     return units_for(prices, action, max_seconds)
 

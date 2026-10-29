@@ -24,7 +24,7 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
-from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus
+from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus, TaskPurpose
 from aicefr.services.core.assessment.context import active_model_name, active_qc, svc
 from aicefr.storage.task_repository import Task, task_message
 
@@ -79,7 +79,8 @@ def settle_charge(rid: str) -> None:
             report.assessment is not None or report.practice is not None
         )
         seconds = report.qc.duration_ms / 1000 if report.qc else None
-        action = "practice" if status["purpose"] == "practice" else "assess"
+        # The ledger keeps the purpose (D060); a response older than purposes was an assessment.
+        action = status.get("purpose") or TaskPurpose.ASSESSMENT.value
         # D057: the tokens the recogniser used, counted by it where it can.
         asr = report.asr
         metering.settle(

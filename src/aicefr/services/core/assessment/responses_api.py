@@ -134,7 +134,7 @@ async def submit_response(
     # allows would cost; settled on the real length once there is a result.
     # Off (the school deployment, BR-29/BR-30) this always allows.
     metering = getattr(s.peers, "metering", None)
-    action = "practice" if task.purpose is TaskPurpose.PRACTICE else "assess"
+    action = task.purpose.value
     refusal = (
         metering.hold(
             account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds

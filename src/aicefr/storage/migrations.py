@@ -241,12 +241,61 @@ def _d060_billing(db: Database) -> None:
     _settings(db, "billing_setting", "billing.")
 
 
+def _d060_metering(db: Database) -> None:
+    """`credit_wallet` + `free_quota` + `credit_grant` become `wallet`; `usage_ledger` `ledger`.
+
+    The ledger keeps the response's purpose from now on: `assess` becomes
+    `assessment`, as `TaskPurpose` says it. Of the free quota only the latest
+    cycle of each account matters -- earlier cycles are over.
+    """
+    if _has(db, "credit_wallet") or _has(db, "free_quota") or _has(db, "credit_grant"):
+        owners = {r["user_ref"] for r in db["credit_wallet"].find({}, {"user_ref": 1})}
+        owners |= {r["user_ref"] for r in db["free_quota"].find({}, {"user_ref": 1})}
+        owners |= {r["user_ref"] for r in db["credit_grant"].find({}, {"user_ref": 1})}
+        for who in sorted(owners):
+            w = db["credit_wallet"].find_one({"user_ref": who}) or {}
+            q = db["free_quota"].find_one({"user_ref": who}, sort=[("period", -1)]) or {}
+            grants = [
+                {k: g.get(k) for k in ("grant_id", "units", "source", "ref", "by", "created_at")}
+                for g in db["credit_grant"].find({"user_ref": who}).sort("created_at", 1)
+            ]
+            wallet = {
+                "balance": int(w.get("balance", 0)),
+                "period": q.get("period", ""),
+                "free_used": int(q.get("used", 0)),
+                "grants": grants,
+            }
+            db["wallet"].update_one({"user_ref": who}, {"$setOnInsert": wallet}, upsert=True)
+        for old in ("credit_wallet", "free_quota", "credit_grant"):
+            db.drop_collection(old)
+    if _has(db, "usage_ledger"):
+        for e in db["usage_ledger"].find({}, {"_id": 0}):
+            if e.get("action") == "assess":
+                e["action"] = "assessment"
+            db["ledger"].update_one(
+                {"key": e["key"], "action": e["action"]}, {"$setOnInsert": e}, upsert=True
+            )
+        db.drop_collection("usage_ledger")
+    if _has(db, "wallet") or _has(db, "ledger"):
+        ensure_indexes(db, D060_INDEXES["metering"], "migration-7-metering")
+
+
 _ASSIGNMENT_KEYS = (
     "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
 )  # fmt: skip
 
 # The indexes of the D060 collections, by the aggregate that owns them.
 D060_INDEXES: dict[str, dict] = {
+    # usage: one entry per (response, purpose), so a charge is never taken twice.
+    "metering": {
+        "wallet": [(("user_ref",), True)],
+        "ledger": [
+            (("entry_id",), True),
+            (("key", "action"), True),
+            (("user_ref", "created_at"), False),
+            (("state", "created_at"), False),
+        ],
+    },
     "classroom": {
         "classroom": [
             (("class_id",), True),
@@ -262,6 +311,7 @@ D060_STEPS: tuple[Callable[[Database], None], ...] = (
     _d060_classroom,
     _d060_study,
     _d060_billing,
+    _d060_metering,
 )
 
 

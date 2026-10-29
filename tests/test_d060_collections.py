@@ -104,3 +104,27 @@ def test_payment_events_move_into_their_order_and_settings_into_system(db):
     assert db["system"].find_one({"key": "billing.organization"})["value"] == "Trường A"
     gone = {"billing_order", "billing_event", "billing_license", "billing_setting"}
     assert not gone & set(db.list_collection_names())
+
+
+def test_the_wallet_gathers_balance_free_runs_and_top_ups(db):
+    db["credit_wallet"].insert_one({"user_ref": "a1", "balance": 4000})
+    db["free_quota"].insert_many(
+        [{"user_ref": "a1", "period": "2026-09", "used": 3000},
+         {"user_ref": "a1", "period": "2026-10", "used": 1000}]
+    )  # fmt: skip
+    db["credit_grant"].insert_one(
+        {"grant_id": "g1", "user_ref": "a1", "units": 5000, "source": "order", "ref": "o-1",
+         "by": None, "created_at": "t1"}
+    )  # fmt: skip
+    db["usage_ledger"].insert_one(
+        {"entry_id": "e1", "user_ref": "a1", "action": "assess", "key": "r1", "state": "held"}
+    )
+
+    _twice(migrations._d060_metering, db)
+
+    w = db["wallet"].find_one({"user_ref": "a1"})
+    assert (w["balance"], w["period"], w["free_used"]) == (4000, "2026-10", 1000)
+    assert [g["ref"] for g in w["grants"]] == ["o-1"]
+    assert db["ledger"].find_one({"key": "r1"})["action"] == "assessment"
+    gone = {"credit_wallet", "free_quota", "credit_grant", "usage_ledger"}
+    assert not gone & set(db.list_collection_names())
