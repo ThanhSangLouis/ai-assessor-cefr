@@ -82,7 +82,7 @@
 
   <div class="sidebar-foot">
     {#- The account folds into one menu at the foot of the sidebar: who is signed
-        in, terms, theme, sign out. -#}
+        in, theme, sign out. -#}
     <details class="account-menu">
       <summary class="account-button" aria-label="Tài khoản {{ account.pseudonym }}, {{ role_names.get(role, role) }}">
         <span class="avatar avatar-{{ account.avatar_color or 'none' }}" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
@@ -95,9 +95,6 @@
       <div class="account-panel">
         <p class="account-head">Đang đăng nhập là <b>{{ account.pseudonym }}</b><br>{{ role_names.get(role, role) }}</p>
         <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
-        {% if role == "student" %}
-          <a href="/terms"{% if here == "terms" %} aria-current="page"{% endif %}>{{ icon("file-check") }}<span>Điều khoản sử dụng</span></a>
-        {% endif %}
         {% if role == "admin" and api_docs %}
           <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
         {% endif %}

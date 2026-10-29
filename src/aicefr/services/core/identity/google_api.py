@@ -183,10 +183,7 @@ def google_callback(
             audit(opened[1]["pseudonym"], "account.google_signup", aid, None)
     token, row = opened
     audit(row["pseudonym"], "auth.login", row["account_id"], "method=google")
-    if signed_up:
-        # A new account has accepted nothing yet; the terms come first (D058).
-        target = "/terms"
-    elif row["must_change_password"]:
+    if row["must_change_password"]:
         # Google proves who is signing in; it does not make a password an
         # administrator has seen any less known. The D028 rule still applies.
         target = "/account?first=1"

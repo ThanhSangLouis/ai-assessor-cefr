@@ -114,8 +114,10 @@ def _start_study(m, n: int = 4):
     return admin, study_id, students, by_arm
 
 
-def test_study_enrols_students_with_terms_half_in_each_arm(m):
-    login_as(m, "SV-NO", terms=False)
+def test_study_enrols_active_students_half_in_each_arm(m):
+    login_as(m, "SV-NO")
+    # D064: every student still switched on may take part; a disabled one may not.
+    m.app.state.auth_repo.set_disabled(account_id(m, "SV-NO"), True)
     login_as(m, "GV-01", "teacher")
     admin, study_id, students, _ = _start_study(m, n=5)
     people = m.studies.participants(study_id)
@@ -126,7 +128,7 @@ def test_study_enrols_students_with_terms_half_in_each_arm(m):
     assert audit and "seed=" in audit[0]["detail"]
 
 
-def test_study_needs_enough_students_with_terms(m):
+def test_study_needs_enough_students(m):
     login_as(m, "SV-001")
     admin = login_as(m, "AD-01", "admin")
     r = admin.post("/api/v1/admin/studies", json={"name": "Quá ít"})

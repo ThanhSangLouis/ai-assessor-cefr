@@ -52,8 +52,6 @@ def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    if role == "student":
-        c.post("/api/v1/me/terms")
     return c
 
 

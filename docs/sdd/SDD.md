@@ -1078,7 +1078,6 @@ erDiagram
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
-        string terms_accepted_at "D058"
         array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
         object seen_markers "tên dấu → lúc xem (D028)"
     }

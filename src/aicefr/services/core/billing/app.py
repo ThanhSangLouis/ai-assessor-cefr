@@ -42,7 +42,6 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         assessments=lambda since, until: peers.assessment.assessments_by_account(
             since=since, until=until
         ),
-        research=lambda: set(peers.identity.research_allowed()),
         settings=settings,
         gateways=gateways,
         audit=audit_log.write,

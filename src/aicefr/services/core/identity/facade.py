@@ -54,8 +54,8 @@ class IdentityFacade:
 
     @exposed
     def research_allowed(self) -> list[str]:
-        """Accounts whose data may be used in research: they accepted the terms (D058)."""
-        return sorted(self.auth.accounts_with_terms())
+        """Accounts whose data research may use: every account still switched on (D064)."""
+        return sorted(self.auth.active_account_ids())
 
     @exposed
     def seen_at(self, account_id: str, marker: str) -> str | None:

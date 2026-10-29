@@ -117,20 +117,7 @@ fetch(`/api/v1/practice/tasks/${encodeURIComponent(TASK_ID)}`)
       '<p><a href="/practice">Quay lại trang luyện tập</a> để chọn nhiệm vụ khác.</p></div>';
   });
 
-// ---------------------------------------------------------------- terms, health
-fetch("/api/v1/me/terms")
-  .then((r) => (r.ok ? r.json() : null))
-  .then((t) => {
-    if (!t || t.may_submit) return;
-    const gate = document.getElementById("terms-gate");
-    gate.innerHTML =
-      "<b>Chưa đồng ý điều khoản.</b> Bài luyện tập cũng là bản ghi giọng nói của bạn. " +
-      '<a href="/terms">Đồng ý điều khoản</a> rồi quay lại.';
-    gate.hidden = false;
-    recorder.block("Cần đồng ý điều khoản trước khi ghi âm.");
-  })
-  .catch(() => {});
-
+// ---------------------------------------------------------------- health
 fetch("/api/v1/health")
   .then((r) => (r.ok ? r.json() : null))
   .then((h) => {

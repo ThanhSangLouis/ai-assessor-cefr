@@ -1,4 +1,4 @@
-%% ERD - các collection sau D060 (lược đồ phiên bản 7): một aggregate root
+%% ERD - các collection sau D060 (lược đồ phiên bản 8): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
@@ -33,7 +33,6 @@ erDiagram
         string account_id PK
         string pseudonym UK
         string role
-        string terms_accepted_at
         array identities "liên kết Google (băm)"
         object seen_markers
     }

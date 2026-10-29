@@ -72,8 +72,6 @@ def test_a_score_only_learner_sees_why_and_can_leave(browser, live_server):
 
     auth = AuthRepository(live_server.db_path)
     names = [live_server.account() for _ in range(4)]
-    for name in names:
-        auth.accept_terms(auth.get_by_pseudonym(name)["account_id"])
 
     admin = _page(browser, live_server, "/admin", "admin")
     admin.goto("/admin/study")

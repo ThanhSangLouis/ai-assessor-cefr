@@ -694,21 +694,4 @@ fetch("/api/v1/health")
   })
   .catch(() => recorder.enable(false));
 
-// Terms of use (D058): a learner's recordings are personal data. A teacher
-// previewing a draft stores nothing, so the check is for learners only.
-if (MODE !== "preview") {
-  fetch("/api/v1/me/terms")
-    .then((r) => (r.ok ? r.json() : null))
-    .then((t) => {
-      if (!t || t.may_submit || t.role !== "student") return;
-      const gate = document.getElementById("terms-gate");
-      gate.innerHTML =
-        "<b>Chưa đồng ý điều khoản.</b> Bài luyện là bản ghi giọng nói của bạn. " +
-        '<a href="/terms">Đồng ý điều khoản</a> rồi quay lại.';
-      gate.hidden = false;
-      recorder.block("Cần đồng ý điều khoản trước khi ghi âm.");
-    })
-    .catch(() => {});
-}
-
 load();

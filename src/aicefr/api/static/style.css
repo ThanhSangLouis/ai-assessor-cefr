@@ -4673,6 +4673,17 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
 .auth-or::before,
 .auth-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 .google-button { width: 100%; margin-top: 0; }
+/* The Google mark keeps its own colours (branding guidelines); a white disc
+   behind it keeps the yellow and green readable on the dark theme. */
+.google-logo {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 2px;
+  border-radius: 50%;
+  background: #fff;
+  box-sizing: content-box;
+}
 .auth-help { margin-top: var(--sp-4); font-size: var(--t-sm); }
 .auth-help summary { cursor: pointer; color: var(--brand); font-weight: 600; }
 .auth-help p { margin: var(--sp-2) 0 0; color: var(--fg-muted); }

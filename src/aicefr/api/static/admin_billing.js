@@ -203,7 +203,6 @@
       '<section class="card" aria-labelledby="bill-use-h"><h2 id="bill-use-h">Mức đang dùng</h2>' +
       meter("Sinh viên đang có tài khoản", u.students, d.students_allowed, u.students >= d.students_allowed) +
       meter(`Bài đánh giá tháng ${escapeHtml(u.month)}`, u.assessments, u.quota, Boolean(u.warning)) +
-      `<p class="muted">Bài của người đang đồng thuận cho nghiên cứu không tính vào mức này (${Number(u.research_assessments)} bài tháng này).</p>` +
       warn +
       "</section>"
     );

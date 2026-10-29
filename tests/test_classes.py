@@ -43,7 +43,7 @@ def assign(teacher, class_id: str, days: int = 3, task: str = "P3") -> dict:
 
 
 def test_a_student_joins_with_the_code_and_sees_the_assignment(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     c = make_class(teacher)
     assign(teacher, c["class_id"])
@@ -54,7 +54,7 @@ def test_a_student_joins_with_the_code_and_sees_the_assignment(m):
 
 
 def test_a_submission_of_the_task_counts_as_handed_in(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student, _, idle = login_as(m, "SV-001"), login_as(m, "SV-002"), login_as(m, "SV-003")
     c = make_class(teacher)
     added = teacher.post(
@@ -74,7 +74,7 @@ def test_a_submission_of_the_task_counts_as_handed_in(m):
 
 
 def test_work_before_the_task_was_set_does_not_count(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     c = make_class(teacher)
     student.post("/api/v1/me/classes/join", json={"code": c["code"]})
@@ -94,7 +94,7 @@ def test_work_before_the_task_was_set_does_not_count(m):
 def test_a_submission_after_the_due_day_is_late(m):
     from aicefr.services.core.assessment import context
 
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     c = make_class(teacher)
     student.post("/api/v1/me/classes/join", json={"code": c["code"]})
@@ -110,9 +110,9 @@ def test_a_submission_after_the_due_day_is_late(m):
 
 
 def test_another_teachers_class_is_not_found(m):
-    owner = login_as(m, "GV-01", "teacher", terms=False)
-    other = login_as(m, "GV-02", "teacher", terms=False)
-    admin = login_as(m, "QT-01", "admin", terms=False)
+    owner = login_as(m, "GV-01", "teacher")
+    other = login_as(m, "GV-02", "teacher")
+    admin = login_as(m, "QT-01", "admin")
     c = make_class(owner)
     assert other.get(f"/api/v1/classes/{c['class_id']}").status_code == 404
     assert other.get("/api/v1/classes").json() == []
@@ -120,7 +120,7 @@ def test_another_teachers_class_is_not_found(m):
 
 
 def test_only_open_assessment_tasks_with_a_future_due_day_are_set(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     c = make_class(teacher)
     url = f"/api/v1/classes/{c['class_id']}/assignments"
     past = (today() - timedelta(days=1)).isoformat()
@@ -131,7 +131,7 @@ def test_only_open_assessment_tasks_with_a_future_due_day_are_set(m):
 
 
 def test_students_cannot_make_classes_and_teachers_cannot_join(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     assert student.post("/api/v1/classes", json={"name": "x"}).status_code == 403
     c = make_class(teacher)
@@ -139,7 +139,7 @@ def test_students_cannot_make_classes_and_teachers_cannot_join(m):
 
 
 def test_an_archived_class_takes_no_one_new(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     c = make_class(teacher)
     teacher.post(f"/api/v1/classes/{c['class_id']}/archive")
@@ -147,7 +147,7 @@ def test_an_archived_class_takes_no_one_new(m):
 
 
 def test_the_pages_render(m):
-    teacher = login_as(m, "GV-01", "teacher", terms=False)
+    teacher = login_as(m, "GV-01", "teacher")
     student = login_as(m, "SV-001")
     c = make_class(teacher)
     assert teacher.get("/teach/classes").status_code == 200

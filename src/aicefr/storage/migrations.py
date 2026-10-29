@@ -126,6 +126,18 @@ def _terms(db: Database, target: str) -> None:
     db.drop_collection("consent")
 
 
+def _drop_terms(db: Database, target: str) -> None:
+    """D064: no terms-of-use step any more, so the account forgets when it accepted them.
+
+    Run on a store without accounts (the learning or metering database), or a
+    second time, it changes nothing.
+    """
+    if "account" in db.list_collection_names():
+        db["account"].update_many(
+            {"terms_accepted_at": {"$exists": True}}, {"$unset": {"terms_accepted_at": ""}}
+        )
+
+
 # ---------------------------------------------------------------- D060
 # One collection per aggregate root of the class diagram: the parts of an
 # aggregate move into its document. Each step copies first and drops the old
@@ -566,6 +578,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(5, "replay_label: guided listening with control moments (D056)", _replay),
     Migration(6, "terms: research consent replaced by account.terms_accepted_at (D058)", _terms),
     Migration(7, "one collection per aggregate root of the class diagram (D060)", _d060),
+    Migration(8, "terms: account.terms_accepted_at dropped, no terms step (D064)", _drop_terms),
 )
 
 LATEST = MIGRATIONS[-1].version

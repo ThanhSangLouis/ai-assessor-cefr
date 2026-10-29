@@ -295,11 +295,6 @@ def _lesson_view(lesson: Lesson) -> dict:
     return data
 
 
-def _require_terms(request: Request, account: Account) -> None:
-    if not account.may_submit:
-        raise HTTPException(403, "chưa đồng ý điều khoản sử dụng. Vào trang /terms để đồng ý")
-
-
 # ================================================================= learners
 
 
@@ -538,7 +533,6 @@ async def learn_attempt(
     account: Account = STUDENT_ONLY,
 ) -> dict:
     """Record one step and measure it right away. FR-46."""
-    _require_terms(request, account)
     lessons_repo = svc().lessons
     lesson, version = _live(lesson_id)
     step = lesson.step(step_id)
@@ -732,7 +726,6 @@ async def learn_review_attempt(
     review_id: str = Form(...),
     account: Account = STUDENT_ONLY,
 ) -> dict:
-    _require_terms(request, account)
     session = {s["review_id"]: s for s in _review_steps(account.account_id)}
     entry = session.get(review_id)
     if entry is None:

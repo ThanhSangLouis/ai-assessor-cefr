@@ -48,7 +48,6 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
         ).status_code
         == 200
     )
-    c.post("/api/v1/me/terms")
     return c
 
 
