@@ -11,6 +11,8 @@ Hướng dẫn đưa hệ thống lên một máy chủ Ubuntu 24.04 có tên mi
 | `deploy/vps/backup.sh`, `restore.sh` | Sao lưu và phục hồi cơ sở dữ liệu cùng bản ghi âm |
 | `.env.production.example` | Mẫu `.env` cho máy chủ |
 
+Trên AWS EC2, kèm tự động triển khai từ GitHub Actions: xem [TRIEN_KHAI_EC2.md](TRIEN_KHAI_EC2.md).
+
 Kiến trúc dịch vụ bên trong không đổi so với `TRIEN_KHAI_DICH_VU.md`; chỉ thêm Caddy đứng trước gateway:
 
 ```

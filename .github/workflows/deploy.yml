@@ -1,0 +1,128 @@
+# Deploy main to the EC2 server (docs/plan/TRIEN_KHAI_EC2.md).
+#
+# A GitHub-hosted runner SSHes into the server and runs deploy/vps/deploy.sh,
+# the same script used by hand (TRIEN_KHAI_VPS.md, step 5). No self-hosted
+# runner: this repository is public, and a self-hosted runner would let any
+# fork's pull request run code on the server.
+#
+# Runs only after CI succeeded on a push to main, or by hand on main. Never on
+# pull_request, so no fork ever reaches the secrets of the `production`
+# environment. Until those secrets exist the job ends early and stays green.
+name: Deploy EC2
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# One deploy at a time; a second one waits instead of cutting the first
+# mid-build.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Trien khai len EC2
+    if: >-
+      (github.event_name == 'workflow_run'
+        && github.event.workflow_run.conclusion == 'success'
+        && github.event.workflow_run.event == 'push')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    # First build on the server takes 5-15 minutes, plus up to 5 for /healthz.
+    timeout-minutes: 40
+    environment:
+      name: production
+    env:
+      EC2_HOST: ${{ secrets.EC2_HOST }}
+      EC2_USER: ${{ secrets.EC2_USER }}
+      EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+      EC2_KNOWN_HOSTS: ${{ secrets.EC2_KNOWN_HOSTS }}
+      DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Kiem tra cau hinh
+        id: config
+        run: |
+          missing=()
+          for name in EC2_HOST EC2_SSH_KEY EC2_KNOWN_HOSTS; do
+            [[ -n "${!name}" ]] || missing+=("$name")
+          done
+          if (( ${#missing[@]} )); then
+            echo "::notice::Bo qua trien khai: environment production chua co ${missing[*]} (docs/plan/TRIEN_KHAI_EC2.md, buoc 6)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # CI runs can finish out of order; deploying an older commit after a
+      # newer one would roll the server back.
+      - name: Chi trien khai commit moi nhat cua main
+        id: latest
+        if: steps.config.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          head="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          if [[ "$head" != "$DEPLOY_SHA" ]]; then
+            echo "::notice::Bo qua ${DEPLOY_SHA}: main da sang ${head}, lan chay cua commit do se trien khai."
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.latest.outputs.current == 'true'
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+          persist-credentials: false
+
+      # deploy.sh calls plain `ssh` and `rsync`, so everything goes into an
+      # ssh config entry. The host key is pinned from a secret, never learnt
+      # on first contact.
+      - name: Khoa SSH
+        if: steps.latest.outputs.current == 'true'
+        run: |
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$EC2_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$EC2_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host aicefr-ec2
+            HostName ${EC2_HOST}
+            User ${EC2_USER:-aicefr}
+            IdentityFile ~/.ssh/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            ServerAliveInterval 30
+          EOF
+
+      # TRIEN_KHAI_VPS.md 9.2: back up before an update. Skipped only on the
+      # very first deploy, when neither the script nor a running mongo exists;
+      # a failing backup stops the deploy.
+      - name: Sao luu truoc khi cap nhat
+        if: steps.latest.outputs.current == 'true'
+        run: |
+          ssh aicefr-ec2 bash -s <<'REMOTE'
+          set -euo pipefail
+          cd /srv/aicefr 2>/dev/null || { echo "Lan dau trien khai: chua co gi de sao luu."; exit 0; }
+          if [[ -x deploy/vps/backup.sh ]] \
+            && [[ -n "$(docker compose -f docker-compose.yml -f docker-compose.prod.yml ps -q mongo 2>/dev/null)" ]]; then
+            deploy/vps/backup.sh
+          else
+            echo "Lan dau trien khai: chua co gi de sao luu."
+          fi
+          REMOTE
+
+      - name: Trien khai
+        if: steps.latest.outputs.current == 'true'
+        run: deploy/vps/deploy.sh aicefr-ec2 /srv/aicefr
+
+      - name: Xoa khoa SSH
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
