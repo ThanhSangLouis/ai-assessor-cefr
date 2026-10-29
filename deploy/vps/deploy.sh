@@ -131,5 +131,23 @@ until curl -fsS --max-time 10 "${URL}/healthz" >/dev/null 2>&1; do
   sleep 5
 done
 
+# D063: the seed accounts (QT-01, GV-01..03, SV-001..010), only those still
+# missing, and only when the server's .env sets AICEFR_SEED_PASSWORD. The
+# password is read on the server and handed to the one command that needs it;
+# it never travels back here or into a log.
+step "Seeding missing accounts"
+ssh "$TARGET" bash -s -- "$REMOTE_DIR" <<'REMOTE'
+set -euo pipefail
+cd "$1"
+seed="$(sed -n 's/^AICEFR_SEED_PASSWORD=//p' .env | tail -n 1 | tr -d "\"' \r")"
+if [[ -z "$seed" ]]; then
+  echo "AICEFR_SEED_PASSWORD is not set in .env: no accounts seeded."
+  exit 0
+fi
+# Passed by name, not as NAME=value, so the password is not in any argv.
+AICEFR_SEED_PASSWORD="$seed" docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+  exec -T -e AICEFR_SEED_PASSWORD core python -m aicefr.accounts_cli seed
+REMOTE
+
 step "Deployed"
 echo "${URL}"

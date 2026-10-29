@@ -130,6 +130,10 @@ class Settings:
     google_allowed_domain: str | None = field(
         default_factory=lambda: os.getenv("AICEFR_GOOGLE_DOMAIN") or None
     )
+    # D063: a Google account linked to no account signs up as a new student
+    # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
+    # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
+    google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
     # The address people reach this instance at, e.g. https://cefr.example.edu.vn.
     # Builds the Google redirect URI behind a proxy; unset, the request's own
     # address is used, which is right for localhost.

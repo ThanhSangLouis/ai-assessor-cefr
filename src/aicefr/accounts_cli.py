@@ -1,18 +1,20 @@
 """Account creation commands. Implements the administrative part of FR-32.
 
-The system has no self-registration: every account must be assigned a specific
-role, and since the teacher role can change scores, the role cannot be left for
-the user to pick.
+Teacher and administrator accounts are only ever made here: the teacher role
+can change scores, so it cannot be left for the user to pick. The one way to
+self-register is Google sign-up (D063), and it only makes students.
 
 Run:
     python -m aicefr.accounts_cli them --but-danh GV-01 --vai-tro teacher
     python -m aicefr.accounts_cli liet-ke
+    AICEFR_SEED_PASSWORD=... python -m aicefr.accounts_cli seed
 """
 
 from __future__ import annotations
 
 import argparse
 import getpass
+import os
 import sys
 
 from pymongo.errors import PyMongoError
@@ -22,6 +24,15 @@ from aicefr.config import get_settings
 from aicefr.storage.auth_repository import AuthRepository, Role
 
 MIN_PASSWORD_LENGTH = 8
+SEED_PASSWORD_ENV = "AICEFR_SEED_PASSWORD"
+
+# The accounts a fresh deployment needs to be shown and tested: every role, a
+# class's worth of students. Pseudonyms only, as everywhere (FR-33).
+SEED_ACCOUNTS: tuple[tuple[str, Role], ...] = (
+    ("QT-01", Role.ADMIN),
+    *((f"GV-{i:02d}", Role.TEACHER) for i in range(1, 4)),
+    *((f"SV-{i:03d}", Role.STUDENT) for i in range(1, 11)),
+)
 
 
 def _add(args: argparse.Namespace) -> int:
@@ -51,6 +62,32 @@ def _add(args: argparse.Namespace) -> int:
 
     aid = repo.create_account(args.pseudonym, password, Role(args.role))
     print(f"Đã tạo tài khoản {args.pseudonym} · vai trò {args.role} · mã {aid}")
+    return 0
+
+
+def _seed(args: argparse.Namespace) -> int:
+    """Create the seed accounts that do not exist yet; leave the others untouched.
+
+    Safe to run on every deploy: an existing account keeps its password, role
+    and history. The password comes from the option or AICEFR_SEED_PASSWORD,
+    never from a default, so no deployment ends up with a password printed in
+    this repository.
+    """
+    password = args.password or os.getenv(SEED_PASSWORD_ENV, "")
+    if len(password) < MIN_PASSWORD_LENGTH:
+        print(
+            f"Cần --mat-khau hoặc {SEED_PASSWORD_ENV}, từ {MIN_PASSWORD_LENGTH} ký tự trở lên.",
+            file=sys.stderr,
+        )
+        return 1
+    repo = AuthRepository(args.db)
+    made = []
+    for pseudonym, role in SEED_ACCOUNTS:
+        if repo.get_by_pseudonym(pseudonym) is None:
+            repo.create_account(pseudonym, password, role)
+            made.append(pseudonym)
+    kept = len(SEED_ACCOUNTS) - len(made)
+    print(f"Đã tạo {len(made)} tài khoản ({', '.join(made) or 'không có'}); giữ nguyên {kept}.")
     return 0
 
 
@@ -115,6 +152,17 @@ def main(argv: list[str] | None = None) -> int:
     p_add.set_defaults(func=_add)
 
     sub.add_parser("liet-ke", help="liệt kê tài khoản").set_defaults(func=_list)
+
+    p_seed = sub.add_parser(
+        "seed", help="tạo bộ tài khoản mẫu còn thiếu (QT-01, GV-01..03, SV-001..010)"
+    )
+    p_seed.add_argument(
+        "--mat-khau",
+        dest="password",
+        default=None,
+        help=f"mật khẩu chung của tài khoản mới tạo; bỏ trống thì đọc {SEED_PASSWORD_ENV}",
+    )
+    p_seed.set_defaults(func=_seed)
 
     p_unlock = sub.add_parser("mo-khoa", help="gỡ khóa tài khoản")
     p_unlock.add_argument("--but-danh", dest="pseudonym", required=True)

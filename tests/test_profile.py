@@ -37,8 +37,15 @@ SAFARI_IPHONE = (
 )
 
 
-def make_app(monkeypatch, tmp_path, google_on: bool = True, domain: str | None = None):
+def make_app(
+    monkeypatch,
+    tmp_path,
+    google_on: bool = True,
+    domain: str | None = None,
+    signup: bool = True,
+):
     monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("AICEFR_GOOGLE_SIGNUP", "1" if signup else "0")
     if google_on:
         monkeypatch.setenv("AICEFR_GOOGLE_CLIENT_ID", CLIENT_ID)
         # Built, not written out, so the secret scanner sees no literal.
@@ -306,7 +313,42 @@ def test_linking_then_signing_in_with_google(m, monkeypatch, tmp_path):
     assert audit(m, "auth.login")[0].detail == "method=google"
 
 
-def test_an_unlinked_google_account_cannot_sign_in_or_create_one(m, monkeypatch):
+def test_an_unlinked_google_account_signs_up_as_a_student(m, monkeypatch):
+    """D063: the first Google sign-in makes a student with a random pseudonym."""
+    browser = TestClient(m.app)
+    _, flow = start(browser)
+    r, _ = finish(monkeypatch, browser, flow, sub="first-time-here")
+    assert r.headers["location"] == "/terms"
+    me = browser.get("/api/v1/me").json()
+    assert me["role"] == "student" and me["pseudonym"].startswith("SV-G")
+    row = m.app.state.auth_repo.account_by_identity(
+        google.PROVIDER, google.subject_hash("first-time-here")
+    )
+    assert row["pseudonym"] == me["pseudonym"]
+    assert audit(m, "account.google_signup")[0].target_id == row["account_id"]
+
+    # The second time it is a sign-in to the same account, not a new one.
+    count = len(m.app.state.auth_repo.list_accounts())
+    again = TestClient(m.app)
+    _, flow = start(again)
+    r, _ = finish(monkeypatch, again, flow, sub="first-time-here")
+    assert r.headers["location"] != "/terms"
+    assert again.get("/api/v1/me").json()["pseudonym"] == me["pseudonym"]
+    assert len(m.app.state.auth_repo.list_accounts()) == count
+
+
+def test_the_login_page_offers_sign_up_only_when_it_is_on(tmp_path, monkeypatch):
+    on = make_app(monkeypatch, tmp_path)
+    assert "đăng ký bằng Google" in TestClient(on.app).get("/login").text
+    off = make_app(monkeypatch, tmp_path, signup=False)
+    page = TestClient(off.app).get("/login").text
+    assert "đăng ký bằng Google" not in page and 'id="google-login"' in page
+
+
+def test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one(
+    tmp_path, monkeypatch
+):
+    m = make_app(monkeypatch, tmp_path, signup=False)
     before = len(m.app.state.auth_repo.list_accounts())
     browser = TestClient(m.app)
     _, flow = start(browser)
@@ -410,7 +452,9 @@ def test_a_temporary_password_still_has_to_be_replaced_after_google(m, monkeypat
     assert r.headers["location"] == "/account?first=1"
 
 
-def test_unlinking_google_by_the_person_or_an_administrator(m, monkeypatch):
+def test_unlinking_google_by_the_person_or_an_administrator(tmp_path, monkeypatch):
+    # Sign-up off: with it on, the unlinked Google account would make a new student.
+    m = make_app(monkeypatch, tmp_path, signup=False)
     admin = login_as(m, "QT-01", "admin")
     student = login_as(m, "SV-001")
     for who in ("self", "admin"):

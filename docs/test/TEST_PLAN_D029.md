@@ -96,7 +96,9 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PF-I10 | `test_google_is_off_until_configured` | AC-59.1 | Không cấu hình thì không có nút, luồng trả về thông báo |
 | TC-PF-I11 | `test_start_sends_the_browser_to_google_with_state_nonce_and_pkce` | AC-59.2 | Tham số chuyển hướng và cờ cookie |
 | TC-PF-I12 | `test_linking_then_signing_in_with_google` | AC-59.3 | Liên kết, rồi đăng nhập bằng Google; CSDL không có email |
-| TC-PF-I13 | `test_an_unlinked_google_account_cannot_sign_in_or_create_one` | AC-59.4 | Tài khoản Google lạ bị từ chối, không tạo tài khoản |
+| TC-PF-I13 | `test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one` | AC-59.4 | Tắt đăng ký (`AICEFR_GOOGLE_SIGNUP=0`): tài khoản Google lạ bị từ chối, không tạo tài khoản |
+| TC-PF-I25 | `test_an_unlinked_google_account_signs_up_as_a_student` | AC-59.10 | D063: lần đầu tạo sinh viên bút danh ngẫu nhiên, chuyển tới `/terms`; lần sau đăng nhập đúng tài khoản đó |
+| TC-PF-I26 | `test_the_login_page_offers_sign_up_only_when_it_is_on` | AC-59.10 | Nút ghi "đăng ký" chỉ khi bật đăng ký |
 | TC-PF-I14 | `test_a_forged_or_stale_round_trip_is_refused` | AC-59.5 | Năm cách giả mạo hay quá hạn |
 | TC-PF-I15 | `test_a_callback_without_its_cookie_or_after_cancel_is_refused` | AC-59.5 | Thiếu cookie, hoặc người dùng huỷ ở Google |
 | TC-PF-I16 | `test_one_google_account_links_to_one_pseudonym` | AC-59.6 | Một tài khoản Google, một bút danh |

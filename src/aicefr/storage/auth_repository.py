@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
 import uuid
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
@@ -729,6 +730,48 @@ class AuthRepository(MongoStore):
         except IntegrityError as e:
             # Linked to another account between the check and the update.
             raise IdentityTaken(provider) from e
+
+    def create_with_identity(self, provider: str, subject_hash: str) -> str:
+        """Sign up a student from an outside identity alone (D063); return the account_id.
+
+        The pseudonym is drawn at random ("SV-G" and eight hex digits): Google's
+        name and address never enter the system (FR-33), only the hash of its
+        subject. The password is random and never shown, so the account opens
+        through Google until its owner sets one. The identity is written with
+        the account in one insert: there is no moment where the account exists
+        unlinked. Raises IdentityTaken when the identity already has an account,
+        which is how a second, simultaneous callback learns it lost the race.
+        """
+        if self.account_by_identity(provider, subject_hash) is not None:
+            raise IdentityTaken(provider)
+        now = _now()
+        for _ in range(20):
+            try:
+                pseudonym = validate_pseudonym("SV-G" + secrets.token_hex(4))
+            except ValueError:  # a hex run that spells a forbidden token
+                continue
+            if self.get_by_pseudonym(pseudonym) is not None:
+                continue
+            aid = uuid.uuid4().hex[:12]
+            doc = self._new_account(
+                aid,
+                pseudonym,
+                passwords.hash_password(secrets.token_urlsafe(32)),
+                Role.STUDENT,
+                False,
+                now,
+            )
+            doc["identities"] = [
+                {"provider": provider, "subject_hash": subject_hash, "linked_at": now}
+            ]
+            try:
+                self.col("account").insert_one(doc)
+            except IntegrityError as e:
+                if self.account_by_identity(provider, subject_hash) is not None:
+                    raise IdentityTaken(provider) from e
+                continue  # the pseudonym was taken in between; draw another
+            return aid
+        raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
 
     def count_identities(self, provider: str) -> int:
         return self.col("account").count_documents({"identities.provider": provider})
