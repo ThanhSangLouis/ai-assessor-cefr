@@ -147,7 +147,8 @@ def test_every_adapter_of_a_port_appears_on_a_diagram() -> None:
 # Cu phap thanh vien UML: `+/-/# ten: Kieu` cho thuoc tinh,
 # `+/-/# ten(tham so: Kieu): KieuTra` cho thao tac. Tap hop viet
 # `List<X>`, anh xa viet `Map<K, V>`. KHONG ghi boi so trong thuoc
-# tinh -- boi so la khai niem cua DAU LIEN KET, nen no nam tren canh.
+# tinh -- boi so noi so luong giua HAI thuc the, la khai niem cua DAU LIEN
+# KET, nen no nam tren canh (chu du an nhac lai ngay 29/10/2026).
 MEMBER = re.compile(r"^[+\-#] \w+(\([^)]*\))?: \w+(<[\w, ]+>)?$")
 
 
@@ -375,12 +376,9 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
 # FR-24, trong khi `EvidenceBuilder` cho toi da 10 (ba loai x max_per_kind=3,
 # cong mot muc lexical). Ve theo yeu cau la hua mot rang buoc he thong khong giu.
 BOUNDS_IN_CODE = {
-    ("Assessment", "CriterionCoverage"): "5",
-    ("FeatureSet", "Feature"): "1..*",
-    ("Assessment", "Evidence"): "0..10",
-    ("Assessment", "Comment"): "0..4",
-    ("Assessment", "Priority"): "0..2",
-    ("Assessment", "AnalysisWindow"): "0..10",
+    # `Lesson.steps` holds at most twelve (Field max_length), and the lesson
+    # lint refuses to publish a lesson without a step.
+    ("Lesson", "Step"): "1..12",
 }
 
 

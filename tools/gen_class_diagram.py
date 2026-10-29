@@ -12,13 +12,17 @@ Day la MO HINH MIEN (domain model), khong phai so do lop thiet ke. No:
   * phan biet «entity» (co danh tinh va vong doi) voi «value object» (khong
     co danh tinh, dinh nghia hoan toan bang gia tri).
   * ghi DU kieu cho moi thuoc tinh va du chu ky cho moi thao tac, theo cu
-    phap UML `+/-/# ten: Kieu [boi so]` va `+ ten(thamso: Kieu): KieuTra`.
-    Mot so do lop khong co kieu thi khong ra duoc code tu no.
-  * dien dat TINH TUY CHON bang BOI SO UML `[0..1]`, tap hop bang `[*]` --
-    KHONG dung `X | None` hay `list[X]`. Hai cach sau la cu phap chu thich
-    kieu cua Python, khong phai UML; tron chung vao mot so do lop la sai
-    chuan. `float [0..1]` va `float | None` noi cung mot dieu, nhung chi cai
-    dau la thu nguoi doc UML mong doi.
+    phap UML `+/-/# ten: Kieu` va `+ ten(thamso: Kieu): KieuTra`. Mot so do
+    lop khong co kieu thi khong ra duoc code tu no.
+  * BOI SO (`0..1`, `1..*`) chi noi so luong giua HAI thuc the, nen chi nam
+    tren duong lien ket -- khong bao gio trong thuoc tinh (chu du an, ngay
+    29/10/2026: "0..1 la quan he so luong giua 2 collection, khong phai
+    min..max cua mot truong"). Tap hop viet `List<X>`. Trong dac ta, thuoc
+    tinh mang kieu thuc the van ghi boi so (`ratings: Rating [1..*]`) de
+    `check_relations()` doi voi duong; khi ve, `attribute_text()` bo no ra
+    khoi hop.
+  * thuoc tinh co tap gia tri dong mang KIEU ENUM (`role: Role`), ca tren
+    hinh lan trong code.
   * chi ghi thao tac nao la LUAT doan khong ra tu thuoc tinh.
   * GHI CA THUOC TINH THAM CHIEU lan quan he. Chuan UML cho phep chon mot
     trong hai (mot dau lien ket da la mot thuoc tinh), nhung ve ca hai thi
@@ -45,6 +49,7 @@ from __future__ import annotations
 
 import html
 import pathlib
+import re
 import sys
 
 # Duong dan tinh tu vi tri cua chinh tep nay, khong tinh tu thu muc dang dung.
@@ -89,409 +94,494 @@ def title(text: str) -> str:
     return html.escape(text.replace(BR, "<br>"), quote=True)
 
 
+def _e(cid, name, lines):
+    return (cid, "«entity»" + BR + name, lines)
+
+
+def _v(cid, name, lines):
+    return (cid, "«value object»" + BR + name, lines)
+
+
+def _n(cid, name, values):
+    return (cid, "«enumeration»" + BR + name, values)
+
+
+# Mo hinh nghiep vu cua bai toan (chu du an chot 29/10/2026): thuc the -- lop co
+# dinh danh, vong doi rieng -- va cac enumeration ma thuoc tinh cua chung lay
+# kieu. Khong lop truu tuong, khong value object: phan khong co dinh danh (tu co
+# moc thoi gian, phep do, nhan xet) la thuoc tinh cua thuc the so huu.
+#
+# QUAN HE QUA THUOC TINH (quy tac cua chu du an): moi duong noi co dung mot
+# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `ratings: Rating [1..*]` o
+# `RatingBatch` thi moi co kim cuong `RatingBatch` -> `Rating`. Hop thanh: lop
+# toan the giu danh sach phan (luu chung mot document). Ket hop: lop giu tham
+# chieu (luu ma cua ben kia). Boi so cua thuoc tinh ve tren dau duong, khong ve
+# trong hop. `check_relations()` duoi day bat moi duong thieu thuoc tinh.
+#
+# Ba database (D051): core, learning, metering. Hop thanh khong vuot database
+# -- `Wallet` o metering nen la thuc the rieng tro toi `Account`, khong nhung
+# vao tai khoan; thanh tuu o learning nen la `Achievement`, khong la thuoc tinh
+# cua `Account`.
 CLASSES = [
-    (
+    _e(
         "Account",
-        "«entity»" + BR + "Account",
+        "Account",
         [
             "- accountId: str",
             "- pseudonym: str",
             "- role: Role",
-            "- mustChangePassword: bool",
-            "- avatarIcon: str",
-            "- avatarColor: str",
             "- dailyGoalS: int",
-            "- termsAcceptedAt: str",
-            "+ isTeacher(): bool",
+            "- identities: List<str>",
+            "- seenMarkers: List<str>",
+            "- termsAcceptedAt: datetime",
             "+ maySubmit(): bool",
+            "+ isStaff(): bool",
         ],
     ),
-    (
-        "Review",
-        "«entity»" + BR + "Review",
+    _e(
+        "Audit",
+        "AuditEntry",
         [
-            "- reviewerId: str",
+            "- entryId: int",
+            "- actor: Account [0..1]",
+            "- action: str",
+            "- targetId: str",
+            "- service: str",
+            "- at: datetime",
+        ],
+    ),
+    _e(
+        "Task",
+        "Task",
+        [
+            "- taskId: str",
+            "- title: str",
+            "- purpose: TaskPurpose",
+            "- part: str",
+            "- promptText: str",
+            "- minSeconds: int",
+            "- maxSeconds: int",
+            "- topicKeywords: List<str>",
+            "- criterion: Criterion",
+            "- band: Band",
+            "- referenceText: str",
+            "- missions: List<str>",
+            "- promptVersion: str",
+        ],
+    ),
+    _e(
+        "Resp",
+        "Response",
+        [
+            "- responseId: str",
+            "- speaker: Account [1]",
+            "- task: Task [1]",
+            "- purpose: TaskPurpose",
+            "- status: ResponseStatus",
+            "- reasonCodes: List<str>",
+            "- durationMs: int",
+            "- transcript: str",
+            "- overall06: float",
+            "- overallBand: Band",
+            "- criterionScores: List<float>",
+            "- intervalLow: float",
+            "- intervalHigh: float",
+            "- feedback: List<str>",
+            "- replayLabels: List<str>",
+            "- reviews: Review [0..*]",
+            "- modelVersion: str",
+            "- teacherVerified: bool",
+            "- createdAt: datetime",
+            "+ isSingleBand(): bool",
+        ],
+    ),
+    _e(
+        "Review",
+        "Review",
+        [
+            "- reviewId: int",
+            "- reviewer: Account [1]",
             "- oldScore: float",
             "- newScore: float",
             "- oldBand: Band",
             "- newBand: Band",
             "- reason: str",
-            "- createdAt: str",
+            "- openedAt: datetime",
+            "- decidedAt: datetime",
         ],
     ),
-    (
-        "Task",
-        "«entity»" + BR + "Task",
+    _e(
+        "Batch",
+        "RatingBatch",
         [
-            "- taskId: str",
-            "- title: str",
-            "- promptText: str",
-            "- promptVersion: str",
-            "- part: TaskPart",
-            "- minSeconds: int",
-            "- maxSeconds: int",
-            "- topicKeywords: List<str>",
-            "- purpose: TaskPurpose",
-            "- criterion: Criterion",
+            "- batchId: str",
+            "- name: str",
+            "- seed: int",
+            "- closed: bool",
+            "- ratings: Rating [1..*]",
+            "- createdAt: datetime",
+        ],
+    ),
+    _e(
+        "Rating",
+        "Rating",
+        [
+            "- assignmentId: str",
+            "- response: Response [1]",
+            "- rater: Account [1]",
+            "- position: int",
+            "- scoreOverall: float",
             "- band: Band",
-            "- missions: List<Mission>",
-            "- tips: List<str>",
-            "- referenceText: str",
+            "- criterionScores: List<float>",
+            "- unscorableReason: str",
+            "- machineSeen: bool",
+            "- submittedAt: datetime",
         ],
     ),
-    (
-        "Report",
-        "«entity»" + BR + "Response",
+    _e(
+        "Study",
+        "Study",
         [
-            "- responseId: str",
-            "- status: Status",
-            "- qc: QcResult",
-            "- asr: Transcript",
-            "- features: FeatureSet",
-            "- assessment: Assessment",
-            "- reasons: List<ReasonCode>",
-            "- configVersion: str",
-            "- promptVersion: str",
-            "- practice: PracticeResult",
+            "- studyId: str",
+            "- name: str",
+            "- status: StudyStatus",
+            "- minDays: int",
+            "- participants: Participant [0..*]",
+            "- measuredUntil: datetime",
         ],
     ),
-    (
-        "Qc",
-        "«value object»" + BR + "QcResult",
+    _e(
+        "Part",
+        "Participant",
         [
-            "- durationMs: int",
-            "- sampleRateHz: int",
-            "- channels: int",
-            "- silenceRatio: float",
-            "- clippingRatio: float",
-            "- snrDb: float",
-            "- qcStatus: QcStatus",
-            "- qcConfigVersion: str",
-            "- reasons: List<ReasonCode>",
-            "+ passed(): bool",
+            "- code: str",
+            "- account: Account [1]",
+            "- arm: str",
+            "- enrolledAt: datetime",
+            "- withdrawnAt: datetime",
+            "- surveyAnswers: List<str>",
         ],
     ),
-    (
-        "Asr",
-        "«value object»" + BR + "Transcript",
+    _e(
+        "Class",
+        "Classroom",
         [
-            "- text: str",
-            "- words: List<Word>",
-            "- engine: str",
-            "- modelVersion: str",
-            "- hasWordTimestamps: bool",
-            "- isVerbatim: bool",
-            "- language: str",
-            "- languageProbability: float",
-            "- outputTokens: int",
+            "- classId: str",
+            "- name: str",
+            "- code: str",
+            "- teacher: Account [1]",
+            "- members: Account [0..*]",
+            "- assignments: Assignment [0..*]",
+            "- archived: bool",
         ],
     ),
-    (
-        "Word",
-        "«value object»" + BR + "Word",
+    _e(
+        "Asg",
+        "Assignment",
         [
-            "- text: str",
-            "- startS: float",
-            "- endS: float",
-            "- prob: float",
-            "+ isUncertain(): bool",
-        ],
-    ),
-    (
-        "Feat",
-        "«value object»" + BR + "FeatureSet",
-        [
-            "- items: List<Feature>",
-            "- featureVersion: str",
-            "+ valueOf(name: str): float",
-            "+ vector(order: List<str>): List<float>",
-        ],
-    ),
-    (
-        "Ftr",
-        "«value object»" + BR + "Feature",
-        ["- name: str", "- value: float", "- reason: ReasonCode"],
-    ),
-    (
-        "Win",
-        "«value object»" + BR + "AnalysisWindow",
-        [
-            "- index: int",
-            "- startS: float",
-            "- endS: float",
-            "- overall06: float",
-            "- band: Band",
-            "- reasons: List<ReasonCode>",
-        ],
-    ),
-    (
-        "Cov",
-        "«value object»" + BR + "CriterionCoverage",
-        ["- criterion: Criterion", "- coverage: float", "- reasons: List<ReasonCode>"],
-    ),
-    (
-        "Asmt",
-        "«entity»" + BR + "Assessment",
-        [
-            "- overall06: float",
-            "- overallBand: Band",
-            "- criteria: List<CriterionCoverage>",
-            "- evidence: List<Evidence>",
-            "- modelVersion: str",
-            "- featureVersion: str",
-            "- bandMapVersion: str",
-            "- calibrationVersion: str",
-            "- scoredAt: str",
-            "- reasons: List<ReasonCode>",
-            "- comments: List<Comment>",
-            "- priorities: List<Priority>",
-            "- windows: List<AnalysisWindow>",
-            "- windowSpread: float",
-            "- outOfRange: List<Map>",
-            "- teacherVerified: bool",
-            "- interval: ScoreInterval",
-            "- indicators: List<CriterionIndicator>",
-            "- weakestCriteria: List<Criterion>",
-            "+ isCalibrated(): bool",
-        ],
-    ),
-    (
-        "Ev",
-        "«value object»" + BR + "Evidence",
-        [
-            "- evidenceId: str",
-            "- criterion: Criterion",
-            "- kind: EvidenceKind",
-            "- startS: float",
-            "- endS: float",
-            "- snippet: str",
+            "- assignmentId: str",
+            "- task: Task [1]",
             "- note: str",
+            "- dueOn: date",
+            "+ isLate(at: datetime): bool",
         ],
     ),
-    (
-        "Cmt",
-        "«value object»" + BR + "Comment",
-        ["- criterion: Criterion", "- text: str", "- evidenceRefs: List<str>"],
-    ),
-    (
-        "Pri",
-        "«value object»" + BR + "Priority",
-        ["- featureName: str", "- text: str", "- impact: float"],
-    ),
-    (
-        "Intv",
-        "«value object»" + BR + "ScoreInterval",
+    _e(
+        "Path",
+        "LessonPath",
         [
-            "- low: float",
-            "- high: float",
-            "- bandSet: List<Band>",
-            "- coverage: float",
-            "- method: str",
-            "- calibrationVersion: str",
-            "+ isSingleBand(): bool",
+            "- pathId: str",
+            "- title: str",
+            "- author: Account [0..1]",
+            "- bandFrom: Band",
+            "- bandTo: Band",
+            "- status: PathStatus",
+            "- units: Unit [0..*]",
+            "- sample: bool",
         ],
     ),
-    (
-        "Ind",
-        "«value object»" + BR + "CriterionIndicator",
+    _e(
+        "Unit",
+        "Unit",
         [
+            "- unitId: str",
+            "- title: str",
+            "- function: str",
+            "- band: Band",
+            "- topic: str",
+            "- position: int",
+            "- lessons: Lesson [0..*]",
+        ],
+    ),
+    _e(
+        "Lesson",
+        "Lesson",
+        [
+            "- lessonId: str",
+            "- title: str",
+            "- band: Band",
             "- criterion: Criterion",
-            "- feature: str",
-            "- value: float",
-            "- percentile: float",
-            "- higherIsBetter: bool",
+            "- modelText: str",
+            "- passRatio: float",
+            "- steps: Step [1..12]",
+            "- publishedVersion: int",
+            "- media: List<str>",
+            "- archived: bool",
         ],
     ),
-    (
-        "Mis",
-        "«value object»" + BR + "Mission",
-        ["- kind: MissionKind", "- target: float", "- label: str", "- words: List<str>"],
-    ),
-    (
-        "Prac",
-        "«value object»" + BR + "PracticeResult",
-        ["- taskId: str", "- checks: List<MissionCheck>", "- rulesVersion: str"],
-    ),
-    (
-        "MChk",
-        "«value object»" + BR + "MissionCheck",
+    _e(
+        "Step",
+        "Step",
         [
-            "- kind: MissionKind",
-            "- label: str",
-            "- target: float",
-            "- measured: float",
-            "- met: bool",
-            "- hits: List<MissionHit>",
-            "- reason: ReasonCode",
+            "- stepId: str",
+            "- kind: StepKind",
+            "- text: str",
+            "- hintWords: List<str>",
+            "- modelAudio: str",
+            "- rounds: List<int>",
+            "- strictness: str",
         ],
     ),
-    ("MHit", "«value object»" + BR + "MissionHit", ["- text: str", "- startS: float"]),
-    # D057: what the metered channel charges, and what a recording used.
-    (
-        "Price",
-        "«value object»" + BR + "PriceList",
+    _e(
+        "Attempt",
+        "StepAttempt",
         [
-            "- firstMinuteRuns: float",
-            "- extraMinuteRuns: float",
-            "- practiceFactor: float",
-            "- idpointPerRun: int",
-            "- version: str",
+            "- attemptId: str",
+            "- learner: Account [1]",
+            "- step: Step [1]",
+            "- lessonVersion: int",
+            "- round: int",
+            "- passed: bool",
+            "- speakingS: float",
+            "- result: List<str>",
+            "- createdAt: datetime",
         ],
     ),
-    (
-        "Tok",
-        "«value object»" + BR + "TokenUsage",
-        ["- inputTokens: int", "- outputTokens: int", "- estimated: bool"],
-    ),
-    # D056: a moment of a recording to listen to again; D055: a reminder.
-    (
-        "Mom",
-        "«value object»" + BR + "Moment",
+    _e(
+        "RevItem",
+        "ReviewItem",
         [
-            "- momentId: str",
-            "- startS: float",
-            "- endS: float",
-            "- source: str",
+            "- itemId: str",
+            "- learner: Account [1]",
+            "- lesson: Lesson [1]",
             "- kind: str",
+            "- word: str",
+            "- box: int",
+            "- dueDate: date",
+            "+ isDue(today: date): bool",
         ],
     ),
-    (
-        "Nud",
-        "«value object»" + BR + "Nudge",
-        ["- kind: str", "- text: str", "- href: str", "- urgent: bool"],
+    _e(
+        "Achv",
+        "Achievement",
+        [
+            "- code: str",
+            "- learner: Account [1]",
+            "- reachedAt: datetime",
+            "- seenAt: datetime",
+        ],
+    ),
+    _e(
+        "Plan",
+        "LearningPlan",
+        [
+            "- planId: str",
+            "- owner: Account [1]",
+            "- goal: str",
+            "- audience: Role",
+            "- lessons: Lesson [1..*]",
+            "- savedAs: LessonPath [0..1]",
+            "- active: bool",
+            "- modelVersion: str",
+        ],
+    ),
+    _e(
+        "Order",
+        "Order",
+        [
+            "- orderId: str",
+            "- placedBy: Account [1]",
+            "- kind: OrderKind",
+            "- plan: ServicePlan",
+            "- seats: int",
+            "- valueVnd: int",
+            "- gateway: str",
+            "- status: OrderStatus",
+            "- events: List<str>",
+            "- creditedAt: datetime",
+        ],
+    ),
+    _e(
+        "License",
+        "License",
+        [
+            "- licenseId: str",
+            "- organization: str",
+            "- plan: ServicePlan",
+            "- seats: int",
+            "- validFrom: date",
+            "- validTo: date",
+            "- source: str",
+            "- order: Order [0..1]",
+            "+ isActive(today: date): bool",
+        ],
+    ),
+    _e(
+        "Wallet",
+        "Wallet",
+        [
+            "- owner: Account [1]",
+            "- balance: int",
+            "- freeUsed: int",
+            "- period: str",
+            "- grants: List<str>",
+            "+ available(): int",
+        ],
+    ),
+    _e(
+        "Ledger",
+        "LedgerEntry",
+        [
+            "- entryId: str",
+            "- wallet: Wallet [1]",
+            "- response: Response [1]",
+            "- action: TaskPurpose",
+            "- held: int",
+            "- fromFree: int",
+            "- fromWallet: int",
+            "- charged: int",
+            "- state: LedgerState",
+            "- priceVersion: str",
+        ],
     ),
 ]
 
-# Chi ve PHAN LOAI DONG dinh hinh mo hinh. `ReasonCode` la tu vung chan doan
-# 22 gia tri -- xem docstring dau tep.
+# Chi giu enum DIEU KHIEN nghiep vu: vai tro, band va tieu chi cham, muc dich,
+# trang thai vong doi cua bai noi / lo trinh / thuc nghiem / don / but toan, loai
+# buoc bai hoc (quyet dinh cach cham buoc), loai don va goi dich vu. Tap gia tri
+# chi la chi tiet (ma ly do, nhiem vu, chu de, cong thanh toan, nguon license, do
+# chat) ghi `str`; hai trang thai thi ghi `bool`; enum trung nghia thi dung lai
+# (`LedgerEntry.action: TaskPurpose`, `LearningPlan.audience: Role`).
+# Ten khac code: `ResponseStatus` (code: Status), `ServicePlan` (code: Plan).
 ENUMS = [
-    ("Role", "«enumeration»" + BR + "Role", ["STUDENT", "TEACHER", "ADMIN"]),
-    (
+    _n("Role", "Role", ["STUDENT", "TEACHER", "ADMIN"]),
+    _n("Band", "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
+    _n("Criterion", "Criterion", ["RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "PHONOLOGY"]),
+    _n("Purpose", "TaskPurpose", ["ASSESSMENT", "PRACTICE"]),
+    _n(
         "Status",
-        "«enumeration»" + BR + "Status",
+        "ResponseStatus",
         ["QUEUED", "RUNNING", "COMPLETED", "REVIEW_REQUIRED", "REJECTED", "FAILED"],
     ),
-    ("QcStatus", "«enumeration»" + BR + "QcStatus", ["PASS", "REVIEW", "REJECT"]),
-    (
-        "EvKind",
-        "«enumeration»" + BR + "EvidenceKind",
-        ["PAUSE", "FILLER", "LOW_CONFIDENCE_WORD", "LEXICAL"],
-    ),
-    ("TaskPart", "«enumeration»" + BR + "TaskPart", ["P3", "P4", "P5"]),
-    ("TaskPurpose", "«enumeration»" + BR + "TaskPurpose", ["ASSESSMENT", "PRACTICE"]),
-    (
-        "MissionKind",
-        "«enumeration»" + BR + "MissionKind",
+    _n("StudySt", "StudyStatus", ["RUNNING", "SURVEY", "CLOSED"]),
+    _n("PathSt", "PathStatus", ["DRAFT", "PUBLISHED", "ARCHIVED"]),
+    _n(
+        "StepKind",
+        "StepKind",
         [
-            "SPEAK_SECONDS",
-            "MAX_PAUSE",
-            "USE_WORDS",
-            "UNIQUE_WORDS",
-            "PAST_VERBS",
-            "CONDITIONALS",
             "READ_ALOUD",
+            "REPEAT",
+            "LOOK_UP",
+            "GAP",
+            "KEYWORDS",
+            "STARTER",
+            "PICTURE",
+            "OUTLINE",
+            "FREE",
         ],
     ),
-    ("Action", "«enumeration»" + BR + "Action", ["ASSESS", "PRACTICE"]),
-    (
-        "ReasonCode",
-        "«enumeration»" + BR + "ReasonCode",
-        [
-            "AUDIO_UNSUPPORTED",
-            "AUDIO_TOO_LARGE",
-            "AUDIO_TOO_LONG",
-            "AUDIO_TOO_SHORT",
-            "TERMS_NOT_ACCEPTED",
-            "HIGH_SILENCE_RATIO",
-            "CLIPPING_DETECTED",
-            "LOW_SNR",
-            "WRONG_SAMPLE_RATE",
-            "ASR_FAILED",
-            "ASR_EMPTY_TRANSCRIPT",
-            "ASR_LOW_CONFIDENCE",
-            "ASR_HALLUCINATION",
-            "FEATURE_NOT_COMPUTABLE",
-            "TOO_FEW_WORDS",
-            "SCORE_NEAR_BOUNDARY",
-            "SCORE_AGGREGATED",
-            "MODEL_VERSION_MISSING",
-            "OUT_OF_DISTRIBUTION",
-            "PROCESSING_INTERRUPTED",
-            "ASR_VERSION_MISMATCH",
-            "VAD_VERSION_MISMATCH",
-            "LANGUAGE_NOT_ENGLISH",
-            "OFF_TOPIC_SUSPECTED",
-            "PROMPT_COPY_SUSPECTED",
-        ],
-    ),
-    ("Band", "«enumeration»" + BR + "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
-    (
-        "Criterion",
-        "«enumeration»" + BR + "Criterion",
-        ["RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "PHONOLOGY"],
-    ),
+    _n("OrderKind", "OrderKind", ["LICENSE", "CREDITS"]),
+    _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
+    _n("SvcPlan", "ServicePlan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
+    _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
 ]
 
-# (nguon, dich, "boi so nguon : boi so dich", kieu)
+# (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
+# co thuoc tinh mang kieu lop kia; boi so lop kia chinh la boi so cua thuoc tinh.
 EDGES = [
-    ("Account", "Report", "1 : 0..*", "assoc"),
-    ("Account", "Review", "1 : 0..*", "assoc"),
-    ("Task", "Report", "1 : 0..*", "assoc"),
-    ("Report", "Qc", "1 : 0..1", "comp"),
-    ("Report", "Asr", "1 : 0..1", "comp"),
-    ("Report", "Feat", "1 : 0..1", "comp"),
-    ("Feat", "Ftr", "1 : 1..*", "comp"),
-    ("Report", "Asmt", "1 : 0..1", "comp"),
-    ("Report", "Review", "1 : 0..*", "assoc"),
-    ("Asr", "Word", "1 : 0..*", "comp"),
-    ("Asmt", "Cov", "1 : 5", "comp"),
-    ("Asmt", "Win", "1 : 0..10", "comp"),
-    ("Asmt", "Ev", "1 : 0..10", "comp"),
-    ("Asmt", "Cmt", "1 : 0..4", "comp"),
-    ("Asmt", "Pri", "1 : 0..2", "comp"),
-    ("Cmt", "Ev", "0..* : 1..*", "nn"),
-    ("Account", "Role", "", "enum"),
-    ("Report", "ReasonCode", "", "enum"),
-    ("Qc", "ReasonCode", "", "enum"),
-    ("Asmt", "ReasonCode", "", "enum"),
-    ("Win", "ReasonCode", "", "enum"),
-    ("Cov", "ReasonCode", "", "enum"),
-    ("Ftr", "ReasonCode", "", "enum"),
-    ("Report", "Status", "", "enum"),
-    ("Qc", "QcStatus", "", "enum"),
-    ("Asmt", "Band", "", "enum"),
-    ("Cov", "Criterion", "", "enum"),
-    ("Win", "Band", "", "enum"),
-    ("Ev", "Criterion", "", "enum"),
-    ("Ev", "EvKind", "", "enum"),
-    ("Task", "TaskPart", "", "enum"),
-    ("Cmt", "Criterion", "", "enum"),
-    ("Review", "Band", "", "enum"),
-    ("Report", "Prac", "1 : 0..1", "comp"),
-    ("Prac", "MChk", "1 : 0..*", "comp"),
-    # Shared with the lesson steps (`Step`, `StepResult`): association, not composition.
-    ("MChk", "MHit", "1 : 0..*", "assoc"),
-    ("Task", "Mis", "1 : 0..*", "assoc"),
-    ("Asmt", "Intv", "1 : 0..1", "comp"),
-    ("Asmt", "Ind", "1 : 0..*", "comp"),
-    ("Task", "TaskPurpose", "", "enum"),
-    ("Mis", "MissionKind", "", "enum"),
-    ("MChk", "MissionKind", "", "enum"),
-    ("MChk", "ReasonCode", "", "enum"),
-    ("Intv", "Band", "", "enum"),
-    ("Ind", "Criterion", "", "enum"),
-    ("Asmt", "Criterion", "", "enum"),
+    ("Audit", "Account", "0..* : 0..1", "assoc"),
+    ("Resp", "Account", "0..* : 1", "assoc"),
+    ("Resp", "Task", "0..* : 1", "assoc"),
+    ("Resp", "Review", "1 : 0..*", "comp"),
+    ("Review", "Account", "0..* : 1", "assoc"),
+    ("Batch", "Rating", "1 : 1..*", "comp"),
+    ("Rating", "Resp", "0..* : 1", "assoc"),
+    ("Rating", "Account", "0..* : 1", "assoc"),
+    ("Study", "Part", "1 : 0..*", "comp"),
+    ("Part", "Account", "0..* : 1", "assoc"),
+    ("Class", "Account", "0..* : 1", "assoc"),
+    ("Class", "Account", "0..* : 0..*", "nn"),
+    ("Class", "Asg", "1 : 0..*", "comp"),
+    ("Asg", "Task", "0..* : 1", "assoc"),
+    ("Path", "Account", "0..* : 0..1", "assoc"),
+    ("Path", "Unit", "1 : 0..*", "comp"),
+    ("Unit", "Lesson", "1 : 0..*", "comp"),
+    ("Lesson", "Step", "1 : 1..12", "comp"),
+    ("Attempt", "Account", "0..* : 1", "assoc"),
+    ("Attempt", "Step", "0..* : 1", "assoc"),
+    ("RevItem", "Account", "0..* : 1", "assoc"),
+    ("RevItem", "Lesson", "0..* : 1", "assoc"),
+    ("Achv", "Account", "0..* : 1", "assoc"),
+    ("Plan", "Account", "0..* : 1", "assoc"),
+    ("Plan", "Lesson", "0..* : 1..*", "assoc"),
+    ("Plan", "Path", "0..1 : 0..1", "assoc"),
+    ("Order", "Account", "0..* : 1", "assoc"),
+    ("License", "Order", "0..1 : 0..1", "assoc"),
+    ("Wallet", "Account", "0..1 : 1", "assoc"),
+    ("Ledger", "Wallet", "0..* : 1", "assoc"),
+    ("Ledger", "Resp", "0..1 : 1", "assoc"),
 ]
 
-# Bon cot, doc tu trai sang phai theo luong nghiep vu. Enum dat canh lop dung
-# no nhieu nhat de duong phu thuoc ngan.
-COLUMNS = [
-    (40, ["Account", "Role", "Review", "Price", "Tok", "Action"]),
-    (40 + COL_DX, ["Task", "TaskPart", "TaskPurpose", "Mis", "MissionKind", "Mom", "Nud"]),
-    (40 + 2 * COL_DX, ["Status", "Report", "Qc", "QcStatus", "Prac", "MChk", "MHit"]),
-    (40 + 3 * COL_DX, ["Asr", "Word", "Feat", "Ftr", "Win", "Cov", "ReasonCode"]),
-    (40 + 4 * COL_DX, ["Asmt", "Intv", "Ind", "Ev", "Cmt", "Pri", "Band", "Criterion", "EvKind"]),
+# Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
+# lay lam kieu.
+EDGES += [
+    (src, enum, "", "enum")
+    for src, enum in [
+        ("Account", "Role"),
+        ("Plan", "Role"),
+        ("Task", "Band"),
+        ("Resp", "Band"),
+        ("Review", "Band"),
+        ("Rating", "Band"),
+        ("Path", "Band"),
+        ("Unit", "Band"),
+        ("Lesson", "Band"),
+        ("Task", "Criterion"),
+        ("Lesson", "Criterion"),
+        ("Task", "Purpose"),
+        ("Resp", "Purpose"),
+        ("Ledger", "Purpose"),
+        ("Resp", "Status"),
+        ("Study", "StudySt"),
+        ("Path", "PathSt"),
+        ("Step", "StepKind"),
+        ("Order", "OrderKind"),
+        ("Order", "SvcPlan"),
+        ("Order", "OrderSt"),
+        ("License", "SvcPlan"),
+        ("Ledger", "LedgerSt"),
+    ]
 ]
+
+# Khung theo phan nghiep vu (`tools/zone_layout.py`). Dinh danh o giua hang tren
+# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Nghien cuu, Lop
+# hoc, Thuong mai va Hoc tap deu noi vao bai noi hoac `Band`.
+# (khoa, tieu de, hang, [(cot, [hop, ...])]); (hop, dy) dat hop cach dinh hang dy.
+ZONES = [
+    ("research", "Nghiên cứu: chấm mù, thực nghiệm", 0,
+     [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
+    ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
+    ("commerce", "Thương mại: gói dịch vụ, tính lượt", 0,
+     [(4, ["Wallet", "Ledger", "LedgerSt"]), (5, ["Order", "License"]),
+      (6, ["OrderKind", "OrderSt", "SvcPlan"])]),
+    ("classroom", "Lớp học", 1, [(0, ["Class", "Asg"])]),
+    ("assessment", "Đánh giá", 1,
+     [(1, ["Task"]), (2, ["Resp", "Review"]), (3, ["Purpose", "Status", "Band", "Criterion"])]),
+    ("learning", "Học tập", 1,
+     [(4, ["Plan", "RevItem", "Attempt", "Achv"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+      (6, ["PathSt", ("StepKind", "Step")])]),
+]  # fmt: skip
+COLUMNS = []
 
 # `--spec v3`: sinh THIET KE DICH tu `tools/class_spec_v3.py` thay cho so do
 # hien trang o tren. Cung bo cuc, cung bo dinh tuyen canh, chi khac dac ta --
@@ -506,6 +596,7 @@ if "--spec" in sys.argv:
     CLASSES, ENUMS, EDGES = _spec.CLASSES, _spec.ENUMS, _spec.EDGES
     COLUMNS = [(40 + i * COL_DX, ids) for i, ids in enumerate(_spec.COLUMN_IDS)]
     PAGE_NAME = _spec.PAGE_NAME
+    ZONES = None
     if "--out" not in sys.argv:
         OUT = ROOT / _spec.OUT
 
@@ -549,7 +640,57 @@ STYLE = {
 }
 
 SPEC = {c[0]: c for c in CLASSES + ENUMS}
+
+
+def check_relations() -> None:
+    """Every line has its attribute, every class-typed attribute has its line.
+
+    The owner's rule for this diagram: a relationship is drawn only where the
+    class holding it has an attribute of the other class's type, and the
+    multiplicity at the far end of the line is that attribute's multiplicity.
+    """
+    name = {c[0]: c[1].split(BR)[-1] for c in CLASSES + ENUMS}
+    typed = re.compile(r"^- (\w+): (\w+)(?: \[([^\]]*)\])?$")
+    problems = []
+    claimed: set[tuple[str, str]] = set()
+    for src, dst, label, kind in EDGES:
+        lines = SPEC[src][2]
+        if kind == "enum":
+            hits = [ln for ln in lines if (m := typed.match(ln)) and m.group(2) == name[dst]]
+            if not hits:
+                problems.append(f"{name[src]} uses {name[dst]} but no attribute has that type")
+            continue
+        far = label.split(" : ")[1]
+        hits = [
+            m.group(1)
+            for ln in lines
+            if (m := typed.match(ln))
+            and m.group(2) == name[dst]
+            and (m.group(3) or "1") == far
+            and (src, m.group(1)) not in claimed
+        ]
+        if not hits:
+            problems.append(f"{name[src]} -> {name[dst]} [{far}]: no attribute holds it")
+        else:
+            claimed.add((src, hits[0]))
+    classes = {name[c[0]] for c in CLASSES}
+    for c in CLASSES:
+        for ln in c[2]:
+            m = typed.match(ln)
+            if m and m.group(2) in classes and (c[0], m.group(1)) not in claimed:
+                problems.append(f"{name[c[0]]}.{m.group(1)}: {m.group(2)} has no line")
+    if problems:
+        raise SystemExit("relations:\n  " + "\n  ".join(problems))
+
+
+if ZONES:
+    check_relations()
 GEO: dict[str, tuple[int, int, int]] = {}
+if ZONES:
+    sys.path.insert(0, str(ROOT / "tools"))
+    import zone_layout
+
+    GEO, ZONE_OF, FRAMES = zone_layout.place(ZONES, lambda cid: TITLE_H + LH * len(SPEC[cid][2]), W)
 for _x, _ids in COLUMNS:
     _y = 40
     for _cid in _ids:
@@ -565,6 +706,30 @@ ROW_OF = {cid: i for _x, ids in COLUMNS for i, cid in enumerate(ids)}
 BOTTOM = max(y + h for _x, y, h in GEO.values())
 
 
+# Names of the classes drawn (not the enumerations): an attribute typed with one
+# of them is an association, and UML writes its multiplicity on the line, not
+# in the box -- `assessment: Assessment`, with `0..1` at the end of the edge.
+CLASS_NAMES = {c[1].split(BR)[-1] for c in CLASSES}
+_MULTIPLICITY = re.compile(r"^([-+] \w+: (\w+)) \[[^\]]*\]$")
+
+
+def attribute_text(text: str) -> str:
+    """The attribute as drawn: an association's multiplicity left to its edge.
+
+    Multiplicity belongs to a relationship between two entities and is written
+    on the line. In the box the attribute keeps its name and type: the entity,
+    or `List<Entity>` when the far end holds more than one.
+    """
+    m = _MULTIPLICITY.match(text)
+    if not (m and m.group(2) in CLASS_NAMES):
+        return text
+    upper = text.rsplit("[", 1)[1].rstrip("]").split("..")[-1]
+    if upper == "1":
+        return m.group(1)
+    name = m.group(1).rsplit(": ", 1)[0]
+    return f"{name}: List<{m.group(2)}>"
+
+
 def box(cid, box_title, lines, style):
     if NO_STEREOTYPE:
         box_title = box_title.split(BR)[-1]
@@ -576,7 +741,7 @@ def box(cid, box_title, lines, style):
     ]
     for i, text in enumerate(lines):
         out.append(
-            f'<mxCell id="{cid}-{i}" value="{label(text)}" '
+            f'<mxCell id="{cid}-{i}" value="{label(attribute_text(text))}" '
             f'style="{LINE}" vertex="1" parent="{cid}">'
             f'<mxGeometry y="{TITLE_H + LH * i}" width="{W}" height="{LH}" '
             f'as="geometry"/></mxCell>'
@@ -795,7 +960,8 @@ def build_routes():
     return routes
 
 
-ROUTES = build_routes()
+ROUTES = {} if ZONES else build_routes()
+ZONE_ROUTES = zone_layout.route(EDGES, GEO, ZONE_OF, FRAMES, W) if ZONES else {}
 
 
 # Doi mot vai nhan ra khoi cho co duong khac cat qua. Chi can khi mot canh di
@@ -850,14 +1016,82 @@ def edge(i, src, dst, label, kind):
     return cells
 
 
+ZONE_STYLE = (
+    "rounded=1;arcSize=2;whiteSpace=wrap;html=1;fillColor=#f6f8fb;strokeColor=#8a96a8;"
+    "verticalAlign=top;align=left;spacingLeft=14;spacingTop=8;fontStyle=1;fontSize=16;"
+    "fontColor=#2b3442;"
+)
+LABEL_STYLE = (
+    "text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];"
+    "labelBackgroundColor=#ffffff;fontSize=11;fontColor=#000000;spacing=0;"
+)
+
+
+def zone_frame(key):
+    name, x, y, w, h = FRAMES[key]
+    return (
+        f'<mxCell id="zone-{key}" value="{html.escape(name)}" style="{ZONE_STYLE}" '
+        f'vertex="1" parent="1"><mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" '
+        f'as="geometry"/></mxCell>'
+    )
+
+
+def zone_edge(i, src, dst, label, kind):
+    """An edge along its routed path, multiplicities beside the two ports.
+
+    Each multiplicity is a label of the edge pinned to one END of the path
+    (`x=-1` the source, `x=1` the target) and pushed beside the port by an
+    offset. A label at a fraction of the path would land far from its box on a
+    long path; a free text cell would no longer belong to the edge, and
+    `tests/test_diagrams.py` reads the target's multiplicity from the edge.
+    """
+    pts, side_out, side_in = ZONE_ROUTES[i]
+    (x0, y0), (x1, y1) = pts[0], pts[-1]
+    sx, sy, sh = GEO[src]
+    tx, ty, th = GEO[dst]
+    anchors = (
+        f"exitX={(x0 - sx) / W:.4f};exitY={(y0 - sy) / sh:.4f};exitPerimeter=0;"
+        f"entryX={(x1 - tx) / W:.4f};entryY={(y1 - ty) / th:.4f};entryPerimeter=0;"
+    )
+    style = STYLE[kind].replace("edgeStyle=orthogonalEdgeStyle;", "edgeStyle=none;")
+    inner = "".join(f'<mxPoint x="{x}" y="{y}"/>' for x, y in pts[1:-1])
+    cells = [
+        f'<mxCell id="e{i}" style="{style}{anchors}" edge="1" parent="1" '
+        f'source="{src}" target="{dst}"><mxGeometry relative="1" as="geometry">'
+        f'<Array as="points">{inner}</Array></mxGeometry></mxCell>'
+    ]
+    if kind == "enum" or " : " not in label:
+        return cells
+    for k, (txt, end, side) in enumerate(
+        zip(label.split(" : "), (-1, 1), (side_out, side_in), strict=True)
+    ):
+        txt = txt.strip()
+        half = (7 * len(txt) + 6) / 2
+        dx, dy = {
+            "R": (half + 4, -10),
+            "L": (-half - 4, -10),
+            "B": (half + 3, 11),
+            "T": (half + 3, -11),
+        }[side]
+        cells.append(
+            f'<mxCell id="e{i}l{k}" value="{html.escape(txt)}" style="{LABEL_STYLE}" '
+            f'vertex="1" connectable="0" parent="e{i}">'
+            f'<mxGeometry x="{end}" relative="1" as="geometry">'
+            f'<mxPoint x="{dx}" y="{dy}" as="offset"/></mxGeometry></mxCell>'
+        )
+    return cells
+
+
 def main() -> None:
     cells: list[str] = []
+    for key in FRAMES if ZONES else []:
+        cells.append(zone_frame(key))
     for c in CLASSES:
         cells += box(c[0], c[1], c[2], BOX)
     for e in ENUMS:
         cells += box(e[0], e[1], e[2], ENUMBOX)
     for i, (src, dst, label, kind) in enumerate(EDGES):
-        cells += edge(i, src, dst, label, kind)
+        cells += (zone_edge if ZONES else edge)(i, src, dst, label, kind)
 
     body = "".join("\n        " + c for c in cells)
     page_id = PAGE_NAME.lower().replace(" ", "-")
