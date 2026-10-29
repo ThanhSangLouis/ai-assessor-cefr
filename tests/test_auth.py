@@ -274,10 +274,10 @@ def test_another_users_status_returns_404(app) -> None:
 def test_stuck_running_response_marked_failed(app, monkeypatch) -> None:
     """NFR-11: if the process dies halfway, a response must not sit in RUNNING forever."""
     from aicefr.api import main as m
-    from aicefr.contracts import Response, Status
+    from aicefr.contracts import Response, ResponseStatus
 
     m.repo.save(
-        Response(response_id="ket001", status=Status.RUNNING, config_version="v1"),
+        Response(response_id="ket001", status=ResponseStatus.RUNNING, config_version="v1"),
         "SV-001",
         "P3",
     )

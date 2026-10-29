@@ -11,7 +11,7 @@ from enum import Enum
 from pydantic import AliasChoices, BaseModel, Field, computed_field, model_validator
 
 
-class Status(str, Enum):
+class ResponseStatus(str, Enum):
     """State of a single processing run.
 
     QUEUED and RUNNING are the two NOT-YET-FINISHED states, added for FR-05 and
@@ -31,7 +31,7 @@ class Status(str, Enum):
     @property
     def is_pending(self) -> bool:
         """Still processing; no final result yet."""
-        return self in (Status.QUEUED, Status.RUNNING)
+        return self in (ResponseStatus.QUEUED, ResponseStatus.RUNNING)
 
 
 class ReasonCode(str, Enum):
@@ -822,7 +822,7 @@ class Response(BaseModel):
     """The pipeline's single output."""
 
     response_id: str
-    status: Status
+    status: ResponseStatus
     qc: QcResult | None = None
     asr: Transcript | None = None
     features: FeatureSet | None = None
@@ -842,4 +842,4 @@ class Response(BaseModel):
 
     @property
     def needs_teacher(self) -> bool:
-        return self.status is Status.REVIEW_REQUIRED
+        return self.status is ResponseStatus.REVIEW_REQUIRED

@@ -27,7 +27,7 @@ from aicefr.contracts import (
     ProcessingRequest,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
 )
 from aicefr.infra.blobs import audio_response
@@ -169,7 +169,7 @@ async def submit_response(
     s.repo.save(
         Response(
             response_id=rid,
-            status=Status.QUEUED,
+            status=ResponseStatus.QUEUED,
             config_version=CONFIG_VERSION,
             prompt_version=req.prompt_version,
         ),
@@ -187,7 +187,10 @@ async def submit_response(
         # than leave the student watching a QUEUED page until the next restart.
         logger.exception("could not hand %s to the speech service", rid)
         s.repo.set_status(
-            rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=(Status.QUEUED,)
+            rid,
+            ResponseStatus.FAILED,
+            [ReasonCode.PROCESSING_INTERRUPTED],
+            only_from=(ResponseStatus.QUEUED,),
         )
         scoring.settle_charge(rid)
         raise HTTPException(503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút") from e
@@ -195,7 +198,7 @@ async def submit_response(
     response.status_code = 202
     return SubmitResponse(
         response_id=rid,
-        status=Status.QUEUED.value,
+        status=ResponseStatus.QUEUED.value,
         message="Đã nhận bài, đang xử lý.",
     )
 
@@ -268,7 +271,7 @@ def response_status(response_id: str, account: Account = Depends(require_login))
     status_info = repo.status_of(response_id)
     if status_info is None or not can_view_response(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
-    status_info["is_pending"] = Status(status_info["status"]).is_pending
+    status_info["is_pending"] = ResponseStatus(status_info["status"]).is_pending
     return status_info
 
 
@@ -519,7 +522,7 @@ def _practice_progress(attempts: list[dict]) -> dict[str, TaskProgress]:
     """Per-task progress from the attempts (oldest first). Only processed attempts count."""
     out: dict[str, TaskProgress] = {}
     for a in attempts:
-        if a["status"] != Status.COMPLETED.value:
+        if a["status"] != ResponseStatus.COMPLETED.value:
             continue
         prev = out.get(a["task_id"], TaskProgress())
         out[a["task_id"]] = TaskProgress(
@@ -572,7 +575,7 @@ def _next_view(
 
 def _daily_view(attempts: list[dict]) -> dict:
     d = summarize(
-        [a["created_at"] for a in attempts if a["status"] == Status.COMPLETED.value],
+        [a["created_at"] for a in attempts if a["status"] == ResponseStatus.COMPLETED.value],
         datetime.now(UTC),
     )
     return {
@@ -677,14 +680,14 @@ def practice_attempt(response_id: str, account: Account = Depends(require_login)
     earlier = [
         a
         for a in attempts[:position]
-        if a["task_id"] == info["task_id"] and a["status"] == Status.COMPLETED.value
+        if a["task_id"] == info["task_id"] and a["status"] == ResponseStatus.COMPLETED.value
     ]
     previous = repo.get(earlier[-1]["response_id"]) if earlier else None
     before = previous_measures(result, previous.practice if previous else None) if result else []
     return {
         "response_id": response_id,
         "status": info["status"],
-        "is_pending": Status(info["status"]).is_pending,
+        "is_pending": ResponseStatus(info["status"]).is_pending,
         "created_at": info["created_at"],
         "reasons": [r.value for r in report.reasons],
         "task": {

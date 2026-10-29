@@ -35,7 +35,7 @@ from aicefr import config
 from aicefr.asr.vad import EnergyVad
 from aicefr.billing import keys
 from aicefr.billing.gateways import VnpayGateway
-from aicefr.billing.plans import GRACE_DAYS, License, Plan
+from aicefr.billing.plans import GRACE_DAYS, License, ServicePlan
 from aicefr.contracts import Band, Criterion
 from aicefr.storage.auth_repository import Role
 
@@ -468,7 +468,7 @@ def test_a_licence_key_is_installed_once(m):
     contract = License(
         license_id="HD-2026-07",
         organization="Trung tâm Ngoại ngữ",
-        plan=Plan.ADVANCED,
+        plan=ServicePlan.ADVANCED,
         seats=400,
         valid_from=today,
         valid_to=today + timedelta(days=364),

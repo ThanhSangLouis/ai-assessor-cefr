@@ -170,13 +170,13 @@ def test_the_submission_screen_quotes_the_most_a_task_costs(metered):
 
 def test_a_failed_scoring_releases_the_hold(metered):
     """The speech service reports a failure: nothing is charged, the free run comes back."""
-    from aicefr.contracts import Response, Status
+    from aicefr.contracts import Response, ResponseStatus
     from aicefr.services.core.assessment import scoring
 
     m = metered
     login_as(m, "SV-001")
     who = account_id(m, "SV-001")
-    m.repo.save(Response(response_id="r-fail", status=Status.QUEUED, config_version="v1"),
+    m.repo.save(Response(response_id="r-fail", status=ResponseStatus.QUEUED, config_version="v1"),
                 "SV-001", "P3", account_id=who)  # fmt: skip
     assert (
         m.core_parts.facade.metering.hold(

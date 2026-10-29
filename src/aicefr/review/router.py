@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from aicefr.contracts import Assessment, FeatureSet, QcResult, QcStatus, ReasonCode, Status
+from aicefr.contracts import Assessment, FeatureSet, QcResult, QcStatus, ReasonCode, ResponseStatus
 
 LOW_ASR_CONF = 0.65
 
@@ -13,12 +13,12 @@ LOW_ASR_CONF = 0.65
 class ReviewDecision:
     """The outcome of one routing call. A value object, not a service."""
 
-    status: Status
+    status: ResponseStatus
     reasons: list[ReasonCode]
 
     @property
     def needs_teacher(self) -> bool:
-        return self.status is Status.REVIEW_REQUIRED
+        return self.status is ResponseStatus.REVIEW_REQUIRED
 
 
 class ReviewRouter:
@@ -46,7 +46,7 @@ class ReviewRouter:
         reasons: list[ReasonCode] = []
 
         if qc is None or qc.qc_status is QcStatus.REJECT:
-            return ReviewDecision(Status.REJECTED, list(qc.reasons) if qc else [])
+            return ReviewDecision(ResponseStatus.REJECTED, list(qc.reasons) if qc else [])
 
         # QC at the REVIEW level still gets scored, but the result must pass through
         # a teacher. This is exactly why QcResult needs three levels: folding the
@@ -66,7 +66,7 @@ class ReviewRouter:
             seen = [r for r in extra if r not in reasons]
             reasons += seen or [ReasonCode.FEATURE_NOT_COMPUTABLE]
             reasons = list(dict.fromkeys(reasons))
-            return ReviewDecision(Status.REVIEW_REQUIRED, reasons)
+            return ReviewDecision(ResponseStatus.REVIEW_REQUIRED, reasons)
 
         if features is not None:
             conf = features.value_of("asr_conf_mean")
@@ -116,5 +116,5 @@ class ReviewRouter:
             ReasonCode.PROMPT_COPY_SUSPECTED,
         }
         needs_human = qc_needs_human or bool(set(reasons) & trigger)
-        status = Status.REVIEW_REQUIRED if needs_human else Status.COMPLETED
+        status = ResponseStatus.REVIEW_REQUIRED if needs_human else ResponseStatus.COMPLETED
         return ReviewDecision(status, reasons)

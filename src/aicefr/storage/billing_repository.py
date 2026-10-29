@@ -22,7 +22,7 @@ from pymongo import ASCENDING, DESCENDING, ReturnDocument
 from pymongo.database import Database
 
 from aicefr.billing.payments import SETTLEABLE, OrderStatus
-from aicefr.billing.plans import License, Plan
+from aicefr.billing.plans import License, ServicePlan
 from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes, fields, next_id
 from aicefr.storage.db import now_iso as _now
 
@@ -85,7 +85,7 @@ class BillingRepository(MongoStore):
         return License(
             license_id=row["license_id"],
             organization=row["organization"],
-            plan=Plan(row["plan"]),
+            plan=ServicePlan(row["plan"]),
             seats=row["seats"],
             valid_from=date.fromisoformat(row["valid_from"]),
             valid_to=date.fromisoformat(row["valid_to"]),

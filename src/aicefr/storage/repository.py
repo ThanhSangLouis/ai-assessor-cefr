@@ -22,9 +22,9 @@ from aicefr.contracts import (
     AppConfig,
     ReasonCode,
     Response,
+    ResponseStatus,
     Review,
     ReviewLock,
-    Status,
     TaskPurpose,
 )
 from aicefr.infra.blobs import key_of
@@ -86,7 +86,7 @@ def _record_decision(
     db: Database,
     response_id: str,
     reviewer_id: str,
-    status: Status,
+    status: ResponseStatus,
     action: str,
     reason: str,
     scores: tuple[float | None, float | None, str | None, str | None] = (None, None, None, None),
@@ -182,7 +182,8 @@ class Repository(MongoStore):
 
         if must_exist and (
             existing is None
-            or existing.get("status") not in (Status.QUEUED.value, Status.RUNNING.value)
+            or existing.get("status")
+            not in (ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value)
         ):
             logger.warning(
                 "bo ket qua cham cua %s: bai da bi xoa hoac khong con dang cho",
@@ -240,7 +241,7 @@ class Repository(MongoStore):
             done = responses.update_one(
                 {
                     "response_id": report.response_id,
-                    "status": {"$in": [Status.QUEUED.value, Status.RUNNING.value]},
+                    "status": {"$in": [ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value]},
                     "teacher_verified": 0,
                 },
                 {"$set": values},
@@ -267,9 +268,9 @@ class Repository(MongoStore):
     def set_status(
         self,
         response_id: str,
-        status: Status,
+        status: ResponseStatus,
         reasons: list[ReasonCode] | None = None,
-        only_from: tuple[Status, ...] | None = None,
+        only_from: tuple[ResponseStatus, ...] | None = None,
     ) -> bool:
         """Change the status of a response being processed; True when it changed.
 
@@ -311,17 +312,17 @@ class Repository(MongoStore):
         """
         responses = self.col("response")
         row = responses.find_one(
-            {"response_id": response_id, "status": Status.QUEUED.value}, {"report_json": 1}
+            {"response_id": response_id, "status": ResponseStatus.QUEUED.value}, {"report_json": 1}
         )
         if row is None:
             return False
         report = json.loads(row["report_json"])
-        report["status"] = Status.RUNNING.value
+        report["status"] = ResponseStatus.RUNNING.value
         responses.update_one(
-            {"response_id": response_id, "status": Status.QUEUED.value},
+            {"response_id": response_id, "status": ResponseStatus.QUEUED.value},
             {
                 "$set": {
-                    "status": Status.RUNNING.value,
+                    "status": ResponseStatus.RUNNING.value,
                     "report_json": json.dumps(report, ensure_ascii=False),
                     "started_at": _now(),
                 }
@@ -332,7 +333,7 @@ class Repository(MongoStore):
     def running_since(self, cutoff: str) -> list[str]:
         """Responses RUNNING since before `cutoff`: the speech service never finished them."""
         rows = self.col("response").find(
-            {"status": Status.RUNNING.value, "started_at": {"$ne": None, "$lte": cutoff}},
+            {"status": ResponseStatus.RUNNING.value, "started_at": {"$ne": None, "$lte": cutoff}},
             {"response_id": 1},
         )
         return [r["response_id"] for r in rows]
@@ -340,7 +341,8 @@ class Repository(MongoStore):
     def queued_since(self, cutoff: str) -> list[str]:
         """Responses still QUEUED, submitted before `cutoff`: no worker ever took them."""
         rows = self.col("response").find(
-            {"status": Status.QUEUED.value, "created_at": {"$lte": cutoff}}, {"response_id": 1}
+            {"status": ResponseStatus.QUEUED.value, "created_at": {"$lte": cutoff}},
+            {"response_id": 1},
         )
         return [r["response_id"] for r in rows]
 
@@ -355,14 +357,14 @@ class Repository(MongoStore):
         cutoff = (datetime.now(UTC) - timedelta(minutes=minutes)).isoformat(timespec="seconds")
         rows = self.col("response").find(
             {
-                "status": {"$in": [Status.QUEUED.value, Status.RUNNING.value]},
+                "status": {"$in": [ResponseStatus.QUEUED.value, ResponseStatus.RUNNING.value]},
                 "created_at": {"$lte": cutoff},
             },
             {"response_id": 1},
         )
         ids = [r["response_id"] for r in rows]
         for rid in ids:
-            self.set_status(rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED])
+            self.set_status(rid, ResponseStatus.FAILED, [ReasonCode.PROCESSING_INTERRUPTED])
         return ids
 
     def status_of(self, response_id: str) -> dict | None:
@@ -688,7 +690,7 @@ class Repository(MongoStore):
         criterion_of = {t.task_id: t.criterion.value for t in PRACTICE_TASKS}
         rows = list(
             self.col("response").find(
-                {"purpose": "practice", "status": Status.COMPLETED.value},
+                {"purpose": "practice", "status": ResponseStatus.COMPLETED.value},
                 {"account_id": 1, "task_id": 1, "report_json": 1},
             )
         )
@@ -970,7 +972,8 @@ class Repository(MongoStore):
     def count_waiting_review(self, exclude: Collection[str] = ()) -> int:
         """How many assessed responses wait in the teacher queue, less the ones in `exclude`."""
         rows = self.col("response").find(
-            {"status": Status.REVIEW_REQUIRED.value, "purpose": "assessment"}, {"response_id": 1}
+            {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"},
+            {"response_id": 1},
         )
         hidden = set(exclude)
         return sum(r["response_id"] not in hidden for r in rows)
@@ -979,7 +982,7 @@ class Repository(MongoStore):
         row = self.col("response").find_one({"response_id": response_id}, {"report_json": 1})
         return Response.model_validate_json(row["report_json"]) if row else None
 
-    def queue_with_locks(self, status: Status, limit: int = 50) -> list[dict]:
+    def queue_with_locks(self, status: ResponseStatus, limit: int = 50) -> list[dict]:
         """The review queue plus, for each response, who currently holds it.
 
         Two reads rather than one read per queued response: the caller used to
@@ -1059,7 +1062,7 @@ class Repository(MongoStore):
         # travel into the exported profile, which is exactly what FR-21 forbids.
         # A response still QUEUED or RUNNING could be decided before it had been
         # scored at all, and an already decided one could be quietly changed again.
-        if report.status is not Status.REVIEW_REQUIRED:
+        if report.status is not ResponseStatus.REVIEW_REQUIRED:
             raise InvalidStateError(
                 f"bài đang ở trạng thái {report.status.value}, chỉ duyệt được bài "
                 "đang chờ giảng viên"
@@ -1121,13 +1124,13 @@ class Repository(MongoStore):
         # duoc tren ban ghi.
 
         a.teacher_verified = True
-        report.status = Status.COMPLETED
+        report.status = ResponseStatus.COMPLETED
 
         owner = _record_decision(
             self.db,
             response_id,
             reviewer_id,
-            Status.COMPLETED,
+            ResponseStatus.COMPLETED,
             "REVIEW_DECISION",
             reason,
             (
@@ -1162,11 +1165,11 @@ class Repository(MongoStore):
         report = self.get(response_id)
         if report is None:
             return None
-        if report.status is not Status.REVIEW_REQUIRED or report.assessment is not None:
+        if report.status is not ResponseStatus.REVIEW_REQUIRED or report.assessment is not None:
             raise InvalidStateError("chỉ đóng được bài đang chờ duyệt mà máy không chấm được")
-        report.status = Status.REJECTED
+        report.status = ResponseStatus.REJECTED
         owner = _record_decision(
-            self.db, response_id, reviewer_id, Status.REJECTED, "REVIEW_CLOSED", reason
+            self.db, response_id, reviewer_id, ResponseStatus.REJECTED, "REVIEW_CLOSED", reason
         )
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
@@ -1304,7 +1307,7 @@ def _profile_row(row: dict) -> dict:
     return row
 
 
-def _claim_decision(db: Database, response_id: str, new_status: Status) -> None:
+def _claim_decision(db: Database, response_id: str, new_status: ResponseStatus) -> None:
     """Chuyen REVIEW_REQUIRED -> new_status NGUYEN TU, truoc moi ghi khac cua quyet dinh.
 
     Kiem trang thai bang mot lan doc truoc do khong du: hai giang vien cung doc
@@ -1315,7 +1318,7 @@ def _claim_decision(db: Database, response_id: str, new_status: Status) -> None:
     claimed = (
         db["response"]
         .update_one(
-            {"response_id": response_id, "status": Status.REVIEW_REQUIRED.value},
+            {"response_id": response_id, "status": ResponseStatus.REVIEW_REQUIRED.value},
             {"$set": {"status": new_status.value}},
         )
         .modified_count

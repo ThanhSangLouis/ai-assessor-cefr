@@ -39,7 +39,7 @@ from aicefr.contracts import (
     QcStatus,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
 )
 from aicefr.lessons.model import (
     STEP_RULES_VERSION,
@@ -173,7 +173,7 @@ def submit_assessment(c: TestClient) -> str:
 def scored(response_id: str, band: Band, weakest: list[Criterion]) -> Response:
     return Response(
         response_id=response_id,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         assessment=Assessment(
             overall_0_6=3.2, overall_band=band, model_version="test", weakest_criteria=weakest

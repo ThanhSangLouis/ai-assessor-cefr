@@ -10,7 +10,7 @@ from aicefr.contracts import (
     FeatureSet,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
 )
 
 
@@ -26,7 +26,7 @@ def test_six_bands_within_scope():
 
 
 def test_minimal_report_is_valid():
-    r = Response(response_id="r1", status=Status.FAILED, config_version="v1")
+    r = Response(response_id="r1", status=ResponseStatus.FAILED, config_version="v1")
     assert r.assessment is None
     assert r.reasons == []
 

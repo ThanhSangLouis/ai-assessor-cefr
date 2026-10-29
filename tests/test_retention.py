@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from aicefr.contracts import Assessment, Band, Response, Status, Transcript, Word
+from aicefr.contracts import Assessment, Band, Response, ResponseStatus, Transcript, Word
 from aicefr.retention import apply_retention, backup, orphaned_recordings, restore_backup
 from aicefr.storage.repository import Repository
 
@@ -19,7 +19,7 @@ from aicefr.storage.repository import Repository
 def _report(rid: str) -> Response:
     return Response(
         response_id=rid,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         asr=Transcript(
             text="i think online learning is flexible",

@@ -21,7 +21,7 @@ import hmac
 import json
 from datetime import date
 
-from aicefr.billing.plans import MAX_SEATS, PURCHASABLE, License, Plan
+from aicefr.billing.plans import MAX_SEATS, PURCHASABLE, License, ServicePlan
 from aicefr.encoding import b64url_decode as _unb64
 from aicefr.encoding import b64url_encode as _b64
 
@@ -65,7 +65,7 @@ def read(key: str, secret: bytes) -> License:
         lic = License(
             license_id=str(body["license_id"]),
             organization=str(body["organization"]).strip(),
-            plan=Plan(body["plan"]),
+            plan=ServicePlan(body["plan"]),
             seats=int(body["seats"]),
             valid_from=date.fromisoformat(body["valid_from"]),
             valid_to=date.fromisoformat(body["valid_to"]),

@@ -24,13 +24,13 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
-from aicefr.contracts import ProcessingRequest, ReasonCode, Response, Status
+from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus
 from aicefr.services.core.assessment.context import active_model_name, active_qc, svc
 from aicefr.storage.task_repository import Task, task_message
 
 logger = logging.getLogger(__name__)
 
-WAITING = (Status.QUEUED, Status.RUNNING)
+WAITING = (ResponseStatus.QUEUED, ResponseStatus.RUNNING)
 SCORE_QUEUE = "speech.score"
 RESULT_QUEUE = "assessment.scoring"
 
@@ -75,7 +75,7 @@ def settle_charge(rid: str) -> None:
         status = s.repo.status_of(rid)
         if report is None or status is None:
             return
-        result = report.status in (Status.COMPLETED, Status.REVIEW_REQUIRED) and (
+        result = report.status in (ResponseStatus.COMPLETED, ResponseStatus.REVIEW_REQUIRED) and (
             report.assessment is not None or report.practice is not None
         )
         seconds = report.qc.duration_ms / 1000 if report.qc else None
@@ -98,11 +98,13 @@ def on_scoring(message: dict) -> None:
     """One report of the speech service about one response."""
     repo = svc().repo
     rid = message["response_id"]
-    if message.get("status") == Status.RUNNING.value:
+    if message.get("status") == ResponseStatus.RUNNING.value:
         repo.mark_running(rid)
         return
     if "failed" in message:
-        repo.set_status(rid, Status.FAILED, [ReasonCode(message["failed"])], only_from=WAITING)
+        repo.set_status(
+            rid, ResponseStatus.FAILED, [ReasonCode(message["failed"])], only_from=WAITING
+        )
         settle_charge(rid)
         return
     try:
@@ -117,7 +119,9 @@ def on_scoring(message: dict) -> None:
         )
     except Exception:  # noqa: BLE001 - whatever failed, the response must not stay waiting
         logger.exception("could not save the result of %s", rid)
-        repo.set_status(rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=WAITING)
+        repo.set_status(
+            rid, ResponseStatus.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=WAITING
+        )
     settle_charge(rid)
 
 
@@ -140,13 +144,13 @@ def sweep_overdue(now: datetime | None = None) -> list[str]:
     limit = s.settings.job_timeout_s
     cutoff = (now - timedelta(seconds=limit)).isoformat(timespec="seconds")
     queued_cutoff = (now - timedelta(seconds=limit * QUEUED_TIMEOUTS)).isoformat(timespec="seconds")
-    candidates = [(rid, Status.RUNNING) for rid in s.repo.running_since(cutoff)]
-    candidates += [(rid, Status.QUEUED) for rid in s.repo.queued_since(queued_cutoff)]
+    candidates = [(rid, ResponseStatus.RUNNING) for rid in s.repo.running_since(cutoff)]
+    candidates += [(rid, ResponseStatus.QUEUED) for rid in s.repo.queued_since(queued_cutoff)]
     failed = [
         rid
         for rid, state in candidates
         if s.repo.set_status(
-            rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=(state,)
+            rid, ResponseStatus.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=(state,)
         )
     ]
     if failed:
