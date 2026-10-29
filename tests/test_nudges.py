@@ -86,7 +86,7 @@ def test_the_endpoint_gathers_an_assignment_due_today(tmp_path, monkeypatch):
     from test_lessons_integration import login_as
 
     m = boot(tmp_path, monkeypatch)
-    teacher = login_as(m, "GV-01", "teacher", consent=False)
+    teacher = login_as(m, "GV-01", "teacher", terms=False)
     student = login_as(m, "SV-001")
     c = teacher.post("/api/v1/classes", json={"name": "Lớp thử"}).json()
     student.post("/api/v1/me/classes/join", json={"code": c["code"]})

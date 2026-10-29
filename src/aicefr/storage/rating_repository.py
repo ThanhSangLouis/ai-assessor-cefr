@@ -1,53 +1,57 @@
 """Persistence for the blind double rating of the field study (D030).
 
-The collections sit in the same database as the responses and go with them:
-erasing a participant's response (FR-35) erases what raters said about it
-(`Repository._forget_responses`). They never touch `response` or
-`review_action`: the operational review flow stays exactly as it was
-(HUONG_PHAT_TRIEN_TIEP §2.1, "không đụng apply_review").
+One collection, `rating_batch` (D060): a batch and its sheets. A sheet is a
+`Rating` -- one rater's slot on one response, and, once submitted, what they
+said -- and lives in its batch's document (`RatingBatch ◆ Rating` on the class
+diagram): it is drawn with the batch and has no life outside it. Erasing a
+participant's response (FR-35) pulls every sheet about it
+(`Repository._forget_responses`). The operational review flow is never
+touched: a review decision stays where it was (HUONG_PHAT_TRIEN_TIEP §2.1,
+"không đụng apply_review").
 
 What a rater may see is decided in the API layer; this module still keeps the
 two kinds of read apart: `rater_view` returns nothing a rater must not see
 (no response id, no speaker, no machine score), `analysis_rows` returns
 everything the analysis needs and is for administrators only.
 
-Blindness is also a fact about the past. `machine_seen` notes who has opened
-the machine's result for which response; with the teachers' review decisions it
-says who is no longer blind to a response. Such a rater is never drawn for it,
-and a sheet of theirs still pending stops taking a rating -- which is also what
-keeps a batch that was closed, looked at, then reopened from collecting
-anchored ratings.
+Blindness is also a fact about the past. A response keeps who has opened its
+machine result (`response.machine_seen`); with the teachers' review decisions
+it says who is no longer blind to it. Such a rater is never drawn for it, and a
+sheet of theirs still pending stops taking a rating -- which is also what keeps
+a batch that was closed, looked at, then reopened from collecting anchored
+ratings.
 """
 
 from __future__ import annotations
 
 import uuid
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from pymongo import ASCENDING, DESCENDING
+from pymongo import DESCENDING
 from pymongo.database import Database
 
+from aicefr.contracts import Band
 from aicefr.infra.blobs import key_of
 from aicefr.research import assign
-from aicefr.research.agreement import BANDS, CRITERIA, RatedResponse, Rating, needs_adjudication
-from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes, fields
+from aicefr.research.agreement import (
+    BANDS,
+    CRITERIA,
+    RatedResponse,
+    RaterScore,
+    needs_adjudication,
+)
+from aicefr.storage.db import MongoStore, ensure_indexes, fields
 from aicefr.storage.db import now_iso as _now
 
-# machine_seen: who has had the machine's result for a response in view -- its
-# report, its history, the review screen. The first time only; erased with the
-# response.
 INDEXES = {
-    "rating_batch": [(("batch_id",), True)],
-    "rating_assignment": [
-        (("assignment_id",), True),
-        (("batch_id", "response_id", "slot"), True),
-        (("batch_id", "response_id", "rater_id"), True),
-        (("rater_id", "batch_id"), False),
-        (("response_id",), False),
+    "rating_batch": [
+        (("batch_id",), True),
+        (("ratings.rater_id",), False),
+        (("ratings.response_id",), False),
+        (("ratings.assignment_id",), False),
     ],
-    "machine_seen": [(("account_id", "response_id"), True), (("response_id",), False)],
-    "research_rating": [(("assignment_id",), True)],
 }
 
 RATING_FIELDS = (
@@ -64,7 +68,6 @@ RATING_FIELDS = (
     "reason",
     "submitted_at",
 )
-BATCH_FIELDS = ("batch_id", "name", "seed", "status", "created_by", "created_at")
 
 # Why a recording could not be rated (appendix B of the survey plan).
 UNSCORABLE_REASONS = {
@@ -74,43 +77,120 @@ UNSCORABLE_REASONS = {
 }
 
 
+@dataclass
+class Rating:
+    """One rater's sheet for one response in a batch, and what they gave once submitted."""
+
+    assignment_id: str
+    response_id: str
+    rater_id: str
+    slot: int  # 1 and 2 the primary raters, 3 the adjudicator
+    position: int  # in the rater's own random order
+    opened_at: str | None = None
+    score_range: float | None = None
+    score_accuracy: float | None = None
+    score_fluency: float | None = None
+    score_coherence: float | None = None
+    score_phonology: float | None = None
+    score_overall: float | None = None
+    band: Band | None = None
+    unscorable: int = 0
+    unscorable_reason: str | None = None
+    reason: str | None = None
+    submitted_at: str | None = None
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> Rating:
+        band = doc.get("band")
+        return cls(**{**doc, "band": Band(band) if band else None})
+
+    def to_doc(self) -> dict:
+        return {**asdict(self), "band": self.band.value if self.band else None}
+
+
+@dataclass
+class RatingBatch:
+    batch_id: str
+    name: str
+    seed: int
+    created_by: str
+    created_at: str
+    closed: bool = False
+    ratings: list[Rating] = field(default_factory=list)
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> RatingBatch:
+        return cls(
+            batch_id=doc["batch_id"],
+            name=doc["name"],
+            seed=doc["seed"],
+            created_by=doc["created_by"],
+            created_at=doc["created_at"],
+            closed=bool(doc.get("closed", False)),
+            ratings=[Rating.from_doc(r) for r in doc.get("ratings", [])],
+        )
+
+    def to_doc(self) -> dict:
+        return {**asdict(self), "ratings": [r.to_doc() for r in self.ratings]}
+
+    @property
+    def status(self) -> str:
+        """`open` or `closed`, as the screens name it."""
+        return "closed" if self.closed else "open"
+
+
+def _batches(db: Database, query: dict | None = None) -> list[RatingBatch]:
+    rows = (
+        db["rating_batch"].find(query or {}).sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+    )
+    return [RatingBatch.from_doc(r) for r in rows]
+
+
+def _sheets(db: Database, query: dict | None = None, **match) -> list[dict]:
+    """Every sheet of the batches `query` picks whose fields equal `match`, with its batch id."""
+    out = []
+    for b in _batches(db, query):
+        for r in b.ratings:
+            sheet = {**r.to_doc(), "batch_id": b.batch_id}
+            if all(sheet.get(k) == v for k, v in match.items()):
+                out.append(sheet)
+    return out
+
+
 def _seen(db: Database, response_ids: list[str] | None = None) -> set[tuple[str, str]]:
     """(person, response) pairs where the person has seen the machine's result.
 
-    Opened it (machine_seen), or decided a review on it -- decisions made
-    before machine_seen existed count too.
+    Opened it (`response.machine_seen`), or decided a review on it -- decisions
+    made before the opening was recorded count too.
     """
     query = {} if response_ids is None else {"response_id": {"$in": list(response_ids)}}
-    pairs = {
-        (r["account_id"], r["response_id"])
-        for r in db["machine_seen"].find(query, {"account_id": 1, "response_id": 1})
-    }
-    pairs |= {
-        (r["reviewer_id"], r["response_id"])
-        for r in db["review_action"].find(query, {"reviewer_id": 1, "response_id": 1})
-    }
+    pairs: set[tuple[str, str]] = set()
+    for r in db["response"].find(query, {"response_id": 1, "machine_seen": 1, "reviews": 1}):
+        pairs |= {(m["account_id"], r["response_id"]) for m in r.get("machine_seen") or []}
+        pairs |= {(v["reviewer_id"], r["response_id"]) for v in r.get("reviews") or []}
     return pairs
 
 
-def _rated(db: Database, assignment_ids: list[str]) -> dict[str, dict]:
+def _rated(sheets: list[dict]) -> dict[str, dict]:
     """The ratings submitted on these sheets, by sheet."""
-    rows = db["research_rating"].find({"assignment_id": {"$in": list(assignment_ids)}})
-    return {r["assignment_id"]: fields(r, RATING_FIELDS) for r in rows}  # type: ignore[misc]
+    return {
+        x["assignment_id"]: fields(x, RATING_FIELDS)  # type: ignore[misc]
+        for x in sheets
+        if x.get("submitted_at") is not None
+    }
 
 
 def _machine(db: Database, responses: dict[str, dict]) -> dict[str, dict]:
     """The machine's own output per response, before any teacher decision overwrote it.
 
     A review rewrites overall_0_6 and overall_band, and keeps the machine's
-    values as the first review action's "old" fields. A response with a review
-    was routed to a teacher, which is the routing flag RQ4 compares.
+    values as the first review's "old" fields. A response with a review was
+    routed to a teacher, which is the routing flag RQ4 compares.
     """
-    first: dict[str, dict] = {}
-    for a in db["review_action"].find({"response_id": {"$in": list(responses)}}).sort("id", 1):
-        first.setdefault(a["response_id"], a)
     out = {}
     for rid, r in responses.items():
-        review = first.get(rid)
+        reviews = sorted(r.get("reviews") or [], key=lambda v: v.get("review_id") or 0)
+        review = reviews[0] if reviews else None
         out[rid] = {
             "ai_overall": review.get("old_score") if review else r.get("overall_0_6"),
             "ai_band": review.get("old_band") if review else r.get("overall_band"),
@@ -146,36 +226,27 @@ class RatingRepository(MongoStore):
         """Sheets the rater still owes, blind: batch open, nothing submitted, and the
         rater has not seen the machine's result since."""
         db = self.db
-        query: dict = {"rater_id": rater_id}
+        match = {"rater_id": rater_id}
         if response_id is not None:
-            query["response_id"] = response_id
-        sheets = list(db["rating_assignment"].find(query))
+            match["response_id"] = response_id
+        sheets = _sheets(db, {"closed": False, "ratings.rater_id": rater_id}, **match)
         if not sheets:
             return []
-        open_batches = {
-            b["batch_id"]
-            for b in db["rating_batch"].find(
-                {"batch_id": {"$in": list({x["batch_id"] for x in sheets})}, "status": "open"}
-            )
-        }
-        rated = _rated(db, [x["assignment_id"] for x in sheets])
         seen = _seen(db, list({x["response_id"] for x in sheets}))
         return [
             x
             for x in sheets
-            if x["batch_id"] in open_batches
-            and x["assignment_id"] not in rated
-            and (rater_id, x["response_id"]) not in seen
+            if x["submitted_at"] is None and (rater_id, x["response_id"]) not in seen
         ]
 
     # ------------------------------------------------------------ eligibility
 
     def eligible(self, allowed_accounts: set[str], only_new: bool = True) -> list[str]:
-        """Responses that may go to raters: assessed, recorded, owner consents to research.
+        """Responses that may go to raters: assessed, recorded, owner accepted the terms.
 
         A practice attempt is not assessment data (D023); a response without its
         recording cannot be listened to; and rating is research use, so only
-        owners whose standing consent allows research count. `only_new` leaves
+        owners who accepted the terms of use (D058) count. `only_new` leaves
         out responses already in a batch.
         """
         if not allowed_accounts:
@@ -192,11 +263,7 @@ class RatingRepository(MongoStore):
             )
         )
         if only_new:
-            batched = set(
-                self.col("rating_assignment").distinct(
-                    "response_id", {"response_id": {"$in": [r["response_id"] for r in rows]}}
-                )
-            )
+            batched = {x["response_id"] for x in _sheets(self.db)}
             rows = [r for r in rows if r["response_id"] not in batched]
         return [r["response_id"] for r in rows if self.blobs.exists(key_of(r["audio_path"]))]
 
@@ -220,19 +287,17 @@ class RatingRepository(MongoStore):
         kept = {p.response_id for p in planned}
         if not kept:
             raise ValueError("no response has two raters who have not seen the machine's result")
-        batch_id = uuid.uuid4().hex[:12]
-        # The sheets first, then the batch that lists them.
-        self._insert(self.db, batch_id, planned)
-        self.col("rating_batch").insert_one(
-            {
-                "batch_id": batch_id,
-                "name": name,
-                "seed": seed,
-                "status": "open",
-                "created_by": created_by,
-                "created_at": _now(),
-            }
+        batch = RatingBatch(
+            batch_id=uuid.uuid4().hex[:12],
+            name=name,
+            seed=seed,
+            created_by=created_by,
+            created_at=_now(),
+            ratings=[_sheet(p) for p in planned],
         )
+        # One document: the batch is listed with every sheet in it, never half.
+        self.col("rating_batch").insert_one(batch.to_doc())
+        batch_id = batch.batch_id
         return {
             "batch_id": batch_id,
             "responses": len(kept),
@@ -243,41 +308,32 @@ class RatingRepository(MongoStore):
     def _insert(db: Database, batch_id: str, planned: list[assign.Planned]) -> None:
         if not planned:
             return
-        db["rating_assignment"].insert_many(
-            [
-                {
-                    "assignment_id": uuid.uuid4().hex[:16],
-                    "batch_id": batch_id,
-                    "response_id": p.response_id,
-                    "rater_id": p.rater_id,
-                    "slot": p.slot,
-                    "position": p.position,
-                    "opened_at": None,
-                }
-                for p in planned
-            ]
+        db["rating_batch"].update_one(
+            {"batch_id": batch_id},
+            {"$push": {"ratings": {"$each": [_sheet(p).to_doc() for p in planned]}}},
         )
 
     def batch(self, batch_id: str) -> dict | None:
-        return fields(self.col("rating_batch").find_one({"batch_id": batch_id}), BATCH_FIELDS)
+        found = _batches(self.db, {"batch_id": batch_id})
+        return _batch_view(found[0]) if found else None
 
     def set_status(self, batch_id: str, status: str) -> None:
         if status not in ("open", "closed"):
             raise ValueError(status)
-        self.col("rating_batch").update_one({"batch_id": batch_id}, {"$set": {"status": status}})
+        self.col("rating_batch").update_one(
+            {"batch_id": batch_id}, {"$set": {"closed": status == "closed"}}
+        )
 
     def batches(self) -> list[dict]:
         """Every batch with its progress per rater and how many responses need a third rater."""
         db = self.db
-        batches = list(
-            db["rating_batch"].find().sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-        )
-        sheets = list(db["rating_assignment"].find())
-        rated = _rated(db, [x["assignment_id"] for x in sheets])
+        batches = _batches(db)
+        sheets = _sheets(db)
+        rated = _rated(sheets)
         seen = _seen(db, list({x["response_id"] for x in sheets}))
         out = []
         for b in batches:
-            mine = [x for x in sheets if x["batch_id"] == b["batch_id"]]
+            mine = [x for x in sheets if x["batch_id"] == b.batch_id]
             raters: dict[str, dict] = {}
             done = voided = 0
             for x in mine:
@@ -296,18 +352,13 @@ class RatingRepository(MongoStore):
                 voided += int(is_void)
             out.append(
                 {
-                    "batch_id": b["batch_id"],
-                    "name": b["name"],
-                    "seed": b["seed"],
-                    "status": b["status"],
-                    "created_by": b["created_by"],
-                    "created_at": b["created_at"],
+                    **_batch_view(b),
                     "responses": len({x["response_id"] for x in mine}),
                     "assignments": len(mine),
                     "done": done,
                     "voided": voided,
                     "raters": raters,
-                    "needs_adjudication": len(self._to_adjudicate(b["batch_id"])),
+                    "needs_adjudication": len(self._to_adjudicate(b.batch_id)),
                 }
             )
         return out
@@ -327,21 +378,18 @@ class RatingRepository(MongoStore):
         return {x["response_id"] for x in self._owed(rater_id)}
 
     def batch_responses(self, batch_id: str) -> set[str]:
-        return set(self.col("rating_assignment").distinct("response_id", {"batch_id": batch_id}))
+        return {x["response_id"] for x in _sheets(self.db, {"batch_id": batch_id})}
 
     # ------------------------------------------------------------ who has seen the machine
 
     def saw_machine(self, account_id: str, response_id: str, via: str) -> None:
         """Note that this person has had the machine's result for this response in view."""
-        if self.col("response").find_one({"response_id": response_id}, {"_id": 1}) is None:
-            return
-        try:
-            self.col("machine_seen").insert_one(
-                {"account_id": account_id, "response_id": response_id, "first_seen": _now(),
-                 "via": via}
-            )  # fmt: skip
-        except IntegrityError:
-            pass  # the first time only
+        # The first time only: appended where this person is not noted yet.
+        self.col("response").update_one(
+            {"response_id": response_id, "machine_seen.account_id": {"$ne": account_id}},
+            {"$push": {"machine_seen": {"account_id": account_id, "first_seen": _now(),
+                                        "via": via}}},
+        )  # fmt: skip
 
     def seen_by(self, response_ids: list[str]) -> dict[str, set[str]]:
         """Per response, everyone who has opened its machine result or decided a review on it."""
@@ -353,39 +401,27 @@ class RatingRepository(MongoStore):
     def rater_list(self, rater_id: str) -> list[dict]:
         """This rater's assignments, in their own order, without anything about the response."""
         db = self.db
-        sheets = list(db["rating_assignment"].find({"rater_id": rater_id}))
-        batches = {
-            b["batch_id"]: b
-            for b in db["rating_batch"].find(
-                {"batch_id": {"$in": list({x["batch_id"] for x in sheets})}}
-            )
-        }
-        rated = _rated(db, [x["assignment_id"] for x in sheets])
-        seen = _seen(db, list({x["response_id"] for x in sheets}))
         rows = []
-        for x in sheets:
-            b = batches.get(x["batch_id"])
-            if b is None:
-                continue
-            rows.append(
-                {
-                    "assignment_id": x["assignment_id"],
-                    "batch_id": x["batch_id"],
-                    "position": x["position"],
-                    "opened_at": x.get("opened_at"),
-                    "slot": x["slot"],
-                    "name": b["name"],
-                    "status": b["status"],
-                    "submitted_at": (rated.get(x["assignment_id"]) or {}).get("submitted_at"),
-                    "seen": int((rater_id, x["response_id"]) in seen),
-                    "_order": (b["created_at"], b["_id"]),
-                }
+        # Newest batch first (`_batches` sorts so), each in the rater's own order.
+        for b in _batches(db, {"ratings.rater_id": rater_id}):
+            mine = sorted(
+                (x for x in b.ratings if x.rater_id == rater_id), key=lambda x: x.position
             )
-        # Newest batch first, each in the rater's own order.
-        rows.sort(key=lambda r: r["position"])
-        rows.sort(key=lambda r: r["_order"], reverse=True)
-        for r in rows:
-            del r["_order"]
+            seen = _seen(db, list({x.response_id for x in mine}))
+            rows += [
+                {
+                    "assignment_id": x.assignment_id,
+                    "batch_id": b.batch_id,
+                    "position": x.position,
+                    "opened_at": x.opened_at,
+                    "slot": x.slot,
+                    "name": b.name,
+                    "status": b.status,
+                    "submitted_at": x.submitted_at,
+                    "seen": int((rater_id, x.response_id) in seen),
+                }
+                for x in mine
+            ]
         return rows
 
     def rater_view(self, assignment_id: str) -> dict | None:
@@ -395,17 +431,16 @@ class RatingRepository(MongoStore):
         task prompt, the audio stream); the API must not pass them on.
         """
         db = self.db
-        x = db["rating_assignment"].find_one({"assignment_id": assignment_id})
-        if x is None:
+        found = _batches(db, {"ratings.assignment_id": assignment_id})
+        if not found:
             return None
-        b = db["rating_batch"].find_one({"batch_id": x["batch_id"]})
+        b = found[0]
+        x = next(y.to_doc() for y in b.ratings if y.assignment_id == assignment_id)
         r = db["response"].find_one({"response_id": x["response_id"]})
-        if b is None or r is None:
+        if r is None:
             return None
-        mine = list(
-            db["rating_assignment"].find({"batch_id": x["batch_id"], "rater_id": x["rater_id"]})
-        )
-        rated = _rated(db, [y["assignment_id"] for y in mine])
+        mine = [y.to_doc() for y in b.ratings if y.rater_id == x["rater_id"]]
+        rated = _rated(mine)
         seen = _seen(db, list({y["response_id"] for y in mine}))
         following = sorted(
             (
@@ -419,14 +454,14 @@ class RatingRepository(MongoStore):
         )
         return {
             "assignment_id": x["assignment_id"],
-            "batch_id": x["batch_id"],
+            "batch_id": b.batch_id,
             "rater_id": x["rater_id"],
             "slot": x["slot"],
             "position": x["position"],
             "opened_at": x.get("opened_at"),
             "response_id": x["response_id"],
-            "name": b["name"],
-            "status": b["status"],
+            "name": b.name,
+            "status": b.status,
             "task_id": r.get("task_id"),
             "audio_path": r.get("audio_path"),
             "seen": int((x["rater_id"], x["response_id"]) in seen),
@@ -437,12 +472,17 @@ class RatingRepository(MongoStore):
 
     def mark_opened(self, assignment_id: str) -> None:
         """The first time the rater opens it, for the time-to-rate the report states."""
-        self.col("rating_assignment").update_one(
-            {"assignment_id": assignment_id, "opened_at": None}, {"$set": {"opened_at": _now()}}
+        self.col("rating_batch").update_one(
+            {"ratings": {"$elemMatch": {"assignment_id": assignment_id, "opened_at": None}}},
+            {"$set": {"ratings.$.opened_at": _now()}},
         )
 
     def submit(
-        self, assignment_id: str, rating: Rating, reason: str | None, unscorable_reason: str | None
+        self,
+        assignment_id: str,
+        rating: RaterScore,
+        reason: str | None,
+        unscorable_reason: str | None,
     ) -> None:
         """Record a rating. Final: a second submission raises AlreadyRated.
 
@@ -450,25 +490,26 @@ class RatingRepository(MongoStore):
         sheet was given (SeenMachine) can no longer rate it blind.
         """
         db = self.db
-        x = db["rating_assignment"].find_one({"assignment_id": assignment_id})
+        found = _sheets(db, {"ratings.assignment_id": assignment_id}, assignment_id=assignment_id)
+        x = found[0] if found else None
         if x is not None and (x["rater_id"], x["response_id"]) in _seen(db, [x["response_id"]]):
             raise SeenMachine(assignment_id)
-        scores = {f"score_{k}": rating.criteria.get(k) for k in CRITERIA}
-        try:
-            db["research_rating"].insert_one(
-                {
-                    "assignment_id": assignment_id,
-                    **scores,
-                    "score_overall": rating.overall,
-                    "band": rating.band,
-                    "unscorable": int(rating.unscorable),
-                    "unscorable_reason": unscorable_reason,
-                    "reason": reason,
-                    "submitted_at": _now(),
-                }
-            )
-        except IntegrityError as e:
-            raise AlreadyRated(assignment_id) from e
+        given = {
+            **{f"ratings.$.score_{k}": rating.criteria.get(k) for k in CRITERIA},
+            "ratings.$.score_overall": rating.overall,
+            "ratings.$.band": rating.band,
+            "ratings.$.unscorable": int(rating.unscorable),
+            "ratings.$.unscorable_reason": unscorable_reason,
+            "ratings.$.reason": reason,
+            "ratings.$.submitted_at": _now(),
+        }
+        # Final: only a sheet with nothing submitted takes the rating.
+        done = db["rating_batch"].update_one(
+            {"ratings": {"$elemMatch": {"assignment_id": assignment_id, "submitted_at": None}}},
+            {"$set": given},
+        )
+        if not done.modified_count:
+            raise AlreadyRated(assignment_id)
 
     # ------------------------------------------------------------ adjudication
 
@@ -484,10 +525,8 @@ class RatingRepository(MongoStore):
         return out
 
     def _last_position(self, batch_id: str, rater_id: str) -> int:
-        last = self.col("rating_assignment").find_one(
-            {"batch_id": batch_id, "rater_id": rater_id}, sort=[("position", DESCENDING)]
-        )
-        return int(last["position"]) if last else 0
+        mine = _sheets(self.db, {"batch_id": batch_id}, rater_id=rater_id)
+        return max((int(x["position"]) for x in mine), default=0)
 
     def add_adjudication(self, batch_id: str, adjudicator_id: str, seed: int) -> dict:
         """A third rating, by one adjudicator, for every response that needs one.
@@ -522,8 +561,8 @@ class RatingRepository(MongoStore):
         result too (`skipped_seen`).
         """
         db = self.db
-        sheets = list(db["rating_assignment"].find({"batch_id": batch_id}))
-        rated = _rated(db, [x["assignment_id"] for x in sheets])
+        sheets = _sheets(db, {"batch_id": batch_id})
+        rated = _rated(sheets)
         seen_pairs = _seen(db, list({x["response_id"] for x in sheets}))
         void = sorted(
             (
@@ -547,8 +586,13 @@ class RatingRepository(MongoStore):
                 taken.add(v["response_id"])
         start = self._last_position(batch_id, rater_id)
         if moved:
-            db["rating_assignment"].delete_many(
-                {"assignment_id": {"$in": [v["assignment_id"] for v in moved]}}
+            db["rating_batch"].update_one(
+                {"batch_id": batch_id},
+                {
+                    "$pull": {
+                        "ratings": {"assignment_id": {"$in": [v["assignment_id"] for v in moved]}}
+                    }
+                },
             )
         planned = assign.reassignment(
             [(v["response_id"], v["slot"]) for v in moved], rater_id, seed, start
@@ -561,8 +605,7 @@ class RatingRepository(MongoStore):
     def _ratings_by_response(self, batch_id: str, allowed: set[str] | None = None) -> list[dict]:
         db = self.db
         sheets = sorted(
-            db["rating_assignment"].find({"batch_id": batch_id}),
-            key=lambda x: (x["response_id"], x["slot"]),
+            _sheets(db, {"batch_id": batch_id}), key=lambda x: (x["response_id"], x["slot"])
         )
         responses = {
             r["response_id"]: r
@@ -571,7 +614,7 @@ class RatingRepository(MongoStore):
             )
         }
         machine = _machine(db, responses)
-        rated = _rated(db, [x["assignment_id"] for x in sheets])
+        rated = _rated(sheets)
         items: dict[str, dict] = {}
         for x in sheets:
             r = responses.get(x["response_id"])
@@ -614,7 +657,7 @@ class RatingRepository(MongoStore):
         return list(items.values())
 
     def analysis_rows(self, batch_id: str, allowed: set[str]) -> list[dict]:
-        """Every response of the batch whose owner still consents, with all its ratings.
+        """Every response of the batch whose owner is in `allowed`, with all its ratings.
 
         For administrators: holds the speaker pseudonym (the bootstrap resamples
         speakers) and the machine's own score next to the human ones.
@@ -623,34 +666,48 @@ class RatingRepository(MongoStore):
 
     def all_times_to_rate(self) -> list[float]:
         """Seconds from opening to submission, every batch: rating without the machine (D041)."""
-        batches = self.col("rating_batch").distinct("batch_id")
-        return [s for b in batches for s in self.times_to_rate(b)]
+        return [s for b in _batches(self.db) for s in self.times_to_rate(b.batch_id)]
 
     def times_to_rate(self, batch_id: str) -> list[float]:
         """Seconds from first opening to submission, per submitted rating."""
-        sheets = {
-            x["assignment_id"]: x
-            for x in self.col("rating_assignment").find(
-                {"batch_id": batch_id, "opened_at": {"$ne": None}}
-            )
-        }
+        done = [
+            x
+            for x in _sheets(self.db, {"batch_id": batch_id})
+            if x["opened_at"] is not None and x["submitted_at"] is not None
+        ]
         out = []
-        for g in (
-            self.col("research_rating")
-            .find({"assignment_id": {"$in": list(sheets)}})
-            .sort("_id", ASCENDING)
-        ):
-            opened = sheets[g["assignment_id"]]["opened_at"]
+        for x in sorted(done, key=lambda x: x["submitted_at"]):
             seconds = (
-                datetime.fromisoformat(g["submitted_at"]) - datetime.fromisoformat(opened)
+                datetime.fromisoformat(x["submitted_at"]) - datetime.fromisoformat(x["opened_at"])
             ).total_seconds()
             out.append(max(0.0, seconds))
         return out
 
 
-def _rating(row: dict) -> Rating:
-    unscorable = bool(row["unscorable"])
+def _sheet(p: assign.Planned) -> Rating:
     return Rating(
+        assignment_id=uuid.uuid4().hex[:16],
+        response_id=p.response_id,
+        rater_id=p.rater_id,
+        slot=p.slot,
+        position=p.position,
+    )
+
+
+def _batch_view(b: RatingBatch) -> dict:
+    return {
+        "batch_id": b.batch_id,
+        "name": b.name,
+        "seed": b.seed,
+        "status": b.status,
+        "created_by": b.created_by,
+        "created_at": b.created_at,
+    }
+
+
+def _rating(row: dict) -> RaterScore:
+    unscorable = bool(row["unscorable"])
+    return RaterScore(
         rater_id=row["rater_id"],
         overall=None if unscorable else row["score_overall"],
         band=None if unscorable else row["band"],

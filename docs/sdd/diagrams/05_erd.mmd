@@ -1,86 +1,69 @@
-%% SDD - Diagram 05: ERD - phan cham diem cua lang do dang chay (SQLite, aicefr.db)
-%% Tach lam hai hinh vi gop chin bang vao mot hinh cho ty le 2,28 - qua rong,
-%% in A4 thi chu mat. Hinh 5c ve phan dinh danh, dong thuan va trang thai theo
-%% tai khoan; hinh 5d ve phan cham mu (D030).
-%% Kieu ghi dung kieu SQLite that: TEXT / INTEGER / REAL.
+%% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
+%% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
+%% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
+%% in A4: hinh 5c ve dinh danh, hinh 5d ve cham mu va thuc nghiem.
+%% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
-    account ||--o{ response : "nộp · account_id, chưa ràng buộc FK"
-    task ||--o{ response : "đề bài · task_id, chưa ràng buộc FK"
-    response ||--o{ review_action : "được sửa điểm (FK)"
-    response ||--o| review_lock : "đang có người duyệt (FK)"
+    account ||--o{ response : "nộp · account_id"
+    task ||--o{ response : "đề bài · task_id"
+    account ||--o{ classroom : "dạy · teacher_id, học · members"
+    classroom }o--o{ task : "giao · assignments.task_id"
 
     account {
-        TEXT account_id PK "chi tiết ở hình 5c"
+        string account_id PK "chi tiết ở hình 5c"
     }
 
     task {
-        TEXT task_id PK
-        TEXT title
-        TEXT prompt_text
-        TEXT prompt_version
-        TEXT part "phần thi, ví dụ P3"
-        INTEGER min_seconds
-        INTEGER max_seconds
-        INTEGER active
-        TEXT created_at
-        TEXT topic_keywords "từ khóa chủ đề tiếng Anh, rỗng là đề mở (D022)"
-        TEXT purpose "assessment · practice (D023)"
-        TEXT criterion "chỉ đề luyện tập"
-        TEXT band "chỉ đề luyện tập"
-        TEXT missions_json "chỉ đề luyện tập"
-        TEXT tips_json "chỉ đề luyện tập"
-        TEXT reference_text "đoạn đọc theo, chỉ đề luyện tập"
+        string task_id PK
+        string title
+        string prompt_text
+        string prompt_version
+        string part "phần thi, ví dụ P3"
+        int min_seconds
+        int max_seconds
+        string topic_keywords "từ khóa chủ đề, rỗng là đề mở (D022)"
+        string purpose "assessment · practice (D023)"
+        string criterion "chỉ đề luyện tập"
+        string band "chỉ đề luyện tập"
+        string reference_text "đoạn đọc theo, chỉ đề luyện tập"
     }
 
     response {
-        TEXT response_id PK
-        TEXT speaker_id "bút danh, sao lại lúc nộp"
-        TEXT task_id
-        TEXT status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
-        REAL overall_0_6 "NULL khi chưa chấm được"
-        TEXT overall_band "A2 · B1 · B2"
-        INTEGER teacher_verified
-        TEXT model_version
-        TEXT config_version
-        TEXT report_json "toàn bộ Response, nguồn sự thật của báo cáo"
-        TEXT created_at
-        TEXT account_id
-        TEXT audio_path
-        TEXT purpose "assessment · practice; bài luyện không vào hàng đợi duyệt (D023)"
+        string response_id PK
+        string account_id
+        string task_id
+        string status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
+        float overall_0_6 "null khi chưa chấm được"
+        string overall_band "A1 … C2 (D059)"
+        int teacher_verified
+        string report_json "toàn bộ báo cáo, nguồn sự thật"
+        string purpose "assessment · practice"
+        array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
+        object review_lock "ai đang duyệt, tới lúc nào"
+        array review_visits "mở bài, kết thúc, hành động (D041)"
+        array replay_labels "tự nghe lại (D056)"
+        array machine_seen "ai đã thấy điểm máy, qua đâu"
     }
 
-    review_action {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT response_id FK
-        TEXT reviewer_id "bút danh giảng viên, lấy từ phiên"
-        REAL old_score
-        REAL new_score
-        TEXT old_band
-        TEXT new_band
-        TEXT reason
-        TEXT created_at
-    }
-
-    review_lock {
-        TEXT response_id PK "đồng thời là FK"
-        TEXT reviewer_id
-        TEXT reviewer_name
-        TEXT locked_until "khóa hết hạn thì người khác giành được"
+    classroom {
+        string class_id PK
+        string code UK "mã tham gia"
+        string teacher_id
+        array members "mã tài khoản theo thứ tự vào lớp"
+        array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
 
     audit_log {
-        INTEGER id PK "AUTOINCREMENT"
-        TEXT actor_id
-        TEXT action
-        TEXT target_id "không ràng buộc FK - trỏ tới nhiều loại thực thể"
-        TEXT detail
-        TEXT created_at
+        int id PK "tự tăng"
+        string actor_id
+        string action
+        string target_id "trỏ tới nhiều loại thực thể"
+        string service
+        string created_at
     }
 
-    app_config {
-        TEXT key PK "active_model hoặc qc_thresholds"
-        TEXT value "giá trị hiện hành, dạng JSON với ngưỡng QC"
-        TEXT version "nhãn phiên bản, đi vào từng báo cáo sinh ra sau đó"
-        TEXT updated_by "bút danh người đổi — biến môi trường không mang được điều này"
-        TEXT updated_at
+    system {
+        string key PK "assessment.active_model, billing.organization, ..."
+        string value
+        string version "chỉ với cấu hình assessment.*"
     }

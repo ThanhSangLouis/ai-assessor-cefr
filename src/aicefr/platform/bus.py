@@ -2,9 +2,8 @@
 
 Three ways one service hands something to another without calling it:
 
-* **events** (`publish` / `subscribe`): "consent changed", "a response was
-  scored". Every service that subscribed gets its own copy; the publisher does
-  not know who listens.
+* **events** (`publish` / `subscribe`): "a response was scored". Every service
+  that subscribed gets its own copy; the publisher does not know who listens.
 * **work** (`send` / `consume`): a recording to score. Exactly one worker takes
   each message; with Redis the job waits in its queue until one does, so
   scoring survives a restart of either side.

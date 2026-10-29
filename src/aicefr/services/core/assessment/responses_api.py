@@ -27,7 +27,7 @@ from aicefr.contracts import (
     ProcessingRequest,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
 )
 from aicefr.infra.blobs import audio_response
@@ -50,7 +50,6 @@ from aicefr.services.core.assessment.context import (
     scorable_duration,
     svc,
 )
-from aicefr.services.core.identity.facade import consent_from
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.repository import InvalidStateError
 from aicefr.storage.task_repository import Task
@@ -79,15 +78,14 @@ async def submit_response(
     # let a student submit under somebody else's pseudonym.
     speaker_id = account.pseudonym
 
-    # FR-01: no consent, no recording. Checked before a single byte is written
-    # to disk -- storing the audio first and asking permission afterwards is the
-    # exact order that makes an ethics committee say no.
-    consent = consent_from(s.peers.identity.consent(account_id=account.account_id))
-    if consent is None or not consent.may_submit:
+    # FR-01 (D058): no accepted terms, no recording. Checked before a single
+    # byte is written to disk -- storing the audio first and asking afterwards
+    # is the wrong order for personal data.
+    if not account.may_submit:
         raise HTTPException(
             403,
-            "chưa có đồng thuận cho phép lưu bản ghi. Vào trang /consent để ký"
-            f" ({ReasonCode.CONSENT_MISSING.value})",
+            "chưa đồng ý điều khoản sử dụng. Vào trang /terms để đồng ý"
+            f" ({ReasonCode.TERMS_NOT_ACCEPTED.value})",
         )
 
     task = s.tasks.get(task_id)
@@ -136,7 +134,7 @@ async def submit_response(
     # allows would cost; settled on the real length once there is a result.
     # Off (the school deployment, BR-29/BR-30) this always allows.
     metering = getattr(s.peers, "metering", None)
-    action = "practice" if task.purpose is TaskPurpose.PRACTICE else "assess"
+    action = task.purpose.value
     refusal = (
         metering.hold(
             account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds
@@ -163,7 +161,6 @@ async def submit_response(
         audio_path=audio_ref,
         prompt_version=task.prompt_version,
         config_version=CONFIG_VERSION,
-        consent_version=consent.consent_version,
     )
 
     # Persist immediately in the QUEUED state and reply, instead of waiting for
@@ -172,10 +169,9 @@ async def submit_response(
     s.repo.save(
         Response(
             response_id=rid,
-            status=Status.QUEUED,
+            status=ResponseStatus.QUEUED,
             config_version=CONFIG_VERSION,
             prompt_version=req.prompt_version,
-            consent_version=req.consent_version,
         ),
         speaker_id,
         task_id,
@@ -191,7 +187,10 @@ async def submit_response(
         # than leave the student watching a QUEUED page until the next restart.
         logger.exception("could not hand %s to the speech service", rid)
         s.repo.set_status(
-            rid, Status.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=(Status.QUEUED,)
+            rid,
+            ResponseStatus.FAILED,
+            [ReasonCode.PROCESSING_INTERRUPTED],
+            only_from=(ResponseStatus.QUEUED,),
         )
         scoring.settle_charge(rid)
         raise HTTPException(503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút") from e
@@ -199,7 +198,7 @@ async def submit_response(
     response.status_code = 202
     return SubmitResponse(
         response_id=rid,
-        status=Status.QUEUED.value,
+        status=ResponseStatus.QUEUED.value,
         message="Đã nhận bài, đang xử lý.",
     )
 
@@ -272,7 +271,7 @@ def response_status(response_id: str, account: Account = Depends(require_login))
     status_info = repo.status_of(response_id)
     if status_info is None or not can_view_response(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
-    status_info["is_pending"] = Status(status_info["status"]).is_pending
+    status_info["is_pending"] = ResponseStatus(status_info["status"]).is_pending
     return status_info
 
 
@@ -349,13 +348,13 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
 # export, reachable without asking an administrator.
 FIELD_PURPOSES: dict[str, str] = {
     "speaker_id": "Bút danh gắn bài nói với tài khoản. Không chứa họ tên hay MSSV.",
-    "consent": "Lịch sử đồng thuận: đã ký bản nào, cho phép gì, rút khi nào.",
+    "terms_accepted_at": "Thời điểm bạn đồng ý điều khoản sử dụng; từ đó hệ thống mới lưu bản ghi.",
     "response_id": "Mã bài nói, dùng để tra cứu và để xoá đúng bản ghi khi bạn yêu cầu.",
     "task_id": "Đề bài đã nói, để so sánh các bài cùng đề.",
     "status": "Trạng thái xử lý của bài.",
     "created_at": "Thời điểm nộp, dùng để áp chính sách lưu trữ 12 tháng.",
     "overall_0_6": "Điểm ước lượng của hệ thống trên thang 0-6.",
-    "overall_band": "Band ước lượng A2/B1/B2. Không phải chứng chỉ.",
+    "overall_band": "Band ước lượng A1–C2. Không phải chứng chỉ.",
     "teacher_verified": "Giảng viên đã xác nhận kết quả này hay chưa.",
     "model_version": "Phiên bản mô hình đã chấm bài, để truy lại khi kết quả bị nghi ngờ.",
     "transcript": "Bản chép lời do máy nhận dạng, dùng để trích bằng chứng.",
@@ -382,8 +381,8 @@ FIELD_PURPOSES: dict[str, str] = {
 def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
     """Everything the system holds about the caller, and what it is used for.
 
-    Consent comes from the identity service and lesson attempts and achievements
-    from the learning service (D043); the export is still one file.
+    Lesson attempts and achievements come from the learning service (D043);
+    the export is still one file.
     """
     s = svc()
     responses = []
@@ -423,19 +422,7 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "speaker_id": account.pseudonym,
             "fields": FIELD_PURPOSES,
-            "consent": [
-                {
-                    k: c[k]
-                    for k in (
-                        "consent_version",
-                        "audio_storage_allowed",
-                        "research_use_allowed",
-                        "signed_at",
-                        "withdrawn_at",
-                    )
-                }
-                for c in s.peers.identity.consent_history(account_id=account.account_id)
-            ],
+            "terms_accepted_at": account.terms_accepted_at,
             "response_count": len(responses),
             "responses": responses,
             "lesson_attempt_count": len(lesson_attempts),
@@ -535,7 +522,7 @@ def _practice_progress(attempts: list[dict]) -> dict[str, TaskProgress]:
     """Per-task progress from the attempts (oldest first). Only processed attempts count."""
     out: dict[str, TaskProgress] = {}
     for a in attempts:
-        if a["status"] != Status.COMPLETED.value:
+        if a["status"] != ResponseStatus.COMPLETED.value:
             continue
         prev = out.get(a["task_id"], TaskProgress())
         out[a["task_id"]] = TaskProgress(
@@ -588,7 +575,7 @@ def _next_view(
 
 def _daily_view(attempts: list[dict]) -> dict:
     d = summarize(
-        [a["created_at"] for a in attempts if a["status"] == Status.COMPLETED.value],
+        [a["created_at"] for a in attempts if a["status"] == ResponseStatus.COMPLETED.value],
         datetime.now(UTC),
     )
     return {
@@ -693,14 +680,14 @@ def practice_attempt(response_id: str, account: Account = Depends(require_login)
     earlier = [
         a
         for a in attempts[:position]
-        if a["task_id"] == info["task_id"] and a["status"] == Status.COMPLETED.value
+        if a["task_id"] == info["task_id"] and a["status"] == ResponseStatus.COMPLETED.value
     ]
     previous = repo.get(earlier[-1]["response_id"]) if earlier else None
     before = previous_measures(result, previous.practice if previous else None) if result else []
     return {
         "response_id": response_id,
         "status": info["status"],
-        "is_pending": Status(info["status"]).is_pending,
+        "is_pending": ResponseStatus(info["status"]).is_pending,
         "created_at": info["created_at"],
         "reasons": [r.value for r in report.reasons],
         "task": {

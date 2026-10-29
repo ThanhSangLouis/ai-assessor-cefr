@@ -527,7 +527,7 @@ audio { width: 100%; }
 }
 .header-button.primary:hover { background: var(--brand-strong); color: var(--brand-fg); }
 
-/* The account menu: who is signed in, consent, theme, sign out. A <details>
+/* The account menu: who is signed in, terms, theme, sign out. A <details>
    element, so it opens with Enter or a click and needs no script to work;
    common.js only closes it on a click outside or Escape. */
 .account-menu { position: relative; }
@@ -1934,9 +1934,7 @@ button.evidence:hover {
 .fold { margin-top: var(--sp-4); }
 .fold[open] > summary { margin-bottom: var(--sp-2); }
 
-/* --- consent: one checkbox per choice ----------------------------------------
-   Each choice is its own box with its own explanation; there is no "agree to
-   all" button. */
+/* --- checkbox rows: one box per choice, each with its own explanation -------- */
 .check {
   margin: 0;
   font-size: var(--t-md);
@@ -1960,7 +1958,7 @@ button.evidence:hover {
   padding: 0;
   accent-color: var(--brand);
 }
-.consent-points { display: grid; gap: var(--sp-2); }
+.terms-points { display: grid; gap: var(--sp-2); }
 
 /* --- word marks ---------------------------------------------------------------
    Heard, unsure, missed: the colours a learner reads after speaking. Shared by
@@ -3934,7 +3932,9 @@ body.has-sidebar { padding-left: var(--sidebar-w); --header-h: 0px; }
   font-weight: 700;
 }
 .band-b1 .part-badge { background: var(--accent); }
-.band-b2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
+.band-b2 .part-badge,
+.band-c1 .part-badge,
+.band-c2 .part-badge { background: var(--fg); color: var(--bg-elevated); }
 .part-count { margin-left: auto; font-size: var(--t-sm); color: var(--fg-muted); white-space: nowrap; }
 
 /* A unit: one topic, a banner and its trail. */

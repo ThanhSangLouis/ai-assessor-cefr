@@ -1,2 +1,1 @@
-"""Diagnostic report contracts, validation and storage for M06."""
-
+"""Xem docs/sdd/SDD.md muc 4."""

@@ -39,7 +39,7 @@ from aicefr.contracts import (
     QcStatus,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
 )
 from aicefr.lessons.model import (
     STEP_RULES_VERSION,
@@ -128,17 +128,14 @@ def freeze(monkeypatch, moment: datetime) -> None:
 
 
 def login_as(
-    m, pseudonym: str, role: str = "student", consent: bool = True, raise_errors: bool = True
+    m, pseudonym: str, role: str = "student", terms: bool = True, raise_errors: bool = True
 ) -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     client = TestClient(m.app, raise_server_exceptions=raise_errors)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
-    if consent:
-        client.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
+    if terms:
+        client.post("/api/v1/me/terms")
     return client
 
 
@@ -176,7 +173,7 @@ def submit_assessment(c: TestClient) -> str:
 def scored(response_id: str, band: Band, weakest: list[Criterion]) -> Response:
     return Response(
         response_id=response_id,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         assessment=Assessment(
             overall_0_6=3.2, overall_band=band, model_version="test", weakest_criteria=weakest
@@ -204,20 +201,23 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     assert path["path_id"] == SAMPLE_PATH_ID and path["sample"] == 1
     assert "chờ giảng viên" in path["description"]  # labelled as content awaiting review
     units = repo.outline(SAMPLE_PATH_ID)
-    # Three levels in order, each through units on different topics.
-    assert [u["band"] for u in units] == ["A2"] * 6 + ["B1"] * 6 + ["B2"] * 6
-    for band in ("A2", "B1", "B2"):
-        assert len({u["topic"] for u in units if u["band"] == band}) == 6
+    # Six levels in order (D059), each through units on different topics.
+    assert [u["band"] for u in units] == (
+        ["A1"] * 2 + ["A2"] * 6 + ["B1"] * 6 + ["B2"] * 6 + ["C1"] * 2 + ["C2"] * 2
+    )
+    for band in ("A1", "A2", "B1", "B2", "C1", "C2"):
+        topics = [u["topic"] for u in units if u["band"] == band]
+        assert len(set(topics)) == len(topics) >= 2
     items = [item for u in units for item in u["lessons"]]
-    assert len(items) == 31
+    assert len(items) == 46
     assert all(item["published_version"] == 1 for item in items)
     assert all(item["lesson"].sample for item in items)
     assert all(item["lesson"].steps[-1].kind is StepKind.FREE for item in items)
 
     home = login_as(m, "SV-001").get("/api/v1/learn").json()
     assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["sample"] is True
-    assert home["path"]["lessons_total"] == 31 and home["path"]["lessons_completed"] == 0
-    assert home["next"]["lesson_id"] == SAMPLE and home["next"]["basis"] == "path_order"
+    assert home["path"]["lessons_total"] == 46 and home["path"]["lessons_completed"] == 0
+    assert home["next"]["lesson_id"] == "lesson-pr-flu-a1" and home["next"]["basis"] == "path_order"
 
 
 def test_students_see_the_published_version_until_republished(m):
@@ -272,7 +272,7 @@ def test_archived_lesson_is_hidden_from_learners_but_its_attempts_stay_readable(
 
     assert student.get(f"/api/v1/learn/lessons/{SAMPLE}").status_code == 404
     record(student, SAMPLE, KEYWORDS, expect=404)
-    assert student.get("/api/v1/learn").json()["path"]["lessons_total"] == 30
+    assert student.get("/api/v1/learn").json()["path"]["lessons_total"] == 45
     seen = teacher.get(f"/api/v1/teach/attempts/{attempt_id}").json()
     assert seen["lesson"]["title"] == "Khu phố của tôi" and seen["step"]["kind"] == "keywords"
     exported = student.get("/api/v1/me/export.json").json()["lesson_attempts"]
@@ -516,7 +516,8 @@ def test_keywords_without_a_text_build_a_word_lesson(m):
 
     assert teacher.post(f"/api/v1/teach/lessons/{words}/publish").json() == {"version": 1}
     student = login_as(m, "SV-001")
-    a2 = student.get("/api/v1/learn").json()["path"]["units"][0]
+    units = student.get("/api/v1/learn").json()["path"]["units"]
+    [a2] = [u for u in units if u["unit_id"] == "unit-sample-a2"]
     assert a2["lessons"][-1]["lesson_id"] == words  # the two drafts stay hidden
     assert a2["lessons"][-1]["kinds"] == ["keywords", "keywords", "free"]
     say(m, "the traffic near my home is bad but the park nearby is quiet")
@@ -654,7 +655,7 @@ def test_path_export_import_roundtrip(m):
     assert _shape(m, new_id) == _shape(m, SAMPLE_PATH_ID)
     imported = [i for u in m.lessons.outline(new_id, published_only=False) for i in u["lessons"]]
     original = [i for u in m.lessons.outline(SAMPLE_PATH_ID) for i in u["lessons"]]
-    assert len(imported) == 31
+    assert len(imported) == 46
     assert all(i["published_version"] == 0 for i in imported)  # drafts, nothing published
     assert not {i["lesson"].lesson_id for i in imported} & {i["lesson"].lesson_id for i in original}
     learner_paths = login_as(m, "SV-001").get("/api/v1/learn").json()["paths"]
@@ -675,7 +676,7 @@ def test_rejected_import_leaves_no_half_built_path(m):
         "title": "Lộ trình nhập lỗi",
         "units": [
             {"title": "Chặng 1", "band": "B1", "lessons": []},
-            {"title": "Chặng 2", "band": "C1", "lessons": []},
+            {"title": "Chặng 2", "band": "D1", "lessons": []},
         ],
     }
 
@@ -743,26 +744,25 @@ def _old_sample_path(db: Path) -> LessonRepository:
 
     every = {ls.lesson_id: ls for unit in sample_lessons().values() for ls in unit}
     repo = LessonRepository(db, seed=False)
-    # The documents of the time: no topic, no record of the layout.
-    repo.col("lesson_path").insert_one(
+    # The documents of the time (in the D060 layout): no topic, no record of the layout.
+    units = [
+        {"unit_id": uid, "title": f"Chặng cũ {band}", "function": "", "band": band,
+         "criterion": None, "position": pos, "created_at": "2026-10-01"}
+        for pos, (uid, band) in enumerate(OLD_SAMPLE_UNITS.items(), 1)
+    ]  # fmt: skip
+    repo.col("path").insert_one(
         {"path_id": SAMPLE_PATH_ID, "title": "Lộ trình mẫu cũ", "description": "Mô tả cũ",
          "band_from": "A2", "band_to": "B2", "status": "published", "sample": 1,
          "created_by": "system", "created_at": "2026-10-01T00:00:00+00:00",
-         "updated_at": "2026-10-01T00:00:00+00:00"}
+         "updated_at": "2026-10-01T00:00:00+00:00", "units": units}
     )  # fmt: skip
-    for pos, (uid, band) in enumerate(OLD_SAMPLE_UNITS.items(), 1):
-        repo.col("lesson_unit").insert_one(
-            {"unit_id": uid, "path_id": SAMPLE_PATH_ID, "title": f"Chặng cũ {band}",
-             "function": "", "band": band, "criterion": None, "position": pos,
-             "created_at": "2026-10-01"}
-        )  # fmt: skip
     by_band = {"A2": "unit-sample-a2", "B1": "unit-sample-b1", "B2": "unit-sample-b2"}
     for uid, ids in OLD_SAMPLE_LESSONS.items():
         for lid in ids:
             repo.add_lesson(uid, every[lid], by="system")
             repo.publish(lid, by="system")
     for lid, lesson in every.items():
-        if lid.startswith("lesson-pr-"):
+        if lid.startswith("lesson-pr-") and Band(lesson.band).value in by_band:
             repo.add_lesson(by_band[Band(lesson.band).value], lesson, by="system")
             repo.publish(lid, by="system")
     return repo
@@ -781,12 +781,13 @@ def test_an_older_sample_path_is_laid_out_by_topic_once(tmp_path):
     ids = [u["unit_id"] for u in units]
     assert ids == [*(u["unit_id"] for u in SAMPLE_UNITS), own]  # a teacher's unit stays, last
     assert all(u["topic"] for u in units[:-1]) and units[-1]["topic"] is None
-    assert units[0]["title"] == "Đời sống hằng ngày" and repo.path(SAMPLE_PATH_ID)["title"] != (
+    assert units[2]["title"] == "Đời sống hằng ngày" and repo.path(SAMPLE_PATH_ID)["title"] != (
         "Lộ trình mẫu cũ"
     )
     where = {i["lesson"].lesson_id: u["unit_id"] for u in units for i in u["lessons"]}
     assert where["lesson-pr-coh-a2"] == "unit-a2-food"
-    assert len([lid for lid in where if lid.startswith("lesson-")]) == 31
+    assert len([lid for lid in where if lid.startswith("lesson-")]) == 46  # D059 adds 15
+    assert repo.path(SAMPLE_PATH_ID)["band_from"] == "A1"
     assert repo.published("lesson-b2-plastic")[1] == 1  # new lessons arrive published
     assert len(repo.attempts(lesson_id="lesson-pr-coh-a2")) == 1  # attempts untouched
 
@@ -1027,7 +1028,11 @@ def test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media(tmp_path):
     lessons = LessonRepository(db, seed=False)
     result = StepResult(step_id="s1", kind=StepKind.KEYWORDS, passed=True)
     lessons.add_attempt("acc-1", "lesson-x", 1, result, audio_key="lesson-audio-a1.wav")
-    lessons.add_media("image", "image/png", "lesson-media-l1-s1-x.png", "GV-01")
+    # Media belong to the lesson they were uploaded for (D060).
+    unit = lessons.add_unit(lessons.create_path("P"), "U")
+    lesson = next(iter(sample_lessons().values()))[0].model_copy(update={"lesson_id": "l1"})
+    lessons.add_lesson(unit, lesson)
+    lessons.add_media("l1", "image", "image/png", "lesson-media-l1-s1-x.png", "GV-01")
     for name in ("lesson-audio-a1.wav", "lesson-media-l1-s1-x.png", "nobody.wav"):
         (uploads / name).write_bytes(b"RIFF")
 
@@ -1075,24 +1080,10 @@ def test_retention_sweep_covers_lesson_attempts(tmp_path):
     assert row["passed"] is False
 
 
-def test_recording_a_step_needs_consent(m):
-    student = login_as(m, "SV-001", consent=False)
+def test_recording_a_step_needs_the_terms(m):
+    student = login_as(m, "SV-001", terms=False)
     acc = account_id(m, "SV-001")
 
-    record(student, SAMPLE, KEYWORDS, expect=403)
-    student.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "false", "research_use_allowed": "true"},
-    )
-    record(student, SAMPLE, KEYWORDS, expect=403)  # storing audio is what must be allowed
-    assert m.lessons.count_attempts(acc) == 0
-
-    student.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "false"},
-    )
-    record(student, SAMPLE, KEYWORDS)
-    student.post("/api/v1/me/consent/withdraw")
     record(student, SAMPLE, KEYWORDS, expect=403)
     review = student.post(
         "/api/v1/learn/review/attempts",
@@ -1100,6 +1091,10 @@ def test_recording_a_step_needs_consent(m):
         data={"review_id": "w-anything"},
     )
     assert review.status_code == 403
+    assert m.lessons.count_attempts(acc) == 0
+
+    student.post("/api/v1/me/terms")
+    record(student, SAMPLE, KEYWORDS)
     assert m.lessons.count_attempts(acc) == 1
 
 

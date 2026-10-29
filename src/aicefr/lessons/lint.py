@@ -18,7 +18,7 @@ from aicefr.lessons.model import GAP_PATTERN, TEXT_KINDS, Lesson, Stage, Step, S
 from aicefr.lessons.text import BRITISH, find_phrase, lemma, phrase_tokens, tokens
 
 # Longest sentence, in words, that a learner at the band reads comfortably.
-SENTENCE_WORDS = {Band.A2: 14, Band.B1: 20, Band.B2: 28}
+SENTENCE_WORDS = {Band.A1: 10, Band.A2: 14, Band.B1: 20, Band.B2: 28, Band.C1: 34, Band.C2: 40}
 
 # Words that sound like another word: a key word or a gap answer from this list
 # cannot be told apart by listening.

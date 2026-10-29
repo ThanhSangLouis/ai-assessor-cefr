@@ -160,12 +160,8 @@ def main(argv: list[str] | None = None) -> int:
     student = Browser(args.base).login(student_id, student_pw)
     status, me = student.call("GET", "/api/v1/me")
     check(status == 200 and me["pseudonym"] == student_id, "core: who am I")
-    status, consent = student.call(
-        "POST",
-        "/api/v1/me/consent",
-        form={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-    )
-    check(status == 200 and consent["may_submit"], "core: consent signed")
+    status, terms = student.call("POST", "/api/v1/me/terms")
+    check(status == 200 and terms["may_submit"], "core: terms accepted")
 
     status, sub = student.call(
         "POST", "/api/v1/responses", form={"task_id": "P3"},
@@ -199,14 +195,14 @@ def main(argv: list[str] | None = None) -> int:
     status, export = student.call("GET", "/api/v1/me/export.json")
     check(
         status == 200 and export["response_count"] == 1 and export["lesson_attempt_count"] == 1,
-        "core: the export gathers responses, consent and lesson attempts",
+        "core: the export gathers responses, terms and lesson attempts",
         export if status != 200 else None,
     )
 
     admin = Browser(args.base).login(admin_id, admin_pw)
     status, audit = admin.call("GET", "/api/v1/audit?limit=200")
     actions = {e["action"] for e in audit} if status == 200 else set()
-    check({"consent.sign", "export.personal"} <= actions, "core: the audit log")
+    check({"terms.accept", "export.personal"} <= actions, "core: the audit log")
     status, plan = admin.call("GET", "/api/v1/admin/billing")
     check(status == 200, "core: the plan screen", plan)
     status, erased = admin.call(

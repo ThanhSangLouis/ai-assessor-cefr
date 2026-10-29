@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from aicefr.platform.rpc import exposed
 from aicefr.qc import audio_qc
+from aicefr.scoring.band_map import thresholds_of
 from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import PREP_SECONDS, active_model_name, active_qc
 from aicefr.storage.rating_repository import RatingRepository
@@ -38,7 +39,9 @@ class AssessmentFacade:
     @exposed
     def student_badges(self, account_id: str) -> dict:
         """Teacher decisions on this student's responses since they last looked (D028)."""
-        seen = self.repo.seen_at(account_id, "results")
+        from aicefr.services.core.assessment.context import svc
+
+        seen = svc().peers.identity.seen_at(account_id=account_id, marker="results")
         return {
             "results": self.repo.count_reviewed_since(account_id, seen),
             "results_seen_at": seen,
@@ -58,10 +61,6 @@ class AssessmentFacade:
 
         _bank, attempts, _progress = _practice_state(account_id)
         return _daily_view(attempts)
-
-    @exposed
-    def mark_seen(self, account_id: str, marker: str) -> str:
-        return self.repo.mark_seen(account_id, marker)
 
     @exposed
     def staff_badges(self, account_id: str) -> dict:
@@ -86,8 +85,7 @@ class AssessmentFacade:
             "max_size_mib": audio_qc.MAX_BYTES // (1024 * 1024),
             "sample_rate_hz": audio_qc.TARGET_SR,
             "prep_seconds": PREP_SECONDS,
-            "a2_b1": model["band_thresholds"]["A2_B1"],
-            "b1_b2": model["band_thresholds"]["B1_B2"],
+            "band_thresholds": thresholds_of(model["band_thresholds"]),
             "model_version": model["model_version"],
         }
 

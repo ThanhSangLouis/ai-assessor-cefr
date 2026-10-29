@@ -4,6 +4,7 @@ import pytest
 from conftest import feature_set
 
 from aicefr.contracts import Band
+from aicefr.scoring.band_map import thresholds_of
 from aicefr.scoring.scorer import RidgeScorer, load_model
 
 BASE, CAL = "ridge_resp_v2", "ridge_resp_v2_cal"
@@ -43,7 +44,8 @@ def test_its_own_thresholds_band_its_own_scores(cal) -> None:
     th = cal["band_thresholds"]
     assert th["A2_B1"] < th["B1_B2"]
     scorer = RidgeScorer(CAL)
-    assert scorer.band_thresholds == th
+    # The calibrated middle thresholds; the outer ones keep the defaults (D059).
+    assert scorer.band_thresholds == thresholds_of(th)
 
 
 def test_it_says_where_it_came_from(cal) -> None:

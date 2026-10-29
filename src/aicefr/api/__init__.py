@@ -1,2 +1,1 @@
-"""HTTP-facing adapters and presentation helpers for student and teacher flows."""
-
+"""Xem docs/sdd/SDD.md muc 4."""

@@ -44,7 +44,7 @@ from aicefr.pronunciation.vietnamese import PATTERN_NAMES, Pattern, opportunitie
 
 COMPOSER_VERSION = "path-composer-v1"
 
-BANDS: tuple[Band, ...] = (Band.A2, Band.B1, Band.B2)
+BANDS: tuple[Band, ...] = tuple(Band)
 BAND_RANK = {b: i for i, b in enumerate(BANDS)}
 MIN_LENGTH, MAX_LENGTH = 3, 30
 
@@ -99,7 +99,7 @@ _PATTERN_WORDS: dict[Pattern, tuple[str, ...]] = {
     Pattern.TH_SOUND: ("am th", "th sound"),
     Pattern.CLUSTER: ("cum phu am", "cluster"),
 }
-_BAND_RE = re.compile(r"\b(a2|b1|b2)\b")
+_BAND_RE = re.compile(r"\b(a1|a2|b1|b2|c1|c2)\b")
 # Vietnamese words of a wish that say nothing about content ("luyện ở trường"
 # should match on "truong", not on "luyen" or "o"). Without marks, as `plain` gives.
 VI_STOPWORDS = frozenset(
@@ -250,7 +250,7 @@ class Learner:
 
 def order_features(c: Candidate) -> np.ndarray:
     rate = c.pass_rate
-    difficulty = (1.0 - rate) if rate is not None else 0.2 + 0.2 * BAND_RANK[c.band]
+    difficulty = (1.0 - rate) if rate is not None else 0.2 * BAND_RANK[c.band]
     return np.array(
         [
             BAND_RANK[c.band],
@@ -588,8 +588,10 @@ def compose(
     goal = goal.resolved()
     if learner and learner.band and not (goal.band_from or goal.band_to):
         # A learner's path starts at the band of their latest assessment and
-        # goes up; lower bands only fill a path that would be too short.
-        goal = replace(goal, band_from=learner.band, band_to=BANDS[-1])
+        # goes one band up (D059: not straight to C2); lower bands only fill a
+        # path that would be too short.
+        above = BANDS[min(BAND_RANK[learner.band] + 1, len(BANDS) - 1)]
+        goal = replace(goal, band_from=learner.band, band_to=above)
     order = fit_order(paths)
     picks = score_candidates(candidates, goal, learner)
     done = learner.completed if learner else frozenset()

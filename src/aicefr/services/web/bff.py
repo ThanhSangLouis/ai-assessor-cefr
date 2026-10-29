@@ -39,7 +39,7 @@ def my_badges(account: Account = Depends(require_login)) -> dict:
 @router.post("/api/v1/me/badges/{marker}/seen", tags=["auth"])
 def mark_badge_seen(marker: Literal["results"], account: Account = Depends(require_login)) -> dict:
     """The person has looked: what was new until now no longer is."""
-    seen_at = pages.svc().peers.assessment.mark_seen(account_id=account.account_id, marker=marker)
+    seen_at = pages.svc().peers.identity.mark_seen(account_id=account.account_id, marker=marker)
     return {"seen_at": seen_at}
 
 

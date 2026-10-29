@@ -13,8 +13,9 @@ from __future__ import annotations
 import os
 import re
 import uuid
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
@@ -23,7 +24,13 @@ from aicefr.auth import passwords
 from aicefr.auth import sessions as session_tokens
 from aicefr.auth.pseudonyms import validate_pseudonym
 from aicefr.contracts import AuthSession
-from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes
+from aicefr.storage.db import (
+    IntegrityError,
+    MongoStore,
+    ensure_indexes,
+    ensure_system,
+    setting_once,
+)
 from aicefr.storage.db import now_iso as _now
 
 # NFR-07: lock the account for 15 minutes after 5 consecutive failed logins;
@@ -31,18 +38,27 @@ from aicefr.storage.db import now_iso as _now
 MAX_FAILED_ATTEMPTS = 5
 LOCK_MINUTES = 15
 
-# account_identity (D029): an outside identity (Google) linked to an account by
-# its owner. Only a one-way hash of the provider's subject identifier is kept:
-# no email, no name, no photo. One identity per account per provider, one
-# account per identity. server_secret (D036): random keys this deployment signs
-# with, made once and kept, so every worker and every restart agree. Not a
-# person's data; never shown.
+# account.identities (D029): outside identities (Google) linked to the account
+# by its owner, part of the account's document (D060). Only a one-way hash of
+# the provider's subject identifier is kept: no email, no name, no photo. One
+# identity per account per provider (kept so by `link_identity`), one account
+# per identity (a unique index over the accounts that have one). The secrets
+# this deployment signs with (D036) are made once and kept in `system`, so
+# every worker and every restart agree. Not a person's data; never shown.
 INDEXES = {
-    "account": [(("account_id",), True), (("pseudonym",), True), (("pseudonym_lower",), False)],
-    "auth_sessions": [(("token_hash",), True), (("account_id",), False)],
-    "account_identity": [(("provider", "subject_hash"), True), (("account_id", "provider"), True)],
-    "server_secret": [(("name",), True)],
+    "account": [
+        (("account_id",), True),
+        (("pseudonym",), True),
+        (("pseudonym_lower",), False),
+        (
+            ("identities.provider", "identities.subject_hash"),
+            True,
+            {"identities.subject_hash": {"$exists": True}},
+        ),
+    ],
+    "session": [(("token_hash",), True), (("account_id",), False)],
 }
+SETTING = "identity."  # this part's keys in `system`
 
 # Every field of an account document, so a reader gets None for one never set,
 # as it got NULL from a column.
@@ -61,6 +77,9 @@ ACCOUNT_FIELDS = (
     "avatar_icon",
     "avatar_color",
     "daily_goal_s",
+    "terms_accepted_at",
+    "identities",
+    "seen_markers",
 )
 
 
@@ -121,10 +140,23 @@ class Account:
     avatar_icon: str | None = None
     avatar_color: str | None = None
     daily_goal_s: int = DEFAULT_DAILY_GOAL
+    # D058: when the learner accepted the terms of use, None until then. It
+    # replaces the research consent form: the voice-collection round is over,
+    # and accepting the terms is what lets a recording be stored and used.
+    terms_accepted_at: str | None = None
+    # D060: the providers of the outside identities linked to the account, and
+    # when its owner last looked at what can change behind their back (D028).
+    identities: tuple[str, ...] = ()
+    seen_markers: Mapping[str, str] = field(default_factory=dict)
 
     @property
-    def is_teacher(self) -> bool:
+    def is_staff(self) -> bool:
         return self.role in (Role.TEACHER, Role.ADMIN)
+
+    @property
+    def may_submit(self) -> bool:
+        """A recording is stored only for someone who accepted the terms."""
+        return self.terms_accepted_at is not None
 
 
 class AccountLocked(Exception):
@@ -158,6 +190,7 @@ class AuthRepository(MongoStore):
         self.db_path = str(db_path)
         self._secrets: dict[str, bytes] = {}
         ensure_indexes(self.db, INDEXES, "auth")
+        ensure_system(self.db)
 
     def secret(self, name: str) -> bytes:
         """A 32-byte key of this deployment for `name`, made the first time it is asked for.
@@ -166,15 +199,8 @@ class AuthRepository(MongoStore):
         it back.
         """
         if name not in self._secrets:
-            secrets = self.col("server_secret")
-            try:
-                secrets.insert_one(
-                    {"name": name, "value_hex": os.urandom(32).hex(), "created_at": _now()}
-                )
-            except IntegrityError:
-                pass  # made already, by this process earlier or by another
-            row = secrets.find_one({"name": name})
-            self._secrets[name] = bytes.fromhex(row["value_hex"])
+            kept, _mine = setting_once(self.db, SETTING + "secret." + name, os.urandom(32).hex())
+            self._secrets[name] = bytes.fromhex(kept)
         return self._secrets[name]
 
     # ---------- accounts ----------
@@ -201,6 +227,9 @@ class AuthRepository(MongoStore):
             "avatar_icon": None,
             "avatar_color": None,
             "daily_goal_s": DEFAULT_DAILY_GOAL,
+            "terms_accepted_at": None,
+            "identities": [],
+            "seen_markers": {},
         }
 
     def create_account(
@@ -289,9 +318,9 @@ class AuthRepository(MongoStore):
         """
         now = _now()
         rows = list(self.col("account").find().sort([("role", 1), ("pseudonym", 1)]))
-        linked = set(self.col("account_identity").distinct("account_id"))
+        linked = {r["account_id"] for r in rows if r.get("identities")}
         active: dict[str, int] = {}
-        for s in self.col("auth_sessions").find({"expires_at": {"$gt": now}}, {"account_id": 1}):
+        for s in self.col("session").find({"expires_at": {"$gt": now}}, {"account_id": 1}):
             active[s["account_id"]] = active.get(s["account_id"], 0) + 1
         out = []
         for found in rows:
@@ -426,7 +455,7 @@ class AuthRepository(MongoStore):
         self, account_id: str, device: str | None = None, method: str = "password"
     ) -> str:
         token = session_tokens.new_token()
-        self.col("auth_sessions").insert_one(
+        self.col("session").insert_one(
             {
                 "token_hash": session_tokens.hash_token(token),
                 "account_id": account_id,
@@ -444,7 +473,7 @@ class AuthRepository(MongoStore):
         """Return the account matching the session token, or None if it is invalid."""
         if not token:
             return None
-        found = self.col("auth_sessions").find_one({"token_hash": session_tokens.hash_token(token)})
+        found = self.col("session").find_one({"token_hash": session_tokens.hash_token(token)})
         if found is None:
             return None
         row = _account(
@@ -465,6 +494,9 @@ class AuthRepository(MongoStore):
             avatar_icon=row["avatar_icon"],
             avatar_color=row["avatar_color"],
             daily_goal_s=row["daily_goal_s"] or DEFAULT_DAILY_GOAL,
+            terms_accepted_at=row["terms_accepted_at"],
+            identities=tuple(i["provider"] for i in row["identities"] or []),
+            seen_markers=dict(row["seen_markers"] or {}),
         )
 
     def logout(self, token: str | None) -> None:
@@ -472,16 +504,16 @@ class AuthRepository(MongoStore):
         immediately."""
         if not token:
             return
-        self.col("auth_sessions").delete_one({"token_hash": session_tokens.hash_token(token)})
+        self.col("session").delete_one({"token_hash": session_tokens.hash_token(token)})
 
     def purge_expired_sessions(self) -> int:
-        return self.col("auth_sessions").delete_many({"expires_at": {"$lte": _now()}}).deleted_count
+        return self.col("session").delete_many({"expires_at": {"$lte": _now()}}).deleted_count
 
     def revoke_sessions(self, account_id: str, keep_token: str | None = None) -> int:
         """End every session of an account except, optionally, the caller's own."""
         keep = session_tokens.hash_token(keep_token) if keep_token else ""
         return (
-            self.col("auth_sessions")
+            self.col("session")
             .delete_many({"account_id": account_id, "token_hash": {"$ne": keep}})
             .deleted_count
         )
@@ -576,7 +608,7 @@ class AuthRepository(MongoStore):
         to tell sessions apart and to end one, useless for opening one.
         """
         rows = (
-            self.col("auth_sessions")
+            self.col("session")
             .find({"account_id": account_id, "expires_at": {"$gt": _now()}})
             .sort([("created_at", -1), ("_id", -1)])
         )
@@ -596,7 +628,7 @@ class AuthRepository(MongoStore):
         if not re.fullmatch(r"[0-9a-f]{16}", session_id or ""):
             return False
         # The short id is hex only, so it is safe inside an anchored pattern.
-        done = self.col("auth_sessions").delete_many(
+        done = self.col("session").delete_many(
             {"account_id": account_id, "token_hash": {"$regex": f"^{session_id}"}}
         )
         return done.deleted_count > 0
@@ -628,6 +660,30 @@ class AuthRepository(MongoStore):
             return
         self.col("account").update_one({"account_id": account_id}, {"$set": changes})
 
+    # ---------- terms of use (D058) ----------
+
+    def accept_terms(self, account_id: str) -> str:
+        """Record that the account accepted the terms; the first time stays.
+
+        Returns the time of acceptance. Accepting again changes nothing, so a
+        double click or a retried request does not move the date.
+        """
+        self.col("account").update_one(
+            {"account_id": account_id, "terms_accepted_at": None},
+            {"$set": {"terms_accepted_at": _now()}},
+        )
+        row = self.col("account").find_one({"account_id": account_id}, {"terms_accepted_at": 1})
+        if row is None:
+            raise KeyError(account_id)
+        return row["terms_accepted_at"]
+
+    def accounts_with_terms(self) -> set[str]:
+        """Accounts whose data may be used in research: those that accepted the terms."""
+        rows = self.col("account").find(
+            {"terms_accepted_at": {"$ne": None}, "disabled": 0}, {"account_id": 1}
+        )
+        return {r["account_id"] for r in rows}
+
     def set_role(self, account_id: str, role: Role) -> str:
         """Give an account another role; returns the role it had."""
         row = self.get(account_id)
@@ -639,52 +695,63 @@ class AuthRepository(MongoStore):
     # ---------- outside identities (D029) ----------
 
     def account_by_identity(self, provider: str, subject_hash: str) -> dict | None:
-        link = self.col("account_identity").find_one(
-            {"provider": provider, "subject_hash": subject_hash}
+        return _account(
+            self.col("account").find_one(
+                {"identities": {"$elemMatch": {"provider": provider, "subject_hash": subject_hash}}}
+            )
         )
-        if link is None:
-            return None
-        return _account(self.col("account").find_one({"account_id": link["account_id"]}))
 
     def identity(self, account_id: str, provider: str) -> dict | None:
-        row = self.col("account_identity").find_one(
-            {"account_id": account_id, "provider": provider}
-        )
-        return {"provider": row["provider"], "linked_at": row["linked_at"]} if row else None
+        row = self.col("account").find_one({"account_id": account_id}, {"identities": 1})
+        for link in (row or {}).get("identities") or []:
+            if link["provider"] == provider:
+                return {"provider": link["provider"], "linked_at": link["linked_at"]}
+        return None
 
     def link_identity(self, account_id: str, provider: str, subject_hash: str) -> None:
         """Link an outside identity to this account, replacing any earlier one.
 
         Raises IdentityTaken when the identity already belongs to another
         account: one Google account opening two pseudonyms would let one person
-        speak as two participants.
+        speak as two participants. On a MongoDB server a unique index also
+        refuses the second of two accounts linking the same identity at once.
         """
         owner = self.account_by_identity(provider, subject_hash)
         if owner is not None and owner["account_id"] != account_id:
             raise IdentityTaken(provider)
-        links = self.col("account_identity")
-        links.delete_many({"account_id": account_id, "provider": provider})
+        accounts = self.col("account")
+        accounts.update_one(
+            {"account_id": account_id}, {"$pull": {"identities": {"provider": provider}}}
+        )
+        link = {"provider": provider, "subject_hash": subject_hash, "linked_at": _now()}
         try:
-            links.insert_one(
-                {
-                    "provider": provider,
-                    "subject_hash": subject_hash,
-                    "account_id": account_id,
-                    "linked_at": _now(),
-                }
-            )
+            accounts.update_one({"account_id": account_id}, {"$push": {"identities": link}})
         except IntegrityError as e:
-            # Linked to another account between the check and the insert.
+            # Linked to another account between the check and the update.
             raise IdentityTaken(provider) from e
 
     def count_identities(self, provider: str) -> int:
-        return self.col("account_identity").count_documents({"provider": provider})
+        return self.col("account").count_documents({"identities.provider": provider})
 
     def unlink_identity(self, account_id: str, provider: str) -> bool:
-        done = self.col("account_identity").delete_many(
-            {"account_id": account_id, "provider": provider}
+        done = self.col("account").update_one(
+            {"account_id": account_id, "identities.provider": provider},
+            {"$pull": {"identities": {"provider": provider}}},
         )
-        return done.deleted_count > 0
+        return done.modified_count > 0
+
+    # ---------- what the owner has seen (D028) ----------
+
+    def seen_at(self, account_id: str, marker: str) -> str | None:
+        row = self.col("account").find_one({"account_id": account_id}, {"seen_markers": 1})
+        return ((row or {}).get("seen_markers") or {}).get(marker)
+
+    def mark_seen(self, account_id: str, marker: str) -> str:
+        now = _now()
+        self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {f"seen_markers.{marker}": now}}
+        )
+        return now
 
     def login_with_identity(
         self, provider: str, subject_hash: str, device: str | None = None

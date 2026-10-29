@@ -25,24 +25,15 @@ import hashlib
 import math
 from pathlib import Path
 
-from aicefr.contracts import Band, Criterion, CriterionIndicator, FeatureSet, ScoreInterval
+from aicefr.contracts import Criterion, CriterionIndicator, FeatureSet, ScoreInterval
 from aicefr.scoring import artifacts
+from aicefr.scoring.band_map import bands_between
 
 SCORE_MIN, SCORE_MAX = 1.0, 6.0
 
 
 class CalibrationMismatchError(ValueError):
     """Artifact hieu chinh khong thuoc mo hinh dang nap."""
-
-
-def bands_between(low: float, high: float, thresholds: dict[str, float]) -> list[Band]:
-    """Moi band co mot phan nam trong [low, high], theo thu tu A2 -> B2."""
-    edges = [
-        (Band.A2, -math.inf, thresholds["A2_B1"]),
-        (Band.B1, thresholds["A2_B1"], thresholds["B1_B2"]),
-        (Band.B2, thresholds["B1_B2"], math.inf),
-    ]
-    return [b for b, lo, hi in edges if low < hi and high >= lo]
 
 
 class ConformalCalibrator:

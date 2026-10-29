@@ -420,20 +420,15 @@ function loadActivity() {
 
 // ---------------------------------------------------------------- data
 function loadData() {
-  const el = document.getElementById("consent-state");
+  const el = document.getElementById("terms-state");
   if (!el) return;
-  fetch("/api/v1/me/consent")
+  fetch("/api/v1/me/terms")
     .then((r) => (r.ok ? r.json() : null))
-    .then((c) => {
-      if (!c) return;
-      if (!c.signed) {
-        el.textContent = "Bạn chưa ký đồng thuận, nên hệ thống chưa lưu bản ghi âm nào của bạn.";
-        return;
-      }
-      const yes = (v) => (v ? "có" : "không");
-      el.textContent =
-        `Đã ký phiên bản ${c.consent_version} lúc ${window.ui.localTime(c.signed_at)}. ` +
-        `Cho lưu bản ghi: ${yes(c.audio_storage_allowed)}; cho dùng vào nghiên cứu: ${yes(c.research_use_allowed)}.`;
+    .then((t) => {
+      if (!t) return;
+      el.textContent = t.accepted
+        ? `Đã đồng ý điều khoản lúc ${window.ui.localTime(t.accepted_at)}.`
+        : "Bạn chưa đồng ý điều khoản, nên hệ thống chưa lưu bản ghi âm nào của bạn.";
     })
     .catch(() => {});
 }

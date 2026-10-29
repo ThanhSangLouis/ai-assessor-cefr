@@ -14,7 +14,7 @@ from aicefr.contracts import (
     Evidence,
     EvidenceKind,
     Response,
-    Status,
+    ResponseStatus,
     Transcript,
     Word,
 )
@@ -38,7 +38,7 @@ def report(response_id: str = "r-1", flagged: tuple[float, ...] = (5.0, 30.0)) -
     ]
     return Response(
         response_id=response_id,
-        status=Status.REVIEW_REQUIRED,
+        status=ResponseStatus.REVIEW_REQUIRED,
         asr=Transcript(text="…", words=words, engine="fake", model_version="fake"),
         assessment=Assessment(
             overall_0_6=3.0, overall_band=Band.B1, model_version="m", evidence=evidence
@@ -169,22 +169,17 @@ def test_a_learner_answers_and_reads_it_back(m):
 
 
 @pytest.mark.integration
-def test_only_the_owner_listens_and_the_analysis_counts_consented_learners(m):
+def test_only_the_owner_listens_and_the_analysis_counts_the_labels(m):
     from test_lessons_integration import login_as, submit_assessment
 
     owner, other = login_as(m, "SV-001"), login_as(m, "SV-002")
-    admin = login_as(m, "QT-01", "admin", consent=False)
+    admin = login_as(m, "QT-01", "admin", terms=False)
     rid = submit_assessment(owner)
     _with_moments(m, rid)
     assert other.get(f"/api/v1/responses/{rid}/replay").status_code == 404
     first = owner.get(f"/api/v1/responses/{rid}/replay").json()["moments"][0]["moment_id"]
     owner.post(f"/api/v1/responses/{rid}/replay/{first}", json={"choice": "hard"})
     assert admin.get("/api/v1/admin/replay/report").json()["labels"] == 1
-    owner.post(
-        "/api/v1/me/consent",
-        data={"audio_storage_allowed": "true", "research_use_allowed": "false"},
-    )
-    assert admin.get("/api/v1/admin/replay/report").json()["labels"] == 0
 
 
 @pytest.mark.integration

@@ -4,7 +4,7 @@ const escapeHtml = window.escapeHtml;
 const root = document.getElementById("classes-root");
 const classId = root.dataset.classId;
 
-const BAND_ORDER = ["A2", "B1", "B2"];
+const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const STATE_CLASS = { on_time: "state-on", late: "state-warn", open: "state-off", missing: "state-warn" };
 const STATE = { open: "Chưa nộp", missing: "Chưa nộp (quá hạn)", on_time: "Đúng hạn", late: "Muộn" };
 const dmy = (iso) => window.ui.dmy(iso, "—");

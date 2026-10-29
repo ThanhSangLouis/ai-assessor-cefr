@@ -204,9 +204,8 @@ class Settings:
     # D049: charge per use. Only the deployment for the NetID channel turns it
     # on; the school and research deployment never does (BR-29, BR-30).
     metering_enabled: bool = field(default_factory=lambda: _flag("AICEFR_METERING"))
-    # D056: guided listening with random control moments. Off until the new
-    # consent item for it is approved; labels are analysed only for learners
-    # who allowed research use.
+    # D056: guided listening with random control moments. Off unless switched
+    # on; labels are analysed only for learners who accepted the terms (D058).
     guided_replay: bool = field(default_factory=lambda: _flag("AICEFR_GUIDED_REPLAY"))
     # D057: the seller's prices, in runs: a recording up to one minute, every
     # further started minute, the share a practice attempt pays, and what one

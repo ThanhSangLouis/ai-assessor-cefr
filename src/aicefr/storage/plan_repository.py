@@ -10,16 +10,18 @@ one stays, inactive, until the learner's data is erased.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from pathlib import Path
 
 from pymongo import ASCENDING, DESCENDING
 
 from aicefr.lessons.model import new_id
+from aicefr.storage.auth_repository import Role
 from aicefr.storage.db import MongoStore, ensure_indexes, fields
 from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import PLAN_INDEXES
 
-AUDIENCES = ("student", "teacher")
+AUDIENCES = (Role.STUDENT.value, Role.TEACHER.value)
 
 PLAN_FIELDS = (
     "plan_id",
@@ -34,6 +36,49 @@ PLAN_FIELDS = (
 )
 
 
+@dataclass
+class LearningPlan:
+    """A path the path model composed for a learner, or proposed to a teacher (D046)."""
+
+    plan_id: str
+    account_id: str
+    audience: Role  # a learner's own plan, or a teacher's proposal
+    goal: dict
+    plan: dict  # units, each with its lessons and the reasons they were picked
+    model_version: str
+    path_id: str | None  # the draft path a teacher saved it as
+    active: bool
+    created_at: str
+
+    @classmethod
+    def from_doc(cls, row: dict) -> LearningPlan:
+        out = fields(row, PLAN_FIELDS)
+        return cls(
+            plan_id=out["plan_id"],  # type: ignore[index]
+            account_id=out["account_id"],  # type: ignore[index]
+            audience=Role(out["audience"]),  # type: ignore[index]
+            goal=json.loads(out["goal_json"]),  # type: ignore[index]
+            plan=json.loads(out["plan_json"]),  # type: ignore[index]
+            model_version=out["model_version"],  # type: ignore[index]
+            path_id=out["path_id"],  # type: ignore[index]
+            active=bool(out["active"]),  # type: ignore[index]
+            created_at=out["created_at"],  # type: ignore[index]
+        )
+
+    def view(self) -> dict:
+        return {
+            "plan_id": self.plan_id,
+            "account_id": self.account_id,
+            "audience": self.audience.value,
+            "model_version": self.model_version,
+            "path_id": self.path_id,
+            "active": self.active,
+            "created_at": self.created_at,
+            "goal": self.goal,
+            "plan": self.plan,
+        }
+
+
 class PlanRepository(MongoStore):
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = str(db_path)
@@ -45,6 +90,7 @@ class PlanRepository(MongoStore):
         """Store a plan; a learner's new plan replaces their active one."""
         if audience not in AUDIENCES:
             raise ValueError(audience)
+        audience = Role(audience).value
         plan_id = new_id("lp")
         plans = self.col("learning_plan")
         if audience == "student":
@@ -69,11 +115,7 @@ class PlanRepository(MongoStore):
 
     @staticmethod
     def _row(row) -> dict:
-        out = fields(row, PLAN_FIELDS)
-        out["goal"] = json.loads(out.pop("goal_json"))  # type: ignore[union-attr]
-        out["plan"] = json.loads(out.pop("plan_json"))  # type: ignore[union-attr]
-        out["active"] = bool(out["active"])  # type: ignore[index]
-        return out  # type: ignore[return-value]
+        return LearningPlan.from_doc(row).view()
 
     def get(self, plan_id: str) -> dict | None:
         row = self.col("learning_plan").find_one({"plan_id": plan_id})

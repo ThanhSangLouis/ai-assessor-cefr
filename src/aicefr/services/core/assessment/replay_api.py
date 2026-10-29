@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, STUDENT_ONLY, require_login
-from aicefr.contracts import Status
+from aicefr.contracts import ResponseStatus
 from aicefr.report.replay import CHOICES, analyse, moments
 from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import svc
@@ -22,7 +22,7 @@ from aicefr.storage.replay_repository import ReplayRepository
 
 router = APIRouter()
 
-SCORED = (Status.COMPLETED, Status.REVIEW_REQUIRED)
+SCORED = (ResponseStatus.COMPLETED, ResponseStatus.REVIEW_REQUIRED)
 
 
 def labels() -> ReplayRepository:

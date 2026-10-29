@@ -26,7 +26,7 @@ from typing import Protocol, runtime_checkable
 import numpy as np
 
 from aicefr.billing.payments import Ack, Checkout, Incoming, PaymentResult
-from aicefr.contracts import Assessment, FeatureSet, Response, Status, Transcript
+from aicefr.contracts import Assessment, FeatureSet, Response, ResponseStatus, Transcript
 
 
 @runtime_checkable
@@ -193,7 +193,9 @@ class ResponseStore(Protocol):
 
     def get(self, response_id: str) -> Response | None: ...
 
-    def set_status(self, response_id: str, status: Status, reasons: list | None = None) -> None: ...
+    def set_status(
+        self, response_id: str, status: ResponseStatus, reasons: list | None = None
+    ) -> None: ...
 
 
 @runtime_checkable

@@ -20,9 +20,11 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import STAFF_ONLY, STUDENT_ONLY
+from aicefr.contracts import Band
 from aicefr.practice.streak import LOCAL_TZ
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account, Role
+from aicefr.storage.classroom_repository import as_assignment
 from aicefr.storage.db import now_iso
 
 router = APIRouter()
@@ -81,6 +83,7 @@ def standing(assignment: dict, members: list[str], now: str | None = None) -> di
         members, assignment["task_id"], assignment["created_at"]
     )
     latest = {r["account_id"]: r for r in responses}
+    due = as_assignment(assignment)
     out = {}
     for account_id in members:
         r = latest.get(account_id)
@@ -90,7 +93,7 @@ def standing(assignment: dict, members: list[str], now: str | None = None) -> di
             continue
         scored = r["status"] not in NOT_SCORED + WAITING
         out[account_id] = {
-            "state": "on_time" if r["created_at"] < assignment["due_at"] else "late",
+            "state": "late" if due.is_late(r["created_at"]) else "on_time",
             "response_id": r["response_id"],
             "submitted_at": r["created_at"],
             "status": r["status"],
@@ -115,7 +118,7 @@ def _summary(assignment: dict, states: dict[str, dict]) -> dict:
         "late": counts["late"],
         "open": counts["open"],
         "missing": counts["missing"],
-        "bands": {b: bands.get(b, 0) for b in ("A2", "B1", "B2")},
+        "bands": {b: bands.get(b, 0) for b in (band.value for band in Band)},
         "verified": sum(1 for s in states.values() if s.get("teacher_verified")),
     }
 

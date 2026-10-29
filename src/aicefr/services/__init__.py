@@ -2,7 +2,7 @@
 
 | service | owns                                                           | store       |
 |---------|----------------------------------------------------------------|-------------|
-| core    | accounts, consent, responses, review, blind rating, the        | schema core |
+| core    | accounts, terms, responses, review, blind rating, the          | schema core |
 |         | feedback study, lessons, achievements, plans and payment       |             |
 | speech  | QC, recognition, features, scoring, lesson-step measuring      | none        |
 | web     | the pages, their static files, the sidebar's counts            | none        |

@@ -473,15 +473,15 @@ fetch(`/api/v1/learn${chosen ? `?path_id=${encodeURIComponent(chosen)}` : ""}`)
     unitsEl.innerHTML = '<p class="error">Không tải được lộ trình. Hãy tải lại trang.</p>';
   });
 
-// Consent comes before practice: every step is a voice recording.
-fetch("/api/v1/me/consent")
+// The terms come before practice (D058): every step is a voice recording.
+fetch("/api/v1/me/terms")
   .then((r) => (r.ok ? r.json() : null))
-  .then((c) => {
-    if (!c || c.may_submit || c.role !== "student") return;
-    const gate = document.getElementById("consent-gate");
+  .then((t) => {
+    if (!t || t.may_submit || t.role !== "student") return;
+    const gate = document.getElementById("terms-gate");
     gate.innerHTML =
-      "<b>Chưa có đồng thuận lưu bản ghi.</b> Mỗi bước luyện là một bản ghi giọng nói của bạn, " +
-      'nên cần ký đồng thuận trước. <a href="/consent">Đến trang đồng thuận</a>.';
+      "<b>Chưa đồng ý điều khoản.</b> Mỗi bước luyện là một bản ghi giọng nói của bạn, " +
+      'nên cần đồng ý điều khoản trước. <a href="/terms">Đến trang điều khoản</a>.';
     gate.hidden = false;
   })
   .catch(() => {});

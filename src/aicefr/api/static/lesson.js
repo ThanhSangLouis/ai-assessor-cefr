@@ -694,19 +694,19 @@ fetch("/api/v1/health")
   })
   .catch(() => recorder.enable(false));
 
-// Consent: a learner's recordings are personal data. A teacher previewing a
-// draft stores nothing, so the check is for learners only.
+// Terms of use (D058): a learner's recordings are personal data. A teacher
+// previewing a draft stores nothing, so the check is for learners only.
 if (MODE !== "preview") {
-  fetch("/api/v1/me/consent")
+  fetch("/api/v1/me/terms")
     .then((r) => (r.ok ? r.json() : null))
-    .then((c) => {
-      if (!c || c.may_submit || c.role !== "student") return;
-      const gate = document.getElementById("consent-gate");
+    .then((t) => {
+      if (!t || t.may_submit || t.role !== "student") return;
+      const gate = document.getElementById("terms-gate");
       gate.innerHTML =
-        "<b>Chưa có đồng thuận lưu bản ghi.</b> Bài luyện là bản ghi giọng nói của bạn. " +
-        '<a href="/consent">Ký đồng thuận</a> rồi quay lại.';
+        "<b>Chưa đồng ý điều khoản.</b> Bài luyện là bản ghi giọng nói của bạn. " +
+        '<a href="/terms">Đồng ý điều khoản</a> rồi quay lại.';
       gate.hidden = false;
-      recorder.block("Cần ký đồng thuận trước khi ghi âm.");
+      recorder.block("Cần đồng ý điều khoản trước khi ghi âm.");
     })
     .catch(() => {});
 }

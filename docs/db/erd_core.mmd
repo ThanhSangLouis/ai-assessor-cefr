@@ -1,111 +1,135 @@
-%% ERD - kho core sau D045 (lược đồ phiên bản 2)
-%% Đường liền: khoá ngoại có trong lược đồ. Đường nét đứt: tham chiếu logic qua
-%% account_id (không khai báo khoá ngoại vì xoá dữ liệu một người đi theo thứ tự
-%% riêng, xem /api/v1/admin/erase). Chỉ ghi cột khoá và vài cột chính.
+%% ERD - các collection sau D060 (lược đồ phiên bản 7): một aggregate root
+%% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
+%% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
+%% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
+%% account_id, không có khoá ngoại do kho ép. Chỉ ghi khoá và vài trường chính.
 erDiagram
-    account ||--o{ auth_sessions : "đăng nhập"
-    account ||--o{ account_identity : "liên kết Google"
-    account ||..o{ consent : "ký"
-    account ||..o{ response : "nộp"
-    account ||..o{ step_attempt : "luyện"
+    account ||--o{ session : "đăng nhập"
+    account ||--o{ response : "nộp"
+    account ||--o{ classroom : "dạy, học"
+    account ||..o{ attempt : "luyện"
     account ||..o{ review_item : "ôn"
     account ||..o{ achievement : "đạt"
     account ||..o{ learning_plan : "nhận gợi ý"
-    account ||..o{ study_participant : "tham gia"
+    account ||..o| wallet : "ví lượt"
+    account ||--o{ order : "mua"
 
-    task ||..o{ response : "đề của"
-    response ||--o{ review_action : "được duyệt"
-    response ||--o| review_lock : "đang khoá"
-    response ||..o{ review_session : "phiên duyệt"
-    response ||--o{ rating_assignment : "chấm mù"
-    response ||--o{ machine_seen : "đã thấy điểm máy"
-    rating_batch ||--o{ rating_assignment : "gồm"
-    rating_assignment ||--o| research_rating : "điểm"
+    task ||--o{ response : "đề của"
+    rating_batch }o--o{ response : "phiếu chấm mù"
+    study }o--o{ account : "người tham gia"
+    classroom }o--o{ task : "bài giao"
 
-    study ||--o{ study_participant : "gồm"
-    study ||--o{ study_survey : "khảo sát"
+    path ||--o{ lesson : "chặng gồm bài"
+    lesson ||--o{ attempt : "lượt nói"
+    lesson ||--o{ review_item : "ôn"
+    learning_plan }o--o{ lesson : "gợi ý"
+    learning_plan |o--o| path : "lưu thành"
 
-    lesson_path ||--o{ lesson_unit : "gồm"
-    lesson_unit ||--o{ lesson : "gồm"
-    lesson ||..o{ lesson_version : "xuất bản"
-    lesson ||..o{ step_attempt : "lượt nói"
-    lesson ||..o{ review_item : "ôn lại"
-    lesson_path ||..o| learning_plan : "lưu thành"
-
-    billing_order ||..o| billing_license : "cấp"
-    billing_order ||..o{ billing_event : "thông báo"
-    billing_order ||..o| credit_grant : "gói lượt vào ví"
-
-    account ||..o{ classroom : "dạy"
-    classroom ||--o{ class_member : "gồm"
-    account ||..o{ class_member : "học"
-    classroom ||--o{ assignment : "được giao"
-    task ||..o{ assignment : "đề"
-    response ||..o{ replay_label : "nghe lại"
+    order |o--o| license : "mua"
+    wallet ||--o{ ledger : "bút toán"
+    ledger ||..|| response : "tính lượt cho"
 
     account {
-        text account_id PK
-        text pseudonym UK
-        text role
+        string account_id PK
+        string pseudonym UK
+        string role
+        string terms_accepted_at
+        array identities "liên kết Google (băm)"
+        object seen_markers
+    }
+    session {
+        string token_hash PK
+        string account_id
+        string expires_at
+    }
+    task {
+        string task_id PK
+        string purpose
+        string band
     }
     response {
-        text response_id PK
-        text account_id
-        text task_id
-        text status
-        real overall_0_6
+        string response_id PK
+        string account_id
+        string task_id
+        string status
+        float overall_0_6
+        string overall_band
+        array reviews "Review"
+        object review_lock
+        array review_visits
+        array replay_labels
+        array machine_seen
     }
-    lesson_path {
-        text path_id PK
-        text status
-        text band_from
-        text band_to
+    rating_batch {
+        string batch_id PK
+        bool closed
+        array ratings "Rating: phiếu và điểm"
     }
-    lesson_unit {
-        text unit_id PK
-        text path_id FK
-        text band
-        text criterion
-        text topic
-    }
-    lesson {
-        text lesson_id PK
-        text unit_id FK
-        int published_version
-    }
-    step_attempt {
-        text attempt_id PK
-        text account_id
-        text lesson_id
-        int lesson_version
-        int passed
-    }
-    learning_plan {
-        text plan_id PK
-        text account_id
-        text audience
-        text model_version
-        text path_id
-    }
-    billing_order {
-        text order_id PK
-        text plan
-        text status
+    study {
+        string study_id PK
+        string status
+        array participants "Participant kèm khảo sát"
     }
     classroom {
-        text class_id PK
-        text code UK
-        text teacher_id
+        string class_id PK
+        string code UK
+        string teacher_id
+        array members
+        array assignments "Assignment"
     }
-    assignment {
-        text assignment_id PK
-        text class_id
-        text task_id
-        text due_at
+    path {
+        string path_id PK
+        string status
+        array units "Unit"
     }
-    replay_label {
-        text response_id PK
-        text moment_id PK
-        text source
-        text choice
+    lesson {
+        string lesson_id PK
+        string unit_id
+        int published_version
+        array versions
+        array media
+    }
+    attempt {
+        string attempt_id PK
+        string account_id
+        string lesson_id
+        int lesson_version
+    }
+    review_item {
+        string item_id PK
+        string account_id
+        string due_date
+    }
+    achievement {
+        string account_id PK
+        string code PK
+    }
+    learning_plan {
+        string plan_id PK
+        string account_id
+        string audience
+        string path_id
+    }
+    order {
+        string order_id PK
+        string kind
+        string status
+        array events
+    }
+    license {
+        string license_id PK
+        string plan
+        string order_id
+    }
+    wallet {
+        string user_ref PK
+        int balance
+        int free_used
+        array grants
+    }
+    ledger {
+        string entry_id PK
+        string key UK "bài nói"
+        string action
+        string state
     }
