@@ -180,7 +180,7 @@ def test_database_never_stores_raw_session_token(app) -> None:
     lets nobody impersonate any session."""
     c = login_as(app, "SV-001", "student")
     token = c.cookies[COOKIE_NAME]
-    stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("auth_sessions").find()]
+    stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("session").find()]
     assert token not in stored_hashes
     assert len(stored_hashes) == 1
 

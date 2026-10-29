@@ -480,7 +480,7 @@ def test_every_operation_on_the_diagram_has_a_caller(diagram: pathlib.Path) -> N
     `scoring/scorer.py`, con thuoc tinh do chi doc lai ma ly do.
 
     Tim theo TEN, khong theo kieu: mot `@property` duoc goi khong ngoac
-    (`account.is_teacher`), va phia JS doc no qua JSON cung bang chinh ten do.
+    (`account.is_staff`), va phia JS doc no qua JSON cung bang chinh ten do.
     """
     if diagram.suffix != ".drawio":
         pytest.skip("chi ap cho so do lop")

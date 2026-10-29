@@ -128,3 +128,25 @@ def test_the_wallet_gathers_balance_free_runs_and_top_ups(db):
     assert db["ledger"].find_one({"key": "r1"})["action"] == "assessment"
     gone = {"credit_wallet", "free_quota", "credit_grant", "usage_ledger"}
     assert not gone & set(db.list_collection_names())
+
+
+def test_identities_markers_sessions_and_secrets_find_their_places(db):
+    db["account"].insert_one({"account_id": "a1", "pseudonym": "SV-001"})
+    db["account_identity"].insert_one(
+        {"account_id": "a1", "provider": "google", "subject_hash": "h", "linked_at": "t1"}
+    )
+    db["seen_marker"].insert_one({"account_id": "a1", "marker": "results", "seen_at": "t2"})
+    db["auth_sessions"].insert_one({"token_hash": "x", "account_id": "a1"})
+    db["server_secret"].insert_one({"name": "oauth", "value_hex": "ab", "created_at": "t0"})
+    db["app_config"].insert_one({"key": "review_policy", "value": "v", "version": "1"})
+
+    _twice(migrations._d060_identity, db)
+
+    a = db["account"].find_one({"account_id": "a1"})
+    assert [i["provider"] for i in a["identities"]] == ["google"]
+    assert a["seen_markers"] == {"results": "t2"}
+    assert db["session"].count_documents({"token_hash": "x"}) == 1
+    assert db["system"].find_one({"key": "identity.secret.oauth"})["value"] == "ab"
+    assert db["system"].find_one({"key": "assessment.review_policy"})["version"] == "1"
+    gone = {"account_identity", "seen_marker", "auth_sessions", "server_secret", "app_config"}
+    assert not gone & set(db.list_collection_names())

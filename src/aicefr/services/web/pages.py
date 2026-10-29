@@ -267,7 +267,7 @@ def page_lesson(
     nothing.
     """
     lim = _limits()
-    teacher_preview = account is not None and account.is_teacher
+    teacher_preview = account is not None and account.is_staff
     return _page(
         request,
         "lesson.html",

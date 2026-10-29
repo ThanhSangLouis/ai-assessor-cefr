@@ -280,6 +280,51 @@ def _d060_metering(db: Database) -> None:
         ensure_indexes(db, D060_INDEXES["metering"], "migration-7-metering")
 
 
+def _d060_identity(db: Database) -> None:
+    """Outside identities and seen markers into `account`; sessions, secrets, settings move.
+
+    `account_identity` -> `account.identities`, `seen_marker` ->
+    `account.seen_markers`, `auth_sessions` -> `session`, `server_secret` and
+    `app_config` -> `system` (under `identity.secret.` and `assessment.`).
+    """
+    if _has(db, "account_identity"):
+        for link in db["account_identity"].find().sort("linked_at", 1):
+            item = {k: link[k] for k in ("provider", "subject_hash", "linked_at")}
+            db["account"].update_one(
+                {"account_id": link["account_id"],
+                 "identities.provider": {"$ne": link["provider"]}},
+                {"$push": {"identities": item}},
+            )  # fmt: skip
+        db.drop_collection("account_identity")
+    if _has(db, "seen_marker"):
+        for m in db["seen_marker"].find():
+            db["account"].update_one(
+                {"account_id": m["account_id"]},
+                {"$set": {f"seen_markers.{m['marker']}": m["seen_at"]}},
+            )
+        db.drop_collection("seen_marker")
+    if _has(db, "account"):
+        db["account"].update_many({"identities": {"$exists": False}}, {"$set": {"identities": []}})
+        db["account"].update_many(
+            {"seen_markers": {"$exists": False}}, {"$set": {"seen_markers": {}}}
+        )
+    _rename(db, "auth_sessions", "session")
+    if _has(db, "server_secret"):
+        for r in db["server_secret"].find():
+            db["system"].update_one(
+                {"key": "identity.secret." + r["name"]},
+                {"$setOnInsert": {"value": r["value_hex"], "updated_by": None,
+                                  "updated_at": r.get("created_at")}},
+                upsert=True,
+            )  # fmt: skip
+        db.drop_collection("server_secret")
+    if _has(db, "app_config"):
+        for r in db["app_config"].find({}, {"_id": 0}):
+            key = r.pop("key")
+            db["system"].update_one({"key": "assessment." + key}, {"$setOnInsert": r}, upsert=True)
+        db.drop_collection("app_config")
+
+
 _ASSIGNMENT_KEYS = (
     "assignment_id", "task_id", "note", "due_on", "due_at", "created_by", "created_at",
 )  # fmt: skip
@@ -312,6 +357,7 @@ D060_STEPS: tuple[Callable[[Database], None], ...] = (
     _d060_study,
     _d060_billing,
     _d060_metering,
+    _d060_identity,
 )
 
 

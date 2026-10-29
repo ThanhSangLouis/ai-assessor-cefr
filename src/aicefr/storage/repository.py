@@ -30,7 +30,15 @@ from aicefr.contracts import (
 from aicefr.infra.blobs import key_of
 from aicefr.storage.audit_repository import prepare as prepare_audit
 from aicefr.storage.audit_repository import recent_entries, write_audit
-from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes, fields, next_id
+from aicefr.storage.db import (
+    SYSTEM,
+    IntegrityError,
+    MongoStore,
+    ensure_indexes,
+    ensure_system,
+    fields,
+    next_id,
+)
 from aicefr.storage.db import now_iso as _now
 
 # The collections of the assessment service and the indexes that stand for the
@@ -40,8 +48,10 @@ from aicefr.storage.db import now_iso as _now
 # teacher queue, the research export, or the class scoring statistics.
 # review_session (D041): when a teacher opened a response for review and when
 # they decided -- the lock itself is deleted on decision, so its start is kept.
-# seen_marker (D028): when a person last looked at something that can change
-# behind their back, so the sidebar can count what is new since then.
+# The settings an administrator changes at run time live in `system` under
+# `assessment.` (D060); when a person last looked at something that can change
+# behind their back (D028) lives on their account (`seen_markers`).
+CONFIG = "assessment."
 INDEXES = {
     "response": [
         (("response_id",), True),
@@ -52,8 +62,6 @@ INDEXES = {
     "review_action": [(("id",), True), (("response_id",), False)],
     "review_lock": [(("response_id",), True)],
     "review_session": [(("id",), True), (("response_id", "reviewer_id", "decided_at"), False)],
-    "app_config": [(("key",), True)],
-    "seen_marker": [(("account_id", "marker"), True)],
 }
 
 LIST_FIELDS = (
@@ -130,6 +138,7 @@ class Repository(MongoStore):
         self._blobs = blobs
         db = self.db
         ensure_indexes(db, INDEXES, "assessment")
+        ensure_system(db)
         prepare_audit(db)
 
     @property
@@ -941,14 +950,16 @@ class Repository(MongoStore):
 
     # ---------- what is new for a person (D028) ----------
 
+    # The markers are the account's (`Account.seen_markers`, D060): this part
+    # writes only that field of the account document, never anything else.
     def seen_at(self, account_id: str, marker: str) -> str | None:
-        row = self.col("seen_marker").find_one({"account_id": account_id, "marker": marker})
-        return row["seen_at"] if row else None
+        row = self.col("account").find_one({"account_id": account_id}, {"seen_markers": 1})
+        return ((row or {}).get("seen_markers") or {}).get(marker)
 
     def mark_seen(self, account_id: str, marker: str) -> str:
         now = _now()
-        self.col("seen_marker").update_one(
-            {"account_id": account_id, "marker": marker}, {"$set": {"seen_at": now}}, upsert=True
+        self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {f"seen_markers.{marker}": now}}
         )
         return now
 
@@ -1228,8 +1239,8 @@ class Repository(MongoStore):
     # will be asked.
 
     def set_config(self, key: str, value: str, version: str, actor_id: str) -> None:
-        self.col("app_config").update_one(
-            {"key": key},
+        self.col(SYSTEM).update_one(
+            {"key": CONFIG + key},
             {
                 "$set": {
                     "value": value,
@@ -1242,9 +1253,9 @@ class Repository(MongoStore):
         )
 
     def get_config(self, key: str) -> AppConfig | None:
-        row = self.col("app_config").find_one({"key": key})
-        names = ("key", "value", "version", "updated_by", "updated_at")
-        return AppConfig(**fields(row, names)) if row else None
+        row = self.col(SYSTEM).find_one({"key": CONFIG + key})
+        names = ("value", "version", "updated_by", "updated_at")
+        return AppConfig(key=key, **fields(row, names)) if row else None
 
     def write_audit(
         self, actor_id: str, action: str, target_id: str | None, detail: str | None

@@ -592,7 +592,7 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
     except NotFound:
         raise HTTPException(404, "không tìm thấy bản ghi") from None
     # 404 rather than 403 for someone else's attempt: a 403 would confirm it exists.
-    if row["account_id"] != account.account_id and not account.is_teacher:
+    if row["account_id"] != account.account_id and not account.is_staff:
         raise HTTPException(404, "không tìm thấy bản ghi")
     key = row.get("audio_key")
     if not key:

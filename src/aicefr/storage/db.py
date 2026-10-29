@@ -183,7 +183,10 @@ def next_id(db: Database, name: str) -> int:
     return int(counter["seq"])
 
 
-IndexSpec = tuple[tuple[str, ...], bool]  # (fields, unique)
+# (fields, unique) or (fields, unique, partial filter): a unique index over an
+# array field of embedded parts must leave out the documents with no part, or
+# every one of them would count as the same missing value.
+IndexSpec = tuple
 
 _indexed: set[tuple[str, str]] = set()
 _indexed_lock = threading.Lock()
@@ -202,11 +205,13 @@ def ensure_indexes(db: Database, specs: Mapping[str, Sequence[IndexSpec]], owner
         if key in _indexed:
             return
         for collection, indexes in specs.items():
-            for keys, unique in indexes:
+            for keys, unique, *partial in indexes:
+                extra = {"partialFilterExpression": partial[0]} if partial else {}
                 db[collection].create_index(
                     [(k, ASCENDING) for k in keys],
                     unique=unique,
                     name=("u_" if unique else "i_") + "_".join(keys),
+                    **extra,
                 )
         _indexed.add(key)
 
