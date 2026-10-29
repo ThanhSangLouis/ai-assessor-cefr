@@ -61,7 +61,7 @@ ffmpeg -version                    # phải ra thông tin phiên bản
 
 ## Bước 2. Lấy dữ liệu
 
-Đọc [CHOT_DATASET_VA_MODEL.md](CHOT_DATASET_VA_MODEL.md). Tóm tắt:
+Bản đầy đủ là `CHOT_DATASET_VA_MODEL.md`, tài liệu nội bộ không có trong repo này ([TAI_LIEU_NOI_BO.md](TAI_LIEU_NOI_BO.md)). Tóm tắt:
 
 - **Mỗi người tự đăng ký** Speak & Improve bằng tài khoản riêng. Giấy phép **cấm chép cho nhau**.
 - Gói khung 241 MB là đủ cho fine-tune văn bản, **không cần tải audio**.
@@ -124,7 +124,7 @@ không in được A4, hoặc sơ đồ vẽ một lớp không tồn tại tron
 
 ## CEFR chỉ làm 5 tiêu chí
 
-Đã chốt, ghi ở [QUYET_DINH.md](QUYET_DINH.md) mục QD-04.
+Đã chốt ở mục QD-04 của `QUYET_DINH.md` (tài liệu nội bộ, xem [TAI_LIEU_NOI_BO.md](TAI_LIEU_NOI_BO.md)).
 
 **Làm:** Range, Accuracy, Fluency, Coherence, Phonology.
 **Bỏ hẳn:** Interaction, và bỏ luôn dạng bài hội thoại khỏi quy trình thu dữ liệu.
