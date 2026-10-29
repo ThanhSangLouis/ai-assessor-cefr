@@ -79,7 +79,10 @@ class RedisBus:
         bullmq, redis = _libraries()
         self.url = url
         self._bullmq = bullmq
-        self._redis = redis.Redis.from_url(url, decode_responses=True)
+        # No socket read timeout: redis-py 8 defaults it to 5 s, which cuts a
+        # blocking BLPOP/BRPOP short of its own timeout (call() waits up to
+        # minutes for a Whisper step). Each blocking command bounds itself.
+        self._redis = redis.Redis.from_url(url, decode_responses=True, socket_timeout=None)
         self._loop: _Loop | None = None
         self._queues: dict[str, Any] = {}
         self._workers: list[Any] = []

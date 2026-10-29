@@ -116,6 +116,29 @@ def test_a_call_gets_its_own_answer_and_a_silent_queue_times_out(names):
         RedisBus(URL).call(names("nobody"), {"x": 1}, timeout=1.5)
 
 
+def test_a_call_waits_past_the_client_default_socket_timeout(names):
+    # redis-py 8 reads with a 5 s socket timeout by default, which cut every
+    # BLPOP of call() at 5 s: a Whisper step took longer and the caller saw
+    # "speech service unreachable" while the answer was on its way.
+    queue = names("slow-step")
+    server = RedisBus(URL)
+
+    def slow(req: dict) -> dict:
+        import time
+
+        time.sleep(6.5)
+        return {"echo": req["x"]}
+
+    server.serve(queue, slow)
+    server.start()
+    try:
+        assert RedisBus(URL).call(queue, {"x": 7}, timeout=20) == {"echo": 7}
+    finally:
+        server.close()
+    with pytest.raises(BusTimeout):
+        RedisBus(URL).call(names("nobody"), {"x": 1}, timeout=7)
+
+
 def test_a_handler_that_fails_does_not_stop_the_queue(names):
     queue = names("mixed")
     done = threading.Event()
