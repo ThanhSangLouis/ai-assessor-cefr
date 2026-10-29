@@ -75,7 +75,7 @@ def test_band_descriptors_distinguish_unmeasured_and_out_of_scope_aspects():
     aspects = {aspect.key: aspect for aspect in ASPECTS}
 
     assert aspects["accuracy"].provenance is Provenance.NOT_MEASURED
-    assert aspects["interaction"].provenance is Provenance.NOT_ASSESSED
+    assert "interaction" not in aspects  # D062: a monologue cannot show it
 
 
 def test_student_can_join_a_class_and_see_its_open_assignment(assessment_service):

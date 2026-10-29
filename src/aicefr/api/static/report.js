@@ -573,7 +573,7 @@ function aspectBlock(a) {
 
   if (!rows.length) {
     h += '<p class="muted">Không có phép đo nào cho bài này.</p>';
-    return h + interactionBlock();
+    return h;
   }
 
   h +=
@@ -600,16 +600,6 @@ function aspectBlock(a) {
       `<td>${what}</td><td>${cell}</td></tr>`;
   });
 
-  // FR-23 and US-21: Interaction is always present, carrying the label "not
-  // enough evidence". Silently dropping one of the six CEFR criteria would make
-  // the reader believe the system had assessed all of them. This is a gap made
-  // visible in the interface, not a gap in the model data.
-  h +=
-    '<tr><td><b>Tương tác</b></td><td colspan="2" class="muted">' +
-    "Không đánh giá được từ bài nói một chiều. Tiêu chí này đo cách người nói " +
-    "phản ứng với người đối thoại — luân phiên lượt lời, bắt nhịp, xử lý hiểu " +
-    "nhầm — nên cần bài hội thoại có người thứ hai. Bài nộp ở đây là độc thoại." +
-    "</td></tr>";
   h += "</tbody></table>";
 
   // The one-line explanation the column header alone cannot carry. This used to
@@ -619,13 +609,6 @@ function aspectBlock(a) {
     "trăm số phép đo cần thiết trên bản ghi này. Nó <b>không</b> cho biết điểm đúng hay sai: " +
     "đủ 100% phép đo vẫn có thể ra một ước lượng lệch.</p>";
   return h;
-}
-
-function interactionBlock() {
-  return (
-    '<p class="muted"><b>Tương tác:</b> không đánh giá được từ bài nói một chiều. ' +
-    "Tiêu chí này cần bài hội thoại có người thứ hai.</p>"
-  );
 }
 
 // FR-25. Every sentence here cites the evidence it stands on, and the citation

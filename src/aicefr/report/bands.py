@@ -7,13 +7,15 @@ the spirit of the CEFR qualitative aspects of spoken language use (Council of
 Europe, Companion Volume 2020); they are not a translation of the official
 scales and are waiting for review by the Foreign Languages teachers (A-03).
 
-Every aspect carries one of three labels, so the page cannot imply that the
+Every aspect carries one of two labels, so the page cannot imply that the
 machine heard grammar when its measurements are lengths, counts, word variety,
 the kinds of connectors used (D061), recogniser confidence and pause statistics:
 
 * measured indirectly -- some measurement touches this aspect;
-* not measured        -- the machine has no measurement of it at all;
-* not assessed        -- outside what a monologue task can show (Interaction).
+* not measured        -- the machine has no measurement of it at all.
+
+Interaction is not listed (D062): a monologue holds no turn to observe, and a
+row that can only ever say "not assessed" was read as a missing feature.
 
 The scorer has ONE output, an overall estimate. Nothing here suggests five
 separate criterion scores.
@@ -30,13 +32,11 @@ from aicefr.contracts import Band
 class Provenance(str, Enum):
     MEASURED_INDIRECTLY = "indirect"
     NOT_MEASURED = "not_measured"
-    NOT_ASSESSED = "not_assessed"
 
 
 PROVENANCE_NAMES = {
     Provenance.MEASURED_INDIRECTLY: "Máy đo gián tiếp",
     Provenance.NOT_MEASURED: "Máy không đo",
-    Provenance.NOT_ASSESSED: "Không đánh giá",
 }
 
 
@@ -100,20 +100,9 @@ ASPECTS: tuple[Aspect, ...] = (
         "không chấm giọng; máy nghe kém có thể do micro, tiếng ồn hay giọng lạ chứ không phải do "
         "phát âm sai. Không đo ngữ điệu và trọng âm",
     ),
-    Aspect(
-        "interaction",
-        "Tương tác (Interaction)",
-        Provenance.NOT_ASSESSED,
-        "",
-        "tương tác là khả năng nói chuyện qua lại với người khác: giữ và nhường lượt lời, hỏi lại "
-        "khi chưa hiểu, đáp lại ý người kia. Bài nói ở đây là độc thoại, một mình người học nói "
-        "theo đề, nên không có lượt lời nào để quan sát. Hệ thống không suy ra tiêu chí này; "
-        "cần một bài hội thoại với người thật mới đánh giá được",
-    ),
 )
 
-# Paraphrased descriptors, one line per aspect and band. Interaction is left
-# out on purpose: the page says why in its own row of ASPECTS.
+# Paraphrased descriptors, one line per aspect and band.
 DESCRIPTORS: dict[Band, dict[str, str]] = {
     Band.A1: {
         "range": (
