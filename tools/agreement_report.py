@@ -7,7 +7,7 @@ committee can watch being re-run:
     python tools/agreement_report.py --db aicefr.db --list
     python tools/agreement_report.py --db aicefr.db --batch <id> --out bao_cao_dong_thuan.md
 
-Only responses whose owner still consents to research use are included, as on
+Only responses whose owner accepted the terms of use (D058) are included, as on
 the screen. The output names no student and holds no transcript, but it is a
 research result about real people: it is written where you point it and is
 never committed by default (`docs/reports/` is the place for a summary, not
@@ -25,7 +25,7 @@ from pathlib import Path
 
 from aicefr.config import get_settings
 from aicefr.research.agreement import BANDS, agreement_report
-from aicefr.storage.consent_repository import ConsentRepository
+from aicefr.storage.auth_repository import AuthRepository
 from aicefr.storage.rating_repository import RatingRepository, rated_responses
 
 PLAN_TARGETS = {"qwk_band": 0.70, "icc_overall": 0.75}
@@ -156,7 +156,7 @@ def build(db: str, batch_id: str) -> tuple[dict, dict]:
     batch = ratings.batch(batch_id)
     if batch is None:
         raise SystemExit(f"không có đợt {batch_id!r}")
-    allowed = ConsentRepository(db).accounts_allowing_research()
+    allowed = AuthRepository(db).accounts_with_terms()
     everyone = ratings.analysis_rows(batch_id, allowed=None)
     rows = ratings.analysis_rows(batch_id, allowed)
     times = ratings.times_to_rate(batch_id)

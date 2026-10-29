@@ -20,8 +20,7 @@ from aicefr.auth import google, passwords
 from aicefr.config import Settings
 from aicefr.research.agreement import BANDS, CRITERIA
 from aicefr.services import Peers
-from aicefr.services.core.identity.auth_api import consent_state
-from aicefr.services.core.identity.facade import consent_from
+from aicefr.services.core.identity.auth_api import terms_state
 from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
     AVATAR_ICONS,
@@ -29,7 +28,6 @@ from aicefr.storage.auth_repository import (
     Account,
     Role,
 )
-from aicefr.storage.consent_repository import CURRENT_CONSENT_VERSION
 from aicefr.storage.rating_repository import UNSCORABLE_REASONS
 
 router = APIRouter()
@@ -131,41 +129,42 @@ def page_login(request: Request):
 
 @router.get("/bands", response_class=HTMLResponse, tags=["web"])
 def page_bands(request: Request, account: Account | None = Depends(optional_account)):
-    """What A2, B1 and B2 describe, and what the machine measures of each aspect (D028).
+    """What A1 to C2 describe, and what the machine measures of each aspect (D028, D059).
 
-    Open to visitors too: it explains a result, it does not show one. The two
-    thresholds come from the model in force, the same numbers `to_band` uses.
+    Open to visitors too: it explains a result, it does not show one. The five
+    thresholds are those of the model in force, the same numbers `to_band` uses.
     """
     from aicefr.report.bands import page_rows
+    from aicefr.scoring.band_map import band_spans
 
     lim = _limits()
+    spans = [
+        {"band": b.value, "low": None if lo == float("-inf") else lo,
+         "high": None if hi == float("inf") else hi}
+        for b, lo, hi in band_spans(lim["band_thresholds"])
+    ]  # fmt: skip
     return _page(
         request,
         "bands.html",
         account,
         "bands",
         rows=page_rows(),
-        a2_b1=lim["a2_b1"],
-        b1_b2=lim["b1_b2"],
+        spans=spans,
         model_version=lim["model_version"],
     )
 
 
-@router.get("/consent", response_class=HTMLResponse, tags=["web"])
-def page_consent(request: Request, account: Account | None = Depends(optional_account)):
-    """The consent screen. Wording lives in the template, version in the code."""
-    state = None
-    if account is not None:
-        current = consent_from(svc().peers.identity.consent(account_id=account.account_id))
-        state = consent_state(current, account)
-    return _page(
-        request,
-        "consent.html",
-        account,
-        "consent",
-        consent=state,
-        consent_version=CURRENT_CONSENT_VERSION,
-    )
+@router.get("/terms", response_class=HTMLResponse, tags=["web"])
+def page_terms(request: Request, account: Account | None = Depends(optional_account)):
+    """The terms of use (D058). The account says whether they were accepted."""
+    state = terms_state(account) if account is not None else None
+    return _page(request, "terms.html", account, "terms", terms=state)
+
+
+@router.get("/consent", include_in_schema=False)
+def page_consent() -> RedirectResponse:
+    """The old address of the consent screen, which the terms replaced."""
+    return RedirectResponse("/terms", status_code=301)
 
 
 @router.get("/account", response_class=HTMLResponse, tags=["web"])
@@ -268,7 +267,7 @@ def page_lesson(
     nothing.
     """
     lim = _limits()
-    teacher_preview = account is not None and account.is_teacher
+    teacher_preview = account is not None and account.is_staff
     return _page(
         request,
         "lesson.html",

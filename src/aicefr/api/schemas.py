@@ -6,6 +6,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field, field_validator
 
 from aicefr.auth.pseudonyms import validate_pseudonym  # noqa: F401 - re-export
+from aicefr.contracts import Band
 
 
 class SubmitResponse(BaseModel):
@@ -30,8 +31,8 @@ class ReviewDecision(BaseModel):
     @field_validator("new_band")
     @classmethod
     def band_must_be_valid(cls, v: str | None) -> str | None:
-        if v is not None and v not in {"A2", "B1", "B2"}:
-            raise ValueError("band chỉ nhận A2, B1 hoặc B2")
+        if v is not None and v not in {b.value for b in Band}:
+            raise ValueError("band chỉ nhận A1, A2, B1, B2, C1 hoặc C2")
         return v
 
 

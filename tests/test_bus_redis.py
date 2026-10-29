@@ -77,7 +77,7 @@ def test_each_message_of_a_queue_goes_to_one_worker(names):
 
 
 def test_an_event_reaches_every_subscribing_service(names):
-    topic = names("consent.changed")
+    topic = names("response.scored")
     arrived = {"assessment": threading.Event(), "learning": threading.Event()}
     buses = []
     for group, event in arrived.items():

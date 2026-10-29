@@ -31,7 +31,7 @@ from aicefr.contracts import (
     ProcessingRequest,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
 )
 from aicefr.pipeline import ResponseProcessor
@@ -62,10 +62,10 @@ def wav(seconds: float = 35.0) -> bytes:
 # ================================================================= database (FR-40, FR-44)
 
 
-def test_task_repository_seeds_15_practice_tasks_and_lists_assessment_by_default(tmp_path):
+def test_task_repository_seeds_30_practice_tasks_and_lists_assessment_by_default(tmp_path):
     tasks = TaskRepository(tmp_path / "t.db")
     practice = tasks.list_active(TaskPurpose.PRACTICE)
-    assert len(practice) == 15 and all(t.is_practice for t in practice)
+    assert len(practice) == 30 and all(t.is_practice for t in practice)
     assert {t.task_id for t in tasks.list_active()} == {"P3", "P4", "P5"}
     loaded = tasks.get("PR-COH-B2")
     assert loaded.criterion is Criterion.COHERENCE and loaded.band is Band.B2
@@ -89,14 +89,14 @@ def test_bank_version_bump_updates_the_row_and_same_version_leaves_it(tmp_path):
 
 
 def _queued(rid: str) -> Response:
-    return Response(response_id=rid, status=Status.QUEUED, config_version="v1")
+    return Response(response_id=rid, status=ResponseStatus.QUEUED, config_version="v1")
 
 
 def test_later_save_without_purpose_keeps_the_stored_purpose(tmp_path):
     """The worker saving a result does not know the purpose; losing it turns practice into exams."""
     repo = Repository(tmp_path / "r.db")
     repo.save(_queued("p1"), "SV-1", "PR-COH-A2", account_id="a1", purpose=TaskPurpose.PRACTICE)
-    done = Response(response_id="p1", status=Status.COMPLETED, config_version="v1")
+    done = Response(response_id="p1", status=ResponseStatus.COMPLETED, config_version="v1")
     assert repo.save(done, "SV-1", "PR-COH-A2", account_id="a1", must_exist=True)
     assert repo.status_of("p1")["purpose"] == "practice"
     repo.save(_queued("a1"), "SV-1", "P3", account_id="a1")
@@ -116,7 +116,7 @@ def test_attempts_keep_submission_order_within_one_second_and_filter_by_task(tmp
 def _scored(rid: str, band: Band, weakest: list[Criterion], verified: bool = False) -> Response:
     return Response(
         response_id=rid,
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         config_version="v1",
         assessment=Assessment(
             overall_0_6=3.2,
@@ -147,11 +147,13 @@ def test_latest_assessment_ignores_practice_and_unscored_rows(tmp_path):
 def test_teacher_queue_never_holds_practice_even_if_marked_for_review(tmp_path):
     """Defence in depth: the pipeline never puts a practice attempt up for review."""
     repo = Repository(tmp_path / "r.db")
-    stray = Response(response_id="p1", status=Status.REVIEW_REQUIRED, config_version="v1")
+    stray = Response(response_id="p1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1")
     repo.save(stray, "SV-1", "PR-COH-A2", account_id="a1", purpose=TaskPurpose.PRACTICE)
-    real = Response(response_id="a1", status=Status.REVIEW_REQUIRED, config_version="v1")
+    real = Response(response_id="a1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1")
     repo.save(real, "SV-1", "P3", account_id="a1")
-    assert [r["response_id"] for r in repo.queue_with_locks(Status.REVIEW_REQUIRED)] == ["a1"]
+    assert [r["response_id"] for r in repo.queue_with_locks(ResponseStatus.REVIEW_REQUIRED)] == [
+        "a1"
+    ]
 
 
 def test_research_rows_exclude_practice(tmp_path):
@@ -209,7 +211,7 @@ def processor(tmp_path, text: str, engine=None, **fake) -> ResponseProcessor:
 
 def test_practice_attempt_is_measured_not_scored_and_not_routed(tmp_path):
     r = processor(tmp_path, COH_TEXT).process(_req(), tone(40), SR)
-    assert r.status is Status.COMPLETED
+    assert r.status is ResponseStatus.COMPLETED
     assert r.assessment is None  # no band, no score
     assert r.practice is not None and r.practice.task_id == "PR-COH-A2"
     assert r.practice.completed is True
@@ -221,19 +223,19 @@ def test_practice_attempt_is_measured_not_scored_and_not_routed(tmp_path):
 def test_non_english_practice_is_rejected_not_sent_to_a_teacher(tmp_path):
     p = processor(tmp_path, "xin chao cac ban", language="vi", language_probability=0.95)
     r = p.process(_req(), tone(40), SR)
-    assert r.status is Status.REJECTED and r.reasons == [ReasonCode.LANGUAGE_NOT_ENGLISH]
+    assert r.status is ResponseStatus.REJECTED and r.reasons == [ReasonCode.LANGUAGE_NOT_ENGLISH]
     assert r.practice is None
 
 
 def test_non_english_assessment_still_goes_to_a_teacher(tmp_path):
     p = processor(tmp_path, "xin chao cac ban", language="vi", language_probability=0.95)
     r = p.process(_req("P3"), tone(40), SR)
-    assert r.status is Status.REVIEW_REQUIRED and r.practice is None
+    assert r.status is ResponseStatus.REVIEW_REQUIRED and r.practice is None
 
 
 def test_practice_with_empty_transcript_is_rejected_with_its_reason(tmp_path):
     r = processor(tmp_path, "   ").process(_req(), tone(40), SR)
-    assert r.status is Status.REJECTED and r.reasons == [ReasonCode.ASR_EMPTY_TRANSCRIPT]
+    assert r.status is ResponseStatus.REJECTED and r.reasons == [ReasonCode.ASR_EMPTY_TRANSCRIPT]
 
 
 def test_too_short_practice_is_rejected_by_qc_without_calling_asr(tmp_path):
@@ -244,13 +246,13 @@ def test_too_short_practice_is_rejected_by_qc_without_calling_asr(tmp_path):
             raise AssertionError("ASR must not run when QC rejects")
 
     r = processor(tmp_path, "", engine=MustNotRun()).process(_req(), tone(10), SR)
-    assert r.status is Status.REJECTED and ReasonCode.AUDIO_TOO_SHORT in r.reasons
+    assert r.status is ResponseStatus.REJECTED and ReasonCode.AUDIO_TOO_SHORT in r.reasons
     assert r.practice is None
 
 
 def test_practice_flagged_by_qc_is_still_measured_and_keeps_the_qc_reason(tmp_path):
     r = processor(tmp_path, COH_TEXT).process(_req(), tone(25), SR)
-    assert r.status is Status.COMPLETED
+    assert r.status is ResponseStatus.COMPLETED
     assert ReasonCode.AUDIO_TOO_SHORT in r.reasons
     spoken = r.practice.checks[1]
     assert spoken.met is False  # 25 seconds < the 30-second target
@@ -259,7 +261,7 @@ def test_practice_flagged_by_qc_is_still_measured_and_keeps_the_qc_reason(tmp_pa
 def test_looping_transcript_is_measured_on_the_trimmed_part(tmp_path):
     looped = "I like pho because it is good and cheap " + "so " * 12
     r = processor(tmp_path, looped).process(_req(), tone(40), SR)
-    assert r.status is Status.COMPLETED
+    assert r.status is ResponseStatus.COMPLETED
     assert ReasonCode.ASR_HALLUCINATION in r.reasons
     assert r.practice.checks[0].measured <= 3  # the "so so so" loop was cut off
 
@@ -267,7 +269,7 @@ def test_looping_transcript_is_measured_on_the_trimmed_part(tmp_path):
 def test_read_aloud_matching_the_reference_is_completed(tmp_path):
     p = processor(tmp_path, PHO_A2.reference_text)
     r = p.process(_req("PR-PHO-A2"), tone(40), SR)
-    assert r.status is Status.COMPLETED and r.practice.completed is True
+    assert r.status is ResponseStatus.COMPLETED and r.practice.completed is True
     assert r.practice.checks[0].measured == 1.0
 
 
@@ -295,18 +297,15 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student", consent: bool = True) -> TestClient:
+def login_as(m, pseudonym: str, role: str = "student", terms: bool = True) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200
-    if consent:
-        c.post(
-            "/api/v1/me/consent",
-            data={"audio_storage_allowed": "true", "research_use_allowed": "true"},
-        )
+    if terms:
+        c.post("/api/v1/me/terms")
     return c
 
 
@@ -342,10 +341,13 @@ def test_new_learner_gets_an_a2_suggestion_and_the_full_path(m):
         "accuracy",
         "phonology",
     ]
-    assert all([t["band"] for t in row["tasks"]] == ["A2", "B1", "B2"] for row in body["path"])
+    assert all(
+        [t["band"] for t in row["tasks"]] == ["A1", "A2", "B1", "B2", "C1", "C2"]
+        for row in body["path"]
+    )
     assert body["daily"]["today"] == 0 and body["daily"]["streak"] == 0
     assert len(body["daily"]["week"]) == 7
-    assert body["totals"] == {"tasks": 15, "completed": 0, "attempts": 0}
+    assert body["totals"] == {"tasks": 30, "completed": 0, "attempts": 0}
 
 
 def test_practice_tasks_never_appear_in_the_assessment_task_list(m):
@@ -395,8 +397,8 @@ def test_practice_submission_gets_a_result_without_band_and_skips_the_queue(m):
 
     hub = student.get("/api/v1/practice").json()
     coherence = next(r for r in hub["path"] if r["criterion"] == "coherence")
-    assert coherence["tasks"][0]["status"] == "completed"
-    assert hub["totals"] == {"tasks": 15, "completed": 1, "attempts": 1}
+    assert coherence["tasks"][1]["status"] == "completed"  # [0] is A1
+    assert hub["totals"] == {"tasks": 30, "completed": 1, "attempts": 1}
 
 
 def test_completing_the_suggested_task_moves_the_suggestion_on(m):
@@ -407,8 +409,8 @@ def test_completing_the_suggested_task_moves_the_suggestion_on(m):
     assert first == "PR-FLU-A2" and after["task_id"] == "PR-FLU-B1"
 
 
-def test_practice_without_consent_is_refused(m):
-    student = login_as(m, "SV-001", consent=False)
+def test_practice_without_the_terms_is_refused(m):
+    student = login_as(m, "SV-001", terms=False)
     submit(student, "PR-COH-A2", expect=403)
     assert student.get("/api/v1/me/responses").json() == []
 

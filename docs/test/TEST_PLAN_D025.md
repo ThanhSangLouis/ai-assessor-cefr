@@ -151,7 +151,7 @@ Tệp: `tests/test_lessons_unit.py`.
 | TC-LS-I31 | `test_deleting_an_attempt_is_audited_without_its_content` | FR-45 | Thuận | Sinh viên xoá lượt luyện của mình: nhật ký ghi ai xoá, không ghi nội dung (hồi quy D025-B9) |
 | TC-LS-I32 | `test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media` | FR-45 | Âm | Lệnh dọn tệp mồ côi không coi bản ghi luyện tập và tệp của giảng viên là mồ côi (hồi quy D025-B18) |
 | TC-LS-I33 | `test_retention_sweep_covers_lesson_attempts` | FR-45 | Thuận | Quét thời hạn lưu trữ xoá bản ghi và lời máy nghe được của lượt luyện quá hạn, giữ kết quả từng từ |
-| TC-LS-I34 | `test_recording_a_step_needs_consent` | FR-46 | Âm | Chưa đồng thuận lưu bản ghi thì không ghi được bước nào |
+| TC-LS-I34 | `test_recording_a_step_needs_the_terms` | FR-46 | Âm | Chưa đồng thuận lưu bản ghi thì không ghi được bước nào |
 | TC-LS-I35 | `test_personal_export_and_erasure_cover_lesson_attempts` | FR-45 | Thuận | Bản xuất dữ liệu cá nhân và lệnh xoá theo người học có cả lượt luyện |
 | TC-LS-I36 | `test_daily_goal_counts_seconds_spoken` | AC-50.1 | Thuận | Hai lượt tổng 95 giây: mục tiêu ngày hiện 95 trên 180 giây |
 | TC-LS-I37 | `test_next_lesson_follows_the_weakest_criterion` | AC-50.2 | Thuận | Band B1, tiêu chí yếu nhất Range: bài nên học là bài chưa xong đầu tiên của chặng Range B1 |
@@ -168,7 +168,7 @@ Tệp: `tests/test_lessons_integration.py`.
 | TC-LS-E02 | `test_read_aloud_step_marks_words_and_moves_on` | AC-46.1 | Thuận | Bước đọc to: 6 từ gợi ý tô đậm; nộp file, khung kết quả ghi rõ là kết quả giả lập (máy chủ E2E dùng bộ nhận dạng giả lập), kết luận Đạt, từng từ được tô, không từ nào "máy chưa nghe ra"; Bước tiếp mở bước nhắc lại |
 | TC-LS-E03 | `test_free_step_runs_in_shrinking_rounds_and_compares_them` | AC-46.5 | Thuận | Bước nói tự do: lượt 1 45 giây, lượt 2 35 giây; sau lượt 2 có mục "So với lượt 1" nêu số từ mỗi phút |
 | TC-LS-E04 | `test_completing_a_lesson_marks_it_done_on_the_path` | AC-45.4 | Thuận | Làm đủ bảy bước: trang lộ trình hiện bài đã hoàn thành, 1/31 bài, mục tiêu ngày khác 0, bài nên học chuyển sang bài khác |
-| TC-LS-E05 | `test_learner_without_consent_cannot_record_a_step` | FR-46 | Âm | Chưa đồng thuận: hiện cảnh báo, nút ghi âm và ô chọn file bị tắt |
+| TC-LS-E05 | `test_learner_without_the_terms_cannot_record_a_step` | FR-46 | Âm | Chưa đồng thuận: hiện cảnh báo, nút ghi âm và ô chọn file bị tắt |
 | TC-LS-E06 | `test_review_page_without_due_items_says_when_the_next_one_comes` | AC-48.1 | Biên | Từ gợi ý bị bỏ được hẹn ôn ngày mai: hôm nay trang ôn tập báo không có mục đến hạn và nêu đúng ngày ôn tới |
 | TC-LS-E07 | `test_phone_layout_of_the_path_and_a_lesson_has_no_sideways_scroll` | FR-45 | Biên | Màn 375 px: trang lộ trình và trang bài học không tràn ngang; dãy bước thành một hàng |
 | TC-LS-E08 | `test_teacher_builds_a_lesson_from_a_text_and_publishes_it` | AC-47.1 | Thuận | Giáo viên tạo lộ trình, chặng B1, bài từ đoạn văn: sáu bước, bước cuối nói tự do; gõ chữ số thì bộ soát lỗi báo; xuất bản v1; xem thử |

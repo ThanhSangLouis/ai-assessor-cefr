@@ -30,7 +30,7 @@ from aicefr.contracts import (
     QcResult,
     ReasonCode,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
     Transcript,
 )
@@ -43,7 +43,8 @@ from aicefr.qc.audio_qc import AudioQualityChecker
 from aicefr.report.comments import CommentBuilder
 from aicefr.report.evidence import EvidenceBuilder
 from aicefr.review.router import ReviewRouter
-from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer, to_band
+from aicefr.scoring.band_map import thresholds_of, to_band
+from aicefr.scoring.scorer import ModelNotFoundError, RidgeScorer
 from aicefr.scoring.windows import clip_segments, plan_windows
 
 
@@ -220,10 +221,7 @@ class ResponseProcessor:
 
         median = statistics.median(values)
         spread = max(values) - min(values)
-        thresholds = getattr(self.scorer, "band_thresholds", None) or {
-            "A2_B1": 2.75,
-            "B1_B2": 3.75,
-        }
+        thresholds = thresholds_of(getattr(self.scorer, "band_thresholds", None))
 
         merged = self.scorer.score(whole)
         merged.overall_0_6 = round(median, 2)
@@ -283,7 +281,7 @@ class ResponseProcessor:
         result = self.mission_checker.check(task, asr, segments)
         return Response(
             **base,
-            status=Status.COMPLETED,
+            status=ResponseStatus.COMPLETED,
             qc=qc,
             asr=asr,
             features=features,
@@ -306,12 +304,11 @@ class ResponseProcessor:
         # its reason, so the learner knows why and can try again instead of
         # waiting for someone who will never come.
         is_practice = getattr(task, "purpose", None) is TaskPurpose.PRACTICE
-        needs_teacher = Status.REJECTED if is_practice else Status.REVIEW_REQUIRED
+        needs_teacher = ResponseStatus.REJECTED if is_practice else ResponseStatus.REVIEW_REQUIRED
         base = {
             "response_id": request.response_id,
             "config_version": request.config_version,
             "prompt_version": request.prompt_version,
-            "consent_version": request.consent_version,
         }
 
         # Pass the real channel count and byte size: without them the report
@@ -320,7 +317,7 @@ class ResponseProcessor:
         with timed("pipeline_stage_seconds", stage="qc"):
             qc = self.quality_checker.check(pcm, sr, channels=channels, size_bytes=size_bytes)
         if not qc.passed:
-            return Response(**base, status=Status.REJECTED, qc=qc, reasons=qc.reasons)
+            return Response(**base, status=ResponseStatus.REJECTED, qc=qc, reasons=qc.reasons)
 
         # Voice activity detection runs BEFORE recognition, not after.
         #
@@ -352,7 +349,9 @@ class ResponseProcessor:
             with timed("pipeline_stage_seconds", stage="asr"):
                 asr = self.asr_engine.transcribe(trimmed, sr)
         except AsrError:
-            return Response(**base, status=Status.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED])
+            return Response(
+                **base, status=ResponseStatus.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED]
+            )
         if not asr.text.strip():
             return Response(
                 **base,
@@ -411,7 +410,7 @@ class ResponseProcessor:
         except ModelNotFoundError:
             return Response(
                 **base,
-                status=Status.REVIEW_REQUIRED,
+                status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
                 features=features,

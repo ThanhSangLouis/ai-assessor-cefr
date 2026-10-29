@@ -114,8 +114,8 @@ def _start_study(m, n: int = 4):
     return admin, study_id, students, by_arm
 
 
-def test_study_enrols_consenting_students_half_in_each_arm(m):
-    login_as(m, "SV-NO", consent=False)
+def test_study_enrols_students_with_terms_half_in_each_arm(m):
+    login_as(m, "SV-NO", terms=False)
     login_as(m, "GV-01", "teacher")
     admin, study_id, students, _ = _start_study(m, n=5)
     people = m.studies.participants(study_id)
@@ -126,7 +126,7 @@ def test_study_enrols_consenting_students_half_in_each_arm(m):
     assert audit and "seed=" in audit[0]["detail"]
 
 
-def test_study_needs_enough_consenting_students(m):
+def test_study_needs_enough_students_with_terms(m):
     login_as(m, "SV-001")
     admin = login_as(m, "AD-01", "admin")
     r = admin.post("/api/v1/admin/studies", json={"name": "Quá ít"})
@@ -171,15 +171,6 @@ def test_leaving_the_study_or_closing_it_brings_feedback_back(m):
     closed = admin.post(f"/api/v1/admin/studies/{study_id}/status", json={"status": "closed"})
     assert closed.status_code == 200
     assert other.get("/api/v1/me/study").json() == {"enrolled": False}
-
-
-def test_withdrawing_research_consent_leaves_the_study(m):
-    _, _, _, arm = _start_study(m)
-    client = arm["score_only"]
-    rid = submit_assessment(client)
-    _with_feedback(rid)
-    client.post("/api/v1/me/consent/withdraw")
-    assert "feedback_withheld" not in client.get(f"/api/v1/responses/{rid}").json()
 
 
 def test_feedback_stays_held_back_through_the_survey_and_in_the_export(m):
@@ -257,8 +248,10 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     sessions = m.repo.review_sessions()
     assert len(sessions) == 1
     assert sessions[0]["action"] == "decision" and sessions[0]["decided_at"]
-    who = store()["review_session"].find_one()
-    assert (who["response_id"], who["reviewer_id"]) == (rid, account_id(m, "GV-01"))
+    visits = store()["response"].find_one({"response_id": rid})["review_visits"]
+    assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
+    # The decision carries when the teacher opened the response (D041, D060).
+    assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
 
 
 def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
@@ -267,15 +260,18 @@ def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
     assert body["review_with_machine"] == {"n": 0, "median_minutes": None, "idle_left_out": 0}
     assert body["time_saved"] is None and body["settled_alone"]["ci95"] is None
 
-    for i, minutes in enumerate((2, 3, 4, 5, 6, 45), 1):
-        store()["review_session"].insert_one(
+    for minutes in (2, 3, 4, 5, 6, 45):
+        store()["response"].insert_one(
             {
-                "id": 1000 + i,
                 "response_id": uuid.uuid4().hex,
-                "reviewer_id": "t",
-                "opened_at": "2026-10-01T10:00:00+00:00",
-                "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
-                "action": "decision",
+                "review_visits": [
+                    {
+                        "reviewer_id": "t",
+                        "opened_at": "2026-10-01T10:00:00+00:00",
+                        "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
+                        "action": "decision",
+                    }
+                ],
             }
         )
     body = teacher.get("/api/v1/review/kpi").json()

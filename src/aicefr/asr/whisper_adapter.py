@@ -131,7 +131,6 @@ class WhisperEngine:
             words=words,
             engine=self.name,
             model_version=self.model,
-            has_word_timestamps=bool(words),
             is_verbatim=self.is_verbatim,
             language=language[0] if language else None,
             language_probability=round(language[1], 4) if language else None,

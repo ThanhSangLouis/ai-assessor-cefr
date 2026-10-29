@@ -50,9 +50,9 @@ def test_a_missing_field_reads_none_and_the_id_stays_inside():
 def test_inline_events_reach_every_subscriber_and_one_failure_stops_none():
     bus = InlineBus(InlineJobQueue())
     got = []
-    bus.subscribe("consent.changed", "a", lambda m: (_ for _ in ()).throw(RuntimeError("x")))
-    bus.subscribe("consent.changed", "b", got.append)
-    bus.publish("consent.changed", {"account_id": "u"})
+    bus.subscribe("response.scored", "a", lambda m: (_ for _ in ()).throw(RuntimeError("x")))
+    bus.subscribe("response.scored", "b", got.append)
+    bus.publish("response.scored", {"account_id": "u"})
     assert got == [{"account_id": "u"}]
 
 
@@ -144,7 +144,7 @@ def test_each_path_goes_to_its_service(path, service):
 
 
 def test_merged_logs_keep_the_order_the_actions_happened_in():
-    identity = [{"id": 9, "actor_id": "a", "action": "consent.sign", "target_id": None,
+    identity = [{"id": 9, "actor_id": "a", "action": "terms.accept", "target_id": None,
                  "detail": None, "created_at": "2026-10-12T10:00:00.000200+00:00"}]  # fmt: skip
     assessment = [
         {"id": 2, "actor_id": "a", "action": "rating.batch_create", "target_id": None,
@@ -153,7 +153,7 @@ def test_merged_logs_keep_the_order_the_actions_happened_in():
          "detail": None, "created_at": "2026-10-12T09:59:59+00:00"},
     ]  # fmt: skip
     merged = merge([identity, assessment], limit=2)
-    assert [e.action for e in merged] == ["rating.batch_create", "consent.sign"]
+    assert [e.action for e in merged] == ["rating.batch_create", "terms.accept"]
 
 
 def test_one_client_per_server_and_the_database_from_the_path():

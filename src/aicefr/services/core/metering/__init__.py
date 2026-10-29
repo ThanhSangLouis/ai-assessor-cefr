@@ -1,3 +1,1 @@
-"""Metering core service package."""
-
-from __future__ import annotations
+"""Charging per use on the metered channel (D049): the ledger, its facade and its pages."""

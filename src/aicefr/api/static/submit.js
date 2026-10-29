@@ -215,29 +215,23 @@ fetch("/api/v1/tasks")
     taskListEl.innerHTML = '<p class="error">Không tải được danh sách đề bài.</p>';
   });
 
-// ---------------------------------------------------------------- consent
-// The server refuses a submission without consent to store recordings, and
+// ---------------------------------------------------------------- terms
+// The server refuses a submission before the terms are accepted (D058), and
 // rightly so. Saying it at page load, before a minute of recording, is the
 // courtesy layer; the protection itself stays on the server.
-fetch("/api/v1/me/consent")
+fetch("/api/v1/me/terms")
   .then((r) => (r.ok ? r.json() : null))
   .then((state) => {
     if (!state || state.may_submit) return;
     maySubmit = false;
-    // "Never signed" and "signed but refused audio storage" are different: the
-    // second is a deliberate choice and must not be worded as if forgotten.
-    const signedButRefused = state.signed && !state.audio_storage_allowed;
-    const box = document.getElementById("consent-gate");
-    box.innerHTML = signedButRefused
-      ? "<b>Bạn đã ký đồng thuận nhưng không cho phép lưu bản ghi âm.</b> " +
-        "Hệ thống vì thế không nhận bài nói. Nếu đổi ý, " +
-        '<a href="/consent">vào trang đồng thuận</a> và tích mục cho phép lưu bản ghi.'
-      : "<b>Chưa nộp bài được: bạn chưa ký đồng thuận.</b> " +
-        "Bản ghi giọng nói là dữ liệu cá nhân, nên hệ thống không lưu gì trước khi bạn đồng ý. " +
-        '<a href="/consent">Ký đồng thuận ở đây</a> rồi quay lại; bạn rút lại lúc nào cũng được.';
+    const box = document.getElementById("terms-gate");
+    box.innerHTML =
+      "<b>Chưa nộp bài được: bạn chưa đồng ý điều khoản sử dụng.</b> " +
+      "Bản ghi giọng nói là dữ liệu cá nhân, nên hệ thống không lưu gì trước khi bạn đồng ý. " +
+      '<a href="/terms">Đồng ý điều khoản ở đây</a> rồi quay lại.';
     box.hidden = false;
     prepEl.hidden = true;
-    recorder.block("Cần ký đồng thuận trước khi ghi âm và nộp bài.");
+    recorder.block("Cần đồng ý điều khoản trước khi ghi âm và nộp bài.");
   })
   // A transient network error is no reason to block; the server still decides.
   .catch(() => {});

@@ -12,7 +12,7 @@
 // vào sẽ làm đẹp cho mô hình bằng chính những ca nó không trả lời.
 const panel = document.getElementById("stats-panel");
 
-const BAND_ORDER = ["A2", "B1", "B2"];
+const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 fetch("/api/v1/review/stats")
   .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json()))

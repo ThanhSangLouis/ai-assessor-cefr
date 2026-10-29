@@ -1,39 +1,97 @@
-"""Store of the feedback study (D040): the study, who is in which arm, their survey."""
+"""Store of the feedback study (D040): the study, who is in which arm, their survey.
+
+One collection, `study`, one document per study (D060). The document is a
+`Study`, and its participants are part of it (`Study ◆ Participant` on the
+class diagram): a participant exists only inside one study, and a learner's
+closing survey is part of their participation, so the answers sit on the
+participant rather than in a collection of their own.
+"""
 
 from __future__ import annotations
 
-import json
 import uuid
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from pymongo import ASCENDING, DESCENDING
+from pymongo import DESCENDING
 
-from aicefr.research.study import STATUSES
-from aicefr.storage.db import MongoStore, ensure_indexes, fields
+from aicefr.research.study import StudyStatus
+from aicefr.storage.db import MongoStore, ensure_indexes
 from aicefr.storage.db import now_iso as _now
 
-# study.status: running | survey | closed; study_participant.arm:
-# feedback | score_only. measured_until ends the measured phase: scores after
-# it, when both arms see feedback again, are not outcomes. A participant's
-# `code` is fixed at enrolment so exports of different days line up.
+# arm: feedback | score_only. measured_until ends the measured phase: scores
+# after it, when both arms see feedback again, are not outcomes. A
+# participant's `code` is fixed at enrolment so exports of different days line up.
 INDEXES = {
-    "study": [(("study_id",), True), (("status", "created_at"), False)],
-    "study_participant": [(("study_id", "account_id"), True), (("account_id",), False)],
-    "study_survey": [(("study_id", "account_id"), True), (("account_id",), False)],
+    "study": [
+        (("study_id",), True),
+        (("status", "created_at"), False),
+        (("participants.account_id",), False),
+    ],
 }
+ACTIVE = (StudyStatus.RUNNING.value, StudyStatus.SURVEY.value)
 
-STUDY_FIELDS = (
-    "study_id",
-    "name",
-    "seed",
-    "min_days",
-    "status",
-    "created_by",
-    "created_at",
-    "closed_at",
-    "measured_until",
-)
-ACTIVE = ("running", "survey")
+
+@dataclass
+class Participant:
+    """One learner in one study: the arm drawn for them, and their survey."""
+
+    code: str
+    account_id: str
+    arm: str
+    enrolled_at: str
+    withdrawn_at: str | None = None
+    survey_answers: dict | None = None
+    surveyed_at: str | None = None
+
+
+@dataclass
+class Study:
+    study_id: str
+    name: str
+    seed: int
+    min_days: int
+    status: StudyStatus
+    created_by: str
+    created_at: str
+    closed_at: str | None = None
+    measured_until: str | None = None
+    participants: list[Participant] = field(default_factory=list)
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> Study:
+        return cls(
+            study_id=doc["study_id"],
+            name=doc["name"],
+            seed=doc["seed"],
+            min_days=doc["min_days"],
+            status=StudyStatus(doc["status"]),
+            created_by=doc["created_by"],
+            created_at=doc["created_at"],
+            closed_at=doc.get("closed_at"),
+            measured_until=doc.get("measured_until"),
+            participants=[Participant(**p) for p in doc.get("participants", [])],
+        )
+
+    def to_doc(self) -> dict:
+        return {**asdict(self), "status": self.status.value}
+
+    def view(self) -> dict:
+        """The study without its participants, as the screens list it."""
+        return {
+            "study_id": self.study_id,
+            "name": self.name,
+            "seed": self.seed,
+            "min_days": self.min_days,
+            "status": self.status.value,
+            "created_by": self.created_by,
+            "created_at": self.created_at,
+            "closed_at": self.closed_at,
+            "measured_until": self.measured_until,
+        }
+
+    def place_of(self, account_id: str) -> Participant | None:
+        return next((p for p in self.participants if p.account_id == account_id), None)
 
 
 class StudyRepository(MongoStore):
@@ -41,45 +99,36 @@ class StudyRepository(MongoStore):
         self.db_path = str(db_path)
         ensure_indexes(self.db, INDEXES, "study")
 
+    def _load(self, study_id: str) -> Study | None:
+        doc = self.col("study").find_one({"study_id": study_id})
+        return Study.from_doc(doc) if doc else None
+
     def create(
         self, name: str, seed: int, min_days: int, created_by: str, arms: dict[str, str]
     ) -> str:
-        study_id = "st-" + uuid.uuid4().hex[:10]
         now = _now()
-        # The participants first: a study is listed only once its document is
-        # there, and by then everybody in it is enrolled.
-        participants = [
-            {
-                "study_id": study_id,
-                "account_id": account_id,
-                "arm": arm,
-                "enrolled_at": now,
-                "withdrawn_at": None,
-                # Codes in the order of the random assignment: they say nothing
-                # of who is who, and never change.
-                "code": f"P{i:03d}",
-            }
-            for i, (account_id, arm) in enumerate(arms.items(), 1)
-        ]
-        if participants:
-            self.col("study_participant").insert_many(participants)
-        self.col("study").insert_one(
-            {
-                "study_id": study_id,
-                "name": name,
-                "seed": seed,
-                "min_days": min_days,
-                "status": "running",
-                "created_by": created_by,
-                "created_at": now,
-                "closed_at": None,
-                "measured_until": None,
-            }
+        study = Study(
+            study_id="st-" + uuid.uuid4().hex[:10],
+            name=name,
+            seed=seed,
+            min_days=min_days,
+            status=StudyStatus.RUNNING,
+            created_by=created_by,
+            created_at=now,
+            # Codes in the order of the random assignment: they say nothing of
+            # who is who, and never change. One document: the study is listed
+            # with everybody in it enrolled, never half.
+            participants=[
+                Participant(code=f"P{i:03d}", account_id=account_id, arm=arm, enrolled_at=now)
+                for i, (account_id, arm) in enumerate(arms.items(), 1)
+            ],
         )
-        return study_id
+        self.col("study").insert_one(study.to_doc())
+        return study.study_id
 
     def get(self, study_id: str) -> dict | None:
-        return fields(self.col("study").find_one({"study_id": study_id}), STUDY_FIELDS)
+        found = self._load(study_id)
+        return found.view() if found else None
 
     def active(self) -> dict | None:
         """The study still running or collecting surveys; at most one at a time."""
@@ -87,32 +136,33 @@ class StudyRepository(MongoStore):
             {"status": {"$in": list(ACTIVE)}},
             sort=[("created_at", DESCENDING), ("_id", DESCENDING)],
         )
-        return fields(row, STUDY_FIELDS)
+        return Study.from_doc(row).view() if row else None
 
     def all(self) -> list[dict]:
-        studies = list(
-            self.col("study").find().sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-        )
+        rows = self.col("study").find().sort([("created_at", DESCENDING), ("_id", DESCENDING)])
         out = []
-        for s in studies:
-            item = fields(s, STUDY_FIELDS)
-            item["participants"] = self.col("study_participant").count_documents(  # type: ignore[index]
-                {"study_id": s["study_id"], "withdrawn_at": None}
+        for study in map(Study.from_doc, rows):
+            out.append(
+                {
+                    **study.view(),
+                    "participants": sum(p.withdrawn_at is None for p in study.participants),
+                    "surveys": sum(p.survey_answers is not None for p in study.participants),
+                }
             )
-            item["surveys"] = self.col("study_survey").count_documents(  # type: ignore[index]
-                {"study_id": s["study_id"]}
-            )
-            out.append(item)
-        return out  # type: ignore[return-value]
+        return out
 
     def set_status(self, study_id: str, status: str) -> None:
-        if status not in STATUSES:
-            raise ValueError(f"unknown study status {status}")
+        status = StudyStatus(status).value  # ValueError on anything else
         now = _now()
         studies = self.col("study")
         studies.update_one(
             {"study_id": study_id},
-            {"$set": {"status": status, "closed_at": now if status == "closed" else None}},
+            {
+                "$set": {
+                    "status": status,
+                    "closed_at": now if status == StudyStatus.CLOSED.value else None,
+                }
+            },
         )
         # The measured phase ends the first time the study leaves "running".
         studies.update_one(
@@ -120,64 +170,75 @@ class StudyRepository(MongoStore):
         )
 
     def participants(self, study_id: str) -> list[dict]:
-        rows = (
-            self.col("study_participant").find({"study_id": study_id}).sort("account_id", ASCENDING)
-        )
-        names = ("account_id", "arm", "enrolled_at", "withdrawn_at", "code")
-        return [fields(r, names) for r in rows]  # type: ignore[misc]
+        found = self._load(study_id)
+        rows = sorted(found.participants if found else [], key=lambda p: p.account_id)
+        return [
+            {
+                "account_id": p.account_id,
+                "arm": p.arm,
+                "enrolled_at": p.enrolled_at,
+                "withdrawn_at": p.withdrawn_at,
+                "code": p.code,
+            }
+            for p in rows
+        ]
 
     def membership(self, account_id: str) -> dict | None:
         """This learner's place in the active study, withdrawn or not."""
-        places = {
-            p["study_id"]: p for p in self.col("study_participant").find({"account_id": account_id})
-        }
-        if not places:
-            return None
-        study = self.col("study").find_one(
-            {"study_id": {"$in": list(places)}, "status": {"$in": list(ACTIVE)}},
+        row = self.col("study").find_one(
+            {"participants.account_id": account_id, "status": {"$in": list(ACTIVE)}},
             sort=[("created_at", DESCENDING), ("_id", DESCENDING)],
         )
-        if study is None:
+        if row is None:
             return None
-        place = places[study["study_id"]]
+        study = Study.from_doc(row)
+        place = study.place_of(account_id)
         return {
-            "study_id": study["study_id"],
-            "name": study["name"],
-            "status": study["status"],
-            "arm": place["arm"],
-            "withdrawn_at": place.get("withdrawn_at"),
+            "study_id": study.study_id,
+            "name": study.name,
+            "status": study.status.value,
+            "arm": place.arm,  # type: ignore[union-attr]
+            "withdrawn_at": place.withdrawn_at,  # type: ignore[union-attr]
         }
 
     def withdraw(self, account_id: str) -> int:
         """Leave every active study; from then on the learner sees full feedback again."""
-        active = [s["study_id"] for s in self.col("study").find({"status": {"$in": list(ACTIVE)}})]
-        done = self.col("study_participant").update_many(
-            {"account_id": account_id, "withdrawn_at": None, "study_id": {"$in": active}},
-            {"$set": {"withdrawn_at": _now()}},
+        done = self.col("study").update_many(
+            {
+                "status": {"$in": list(ACTIVE)},
+                "participants": {"$elemMatch": {"account_id": account_id, "withdrawn_at": None}},
+            },
+            {"$set": {"participants.$.withdrawn_at": _now()}},
         )
         return done.modified_count
 
     def save_survey(self, study_id: str, account_id: str, answers: dict) -> None:
-        self.col("study_survey").update_one(
-            {"study_id": study_id, "account_id": account_id},
+        self.col("study").update_one(
+            {"study_id": study_id, "participants.account_id": account_id},
             {
                 "$set": {
-                    "answers_json": json.dumps(answers, ensure_ascii=False),
-                    "submitted_at": _now(),
+                    "participants.$.survey_answers": answers,
+                    "participants.$.surveyed_at": _now(),
                 }
             },
-            upsert=True,
         )
 
     def surveys(self, study_id: str) -> dict[str, dict]:
-        rows = self.col("study_survey").find({"study_id": study_id})
-        return {r["account_id"]: json.loads(r["answers_json"]) for r in rows}
+        found = self._load(study_id)
+        return {
+            p.account_id: p.survey_answers
+            for p in (found.participants if found else [])
+            if p.survey_answers is not None
+        }
 
     def has_survey(self, study_id: str, account_id: str) -> bool:
-        found = self.col("study_survey").find_one({"study_id": study_id, "account_id": account_id})
-        return found is not None
+        found = self._load(study_id)
+        place = found.place_of(account_id) if found else None
+        return place is not None and place.survey_answers is not None
 
     def erase_account(self, account_id: str) -> None:
         """Erasure (FR-35) takes the learner out of every study, past ones included."""
-        self.col("study_survey").delete_many({"account_id": account_id})
-        self.col("study_participant").delete_many({"account_id": account_id})
+        self.col("study").update_many(
+            {"participants.account_id": account_id},
+            {"$pull": {"participants": {"account_id": account_id}}},
+        )

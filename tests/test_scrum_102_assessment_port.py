@@ -15,7 +15,7 @@ from aicefr.contracts import (
     QcResult,
     QcStatus,
     Response,
-    Status,
+    ResponseStatus,
     TaskPurpose,
     Transcript,
     Word,
@@ -26,6 +26,8 @@ from aicefr.report.evidence import EvidenceBuilder
 from aicefr.services.core.assessment import context
 from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.repository import Repository
+
+ACCEPTED = "2026-10-28T00:00:00+00:00"  # D058: the terms of use, accepted
 
 
 @pytest.fixture
@@ -49,13 +51,13 @@ def test_assessment_api_registers_the_migrated_response_review_admin_and_class_r
 def test_class_assignment_query_omits_practice_and_handles_no_members(tmp_path):
     repo = Repository(tmp_path / "assessment.db")
     repo.save(
-        Response(response_id="assessment-1", status=Status.COMPLETED, config_version="v1"),
+        Response(response_id="assessment-1", status=ResponseStatus.COMPLETED, config_version="v1"),
         "SV-001",
         "P3",
         account_id="student-1",
     )
     repo.save(
-        Response(response_id="practice-1", status=Status.COMPLETED, config_version="v1"),
+        Response(response_id="practice-1", status=ResponseStatus.COMPLETED, config_version="v1"),
         "SV-001",
         "P3",
         account_id="student-1",
@@ -80,7 +82,7 @@ def test_student_can_join_a_class_and_see_its_open_assignment(assessment_service
     parts, settings = assessment_service
     app = asgi(parts, settings)
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
 
     with TestClient(app) as client:
         made = client.post(
@@ -128,10 +130,9 @@ def test_teacher_review_queue_and_admin_stats_are_wired(assessment_service):
         assert stats.json()["total"] == 0
 
 
-def test_submission_requires_consent_before_writing_audio_or_response(assessment_service):
+def test_submission_requires_the_terms_before_writing_audio_or_response(assessment_service):
     parts, settings = assessment_service
-    context.svc().peers.identity.consent = lambda *, account_id: None
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT)  # terms not accepted
     with TestClient(asgi(parts, settings)) as client:
         denied = client.post(
             "/api/v1/responses",
@@ -144,7 +145,7 @@ def test_submission_requires_consent_before_writing_audio_or_response(assessment
 
 def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
     parts, settings = assessment_service
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
     with TestClient(asgi(parts, settings)) as client:
         accepted = client.post(
             "/api/v1/responses",
@@ -155,7 +156,7 @@ def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
         rid = accepted.json()["response_id"]
         saved = context.svc().repo.get(rid)
         assert saved is not None
-        assert saved.status is Status.QUEUED
+        assert saved.status is ResponseStatus.QUEUED
         assert context.svc().repo.owner_of(rid) == student.account_id
 
 
@@ -181,7 +182,6 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
         ],
         engine="fake",
         model_version="v1",
-        has_word_timestamps=True,
         is_verbatim=True,
     )
     evidence = EvidenceBuilder().build(transcript, features, [(0.0, 1.2), (2.5, 3.0)])
@@ -198,7 +198,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     )
     report = Response(
         response_id="report-1",
-        status=Status.COMPLETED,
+        status=ResponseStatus.COMPLETED,
         qc=QcResult(
             duration_ms=30_000,
             sample_rate_hz=16_000,
@@ -214,7 +214,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     )
     context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
 
-    student = Account("student-1", "SV-001", Role.STUDENT)
+    student = Account("student-1", "SV-001", Role.STUDENT, terms_accepted_at=ACCEPTED)
     with TestClient(asgi(parts, settings)) as client:
         result = client.get("/api/v1/responses/report-1", headers=headers(student))
     assert result.status_code == 200, result.text
@@ -229,7 +229,7 @@ def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessme
     parts, settings = assessment_service
     report = Response(
         response_id="needs-review",
-        status=Status.REVIEW_REQUIRED,
+        status=ResponseStatus.REVIEW_REQUIRED,
         assessment=Assessment(
             overall_0_6=3.4,
             overall_band=Band.B1,

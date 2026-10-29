@@ -9,7 +9,7 @@ import pytest
 from aicefr.asr.fake import FakeAsrEngine
 from aicefr.asr.vad import EnergyVad
 from aicefr.asr.whisper_adapter import WhisperEngine
-from aicefr.contracts import ProcessingRequest, ReasonCode, Status
+from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
 from aicefr.features.relevance import (
     MIN_WORDS_FOR_OFF_TOPIC,
     is_english,
@@ -114,7 +114,7 @@ def _run(engine, request_obj, tone, sr, task=P4):
 
 def test_speech_detected_as_vietnamese_is_not_scored(request_obj, tone, sr) -> None:
     r = _run(FakeAsrEngine(language="vi", language_probability=0.92), request_obj, tone, sr)
-    assert r.status is Status.REVIEW_REQUIRED
+    assert r.status is ResponseStatus.REVIEW_REQUIRED
     assert r.reasons == [ReasonCode.LANGUAGE_NOT_ENGLISH]
     assert r.assessment is None
 
@@ -135,7 +135,7 @@ def test_off_topic_keeps_the_score_and_goes_to_a_teacher(request_obj, tone, sr) 
     off = _run(FakeAsrEngine(transcript=FOOTBALL), request_obj, tone, sr)
     assert ReasonCode.OFF_TOPIC_SUSPECTED not in on.reasons
     assert ReasonCode.OFF_TOPIC_SUSPECTED in off.reasons
-    assert off.status is Status.REVIEW_REQUIRED
+    assert off.status is ResponseStatus.REVIEW_REQUIRED
     if off.assessment is not None and off.assessment.overall_0_6 is not None:
         # Khong tru diem: co chi la co.
         assert off.assessment.overall_0_6 > 0

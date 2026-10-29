@@ -24,11 +24,11 @@ pytest.importorskip("playwright.sync_api")
 
 from playwright.sync_api import expect  # noqa: E402
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
+    accept_terms,
     browser,
     context,
     live_server,
     login,
-    sign_consent,
     wait_until,
 )
 
@@ -47,7 +47,7 @@ def login_home(page, server, pseudonym: str, home: str) -> None:
 def student_page(context, live_server, path: str = "/"):
     page = context.new_page()
     login(page, live_server, live_server.account(), path)
-    sign_consent(page)
+    accept_terms(page)
     page.goto(path)
     return page
 
@@ -109,11 +109,11 @@ def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, l
         teacher.context.close()
 
 
-def test_account_menu_holds_consent_theme_and_sign_out(context, live_server):
+def test_account_menu_holds_terms_theme_and_sign_out(context, live_server):
     page = student_page(context, live_server, "/practice")
     menu = page.locator("details.account-menu")
     page.locator("details.account-menu > summary").click()
-    expect(menu.get_by_role("link", name="Đồng thuận dữ liệu")).to_be_visible()
+    expect(menu.get_by_role("link", name="Điều khoản sử dụng")).to_be_visible()
     expect(menu.get_by_role("button", name="Đăng xuất")).to_be_visible()
     before = page.evaluate("document.documentElement.getAttribute('data-theme')")
     page.locator("#theme-toggle").click()
@@ -203,21 +203,14 @@ def test_my_responses_filters_assessments_from_practice(context, live_server):
     expect(items.first).not_to_contain_text("Luyện tập ·")
 
 
-def test_consent_asks_before_withdrawing_and_offers_next_steps(context, live_server):
+def test_accepting_the_terms_offers_next_steps(context, live_server):
     page = context.new_page()
-    login(page, live_server, live_server.account(), "/consent")
-    page.locator("#audio").check()
-    page.get_by_role("button", name="Ký đồng thuận").click()
-    expect(page.locator("#state")).to_have_text("Đã ký · nộp bài được")
+    login(page, live_server, live_server.account(), "/terms")
+    expect(page.locator("#state")).to_have_text("Chưa đồng ý")
+    page.get_by_role("button", name="Tôi đồng ý điều khoản").click()
+    expect(page.locator("#state")).to_contain_text("Đã đồng ý lúc")
+    expect(page.get_by_role("button", name="Tôi đồng ý điều khoản")).to_be_disabled()
     expect(page.get_by_role("link", name="Vào luyện tập")).to_be_visible()
-
-    page.once("dialog", lambda d: d.dismiss())
-    page.get_by_role("button", name="Rút lại đồng thuận").click()
-    expect(page.locator("#state")).to_have_text("Đã ký · nộp bài được")
-
-    page.once("dialog", lambda d: d.accept())
-    page.get_by_role("button", name="Rút lại đồng thuận").click()
-    expect(page.locator("#state")).to_have_text("Chưa ký")
 
 
 # ---------------------------------------------------------------- teacher
@@ -297,14 +290,14 @@ def test_admin_activation_asks_first_and_only_compatible_models_offer_it(context
 # ---------------------------------------------------------------- phone
 
 
-@pytest.mark.parametrize("path", ["/", "/my-responses", "/practice/PR-COH-A2", "/consent"])
+@pytest.mark.parametrize("path", ["/", "/my-responses", "/practice/PR-COH-A2", "/terms"])
 def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     context, live_server, path
 ):
     page = context.new_page()
     page.set_viewport_size({"width": 375, "height": 812})
     login(page, live_server, live_server.account(), "/practice")
-    sign_consent(page)
+    accept_terms(page)
     page.goto(path)
     page.wait_for_load_state("networkidle")
     nav = page.locator(".site-nav")

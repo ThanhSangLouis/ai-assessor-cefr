@@ -1,6 +1,6 @@
-%% SDD - Diagram 06: Deployment diagram - sau D044
+%% SDD - Diagram 06: Deployment diagram - sau D044, D048, D050
 %% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
-%% (core, speech, web), PostgreSQL mot schema core, RabbitMQ, hai volume. Mot
+%% (core, speech, web), MongoDB mot database aicefr, Redis (BullMQ), hai volume. Mot
 %% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
 flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
@@ -9,8 +9,8 @@ flowchart TB
         CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
         WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
-        PG[("PostgreSQL 16<br/>schema core, một vai trò")]
-        MQ[["RabbitMQ<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        PG[("MongoDB 7.0<br/>database aicefr")]
+        MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]
         V2[("Volume models<br/>cache model Whisper")]
     end
