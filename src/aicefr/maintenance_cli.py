@@ -45,7 +45,7 @@ def _stores(args: argparse.Namespace) -> tuple[Repository, LessonRepository]:
     # D051: lesson attempts are in the learning part's store, which may be
     # its own database; on one machine, or with --db, the same store.
     learning = args.db or get_settings().store("learning")
-    for store, name in ((target, "response"), (learning, "step_attempt")):
+    for store, name in ((target, "response"), (learning, "attempt")):
         if not collection_exists(store, name):
             raise WrongStore(f"kho {store!r} chưa có collection {name}: kiểm tra lại địa chỉ kho")
     return Repository(target), LessonRepository(learning, seed=False)

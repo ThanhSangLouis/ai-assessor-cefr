@@ -209,3 +209,31 @@ def test_sheets_and_their_ratings_become_the_batch_and_seen_goes_to_the_response
     assert [m["account_id"] for m in db["response"].find_one()["machine_seen"]] == ["t9"]
     gone = {"rating_assignment", "research_rating", "machine_seen"}
     assert not gone & set(db.list_collection_names())
+
+
+def test_units_versions_media_and_attempts_find_their_lessons_and_paths(db):
+    db["lesson_path"].insert_one({"path_id": "p1", "title": "P", "status": "draft"})
+    db["lesson_unit"].insert_many(
+        [{"unit_id": "u2", "path_id": "p1", "position": 2},
+         {"unit_id": "u1", "path_id": "p1", "position": 1}]
+    )  # fmt: skip
+    db["lesson"].insert_one({"lesson_id": "l1", "unit_id": "u1", "draft_json": "{}"})
+    db["lesson_version"].insert_one({"lesson_id": "l1", "version": 1, "lesson_json": "{}"})
+    db["lesson_media"].insert_one(
+        {"media_key": "m1", "kind": "image", "blob_key": "lesson-media-l1-s1-x.png"}
+    )
+    db["step_attempt"].insert_one({"attempt_id": "a1", "lesson_id": "l1"})
+    db["lesson_meta"].insert_one({"key": "sample_layout", "value": "3"})
+
+    _twice(migrations._d060_learning, db)
+
+    path = db["path"].find_one({"path_id": "p1"})
+    assert [u["unit_id"] for u in path["units"]] == ["u1", "u2"]
+    lesson = db["lesson"].find_one({"lesson_id": "l1"})
+    assert [x["version"] for x in lesson["versions"]] == [1]
+    assert [x["media_key"] for x in lesson["media"]] == ["m1"]
+    assert db["attempt"].count_documents({}) == 1
+    assert db["system"].find_one({"key": "learning.sample_layout"})["value"] == "3"
+    gone = {"lesson_path", "lesson_unit", "lesson_version", "lesson_media", "step_attempt",
+            "lesson_meta"}  # fmt: skip
+    assert not gone & set(db.list_collection_names())

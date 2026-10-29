@@ -39,7 +39,9 @@ class AssessmentFacade:
     @exposed
     def student_badges(self, account_id: str) -> dict:
         """Teacher decisions on this student's responses since they last looked (D028)."""
-        seen = self.repo.seen_at(account_id, "results")
+        from aicefr.services.core.assessment.context import svc
+
+        seen = svc().peers.identity.seen_at(account_id=account_id, marker="results")
         return {
             "results": self.repo.count_reviewed_since(account_id, seen),
             "results_seen_at": seen,
@@ -59,10 +61,6 @@ class AssessmentFacade:
 
         _bank, attempts, _progress = _practice_state(account_id)
         return _daily_view(attempts)
-
-    @exposed
-    def mark_seen(self, account_id: str, marker: str) -> str:
-        return self.repo.mark_seen(account_id, marker)
 
     @exposed
     def staff_badges(self, account_id: str) -> dict:

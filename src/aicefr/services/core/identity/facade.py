@@ -58,5 +58,14 @@ class IdentityFacade:
         return sorted(self.auth.accounts_with_terms())
 
     @exposed
+    def seen_at(self, account_id: str, marker: str) -> str | None:
+        """When the owner last looked at `marker` (D028): the account keeps it (D060)."""
+        return self.auth.seen_at(account_id, marker)
+
+    @exposed
+    def mark_seen(self, account_id: str, marker: str) -> str:
+        return self.auth.mark_seen(account_id, marker)
+
+    @exposed
     def audit_recent(self, limit: int = 100) -> list[dict]:
         return self.audit.recent(limit)

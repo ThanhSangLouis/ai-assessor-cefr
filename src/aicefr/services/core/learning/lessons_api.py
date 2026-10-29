@@ -1312,7 +1312,7 @@ async def teach_model_audio(
     blob_key = f"lesson-media-{lesson_id}-{step_id}-{_rand()}.{kind}"
     svc().blobs.put(blob_key, data)
     key = svc().lessons.add_media(
-        "audio", AUDIO_TYPES.get(kind, "audio/wav"), blob_key, account.pseudonym
+        lesson_id, "audio", AUDIO_TYPES.get(kind, "audio/wav"), blob_key, account.pseudonym
     )
     _set_step_media(lesson_id, step_id, "model_audio", key, account.pseudonym)
     check = None
@@ -1350,7 +1350,9 @@ async def teach_image(
         raise HTTPException(415, "chỉ nhận ảnh png, jpg hoặc webp")
     blob_key = f"lesson-media-{lesson_id}-{step_id}-{_rand()}.{kind}"
     svc().blobs.put(blob_key, data)
-    key = svc().lessons.add_media("image", IMAGE_TYPES[kind], blob_key, account.pseudonym)
+    key = svc().lessons.add_media(
+        lesson_id, "image", IMAGE_TYPES[kind], blob_key, account.pseudonym
+    )
     _set_step_media(lesson_id, step_id, "image", key, account.pseudonym)
     return {"media_key": key, "url": _media_url(key)}
 

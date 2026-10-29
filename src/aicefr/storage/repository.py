@@ -51,8 +51,8 @@ from aicefr.storage.db import now_iso as _now
 # teacher opened it and when they left, D041 -- the lock is cleared on decision,
 # so its start is kept here) and `replay_labels` (guided listening, D056).
 # The settings an administrator changes at run time live in `system` under
-# `assessment.` (D060); when a person last looked at something that can change
-# behind their back (D028) lives on their account (`seen_markers`).
+# `assessment.` (D060). When a person last looked at something that can change
+# behind their back (D028) is on their account, asked of the identity part.
 CONFIG = "assessment."
 INDEXES = {
     "response": [
@@ -980,19 +980,6 @@ class Repository(MongoStore):
         return out  # type: ignore[return-value]
 
     # ---------- what is new for a person (D028) ----------
-
-    # The markers are the account's (`Account.seen_markers`, D060): this part
-    # writes only that field of the account document, never anything else.
-    def seen_at(self, account_id: str, marker: str) -> str | None:
-        row = self.col("account").find_one({"account_id": account_id}, {"seen_markers": 1})
-        return ((row or {}).get("seen_markers") or {}).get(marker)
-
-    def mark_seen(self, account_id: str, marker: str) -> str:
-        now = _now()
-        self.col("account").update_one(
-            {"account_id": account_id}, {"$set": {f"seen_markers.{marker}": now}}
-        )
-        return now
 
     def count_reviewed_since(self, account_id: str, since: str | None) -> int:
         """The owner's assessed responses a teacher decided on after `since`.

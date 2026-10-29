@@ -446,6 +446,61 @@ def _d060_rating(db: Database) -> None:
         db["rating_batch"].update_many({"ratings": {"$exists": False}}, {"$set": {"ratings": []}})
 
 
+def _d060_learning(db: Database) -> None:
+    """Units into `path`, versions and media into `lesson`, attempts into `attempt`.
+
+    `lesson_path` + `lesson_unit` -> `path` (units embedded, in their order),
+    `lesson_version` -> `lesson.versions`, `lesson_media` -> the media of the
+    lesson whose step points at it (by the key the upload put in its file
+    name), `step_attempt` -> `attempt`, `lesson_meta` -> `system` (`learning.`).
+    """
+    if _has(db, "lesson_path"):
+        for p in db["lesson_path"].find({}, {"_id": 0}):
+            units = [
+                {k: v for k, v in u.items() if k not in ("_id", "path_id")}
+                for u in db["lesson_unit"].find({"path_id": p["path_id"]}).sort("position", 1)
+            ]
+            db["path"].update_one(
+                {"path_id": p["path_id"]}, {"$setOnInsert": {**p, "units": units}}, upsert=True
+            )
+        db.drop_collection("lesson_path")
+        db.drop_collection("lesson_unit")
+    if _has(db, "lesson_version"):
+        for v in db["lesson_version"].find({}, {"_id": 0}).sort("version", 1):
+            lid = v.pop("lesson_id")
+            db["lesson"].update_one(
+                {"lesson_id": lid, "versions.version": {"$ne": v["version"]}},
+                {"$push": {"versions": v}},
+            )
+        db.drop_collection("lesson_version")
+    if _has(db, "lesson_media"):
+        for m in db["lesson_media"].find({}, {"_id": 0}):
+            # Uploads are named `lesson-media-<lesson>-<step>-...`: the lesson
+            # they were made for. A file of another name is kept with no lesson
+            # rather than lost.
+            owner = None
+            blob = str(m.get("blob_key") or "")
+            if blob.startswith("lesson-media-"):
+                for row in db["lesson"].find({}, {"lesson_id": 1}):
+                    if blob.startswith(f"lesson-media-{row['lesson_id']}-"):
+                        owner = row["lesson_id"]
+                        break
+            if owner is None:
+                hit = db["lesson"].find_one({"draft_json": {"$regex": m["media_key"]}})
+                owner = hit["lesson_id"] if hit else None
+            if owner is not None:
+                db["lesson"].update_one(
+                    {"lesson_id": owner, "media.media_key": {"$ne": m["media_key"]}},
+                    {"$push": {"media": m}},
+                )
+        db.drop_collection("lesson_media")
+    if _has(db, "lesson"):
+        for key in ("versions", "media"):
+            db["lesson"].update_many({key: {"$exists": False}}, {"$set": {key: []}})
+    _rename(db, "step_attempt", "attempt")
+    _settings(db, "lesson_meta", "learning.")
+
+
 _RATING_KEYS = (
     "score_range", "score_accuracy", "score_fluency", "score_coherence", "score_phonology",
     "score_overall", "band", "unscorable_reason", "reason", "submitted_at",
@@ -486,6 +541,7 @@ D060_STEPS: tuple[Callable[[Database], None], ...] = (
     _d060_identity,
     _d060_response,
     _d060_rating,
+    _d060_learning,
 )
 
 

@@ -740,6 +740,19 @@ class AuthRepository(MongoStore):
         )
         return done.modified_count > 0
 
+    # ---------- what the owner has seen (D028) ----------
+
+    def seen_at(self, account_id: str, marker: str) -> str | None:
+        row = self.col("account").find_one({"account_id": account_id}, {"seen_markers": 1})
+        return ((row or {}).get("seen_markers") or {}).get(marker)
+
+    def mark_seen(self, account_id: str, marker: str) -> str:
+        now = _now()
+        self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {f"seen_markers.{marker}": now}}
+        )
+        return now
+
     def login_with_identity(
         self, provider: str, subject_hash: str, device: str | None = None
     ) -> tuple[str, dict] | None:
