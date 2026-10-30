@@ -53,7 +53,7 @@ Repo nộp bài đã chuyển sang tài khoản `ThanhSangLouis/ai-assessor-cefr
 
 ### 1.4. Kiểm thử
 
-Bản 30/10 (sau D064, trước #89–#91):
+Bản 30/10 (sau D064; #89–#92 merge tối 30/10, tự deploy lên EC2):
 - Kiểm thử trên MongoDB và Redis thật: 1492/1492 qua. E2E Playwright với ba vai trò: 75/75 qua (bỏ 4 test điều khoản theo D064).
 - Bản clone sạch của `main` (`bbaa713`), cài như máy teammate: 1493 test qua, 0 lỗi; đăng nhập ba vai trò, 178 trang không lỗi.
 - #89, #90: CI đủ 5 check xanh. #91: toàn bộ test đơn vị 1525 qua, 24 test tích hợp và 2 test E2E mới của D065 qua.
@@ -73,7 +73,7 @@ Trên nhánh đã gộp, trước khi vào `main`:
 3. **D059–D065 đang PROPOSED** (D058 đã được D064 thay). Cần cả nhóm xác nhận.
 4. **Production bật cổng thanh toán thử (sandbox).** `.env` trên EC2 để trống `AICEFR_PAYMENT_GATEWAYS` nên dùng mặc định `sandbox`: ai đặt mua lượt chấm cũng tự "thanh toán" được mà không mất tiền. Cần chủ dự án quyết: giữ (đồ án, không thu tiền thật) hay tắt (sinh viên chỉ còn lượt miễn phí mỗi kỳ).
 5. **Rủi ro dữ liệu cá nhân sau D064.** Giọng nói là dữ liệu cá nhân (Nghị định 13/2023); không còn mốc đồng ý trong hệ thống thì cơ sở pháp lý phải nằm ở hợp đồng với trường hoặc thông báo ngoài hệ thống.
-6. **#89, #90, #91 chờ merge.** CI xanh nhưng công cụ AI không được tự merge; #91 cần cập nhật sau khi #90 vào `main` (thêm hai route công khai mới vào test ma trận quyền).
+6. **Teammate cần chạy lại để xác nhận** bản sửa #89 (cài `[dev,asr,vad]` nếu muốn chấm thật; muốn thử Google ở local thì xin khoá qua kênh riêng).
 7. **Tài liệu SDD module** (M03–M05, M09, M10, M12, M13) còn nhắc tên bảng cũ.
 8. **AI Prompt Log tuần 6 của Sang còn trống** (0 dòng).
 
@@ -81,7 +81,7 @@ Trên nhánh đã gộp, trước khi vào `main`:
 
 1. Sửa Bản cam kết theo D059–D065, gửi GVHD và ký trước tuần 11.
 2. Thống nhất với nhóm D059–D065 (PROPOSED → quyết định của nhóm); chốt cổng thanh toán thử trên production.
-3. Merge #89–#91; teammate chạy lại theo `docs/plan/CHAY_DU_AN_CHO_AI.md` để xác nhận đã chạy được.
+3. Teammate chạy lại theo `docs/plan/CHAY_DU_AN_CHO_AI.md` để xác nhận đã chạy được.
 4. Cập nhật SDD module M03–M05, M09, M10, M12, M13 theo collection và lớp miền của D060.
 5. Phương án cho ba ngưỡng band chưa hiệu chuẩn; cân nhắc huấn luyện lại model trên bản chép lời của Whisper đang chạy để bớt bài phải duyệt.
 6. Bổ sung AI Prompt Log tuần 6 của Sang.
