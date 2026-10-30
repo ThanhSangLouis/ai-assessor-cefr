@@ -428,6 +428,11 @@ const ACTIVITY_NAMES = {
   "account.role_change": "Đổi vai trò",
   "account.google_link": "Liên kết Google",
   "account.google_unlink": "Gỡ liên kết Google",
+  "account.signup": "Tự đăng ký",
+  "account.google_signup": "Đăng ký bằng Google",
+  "account.recovery_code": "Tạo mã khôi phục",
+  "account.recover": "Đặt lại mật khẩu bằng mã khôi phục",
+  "auth.recover_failed": "Thử mã khôi phục sai",
   "account.profile": "Sửa hồ sơ",
 };
 

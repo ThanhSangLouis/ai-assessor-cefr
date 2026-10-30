@@ -124,27 +124,31 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class LoginRateLimitMiddleware(BaseHTTPMiddleware):
-    """Cap login attempts per client address.
+    """Cap login, sign-up and recovery attempts per client address.
 
     The per-account lockout already stops an attacker grinding one account.
     This stops the other shape of the same attack: one guess, every account.
+    Sign-up and recovery (D065) are counted apart from login, each on its own:
+    a script opening accounts by the hundred, or trying recovery codes, is held
+    to the same pace as one guessing passwords.
     Kept in memory on purpose -- a single process serves this deployment, and a
     shared store would be a dependency bought for very little.
     """
 
-    PATH = "/api/v1/auth/login"
+    PATHS = frozenset({"/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/recover"})
 
     def __init__(self, app) -> None:
         super().__init__(app)
         self._limiter = InMemoryRateLimiter()
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path != self.PATH or request.method != "POST":
+        path = request.url.path
+        if path not in self.PATHS or request.method != "POST":
             return await call_next(request)
 
         limit = get_settings().login_attempts_per_minute
         who = request.client.host if request.client else "unknown"
-        if not self._limiter.hit(who, limit):
+        if not self._limiter.hit(f"{path} {who}", limit):
             count("login_rate_limited_total")
             logger.warning("login rate limit hit", extra={"event": "rate_limit"})
             return JSONResponse(

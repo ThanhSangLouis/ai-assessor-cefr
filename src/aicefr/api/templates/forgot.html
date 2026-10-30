@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_art.html" import terraces %}
+{% block title %}Quên mật khẩu · AI Assessor CEFR{% endblock %}
+{% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
+{% block content %}
+<div class="auth-split">
+  <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
+  <section class="auth-intro" aria-labelledby="auth-intro-h">
+    <p class="eyebrow">AI Assessor CEFR</p>
+    <h2 id="auth-intro-h">Đặt lại mật khẩu bằng mã khôi phục</h2>
+    <ul class="auth-points">
+      <li>Hệ thống không lưu email nên không gửi thư đặt lại mật khẩu.</li>
+      <li>Mã khôi phục được cấp khi đăng ký, hoặc tạo ở trang Tài khoản.</li>
+      <li>Đặt lại xong, mọi thiết bị khác bị đăng xuất.</li>
+    </ul>
+  </section>
+
+  <section class="card auth-card" aria-labelledby="forgot-h">
+    <h1 id="forgot-h">Quên mật khẩu</h1>
+    <form id="f" novalidate>
+      <label for="pseudonym">Mã bút danh</label>
+      <input id="pseudonym" autocomplete="username" required autocapitalize="none" spellcheck="false">
+      <label for="code">Mã khôi phục</label>
+      <input id="code" autocomplete="one-time-code" required autocapitalize="none" spellcheck="false"
+             aria-describedby="code-hint" placeholder="xxxx-xxxx-xxxx-xxxx">
+      <p class="field-hint" id="code-hint">Không phân biệt chữ hoa, chữ thường; dấu gạch có thể bỏ.</p>
+      <label for="password">Mật khẩu mới</label>
+      <input id="password" type="password" autocomplete="new-password" required minlength="{{ min_length }}">
+      <label for="again">Nhập lại mật khẩu mới</label>
+      <input id="again" type="password" autocomplete="new-password" required>
+      <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
+      <div class="button-row">
+        <button id="b" type="submit">Đặt mật khẩu mới</button>
+      </div>
+      <div id="tb" role="alert"></div>
+    </form>
+
+    <div id="done" hidden>
+      <p class="notice notice-ok" role="status">Đã đặt mật khẩu mới và đăng nhập. Mã cũ đã hết hiệu lực; đây là mã mới.</p>
+      {% include "_recovery_slip.html" %}
+      <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu mã khôi phục mới</label>
+      <div class="button-row">
+        <a class="button" id="go" href="/" aria-disabled="true">Tiếp tục</a>
+      </div>
+    </div>
+
+    <p class="muted auth-foot">
+      Không có mã khôi phục? Báo giảng viên hoặc quản trị viên của lớp để nhận mật khẩu tạm.
+      Đã liên kết Google thì <a href="/login">đăng nhập bằng Google</a> rồi tạo mã ở trang Tài khoản.
+    </p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('forgot.js') }}"></script>{% endblock %}

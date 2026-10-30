@@ -75,6 +75,7 @@ function loadMe() {
       setFact("password_changed_at", when(data.password_changed_at));
       document.getElementById("first-time").hidden = !data.must_change_password;
       paintGoogle();
+      paintRecovery();
       checkRules();
       return data;
     })
@@ -280,9 +281,44 @@ if (googleUnlink) {
   });
 }
 
+// ---------------------------------------------------------------- recovery code
+// D065: whether a code is in force; a new one is shown once on the slip.
+const recoveryState = document.getElementById("recovery-state");
+const recoveryNew = document.getElementById("recovery-new");
+
+function paintRecovery() {
+  if (!recoveryState || !me) return;
+  const at = me.recovery && me.recovery.issued_at;
+  recoveryState.innerHTML = at
+    ? `<span class="success">Đang có mã</span>, tạo lúc ${escapeHtml(window.ui.localTime(at))}.`
+    : "Chưa có mã khôi phục. Tạo một mã và cất ở nơi an toàn để tự đặt lại mật khẩu khi quên.";
+}
+
+if (recoveryNew) {
+  recoveryNew.addEventListener("click", async () => {
+    if (me && me.recovery && me.recovery.issued_at &&
+        !window.confirm("Tạo mã mới? Mã khôi phục cũ sẽ hết hiệu lực.")) return;
+    recoveryNew.disabled = true;
+    try {
+      const r = await fetch("/api/v1/me/recovery-code", { method: "POST" });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        window.toast(typeof d.detail === "string" ? d.detail : "Không tạo được mã.", "error");
+        return;
+      }
+      window.showRecoverySlip(me.pseudonym, d.recovery_code);
+      window.toast("Đã tạo mã khôi phục mới. Hãy lưu lại: mã chỉ hiện lần này.", "ok");
+      loadMe();
+    } finally {
+      recoveryNew.disabled = false;
+    }
+  });
+}
+
 // ---------------------------------------------------------------- sessions
 const sessionList = document.getElementById("session-list");
-const METHOD_NAMES = { password: "mật khẩu", google: "Google" };
+const METHOD_NAMES = { password: "mật khẩu", google: "Google", recovery: "mã khôi phục" };
 
 function sessionItem(s) {
   const device = s.device || "Thiết bị không rõ";
@@ -381,11 +417,17 @@ const ACTIVITY = {
   "account.google_link": ["plus", "Liên kết Google"],
   "account.google_unlink": ["x", "Gỡ liên kết Google"],
   "account.profile": ["sparkle", "Sửa hồ sơ"],
+  "account.signup": ["user-plus", "Tự đăng ký tài khoản"],
+  "account.google_signup": ["user-plus", "Đăng ký bằng Google"],
+  "account.recovery_code": ["key", "Tạo mã khôi phục mới"],
+  "account.recover": ["unlock", "Đặt lại mật khẩu bằng mã khôi phục"],
+  "auth.recover_failed": ["alert", "Thử mã khôi phục không thành công"],
 };
 const DETAIL = {
   "method=password": "bằng mật khẩu",
   "method=google": "bằng Google",
   wrong_password: "sai mật khẩu",
+  wrong_code: "sai mã khôi phục",
   locked: "tài khoản đang tạm khoá",
 };
 
