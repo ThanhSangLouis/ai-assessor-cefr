@@ -53,6 +53,15 @@ def _env(service: dict) -> dict:
 # ================================================================= compose override
 
 
+def test_speech_builds_with_silero_without_overriding_the_whisper_model():
+    base = yaml.load(
+        (ROOT / "docker-compose.yml").read_text(encoding="utf-8"), Loader=_ComposeLoader
+    )
+    speech = base["services"]["speech"]
+    assert str(speech["build"]["args"]["VAD"]) == "1"
+    assert "AICEFR_WHISPER_MODEL" not in speech["environment"]
+
+
 def test_caddy_is_the_only_public_entry_on_80_and_443(prod):
     caddy = prod["services"]["caddy"]
     assert caddy["image"].startswith("caddy:2")
