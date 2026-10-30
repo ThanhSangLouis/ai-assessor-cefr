@@ -46,8 +46,9 @@ test. Tầng E2E (E): `tests/e2e/test_signup_e2e.py`, Playwright trên máy ch�
 | TC-SR-I22 | `test_sign_up_and_recovery_pages_are_for_the_signed_out` |
 | TC-SR-E23 | `test_a_visitor_signs_up_then_resets_a_forgotten_password` |
 | TC-SR-E24 | `test_a_signed_in_learner_makes_a_recovery_code_on_the_account_page` |
+| TC-SR-I26 | `test_the_login_page_puts_both_links_inside_the_form_card` |
 
 ## 3. Kết quả chạy
 
-Ngày 30/10/2026 trên nhánh `feat/d065-dang-ky-va-quen-mat-khau`: tầng I 23/23 qua; tầng E 2/2 qua
+Ngày 30/10/2026 trên nhánh `feat/d065-dang-ky-va-quen-mat-khau`: tầng I 24/24 qua; tầng E 2/2 qua
 trên MongoDB 7.

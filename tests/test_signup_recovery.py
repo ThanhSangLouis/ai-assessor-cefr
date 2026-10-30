@@ -290,3 +290,11 @@ def test_sign_up_and_recovery_pages_are_for_the_signed_out(m, path: str) -> None
     c.follow_redirects = False
     r = c.get(path)
     assert r.status_code == 303 and r.headers["location"] == "/practice"
+
+
+def test_the_login_page_puts_both_links_inside_the_form_card(m) -> None:
+    """Both links sit under the sign-in card, after the page heading, not above the page."""
+    page = TestClient(m.app).get("/login").text
+    heading = page.index('id="login-h"')
+    assert heading < page.index('id="forgot-link"') < page.index('id="signup-link"')
+    assert page.count("auth-help") == 1
