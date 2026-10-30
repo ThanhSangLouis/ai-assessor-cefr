@@ -3467,6 +3467,70 @@ button.evidence:hover {
   border: 1px solid rgba(56, 189, 248, 0.25);
   flex: none;
 }
+/* Mic Try Button in Player */
+.lp-studio-mic-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: none;
+}
+:root[data-theme="light"] .lp-studio-mic-btn {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+}
+.lp-studio-mic-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+}
+.lp-studio-mic-btn .icon { width: 15px; height: 15px; }
+.lp-studio-mic-btn.is-recording {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #dc2626;
+  animation: pulse-red 1.2s infinite;
+  box-shadow: 0 0 16px rgba(239, 68, 68, 0.6);
+}
+@keyframes pulse-red {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Interactive mini-players in steps and float mock card */
+.lp-demo-player, .lp-mock-float {
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.lp-demo-player:hover, .lp-mock-float:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+.lp-demo-player.is-playing .lp-demo-rec,
+.lp-mock-float.is-playing .lp-rec {
+  background: #10b981;
+  color: #ffffff;
+  animation: pulse-green 1s infinite alternate;
+}
+@keyframes pulse-green {
+  from { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); }
+  to { box-shadow: 0 0 14px rgba(16, 185, 129, 0.8); }
+}
+.lp-demo-player.is-playing .lp-demo-waveform i,
+.lp-mock-float.is-playing .lp-eq i {
+  animation: lp-eq 0.8s ease-in-out infinite alternate;
+}
+
 @media (max-width: 768px) {
   .lp-studio-speed-badge { display: none; }
 }
@@ -5032,6 +5096,23 @@ button.window-chunk:hover { background: var(--bg-hover); }
 /* --- phones: the guest bar wraps; tasks fold their prompts ---------------------
    (Signed-in users have the sidebar of D027, which turns into a top bar and a
    bottom tab bar on its own; see "app sidebar" at the end of this file.) */
+@media (max-width: 1040px) {
+  .site-header .brand-sub { display: none; }
+  .site-header #theme-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 860px) {
+  .site-header .site-nav { display: none; }
+  .site-header .brand-badge { display: none; }
+}
+
 @media (max-width: 640px) {
   /* One row: the mark and name, sign-in, and the theme as an icon. The links
      of the guest bar only jump within the product page, which the name

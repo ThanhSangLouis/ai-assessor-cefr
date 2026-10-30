@@ -333,6 +333,166 @@
       });
     });
 
+    // Microphone speech recognition or interactive voice trial
+    const micBtn = document.getElementById("lp-demo-mic-btn");
+    let isListening = false;
+    let recognition = null;
+
+    if (micBtn) {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          recognition = new SpeechRec();
+          recognition.continuous = false;
+          recognition.interimResults = true;
+          recognition.lang = "en-US";
+
+          recognition.onstart = () => {
+            isListening = true;
+            micBtn.classList.add("is-recording");
+            const spanText = micBtn.querySelector("span");
+            if (spanText) spanText.textContent = "Đang nghe...";
+            if (!audio.paused) audio.pause();
+            if (tooltipCard) {
+              tooltipCard.innerHTML = `<span style="color:#ef4444">●</span> <em>Đang lắng nghe giọng bạn... Hãy thử nói câu trên!</em>`;
+            }
+          };
+
+          recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+              .map((r) => r[0].transcript)
+              .join("")
+              .toLowerCase();
+            const data = demoData[currentLevel] || demoData.b1;
+            const spokenTokens = transcript.split(/\s+/).filter(Boolean);
+
+            data.words.forEach((item, idx) => {
+              const clean = item.w.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+              const span = wordSpans[idx];
+              if (!span) return;
+              if (spokenTokens.includes(clean)) {
+                span.classList.add("is-speaking");
+              }
+            });
+          };
+
+          recognition.onend = () => {
+            isListening = false;
+            micBtn.classList.remove("is-recording");
+            const spanText = micBtn.querySelector("span");
+            if (spanText) spanText.textContent = "Thử nói";
+            if (window.toast) {
+              window.toast("Đã ghi nhận giọng đọc thử! Hệ thống đối sánh phát âm hoàn tất.", "ok");
+            }
+          };
+
+          recognition.onerror = (e) => {
+            isListening = false;
+            micBtn.classList.remove("is-recording");
+            const spanText = micBtn.querySelector("span");
+            if (spanText) spanText.textContent = "Thử nói";
+            if (e.error !== "no-speech" && window.toast) {
+              window.toast("Microphone chưa sẵn sàng. Bạn có thể bấm vào từng từ để nghe phát âm mẫu!", "info");
+            }
+          };
+
+          micBtn.addEventListener("click", () => {
+            if (isListening) {
+              recognition.stop();
+            } else {
+              try {
+                recognition.start();
+              } catch (err) {
+                console.warn("Speech recognition start issue:", err);
+              }
+            }
+          });
+        } catch (err) {
+          console.warn("Speech recognition init issue:", err);
+        }
+      } else {
+        micBtn.addEventListener("click", () => {
+          if (!audio.paused) audio.pause();
+          micBtn.classList.add("is-recording");
+          const spanText = micBtn.querySelector("span");
+          if (spanText) spanText.textContent = "Mô phỏng...";
+          const data = demoData[currentLevel] || demoData.b1;
+          let idx = 0;
+          const timer = setInterval(() => {
+            if (idx < wordSpans.length) {
+              wordSpans.forEach((s) => s.classList.remove("is-speaking"));
+              wordSpans[idx].classList.add("is-speaking");
+              const item = data.words[idx];
+              tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${item.note}</em>`;
+              idx++;
+            } else {
+              clearInterval(timer);
+              wordSpans.forEach((s) => s.classList.remove("is-speaking"));
+              micBtn.classList.remove("is-recording");
+              if (spanText) spanText.textContent = "Thử nói";
+              if (window.toast) {
+                window.toast("Đã hoàn tất phân tích mẫu câu trực quan!", "ok");
+              }
+            }
+          }, 450);
+        });
+      }
+    }
+
+    // Mini-players in steps and float mock card
+    const stepDemoPlayer = document.getElementById("lp-step-demo-player");
+    const mockFloatPlayer = document.getElementById("lp-mock-float-player");
+    const miniAudio = new Audio();
+    miniAudio.preload = "auto";
+
+    function setupMiniPlayer(el, audioSrc) {
+      if (!el) return;
+      el.addEventListener("click", () => {
+        if (miniAudio.src.includes(audioSrc) && !miniAudio.paused) {
+          miniAudio.pause();
+          el.classList.remove("is-playing");
+        } else {
+          if (!audio.paused) audio.pause();
+          if (stepDemoPlayer) stepDemoPlayer.classList.remove("is-playing");
+          if (mockFloatPlayer) mockFloatPlayer.classList.remove("is-playing");
+
+          miniAudio.src = audioSrc;
+          miniAudio.currentTime = 0;
+          miniAudio.play().then(() => {
+            el.classList.add("is-playing");
+          }).catch(() => {
+            if ("speechSynthesis" in window) {
+              window.speechSynthesis.cancel();
+              const u = new SpeechSynthesisUtterance("I like my neighborhood because the people are friendly.");
+              u.lang = "en-US";
+              u.onstart = () => el.classList.add("is-playing");
+              u.onend = () => el.classList.remove("is-playing");
+              window.speechSynthesis.speak(u);
+            }
+          });
+        }
+      });
+
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          el.click();
+        }
+      });
+    }
+
+    miniAudio.addEventListener("ended", () => {
+      if (stepDemoPlayer) stepDemoPlayer.classList.remove("is-playing");
+      if (mockFloatPlayer) mockFloatPlayer.classList.remove("is-playing");
+    });
+    miniAudio.addEventListener("pause", () => {
+      if (stepDemoPlayer) stepDemoPlayer.classList.remove("is-playing");
+      if (mockFloatPlayer) mockFloatPlayer.classList.remove("is-playing");
+    });
+
+    setupMiniPlayer(stepDemoPlayer, "/static/audio/demo_a2.mp3");
+    setupMiniPlayer(mockFloatPlayer, "/static/audio/demo_b2.mp3");
+
     // Initialize with B1
     renderLevel("b1");
   }

@@ -148,6 +148,9 @@
         <div class="lp-studio-time">
           <span id="lp-demo-time">0:00</span> / <span id="lp-demo-total">0:05</span>
         </div>
+        <button class="lp-studio-mic-btn" id="lp-demo-mic-btn" type="button" aria-label="Bật micro thử nói câu này">
+          {{ icon("mic", cls="icon mic-icon") }} <span>Thử nói</span>
+        </button>
         <span class="lp-studio-speed-badge" id="lp-demo-speed">Tốc độ chuẩn bản ngữ 145 wpm</span>
       </div>
 
@@ -236,7 +239,7 @@
       <h3>Nộp bài &amp; Bóc tách</h3>
       <p>Báo cáo chỉ ra quãng ngập ngừng và từ chưa rõ trong bản ghi; bạn có thể bấm vào để nghe lại đúng giây đó.</p>
       <div class="lp-step-demo">
-        <div class="lp-demo-player">
+        <div class="lp-demo-player" id="lp-step-demo-player" role="button" tabindex="0" aria-label="Bấm để nghe đoạn ghi âm mẫu" title="Bấm để nghe thử âm thanh">
           <span class="lp-demo-rec">{{ icon("play") }}</span>
           <div class="lp-demo-waveform">
             <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
@@ -368,7 +371,7 @@
           <span class="lp-pill">B1</span>
           <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
         </div>
-        <div class="lp-mock-float">
+        <div class="lp-mock-float" id="lp-mock-float-player" role="button" tabindex="0" aria-label="Bấm để nghe đoạn ghi âm sinh viên" title="Bấm để nghe thử âm thanh">
           <span class="lp-rec small">{{ icon("play") }}</span>
           <span class="lp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
           <b>0:18</b>
@@ -379,7 +382,7 @@
 </section>
 
 <!-- Bento Grid: Nguyên tắc hệ thống -->
-<section class="lp-section lp-bento-section" aria-labelledby="principles-h">
+<section class="lp-section lp-bento-section" id="principles" aria-labelledby="principles-h">
   <div class="lp-head center">
     <span class="lp-eyebrow-text">{{ icon("shield") }} Triết lý phát triển</span>
     <h2 id="principles-h">Minh bạch về những gì công nghệ làm được</h2>
@@ -446,7 +449,7 @@
   </div>
 </section>
 
-<section class="lp-section lp-faq" aria-labelledby="faq-h">
+<section class="lp-section lp-faq" id="faq" aria-labelledby="faq-h">
   <div class="lp-head center">
     <span class="lp-eyebrow-text">{{ icon("chat") }} Câu hỏi thường gặp</span>
     <h2 id="faq-h">Những điều bạn cần biết trước khi bắt đầu</h2>
