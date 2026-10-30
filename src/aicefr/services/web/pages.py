@@ -10,6 +10,7 @@ its script from the service that owns it.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -60,6 +61,23 @@ def _page(request: Request, template: str, account: Account | None, nav: str, **
     return templates.TemplateResponse(
         request, template, {"account": account, "nav_here": nav, **extra}
     )
+
+
+def _admin_gate(request: Request, account: Account | None) -> RedirectResponse | None:
+    """Keep the administrator's screens to administrators.
+
+    Their data is already refused by the API (403), but the shell of the
+    screen, its tabs and buttons, is nobody else's business either: a visitor
+    goes to the login page and comes back here, another role goes to its own
+    start page, and a temporary password is replaced first (D028).
+    """
+    if account is None:
+        return RedirectResponse(f"/login?next={quote(request.url.path)}", status_code=303)
+    if account.must_change_password:
+        return RedirectResponse("/account?first=1", status_code=303)
+    if account.role is not Role.ADMIN:
+        return RedirectResponse(ROLE_HOME[account.role], status_code=303)
+    return None
 
 
 def _response_nav(account: Account | None) -> str:
@@ -330,13 +348,13 @@ def page_report(
 @router.get("/admin", response_class=HTMLResponse, tags=["web"])
 def page_admin(request: Request, account: Account | None = Depends(optional_account)):
     """Administration screen. FR-08, FR-34, FR-35, FR-36."""
-    return _page(request, "admin.html", account, "admin")
+    return _admin_gate(request, account) or _page(request, "admin.html", account, "admin")
 
 
 @router.get("/admin/study", response_class=HTMLResponse, tags=["web"])
 def page_study(request: Request, account: Account | None = Depends(optional_account)):
     """The feedback study (D040)."""
-    return _page(request, "admin_study.html", account, "admin")
+    return _admin_gate(request, account) or _page(request, "admin_study.html", account, "admin")
 
 
 @router.get("/review/stats", response_class=HTMLResponse, tags=["web"])
