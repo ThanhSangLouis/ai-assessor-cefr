@@ -111,19 +111,30 @@
   <div class="header-inner">
     <a class="brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
       {{ logo() }}
-      <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
-      <span class="brand-sub">Luyện nói A1–C2</span>
+      <span class="brand-text">
+        <span class="brand-title-row">
+          <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+          <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
+        </span>
+        <span class="brand-sub">Đánh giá phát âm &amp; độ trôi chảy</span>
+      </span>
     </a>
 
     <nav class="site-nav" aria-label="Điều hướng chính">
-      <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>Giới thiệu</a>
-      <a href="/#how-it-works">Cách hoạt động</a>
-      <a href="/#for-teachers">Cho giảng viên</a>
+      <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>{{ icon("home") }}<span>Giới thiệu</span></a>
+      <a href="/#interactive-demo">{{ icon("sparkle") }}<span>Demo AI</span></a>
+      <a href="/#how-it-works">{{ icon("path") }}<span>Cách hoạt động</span></a>
+      <a href="/#for-teachers">{{ icon("users") }}<span>Cho giảng viên</span></a>
+      <a href="/bands"{% if here == "bands" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span>Chuẩn CEFR</span></a>
     </nav>
 
     <div class="header-actions">
-      {% if here != "login" %}<a class="header-button primary" href="/login">Đăng nhập</a>{% endif %}
-      <button type="button" class="header-button" id="theme-toggle" aria-pressed="false">
+      {% if here != "login" %}
+      <a class="header-button primary" href="/login">
+        {{ icon("user") }}<span>Đăng nhập</span>
+      </a>
+      {% endif %}
+      <button type="button" class="header-button theme-toggle-btn" id="theme-toggle" aria-pressed="false" title="Chuyển đổi giao diện sáng/tối">
         {{ icon("moon", "icon theme-dark") }}{{ icon("sun", "icon theme-light") }}<span id="theme-toggle-label">Giao diện tối</span>
       </button>
     </div>
@@ -136,13 +147,98 @@
 </main>
 
 <footer class="site-footer">
-  <div class="footer-inner">
-    <p><b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
-      của mô hình, dùng để luyện tập và tham khảo.</p>
-    <p><b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
-      có giảng viên duyệt.</p>
-    <p>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</p>
-    <p><a href="/bands">Band A1 đến C2 nghĩa là gì, và máy đo được những gì</a></p>
+  <div class="footer-wrap footer-inner">
+    <div class="footer-grid">
+      <!-- Cột 1: Thương hiệu, giới thiệu & Trạng thái hệ thống -->
+      <div class="footer-col footer-col-brand">
+        <a class="brand footer-brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+          {{ logo() }}
+          <span class="brand-text">
+            <span class="brand-title-row">
+              <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+              <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
+            </span>
+            <span class="brand-sub">Luyện nói &amp; Đánh giá năng lực</span>
+          </span>
+        </a>
+        <p class="footer-desc">
+          Nền tảng ứng dụng trí tuệ nhân tạo nhận diện phát âm, ngữ điệu và phân tích độ trôi chảy theo khung tham chiếu CEFR từ A1 đến C2 dành cho sinh viên đại học.
+        </p>
+        <div class="footer-status-badge">
+          <span class="status-pulse-dot"></span>
+          <span class="status-badge-text">Hệ thống AI v2.4 sẵn sàng · Độ trễ &lt; 2s</span>
+        </div>
+      </div>
+
+      <!-- Cột 2: Luyện tập & Tính năng -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Luyện tập &amp; Tính năng</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/login">{{ icon("user") }}<span>Bắt đầu luyện nói</span></a></li>
+          <li><a href="/#interactive-demo">{{ icon("sparkle") }}<span>Trải nghiệm mẫu AI</span></a></li>
+          <li><a href="/bands">{{ icon("chart") }}<span>Thang điểm CEFR (A1–C2)</span></a></li>
+          <li><a href="/#how-it-works">{{ icon("path") }}<span>Quy trình đánh giá 4 bước</span></a></li>
+        </ul>
+      </div>
+
+      <!-- Cột 3: Giảng viên & Học thuật -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Học thuật &amp; Đào tạo</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/#for-teachers">{{ icon("users") }}<span>Cổng quản lý giảng viên</span></a></li>
+          <li><a href="/#principles">{{ icon("shield") }}<span>Nguyên tắc chấm &amp; AI rubric</span></a></li>
+          <li><a href="/#faq">{{ icon("info") }}<span>Câu hỏi thường gặp (FAQ)</span></a></li>
+          <li><a href="/login">{{ icon("key") }}<span>Cổng đăng nhập LMS / SSO</span></a></li>
+        </ul>
+      </div>
+
+      <!-- Cột 4: Cam kết học thuật & Minh bạch -->
+      <div class="footer-col footer-col-card">
+        <div class="footer-academic-card">
+          <div class="academic-card-head">
+            {{ icon("shield", "academic-icon") }}
+            <h4 class="academic-card-title">Cam kết học thuật &amp; Minh bạch</h4>
+          </div>
+          <div class="academic-card-body">
+            <p>
+              <b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
+              của mô hình, dùng để luyện tập và tham khảo.
+            </p>
+            <p>
+              <b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
+              có giảng viên duyệt.
+            </p>
+            <p class="academic-privacy-note">
+              {{ icon("lock") }}
+              <span>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</span>
+            </p>
+          </div>
+          <div class="academic-card-foot">
+            <a href="/bands" class="academic-learn-more">
+              <span>Band A1 đến C2 nghĩa là gì, và máy đo được những gì</span>
+              {{ icon("arrow-right") }}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thanh phụ cuối trang (Bản quyền & Liên kết phụ) -->
+    <div class="footer-sub">
+      <div class="footer-sub-left">
+        <p class="footer-copy">© 2026 AI Assessor CEFR. Đề tài Nghiên cứu &amp; Ứng dụng AI Đánh giá Nói Tiếng Anh (HCMUTE).</p>
+      </div>
+      <div class="footer-sub-right">
+        <a href="/bands" class="footer-sublink">Chuẩn năng lực</a>
+        <span class="footer-sub-sep" aria-hidden="true">•</span>
+        <a href="/#principles" class="footer-sublink">Chính sách học thuật</a>
+        <span class="footer-sub-sep" aria-hidden="true">•</span>
+        <a href="#main" class="footer-sublink back-to-top" aria-label="Cuộn về đầu trang">
+          {{ icon("arrow-up") }}
+          <span>Về đầu trang</span>
+        </a>
+      </div>
+    </div>
   </div>
 </footer>
 
