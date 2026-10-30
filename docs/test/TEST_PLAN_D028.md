@@ -87,6 +87,17 @@ Tiêu chí chấp nhận AC-51.1..AC-55.2 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PC-I17 | `test_the_report_links_its_band_to_the_band_page` | AC-54.2 | Báo cáo dẫn tới `/bands` |
 | TC-PC-I18 | `test_the_submit_page_offers_thirty_seconds_of_preparation` | AC-55.1 | Khối chuẩn bị 30 giây trên trang nộp bài |
 | TC-PC-I19 | `test_temporary_passwords_avoid_characters_people_confuse` | FR-52 | 300 mật khẩu tạm khác nhau, đúng mẫu, không có i, l, o, 0, 1 |
+| TC-PC-A01 | `test_the_guards_are_where_the_paths_say` | AC-52.6 | Mọi route `/api/v1/admin/*` chỉ cho quản trị viên; mọi route API khác có lớp chặn, trừ bốn route phải công khai (đăng nhập, đăng xuất, callback thanh toán) |
+| TC-PC-A02 | `test_a_visitor_is_asked_to_sign_in_everywhere_guarded` | FR-52 | Khách gọi mọi route có lớp chặn đều nhận 401 |
+| TC-PC-A03 | `test_a_student_is_refused_every_admin_and_staff_route` | AC-52.6 | Sinh viên nhận 403 "không có quyền" ở mọi route quản trị và giảng viên |
+| TC-PC-A04 | `test_a_teacher_is_refused_every_admin_and_student_route` | AC-52.6 | Giảng viên nhận 403 ở mọi route quản trị và route riêng của sinh viên |
+| TC-PC-A05 | `test_an_admin_on_a_temporary_password_reaches_nothing_admin` | FR-52 | Quản trị viên còn mật khẩu tạm nhận 403 ở mọi route quản trị |
+| TC-PC-A06 | `test_an_admin_passes_every_admin_route` | AC-52.6 | Quản trị viên không bị 401 hay lời từ chối vai trò ở route quản trị nào |
+| TC-PC-A07 | `test_an_admin_is_refused_every_student_route` | FR-52 | Quản trị viên nhận 403 ở route riêng của sinh viên |
+| TC-PC-A08 | `test_a_disabled_admin_is_signed_out_at_once` | FR-52 | Tắt tài khoản quản trị: phiên đang mở nhận 401 ngay, đăng nhập lại bị từ chối |
+| TC-PC-A09 | `test_a_demoted_admin_loses_admin_routes_on_the_next_call` | FR-52 | Hạ vai trò: lần gọi kế tiếp nhận 403 |
+| TC-PC-A10 | `test_an_admin_cannot_lock_themself_out` | FR-52 | Quản trị viên không tự tắt, tự hạ vai trò, tự cấp mật khẩu tạm hay tự đăng xuất mọi nơi (409) |
+| TC-PC-A11 | `test_admin_pages_open_only_for_an_admin` | AC-52.6 | `/admin`, `/admin/study`: khách về trang đăng nhập, vai trò khác về trang của mình, mật khẩu tạm về `/account` |
 
 ### Tầng 3 — E2E (`tests/e2e/test_accounts_e2e.py`)
 
