@@ -117,6 +117,7 @@ extend-immutable-calls = [
 "tests/e2e/test_accounts_e2e.py" = ["F811"]
 "tests/e2e/test_profile_e2e.py" = ["F811"]
 "tests/e2e/test_ratings_e2e.py" = ["F811"]
+"tests/e2e/test_signup_e2e.py" = ["F811"]
 "tests/e2e/test_ui_depth_e2e.py" = ["F811"]
 "tests/e2e/test_achievements_e2e.py" = ["F811"]
 "tests/e2e/test_billing_e2e.py" = ["F811"]

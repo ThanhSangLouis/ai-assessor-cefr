@@ -82,3 +82,26 @@ def temporary_password() -> str:
     """
     raw = "".join(secrets.choice(TEMPORARY_ALPHABET) for _ in range(12))
     return f"{raw[:4]}-{raw[4:8]}-{raw[8:]}"
+
+
+def recovery_code() -> str:
+    """A one-time code that replaces a forgotten password, e.g. "k7mq-x3pa-r9tz-c4wn" (D065).
+
+    The system has no email address to send a reset link to (FR-33), so the
+    person keeps this code instead, the way a bank's backup codes are kept.
+    Sixteen characters from the same 31-symbol alphabet as a temporary
+    password, about 79 bits; stored only as a bcrypt hash, and every use
+    replaces it.
+    """
+    raw = "".join(secrets.choice(TEMPORARY_ALPHABET) for _ in range(16))
+    return "-".join(raw[i : i + 4] for i in range(0, 16, 4))
+
+
+def normalize_code(code: str) -> str:
+    """What a person typed, as the code was hashed: lower case, no spaces, dashes kept.
+
+    Codes are read off paper or a phone and retyped; case and stray spaces are
+    not the point of the check.
+    """
+    raw = "".join(ch for ch in code.lower() if ch.isalnum())
+    return "-".join(raw[i : i + 4] for i in range(0, len(raw), 4))

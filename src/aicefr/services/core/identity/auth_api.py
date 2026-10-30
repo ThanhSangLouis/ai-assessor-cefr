@@ -1,7 +1,9 @@
 """Sign-in, the merged audit log, and the gateway's session check (D043).
 
 FR-32 (sign-in), FR-36 (audit). There is no terms-of-use step any more (D064):
-a signed-in learner records straight away.
+a signed-in learner records straight away. D065: a student may open an account
+with a password (/signup) and replace a forgotten one with a recovery code
+(/forgot) -- the system keeps no email address to send a reset link to.
 """
 
 from __future__ import annotations
@@ -12,8 +14,9 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi import Response as HttpResponse
 
 from aicefr.api.deps import ADMIN_ONLY, ROLE_HOME, require_login, set_session_cookie
-from aicefr.api.schemas import LoginRequest
+from aicefr.api.schemas import LoginRequest, RecoverRequest, SignupRequest
 from aicefr.auth.sessions import COOKIE_NAME, device_label
+from aicefr.config import get_settings
 from aicefr.contracts import AuditEntry
 from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_account
 from aicefr.platform.rpc import RemoteError, same_key
@@ -92,6 +95,87 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
         "status": "ok",
         "home": "/account?first=1" if must_change else home,
         "must_change_password": must_change,
+    }
+
+
+# A response carrying a recovery code must not be kept by a browser or a proxy.
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+@router.post("/api/v1/auth/signup", tags=["auth"])
+def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dict:
+    """Open a student account with a password; sign it in (D065).
+
+    The pseudonym is the system's choice, and the recovery code that comes
+    back is shown once: it is the one way back in without an administrator.
+    Only students sign themselves up; a teacher or an administrator is given
+    their role by somebody with authority (FR-32).
+    """
+    if not get_settings().self_signup:
+        raise HTTPException(404, "máy chủ này không cho tự đăng ký")
+    s = svc()
+    # A plan's student seats (D033, BR-31) bind self sign-up as they bind the
+    # administrator's account creation.
+    if s.peers.billing is not None:
+        reason = s.peers.billing.seat_refusal(n=1)
+        if reason:
+            raise HTTPException(409, reason)
+    try:
+        aid, pseudonym, code, token = s.auth.signup(
+            info.password, device_label(request.headers.get("user-agent"))
+        )
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    s.audit_log.write(pseudonym, "account.signup", aid, "method=password")
+    set_session_cookie(response, token)
+    response.headers.update(NO_STORE)
+    return {
+        "pseudonym": pseudonym,
+        "recovery_code": code,
+        "home": ROLE_HOME[Role.STUDENT],
+    }
+
+
+@router.post("/api/v1/auth/recover", tags=["auth"])
+def recover(info: RecoverRequest, request: Request, response: HttpResponse) -> dict:
+    """Replace a forgotten password with the recovery code; sign in (D065).
+
+    Answers a wrong pseudonym and a wrong code with the same sentence, as the
+    login does. A wrong code counts towards the lockout (NFR-07). On success
+    every other session of the account ends and a new code replaces the one
+    just used, shown once.
+    """
+    s = svc()
+    known = s.auth.get_by_pseudonym(info.pseudonym)
+    try:
+        done = s.auth.recover(
+            info.pseudonym,
+            info.recovery_code,
+            info.new_password,
+            device_label(request.headers.get("user-agent")),
+        )
+    except AccountLocked as e:
+        if known is not None:
+            s.audit_log.write(
+                known["pseudonym"], "auth.recover_failed", known["account_id"], "locked"
+            )
+        raise HTTPException(429, f"tài khoản tạm khóa đến {e.args[0]}, thử lại sau") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    if done is None:
+        if known is not None:
+            s.audit_log.write(
+                known["pseudonym"], "auth.recover_failed", known["account_id"], "wrong_code"
+            )
+        raise HTTPException(401, "bút danh hoặc mã khôi phục không đúng")
+    token, row, code = done
+    s.audit_log.write(row["pseudonym"], "account.recover", row["account_id"], None)
+    set_session_cookie(response, token)
+    response.headers.update(NO_STORE)
+    return {
+        "pseudonym": row["pseudonym"],
+        "recovery_code": code,
+        "home": ROLE_HOME.get(Role(row["role"]), "/"),
     }
 
 

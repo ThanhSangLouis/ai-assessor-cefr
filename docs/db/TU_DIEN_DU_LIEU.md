@@ -25,7 +25,7 @@ Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs
 
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
-| `account` | CN | Tài khoản: bút danh, băm mật khẩu (scrypt), vai trò, khoá do đăng nhập sai, mật khẩu tạm, mục tiêu luyện mỗi ngày, hình đại diện (không còn mốc đồng ý điều khoản: D064 bỏ, migration 8 xoá trường `terms_accepted_at`) | `identities`: liên kết Google, chỉ giữ băm của mã người dùng Google, không giữ email (D029). `seen_markers`: dấu "đã xem" của thanh bên (D028) | PK `account_id`; `pseudonym` duy nhất; (`identities.provider`, `identities.subject_hash`) duy nhất trên các tài khoản có liên kết |
+| `account` | CN | Tài khoản: bút danh, băm mật khẩu (bcrypt, NFR-07), băm mã khôi phục và thời điểm cấp (`recovery_hash`, `recovery_issued_at`, D065; không bao giờ lưu mã rõ), vai trò, khoá do đăng nhập sai, mật khẩu tạm, mục tiêu luyện mỗi ngày, hình đại diện (không còn mốc đồng ý điều khoản: D064 bỏ, migration 8 xoá trường `terms_accepted_at`) | `identities`: liên kết Google, chỉ giữ băm của mã người dùng Google, không giữ email (D029). `seen_markers`: dấu "đã xem" của thanh bên (D028) | PK `account_id`; `pseudonym` duy nhất; (`identities.provider`, `identities.subject_hash`) duy nhất trên các tài khoản có liên kết |
 | `session` | CN | Phiên đăng nhập: băm của mã phiên, hạn, thiết bị, cách đăng nhập | | PK `token_hash`; FK `account_id` |
 | `audit_log` | CN | Nhật ký kiểm toán: ai làm gì, với đối tượng nào, phần nào ghi (`service`). Mỗi database có một collection này cho phần dùng nó | | PK `id` tự tăng |
 

@@ -5551,3 +5551,7 @@ button:not(:disabled):hover,
 .replay-moment:last-child { border-bottom: 0; }
 .replay-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
 .replay-moment fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
+
+/* D065: the recovery code, shown once where it is made. */
+.recovery-slip { margin: var(--sp-3) 0; }
+.recovery-slip .button-row { margin-top: var(--sp-3); }

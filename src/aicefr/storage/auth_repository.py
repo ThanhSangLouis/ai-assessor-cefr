@@ -80,6 +80,8 @@ ACCOUNT_FIELDS = (
     "daily_goal_s",
     "identities",
     "seen_markers",
+    "recovery_hash",
+    "recovery_issued_at",
 )
 
 
@@ -220,6 +222,9 @@ class AuthRepository(MongoStore):
             "daily_goal_s": DEFAULT_DAILY_GOAL,
             "identities": [],
             "seen_markers": {},
+            # D065: the bcrypt hash of the one recovery code in force, or None.
+            "recovery_hash": None,
+            "recovery_issued_at": None,
         }
 
     def create_account(
@@ -378,6 +383,30 @@ class AuthRepository(MongoStore):
         is wrong. Any hint that distinguishes the two cases would leak which
         accounts really exist.
         """
+        row = self._unlocked_row(pseudonym)
+
+        if row is None:
+            # Same cost as a real check, so response time does not reveal
+            # whether the pseudonym exists.
+            passwords.waste_equivalent_time(raw_password)
+            return None
+
+        if not passwords.verify_password(raw_password, row["password_hash"]):
+            self._record_failure(row["account_id"])
+            return None
+
+        self._reset_failures(row["account_id"])
+        self.col("account").update_one(
+            {"account_id": row["account_id"]}, {"$set": {"last_login_at": _now()}}
+        )
+        return self._open_session(row["account_id"], device)
+
+    def _unlocked_row(self, pseudonym: str) -> dict | None:
+        """The account to check a secret against, or None; AccountLocked inside a lockout.
+
+        Shared by the password and the recovery code (D065): both are guesses
+        at a secret, so both count towards, and are stopped by, one lockout.
+        """
         row = self.get_by_pseudonym(pseudonym)
 
         # Clear the counter once the lock window has passed.
@@ -400,22 +429,7 @@ class AuthRepository(MongoStore):
             and not session_tokens.is_expired(row["locked_until"])
         ):
             raise AccountLocked(row["locked_until"])
-
-        if row is None:
-            # Same cost as a real check, so response time does not reveal
-            # whether the pseudonym exists.
-            passwords.waste_equivalent_time(raw_password)
-            return None
-
-        if not passwords.verify_password(raw_password, row["password_hash"]):
-            self._record_failure(row["account_id"])
-            return None
-
-        self._reset_failures(row["account_id"])
-        self.col("account").update_one(
-            {"account_id": row["account_id"]}, {"$set": {"last_login_at": _now()}}
-        )
-        return self._open_session(row["account_id"], device)
+        return row
 
     def _record_failure(self, account_id: str) -> None:
         """Tang bo dem NGUYEN TU va khoa ngay khi cham nguong.
@@ -557,6 +571,10 @@ class AuthRepository(MongoStore):
                     "must_change_password": 1,
                     "failed_attempts": 0,
                     "locked_until": None,
+                    # Whoever held the account may have made a recovery code;
+                    # a reset by the administrator voids it too (D065).
+                    "recovery_hash": None,
+                    "recovery_issued_at": None,
                 }
             },
         )
@@ -564,6 +582,110 @@ class AuthRepository(MongoStore):
             raise KeyError(account_id)
         self.revoke_sessions(account_id)
         return temporary
+
+    # ---------- self sign-up and recovery codes (D065) ----------
+
+    def signup(self, raw_password: str, device: str | None = None) -> tuple[str, str, str, str]:
+        """Create a student account with a password its owner chose; sign it in.
+
+        Returns (account_id, pseudonym, recovery code, session token). The
+        pseudonym is drawn at random ("SV-" and six hex digits, upper case):
+        a chosen one invites a real name (FR-33). The recovery code is the only
+        way back in without an administrator, so it is made here, shown once.
+        Raises ValueError, worded for the person, when the password will not do.
+        """
+        now = _now()
+        for _ in range(20):
+            try:
+                pseudonym = validate_pseudonym("SV-" + secrets.token_hex(3).upper())
+            except ValueError:  # a hex run that spells a forbidden token
+                continue
+            if self.get_by_pseudonym(pseudonym) is not None:
+                continue
+            passwords.check_new_password(raw_password, pseudonym)
+            code = passwords.recovery_code()
+            aid = uuid.uuid4().hex[:12]
+            doc = self._new_account(
+                aid, pseudonym, passwords.hash_password(raw_password), Role.STUDENT, False, now
+            )
+            doc.update(
+                password_changed_at=now,
+                last_login_at=now,
+                recovery_hash=passwords.hash_password(code),
+                recovery_issued_at=now,
+            )
+            try:
+                self.col("account").insert_one(doc)
+            except IntegrityError:
+                continue  # the pseudonym was taken in between; draw another
+            return aid, pseudonym, code, self._open_session(aid, device)
+        raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
+
+    def issue_recovery_code(self, account_id: str) -> str:
+        """A new recovery code for a signed-in owner, in clear, once; the old one stops working."""
+        code = passwords.recovery_code()
+        done = self.col("account").update_one(
+            {"account_id": account_id},
+            {
+                "$set": {
+                    "recovery_hash": passwords.hash_password(code),
+                    "recovery_issued_at": _now(),
+                }
+            },
+        )
+        if done.matched_count == 0:
+            raise KeyError(account_id)
+        return code
+
+    def recover(
+        self, pseudonym: str, code: str, new_password: str, device: str | None = None
+    ) -> tuple[str, dict, str] | None:
+        """Replace a forgotten password with the recovery code; sign in.
+
+        Returns (session token, account row, the next recovery code), or None
+        for a wrong pseudonym, a wrong code, a disabled account or one with no
+        code, all alike, as a login does. A wrong code counts as a failed login
+        (NFR-07): the lockout stops guessing codes as it stops guessing
+        passwords. On success the code is spent and replaced, every session of
+        the account ends, and the failures are cleared. Raises AccountLocked
+        inside a lockout and ValueError for an unacceptable new password, which
+        is checked first and spends nothing.
+        """
+        row = self._unlocked_row(pseudonym)
+        passwords.check_new_password(new_password, row["pseudonym"] if row else pseudonym)
+        typed = passwords.normalize_code(code)
+        if row is None or row["disabled"] or not row["recovery_hash"]:
+            passwords.waste_equivalent_time(typed)
+            if row is not None:
+                self._record_failure(row["account_id"])
+            return None
+        if not passwords.verify_password(typed, row["recovery_hash"]):
+            self._record_failure(row["account_id"])
+            return None
+        now = _now()
+        following = passwords.recovery_code()
+        # Conditional on the hash just checked: of two requests racing with the
+        # same code, only one spends it.
+        done = self.col("account").update_one(
+            {"account_id": row["account_id"], "recovery_hash": row["recovery_hash"]},
+            {
+                "$set": {
+                    "password_hash": passwords.hash_password(new_password),
+                    "must_change_password": 0,
+                    "password_changed_at": now,
+                    "last_login_at": now,
+                    "failed_attempts": 0,
+                    "locked_until": None,
+                    "recovery_hash": passwords.hash_password(following),
+                    "recovery_issued_at": now,
+                }
+            },
+        )
+        if done.modified_count == 0:
+            return None
+        self.revoke_sessions(row["account_id"])
+        token = self._open_session(row["account_id"], device, method="recovery")
+        return token, self.get(row["account_id"]), following
 
     def set_disabled(self, account_id: str, disabled: bool) -> None:
         """Turn an account off or on. Turning it off ends its sessions at once."""
