@@ -50,6 +50,7 @@ PLANS = [
         {
             "TC-PC-I": ROOT / "tests" / "test_accounts.py",
             "TC-PC-E": ROOT / "tests" / "e2e" / "test_accounts_e2e.py",
+            "TC-PC-A": ROOT / "tests" / "test_admin_access.py",
         },
         "5[1-5]",
         19,
