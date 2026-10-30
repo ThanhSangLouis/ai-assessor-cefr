@@ -77,9 +77,24 @@ curl -s -o /dev/null -w "%{http_code}\n" -H 'content-type: application/json' \
   -d '{"pseudonym":"SV-001","password":"matkhau123"}' localhost:8000/api/v1/auth/login   # 200
 ```
 
-Mở http://localhost:8000. Sinh viên phải **đồng ý điều khoản** (`/terms`) trước
-khi nộp bài lần đầu; chưa đồng ý thì API trả `TERMS_NOT_ACCEPTED` — đó là hành vi
-đúng (D058), không phải lỗi.
+Mở http://localhost:8000. Đăng nhập xong là nộp bài được ngay: không còn bước đồng ý
+điều khoản (D064), `/terms` chỉ chuyển về trang chủ.
+
+### Đăng nhập bằng Google ở local
+
+Nút "Đăng nhập bằng Google" **chỉ hiện khi** `.env` có `AICEFR_GOOGLE_CLIENT_ID` và
+`AICEFR_GOOGLE_CLIENT_SECRET`. Hai khoá là bí mật: chỉ nằm trong `.env` trên máy chủ
+EC2, không có trong Git. Thiếu chúng thì `demo.sh` in `Dang nhap Google: TAT` và trang
+đăng nhập (môi trường dev) ghi lý do. Đây là hành vi đúng, không phải lỗi tính năng.
+
+Muốn thử Google trên máy mình:
+
+1. Xin Sang hai khoá qua kênh riêng (không gửi trong nhóm chat công khai, không commit).
+2. Dán vào `.env` ở gốc repo (sao từ `.env.example`, đã nằm trong `.gitignore`).
+3. Chạy lại `./demo.sh`, mở đúng `http://localhost:8000` (không dùng `127.0.0.1`: Google
+   chỉ nhận địa chỉ callback đã đăng ký, `http://localhost:8000/auth/google/callback`).
+
+Chi tiết và lỗi `redirect_uri_mismatch`: [CAU_HINH_KHOA_BEN_NGOAI.md](CAU_HINH_KHOA_BEN_NGOAI.md).
 
 ## 4. Chấm thật bằng Whisper
 
@@ -151,7 +166,8 @@ docker stop aicefr-test-mongo aicefr-test-redis     # luôn tắt container th�
 | `CANH BAO: khong thay artifact that` | Không có `../aicefr-models` | Bình thường trên máy teammate; xin thư mục từ Sang nếu cần điểm thật. **Không** chép artifact vào repo |
 | `/readyz` 503, `scoring_model: failed: SHA-256 ...` | Artifact bị sửa hoặc sai phiên bản | Lấy lại bản gốc; không sửa giá trị ghim trong `artifacts.py` |
 | Bài nộp không có điểm, `MODEL_VERSION_MISSING` | Thiếu artifact (chạy uvicorn tay, không qua `demo.sh`) | Đặt `AICEFR_MODEL_DIR`, hoặc dùng `demo.sh` |
-| `TERMS_NOT_ACCEPTED` | Chưa đồng ý điều khoản | Vào `/terms` bấm đồng ý |
+| Không thấy nút đăng nhập Google | `.env` thiếu `AICEFR_GOOGLE_CLIENT_ID`/`SECRET` | Mục "Đăng nhập bằng Google ở local" ở trên |
+| Bật Whisper mà mọi bài `FAILED` (`ASR_FAILED`) | Chưa cài nhóm `[asr]` | `pip install -e ".[dev,asr,vad]"`; `demo.sh` giờ tự báo |
 | `AUDIO_UNSUPPORTED` | Thiếu `ffmpeg` | Cài ffmpeg, mở lại terminal |
 | Cổng 8000 hoặc 27019 đã bị chiếm | Server cũ còn chạy | `lsof -iTCP:8000 -sTCP:LISTEN`; đổi cổng Mongo bằng `AICEFR_DEMO_MONGO_PORT` |
 | Muốn làm sạch dữ liệu thử | — | `docker rm -f aicefr-demo-mongo && docker volume rm aicefr-demo-mongo && rm -rf uploads/` |
