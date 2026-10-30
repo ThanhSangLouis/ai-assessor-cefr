@@ -3,8 +3,9 @@
 A person looks after their own password, sessions, profile and linked Google
 account; an administrator looks after everybody's account from the web, not
 from a terminal on the server.
-Accounts are still never self-registered (FR-32): the role decides what a
-person may change, so somebody with authority hands it out.
+Only a student may register themself (D063 with Google, D065 with a password):
+the role decides what a person may change, so a teacher or an administrator is
+given that role by somebody with authority (FR-32).
 
 Two rules shape the administrator's side:
 
@@ -104,6 +105,11 @@ ACTIVITY_ACTIONS = (
     "account.google_link",
     "account.google_unlink",
     "account.profile",
+    "account.signup",
+    "account.google_signup",
+    "account.recovery_code",
+    "account.recover",
+    "auth.recover_failed",
 )
 
 
@@ -140,6 +146,8 @@ def my_account(
             "avatar_colors": list(AVATAR_COLORS),
             "daily_goals": list(DAILY_GOALS),
         },
+        # D065: whether a recovery code is in force and since when; never the code.
+        "recovery": {"issued_at": auth.get(account.account_id)["recovery_issued_at"]},
         "google": {
             "enabled": settings.google_enabled,
             "linked": linked is not None,
@@ -267,6 +275,24 @@ def change_my_password(
         account.pseudonym, "account.password_change", account.account_id, f"sessions_ended={ended}"
     )
     return {"status": "ok", "sessions_ended": ended, "home": ROLE_HOME.get(account.role, "/")}
+
+
+@router.post("/api/v1/me/recovery-code", tags=["auth"])
+def new_recovery_code(
+    response: HttpResponse,
+    account: Account = Depends(require_login),
+    auth: AuthRepository = Depends(get_auth_repo),
+) -> dict:
+    """A new recovery code, shown once; the previous one stops working (D065).
+
+    Needs only the session, like linking Google: an account opened with
+    Google has no password its owner knows, and this is how it gets one --
+    make a code here, then use "Quên mật khẩu".
+    """
+    code = auth.issue_recovery_code(account.account_id)
+    svc().audit(account.pseudonym, "account.recovery_code", account.account_id, None)
+    response.headers.update(NO_STORE)
+    return {"recovery_code": code}
 
 
 @router.post("/api/v1/me/sessions/revoke-others", tags=["auth"])

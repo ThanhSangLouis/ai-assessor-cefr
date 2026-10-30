@@ -43,6 +43,21 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class SignupRequest(BaseModel):
+    """Self sign-up (D065): a password and nothing else. The pseudonym is drawn by
+    the system; there is no field where a name or an email could go."""
+
+    password: str = Field(min_length=1, max_length=256)
+
+
+class RecoverRequest(BaseModel):
+    """A forgotten password replaced with the recovery code (D065)."""
+
+    pseudonym: str = Field(min_length=1, max_length=64)
+    recovery_code: str = Field(min_length=1, max_length=64)
+    new_password: str = Field(min_length=1, max_length=256)
+
+
 class EraseRequest(BaseModel):
     """Erasure request. The id is sent twice on purpose.
 

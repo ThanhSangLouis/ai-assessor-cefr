@@ -134,6 +134,10 @@ class Settings:
     # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
     # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
     google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
+    # D065: a student opens an account with a password from /signup, and gets
+    # back into it with a recovery code from /forgot. Off: accounts come from
+    # an administrator (or Google, above) only.
+    self_signup: bool = field(default_factory=lambda: _flag("AICEFR_SELF_SIGNUP", True))
     # The address people reach this instance at, e.g. https://cefr.example.edu.vn.
     # Builds the Google redirect URI behind a proxy; unset, the request's own
     # address is used, which is right for localhost.

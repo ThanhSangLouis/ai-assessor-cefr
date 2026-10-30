@@ -242,7 +242,7 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | --- | --- | --- | --- | --- |
 | BR-01 | Hệ thống **không cấp chứng chỉ** và không quyết định đậu/rớt. Mọi điểm và band là ước lượng; giảng viên quyết định cuối cùng | FR-21, FR-30, C-09 | 1.0 | Tuyên bố bắt buộc ở mọi trang; `tests/test_web.py` (`test_every_page_carries_required_disclaimer`, chuỗi cấm) |
 | BR-02 | Hệ thống chỉ biết **bút danh**: không lưu họ tên, mã số sinh viên, email hay số điện thoại. Mối nối bút danh – người thật nằm trên giấy | FR-33, FR-52, FR-59 | 1.0 | `auth/pseudonyms.py` (`validate_pseudonym`); bảng `account` không có cột liên lạc; Google chỉ để lại mã băm (BR-15) |
-| BR-03 | **Không tự đăng ký, trừ sinh viên qua Google (D063).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên có thể tự đăng ký bằng Google, nhận bút danh ngẫu nhiên | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
+| BR-03 | **Chỉ sinh viên tự đăng ký (D063, D065).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên tự đăng ký bằng Google hoặc bằng mật khẩu ở `/signup`, nhận bút danh ngẫu nhiên và (với mật khẩu) một mã khôi phục dùng một lần; tắt bằng `AICEFR_GOOGLE_SIGNUP=0`, `AICEFR_SELF_SIGNUP=0` | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
 | BR-04 | Chưa đồng ý điều khoản sử dụng thì hệ thống **không nhận** bài nói hay lượt luyện nào | FR-01 | 1.0, đổi ở D058 | `TERMS_NOT_ACCEPTED` ở `POST /api/v1/responses` và API lượt luyện; `tests/test_terms.py` |
 | BR-05 | Chỉ dữ liệu của người **đã đồng ý điều khoản sử dụng** mới vào bản xuất nghiên cứu, đợt chấm mù, báo cáo đồng thuận và bản xuất phiếu chấm; xoá dữ liệu là rút khỏi tất cả | FR-34, FR-35, FR-61, FR-64 | 1.0, mở rộng 1.3 (D030), đổi ở D058 | `AuthRepository.accounts_with_terms`; `tests/test_terms.py` (`test_research_use_covers_the_accounts_that_accepted`) |
 | BR-06 | Bài luyện **không** qua mô hình chấm, không có band, không vào hàng đợi duyệt, thống kê chấm hay bản xuất nghiên cứu | FR-44, FR-49 | 1.3 (D023, D025) | cột `purpose`; `tests/test_lessons_integration.py` (`test_lesson_attempts_stay_out_of_queue_and_research_export`) |
@@ -961,7 +961,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 ### FR-52 — Quản trị viên cấp và quản lý tài khoản trên web
 
-**Mô tả:** Ở tab Tài khoản của trang quản trị, quản trị viên tạo một bút danh cụ thể hoặc một dãy đánh số tiếp nối dãy đang có (SV-001, GV-001, QT-001…; tối đa 200 tài khoản một lần, tạo đủ cả dãy hoặc không tạo tài khoản nào). Mỗi tài khoản nhận một **mật khẩu tạm** 12 ký tự không có ký tự dễ nhầm (i, l, o, 0, 1), chỉ trả về một lần (máy chủ không lưu bản rõ, phản hồi mang `Cache-Control: no-store`) và in được thành phiếu có dòng họ tên ghi tay để cất ngoài hệ thống. Tài khoản đang dùng mật khẩu tạm chỉ gọi được "tôi là ai", đổi mật khẩu và đăng xuất cho tới khi đặt mật khẩu riêng; mọi trang khác chuyển về `/account`. Quản trị viên cấp lại mật khẩu tạm (mọi phiên của tài khoản đó kết thúc), tắt hoặc bật tài khoản (tắt là đăng xuất ngay, dữ liệu giữ nguyên; xoá dữ liệu vẫn là thao tác riêng ở FR-35) và gỡ khoá đăng nhập. Không tự tắt hay tự cấp lại mật khẩu cho chính mình. Mỗi thao tác ghi nhật ký kiểm toán, không ghi mật khẩu. Vẫn không có tự đăng ký (FR-32).
+**Mô tả:** Ở tab Tài khoản của trang quản trị, quản trị viên tạo một bút danh cụ thể hoặc một dãy đánh số tiếp nối dãy đang có (SV-001, GV-001, QT-001…; tối đa 200 tài khoản một lần, tạo đủ cả dãy hoặc không tạo tài khoản nào). Mỗi tài khoản nhận một **mật khẩu tạm** 12 ký tự không có ký tự dễ nhầm (i, l, o, 0, 1), chỉ trả về một lần (máy chủ không lưu bản rõ, phản hồi mang `Cache-Control: no-store`) và in được thành phiếu có dòng họ tên ghi tay để cất ngoài hệ thống. Tài khoản đang dùng mật khẩu tạm chỉ gọi được "tôi là ai", đổi mật khẩu và đăng xuất cho tới khi đặt mật khẩu riêng; mọi trang khác chuyển về `/account`. Quản trị viên cấp lại mật khẩu tạm (mọi phiên của tài khoản đó kết thúc), tắt hoặc bật tài khoản (tắt là đăng xuất ngay, dữ liệu giữ nguyên; xoá dữ liệu vẫn là thao tác riêng ở FR-35) và gỡ khoá đăng nhập. Không tự tắt hay tự cấp lại mật khẩu cho chính mình. Mỗi thao tác ghi nhật ký kiểm toán, không ghi mật khẩu. Giảng viên và quản trị viên không tự đăng ký; chỉ sinh viên tự đăng ký (BR-03, D063, D065).
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1058,7 +1058,7 @@ Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý t�
 | **AC-59.7** — *Given* giới hạn tên miền, *When* liên kết bằng tài khoản ngoài tên miền hoặc email chưa xác minh, *Then* bị từ chối; đúng tên miền và đã xác minh thì liên kết được (`test_the_domain_restriction_requires_a_verified_school_account`). |
 | **AC-59.8** — *Given* tài khoản đã liên kết rồi bị tắt, *When* đăng nhập bằng Google, *Then* bị từ chối (`test_a_disabled_account_cannot_sign_in_with_google`). |
 | **AC-59.9** — *Given* người dùng hoặc quản trị viên gỡ liên kết, *When* đăng nhập bằng Google, *Then* bị từ chối như tài khoản chưa liên kết khi đăng ký đã tắt (`test_unlinking_google_by_the_person_or_an_administrator`). |
-| **AC-59.10** — *Given* đăng ký bằng Google đang bật (D063) và tài khoản Google chưa liên kết, *When* đăng nhập bằng Google, *Then* hệ thống tạo một tài khoản sinh viên bút danh ngẫu nhiên, không lưu tên hay email, mở phiên và chuyển tới `/terms`; lần sau cùng tài khoản Google đó đăng nhập vào đúng tài khoản ấy (`test_an_unlinked_google_account_signs_up_as_a_student`, `test_the_login_page_offers_sign_up_only_when_it_is_on`). |
+| **AC-59.10** — *Given* đăng ký bằng Google đang bật (D063) và tài khoản Google chưa liên kết, *When* đăng nhập bằng Google, *Then* hệ thống tạo một tài khoản sinh viên bút danh ngẫu nhiên, không lưu tên hay email, mở phiên và chuyển tới trang chính của vai trò (D064 bỏ `/terms`); lần sau cùng tài khoản Google đó đăng nhập vào đúng tài khoản ấy (`test_an_unlinked_google_account_signs_up_as_a_student`, `test_the_login_page_offers_sign_up_only_when_it_is_on`). |
 
 ### FR-60 — Quản trị viên xem chi tiết, đổi vai trò, đăng xuất mọi thiết bị
 
@@ -1833,7 +1833,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **Mã** | UC-17 |
 | **Actor chính** | Sinh viên, Giảng viên, Quản trị viên |
 | **Mô tả** | Vào hệ thống bằng bút danh và mật khẩu hoặc bằng Google đã liên kết; quản lý mật khẩu, phiên và hồ sơ của mình |
-| **Tiền điều kiện** | Có tài khoản do quản trị viên cấp (BR-03) |
+| **Tiền điều kiện** | Có tài khoản do quản trị viên cấp, hoặc sinh viên tự đăng ký (BR-03) |
 | **Kích hoạt** | Người dùng mở `/login` |
 | **Quy tắc** | BR-08, BR-09, BR-10, BR-11, BR-14, BR-15, BR-16, BR-17 |
 
@@ -1852,7 +1852,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **5. Đổi mật khẩu:** ở mục Bảo mật của `/account`, nhập mật khẩu hiện tại và mật khẩu mới đạt quy tắc (BR-10); các phiên khác kết thúc.
 - **6. Liên kết Google:** ở mục Bảo mật, bấm "Liên kết tài khoản Google", xác nhận ở Google; hệ thống lưu mã băm định danh (BR-15, BR-16). Gỡ liên kết ở cùng chỗ.
 - **7. Thấy phiên lạ:** ở mục Bảo mật, đăng xuất phiên đó hoặc mọi thiết bị khác, rồi đổi mật khẩu; mục Hoạt động cho biết lần đăng nhập và lần sai gần đây.
-- **8. Quên mật khẩu:** liên hệ quản trị viên để nhận mật khẩu tạm (UC-10), hoặc đăng nhập bằng Google đã liên kết rồi đổi mật khẩu.
+- **0a. Tự đăng ký (sinh viên, D065):** ở `/signup` nhập mật khẩu hai lần; hệ thống chọn bút danh ngẫu nhiên `SV-` + 6 ký tự hex, mở phiên và hiện **một lần** bút danh cùng mã khôi phục 16 ký tự (sao chép hoặc tải tệp .txt); người dùng đánh dấu đã lưu mới đi tiếp. Không có ô họ tên, email hay vai trò.
+- **8. Quên mật khẩu (D065):** ở `/forgot` nhập bút danh, mã khôi phục và mật khẩu mới; mã đúng thì mật khẩu được thay, mọi phiên khác kết thúc, mã cũ hết hiệu lực và mã mới hiện một lần. Mã sai tính như một lần đăng nhập sai (BR-08). Chưa có mã thì tạo ở mục Bảo mật của `/account` (cả tài khoản đăng ký bằng Google), hoặc nhờ quản trị viên cấp mật khẩu tạm (UC-10; cấp mật khẩu tạm cũng huỷ mã khôi phục).
 
 **Hậu điều kiện:** Có đúng một phiên mới cho lần đăng nhập thành công, mang cách đăng nhập và tên thiết bị; nhật ký có dòng đăng nhập hoặc lần sai (chỉ với bút danh có thật).
 

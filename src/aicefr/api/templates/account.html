@@ -184,6 +184,19 @@
         {% endif %}
       </div>
 
+      <div class="card" aria-labelledby="recovery-h">
+        <h2 id="recovery-h">{{ icon("key") }} Mã khôi phục</h2>
+        <p id="recovery-state" class="muted">Đang kiểm tra…</p>
+        <div class="button-row">
+          <button type="button" class="secondary" id="recovery-new">{{ icon("plus") }} Tạo mã khôi phục mới</button>
+        </div>
+        {% include "_recovery_slip.html" %}
+        <p class="muted small-note">
+          Hệ thống không lưu email nên không gửi thư đặt lại mật khẩu. Quên mật khẩu thì dùng
+          bút danh và mã này ở trang "Quên mật khẩu?". Tạo mã mới thì mã cũ hết hiệu lực.
+        </p>
+      </div>
+
       <div class="card" aria-labelledby="sessions-h">
         <h2 id="sessions-h">{{ icon("users") }} Phiên đăng nhập</h2>
         <ul class="session-list" id="session-list" aria-busy="true"></ul>

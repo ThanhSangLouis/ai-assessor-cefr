@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_art.html" import terraces %}
+{% block title %}Đăng ký · AI Assessor CEFR{% endblock %}
+{% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
+{% block content %}
+<div class="auth-split">
+  <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
+  <section class="auth-intro" aria-labelledby="auth-intro-h">
+    <p class="eyebrow">AI Assessor CEFR</p>
+    <h2 id="auth-intro-h">Một tài khoản, không cần tên hay email</h2>
+    <ul class="auth-points">
+      <li>Hệ thống chọn cho bạn một bút danh ngẫu nhiên, ví dụ SV-3FA9C1.</li>
+      <li>Bạn tự đặt mật khẩu; không ai khác thấy nó.</li>
+      <li>Mã khôi phục thay cho email khi bạn quên mật khẩu.</li>
+    </ul>
+  </section>
+
+  <section class="card auth-card" aria-labelledby="signup-h">
+    <h1 id="signup-h">Đăng ký tài khoản sinh viên</h1>
+    <form id="f" novalidate>
+      <p class="lede">Chỉ cần một mật khẩu. Bút danh do hệ thống chọn để không lộ họ tên thật.</p>
+      <label for="password">Mật khẩu</label>
+      <input id="password" type="password" autocomplete="new-password" required
+             minlength="{{ min_length }}" aria-describedby="pw-hint">
+      <p class="field-hint" id="pw-hint">Từ {{ min_length }} ký tự trở lên. Câu dài dễ nhớ tốt hơn chữ hoa và ký hiệu.</p>
+      <label for="again">Nhập lại mật khẩu</label>
+      <input id="again" type="password" autocomplete="new-password" required>
+      <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
+      <div class="button-row">
+        <button id="b" type="submit">Tạo tài khoản</button>
+      </div>
+      <div id="tb" role="alert"></div>
+    </form>
+
+    <div id="done" hidden>
+      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập. Ghi lại bút danh và mã khôi phục dưới đây.</p>
+      {% include "_recovery_slip.html" %}
+      <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu bút danh và mã khôi phục</label>
+      <div class="button-row">
+        <a class="button" id="go" href="/practice" aria-disabled="true">Bắt đầu luyện nói</a>
+      </div>
+    </div>
+
+    <p class="muted auth-foot">
+      Đã có tài khoản? <a href="/login">Đăng nhập</a>.
+      {% if google_enabled and google_signup %}Hoặc đăng ký bằng Google ở trang đăng nhập.{% endif %}
+      Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
+    </p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('signup.js') }}"></script>{% endblock %}

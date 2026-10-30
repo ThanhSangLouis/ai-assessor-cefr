@@ -21,7 +21,7 @@
 
   <section class="card auth-card" aria-labelledby="login-h">
     <h1 id="login-h">Đăng nhập</h1>
-    <p class="lede">Dùng mã bút danh do lớp cấp. Hệ thống không lưu họ tên thật.</p>
+    <p class="lede">Dùng mã bút danh của bạn. Hệ thống không lưu họ tên thật.</p>
     {% if google_error %}
     <div class="notice notice-danger" role="alert">{{ google_error }}</div>
     {% endif %}
@@ -67,22 +67,27 @@
       <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
     </p>
     {% endif %}
+    {% if self_signup %}
+    <p class="auth-help"><a href="/forgot" id="forgot-link">Quên mật khẩu?</a> Đặt lại bằng mã khôi phục.</p>
+    {% else %}
     <details class="auth-help">
       <summary>Quên mật khẩu?</summary>
       <p>
         Hệ thống không có email của bạn nên không gửi được thư đặt lại mật khẩu. Hãy báo giảng
         viên hoặc quản trị viên của lớp: họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng
-        nhập tới bạn đặt mật khẩu mới. Nếu đã liên kết Google, bạn đăng nhập bằng Google rồi đổi
-        mật khẩu ở trang Tài khoản.
+        nhập tới bạn đặt mật khẩu mới.
       </p>
     </details>
+    {% endif %}
     <p class="muted auth-foot">
-      {% if google_enabled and google_signup %}
+      {% if self_signup %}
+      Sinh viên chưa có tài khoản? <a href="/signup" id="signup-link">Đăng ký</a>{% if google_enabled and google_signup %} hoặc dùng nút Google ở trên{% endif %}.
+      Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
+      {% elif google_enabled and google_signup %}
       Sinh viên chưa có tài khoản đăng ký bằng Google ở nút trên. Tài khoản giảng viên và quản trị
       viên do quản trị viên cấp.
       {% else %}
-      Chưa có tài khoản thì liên hệ quản trị viên của lớp. Hệ thống không cho tự đăng ký vì mỗi
-      tài khoản phải gắn với một vai trò cụ thể.
+      Chưa có tài khoản thì liên hệ quản trị viên của lớp.
       {% endif %}
     </p>
   </section>

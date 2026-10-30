@@ -26,6 +26,11 @@ ROLE_REFUSAL = "tài khoản không có quyền thực hiện việc này"
 PUBLIC_API = {
     ("POST", "/api/v1/auth/login"),  # signing in
     ("POST", "/api/v1/auth/logout"),  # ending a session that may already be gone
+    # D065: opening an account and replacing a forgotten password, both before
+    # any session exists; rate limited per address and, for recovery, locked
+    # after five wrong codes like a login.
+    ("POST", "/api/v1/auth/signup"),
+    ("POST", "/api/v1/auth/recover"),
     # Payment gateways call back without a session; each checks its signature.
     ("GET", "/api/v1/billing/notify/{gateway}"),
     ("POST", "/api/v1/billing/notify/{gateway}"),

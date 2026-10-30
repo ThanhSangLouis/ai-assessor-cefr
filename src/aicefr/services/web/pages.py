@@ -143,9 +143,42 @@ def page_login(request: Request):
             # Outside production, say why the Google button is missing: a
             # teammate without the keys took it for a broken feature.
             "google_missing_hint": not svc().settings.is_production,
+            "self_signup": svc().settings.self_signup,
             "google_error": google.MESSAGES.get(request.query_params.get("google", "")),
         },
     )
+
+
+def _signed_out_page(request: Request, account: Account | None, template: str):
+    """Sign-up and recovery (D065) are for somebody signed out; a signed-in
+    person goes to the start page of their role. Off with AICEFR_SELF_SIGNUP=0."""
+    settings = svc().settings
+    if not settings.self_signup:
+        return RedirectResponse("/login", status_code=303)
+    if account is not None:
+        return RedirectResponse(ROLE_HOME.get(account.role, "/"), status_code=303)
+    return templates.TemplateResponse(
+        request,
+        template,
+        {
+            "nav_here": "login",
+            "min_length": passwords.MIN_LENGTH,
+            "google_enabled": settings.google_enabled,
+            "google_signup": settings.google_signup,
+        },
+    )
+
+
+@router.get("/signup", response_class=HTMLResponse, tags=["web"])
+def page_signup(request: Request, account: Account | None = Depends(optional_account)):
+    """A student opens an account with a password (D065)."""
+    return _signed_out_page(request, account, "signup.html")
+
+
+@router.get("/forgot", response_class=HTMLResponse, tags=["web"])
+def page_forgot(request: Request, account: Account | None = Depends(optional_account)):
+    """A forgotten password replaced with the recovery code (D065)."""
+    return _signed_out_page(request, account, "forgot.html")
 
 
 @router.get("/bands", response_class=HTMLResponse, tags=["web"])

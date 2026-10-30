@@ -1,0 +1,16 @@
+{#- D065: where a recovery code is shown, once. Filled by window.showRecoverySlip. -#}
+<div class="slip recovery-slip" id="recovery-slip" hidden>
+  <p class="slip-brand">AI Assessor CEFR · Mã khôi phục</p>
+  <div class="slip-codes">
+    <div><span class="slip-label">Bút danh</span><span class="slip-code" id="slip-pseudonym"></span></div>
+    <div><span class="slip-label">Mã khôi phục</span><span class="slip-code" id="slip-code"></span></div>
+  </div>
+  <p class="slip-note">
+    Mã chỉ hiện <b>một lần</b>. Quên mật khẩu thì vào "Quên mật khẩu?" ở trang đăng nhập, nhập
+    bút danh và mã này để đặt mật khẩu mới. Dùng xong, hệ thống cấp mã mới.
+  </p>
+  <div class="button-row">
+    <button type="button" class="secondary" id="slip-copy">Sao chép</button>
+    <button type="button" class="secondary" id="slip-save">Tải tệp .txt</button>
+  </div>
+</div>
