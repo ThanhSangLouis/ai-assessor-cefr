@@ -113,6 +113,8 @@ services:
     build:
       context: .
       target: speech
+      args:
+        VAD: "1"
     image: aicefr-speech:latest
     restart: unless-stopped
     environment:

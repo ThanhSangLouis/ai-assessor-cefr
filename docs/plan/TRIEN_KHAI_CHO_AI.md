@@ -152,6 +152,11 @@ container tự chạy lại. Máy tắt mà có merge thì `Deploy EC2` đỏ: b
 | Mọi bài chấm `FAILED`, log `speech` có `Permission denied: '/home/aicefr/.cache/huggingface'` | Thư mục cache Whisper thuộc `root` | Đã sửa trong `Dockerfile` (#82); job CI "Thu muc cache model…" chặn lỗi quay lại. Đừng xoá dòng `mkdir`/`chown` đó |
 | "chưa liên lạc được máy chấm" sau đúng khoảng 5 giây | Client Redis có giới hạn đọc 5 giây (mặc định của redis-py 8) | Đã sửa: `RedisBus` đặt `socket_timeout=None` (#82). Mọi client Redis mới cũng phải đặt như vậy |
 | "chưa liên lạc được máy chấm" sau khoảng 120 giây | `speech` quá tải hoặc đang tải model lần đầu | Thử lại sau vài phút; xem log `speech` |
+| `vad_n_seg_per_min` rất cao và nằm ngoài khoảng mô hình đã học | Có thể image thiếu Silero hoặc Silero nạp lỗi, khiến code dùng Energy VAD | Sang kiểm tra bằng `docker compose exec speech python -c "from aicefr.asr.vad import default_vad; print(default_vad().name)"`. Phải là `silero`; Compose truyền build arg `VAD=1`, cần build lại image qua deploy. Không nới ngưỡng để ép có điểm |
+
+Sau khi sửa cấu hình, kiểm tra bằng một bài nộp mới: báo cáo đã lưu không tự được tính lại.
+Ngay cả khi cặp ASR/VAD đã khớp, bài thiếu bằng chứng hoặc ngoài phân phối vẫn có thể cần giảng viên duyệt.
+Whisper vẫn giữ `large-v3`; bật Silero không loại bỏ cảnh báo ASR khác model đã dùng lúc huấn luyện.
 
 ## 8. Việc AI agent không được làm
 
