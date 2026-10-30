@@ -17,6 +17,8 @@
 - `ruff check --no-cache tests/test_deploy_config.py`, `ruff format --check --no-cache tests/test_deploy_config.py`, `git diff --check`: đạt.
 - Compose base + production `config --quiet`: đạt với domain ví dụ chỉ trong tiến trình kiểm tra.
 - Cú pháp CI YAML và `sh -n` cho các lệnh job image: đạt; giữ nguyên tên job bắt buộc.
+- CI PR lần đầu: job build image, Silero offline, tài liệu và secret scan đạt. Job unit/coverage có 1461 passed, 45 skipped, 1 failed vì test cấu hình mới chưa được ghi trong kế hoạch kiểm thử. Đã bổ sung TC-DP-U11 vào TEST_PLAN_D045_D047.md; không thay test truy vết hoặc nới điều kiện CI.
+- Sau khi bổ sung kế hoạch: `pytest --no-cov -p no:cacheprovider tests/test_deploy_config.py tests/test_product_traceability.py`: **63 passed**. Sửa lần này chỉ chạm tài liệu; Dockerfile và mã trong image đã build giữ nguyên.
 - `python -X utf8 scripts/ci/check_forbidden_files.py` và `check_md_links.py`: đạt. Lượt đầu dùng encoding Windows mặc định không in được tiếng Việt, chạy lại UTF-8 thành công.
 - NOT_EVALUATED: chấm audio thật trên EC2; human review. Không có audio thật, secret, model weights hoặc dữ liệu người học trong PR.
 

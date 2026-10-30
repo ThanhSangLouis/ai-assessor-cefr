@@ -126,6 +126,7 @@
 | TC-DP-U08 | `test_the_caddyfile_limits_bodies_like_the_gateway_and_never_overrides_app_headers` | FR-84 | Giới hạn kích thước như gateway; không ghi đè tiêu đề bảo mật của ứng dụng |
 | TC-DP-U09 | `test_the_server_scripts_exist_and_stop_at_the_first_error` | FR-84 | Kịch bản máy chủ có `set -euo pipefail` |
 | TC-DP-U10 | `test_the_deploy_never_ships_an_env_file` | AC-84.4 | `deploy.sh` không chép `.env` |
+| TC-DP-U11 | `test_speech_builds_with_silero_without_overriding_the_whisper_model` | FR-84 | Build speech với VAD=1, không ghi đè model Whisper đang dùng |
 
 ## 5. Kết quả chạy
 
