@@ -10,11 +10,10 @@
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
+  if (reduced.matches || !finePointer.matches) return;
 
-  // 3D Parallax and Tilting (Only for devices with fine pointer and no reduced motion)
-  if (!reduced.matches && finePointer.matches) {
-    const hero = document.querySelector(".lp-hero");
-    const scene = document.querySelector("[data-scene]");
+  const hero = document.querySelector(".lp-hero");
+  const scene = document.querySelector("[data-scene]");
   if (hero && scene) {
     const EASE = 0.08;
     let target = { x: 0, y: 0 };
@@ -70,9 +69,13 @@
       }
     });
   }
-}
+})();
 
-  // Interactive Speech Diagnostic Studio Playground
+// ---------------------------------------------------------------- Interactive Speech Studio Demo
+(() => {
+  "use strict";
+
+  const escapeHtml = window.escapeHtml || ((s) => String(s));
   const studioTabs = document.querySelectorAll(".lp-tab");
   const wordsDisplay = document.getElementById("lp-words-display");
   const tooltipCard = document.getElementById("lp-word-tooltip");
@@ -89,6 +92,28 @@
 
   if (wordsDisplay) {
     const demoData = {
+      a1: {
+        audio: "/static/audio/demo_a2.mp3",
+        duration: 3.2,
+        total: "0:03",
+        speed: "Tốc độ cơ bản 110 wpm",
+        words: [
+          { w: "Hello,", start: 0.0, end: 0.45, status: "heard", ipa: "/həˈləʊ/", acc: "99% Tự tin", note: "Chào hỏi chuẩn xác" },
+          { w: "my", start: 0.45, end: 0.75, status: "heard", ipa: "/maɪ/", acc: "98% Tự tin", note: "Nguyên âm đơn rõ" },
+          { w: "name", start: 0.75, end: 1.15, status: "heard", ipa: "/neɪm/", acc: "96% Tự tin", note: "Âm khép /m/ tốt" },
+          { w: "is", start: 1.15, end: 1.45, status: "heard", ipa: "/ɪz/", acc: "95% Tự tin", note: "Phát âm rõ ràng" },
+          { w: "Lan", start: 1.45, end: 1.95, status: "heard hint", ipa: "/læn/", acc: "94% Tự tin", note: "Tên riêng chuẩn" },
+          { w: "and", start: 1.95, end: 2.25, status: "heard", ipa: "/ænd/", acc: "92% Tự tin", note: "Liên từ tự nhiên" },
+          { w: "I", start: 2.25, end: 2.45, status: "heard", ipa: "/aɪ/", acc: "97% Tự tin", note: "Rõ ràng" },
+          { w: "am", start: 2.45, end: 2.75, status: "heard", ipa: "/æm/", acc: "91% Tự tin", note: "Chuẩn xác" },
+          { w: "student.", start: 2.75, end: 3.20, status: "unsure hint", ipa: "/ˈstjuː.dənt/", acc: "72% Cần rèn", note: "Lưu ý mạo từ 'a'" }
+        ],
+        band: "A1",
+        score: "1.9",
+        latency: "0.82",
+        fluency: "68%",
+        pause: "2.1"
+      },
       a2: {
         audio: "/static/audio/demo_a2.mp3",
         duration: 3.5,
@@ -153,6 +178,26 @@
         latency: "1.34",
         fluency: "92%",
         pause: "0.6"
+      },
+      c1: {
+        audio: "/static/audio/demo_b2.mp3",
+        duration: 5.8,
+        total: "0:06",
+        speed: "Tốc độ bản ngữ chuyên sâu 168 wpm",
+        words: [
+          { w: "Comprehensive", start: 0.0, end: 0.85, status: "heard hint", ipa: "/ˌkɒm.prɪˈhen.sɪv/", acc: "96% Tự tin", note: "Từ vựng học thuật C1" },
+          { w: "linguistic", start: 0.85, end: 1.55, status: "heard", ipa: "/lɪŋˈɡwɪs.tɪk/", acc: "94% Tự tin", note: "Trọng âm 2 chuẩn xác" },
+          { w: "analysis", start: 1.55, end: 2.25, status: "heard hint", ipa: "/əˈnæl.ə.sɪs/", acc: "95% Tự tin", note: "Nguyên âm yếu chuẩn" },
+          { w: "demonstrates", start: 2.25, end: 2.95, status: "heard", ipa: "/ˈdem.ən.streɪts/", acc: "92% Tự tin", note: "Đuôi số nhiều rõ" },
+          { w: "substantial", start: 2.95, end: 3.70, status: "heard hint", ipa: "/səbˈstæn.ʃəl/", acc: "97% Tự tin", note: "Nối âm tự nhiên" },
+          { w: "phonetic", start: 3.70, end: 4.30, status: "heard", ipa: "/fəˈnet.ɪk/", acc: "96% Tự tin", note: "Âm /f/ rõ nét" },
+          { w: "refinement.", start: 4.30, end: 5.25, status: "heard hint", ipa: "/rɪˈfaɪn.mənt/", acc: "95% Tự tin", note: "Độ trôi chảy xuất sắc" }
+        ],
+        band: "C1",
+        score: "5.8",
+        latency: "1.45",
+        fluency: "96%",
+        pause: "0.3"
       }
     };
 
@@ -211,7 +256,7 @@
         span.title = "Bấm để nghe phát âm riêng từ này";
 
         const showTooltip = () => {
-          tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${item.note}</em>`;
+          tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${escapeHtml(item.note)}</em>`;
         };
 
         span.addEventListener("mouseenter", showTooltip);
@@ -235,7 +280,7 @@
 
       if (data.words.length > 0) {
         const first = data.words[0];
-        tooltipCard.innerHTML = `<strong>${first.w}</strong> <span class="ipa">${first.ipa}</span> · <span class="acc">${first.acc}</span> — <em>${first.note}</em>`;
+        tooltipCard.innerHTML = `<strong>${first.w}</strong> <span class="ipa">${first.ipa}</span> · <span class="acc">${first.acc}</span> — <em>${escapeHtml(first.note)}</em>`;
       }
 
       if (latencyEl) latencyEl.textContent = data.latency;
@@ -259,7 +304,7 @@
         if (!span) return;
         if (cur >= item.start && cur <= item.end) {
           span.classList.add("is-speaking");
-          tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${item.note}</em>`;
+          tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${escapeHtml(item.note)}</em>`;
         } else {
           span.classList.remove("is-speaking");
         }
@@ -423,7 +468,7 @@
               wordSpans.forEach((s) => s.classList.remove("is-speaking"));
               wordSpans[idx].classList.add("is-speaking");
               const item = data.words[idx];
-              tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${item.note}</em>`;
+              tooltipCard.innerHTML = `<strong>${item.w}</strong> <span class="ipa">${item.ipa}</span> · <span class="acc">${item.acc}</span> — <em>${escapeHtml(item.note)}</em>`;
               idx++;
             } else {
               clearInterval(timer);
@@ -461,14 +506,20 @@
           miniAudio.play().then(() => {
             el.classList.add("is-playing");
           }).catch(() => {
+            el.classList.add("is-playing");
             if ("speechSynthesis" in window) {
-              window.speechSynthesis.cancel();
-              const u = new SpeechSynthesisUtterance("I like my neighborhood because the people are friendly.");
-              u.lang = "en-US";
-              u.onstart = () => el.classList.add("is-playing");
-              u.onend = () => el.classList.remove("is-playing");
-              window.speechSynthesis.speak(u);
+              try {
+                window.speechSynthesis.cancel();
+                const u = new SpeechSynthesisUtterance("I like my neighborhood because the people are friendly.");
+                u.lang = "en-US";
+                u.onstart = () => el.classList.add("is-playing");
+                u.onend = () => el.classList.remove("is-playing");
+                window.speechSynthesis.speak(u);
+              } catch (_) {}
             }
+            setTimeout(() => {
+              el.classList.remove("is-playing");
+            }, 2500);
           });
         }
       });

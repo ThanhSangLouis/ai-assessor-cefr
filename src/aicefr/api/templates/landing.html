@@ -46,9 +46,12 @@
       <div class="lp-scene" data-scene>
         <div class="lp-floor"></div>
         <div class="lp-pillars">
+          <span class="cube p-a1"><span class="f-front">A1</span><span class="f-side"></span><span class="f-top"></span></span>
           <span class="cube p-a2"><span class="f-front">A2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b1"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-b1 is-target"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
           <span class="cube p-b2"><span class="f-front">B2</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c1"><span class="f-front">C1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c2"><span class="f-front">C2</span><span class="f-side"></span><span class="f-top"></span></span>
         </div>
 
         <div class="lp-card lp-card-read">
@@ -69,10 +72,12 @@
         </div>
 
         <div class="lp-card lp-card-band">
-          <span class="lp-card-head">Ước lượng</span>
-          <b class="lp-band">B1</b>
-          <span class="lp-range"><span></span></span>
-          <span class="lp-range-scale"><span>A2</span><span>B1</span><span>B2</span></span>
+          <span class="lp-card-head">Ước lượng năng lực</span>
+          <b class="lp-band">B1+</b>
+          <span class="lp-range"><span style="left: 33%; width: 22%;"></span></span>
+          <span class="lp-range-scale">
+            <span>A1</span><span>A2</span><span class="is-active">B1</span><span>B2</span><span>C1</span><span>C2</span>
+          </span>
         </div>
 
         <div class="lp-card lp-card-check">
@@ -87,36 +92,41 @@
 <!-- Impact Stats Ribbon -->
 <div class="lp-stats-ribbon lp-rise" aria-label="Các thông số cốt lõi">
   <div class="lp-stat-item">
-    <span class="lp-stat-number">A2 → B2</span>
-    <span class="lp-stat-desc">Khung chuẩn CEFR Quốc tế</span>
+    <span class="lp-stat-number">A1 → C2</span>
+    <span class="lp-stat-desc">Toàn diện 6 bậc CEFR (D059)</span>
   </div>
   <div class="lp-stat-divider" aria-hidden="true"></div>
   <div class="lp-stat-item">
     <span class="lp-stat-number">&lt; 1.5s</span>
-    <span class="lp-stat-desc">Đánh giá nhanh bằng Whisper AI</span>
+    <span class="lp-stat-desc">Bóc tách ngữ âm Whisper AI</span>
   </div>
   <div class="lp-stat-divider" aria-hidden="true"></div>
   <div class="lp-stat-item">
-    <span class="lp-stat-number">100%</span>
-    <span class="lp-stat-desc">Giảng viên kiểm chứng kết quả</span>
+    <span class="lp-stat-number">5 Tiêu chí</span>
+    <span class="lp-stat-desc">Phát âm, trôi chảy, từ vựng, ngữ pháp, mạch lạc</span>
   </div>
   <div class="lp-stat-divider" aria-hidden="true"></div>
   <div class="lp-stat-item">
-    <span class="lp-stat-number">100% Ẩn danh</span>
-    <span class="lp-stat-desc">Đăng nhập bằng mã bút danh</span>
+    <span class="lp-stat-number">100% Bảo mật</span>
+    <span class="lp-stat-desc">Google SSO hoặc Mã bút danh (D063)</span>
   </div>
 </div>
 
 <!-- Interactive Live Speech Studio (Breakthrough Feature) -->
-<section class="lp-section lp-studio-section" id="interactive-demo" aria-labelledby="studio-h">
+<section class="lp-section" id="interactive-demo" aria-labelledby="studio-h">
   <div class="lp-head center">
     <p class="eyebrow">{{ icon("sparkle") }} Trải nghiệm trực quan</p>
     <h2 id="studio-h">Công nghệ bóc tách ngữ âm trong 1.5 giây</h2>
-    <p class="lp-subhead center">Chọn một mẫu câu thực tế để xem Whisper AI nhận diện từng âm tiết, định vị quãng ngập ngừng và phân tích theo khung chuẩn CEFR Quốc tế.</p>
+    <p class="lp-subhead center">Chọn một mẫu câu thực tế từ A1 đến C2 để xem Whisper AI nhận diện từng âm tiết, định vị quãng ngập ngừng và phân tích theo 5 tiêu chí chuẩn quốc tế.</p>
   </div>
 
   <div class="lp-studio-card lp-rise">
     <div class="lp-studio-tabs" role="tablist" aria-label="Chọn cấp độ mẫu">
+      <button class="lp-tab" data-level="a1" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ A1</span>
+        <b>Mẫu sơ cấp</b>
+        <small>Giới thiệu bản thân</small>
+      </button>
       <button class="lp-tab" data-level="a2" role="tab" aria-selected="false">
         <span class="lp-tab-pill">Cấp độ A2</span>
         <b>Mẫu cơ bản</b>
@@ -131,6 +141,11 @@
         <span class="lp-tab-pill">Cấp độ B2</span>
         <b>Mẫu nâng cao</b>
         <small>Công nghệ &amp; Xã hội</small>
+      </button>
+      <button class="lp-tab" data-level="c1" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ C1–C2</span>
+        <b>Mẫu học thuật</b>
+        <small>Phân tích &amp; Luận điểm</small>
       </button>
     </div>
 
@@ -345,13 +360,13 @@
       <div class="lp-mock lp-tilt" data-tilt>
         <div class="lp-mock-bar">
           <div class="lp-mock-dots"><i></i><i></i><i></i></div>
-          <span class="lp-mock-title">Hàng đợi duyệt bài nộp · Lớp EN-B1-K24</span>
+          <span class="lp-mock-title">Hàng đợi duyệt bài nộp · Lớp CEFR A1–C2</span>
         </div>
         <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">014</span><b>SV-014</b></div>
-          <span class="lp-mock-topic">Kể về cuối tuần qua</span>
-          <span class="lp-pill">B1</span>
-          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">005</span><b>SV-005</b></div>
+          <span class="lp-mock-topic">Giới thiệu bản thân &amp; gia đình</span>
+          <span class="lp-pill">A1</span>
+          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
         </div>
         <div class="lp-mock-row">
           <div class="lp-mock-sv"><span class="lp-avatar-chip">022</span><b>SV-022</b></div>
@@ -360,15 +375,21 @@
           <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
         </div>
         <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">014</span><b>SV-014</b></div>
+          <span class="lp-mock-topic">Kể về kỳ nghỉ cuối tuần</span>
+          <span class="lp-pill">B1</span>
+          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
+        </div>
+        <div class="lp-mock-row">
           <div class="lp-mock-sv"><span class="lp-avatar-chip">031</span><b>SV-031</b></div>
           <span class="lp-mock-topic">Công việc mơ ước tương lai</span>
           <span class="lp-pill">B2</span>
           <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
         </div>
         <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">009</span><b>SV-009</b></div>
-          <span class="lp-mock-topic">Một ngày bình thường của bạn</span>
-          <span class="lp-pill">B1</span>
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">048</span><b>SV-048</b></div>
+          <span class="lp-mock-topic">Tác động của công nghệ AI</span>
+          <span class="lp-pill">C1</span>
           <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
         </div>
         <div class="lp-mock-float" id="lp-mock-float-player" role="button" tabindex="0" aria-label="Bấm để nghe đoạn ghi âm sinh viên" title="Bấm để nghe thử âm thanh">
@@ -458,7 +479,7 @@
   <div class="lp-faq-list">
     <details>
       <summary>Bài nói dài bao lâu và kiểm tra những yếu tố gì?</summary>
-      <p>Bài đánh giá chuẩn dài từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối đa {{ max_size_mib }} MiB. Hệ thống phân tích 4 tiêu chí CEFR: độ trôi chảy (tốc độ nói, quãng ngập ngừng), vốn từ vựng, độ chuẩn ngữ pháp và mức độ dễ hiểu.</p>
+      <p>Bài đánh giá chuẩn dài từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối đa {{ max_size_mib }} MiB. Hệ thống phân tích 5 tiêu chí CEFR (D059, D061, D062): Phát âm &amp; Ngữ âm (Phonology), Độ trôi chảy (Fluency), Độ rộng từ vựng (Range), Độ chính xác ngữ pháp (Accuracy), và Tính mạch lạc qua từ nối (Coherence).</p>
     </details>
     <details>
       <summary>Tôi có cần cài đặt phần mềm chuyên dụng không?</summary>
@@ -466,7 +487,7 @@
     </details>
     <details>
       <summary>Ai là người có thể nghe được bản ghi âm của tôi?</summary>
-      <p>Chỉ duy nhất bạn và giảng viên phụ trách lớp học mới có quyền truy cập bản ghi. Bản ghi chỉ được lưu trữ khi bạn xác nhận đồng ý, và bạn có quyền tải về hoặc xóa bỏ vĩnh viễn bất kỳ lúc nào.</p>
+      <p>Chỉ duy nhất bạn và giảng viên phụ trách lớp học mới có quyền truy cập bản ghi. Hệ thống tôn trọng quyền riêng tư (D064): bạn có toàn quyền tải về hoặc xóa bỏ vĩnh viễn bài ghi âm bất kỳ lúc nào.</p>
     </details>
   </div>
 </section>

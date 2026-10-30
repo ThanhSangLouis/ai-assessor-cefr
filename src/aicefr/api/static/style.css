@@ -2847,10 +2847,10 @@ button.evidence:hover {
 .lp-pillars { position: absolute; left: 50%; bottom: 70px; transform-style: preserve-3d; }
 .lp-pillars .cube { position: absolute; bottom: 0; }
 
-/* 3D Cube Blocks with precision beveled chamfers and ambient lighting */
+/* 3D Cube Blocks: CEFR A1 -> C2 6-stage staircase */
 .cube {
-  --w: 84px;
-  --d: 84px;
+  --w: 52px;
+  --d: 52px;
   --h: 120px;
   --mix: 30%;
   --face: color-mix(in srgb, var(--brand) var(--mix), var(--bg-elevated));
@@ -2860,6 +2860,7 @@ button.evidence:hover {
   width: var(--w);
   height: var(--h);
   transform-style: preserve-3d;
+  transition: transform 0.3s ease;
 }
 .cube > span { position: absolute; }
 .cube .f-front {
@@ -2867,12 +2868,12 @@ button.evidence:hover {
   display: grid;
   justify-items: center;
   align-content: start;
-  padding-top: 14px;
+  padding-top: 10px;
   transform: translateZ(calc(var(--d) / 2));
   background: var(--face);
   color: var(--ink);
-  font-size: 1.45rem;
-  font-weight: 800;
+  font-size: 1.15rem;
+  font-weight: 850;
   letter-spacing: -0.02em;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset -1px 0 0 rgba(255, 255, 255, 0.08), inset 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
@@ -2895,88 +2896,73 @@ button.evidence:hover {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
 
-/* Three bars of the mark matching Photo 2: A2 (Obsidian), B1 (Platinum), B2 (Sapphire) */
-.cube.p-a2 {
-  --h: 118px;
-  left: -158px;
-}
-.cube.p-a2 .f-front {
-  background: linear-gradient(180deg, #252e3d, #19202c);
-  color: #94a3b8;
-}
-.cube.p-a2 .f-top {
-  background: linear-gradient(135deg, #37445a, #293447);
-}
-.cube.p-a2 .f-side {
-  background: linear-gradient(180deg, #141a24, #0d121a);
-}
+/* 6 CEFR Pillars (D059): A1, A2, B1, B2, C1, C2 */
+/* 1. A1 - Khởi đầu (Warm Amber / Bronze) */
+.cube.p-a1 { --h: 85px; left: -176px; }
+.cube.p-a1 .f-front { background: linear-gradient(180deg, #b45309, #78350f); color: #fef3c7; }
+.cube.p-a1 .f-top { background: linear-gradient(135deg, #d97706, #b45309); }
+.cube.p-a1 .f-side { background: linear-gradient(180deg, #78350f, #451a03); }
 
-.cube.p-b1 {
-  --h: 178px;
-  left: -42px;
-}
+/* 2. A2 - Cơ bản (Slate Obsidian) */
+.cube.p-a2 { --h: 122px; left: -110px; }
+.cube.p-a2 .f-front { background: linear-gradient(180deg, #334155, #1e293b); color: #cbd5e1; }
+.cube.p-a2 .f-top { background: linear-gradient(135deg, #475569, #334155); }
+.cube.p-a2 .f-side { background: linear-gradient(180deg, #1e293b, #0f172a); }
+
+/* 3. B1 - Độc lập (Platinum White Frost Pearl - Highlighted Target) */
+.cube.p-b1 { --h: 168px; left: -44px; z-index: 2; }
 .cube.p-b1 .f-front {
-  background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+  background: linear-gradient(180deg, #ffffff, #e2e8f0);
   color: #0f172a;
-  font-weight: 850;
-  box-shadow: inset 0 1px 0 #ffffff, inset -1px 0 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 1px 0 #ffffff, 0 0 20px rgba(56, 189, 248, 0.4);
 }
 .cube.p-b1 .f-top {
-  background: linear-gradient(135deg, #ffffff, #e2e8f0);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, #ffffff, #f1f5f9);
+  box-shadow: inset 0 0 0 1px #ffffff, 0 0 14px rgba(56, 189, 248, 0.5);
 }
-.cube.p-b1 .f-side {
-  background: linear-gradient(180deg, #94a3b8, #64748b);
-}
-
-.cube.p-b2 {
-  --h: 246px;
-  left: 74px;
-}
-.cube.p-b2 .f-front {
-  background: linear-gradient(180deg, #2563eb, #1d4ed8);
+.cube.p-b1 .f-side { background: linear-gradient(180deg, #cbd5e1, #94a3b8); }
+.cube.p-b1.is-target::before {
+  content: "TARGET";
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2563eb;
   color: #ffffff;
+  font-size: 0.6rem;
   font-weight: 850;
-  padding-top: 26px;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset -1px 0 0 rgba(255, 255, 255, 0.15);
-}
-.cube.p-b2 .f-top {
-  background: linear-gradient(135deg, #60a5fa, #3b82f6);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-}
-.cube.p-b2 .f-side {
-  background: linear-gradient(180deg, #1e40af, #1e3a8a);
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.6);
+  white-space: nowrap;
 }
 
-/* Light mode sculptural finishes for cubes: A2 (Obsidian), B1 (Pure Carrara White), B2 (Royal Sapphire) */
-:root[data-theme="light"] .cube.p-a2 .f-front {
-  background: linear-gradient(180deg, #334155, #1e293b);
-  color: #f8fafc;
-  font-weight: 850;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), inset -1px 0 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.4);
-}
-:root[data-theme="light"] .cube.p-a2 .f-top {
-  background: linear-gradient(135deg, #475569, #334155);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-}
-:root[data-theme="light"] .cube.p-a2 .f-side {
-  background: linear-gradient(180deg, #1e293b, #0f172a);
-}
+/* 4. B2 - Nâng cao (Royal Sapphire) */
+.cube.p-b2 { --h: 215px; left: 22px; }
+.cube.p-b2 .f-front { background: linear-gradient(180deg, #2563eb, #1d4ed8); color: #ffffff; }
+.cube.p-b2 .f-top { background: linear-gradient(135deg, #60a5fa, #3b82f6); }
+.cube.p-b2 .f-side { background: linear-gradient(180deg, #1e40af, #1e3a8a); }
 
-:root[data-theme="light"] .cube.p-b1 .f-front {
-  background: linear-gradient(180deg, #ffffff, #f1f5f9);
-  color: #0f172a;
-  font-weight: 850;
-  box-shadow: inset 0 1px 0 #ffffff, inset -1px 0 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(15, 23, 42, 0.12);
-}
-:root[data-theme="light"] .cube.p-b1 .f-top {
-  background: linear-gradient(135deg, #ffffff, #f8fafc);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 1);
-}
-:root[data-theme="light"] .cube.p-b1 .f-side {
-  background: linear-gradient(180deg, #cbd5e1, #94a3b8);
-}
+/* 5. C1 - Thành thạo (Emerald Teal) */
+.cube.p-c1 { --h: 260px; left: 88px; }
+.cube.p-c1 .f-front { background: linear-gradient(180deg, #059669, #047857); color: #ffffff; }
+.cube.p-c1 .f-top { background: linear-gradient(135deg, #34d399, #10b981); }
+.cube.p-c1 .f-side { background: linear-gradient(180deg, #065f46, #064e3b); }
+
+/* 6. C2 - Bậc thầy (Electric Amethyst) */
+.cube.p-c2 { --h: 305px; left: 154px; }
+.cube.p-c2 .f-front { background: linear-gradient(180deg, #7c3aed, #6d28d9); color: #ffffff; }
+.cube.p-c2 .f-top { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
+.cube.p-c2 .f-side { background: linear-gradient(180deg, #5b21b6, #4c1d95); }
+
+/* Light mode adjustments */
+:root[data-theme="light"] .cube.p-a1 .f-front { background: linear-gradient(180deg, #d97706, #b45309); color: #ffffff; }
+:root[data-theme="light"] .cube.p-a2 .f-front { background: linear-gradient(180deg, #475569, #334155); color: #f8fafc; }
+:root[data-theme="light"] .cube.p-b1 .f-front { background: linear-gradient(180deg, #ffffff, #f1f5f9); color: #0f172a; box-shadow: inset 0 1px 0 #ffffff, 0 4px 16px rgba(37, 99, 235, 0.2); }
+:root[data-theme="light"] .cube.p-b2 .f-front { background: linear-gradient(180deg, #2563eb, #1d4ed8); color: #ffffff; }
+:root[data-theme="light"] .cube.p-c1 .f-front { background: linear-gradient(180deg, #059669, #047857); color: #ffffff; }
+:root[data-theme="light"] .cube.p-c2 .f-front { background: linear-gradient(180deg, #7c3aed, #6d28d9); color: #ffffff; }
 
 /* Floating Glass Cards in the Hero Scene (Optical Glassmorphism) */
 .lp-card {
@@ -3136,9 +3122,9 @@ button.evidence:hover {
 @keyframes lp-eq { to { transform: scaleY(1); } }
 
 /* Floating Band Estimate Card */
-.lp-card-band { --z: 40px; --delay: -3.5s; right: -56px; top: -46px; width: 164px; gap: var(--sp-1); }
+.lp-card-band { --z: 40px; --delay: -3.5s; right: -50px; top: -46px; width: 200px; gap: var(--sp-1); }
 .lp-band {
-  font-size: 2.4rem;
+  font-size: 2.3rem;
   font-weight: 850;
   line-height: 1;
   letter-spacing: -0.04em;
@@ -3164,15 +3150,24 @@ button.evidence:hover {
 :root[data-theme="light"] .lp-range { background: #e2e8f0; }
 .lp-range span {
   position: absolute;
-  left: 36%;
-  width: 34%;
+  left: 33%;
+  width: 20%;
   top: 0;
   bottom: 0;
   border-radius: inherit;
   background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
   box-shadow: 0 0 10px rgba(129, 140, 248, 0.6);
 }
-.lp-range-scale { display: flex; justify-content: space-between; font-size: 0.72rem; font-weight: 700; color: #94a3b8; }
+.lp-range-scale { display: flex; justify-content: space-between; font-size: 0.68rem; font-weight: 700; color: #94a3b8; }
+.lp-range-scale span.is-active {
+  color: #38bdf8;
+  font-weight: 850;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+}
+:root[data-theme="light"] .lp-range-scale span.is-active {
+  color: #1d4ed8;
+  text-shadow: none;
+}
 
 /* Floating Teacher Verified Card */
 .lp-card-check {
@@ -3257,7 +3252,8 @@ button.evidence:hover {
 /* ==========================================================================
    Section: Interactive AI Speech Studio Playground
    ========================================================================== */
-.lp-studio-section {
+.lp-studio-section,
+#interactive-demo {
   padding-top: var(--sp-6);
 }
 .lp-head.center {
@@ -3292,7 +3288,7 @@ button.evidence:hover {
 
 .lp-studio-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   background: rgba(0, 0, 0, 0.35);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -3300,9 +3296,15 @@ button.evidence:hover {
   background: #f8fafc;
   border-bottom-color: #e2e8f0;
 }
+@media (max-width: 960px) {
+  .lp-studio-tabs { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 640px) {
+  .lp-studio-tabs { grid-template-columns: 1fr; }
+}
 
 .lp-tab {
-  padding: var(--sp-4) var(--sp-5);
+  padding: var(--sp-3) var(--sp-3);
   text-align: left;
   background: transparent;
   border: none;
@@ -7280,9 +7282,10 @@ dialog.sheet::backdrop {
   -webkit-backdrop-filter: blur(16px) saturate(1.3);
   backdrop-filter: blur(16px) saturate(1.3);
 }
-.auth-cubes { justify-content: flex-start; padding-left: var(--sp-6); margin: var(--sp-2) 0 var(--sp-6); }
-.auth-cubes .cube-row { --cube-gap: 26px; }
-.auth-cubes .cube { --w: 72px; --d: 72px; }
+.auth-cubes { justify-content: flex-start; padding-left: var(--sp-4); margin: var(--sp-2) 0 var(--sp-6); }
+.auth-cubes .cube-row { --cube-gap: 14px; }
+.auth-cubes .cube { --w: 48px; --d: 48px; }
+.auth-cubes .cube .f-front { font-size: 0.8rem; font-weight: 800; padding-top: 6px; }
 .band-columns { margin-bottom: var(--sp-2); }
 .band-columns .cube-row { --cube-gap: 30px; }
 

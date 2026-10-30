@@ -280,7 +280,7 @@ function renderDecisionForm(a, noResult) {
            placeholder="${a.overall_0_6 == null ? "1 – 6" : a.overall_0_6}">
     <label for="bd">Band mới</label>
     <select id="bd"${disabled}>
-      <option value="">${noResult ? "Chọn band" : "Giữ nguyên"}</option><option>A2</option><option>B1</option><option>B2</option>
+      <option value="">${noResult ? "Chọn band" : "Giữ nguyên"}</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
     </select>
     <label for="ly">Lý do quyết định, bắt buộc kể cả khi đồng ý</label>
     <textarea id="ly" rows="3"${disabled}
