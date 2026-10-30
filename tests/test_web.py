@@ -199,3 +199,11 @@ def test_kieu_in_khong_an_toan_bo_nut() -> None:
     for rule in re.findall(r"([^{}]+)\{[^{}]*display:\s*none[^{}]*\}", block):
         selectors = [s.strip() for s in rule.split(",")]
         assert "button" not in selectors, "kiểu in đang ẩn mọi <button>, kể cả thẻ bằng chứng"
+
+
+def test_login_page_says_why_google_is_missing_outside_production() -> None:
+    """Without the Google keys the button is hidden; on a developer's machine the
+    page says why, so a missing key is not taken for a broken feature."""
+    t = client.get("/login").text
+    assert 'id="google-off"' in t
+    assert "AICEFR_GOOGLE_CLIENT_ID" in t

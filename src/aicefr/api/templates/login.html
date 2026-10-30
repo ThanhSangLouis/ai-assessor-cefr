@@ -61,6 +61,11 @@
     {% else %}
     <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
     {% endif %}
+    {% elif google_missing_hint %}
+    <p class="field-hint" id="google-off">
+      Đăng nhập bằng Google chưa bật trên máy này: thiếu <code>AICEFR_GOOGLE_CLIENT_ID</code> và
+      <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
+    </p>
     {% endif %}
     <details class="auth-help">
       <summary>Quên mật khẩu?</summary>

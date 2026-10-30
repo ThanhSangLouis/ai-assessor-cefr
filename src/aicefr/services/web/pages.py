@@ -122,6 +122,9 @@ def page_login(request: Request):
             "nav_here": "login",
             "google_enabled": svc().settings.google_enabled,
             "google_signup": svc().settings.google_signup,
+            # Outside production, say why the Google button is missing: a
+            # teammate without the keys took it for a broken feature.
+            "google_missing_hint": not svc().settings.is_production,
             "google_error": google.MESSAGES.get(request.query_params.get("google", "")),
         },
     )
