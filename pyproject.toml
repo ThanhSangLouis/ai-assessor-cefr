@@ -34,7 +34,12 @@ dependencies = [
 # object storage through the minio client (Apache-2.0). Not needed on one
 # machine, where the bus is in-process and recordings are files.
 services = ["bullmq>=3.4,<4", "redis>=6.2,<9", "minio>=7.2,<8"]
-asr = ["mlx-whisper>=0.4; sys_platform == 'darwin'", "faster-whisper>=1.0; sys_platform != 'darwin'"]
+# Same split as WhisperEngine: mlx only on Apple silicon; an Intel Mac, Linux
+# and Windows run faster-whisper.
+asr = [
+  "mlx-whisper>=0.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "faster-whisper>=1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
+]
 vad = ["silero-vad>=5.1", "torch>=2.2"]
 dev = [
   "pytest>=8.0",

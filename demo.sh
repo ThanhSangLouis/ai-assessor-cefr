@@ -45,6 +45,16 @@ if [ ! -f "$AICEFR_MODEL_DIR/ridge_resp_v2.json" ]; then
   export AICEFR_MODEL_PINS
 fi
 
+# --- May nhan dang (ASR) ----------------------------------------------------
+# AICEFR_ASR=whisper ma chua cai nhom [asr] thi moi bai nop deu FAILED
+# (ASR_FAILED). Bao ngay o day thay vi de nguoi dung doan.
+if [ "${AICEFR_ASR:-fake}" = "whisper" ]; then
+  if [ "$(uname -s)-$(uname -m)" = "Darwin-arm64" ]; then mod=mlx_whisper; else mod=faster_whisper; fi
+  $PY -c "import $mod" 2>/dev/null || {
+    echo "AICEFR_ASR=whisper nhung chua cai $mod. Chay: .venv/bin/pip install -e '.[dev,asr,vad]'" >&2
+    exit 1; }
+fi
+
 # --- Tai khoan demo ---------------------------------------------------------
 for a in "SV-001:student" "SV-002:student" "GV-01:teacher" "QT-01:admin"; do
   $PY -m aicefr.accounts_cli them --but-danh "${a%%:*}" --vai-tro "${a##*:}" \

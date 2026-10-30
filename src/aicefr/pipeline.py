@@ -348,7 +348,10 @@ class ResponseProcessor:
         try:
             with timed("pipeline_stage_seconds", stage="asr"):
                 asr = self.asr_engine.transcribe(trimmed, sr)
-        except AsrError:
+        except AsrError as e:
+            # The reason code alone tells the learner nothing went right; the
+            # log has to say why, or a missing package looks like a bad model.
+            logger.warning("recogniser failed: %s", e)
             return Response(
                 **base, status=ResponseStatus.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED]
             )
