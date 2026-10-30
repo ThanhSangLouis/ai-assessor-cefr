@@ -146,96 +146,190 @@
 {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer">
+<footer class="site-footer" role="contentinfo">
   <div class="footer-wrap footer-inner">
+    <!-- Hàng 1: Lưới liên kết & Thông tin học thuật toàn diện (5 Cột) -->
     <div class="footer-grid">
-      <!-- Cột 1: Thương hiệu, giới thiệu & Trạng thái hệ thống -->
+      <!-- Cột 1: Định danh Viện / Trường & Dự án Nghiên cứu -->
       <div class="footer-col footer-col-brand">
         <a class="brand footer-brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
           {{ logo() }}
           <span class="brand-text">
             <span class="brand-title-row">
               <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
-              <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
+              <span class="brand-badge">A1–C2</span>
             </span>
-            <span class="brand-sub">Luyện nói &amp; Đánh giá năng lực</span>
+            <span class="brand-sub">Hệ thống Khảo thí &amp; Đánh giá Nói Tiếng Anh</span>
           </span>
         </a>
+
         <p class="footer-desc">
-          Nền tảng ứng dụng trí tuệ nhân tạo nhận diện phát âm, ngữ điệu và phân tích độ trôi chảy theo khung tham chiếu CEFR từ A1 đến C2 dành cho sinh viên đại học.
+          Đề tài Nghiên cứu Khoa học &amp; Ứng dụng Công nghệ Khảo thí Tự động — Khoa Công nghệ Thông tin, Trường Đại học Sư phạm Kỹ thuật TP.HCM (HCMUTE).
         </p>
-        <div class="footer-status-badge">
-          <span class="status-pulse-dot"></span>
-          <span class="status-badge-text">Hệ thống AI v2.4 sẵn sàng · Độ trễ &lt; 2s</span>
+
+        <div class="footer-org-meta">
+          <div class="footer-meta-item">
+            <span class="footer-meta-label">Đơn vị chủ quản:</span>
+            <span class="footer-meta-val">Khoa CNTT · HCMUTE</span>
+          </div>
+          <div class="footer-meta-item">
+            <span class="footer-meta-label">Địa chỉ nghiên cứu:</span>
+            <span class="footer-meta-val">01 Võ Văn Ngân, P. Linh Chiểu, TP. Thủ Đức, TP.HCM</span>
+          </div>
+        </div>
+
+        <div class="footer-tags-row">
+          <span class="footer-pill-tag">Khung CEFR 2020</span>
+          <span class="footer-pill-tag">Mô hình Whisper ASR</span>
+          <span class="footer-pill-tag">Human-in-the-Loop</span>
         </div>
       </div>
 
-      <!-- Cột 2: Luyện tập & Tính năng -->
+      <!-- Cột 2: Khung năng lực CEFR (6 Bậc chuẩn Châu Âu) -->
       <div class="footer-col">
-        <h4 class="footer-col-title">Luyện tập &amp; Tính năng</h4>
+        <h3 class="footer-col-title">Khung năng lực CEFR</h3>
         <ul class="footer-nav-list">
-          <li><a href="/login">{{ icon("user") }}<span>Bắt đầu luyện nói</span></a></li>
-          <li><a href="/#interactive-demo">{{ icon("sparkle") }}<span>Trải nghiệm mẫu AI</span></a></li>
-          <li><a href="/bands">{{ icon("chart") }}<span>Thang điểm CEFR (A1–C2)</span></a></li>
-          <li><a href="/#how-it-works">{{ icon("path") }}<span>Quy trình đánh giá 4 bước</span></a></li>
-        </ul>
-      </div>
-
-      <!-- Cột 3: Giảng viên & Học thuật -->
-      <div class="footer-col">
-        <h4 class="footer-col-title">Học thuật &amp; Đào tạo</h4>
-        <ul class="footer-nav-list">
-          <li><a href="/#for-teachers">{{ icon("users") }}<span>Cổng quản lý giảng viên</span></a></li>
-          <li><a href="/#principles">{{ icon("shield") }}<span>Nguyên tắc chấm &amp; AI rubric</span></a></li>
-          <li><a href="/#faq">{{ icon("info") }}<span>Câu hỏi thường gặp (FAQ)</span></a></li>
-          <li><a href="/login">{{ icon("key") }}<span>Cổng đăng nhập LMS / SSO</span></a></li>
-        </ul>
-      </div>
-
-      <!-- Cột 4: Cam kết học thuật & Minh bạch -->
-      <div class="footer-col footer-col-card">
-        <div class="footer-academic-card">
-          <div class="academic-card-head">
-            {{ icon("shield", "academic-icon") }}
-            <h4 class="academic-card-title">Cam kết học thuật &amp; Minh bạch</h4>
-          </div>
-          <div class="academic-card-body">
-            <p>
-              <b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
-              của mô hình, dùng để luyện tập và tham khảo.
-            </p>
-            <p>
-              <b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
-              có giảng viên duyệt.
-            </p>
-            <p class="academic-privacy-note">
-              {{ icon("lock") }}
-              <span>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</span>
-            </p>
-          </div>
-          <div class="academic-card-foot">
-            <a href="/bands" class="academic-learn-more">
-              <span>Band A1 đến C2 nghĩa là gì, và máy đo được những gì</span>
-              {{ icon("arrow-right") }}
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">A1</span>
+              <span class="cefr-badge-text">Khởi đầu <i>(Breakthrough)</i></span>
             </a>
-          </div>
-        </div>
+          </li>
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">A2</span>
+              <span class="cefr-badge-text">Căn bản <i>(Waystage)</i></span>
+            </a>
+          </li>
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">B1</span>
+              <span class="cefr-badge-text">Độc lập <i>(Threshold)</i></span>
+            </a>
+          </li>
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">B2</span>
+              <span class="cefr-badge-text">Nâng cao <i>(Vantage)</i></span>
+            </a>
+          </li>
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">C1</span>
+              <span class="cefr-badge-text">Thành thạo <i>(Effective)</i></span>
+            </a>
+          </li>
+          <li>
+            <a href="/bands" class="footer-cefr-link">
+              <span class="cefr-badge-code">C2</span>
+              <span class="cefr-badge-text">Bậc thầy <i>(Mastery)</i></span>
+            </a>
+          </li>
+          <li class="footer-list-highlight">
+            <a href="/bands">Bảng quy đổi &amp; Ngưỡng điểm →</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Cột 3: 5 Tiêu chí khảo thí nói -->
+      <div class="footer-col">
+        <h3 class="footer-col-title">5 Tiêu chí khảo thí</h3>
+        <ul class="footer-nav-list">
+          <li><a href="/bands#aspect-phonology">Phát âm &amp; Ngữ âm (Phonology)</a></li>
+          <li><a href="/bands#aspect-fluency">Độ trôi chảy &amp; Tốc độ (Fluency)</a></li>
+          <li><a href="/bands#aspect-range">Độ rộng vốn từ (Lexical Range)</a></li>
+          <li><a href="/bands#aspect-accuracy">Độ chuẩn ngữ pháp (Accuracy)</a></li>
+          <li><a href="/bands#aspect-coherence">Mạch lạc &amp; Từ nối (Coherence)</a></li>
+          <li class="footer-list-highlight">
+            <a href="/#how-it-works">Quy trình phân tích 4 bước →</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Cột 4: Phân hệ & Luyện tập -->
+      <div class="footer-col">
+        <h3 class="footer-col-title">Cổng hệ thống</h3>
+        <ul class="footer-nav-list">
+          <li><a href="/login">Cổng Luyện nói Sinh viên</a></li>
+          <li><a href="/#interactive-demo">Trải nghiệm bài thi thử AI</a></li>
+          <li><a href="/#for-teachers">Cổng Thẩm định Giảng viên</a></li>
+          <li><a href="/login">Đăng nhập Bút danh bảo mật</a></li>
+          <li><a href="/login">Đăng nhập Google SSO</a></li>
+          <li class="footer-list-highlight">
+            <a href="/#faq">Câu hỏi thường gặp (FAQ) →</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Cột 5: Quy chuẩn & Học thuật -->
+      <div class="footer-col">
+        <h3 class="footer-col-title">Quy chuẩn &amp; Học thuật</h3>
+        <ul class="footer-nav-list">
+          <li><a href="/#principles">Nguyên tắc chấm &amp; AI Rubric</a></li>
+          <li><a href="/#principles">Quyền riêng tư âm thanh (D064)</a></li>
+          <li><a href="/#principles">Cơ chế Giảng viên duyệt điểm</a></li>
+          <li><a href="/#principles">Cam kết không thay chứng chỉ</a></li>
+          <li><a href="/#principles">Quyền tải về / xóa tệp âm thanh</a></li>
+          <li class="footer-list-highlight">
+            <a href="/bands">Chi tiết giới hạn đo lường →</a>
+          </li>
+        </ul>
       </div>
     </div>
 
-    <!-- Thanh phụ cuối trang (Bản quyền & Liên kết phụ) -->
+    <!-- Hàng 2: Thanh cam kết học thuật & Minh bạch dữ liệu (Academic Governance Strip) -->
+    <div class="footer-trust-strip">
+      <div class="trust-strip-card">
+        <div class="trust-card-head">
+          {{ icon("scale", "trust-icon") }}
+          <h4 class="trust-card-title">Không cấp chứng chỉ</h4>
+        </div>
+        <p class="trust-card-text">
+          Mọi điểm và band trên hệ thống là kết quả ước lượng của mô hình AI, dùng để luyện tập và tham khảo học thuật; không thay thế các văn bằng quốc tế.
+        </p>
+      </div>
+
+      <div class="trust-strip-card">
+        <div class="trust-card-head">
+          {{ icon("user", "trust-icon") }}
+          <h4 class="trust-card-title">Giảng viên quyết định cuối cùng</h4>
+        </div>
+        <p class="trust-card-text">
+          Nguyên tắc Human-in-the-Loop: Kết quả chỉ được coi là xác nhận sau khi có giảng viên chuyên môn thẩm định và phê duyệt trên hệ thống.
+        </p>
+      </div>
+
+      <div class="trust-strip-card">
+        <div class="trust-card-head">
+          {{ icon("lock", "trust-icon") }}
+          <h4 class="trust-card-title">Bảo vệ quyền riêng tư âm thanh</h4>
+        </div>
+        <p class="trust-card-text">
+          Tuân thủ chuẩn bảo mật D064. Tệp ghi âm là dữ liệu cá nhân, chỉ hiển thị với người nộp và giảng viên phụ trách. Sinh viên có quyền xóa bản ghi bất kỳ lúc nào.
+        </p>
+      </div>
+    </div>
+
+    <!-- Hàng 3: Thanh bản quyền & Liên kết chính sách cuối trang -->
     <div class="footer-sub">
       <div class="footer-sub-left">
-        <p class="footer-copy">© 2026 AI Assessor CEFR. Đề tài Nghiên cứu &amp; Ứng dụng AI Đánh giá Nói Tiếng Anh (HCMUTE).</p>
+        <p class="footer-copy">
+          © 2026 AI Assessor CEFR. Đề tài Nghiên cứu Khoa học Trường Đại học Sư phạm Kỹ thuật TP.HCM (HCMUTE).
+        </p>
+        <p class="footer-subcopy">
+          Khoa Công nghệ Thông tin · Phát triển phục vụ đào tạo và nghiên cứu học thuật ngôn ngữ.
+        </p>
       </div>
       <div class="footer-sub-right">
-        <a href="/bands" class="footer-sublink">Chuẩn năng lực</a>
+        <a href="/bands" class="footer-sublink">Chuẩn CEFR</a>
         <span class="footer-sub-sep" aria-hidden="true">•</span>
         <a href="/#principles" class="footer-sublink">Chính sách học thuật</a>
         <span class="footer-sub-sep" aria-hidden="true">•</span>
+        <a href="/#faq" class="footer-sublink">Hỗ trợ</a>
+        <span class="footer-sub-sep" aria-hidden="true">•</span>
         <a href="#main" class="footer-sublink back-to-top" aria-label="Cuộn về đầu trang">
           {{ icon("arrow-up") }}
-          <span>Về đầu trang</span>
+          <span>Đầu trang</span>
         </a>
       </div>
     </div>

@@ -19,8 +19,8 @@
   <div class="lp-terraces" aria-hidden="true">{{ terraces() }}</div>
   <div class="lp-hero-center">
     <p class="lp-kicker">
-      <span class="lp-kicker-badge">{{ icon("sparkle") }} CEFR 2.0</span>
-      <span>Hệ thống Luyện nói &amp; Đánh giá tiếng Anh theo khung CEFR · A1–C2</span>
+      <span class="lp-kicker-badge">CEFR A1–C2</span>
+      <span>Hệ thống Luyện nói &amp; Đánh giá tiếng Anh theo chuẩn CEFR</span>
     </p>
     <h1 id="hero-h" class="lp-title">
       <span class="lp-line">Luyện nói có lộ trình.</span>
@@ -46,21 +46,26 @@
       <div class="lp-scene" data-scene>
         <div class="lp-floor"></div>
         <div class="lp-pillars">
-          <span class="cube p-a1"><span class="f-front">A1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-a2"><span class="f-front">A2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b1 is-target"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b2"><span class="f-front">B2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-c1"><span class="f-front">C1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-c2"><span class="f-front">C2</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-a1" data-level="A1"><span class="f-front">A1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-a2" data-level="A2"><span class="f-front">A2</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-b1 is-target" data-level="B1"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-b2" data-level="B2"><span class="f-front">B2</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c1" data-level="C1"><span class="f-front">C1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c2" data-level="C2"><span class="f-front">C2</span><span class="f-side"></span><span class="f-top"></span></span>
         </div>
 
         <div class="lp-card lp-card-read">
           <span class="lp-card-head"><span class="lp-live"></span>Bước 1 / 7 · Đọc to</span>
           <p class="lp-specimen" lang="en">
-            <span class="w heard">I</span> <span class="w heard">like</span> <span class="w heard">my</span>
-            <span class="w heard hint">neighborhood</span> <span class="w heard">because</span>
-            <span class="w heard">the</span> <span class="w heard">people</span>
-            <span class="w missed">are</span> <span class="w unsure hint">friendly.</span>
+            <span class="w heard" data-tip="/aɪ/ · 98% chuẩn">I</span>
+            <span class="w heard" data-tip="/laɪk/ · 95% âm đuôi">like</span>
+            <span class="w heard" data-tip="/maɪ/ · 99% chuẩn">my</span>
+            <span class="w heard hint" data-tip="/ˈneɪ.bə.hʊd/ · 94% trọng âm">neighborhood</span>
+            <span class="w heard" data-tip="/bɪˈkɒz/ · 92% nối âm">because</span>
+            <span class="w heard" data-tip="/ðə/ · 90% chuẩn">the</span>
+            <span class="w heard" data-tip="/ˈpiː.pəl/ · 96% chuẩn">people</span>
+            <span class="w missed" data-tip="/ɑːr/ · Nuốt âm">are</span>
+            <span class="w unsure hint" data-tip="/ˈfrend.li/ · 68% cần rèn">friendly.</span>
           </p>
           <span class="lp-legend"><span class="dot heard"></span>Nghe ra<span class="dot unsure"></span>Chưa chắc<span class="dot missed"></span>Chưa nghe ra</span>
         </div>
@@ -73,16 +78,24 @@
 
         <div class="lp-card lp-card-band">
           <span class="lp-card-head">Ước lượng năng lực</span>
-          <b class="lp-band">B1+</b>
-          <span class="lp-range"><span style="left: 33%; width: 22%;"></span></span>
-          <span class="lp-range-scale">
-            <span>A1</span><span>A2</span><span class="is-active">B1</span><span>B2</span><span>C1</span><span>C2</span>
+          <div class="lp-band-row">
+            <b class="lp-band" id="lp-hero-band-val">B1+</b>
+            <span class="lp-band-desc" id="lp-hero-band-desc">Độc lập · Chuẩn đầu ra</span>
+          </div>
+          <span class="lp-range"><span id="lp-hero-range-fill" style="left: 33%; width: 22%;"></span></span>
+          <span class="lp-range-scale" id="lp-hero-scale">
+            <span class="scale-item" data-level="A1" data-val="A1" data-desc="Khởi đầu · Giao tiếp cơ bản" data-left="0%" data-width="16%">A1</span>
+            <span class="scale-item" data-level="A2" data-val="A2" data-desc="Sơ cấp · Đời sống thường ngày" data-left="16%" data-width="18%">A2</span>
+            <span class="scale-item is-active" data-level="B1" data-val="B1+" data-desc="Độc lập · Chuẩn đầu ra" data-left="33%" data-width="22%">B1</span>
+            <span class="scale-item" data-level="B2" data-val="B2+" data-desc="Nâng cao · Học thuật &amp; việc làm" data-left="54%" data-width="20%">B2</span>
+            <span class="scale-item" data-level="C1" data-val="C1" data-desc="Thành thạo · Chuyên nghiệp" data-left="72%" data-width="16%">C1</span>
+            <span class="scale-item" data-level="C2" data-val="C2" data-desc="Bậc thầy · Bản ngữ" data-left="86%" data-width="14%">C2</span>
           </span>
         </div>
 
         <div class="lp-card lp-card-check">
           <span class="lp-tick">{{ icon("check") }}</span>
-          <span><b>Giảng viên đã duyệt</b><small>Giữ nguyên kết quả</small></span>
+          <span><b>Giảng viên đã duyệt</b><small>Giữ nguyên kết quả · Đạt B1</small></span>
         </div>
       </div>
     </div>

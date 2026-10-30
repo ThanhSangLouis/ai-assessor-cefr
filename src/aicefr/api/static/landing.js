@@ -12,39 +12,8 @@
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)");
   if (reduced.matches || !finePointer.matches) return;
 
-  const hero = document.querySelector(".lp-hero");
-  const scene = document.querySelector("[data-scene]");
-  if (hero && scene) {
-    const EASE = 0.08;
-    let target = { x: 0, y: 0 };
-    let now = { x: 0, y: 0 };
-    let frame = 0;
-
-    const step = () => {
-      now.x += (target.x - now.x) * EASE;
-      now.y += (target.y - now.y) * EASE;
-      scene.style.setProperty("--px", now.x.toFixed(4));
-      scene.style.setProperty("--py", now.y.toFixed(4));
-      // D037: the terraces under the scene drift the other way, a little.
-      hero.style.setProperty("--px", now.x.toFixed(4));
-      hero.style.setProperty("--py", now.y.toFixed(4));
-      const left = Math.abs(target.x - now.x) + Math.abs(target.y - now.y);
-      frame = left > 0.0005 ? window.requestAnimationFrame(step) : 0;
-    };
-    const aim = (x, y) => {
-      target = { x, y };
-      if (!frame) frame = window.requestAnimationFrame(step);
-    };
-
-    hero.addEventListener("pointermove", (event) => {
-      const box = hero.getBoundingClientRect();
-      aim(
-        ((event.clientX - box.left) / box.width) * 2 - 1,
-        ((event.clientY - box.top) / box.height) * 2 - 1
-      );
-    });
-    hero.addEventListener("pointerleave", () => aim(0, 0));
-  }
+  // D031: The hero 3D scene holds its resting perspective angle for optimal
+  // stability, crystal-clear readability, and 60fps performance without frame drops.
 
   // A tilting card: the edge nearest the pointer comes forward, at most MAX
   // degrees -- enough to feel, not enough to look like a toy. Leaving the
@@ -71,6 +40,98 @@
   }
 })();
 
+// ---------------------------------------------------------------- Hero 3D Stage Interactive Sync
+(() => {
+  "use strict";
+
+  // Hovering pillars or scale items synchronizes assessment display seamlessly
+  const heroPillars = document.querySelector(".lp-pillars");
+  const heroScale = document.getElementById("lp-hero-scale");
+  const heroBandVal = document.getElementById("lp-hero-band-val");
+  const heroBandDesc = document.getElementById("lp-hero-band-desc");
+  const heroRangeFill = document.getElementById("lp-hero-range-fill");
+  const heroScaleItems = document.querySelectorAll("#lp-hero-scale .scale-item");
+  const heroCubes = document.querySelectorAll(".lp-pillars .cube");
+
+  if (heroBandVal && heroRangeFill && heroScaleItems.length && heroCubes.length) {
+    const defaultVal = "B1+";
+    const defaultDesc = "Độc lập · Chuẩn đầu ra";
+    const defaultLeft = "33%";
+    const defaultWidth = "22%";
+
+    const resetToDefault = () => {
+      heroBandVal.textContent = defaultVal;
+      if (heroBandDesc) heroBandDesc.textContent = defaultDesc;
+      heroRangeFill.style.left = defaultLeft;
+      heroRangeFill.style.width = defaultWidth;
+      for (const item of heroScaleItems) {
+        item.classList.toggle("is-active", item.getAttribute("data-level") === "B1");
+      }
+      for (const cube of heroCubes) {
+        cube.classList.remove("is-synced");
+      }
+    };
+
+    const activateLevel = (level, val, desc, left, width, syncCube = false) => {
+      heroBandVal.textContent = val;
+      if (heroBandDesc && desc) heroBandDesc.textContent = desc;
+      heroRangeFill.style.left = left;
+      heroRangeFill.style.width = width;
+      for (const item of heroScaleItems) {
+        item.classList.toggle("is-active", item.getAttribute("data-level") === level);
+      }
+      for (const cube of heroCubes) {
+        cube.classList.toggle("is-synced", syncCube && cube.getAttribute("data-level") === level);
+      }
+    };
+
+    // 1. Direct pillar hover: updates assessment band display and illuminates pillar
+    for (const cube of heroCubes) {
+      cube.addEventListener("pointerenter", () => {
+        const level = cube.getAttribute("data-level");
+        const matchItem = document.querySelector(`#lp-hero-scale .scale-item[data-level="${level}"]`);
+        if (matchItem) {
+          activateLevel(
+            level,
+            matchItem.getAttribute("data-val") || level,
+            matchItem.getAttribute("data-desc") || "",
+            matchItem.getAttribute("data-left") || "33%",
+            matchItem.getAttribute("data-width") || "20%",
+            true
+          );
+        }
+      });
+    }
+
+    if (heroPillars) {
+      heroPillars.addEventListener("pointerleave", resetToDefault);
+    }
+    const heroStage = document.querySelector(".lp-stage");
+    if (heroStage) {
+      heroStage.addEventListener("pointerleave", resetToDefault);
+    }
+
+    // 2. Scale items hover: highlights scale item, updates band score, and lifts corresponding pillar
+    for (const item of heroScaleItems) {
+      item.addEventListener("pointerenter", () => {
+        const level = item.getAttribute("data-level");
+        activateLevel(
+          level,
+          item.getAttribute("data-val") || level,
+          item.getAttribute("data-desc") || "",
+          item.getAttribute("data-left") || "33%",
+          item.getAttribute("data-width") || "20%",
+          true
+        );
+      });
+    }
+
+    if (heroScale) {
+      heroScale.addEventListener("pointerleave", resetToDefault);
+    }
+  }
+})();
+
 // ---------------------------------------------------------------- Interactive Speech Studio Demo
 (() => {
   "use strict";
@@ -93,20 +154,20 @@
   if (wordsDisplay) {
     const demoData = {
       a1: {
-        audio: "/static/audio/demo_a2.mp3",
-        duration: 3.2,
+        audio: "/static/audio/demo_a1.mp3",
+        duration: 3.38,
         total: "0:03",
         speed: "Tốc độ cơ bản 110 wpm",
         words: [
-          { w: "Hello,", start: 0.0, end: 0.45, status: "heard", ipa: "/həˈləʊ/", acc: "99% Tự tin", note: "Chào hỏi chuẩn xác" },
-          { w: "my", start: 0.45, end: 0.75, status: "heard", ipa: "/maɪ/", acc: "98% Tự tin", note: "Nguyên âm đơn rõ" },
-          { w: "name", start: 0.75, end: 1.15, status: "heard", ipa: "/neɪm/", acc: "96% Tự tin", note: "Âm khép /m/ tốt" },
-          { w: "is", start: 1.15, end: 1.45, status: "heard", ipa: "/ɪz/", acc: "95% Tự tin", note: "Phát âm rõ ràng" },
-          { w: "Lan", start: 1.45, end: 1.95, status: "heard hint", ipa: "/læn/", acc: "94% Tự tin", note: "Tên riêng chuẩn" },
-          { w: "and", start: 1.95, end: 2.25, status: "heard", ipa: "/ænd/", acc: "92% Tự tin", note: "Liên từ tự nhiên" },
-          { w: "I", start: 2.25, end: 2.45, status: "heard", ipa: "/aɪ/", acc: "97% Tự tin", note: "Rõ ràng" },
-          { w: "am", start: 2.45, end: 2.75, status: "heard", ipa: "/æm/", acc: "91% Tự tin", note: "Chuẩn xác" },
-          { w: "student.", start: 2.75, end: 3.20, status: "unsure hint", ipa: "/ˈstjuː.dənt/", acc: "72% Cần rèn", note: "Lưu ý mạo từ 'a'" }
+          { w: "Hello,", start: 0.0, end: 0.55, status: "heard", ipa: "/həˈləʊ/", acc: "99% Tự tin", note: "Chào hỏi chuẩn xác" },
+          { w: "my", start: 0.55, end: 0.85, status: "heard", ipa: "/maɪ/", acc: "98% Tự tin", note: "Nguyên âm đơn rõ" },
+          { w: "name", start: 0.85, end: 1.25, status: "heard", ipa: "/neɪm/", acc: "96% Tự tin", note: "Âm khép /m/ tốt" },
+          { w: "is", start: 1.25, end: 1.55, status: "heard", ipa: "/ɪz/", acc: "95% Tự tin", note: "Phát âm rõ ràng" },
+          { w: "Lan", start: 1.55, end: 2.05, status: "heard hint", ipa: "/læn/", acc: "94% Tự tin", note: "Tên riêng chuẩn" },
+          { w: "and", start: 2.05, end: 2.35, status: "heard", ipa: "/ænd/", acc: "92% Tự tin", note: "Liên từ tự nhiên" },
+          { w: "I", start: 2.35, end: 2.55, status: "heard", ipa: "/aɪ/", acc: "97% Tự tin", note: "Rõ ràng" },
+          { w: "am", start: 2.55, end: 2.85, status: "heard", ipa: "/æm/", acc: "91% Tự tin", note: "Chuẩn xác" },
+          { w: "student.", start: 2.85, end: 3.38, status: "unsure hint", ipa: "/ˈstjuː.dənt/", acc: "72% Cần rèn", note: "Lưu ý mạo từ 'a'" }
         ],
         band: "A1",
         score: "1.9",
@@ -180,18 +241,18 @@
         pause: "0.6"
       },
       c1: {
-        audio: "/static/audio/demo_b2.mp3",
-        duration: 5.8,
-        total: "0:06",
+        audio: "/static/audio/demo_c1.mp3",
+        duration: 5.18,
+        total: "0:05",
         speed: "Tốc độ bản ngữ chuyên sâu 168 wpm",
         words: [
-          { w: "Comprehensive", start: 0.0, end: 0.85, status: "heard hint", ipa: "/ˌkɒm.prɪˈhen.sɪv/", acc: "96% Tự tin", note: "Từ vựng học thuật C1" },
-          { w: "linguistic", start: 0.85, end: 1.55, status: "heard", ipa: "/lɪŋˈɡwɪs.tɪk/", acc: "94% Tự tin", note: "Trọng âm 2 chuẩn xác" },
-          { w: "analysis", start: 1.55, end: 2.25, status: "heard hint", ipa: "/əˈnæl.ə.sɪs/", acc: "95% Tự tin", note: "Nguyên âm yếu chuẩn" },
-          { w: "demonstrates", start: 2.25, end: 2.95, status: "heard", ipa: "/ˈdem.ən.streɪts/", acc: "92% Tự tin", note: "Đuôi số nhiều rõ" },
-          { w: "substantial", start: 2.95, end: 3.70, status: "heard hint", ipa: "/səbˈstæn.ʃəl/", acc: "97% Tự tin", note: "Nối âm tự nhiên" },
-          { w: "phonetic", start: 3.70, end: 4.30, status: "heard", ipa: "/fəˈnet.ɪk/", acc: "96% Tự tin", note: "Âm /f/ rõ nét" },
-          { w: "refinement.", start: 4.30, end: 5.25, status: "heard hint", ipa: "/rɪˈfaɪn.mənt/", acc: "95% Tự tin", note: "Độ trôi chảy xuất sắc" }
+          { w: "Comprehensive", start: 0.0, end: 0.90, status: "heard hint", ipa: "/ˌkɒm.prɪˈhen.sɪv/", acc: "96% Tự tin", note: "Từ vựng học thuật C1" },
+          { w: "linguistic", start: 0.90, end: 1.60, status: "heard", ipa: "/lɪŋˈɡwɪs.tɪk/", acc: "94% Tự tin", note: "Trọng âm 2 chuẩn xác" },
+          { w: "analysis", start: 1.60, end: 2.30, status: "heard hint", ipa: "/əˈnæl.ə.sɪs/", acc: "95% Tự tin", note: "Nguyên âm yếu chuẩn" },
+          { w: "demonstrates", start: 2.30, end: 3.00, status: "heard", ipa: "/ˈdem.ən.streɪts/", acc: "92% Tự tin", note: "Đuôi số nhiều rõ" },
+          { w: "substantial", start: 3.00, end: 3.75, status: "heard hint", ipa: "/səbˈstæn.ʃəl/", acc: "97% Tự tin", note: "Nối âm tự nhiên" },
+          { w: "phonetic", start: 3.75, end: 4.35, status: "heard", ipa: "/fəˈnet.ɪk/", acc: "96% Tự tin", note: "Âm /f/ rõ nét" },
+          { w: "refinement.", start: 4.35, end: 5.18, status: "heard hint", ipa: "/rɪˈfaɪn.mənt/", acc: "95% Tự tin", note: "Độ trôi chảy xuất sắc" }
         ],
         band: "C1",
         score: "5.8",
