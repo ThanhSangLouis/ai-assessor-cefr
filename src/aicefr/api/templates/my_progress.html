@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% from "_subnav.html" import subnav %}
 {% from "_icons.html" import icon %}
 {% block title %}Tiến độ của tôi · AI Assessor CEFR{% endblock %}
 {% block content %}
+{{ subnav('Kết quả', [['/my-progress', 'Tiến độ', 'progress'], ['/my-responses', 'Bài đã nộp', 'mine']], 'progress') }}
 <div class="page-head page-head-row">
   <div>
     <h1><span class="head-icon">{{ icon("trend") }}</span>Tiến độ của tôi</h1>

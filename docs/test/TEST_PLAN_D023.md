@@ -169,7 +169,7 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I36 | `test_personal_export_includes_practice_and_explains_the_field` | FR-44 | Thuận | Bản xuất dữ liệu cá nhân có bài luyện và giải thích trường practice |
 | TC-PR-I37 | `test_progress_and_profile_ignore_practice` | FR-44 | Âm | Trang tiến độ và hồ sơ năng lực không tính bài luyện |
 | TC-PR-I38 | `test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment` | AC-42.2 | Thuận | API: gợi ý theo tiêu chí yếu nhất của bài đánh giá gần nhất |
-| TC-PR-I39 | `test_practice_pages_mark_navigation_and_load_their_scripts` | FR-40 | Thuận | Trang luyện tập đánh dấu mục điều hướng, nạp đúng script; khách không thấy mục |
+| TC-PR-I39 | `test_practice_pages_mark_navigation_and_load_their_scripts` | FR-40 | Thuận | Trang luyện tập đánh dấu mục điều hướng, nạp đúng script; đường dẫn nhiệm vụ cũ chuyển về lộ trình (D068); khách không thấy mục |
 | TC-PR-I40 | `test_progress_page_sends_practice_to_the_practice_result` | FR-41 | Thuận | Trang chờ xử lý chuyển bài luyện tới trang kết quả luyện |
 | TC-PR-I41 | `test_practice_report_json_round_trips_into_a_response` | FR-41 | Thuận | JSON báo cáo của bài luyện nạp lại được thành Response |
 

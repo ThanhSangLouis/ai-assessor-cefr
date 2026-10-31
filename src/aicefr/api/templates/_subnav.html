@@ -1,0 +1,8 @@
+{#- D068: two pages that share one sidebar entry, and the way between them. -#}
+{% macro subnav(label, items, current) -%}
+<nav class="subnav" aria-label="{{ label }}">
+  {%- for href, text, key in items %}
+  <a href="{{ href }}"{% if key == current %} aria-current="page"{% endif %}>{{ text }}</a>
+  {%- endfor %}
+</nav>
+{%- endmacro %}

@@ -340,22 +340,10 @@ def page_practice_result(
     return _page(request, "practice_result.html", account, "practice", response_id=response_id)
 
 
-@router.get("/practice/{task_id}", response_class=HTMLResponse, tags=["web"])
-def page_practice_task(
-    request: Request, task_id: str, account: Account | None = Depends(optional_account)
-):
-    """One practice task: missions, tips, recorder. D023."""
-    lim = _limits()
-    return _page(
-        request,
-        "practice_task.html",
-        account,
-        "practice",
-        task_id=task_id,
-        sample_rate_hz=lim["sample_rate_hz"],
-        max_size_mib=lim["max_size_mib"],
-        min_duration_s=lim["min_duration_s"],
-    )
+@router.get("/practice/{task_id}", include_in_schema=False)
+def page_practice_task_gone(task_id: str) -> RedirectResponse:
+    """Practice tasks (D023) are folded into the lesson path (D068); old links go there."""
+    return RedirectResponse("/practice", status_code=301)
 
 
 @router.get("/report/{response_id}", response_class=HTMLResponse, tags=["web"])
@@ -449,7 +437,7 @@ def page_teach(request: Request, account: Account | None = Depends(optional_acco
 @router.get("/teach/insights", response_class=HTMLResponse, tags=["web"])
 def page_teach_insights(request: Request, account: Account | None = Depends(optional_account)):
     """How the class moves through a path; listen and correct the machine (D025, M18)."""
-    return _page(request, "teach_insights.html", account, "teach")
+    return _page(request, "teach_insights.html", account, "stats")
 
 
 @router.get("/teach/lessons/{lesson_id}", response_class=HTMLResponse, tags=["web"])
