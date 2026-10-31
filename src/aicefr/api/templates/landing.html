@@ -4,9 +4,10 @@
 {% block title %}AI Assessor CEFR · Luyện nói có lộ trình, tiến bộ có bằng chứng{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
-{#- The product page for a visitor who is not signed in (D026), redrawn in D031
-    and cut to four parts in D068: what it is, how it works, and the way in.
-    Every claim is something the system does today.
+{#- The product page for a visitor who is not signed in (D026), redrawn in D031:
+    few words, and a picture of what the product does in place of paragraphs.
+    Every claim is something the system does today; the thresholds in the FAQ
+    are the ones in force, read from active_qc() like on the submission page.
 
     The 3D scene and the mock-up are decorative and hidden from screen readers:
     nothing in them is said only there. landing.js tilts them toward the pointer;
@@ -16,19 +17,27 @@
 <section class="lp-hero" aria-labelledby="hero-h">
   {#- D037: the terraces of speech under the scene; the ridges draw themselves in. -#}
   <div class="lp-terraces" aria-hidden="true">{{ terraces() }}</div>
-  <div class="lp-hero-copy">
-    <p class="lp-kicker">{{ logo() }}<span>Luyện nói tiếng Anh theo khung CEFR · A1–C2</span></p>
-    <h1 id="hero-h" class="lp-title"><span class="lp-line">Luyện nói có lộ trình.</span> <span class="lp-line lp-grad">Tiến bộ có bằng chứng.</span></h1>
-    <p class="lp-lede">Bài học ngắn đi từ đọc theo đến nói tự do, phản hồi chỉ đúng chỗ cần luyện
-      trong bản ghi, và giảng viên là người xác nhận kết quả.</p>
+  <div class="lp-hero-center">
+    <p class="lp-kicker">
+      <span class="lp-kicker-badge">{{ icon("sparkle") }} A1–C2</span>
+      <span>Hệ thống Luyện nói &amp; Đánh giá tiếng Anh theo khung CEFR · A1–C2</span>
+    </p>
+    <h1 id="hero-h" class="lp-title">
+      <span class="lp-line">Luyện nói có lộ trình.</span>
+      <span class="lp-line lp-grad">Tiến bộ có bằng chứng.</span>
+    </h1>
+    <p class="lp-lede">
+      <span class="lp-lede-line">Học theo lộ trình gợi ý giảm dần từ giọng đọc mẫu đến tự do giao tiếp.</span>
+      <span class="lp-lede-line">Phản hồi trực quan từng từ, chỉ đúng điểm cần luyện, và kết quả luôn được giảng viên xác nhận.</span>
+    </p>
     <div class="button-row lp-actions">
-      <a class="button" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
-      <a class="button secondary" href="/login">Đăng nhập</a>
+      <a class="button lp-btn-primary" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
+      <a class="button secondary" href="#interactive-demo">{{ icon("play") }} Trải nghiệm Demo AI</a>
     </div>
     <ul class="lp-facts">
-      <li>{{ icon("clock") }}Bài học 10–15 phút</li>
-      <li>{{ icon("headphones") }}Không cần cài đặt</li>
-      <li>{{ icon("lock") }}Dùng mã bút danh, không lưu họ tên</li>
+      <li>{{ icon("clock") }}10–15 phút mỗi bài</li>
+      <li>{{ icon("headphones") }}Chạy trực tiếp trên web</li>
+      <li>{{ icon("lock") }}Bút danh, không lưu họ tên</li>
     </ul>
   </div>
 
@@ -37,9 +46,12 @@
       <div class="lp-scene" data-scene>
         <div class="lp-floor"></div>
         <div class="lp-pillars">
+          <span class="cube p-a1"><span class="f-front">A1</span><span class="f-side"></span><span class="f-top"></span></span>
           <span class="cube p-a2"><span class="f-front">A2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b1"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-b1 is-target"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
           <span class="cube p-b2"><span class="f-front">B2</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c1"><span class="f-front">C1</span><span class="f-side"></span><span class="f-top"></span></span>
+          <span class="cube p-c2"><span class="f-front">C2</span><span class="f-side"></span><span class="f-top"></span></span>
         </div>
 
         <div class="lp-card lp-card-read">
@@ -60,10 +72,12 @@
         </div>
 
         <div class="lp-card lp-card-band">
-          <span class="lp-card-head">Ước lượng</span>
+          <span class="lp-card-head">Ước lượng năng lực</span>
           <b class="lp-band">B1</b>
-          <span class="lp-range"><span></span></span>
-          <span class="lp-range-scale"><span>A2</span><span>B1</span><span>B2</span></span>
+          <span class="lp-range"><span style="left: 33%; width: 22%;"></span></span>
+          <span class="lp-range-scale">
+            <span>A1</span><span>A2</span><span class="is-active">B1</span><span>B2</span><span>C1</span><span>C2</span>
+          </span>
         </div>
 
         <div class="lp-card lp-card-check">
@@ -75,40 +89,421 @@
   </div>
 </section>
 
+<!-- Impact Stats Ribbon -->
+<div class="lp-stats-ribbon lp-rise" aria-label="Các thông số cốt lõi">
+  <div class="lp-stat-item">
+    <span class="lp-stat-number">A1 → C2</span>
+    <span class="lp-stat-desc">Đủ 6 bậc CEFR</span>
+  </div>
+  <div class="lp-stat-divider" aria-hidden="true"></div>
+  <div class="lp-stat-item">
+    <span class="lp-stat-number">≈ 15 giây</span>
+    <span class="lp-stat-desc">Chấm một bài nói 45 giây</span>
+  </div>
+  <div class="lp-stat-divider" aria-hidden="true"></div>
+  <div class="lp-stat-item">
+    <span class="lp-stat-number">5 Tiêu chí</span>
+    <span class="lp-stat-desc">Phát âm, trôi chảy, từ vựng, ngữ pháp, mạch lạc</span>
+  </div>
+  <div class="lp-stat-divider" aria-hidden="true"></div>
+  <div class="lp-stat-item">
+    <span class="lp-stat-number">Bút danh</span>
+    <span class="lp-stat-desc">Đăng ký bằng mật khẩu hoặc Google, không lưu họ tên</span>
+  </div>
+</div>
+
+<!-- Interactive Live Speech Studio (Breakthrough Feature) -->
+<section class="lp-section" id="interactive-demo" aria-labelledby="studio-h">
+  <div class="lp-head center">
+    <p class="eyebrow">{{ icon("sparkle") }} Trải nghiệm trực quan</p>
+    <h2 id="studio-h">Máy nghe ra từng từ của bạn</h2>
+    <p class="lp-subhead center">Chọn một mẫu câu thực tế từ A1 đến C2 để xem máy nghe ra từng từ, chỗ ngập ngừng và từ chưa rõ. Đây là bài minh hoạ, không phải kết quả thật.</p>
+  </div>
+
+  <div class="lp-studio-card lp-rise">
+    <div class="lp-studio-tabs" role="tablist" aria-label="Chọn cấp độ mẫu">
+      <button class="lp-tab" data-level="a1" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ A1</span>
+        <b>Mẫu sơ cấp</b>
+        <small>Giới thiệu bản thân</small>
+      </button>
+      <button class="lp-tab" data-level="a2" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ A2</span>
+        <b>Mẫu cơ bản</b>
+        <small>Cuộc sống thường ngày</small>
+      </button>
+      <button class="lp-tab active" data-level="b1" role="tab" aria-selected="true">
+        <span class="lp-tab-pill">Cấp độ B1</span>
+        <b>Mẫu độc lập</b>
+        <small>Du lịch &amp; Trải nghiệm</small>
+      </button>
+      <button class="lp-tab" data-level="b2" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ B2</span>
+        <b>Mẫu nâng cao</b>
+        <small>Công nghệ &amp; Xã hội</small>
+      </button>
+      <button class="lp-tab" data-level="c1" role="tab" aria-selected="false">
+        <span class="lp-tab-pill">Cấp độ C1–C2</span>
+        <b>Mẫu học thuật</b>
+        <small>Phân tích &amp; Luận điểm</small>
+      </button>
+    </div>
+
+    <div class="lp-studio-body">
+      <div class="lp-studio-player">
+        <button class="lp-studio-play-btn" id="lp-demo-play-btn" aria-label="Phát hoặc dừng nghe mẫu">
+          {{ icon("play", cls="icon play-icon") }}
+        </button>
+        <div class="lp-studio-waves" id="lp-studio-waves" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="lp-studio-time">
+          <span id="lp-demo-time">0:00</span> / <span id="lp-demo-total">0:05</span>
+        </div>
+        <button class="lp-studio-mic-btn" id="lp-demo-mic-btn" type="button" aria-label="Bật micro thử nói câu này">
+          {{ icon("mic", cls="icon mic-icon") }} <span>Thử nói</span>
+        </button>
+        <span class="lp-studio-speed-badge" id="lp-demo-speed">Bài mẫu minh hoạ</span>
+      </div>
+
+      <div class="lp-studio-transcript">
+        <div class="lp-transcript-header">
+          <span>{{ icon("mic") }} Bóc tách ngữ âm theo từng từ (Whisper Tiny ASR)</span>
+          <div class="lp-legend mini">
+            <span class="dot heard"></span>Chuẩn xác
+            <span class="dot unsure"></span>Chưa chắc
+            <span class="dot missed"></span>Chưa nghe ra
+          </div>
+        </div>
+
+        <div class="lp-words-display" id="lp-words-display" lang="en">
+          <span class="w heard" data-ipa="/ˈtræv.əl.ɪŋ/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">Traveling</span>
+          <span class="w heard" data-ipa="/əˈbrɔːd/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">abroad</span>
+          <span class="w heard" data-ipa="/helps/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">helps</span>
+          <span class="w heard hint" data-ipa="/ˈstjuː.dənts/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">students</span>
+          <span class="w heard" data-ipa="/dɪˈvel.əp/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">develop</span>
+          <span class="w heard hint" data-ipa="/ˌɪn.dɪˈpen.dəns/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">independence</span>
+          <span class="w heard" data-ipa="/ænd/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">and</span>
+          <span class="w heard" data-ipa="/ˈkʌl.tʃər.əl/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">cultural</span>
+          <span class="w heard" data-ipa="/əˈweə.nəs/" data-acc="Máy nghe ra" data-note="Máy nghe rõ từ này" tabindex="0">awareness.</span>
+        </div>
+
+        <div class="lp-word-tooltip-card" id="lp-word-tooltip">
+          <strong>students</strong> <span class="lp-ipa">/ˈstjuː.dənts/</span> <span class="lp-acc">Máy nghe ra</span> &bull; <em>Phiên âm từ điển</em>
+        </div>
+      </div>
+
+      <div class="lp-studio-hud">
+        <div class="lp-hud-metric">
+          <small>Thời gian chấm</small>
+          <b><span id="lp-hud-latency">≈15</span> giây</b>
+          <span class="lp-hud-sub">Một bài khoảng 45 giây</span>
+        </div>
+        <div class="lp-hud-metric highlight">
+          <small>CEFR Dự kiến</small>
+          <b id="lp-hud-band">B1</b>
+          <span class="lp-hud-sub">Điểm số: <span id="lp-hud-score">3.2</span> / 6.0</span>
+        </div>
+        <div class="lp-hud-metric">
+          <small>Tốc độ nói</small>
+          <b id="lp-hud-fluency">110 từ/phút</b>
+          <span class="lp-hud-sub">Quãng ngừng dài nhất: <span id="lp-hud-pause">1.1</span>s</span>
+        </div>
+        <div class="lp-hud-metric">
+          <small>Thẩm định sư phạm</small>
+          <b class="status-ok">{{ icon("shield") }} Giữ nguyên</b>
+          <span class="lp-hud-sub">Giảng viên bộ môn duyệt</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="lp-section" id="how-it-works" aria-labelledby="how-h">
-  <div class="lp-head">
-    <p class="eyebrow">Cách hoạt động</p>
+  <div class="lp-head center">
+    <span class="lp-eyebrow-text">{{ icon("path") }} Quy trình học tập</span>
     <h2 id="how-h">Từ lượt nói đến kết quả được xác nhận</h2>
+    <p class="lp-subhead">Quy trình 3 bước khép kín kết hợp giữa trí tuệ nhân tạo và chuyên môn sư phạm của giảng viên.</p>
   </div>
   <ol class="lp-steps">
     <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <span class="lp-orb">{{ icon("path") }}</span>
-      <span class="lp-step-no" aria-hidden="true">01</span>
+      <div class="lp-step-top">
+        <span class="lp-orb">{{ icon("path") }}</span>
+        <span class="lp-step-tag">01 · LỘ TRÌNH</span>
+      </div>
       <h3>Học theo lộ trình</h3>
-      <p>Bài học ngắn, gợi ý giảm dần, luôn kết thúc bằng một lượt nói của chính bạn.</p>
+      <p>Bài học ngắn, gợi ý giảm dần theo giàn giáo sư phạm, luôn kết thúc bằng một lượt nói tự do của chính bạn.</p>
+      <div class="lp-step-demo">
+        <div class="lp-demo-route">
+          <span class="lp-node done">1. Mẫu</span>
+          <span class="lp-arrow">→</span>
+          <span class="lp-node active">2. Khung gợi ý</span>
+          <span class="lp-arrow">→</span>
+          <span class="lp-node">3. Tự do</span>
+        </div>
+      </div>
     </li>
     <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <span class="lp-orb">{{ icon("mic") }}</span>
-      <span class="lp-step-no" aria-hidden="true">02</span>
-      <h3>Nộp bài nói</h3>
-      <p>Báo cáo chỉ ra quãng ngập ngừng và từ chưa rõ; bấm vào là nghe lại đúng giây đó.</p>
+      <div class="lp-step-top">
+        <span class="lp-orb">{{ icon("mic") }}</span>
+        <span class="lp-step-tag">02 · PHÂN TÍCH</span>
+      </div>
+      <h3>Nộp bài &amp; Bóc tách</h3>
+      <p>Báo cáo chỉ ra quãng ngập ngừng và từ chưa rõ trong bản ghi; bạn có thể bấm vào để nghe lại đúng giây đó.</p>
+      <div class="lp-step-demo">
+        <div class="lp-demo-player" id="lp-step-demo-player" role="button" tabindex="0" aria-label="Bấm để nghe đoạn ghi âm mẫu" title="Bấm để nghe thử âm thanh">
+          <span class="lp-demo-rec">{{ icon("play") }}</span>
+          <div class="lp-demo-waveform">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <span class="lp-demo-badge">Nghe lại từng từ</span>
+        </div>
+      </div>
     </li>
     <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <span class="lp-orb">{{ icon("check-circle") }}</span>
-      <span class="lp-step-no" aria-hidden="true">03</span>
+      <div class="lp-step-top">
+        <span class="lp-orb">{{ icon("check-circle") }}</span>
+        <span class="lp-step-tag">03 · THẨM ĐỊNH</span>
+      </div>
       <h3>Giảng viên xác nhận</h3>
-      <p>Kết quả máy chưa đủ chắc chắn được chuyển giảng viên nghe lại và quyết định.</p>
+      <p>Kết quả máy ước lượng được giảng viên bộ môn nghe lại, đánh giá và xác nhận cuối cùng trước khi vào sổ điểm.</p>
+      <div class="lp-step-demo">
+        <div class="lp-demo-verify">
+          <span class="lp-verify-icon">{{ icon("check") }}</span>
+          <div class="lp-verify-info">
+            <b>Đã duyệt chính thức</b>
+            <small>CEFR Level: B2 · 5.14 / 6.0</small>
+          </div>
+        </div>
+      </div>
     </li>
   </ol>
+</section>
+
+<section class="lp-section" aria-labelledby="method-h">
+  <div class="lp-head center">
+    <span class="lp-eyebrow-text">{{ icon("layers") }} Phương pháp giàn giáo sư phạm</span>
+    <h2 id="method-h">Gợi ý ít dần, đến khi bạn tự nói được</h2>
+    <p class="lp-subhead">Mô hình 4 bậc rèn luyện kỹ năng nói độc lập, xóa tan nỗi sợ ngắc ngứ khi bước vào giao tiếp thực tế.</p>
+  </div>
+  <ol class="lp-rungs">
+    <li class="lp-rise">
+      <span class="lp-rung-badge">Bậc 1 · Gợi ý nhiều</span>
+      <span class="lp-rung-block" aria-hidden="true"><span class="cube r1"><span class="f-front">1</span><span class="f-side"></span><span class="f-top"></span></span></span>
+      <b>Mẫu (Imitation)</b><span>Nghe giọng bản ngữ chuẩn và đọc theo từng câu</span>
+      <span class="lp-hints"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><span class="visually-hidden">Gợi ý tối đa</span></span>
+    </li>
+    <li class="lp-rise">
+      <span class="lp-rung-badge">Bậc 2 · Gợi ý vừa</span>
+      <span class="lp-rung-block" aria-hidden="true"><span class="cube r2"><span class="f-front">2</span><span class="f-side"></span><span class="f-top"></span></span></span>
+      <b>Có kiểm soát (Controlled)</b><span>Chữ ẩn dần, bạn tự nói lại câu</span>
+      <span class="lp-hints"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><span class="visually-hidden">Gợi ý vừa</span></span>
+    </li>
+    <li class="lp-rise">
+      <span class="lp-rung-badge">Bậc 3 · Gợi ý ít</span>
+      <span class="lp-rung-block" aria-hidden="true"><span class="cube r3"><span class="f-front">3</span><span class="f-side"></span><span class="f-top"></span></span></span>
+      <b>Có hướng dẫn (Guided)</b><span>Nói theo dàn ý từ khóa và khung mẫu câu định hướng</span>
+      <span class="lp-hints"><i class="on"></i><i class="on"></i><i></i><i></i><span class="visually-hidden">Gợi ý ít</span></span>
+    </li>
+    <li class="lp-rise">
+      <span class="lp-rung-badge standout">Bậc 4 · Tự nói</span>
+      <span class="lp-rung-block" aria-hidden="true"><span class="cube r4"><span class="f-front">4</span><span class="f-side"></span><span class="f-top"></span></span></span>
+      <b>Tự do (Free Speech)</b><span>Tự tin nói lưu loát về chủ đề tương tự mà không cần nhắc</span>
+      <span class="lp-hints"><span class="lp-hint-free">{{ icon("sparkle") }} Tự tin làm chủ</span></span>
+    </li>
+  </ol>
+</section>
+
+<section class="lp-section lp-teach-section" id="for-teachers" aria-labelledby="teach-h">
+  <div class="lp-head center">
+    <span class="lp-eyebrow-text">{{ icon("inbox") }} Dành cho giảng viên bộ môn</span>
+    <h2 id="teach-h">Công cụ trợ giảng đắc lực &amp; Minh bạch</h2>
+    <p class="lp-subhead">Viết một đoạn văn mẫu và chọn từ khóa: hệ thống tự động dựng sẵn bài học 5 đến 7 bước để giảng viên tinh chỉnh và xuất bản cho lớp trong vài phút.</p>
+  </div>
+
+  <div class="lp-teach-layout">
+    <div class="lp-feature-grid">
+      <div class="lp-feat-item">
+        <span class="lp-feat-icon">{{ icon("pencil") }}</span>
+        <div>
+          <b>Soát lỗi tức thì</b>
+          <p>Kiểm tra từ vựng, độ dài và CEFR dự kiến ngay khi soạn bài.</p>
+        </div>
+      </div>
+      <div class="lp-feat-item">
+        <span class="lp-feat-icon">{{ icon("volume") }}</span>
+        <div>
+          <b>Giọng mẫu chính thầy cô</b>
+          <p>Thu âm trực tiếp giọng của giảng viên để làm mẫu cho cả lớp.</p>
+        </div>
+      </div>
+      <div class="lp-feat-item">
+        <span class="lp-feat-icon">{{ icon("chart") }}</span>
+        <div>
+          <b>Theo dõi tiến độ toàn lớp</b>
+          <p>Xem phân bố phổ điểm và tỷ lệ cải thiện mà không gây áp lực xếp hạng.</p>
+        </div>
+      </div>
+      <div class="lp-feat-item">
+        <span class="lp-feat-icon">{{ icon("shield") }}</span>
+        <div>
+          <b>Hàng đợi duyệt tập trung</b>
+          <p>Nghe lại bài nộp, đối chiếu điểm AI và ra quyết định chuẩn xác.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-mock-wrap lp-rise" aria-hidden="true">
+      <div class="lp-mock lp-tilt" data-tilt>
+        <div class="lp-mock-bar">
+          <div class="lp-mock-dots"><i></i><i></i><i></i></div>
+          <span class="lp-mock-title">Hàng đợi duyệt bài nộp · Lớp CEFR A1–C2</span>
+        </div>
+        <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">005</span><b>SV-005</b></div>
+          <span class="lp-mock-topic">Giới thiệu bản thân &amp; gia đình</span>
+          <span class="lp-pill">A1</span>
+          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
+        </div>
+        <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">022</span><b>SV-022</b></div>
+          <span class="lp-mock-topic">Khu phố nơi tôi sống</span>
+          <span class="lp-pill">A2</span>
+          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
+        </div>
+        <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">014</span><b>SV-014</b></div>
+          <span class="lp-mock-topic">Kể về kỳ nghỉ cuối tuần</span>
+          <span class="lp-pill">B1</span>
+          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
+        </div>
+        <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">031</span><b>SV-031</b></div>
+          <span class="lp-mock-topic">Công việc mơ ước tương lai</span>
+          <span class="lp-pill">B2</span>
+          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
+        </div>
+        <div class="lp-mock-row">
+          <div class="lp-mock-sv"><span class="lp-avatar-chip">048</span><b>SV-048</b></div>
+          <span class="lp-mock-topic">Tác động của công nghệ AI</span>
+          <span class="lp-pill">C1</span>
+          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
+        </div>
+        <div class="lp-mock-float" id="lp-mock-float-player" role="button" tabindex="0" aria-label="Bấm để nghe đoạn ghi âm sinh viên" title="Bấm để nghe thử âm thanh">
+          <span class="lp-rec small">{{ icon("play") }}</span>
+          <span class="lp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <b>0:18</b>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Bento Grid: Nguyên tắc hệ thống -->
+<section class="lp-section lp-bento-section" id="principles" aria-labelledby="principles-h">
+  <div class="lp-head center">
+    <span class="lp-eyebrow-text">{{ icon("shield") }} Triết lý phát triển</span>
+    <h2 id="principles-h">Minh bạch về những gì công nghệ làm được</h2>
+    <p class="lp-subhead">Cam kết đạo đức AI trong giáo dục: hỗ trợ người học tiến bộ vững chắc và tôn trọng tuyệt đối quyền riêng tư.</p>
+  </div>
+  <div class="lp-bento-grid">
+    <div class="lp-bento-card featured lp-rise">
+      <div class="lp-bento-header">
+        <span class="lp-bento-icon">{{ icon("scale") }}</span>
+        <span class="lp-bento-pill">Nguyên tắc số 1</span>
+      </div>
+      <h3>Ước lượng để luyện tập, không phải chứng chỉ</h3>
+      <p>Điểm số và band CEFR trên hệ thống đóng vai trò định hướng luyện tập và theo dõi tiến bộ. Hệ thống không thay thế các kỳ thi chứng chỉ quốc tế chính thức.</p>
+      <div class="lp-bento-visual">
+        <div class="lp-bento-gauge">
+          <div class="lp-gauge-bar"><span style="width: 78%;"></span></div>
+          <div class="lp-gauge-labels">
+            <span>Tham khảo luyện tập</span>
+            <b>Kèm khoảng tin cậy</b>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="lp-bento-card lp-rise">
+      <div class="lp-bento-header">
+        <span class="lp-bento-icon">{{ icon("check-circle") }}</span>
+      </div>
+      <h3>Giảng viên quyết định cuối cùng</h3>
+      <p>AI là trợ lý gợi ý phân tích; kết quả chỉ được xác nhận chính thức khi giảng viên bộ môn đã nghe và duyệt bài.</p>
+      <div class="lp-bento-badge-seal">
+        {{ icon("shield") }} Đảm bảo tính sư phạm
+      </div>
+    </div>
+
+    <div class="lp-bento-card lp-rise">
+      <div class="lp-bento-header">
+        <span class="lp-bento-icon">{{ icon("headphones") }}</span>
+      </div>
+      <h3>Đánh giá độ dễ hiểu, không chấm giọng</h3>
+      <p>Hệ thống đo lường độ thông hiểu (Intelligibility) và độ trôi chảy, không bao giờ phán xét giọng vùng miền (Accent).</p>
+      <div class="lp-bento-accent-wave">
+        <span>Natural Accent OK</span>
+        <div class="lp-mini-wave"><i></i><i></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+
+    <div class="lp-bento-card featured lp-rise">
+      <div class="lp-bento-header">
+        <span class="lp-bento-icon">{{ icon("lock") }}</span>
+        <span class="lp-bento-pill secure">Bảo mật tuyệt đối</span>
+      </div>
+      <div class="lp-bento-two-col">
+        <div>
+          <h3>Dữ liệu thuộc về bạn &amp; Hoàn toàn ẩn danh</h3>
+          <p>Đăng ký bằng bút danh ngẫu nhiên, mật khẩu hoặc Google. Hệ thống không lưu họ tên hay email. Bạn có thể tải về hay xóa bản ghi của bạn bất kỳ lúc nào.</p>
+        </div>
+        <div class="lp-bento-chips-secure">
+          <span>{{ icon("lock") }} Mã hóa đầu cuối</span>
+          <span>{{ icon("trash") }} Quyền xóa vĩnh viễn</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="lp-section lp-faq" id="faq" aria-labelledby="faq-h">
+  <div class="lp-head center">
+    <span class="lp-eyebrow-text">{{ icon("chat") }} Câu hỏi thường gặp</span>
+    <h2 id="faq-h">Những điều bạn cần biết trước khi bắt đầu</h2>
+    <p class="lp-subhead">Giải đáp chi tiết về quy cách bài kiểm tra, cách đánh giá và quyền bảo mật dữ liệu học tập.</p>
+  </div>
+  <div class="lp-faq-list">
+    <details>
+      <summary>Bài nói dài bao lâu và kiểm tra những yếu tố gì?</summary>
+      <p>Bài đánh giá chuẩn dài từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối đa {{ max_size_mib }} MiB. Máy đưa ra một điểm tổng ước lượng và bằng chứng theo 5 khía cạnh CEFR: vốn từ, độ chính xác, độ trôi chảy, mạch lạc (qua từ nối) và độ dễ nghe; xem trang <a href="/bands">Band A1–C2</a> để biết máy đo được phần nào.</p>
+    </details>
+    <details>
+      <summary>Tôi có cần cài đặt phần mềm chuyên dụng không?</summary>
+      <p>Không cần bất kỳ cài đặt nào. Mọi trình duyệt hiện đại (Chrome, Edge, Firefox, Safari) trên máy tính hoặc điện thoại đều hoạt động mượt mà. Bạn có thể thu âm trực tiếp qua micro hoặc tải lên tệp ghi âm sẵn.</p>
+    </details>
+    <details>
+      <summary>Ai là người có thể nghe được bản ghi âm của tôi?</summary>
+      <p>Chỉ duy nhất bạn và giảng viên phụ trách lớp học mới có quyền truy cập bản ghi. Bạn có toàn quyền tải về hoặc xóa bỏ vĩnh viễn bài ghi âm bất kỳ lúc nào.</p>
+    </details>
+  </div>
 </section>
 
 <section class="lp-cta lp-rise" aria-labelledby="cta-h">
   <span class="lp-cta-mark" aria-hidden="true">{{ logo("brand-mark lp-cta-logo") }}</span>
   <div class="lp-cta-copy">
-    <h2 id="cta-h">Sẵn sàng cho lượt nói đầu tiên?</h2>
-    <p>Điểm và band là ước lượng để luyện tập, không phải chứng chỉ; giảng viên xác nhận kết quả.</p>
+    <h2 id="cta-h">Sẵn sàng nâng tầm kỹ năng nói tiếng Anh?</h2>
+    <p>Đăng ký miễn phí bằng bút danh, bắt đầu bài học đầu tiên hôm nay.</p>
+    <div class="lp-cta-trust">
+      <span>{{ icon("check") }} Miễn phí sinh viên</span>
+      <span>{{ icon("headphones") }} Không cần cài đặt</span>
+      <span>{{ icon("lock") }} Không lưu họ tên</span>
+    </div>
   </div>
-  <a class="button" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
+  <a class="button lp-cta-btn" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
 </section>
 
 </div>
