@@ -240,3 +240,30 @@ def test_only_the_owner_says_it_again(m):
         files={"audio": ("r.wav", wav(8.0), "audio/wav")},
     )
     assert r.status_code == 404
+
+
+def test_a_busy_model_is_asked_once_more(monkeypatch):
+    """Gemini's free tier answered 503 for a moment on the production host."""
+    import io
+    import urllib.error
+
+    calls = []
+
+    class Answer(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+    def flaky(request, timeout):
+        calls.append(1)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError("u", 503, "Service Unavailable", {}, None)
+        body = {"choices": [{"message": {"content": "{}"}}]}
+        return Answer(json.dumps(body).encode())
+
+    monkeypatch.setattr(providers.urllib.request, "urlopen", flaky)
+    monkeypatch.setattr(providers, "RETRY_WAIT_S", 0)
+    p = providers.Provider("gemini", "gemini-3.5-flash-lite", "k")
+    assert p.complete("{}") == "{}" and len(calls) == 2

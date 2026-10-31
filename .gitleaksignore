@@ -4,3 +4,6 @@
 # la bao nham.
 97ed74ad52bb914a57f8c56926a1038952b7aa34:tests/test_review_fixes.py:generic-api-key:254
 df711965876ed15a683558999daa7438ac5481b9:tests/test_review_medium.py:generic-api-key:246
+# Bao nham (D069): ten model "llama-3.3-70b-versatile" dat canh ten bien AICEFR_GROQ_API_KEY;
+# commit sau da tach dong. Khong phai khoa.
+75f5edfdd936c9af16844f9e533d637577745107:src/aicefr/coach/providers.py:generic-api-key:43

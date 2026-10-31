@@ -20,6 +20,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -38,16 +39,24 @@ class Preset:
     model: str
 
 
+# Keyword arguments on their own lines: a model name next to an environment
+# variable called *_API_KEY reads as a leaked key to the secret scanner.
 OPENAI_COMPATIBLE = {
     "groq": Preset(
-        "https://api.groq.com/openai/v1", "AICEFR_GROQ_API_KEY", "llama-3.3-70b-versatile"
+        base_url="https://api.groq.com/openai/v1",
+        key_env="AICEFR_GROQ_API_KEY",
+        model="llama-3.3-70b-versatile",
     ),
     "gemini": Preset(
-        "https://generativelanguage.googleapis.com/v1beta/openai",
-        "AICEFR_GEMINI_API_KEY",
-        "gemini-3.5-flash-lite",
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        key_env="AICEFR_GEMINI_API_KEY",
+        model="gemini-3.5-flash-lite",
     ),
-    "openrouter": Preset("https://openrouter.ai/api/v1", "AICEFR_OPENROUTER_API_KEY", ""),
+    "openrouter": Preset(
+        base_url="https://openrouter.ai/api/v1",
+        key_env="AICEFR_OPENROUTER_API_KEY",
+        model="",
+    ),
 }
 ANTHROPIC_MODEL = "claude-haiku-5-5"
 ANTHROPIC_KEY_ENV = "AICEFR_ANTHROPIC_API_KEY"
@@ -83,6 +92,25 @@ def provider_from(settings) -> Provider | None:
     return Provider(name, model, key)
 
 
+# A busy model answers 500/502/503/504 for a moment (Gemini's free tier does,
+# measured on the production host): one retry after a short wait, then give up.
+RETRY_STATUSES = frozenset({500, 502, 503, 504})
+RETRY_WAIT_S = 2.0
+
+
+def _post(request: urllib.request.Request) -> dict:
+    for attempt in (1, 2):
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT_S) as r:  # noqa: S310 - fixed https hosts
+                return json.loads(r.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if attempt == 2 or e.code not in RETRY_STATUSES:
+                raise
+            logger.info("coach provider busy (%s), retrying once", e.code)
+            time.sleep(RETRY_WAIT_S)
+    raise AssertionError("unreachable")  # pragma: no cover
+
+
 def _openai_compatible(base_url: str, model: str, key: str, user: str) -> str:
     body = {
         "model": model,
@@ -96,8 +124,7 @@ def _openai_compatible(base_url: str, model: str, key: str, user: str) -> str:
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_S) as r:  # noqa: S310 - fixed https hosts
-            data = json.loads(r.read().decode("utf-8"))
+        data = _post(request)
     except urllib.error.HTTPError as e:
         # 429 is the free tier's daily or per-minute cap: say so, not "error".
         if e.code == 429:
