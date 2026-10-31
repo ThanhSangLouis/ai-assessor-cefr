@@ -72,7 +72,19 @@ def test_displayed_thresholds_match_qc_module() -> None:
     Hardcoded values mean that every threshold change forgets the display, and the user
     reads one number while the machine applies another.
     """
-    t = client.get("/").text
+    # The submission page, where a student reads them before recording; the
+    # product page no longer quotes them (D068).
+    import importlib
+
+    from aicefr.api import main
+    from aicefr.storage.auth_repository import Role
+
+    importlib.reload(main)  # this test's own store, as conftest prepared it
+    main.app.state.auth_repo.create_account("SV-QC1", "matkhau-kiem-thu", Role.STUDENT)
+    student = TestClient(main.app)
+    body = {"pseudonym": "SV-QC1", "password": "matkhau-kiem-thu"}
+    assert student.post("/api/v1/auth/login", json=body).status_code == 200
+    t = student.get("/").text
     assert f"{int(audio_qc.MIN_DURATION_S)} đến {int(audio_qc.MAX_DURATION_S)} giây" in t
     assert f"{audio_qc.MAX_BYTES // (1024 * 1024)} MiB" in t
 

@@ -347,9 +347,43 @@ function todayCard(t) {
     `<p class="week-sum">7 ngày qua: <b>${spoken(t.week_seconds)}</b>` +
     (before > 0 ? ` <span>· 7 ngày trước đó: ${spoken(before)}</span>` : "") +
     "</p>" +
+    goalPicker(goal) +
     "</section>"
   );
 }
+
+// D068: the daily goal is set on the card that measures it, saved when picked.
+const GOALS = (page.dataset.goals || "").split(",").filter(Boolean).map(Number);
+
+function goalPicker(goal) {
+  if (!GOALS.length) return "";
+  const options = GOALS.map(
+    (s) => `<option value="${s}"${s === goal ? " selected" : ""}>${s / 60} phút mỗi ngày</option>`
+  ).join("");
+  return (
+    '<label class="goal-pick" for="goal-select">Mục tiêu ' +
+    `<select id="goal-select">${options}</select></label>`
+  );
+}
+
+sideEl.addEventListener("change", async (e) => {
+  if (e.target.id !== "goal-select") return;
+  const r = await fetch("/api/v1/me/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ daily_goal_s: Number(e.target.value) }),
+  });
+  if (window.redirectToLoginIfExpired(r)) return;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    window.toast("Không lưu được mục tiêu.", "error");
+    return;
+  }
+  data.today.goal_seconds = d.daily_goal_s;
+  data.today.goal_met = data.today.seconds >= d.daily_goal_s;
+  render();
+  window.toast(`Mục tiêu mới: ${Math.round(d.daily_goal_s / 60)} phút nói mỗi ngày.`, "ok");
+});
 
 // Achievements (D032): how many, which are new, the last few, the nearest.
 // Effort only and private; the full list is on the progress page.

@@ -113,7 +113,7 @@ def test_the_product_page_keeps_its_words_out_of_the_3d_scene() -> None:
     for focusable in ("<a ", "<button", "<input", "tabindex"):
         assert focusable not in stage, focusable
     assert re.search(r"<h1[^>]*>.*Tiến bộ", page, re.S)
-    assert 'id="how-it-works"' in page and 'id="for-teachers"' in page
+    assert 'id="how-it-works"' in page
     assert "/static/landing.js?v=" in page
 
 

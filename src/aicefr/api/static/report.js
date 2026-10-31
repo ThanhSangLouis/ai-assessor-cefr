@@ -151,12 +151,13 @@ function buildReport(d) {
     return section("report-summary", "result-h", head + scoreBlock(d, a) + withheldBlock()) + detailCard(d, a, false);
   }
 
+  // D068: four parts. What the learner came for -- the result, what to work
+  // on, the recording -- stays open; everything about how the machine got
+  // there is one fold at the foot.
   return (
-    section("report-summary", "result-h", head + scoreBlock(d, a) + windowBlock(a) + nextStepBlock(a)) +
-    sectionNav(a) +
+    section("report-summary", "result-h", head + scoreBlock(d, a) + nextStepBlock(a)) +
     commentsCard(a) +
     evidenceCard(d, a) +
-    section("report-aspects", "aspects-h", aspectBlock(a) + indicatorBlock(a)) +
     detailCard(d, a, false)
   );
 }
@@ -171,22 +172,6 @@ function withheldBlock() {
 
 function section(id, labelledBy, inner) {
   return `<section class="card anchor-target" id="${id}" aria-labelledby="${labelledBy}">${inner}</section>`;
-}
-
-// Jump links for a long report. Only to sections that exist on this one.
-function sectionNav(a) {
-  const links = [];
-  if ((a.comments || []).length || (a.priorities || []).length) {
-    links.push(["report-comments", "Nhận xét"]);
-  }
-  links.push(["report-evidence", "Bằng chứng và bản ghi"]);
-  links.push(["report-aspects", "Các khía cạnh"]);
-  links.push(["report-detail", "Chất lượng và nguồn gốc"]);
-  return (
-    '<nav class="section-nav" aria-label="Các phần của báo cáo">' +
-    links.map(([id, text]) => `<a href="#${id}">${text}</a>`).join("") +
-    "</nav>"
-  );
 }
 
 // The next step sits in the result card itself. "Khía cạnh nên luyện trước"
@@ -235,9 +220,18 @@ function evidenceCard(d, a) {
     '<div class="sticky-player"><h2 id="evidence-h">Nghe lại và xem bằng chứng</h2>' +
       '<audio id="phat" controls preload="metadata" ' +
       `src="/api/v1/responses/${encodeURIComponent(ID)}/audio"></audio></div>` +
-      evidenceBlock(a) +
-      transcriptBlock(d)
+      transcriptBlock(d) +
+      foldedEvidence(a)
   );
+}
+
+// The evidence cards seek the player above, so they stay in this card, folded:
+// the transcript already marks the same moments.
+function foldedEvidence(a) {
+  // The fold's summary is the heading; drop the block's own.
+  const body = evidenceBlock(a).replace(/^<h3[^>]*>[^<]*<\/h3>/, "");
+  const n = (a.evidence || []).length;
+  return `<details class="fold" id="report-evidence-list"><summary>Bằng chứng trên bản ghi${n ? ` (${n})` : ""}</summary>${body}</details>`;
 }
 
 // FR-27: the provenance fields appear at the foot of every report. Folded,
@@ -247,7 +241,8 @@ function evidenceCard(d, a) {
 function detailCard(d, a, open) {
   return (
     `<details class="card anchor-target detail-card" id="report-detail"${open ? " open" : ""}>` +
-    "<summary>Chất lượng bản ghi và nguồn gốc kết quả</summary>" +
+    "<summary>Chi tiết: các khía cạnh được đo, chất lượng bản ghi, nguồn gốc kết quả</summary>" +
+    (open ? "" : `<div id="report-aspects">${aspectBlock(a)}${indicatorBlock(a)}</div>` + windowBlock(a)) +
     qualityBlock(d) +
     provenanceBlock(d, a) +
     "</details>"
