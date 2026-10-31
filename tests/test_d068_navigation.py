@@ -91,3 +91,11 @@ def test_the_study_measurements_are_for_administrators_only(m):
         insights = c.get("/teach/insights").text
         assert 'href="/teach/insights" aria-current="page"' in insights
         assert 'href="/review/stats" aria-current="page"' in insights  # sidebar: Thống kê
+
+
+def test_the_feedback_study_screen_no_longer_starts_one(m):
+    """D068: a study holds feedback back from real learners; only closing remains."""
+    admin = login_as(m, "QT-N06", "admin")
+    page = admin.get("/admin/study").text
+    assert 'id="study-form"' not in page and "Đã ngừng" in page
+    assert "Thực nghiệm phản hồi (đã ngừng)" in admin.get("/admin").text
