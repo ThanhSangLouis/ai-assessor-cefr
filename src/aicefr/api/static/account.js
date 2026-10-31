@@ -15,11 +15,16 @@ const firstTime = !!homeEl.dataset.first;
 let me = null;
 
 // ---------------------------------------------------------------- tabs
-const TABS = ["profile", "security", "activity", "data"]
+const TABS = ["profile", "security", "data"]
   .map((key) => ({ key, button: document.getElementById(`tab-${key}`), panel: document.getElementById(`panel-${key}`) }))
   .filter((t) => t.button && t.panel);
 const loaded = new Set();
-const LOADERS = { security: loadSessions, activity: loadActivity };
+const LOADERS = {
+  security: () => {
+    loadSessions();
+    loadActivity();
+  },
+};
 
 function showTab(tab) {
   TABS.forEach((t) => {
@@ -49,7 +54,10 @@ TABS.forEach((t, i) => {
   });
 });
 
-const tabFromHash = () => TABS.find((t) => `#${t.key}` === location.hash) || TABS[0];
+// "#activity" is the old address of the history, now part of security (D068).
+const tabFromHash = () =>
+  TABS.find((t) => `#${t.key}` === (location.hash === "#activity" ? "#security" : location.hash)) ||
+  TABS[0];
 if (TABS.length) {
   window.addEventListener("hashchange", () => showTab(tabFromHash()));
   showTab(tabFromHash());
@@ -137,14 +145,6 @@ if (avatarSave) {
     window.toast("Đã lưu ảnh đại diện.", "ok");
   });
 }
-
-// A daily goal is saved as soon as it is picked: one choice, nothing to confirm.
-document.querySelectorAll('input[name="daily-goal"]').forEach((input) =>
-  input.addEventListener("change", async () => {
-    const d = await patchProfile({ daily_goal_s: Number(input.value) });
-    if (d) window.toast(`Mục tiêu mới: ${Math.round(d.daily_goal_s / 60)} phút nói mỗi ngày.`, "ok");
-  })
-);
 
 // Display preferences live in this browser only (window.ui.prefs, common.js).
 const themeSelect = document.getElementById("pref-theme");

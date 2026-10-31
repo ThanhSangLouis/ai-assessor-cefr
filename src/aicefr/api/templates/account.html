@@ -43,8 +43,6 @@
           aria-selected="true" aria-controls="panel-profile">{{ icon("user") }} Hồ sơ</button>
   <button id="tab-security" data-panel="panel-security" role="tab"
           aria-selected="false" aria-controls="panel-security">{{ icon("lock") }} Bảo mật</button>
-  <button id="tab-activity" data-panel="panel-activity" role="tab"
-          aria-selected="false" aria-controls="panel-activity">{{ icon("clock") }} Hoạt động</button>
   {% if is_student %}
   <button id="tab-data" data-panel="panel-data" role="tab"
           aria-selected="false" aria-controls="panel-data">{{ icon("file-check") }} Dữ liệu</button>
@@ -87,22 +85,6 @@
     </div>
 
     <div class="stack-cards">
-      {% if is_student %}
-      <div class="card" aria-labelledby="goal-h">
-        <h2 id="goal-h">{{ icon("target") }} Mục tiêu nói mỗi ngày</h2>
-        <p class="muted small-note">Tính bằng số giây bạn thật sự nói trong các bài luyện, như vòng "Hôm nay" ở trang
-          Luyện tập.</p>
-        <div class="chips goal-chips" role="radiogroup" aria-label="Mục tiêu mỗi ngày" id="goal-chips">
-          {% for seconds in daily_goals %}
-          <label class="chip-radio">
-            <input type="radio" name="daily-goal" value="{{ seconds }}"{% if account.daily_goal_s == seconds %} checked{% endif %}>
-            <span>{{ seconds // 60 }} phút</span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
       <div class="card" aria-labelledby="display-h">
         <h2 id="display-h">{{ icon("eye") }} Hiển thị trên máy này</h2>
         <label for="pref-theme">Giao diện</label>
@@ -205,19 +187,19 @@
         </div>
         <p class="muted small-note">Thấy một phiên lạ thì đăng xuất nó rồi đổi mật khẩu.</p>
       </div>
+
+      {#- D068: what happened on the account sits with the sessions, where a
+          stranger's sign-in is acted on, instead of a tab of its own. -#}
+      <div class="card" aria-labelledby="activity-h">
+        <h2 id="activity-h">{{ icon("clock") }} Hoạt động gần đây</h2>
+        <ol class="activity-list" id="activity-list" aria-busy="true"></ol>
+      </div>
     </div>
     {% endif %}
   </div>
 </section>
 
 {% if not first_time %}
-<section id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden>
-  <div class="card" aria-labelledby="activity-h">
-    <h2 id="activity-h">{{ icon("clock") }} Hoạt động gần đây</h2>
-    <p class="muted small-note">Đăng nhập, lần đăng nhập sai và mọi thay đổi trên tài khoản, mới nhất ở trên.</p>
-    <ol class="activity-list" id="activity-list" aria-busy="true"></ol>
-  </div>
-</section>
 
 {% if is_student %}
 <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" tabindex="0" hidden>

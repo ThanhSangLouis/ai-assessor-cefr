@@ -5555,3 +5555,7 @@ button:not(:disabled):hover,
 /* D065: the recovery code, shown once where it is made. */
 .recovery-slip { margin: var(--sp-3) 0; }
 .recovery-slip .button-row { margin-top: var(--sp-3); }
+
+/* D068: the daily goal, picked on the Today card. */
+.goal-pick { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }
+.goal-pick select { flex: 1; min-width: 0; }

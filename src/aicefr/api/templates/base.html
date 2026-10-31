@@ -118,7 +118,6 @@
     <nav class="site-nav" aria-label="Điều hướng chính">
       <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>Giới thiệu</a>
       <a href="/#how-it-works">Cách hoạt động</a>
-      <a href="/#for-teachers">Cho giảng viên</a>
     </nav>
 
     <div class="header-actions">
@@ -136,13 +135,11 @@
 </main>
 
 <footer class="site-footer">
+  {#- D068: one line. The two phrases stay word for word: every page must say
+      them (SRS 11.3, tests/test_web.py). -#}
   <div class="footer-inner">
-    <p><b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
-      của mô hình, dùng để luyện tập và tham khảo.</p>
-    <p><b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
-      có giảng viên duyệt.</p>
-    <p>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</p>
-    <p><a href="/bands">Band A1 đến C2 nghĩa là gì, và máy đo được những gì</a></p>
+    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
+      <a href="/bands">Band A1–C2 là gì?</a></p>
   </div>
 </footer>
 

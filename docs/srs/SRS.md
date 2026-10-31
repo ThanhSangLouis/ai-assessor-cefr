@@ -1019,7 +1019,7 @@ Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý t�
 | **AC-56.1** — *Given* sinh viên đã đăng nhập, *When* chọn biểu tượng, màu và mục tiêu 5 phút, *Then* hồ sơ lưu đúng ba giá trị; biểu tượng, màu hay mục tiêu ngoài danh sách nhận 422; nhật ký ghi các trường đã sửa (`test_a_profile_takes_only_listed_avatars_and_goals`). |
 | **AC-56.2** — *Given* sinh viên đổi mục tiêu từ 3 lên 10 phút, *When* mở trang Luyện tập, *Then* mục tiêu ngày là 600 giây (`test_the_daily_goal_sets_the_target_on_the_path_page`). |
 | **AC-56.3** — *Given* người dùng chọn ảnh đại diện, *When* mở trang bất kỳ, *Then* thanh điều khiển vẽ đúng biểu tượng và màu đó (`test_the_sidebar_draws_the_chosen_avatar`). |
-| **AC-56.4** — *Given* sinh viên và giảng viên, *When* mở `/account`, *Then* sinh viên có bốn mục và mục tiêu ngày, giảng viên có ba mục, không có mục tiêu ngày (`test_the_account_page_has_four_parts_for_a_student_and_three_for_staff`). |
+| **AC-56.4** — *Given* sinh viên và giảng viên, *When* mở `/account`, *Then* sinh viên có ba mục (Hồ sơ, Bảo mật kèm lịch sử hoạt động, Dữ liệu), giảng viên có hai mục; mục tiêu nói mỗi ngày chọn ở thẻ "Hôm nay" của trang Luyện tập (D068) (`test_the_account_page_has_three_parts_for_a_student_and_two_for_staff`). |
 
 ### FR-57 — Phiên đăng nhập xem được và đăng xuất được từng phiên
 

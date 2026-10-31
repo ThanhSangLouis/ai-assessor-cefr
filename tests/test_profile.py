@@ -173,13 +173,16 @@ def test_the_sidebar_draws_the_chosen_avatar(m):
     assert "#i-plane" in page
 
 
-def test_the_account_page_has_four_parts_for_a_student_and_three_for_staff(m):
-    student = login_as(m, "SV-001").get("/account").text
-    for tab in ("tab-profile", "tab-security", "tab-activity", "tab-data"):
+def test_the_account_page_has_three_parts_for_a_student_and_two_for_staff(m):
+    """D068: the history sits under security; the daily goal on the practice page."""
+    c = login_as(m, "SV-001")
+    student = c.get("/account").text
+    for tab in ("tab-profile", "tab-security", "tab-data"):
         assert f'id="{tab}"' in student
+    assert 'id="tab-activity"' not in student and 'id="activity-list"' in student
+    assert 'data-goals="60,120,180,300,600"' in c.get("/practice").text
     teacher = login_as(m, "GV-01", "teacher").get("/account").text
     assert 'id="tab-data"' not in teacher
-    assert 'id="goal-chips"' not in teacher
 
 
 # ================================================================= sessions (FR-57)

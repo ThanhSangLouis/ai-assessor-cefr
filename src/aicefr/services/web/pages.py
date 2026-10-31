@@ -292,8 +292,11 @@ def page_credits(request: Request, account: Account | None = Depends(optional_ac
 
 @router.get("/practice", response_class=HTMLResponse, tags=["web"])
 def page_practice(request: Request, account: Account | None = Depends(optional_account)):
-    """The learner's lesson path: next lesson, today, reviews, units (D025, M13)."""
-    return _page(request, "practice_path.html", account, "practice")
+    """The learner's lesson path: next lesson, today, reviews, units (D025, M13).
+
+    The daily goal is chosen here, on the card that measures it (D068).
+    """
+    return _page(request, "practice_path.html", account, "practice", daily_goals=DAILY_GOALS)
 
 
 @router.get("/practice/review", response_class=HTMLResponse, tags=["web"])

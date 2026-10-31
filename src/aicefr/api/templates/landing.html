@@ -4,10 +4,9 @@
 {% block title %}AI Assessor CEFR · Luyện nói có lộ trình, tiến bộ có bằng chứng{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
-{#- The product page for a visitor who is not signed in (D026), redrawn in D031:
-    few words, and a picture of what the product does in place of paragraphs.
-    Every claim is something the system does today; the thresholds in the FAQ
-    are the ones in force, read from active_qc() like on the submission page.
+{#- The product page for a visitor who is not signed in (D026), redrawn in D031
+    and cut to four parts in D068: what it is, how it works, and the way in.
+    Every claim is something the system does today.
 
     The 3D scene and the mock-up are decorative and hidden from screen readers:
     nothing in them is said only there. landing.js tilts them toward the pointer;
@@ -23,8 +22,8 @@
     <p class="lp-lede">Bài học ngắn đi từ đọc theo đến nói tự do, phản hồi chỉ đúng chỗ cần luyện
       trong bản ghi, và giảng viên là người xác nhận kết quả.</p>
     <div class="button-row lp-actions">
-      <a class="button" href="/login">Đăng nhập {{ icon("arrow-right") }}</a>
-      <a class="button secondary" href="#how-it-works">Xem cách hoạt động</a>
+      <a class="button" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
+      <a class="button secondary" href="/login">Đăng nhập</a>
     </div>
     <ul class="lp-facts">
       <li>{{ icon("clock") }}Bài học 10–15 phút</li>
@@ -103,110 +102,13 @@
   </ol>
 </section>
 
-<section class="lp-section" aria-labelledby="method-h">
-  <div class="lp-head">
-    <p class="eyebrow">Phương pháp</p>
-    <h2 id="method-h">Gợi ý ít dần, đến khi bạn tự nói được</h2>
-  </div>
-  {#- Four rungs, each a block one step taller: the same three-dimensional bars
-      as the scene above, so the page keeps one picture of "climbing". -#}
-  <ol class="lp-rungs">
-    <li class="lp-rise">
-      <span class="lp-rung-block" aria-hidden="true"><span class="cube r1"><span class="f-front">1</span><span class="f-side"></span><span class="f-top"></span></span></span>
-      <b>Mẫu</b><span>Nghe giọng mẫu và đọc theo</span>
-      <span class="lp-hints"><i class="on"></i><i class="on"></i><i class="on"></i><span class="visually-hidden">Gợi ý nhiều</span></span>
-    </li>
-    <li class="lp-rise">
-      <span class="lp-rung-block" aria-hidden="true"><span class="cube r2"><span class="f-front">2</span><span class="f-side"></span><span class="f-top"></span></span></span>
-      <b>Có kiểm soát</b><span>Chữ ẩn dần, bạn nói lại</span>
-      <span class="lp-hints"><i class="on"></i><i class="on"></i><i></i><span class="visually-hidden">Gợi ý vừa</span></span>
-    </li>
-    <li class="lp-rise">
-      <span class="lp-rung-block" aria-hidden="true"><span class="cube r3"><span class="f-front">3</span><span class="f-side"></span><span class="f-top"></span></span></span>
-      <b>Có hướng dẫn</b><span>Nói theo khung câu và dàn ý</span>
-      <span class="lp-hints"><i class="on"></i><i></i><i></i><span class="visually-hidden">Gợi ý ít</span></span>
-    </li>
-    <li class="lp-rise">
-      <span class="lp-rung-block" aria-hidden="true"><span class="cube r4"><span class="f-front">4</span><span class="f-side"></span><span class="f-top"></span></span></span>
-      <b>Tự do</b><span>Tự nói về một chủ đề tương tự</span>
-      <span class="lp-hints"><i></i><i></i><i></i><span class="visually-hidden">Không còn gợi ý</span></span>
-    </li>
-  </ol>
-</section>
-
-<section class="lp-section lp-teach" id="for-teachers" aria-labelledby="teach-h">
-  <div class="lp-teach-copy">
-    <p class="eyebrow">Cho giảng viên</p>
-    <h2 id="teach-h">Bài học do giảng viên soạn</h2>
-    <p>Viết một đoạn văn mẫu và chọn từ khóa: hệ thống dựng sẵn bài học năm đến bảy bước để
-      giảng viên chỉnh sửa trước khi xuất bản.</p>
-    <ul class="lp-chips">
-      <li>{{ icon("pencil") }}Soát lỗi ngay khi soạn</li>
-      <li>{{ icon("volume") }}Giọng mẫu của chính giảng viên</li>
-      <li>{{ icon("chart") }}Theo dõi cả lớp, không xếp hạng</li>
-      <li>{{ icon("inbox") }}Hàng đợi duyệt và thống kê</li>
-    </ul>
-  </div>
-  <div class="lp-mock-wrap lp-rise" aria-hidden="true">
-    <div class="lp-mock lp-tilt" data-tilt>
-      <div class="lp-mock-bar"><i></i><i></i><i></i><span>Hàng đợi duyệt</span></div>
-      <div class="lp-mock-row"><b>SV-014</b><span>Kể về cuối tuần</span><span class="lp-pill">B1</span><span class="lp-pill warn">Cần duyệt</span></div>
-      <div class="lp-mock-row"><b>SV-022</b><span>Khu phố của tôi</span><span class="lp-pill">A2</span><span class="lp-pill ok">Đã duyệt</span></div>
-      <div class="lp-mock-row"><b>SV-031</b><span>Công việc mơ ước</span><span class="lp-pill">B2</span><span class="lp-pill warn">Cần duyệt</span></div>
-      <div class="lp-mock-row"><b>SV-009</b><span>Một ngày của bạn</span><span class="lp-pill">B1</span><span class="lp-pill ok">Đã duyệt</span></div>
-      <div class="lp-mock-float">
-        <span class="lp-rec small">{{ icon("play") }}</span>
-        <span class="lp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-        <b>0:18</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="lp-section" aria-labelledby="principles-h">
-  <div class="lp-head">
-    <p class="eyebrow">Nguyên tắc</p>
-    <h2 id="principles-h">Minh bạch về những gì máy làm được</h2>
-  </div>
-  <ul class="lp-principles">
-    <li class="lp-rise">{{ icon("scale") }}<h3>Ước lượng để luyện tập, không phải chứng chỉ</h3><p>Điểm và band dùng để luyện tập và tham khảo.</p></li>
-    <li class="lp-rise">{{ icon("check-circle") }}<h3>Giảng viên quyết định cuối cùng</h3><p>Kết quả chỉ được xác nhận khi giảng viên đã duyệt.</p></li>
-    <li class="lp-rise">{{ icon("headphones") }}<h3>Đánh giá độ dễ hiểu, không chấm giọng</h3><p>Máy chỉ báo "chưa nghe ra", không bao giờ nói "phát âm sai".</p></li>
-    <li class="lp-rise">{{ icon("lock") }}<h3>Dữ liệu thuộc về bạn</h3><p>Tải về hay xoá bản ghi của bạn bất cứ lúc nào.</p></li>
-  </ul>
-</section>
-
-<section class="lp-section lp-faq" aria-labelledby="faq-h">
-  <div class="lp-head">
-    <p class="eyebrow">Câu hỏi thường gặp</p>
-    <h2 id="faq-h">Trước khi bắt đầu</h2>
-  </div>
-  <div class="lp-faq-list">
-    <details>
-      <summary>Bài nói dài bao lâu?</summary>
-      <p>Bài đánh giá dài từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối
-        đa {{ max_size_mib }} MiB. Mỗi bước trong bài học chỉ từ vài giây đến khoảng một phút rưỡi.</p>
-    </details>
-    <details>
-      <summary>Cần cài đặt gì không?</summary>
-      <p>Không. Chrome, Edge, Firefox hoặc Safari bản mới là đủ; nếu không ghi âm trực tiếp được,
-        bạn có thể tải lên tệp ghi âm sẵn.</p>
-    </details>
-    <details>
-      <summary>Ai nghe được bản ghi của tôi?</summary>
-      <p>Chỉ bạn và giảng viên phụ trách. Bản ghi chỉ được lưu khi bạn đồng ý, và bạn có thể xoá
-        bản ghi của mình.</p>
-    </details>
-  </div>
-</section>
-
 <section class="lp-cta lp-rise" aria-labelledby="cta-h">
   <span class="lp-cta-mark" aria-hidden="true">{{ logo("brand-mark lp-cta-logo") }}</span>
   <div class="lp-cta-copy">
     <h2 id="cta-h">Sẵn sàng cho lượt nói đầu tiên?</h2>
-    <p>Đăng nhập bằng mã bút danh do lớp cấp. Hệ thống không lưu họ tên thật.</p>
+    <p>Điểm và band là ước lượng để luyện tập, không phải chứng chỉ; giảng viên xác nhận kết quả.</p>
   </div>
-  <a class="button" href="/login">Đăng nhập {{ icon("arrow-right") }}</a>
+  <a class="button" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
 </section>
 
 </div>
