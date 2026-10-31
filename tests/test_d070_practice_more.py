@@ -11,6 +11,7 @@
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 
 from dbutil import store
@@ -155,3 +156,22 @@ def test_the_report_and_the_retell_page_load_the_voice(m):
     rid = submit_assessment(student)
     assert "shadow.js" in student.get(f"/report/{rid}").text
     assert "shadow.js" in student.get(f"/retell/{rid}").text
+
+
+def test_the_report_carries_the_upgrade_and_its_cards_as_the_contract_says(m, coach_on):
+    """Response ◆ CoachUpgrade ◆ PhraseCard: the class diagram's parts are real fields."""
+    from aicefr.contracts import PhraseCard
+
+    student = login_as(m, "SV-P07")
+    rid = submit_assessment(student)
+    scored(m, rid)
+    assert student.get(f"/api/v1/responses/{rid}").json()["upgrade"] is None
+    student.post(f"/api/v1/responses/{rid}/upgrade")
+    student.post("/api/v1/me/phrases/review", json={"key": "on balance", "remembered": True})
+    up = student.get(f"/api/v1/responses/{rid}").json()["upgrade"]
+    assert (up["from_band"], up["to_band"], up["model"]) == ("B1", "B2", "llama-3.3-70b-versatile")
+    card = PhraseCard(**up["phrases"][0])
+    assert card.box == 1 and not card.is_due("2026-01-01T00:00:00+00:00")
+    # Kept beside the stored report, never inside it.
+    row = store()["response"].find_one({"response_id": rid})
+    assert json.loads(row["report_json"]).get("upgrade") is None and row["coach_upgrade"]

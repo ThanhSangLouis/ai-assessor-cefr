@@ -20,6 +20,7 @@ from pymongo.database import Database
 
 from aicefr.contracts import (
     AppConfig,
+    CoachUpgrade,
     ReasonCode,
     Response,
     ResponseStatus,
@@ -249,7 +250,7 @@ class Repository(MongoStore):
             "config_version": report.config_version,
             # The reviews are kept beside the report, not inside it (`get`).
             "report_json": json.dumps(
-                report.model_dump(mode="json", exclude={"reviews"}), ensure_ascii=False
+                report.model_dump(mode="json", exclude={"reviews", "upgrade"}), ensure_ascii=False
             ),
             "account_id": keep("account_id", account_id),
             "audio_path": keep("audio_path", audio_path),
@@ -1099,13 +1100,16 @@ class Repository(MongoStore):
 
     def get(self, response_id: str) -> Response | None:
         row = self.col("response").find_one(
-            {"response_id": response_id}, {"report_json": 1, "reviews": 1}
+            {"response_id": response_id}, {"report_json": 1, "reviews": 1, "coach_upgrade": 1}
         )
         if row is None:
             return None
         report = Response.model_validate_json(row["report_json"])
         return report.model_copy(
-            update={"reviews": [Review(**r) for r in row.get("reviews") or []]}
+            update={
+                "reviews": [Review(**r) for r in row.get("reviews") or []],
+                "upgrade": _upgrade(row.get("coach_upgrade")),
+            }
         )
 
     def queue_with_locks(
@@ -1402,6 +1406,17 @@ class Repository(MongoStore):
             "by_band": by_band,
             "teacher_verified": self.col("response").count_documents({"teacher_verified": 1}),
         }
+
+
+def _upgrade(stored: dict | None) -> CoachUpgrade | None:
+    """The kept upgrade as its contract, or None; one that no longer reads is left out."""
+    if not stored:
+        return None
+    try:
+        return CoachUpgrade.model_validate(stored)
+    except ValueError:
+        logger.warning("coach upgrade does not match its contract; left out of the report")
+        return None
 
 
 def _practice_completed(report_json: str | None) -> bool:
