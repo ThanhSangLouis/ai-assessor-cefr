@@ -122,7 +122,7 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | --- | --- | --- | --- |
 | TC-LE-E01 | `test_progress_page_names_the_pronunciation_patterns` | AC-75.7 | Trang Tiến độ: âm cuối 3/12 · 25 %, ví dụ và cách luyện; đuôi -ed chưa đủ dữ liệu |
 | TC-LE-E02 | `test_a_score_only_learner_sees_why_and_can_leave` | AC-77.8 | Quản trị viên bắt đầu trên trang; người nhóm "Chỉ điểm" thấy lời giải thích, rời thực nghiệm, nhận lại nhận xét |
-| TC-LE-E03 | `test_class_page_shows_teacher_time_and_class_pronunciation` | AC-76.2 | Thống kê lớp có thẻ thời gian giảng viên (chưa đủ 5 lần) và phát âm của lớp |
+| TC-LE-E03 | `test_class_page_shows_teacher_time_and_class_pronunciation` | AC-76.2 | Giảng viên thấy phát âm của cả lớp, không thấy thời gian giảng viên; quản trị viên thấy thẻ thời gian (chưa đủ 5 lần) (D068) |
 | TC-LE-E04 | `test_admin_sets_the_measurement_error_with_its_source` | AC-80.6 | Tab Cấu hình: chưa đặt, nút bài thử lại tắt; nhập tay kèm nguồn rồi thấy nguồn |
 
 ## 7. Kết quả chạy

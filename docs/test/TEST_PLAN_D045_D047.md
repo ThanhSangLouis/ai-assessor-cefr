@@ -96,7 +96,7 @@
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-LP-E01 | `test_a_learner_composes_a_path_and_sets_it_aside` | AC-81.8 | Trang Luyện tập: ghép, tải lại vẫn còn, bỏ |
+| TC-LP-E01 | `test_a_learner_follows_the_published_path_without_composing_one` | AC-81.8 | Trang Luyện tập không còn ô tự ghép lộ trình; sinh viên theo lộ trình giảng viên xuất bản (D068) |
 | TC-LP-E02 | `test_a_teacher_keeps_part_of_a_proposal_as_a_draft_path` | AC-82.7 | Trang Soạn bài: xem đề xuất, bỏ một bài, lưu nháp |
 
 ### Lược đồ — Integration (`tests/test_schema.py`)
