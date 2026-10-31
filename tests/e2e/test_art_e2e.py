@@ -374,7 +374,7 @@ def shoot(page, css: str) -> str:
 def test_the_words_on_the_art_keep_their_contrast(browser, live_server):
     student = live_server.account()
     pages = (
-        ("/", ".lp-hero-copy"),
+        ("/", ".lp-hero-center"),
         ("/login", ".auth-intro, .auth-card"),
         ("/bands", "main"),
         ("/my-progress", "main"),

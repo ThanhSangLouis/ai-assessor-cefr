@@ -15,7 +15,7 @@ const unitsEl = document.getElementById("path-units");
 const sideEl = document.getElementById("path-side");
 
 const TOPICS = window.ui.TOPICS;
-const LEVELS = { A1: "Khởi đầu", A2: "Cơ bản", B1: "Trung cấp", B2: "Nâng cao", C1: "Thành thạo" };
+const LEVELS = { A1: "Khởi đầu", A2: "Cơ bản", B1: "Trung cấp", B2: "Nâng cao", C1: "Thành thạo", C2: "Xuất sắc" };
 // The icon of a lesson is the icon of its first exercise.
 const KIND_ICON = window.ui.STEP_ICONS;
 const STATUS_TEXT = { completed: "Đã hoàn thành", started: "Đang học", new: "Chưa học" };

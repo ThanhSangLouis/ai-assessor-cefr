@@ -160,4 +160,4 @@ def test_the_band_page_says_what_the_machine_does_not_measure(context, live_serv
     expect(page.locator('.aspect-card[data-provenance="not_measured"]')).to_have_count(1)
     expect(page.locator(".band-ladder li")).to_have_count(6)
     # Reached from every page, guests included.
-    expect(page.locator(".site-footer a[href='/bands']")).to_be_visible()
+    expect(page.locator(".site-footer a[href='/bands']").first).to_be_visible()

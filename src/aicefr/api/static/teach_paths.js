@@ -188,7 +188,7 @@ function openPath(id) {
   $("path-dialog-h").textContent = p ? "Sửa thông tin lộ trình" : "Lộ trình mới";
   $("path-title").value = p ? p.title : "";
   $("path-description").value = p ? p.description || "" : "";
-  $("path-band-from").value = (p && p.band_from) || "A2";
+  $("path-band-from").value = (p && p.band_from) || "A1";
   $("path-band-to").value = (p && p.band_to) || "B2";
   $("path-dialog").showModal();
 }
