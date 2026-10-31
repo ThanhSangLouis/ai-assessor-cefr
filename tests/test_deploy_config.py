@@ -150,3 +150,26 @@ def test_the_deploy_never_ships_an_env_file():
     assert "--exclude='.env.*'" in text
     assert "--delete-excluded" not in text  # would remove the server's own .env
     assert "-f docker-compose.yml -f docker-compose.prod.yml up -d --build --remove-orphans" in text
+
+
+METERED = (
+    "AICEFR_METERING",
+    "AICEFR_PRICE_FIRST_MINUTE_RUNS",
+    "AICEFR_PRICE_EXTRA_MINUTE_RUNS",
+    "AICEFR_PRICE_PRACTICE_FACTOR",
+    "AICEFR_IDPOINT_PER_RUN",
+    "AICEFR_CREDIT_PACKS",
+)
+
+
+@pytest.mark.parametrize("name", ["core", "web"])
+def test_the_metered_channel_reaches_core_and_web(name):
+    """Set in .env, the IDPoint channel was never seen by the containers (31/10/2026)."""
+    base = yaml.load(
+        (ROOT / "docker-compose.yml").read_text(encoding="utf-8"), Loader=_ComposeLoader
+    )
+    env = _env(base["services"][name])
+    for key in METERED:
+        assert env.get(key, "").startswith("${" + key + ":-"), key
+    example = (ROOT / ".env.example").read_text(encoding="utf-8")
+    assert all(f"\n{key}=" in example for key in METERED)

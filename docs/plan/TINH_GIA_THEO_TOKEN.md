@@ -25,6 +25,8 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
 | `AICEFR_CREDIT_PACKS` | Gói bán trực tiếp, `lượt:giá_đồng` | `10:19000,30:49000,100:149000` |
 
+**Bật trên máy chủ.** Mặc định kênh tính lượt TẮT (bản của trường không tính gì). Trước 31/10/2026, `docker-compose.yml` không chuyển các biến trên vào container, nên đặt trong `.env` cũng không có tác dụng; nay đã chuyển cho core và web. Muốn bật: trong `/srv/aicefr/.env` đặt `AICEFR_METERING=1` (bán gói lượt thì cần thêm `AICEFR_BILLING=1` và một cổng thanh toán), rồi chạy lại `docker compose ... up -d core web`. Khi bật sẽ có menu "Lượt của tôi" (`/credits`), trang Nộp bài báo trước số lượt và IDPoint, và bài chỉ bị trừ lượt khi đã có kết quả.
+
 Còn phải hỏi NetID: tỷ giá IDPoint thật, phần trăm NetID giữ lại, có cho giữ chỗ rồi hoàn phần thừa không. Các mục dưới là research và các phương án đã cân nhắc trước khi chốt.
 
 ## 0. Thị trường tính tiền thế nào (research ngày 24/10/2026)
