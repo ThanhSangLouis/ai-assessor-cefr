@@ -494,6 +494,84 @@ def test_the_report_puts_humans_first_and_compares_the_machine_before_any_review
     assert d["time_to_rate"]["n"] == 6 and d["withdrawn"] == 0
 
 
+def with_features(m, response_id: str, shift: float) -> None:
+    """Store features `shift` standard deviations from the training mean on every feature.
+
+    What the pipeline stores next to a scored response; the fake recogniser's
+    own features sit outside the model's range, so the test arranges them.
+    """
+    from conftest import feature_set
+
+    from aicefr.scoring.scorer import load_model
+
+    model = load_model("ridge_resp_v2")
+    values = {
+        name: mean + shift * scale
+        for name, mean, scale in zip(
+            model["feature_order"], model["mean"], model["scale"], strict=True
+        )
+    }
+    report = m.repo.get(response_id)
+    report.features = feature_set(values, version=model["feature_version"])
+    store()["response"].update_one(
+        {"response_id": response_id}, {"$set": {"report_json": report.model_dump_json()}}
+    )
+
+
+def test_the_report_rescores_the_batch_with_another_model_on_the_same_ratings(m):
+    """D067: two scoring models compared on one set of human ratings."""
+    from aicefr.scoring.scorer import RidgeScorer
+
+    rids, teachers, admin = study(m, students=3)
+    for rid, shift in zip(rids, (-0.5, 0.0, 0.5), strict=True):
+        machine_scored(m, rid, 3.0, "B1")
+        with_features(m, rid, shift)
+    made = new_batch(m, admin)
+    rate_all(teachers["GV-01"], overall=3.0, band="B1")
+    rate_all(teachers["GV-02"], overall=3.5, band="B1")
+    base = f"/api/v1/admin/ratings/batches/{made['batch_id']}/report"
+
+    graded = admin.get(base).json()
+    assert graded["scored_with"] == {"model": None, "rescored": False, "left_out": 0}
+    assert {"ridge_resp_v2", "ridge_resp_v2_cal"} <= set(graded["models"])
+    assert graded["report"]["machine_human"]["rmse"]["value"] == 0.25
+
+    rmses = {}
+    for name in ("ridge_resp_v2", "ridge_resp_v2_cal"):
+        d = admin.get(f"{base}?model={name}").json()
+        assert d["scored_with"] == {"model": name, "rescored": True, "left_out": 0}
+        assert d["report"]["machine_human"]["n"] == 3
+        # Each response's machine score is now that model's, from its stored
+        # features; the reference is 3.25 everywhere (3.0 and 3.5).
+        scorer = RidgeScorer(name)
+        scores = [scorer.score(m.repo.get(rid).features).overall_0_6 for rid in rids]
+        rmse = (sum((x - 3.25) ** 2 for x in scores) / len(scores)) ** 0.5
+        assert d["report"]["machine_human"]["rmse"]["value"] == pytest.approx(rmse, abs=1e-3)
+        rmses[name] = rmse
+    # The calibrated model spreads the same features further apart (D052).
+    assert rmses["ridge_resp_v2"] != rmses["ridge_resp_v2_cal"]
+    # The humans' part is the same whichever model the machine is.
+    assert d["report"]["human_human"] == graded["report"]["human_human"]
+
+
+def test_a_response_without_stored_features_is_left_out_of_a_rescore(m):
+    rids, teachers, admin = study(m, students=2)
+    for rid in rids:
+        machine_scored(m, rid, 3.0, "B1")
+    with_features(m, rids[0], 0.0)
+    made = new_batch(m, admin)
+    rate_all(teachers["GV-01"])
+    rate_all(teachers["GV-02"])
+    base = f"/api/v1/admin/ratings/batches/{made['batch_id']}/report"
+    d = admin.get(f"{base}?model=ridge_resp_v2_cal").json()
+    assert d["scored_with"]["left_out"] == 1
+    assert d["report"]["machine_human"]["n"] == 1
+    assert any("không chấm lại được" in note for note in d["report"]["notes"])
+    assert admin.get(f"{base}?model=khong-co").status_code == 404
+    # ridge_v3 loads but grades whole exam sittings, not one response.
+    assert admin.get(f"{base}?model=ridge_v3").status_code == 404
+
+
 def test_a_review_decision_keeps_the_ratings_and_who_saw_the_machine(m):
     """A teacher's decision updates the response row in place.
 

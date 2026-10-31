@@ -1,7 +1,7 @@
 """Blind double rating in the app (D030): raters score without seeing the machine.
 
 Part of the assessment service (D043): the ratings sit beside the responses
-they rate. Raters' names and who accepted the terms (D058) come from identity;
+they rate. Raters' names and which accounts are active (D064) come from identity;
 the rating pages are drawn by the web service.
 
 The field study needs human scores that nothing has anchored
@@ -22,13 +22,14 @@ own path, and it is blind by construction:
 An administrator creates batches (two raters per response, a random order per
 rater, one seed recorded), sends disagreements to a third rater, and reads the
 agreement report -- human-human agreement first, machine-human after -- or
-downloads every rating as CSV for the analysis. Only responses whose owner
-accepted the terms of use are rated, reported or exported.
+downloads every rating as CSV for the analysis. Only responses whose owner's
+account is active are rated, reported or exported (D064).
 """
 
 from __future__ import annotations
 
 import csv
+import dataclasses
 import io
 import secrets
 import statistics
@@ -453,17 +454,88 @@ def _not_while_owed(batch_id: str, account: Account) -> None:
         )
 
 
+def _scoring_models() -> list[str]:
+    """The scoring artifacts a report can rescore with: those that load and fit this system."""
+    from aicefr.scoring import artifacts
+    from aicefr.scoring.scorer import RidgeScorer
+
+    names = []
+    for stem in artifacts.available():
+        if stem.startswith("conformal_"):
+            continue
+        try:
+            RidgeScorer(stem)
+        except Exception:  # noqa: BLE001 - an unusable artifact is simply not offered
+            continue
+        names.append(stem)
+    return names
+
+
+def _rescored(items: list[RatedResponse], model: str) -> tuple[list[RatedResponse], int]:
+    """The same responses with the machine's score from `model`, on their stored features (D067).
+
+    Two scoring models are compared on one set of human ratings this way,
+    without waiting for new recordings and without changing the model in
+    force. A response with no stored features, one scored window by window
+    (SCORE_AGGREGATED, a long P5) or one the model refuses as out of its range
+    gets no machine score: it is counted in the second value, and the report
+    says so in its notes. The routing section keeps the flags of the original
+    run, which a rescore does not repeat.
+    """
+    from aicefr.contracts import ReasonCode
+    from aicefr.scoring.scorer import RidgeScorer
+
+    scorer = RidgeScorer(model)
+    out, left_out = [], 0
+    for item in items:
+        response = svc().repo.get(item.response_id)
+        features = response.features if response else None
+        aggregated = bool(
+            response
+            and response.assessment
+            and ReasonCode.SCORE_AGGREGATED in response.assessment.reasons
+        )
+        score = band = None
+        if features is not None and not aggregated:
+            assessment = scorer.score(features)
+            if assessment.overall_0_6 is not None and assessment.overall_band is not None:
+                score, band = assessment.overall_0_6, assessment.overall_band.value
+        left_out += score is None
+        out.append(dataclasses.replace(item, ai_overall=score, ai_band=band))
+    return out, left_out
+
+
 @router.get("/api/v1/admin/ratings/batches/{batch_id}/report", tags=["admin"])
-def batch_report(batch_id: str, account: Account = ADMIN_ONLY) -> dict:
-    """The agreement report of one batch: humans first, then the machine (agreement.py)."""
+def batch_report(batch_id: str, model: str | None = None, account: Account = ADMIN_ONLY) -> dict:
+    """The agreement report of one batch: humans first, then the machine (agreement.py).
+
+    `model` rescores the batch's responses with another scoring artifact
+    (D067), to compare two models on the same human ratings before choosing
+    which one grades new responses. Without it the machine's score is the one
+    each response got when it was graded.
+    """
     batch = _batch_or_404(batch_id)
     _not_while_owed(batch_id, account)
+    models = _scoring_models()
+    if model is not None and model not in models:
+        raise HTTPException(404, f"không có mô hình chấm dùng được tên {model!r}")
     allowed = svc().research_allowed()
     everyone = svc().ratings.analysis_rows(batch_id, allowed=None)
     items = _items(batch_id, allowed)
+    left_out = 0
+    if model is not None:
+        items, left_out = _rescored(items, model)
+    report = agreement_report(items)
+    if left_out:
+        report["notes"].append(
+            f"{left_out} bài không chấm lại được bằng {model}: không có đặc trưng đã lưu, "
+            "bài dài được chấm theo từng khung, hoặc nằm ngoài vùng mô hình đã học"
+        )
     times = svc().ratings.times_to_rate(batch_id)
-    svc().repo.write_audit(account.pseudonym, "rating.report", batch_id, None)
+    svc().repo.write_audit(account.pseudonym, "rating.report", batch_id, model)
     return {
+        "scored_with": {"model": model, "rescored": model is not None, "left_out": left_out},
+        "models": models,
         "batch": {
             "batch_id": batch["batch_id"],
             "name": batch["name"],
@@ -477,7 +549,7 @@ def batch_report(batch_id: str, account: Account = ADMIN_ONLY) -> dict:
             "median_s": round(statistics.median(times), 1) if times else None,
         },
         "plan_targets": PLAN_TARGETS,
-        "report": agreement_report(items),
+        "report": report,
     }
 
 
@@ -510,8 +582,8 @@ def batch_export(
     """Every submitted rating of the batch, one row each, for the analysis outside the app.
 
     Raters appear under their pseudonyms; the machine's score is its own
-    output, from before any teacher decision. Owners who have not accepted the
-    terms, or were erased, are left out.
+    output, from before any teacher decision. Owners whose account is disabled,
+    or who were erased, are left out.
     """
     _batch_or_404(batch_id)
     _not_while_owed(batch_id, account)
