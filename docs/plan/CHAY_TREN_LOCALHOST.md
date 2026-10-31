@@ -310,6 +310,17 @@ và bị đẩy sang giảng viên: model khác làm lệch `asr_conf_mean`, đ�
 số lớn nhất, nên điểm đổi vì lý do không liên quan tới người nói. Đó là hành vi
 cố ý, không phải lỗi cài đặt.
 
+Muốn so một model khác với small (chỉ để so sánh, không chạy production):
+
+```bash
+.venv/bin/python tools/compare_asr.py bai1.wav bai2.webm --models small large-v3 --labels diem_gv.csv
+```
+
+Công cụ chạy đủ pipeline với từng model, in thời gian, điểm, band, lý do chuyển
+giảng viên, `asr_conf_mean`, độ lệch bản chép và (khi có `--labels` gồm cột
+`file,score` là điểm giảng viên) sai số tuyệt đối trung bình so với giảng viên.
+Chỉ dùng bản ghi không có dữ liệu cá nhân hoặc đã được đồng ý; không commit bản ghi.
+
 ---
 
 ## Chặng C — cách khác: chạy bằng Docker
