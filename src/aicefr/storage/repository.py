@@ -1042,6 +1042,10 @@ class Repository(MongoStore):
                 )
         return out
 
+    def upgrades_since_all(self, since: str) -> int:
+        """How many upgrades everyone asked for since `since` (ISO time): the global cap (D072)."""
+        return self.col("response").count_documents({"coach_upgrade.created_at": {"$gte": since}})
+
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""
         row = self.col("response").find_one({"response_id": response_id}, {"account_id": 1})

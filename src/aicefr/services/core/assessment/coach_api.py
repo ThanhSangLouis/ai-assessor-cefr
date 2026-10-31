@@ -16,6 +16,13 @@ And the phrase book built from those upgrades (D070, `coach/phrasebook.py`):
 Only the owner, only a scored assessment with a transcript, never while the
 feedback study holds this learner's feedback back (D040), and a daily cap per
 student so a free tier stays inside its limits.
+
+D072: what it costs. A cap for everyone together in 24 hours
+(`AICEFR_COACH_GLOBAL_DAILY`) keeps the system under the provider's free daily
+quota. On the metered channel an upgrade costs `AICEFR_PRICE_UPGRADE_RUNS`
+runs: held before the model is asked, charged when the upgrade is made,
+released when the model fails. The provider's own token counts are kept with
+the upgrade and its ledger entry.
 """
 
 from __future__ import annotations
@@ -81,7 +88,9 @@ def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
         and report.assessment.overall_band is not None
         and report.assessment.overall_band.value in NEXT
     )
-    return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can}
+    metering = getattr(svc().peers, "metering", None)
+    price = metering.upgrade_price() if metering is not None and can else None
+    return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can, "price": price}
 
 
 @router.post("/api/v1/responses/{response_id}/upgrade", tags=["student"])
@@ -112,15 +121,28 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         raise HTTPException(
             429, f"mỗi ngày tạo được tối đa {s.settings.coach_daily} bản nâng cấp, hãy thử lại sau"
         )
+    if s.repo.upgrades_since_all(since) >= s.settings.coach_global_daily:
+        count("coach_upgrade_global_cap_total")
+        raise HTTPException(
+            429, "hôm nay hệ thống đã dùng hết lượt tạo bản nâng cấp, hãy thử lại vào ngày mai"
+        )
+    metering = getattr(s.peers, "metering", None)
+    key = f"upgrade-{response_id}"
+    if metering is not None:
+        refusal = metering.hold_upgrade(account_id=account.account_id, key=key)
+        if refusal:
+            raise HTTPException(402, refusal)
     status = s.repo.status_of(response_id) or {}
     task = s.tasks.get(status.get("task_id") or "")
     transcript = report.asr.text.strip()
+    message = user_message(task.prompt_text if task else "", transcript, band, NEXT[band])
     try:
-        raw = provider.complete(
-            user_message(task.prompt_text if task else "", transcript, band, NEXT[band])
-        )
+        with_usage = getattr(provider, "complete_with_usage", None)
+        raw, used = with_usage(message) if with_usage else (provider.complete(message), {})
         made = parse(raw, transcript)
     except UpgradeError as e:
+        if metering is not None:
+            metering.settle_upgrade(key=key, result=False)
         count("coach_upgrade_failed_total")
         raise HTTPException(502, str(e)) from e
     kept = {
@@ -133,8 +155,17 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         "model": provider.model,
         "prompt_version": PROMPT_VERSION,
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "input_tokens": used.get("input_tokens"),
+        "output_tokens": used.get("output_tokens"),
     }
     s.repo.save_upgrade(response_id, kept)
+    if metering is not None:
+        metering.settle_upgrade(
+            key=key,
+            result=True,
+            input_tokens=used.get("input_tokens"),
+            output_tokens=used.get("output_tokens"),
+        )
     s.repo.write_audit(account.pseudonym, "coach.upgrade", response_id, provider.name)
     count("coach_upgrade_total")
     return kept

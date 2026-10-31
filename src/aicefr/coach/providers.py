@@ -71,6 +71,14 @@ class Provider:
 
     def complete(self, user: str) -> str:
         """The model's raw answer to the upgrade request."""
+        return self.complete_with_usage(user)[0]
+
+    def complete_with_usage(self, user: str) -> tuple[str, dict]:
+        """The raw answer and the tokens the provider says it used (D072).
+
+        `{"input_tokens": n, "output_tokens": m}`, either None when the
+        provider did not say: kept with the upgrade and its ledger entry.
+        """
         if self.name == "anthropic":
             return _anthropic(self.model, self.key, user)
         return _openai_compatible(OPENAI_COMPATIBLE[self.name].base_url, self.model, self.key, user)
@@ -111,7 +119,12 @@ def _post(request: urllib.request.Request) -> dict:
     raise AssertionError("unreachable")  # pragma: no cover
 
 
-def _openai_compatible(base_url: str, model: str, key: str, user: str) -> str:
+def _usage(input_tokens, output_tokens) -> dict:
+    as_int = lambda v: int(v) if isinstance(v, int | float) else None  # noqa: E731
+    return {"input_tokens": as_int(input_tokens), "output_tokens": as_int(output_tokens)}
+
+
+def _openai_compatible(base_url: str, model: str, key: str, user: str) -> tuple[str, dict]:
     body = {
         "model": model,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
@@ -134,12 +147,14 @@ def _openai_compatible(base_url: str, model: str, key: str, user: str) -> str:
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
         raise UpgradeError("không liên lạc được nhà cung cấp mô hình") from e
     try:
-        return data["choices"][0]["message"]["content"] or ""
+        text = data["choices"][0]["message"]["content"] or ""
     except (KeyError, IndexError, TypeError) as e:
         raise UpgradeError("câu trả lời của mô hình thiếu nội dung") from e
+    used = data.get("usage") if isinstance(data.get("usage"), dict) else {}
+    return text, _usage(used.get("prompt_tokens"), used.get("completion_tokens"))
 
 
-def _anthropic(model: str, key: str, user: str) -> str:
+def _anthropic(model: str, key: str, user: str) -> tuple[str, dict]:
     try:
         import anthropic
     except ImportError as e:  # the `coach` extra is not installed
@@ -163,4 +178,6 @@ def _anthropic(model: str, key: str, user: str) -> str:
         raise UpgradeError("không liên lạc được nhà cung cấp mô hình") from e
     if response.stop_reason == "refusal":
         raise UpgradeError("mô hình từ chối viết lại bài này")
-    return next((b.text for b in response.content if b.type == "text"), "")
+    text = next((b.text for b in response.content if b.type == "text"), "")
+    used = getattr(response, "usage", None)
+    return text, _usage(getattr(used, "input_tokens", None), getattr(used, "output_tokens", None))

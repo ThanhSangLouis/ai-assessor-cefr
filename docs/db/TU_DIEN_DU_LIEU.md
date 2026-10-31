@@ -64,7 +64,7 @@ Chỉ có dữ liệu trên bản triển khai bật `AICEFR_METERING`, tức k�
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
 | `wallet` | CN | Ví của một tài khoản: số lượt trả trước (1/1000 lượt), chu kỳ hiện tại (bắt đầu ngày 16) và số lượt miễn phí đã dùng trong chu kỳ đó | `grants`: mỗi lần cộng lượt, nguồn (`admin`, `order` cho gói lượt mua qua cổng (D053), sau này `netid`), số tham chiếu, ai cộng; một khoản nạp chỉ cộng một lần | Duy nhất `user_ref` |
-| `ledger` | CN | Sổ lượt: mỗi bài một bút toán gồm mục đích (`assessment`, `practice`), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
+| `ledger` | CN | Sổ lượt: mỗi bài một bút toán, và mỗi bản nâng cấp do AI viết một bút toán (D072, khoá `upgrade-<mã bài>`), gồm hành động (`assessment`, `practice`, `upgrade`), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
 
 ### 2.6. Hệ thống
 

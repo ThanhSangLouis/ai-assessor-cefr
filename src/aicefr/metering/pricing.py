@@ -51,10 +51,13 @@ class PriceList:
     extra_minute_runs: float = 0.7  # every further started minute
     practice_factor: float = 0.5  # practice is cheaper, to encourage it
     idpoint_per_run: int = 2000  # what one run is on NetID (1 IDPoint = 1 VND)
+    # D072: one upgraded answer (D069) written by a language model; 0 is free.
+    upgrade_runs: float = 0.3
     version: str = PRICE_VERSION
 
     def __post_init__(self) -> None:
-        if min(self.first_minute_runs, self.extra_minute_runs) < 0 or self.idpoint_per_run < 0:
+        lowest = min(self.first_minute_runs, self.extra_minute_runs, self.upgrade_runs)
+        if lowest < 0 or self.idpoint_per_run < 0:
             raise ValueError("giá không được âm")
         if not 0 < self.practice_factor <= 1:
             raise ValueError("hệ số bài luyện tập phải trong (0; 1]")
@@ -66,6 +69,7 @@ class PriceList:
             "extra_minute_runs": self.extra_minute_runs,
             "practice_factor": self.practice_factor,
             "idpoint_per_run": self.idpoint_per_run,
+            "upgrade_runs": self.upgrade_runs,
             "max_minutes": MAX_MINUTES,
         }
 
@@ -109,6 +113,11 @@ def units_for(prices: PriceList, action: TaskPurpose, seconds: float) -> int:
         runs *= prices.practice_factor
     # A hair under the next thousandth is float noise, not a reason to round up.
     return math.ceil(round(runs * UNITS_PER_RUN, 6))
+
+
+def upgrade_units(prices: PriceList) -> int:
+    """The charge for one upgraded answer (D072), in thousandths of a run."""
+    return math.ceil(round(prices.upgrade_runs * UNITS_PER_RUN, 6))
 
 
 def hold_for(prices: PriceList, action: TaskPurpose, max_seconds: float) -> int:

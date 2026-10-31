@@ -285,6 +285,8 @@ CLASSES = [
             "- model: str",
             "- promptVersion: str",
             "- createdAt: datetime",
+            "- inputTokens: int",
+            "- outputTokens: int",
         ],
     ),
     _e(
@@ -485,7 +487,7 @@ CLASSES = [
             "- entryId: str",
             "- wallet: Wallet [1]",
             "- response: Response [1]",
-            "- action: TaskPurpose",
+            "- action: MeteredAction",
             "- held: int",
             "- fromFree: int",
             "- fromWallet: int",
@@ -534,6 +536,8 @@ ENUMS = [
     _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
     _n("SvcPlan", "ServicePlan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
     _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
+    # D072: what a ledger entry paid for -- a recording, or an upgraded answer.
+    _n("MeterAct", "MeteredAction", ["ASSESSMENT", "PRACTICE", "UPGRADE"]),
 ]
 
 # (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
@@ -574,7 +578,8 @@ EDGES = [
     ("License", "Order", "0..1 : 0..1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
-    ("Ledger", "Resp", "0..1 : 1", "assoc"),
+    # A recording and, since D072, its upgraded answer: two entries at most.
+    ("Ledger", "Resp", "0..2 : 1", "assoc"),
 ]
 
 # Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
@@ -597,7 +602,6 @@ EDGES += [
         ("Unit", "Criterion"),
         ("Task", "Purpose"),
         ("Resp", "Purpose"),
-        ("Ledger", "Purpose"),
         ("Resp", "Status"),
         ("Study", "StudySt"),
         ("Path", "PathSt"),
@@ -607,6 +611,7 @@ EDGES += [
         ("Order", "OrderSt"),
         ("License", "SvcPlan"),
         ("Ledger", "LedgerSt"),
+        ("Ledger", "MeterAct"),
     ]
 ]
 
@@ -619,7 +624,7 @@ ZONES = [
      [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: gói dịch vụ, tính lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt"]), (5, ["Order", "License"]),
+     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order", "License"]),
       (6, ["OrderKind", "OrderSt", "SvcPlan"])]),
     ("classroom", "Lớp học", 1, [(0, ["Class", "Asg"])]),
     ("assessment", "Đánh giá", 1,

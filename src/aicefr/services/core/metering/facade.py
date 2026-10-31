@@ -13,15 +13,22 @@ from aicefr.metering.pricing import (
     DEFAULT_PRICES,
     UNITS_PER_RUN,
     PriceList,
+    TokenUsage,
+    as_idpoint,
     as_runs,
     hold_for,
     units_for,
+    upgrade_units,
     usage_of,
 )
 from aicefr.observability import count
 from aicefr.platform.rpc import exposed
 from aicefr.storage.audit_repository import AuditLog
-from aicefr.storage.metering_repository import InsufficientCredits, MeteringRepository
+from aicefr.storage.metering_repository import (
+    InsufficientCredits,
+    MeteredAction,
+    MeteringRepository,
+)
 
 
 class MeteringFacade:
@@ -75,6 +82,59 @@ class MeteringFacade:
             entry = self.store.settle(key, TaskPurpose(action), result, charge, usage)
             if entry is not None:
                 count("metering_units_total", entry["charged"], action=action, state=entry["state"])
+
+    # ------------------------------------------------------------ upgrades (D072)
+
+    @exposed
+    def upgrade_price(self) -> dict | None:
+        """What one upgraded answer costs, in runs and IDPoint; None when nothing is counted."""
+        if not self.enabled:
+            return None
+        units = upgrade_units(self.prices)
+        return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
+
+    @exposed
+    def hold_upgrade(self, account_id: str, key: str) -> str | None:
+        """Hold the price of an upgraded answer before the model is asked; the refusal, or None.
+
+        Free runs first, then the wallet, as for a recording. Settled with
+        `settle_upgrade` once the model has answered or failed.
+        """
+        units = upgrade_units(self.prices)
+        if not self.enabled or units <= 0:
+            return None
+        try:
+            self.store.hold(account_id, MeteredAction.UPGRADE, key, units, self.prices.version)
+        except InsufficientCredits as e:
+            return (
+                f"bản nâng cấp cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
+                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
+            )
+        return None
+
+    @exposed
+    def settle_upgrade(
+        self,
+        key: str,
+        result: bool,
+        input_tokens: int | None = None,
+        output_tokens: int | None = None,
+    ) -> None:
+        """Charge the hold when the upgrade was made, release it when the model failed.
+
+        The language model's own token counts are kept with the entry, for the
+        cost per request and the reconciliation, as Whisper's are for a recording.
+        """
+        if not self.enabled:
+            return
+        usage = (
+            TokenUsage(int(input_tokens or 0), int(output_tokens or 0),
+                       estimated=input_tokens is None or output_tokens is None)
+            if result else None
+        )  # fmt: skip
+        entry = self.store.settle(key, MeteredAction.UPGRADE, result, None, usage)
+        if entry is not None:
+            count("metering_units_total", entry["charged"], action="upgrade", state=entry["state"])
 
     @exposed
     def runs_left(self, account_id: str) -> float | None:

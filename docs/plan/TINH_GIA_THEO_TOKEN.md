@@ -11,6 +11,7 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | Đánh giá tới 1 phút | 1 | 2.000 |
 | Mỗi phút bắt đầu thêm, tối đa 5 phút | +0,7 | +1.400 (5 phút: 7.600) |
 | Luyện tập | 50% của bài đánh giá cùng thời lượng | 1.000 cho bài tới 1 phút |
+| Bản nâng cấp do AI viết (D072) | 0,3 | 600 |
 | Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 |
 | Gói bán trực tiếp | 10 / 30 / 100 lượt | 19.000 / 49.000 / 149.000 đồng |
 
@@ -23,7 +24,11 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_PRICE_EXTRA_MINUTE_RUNS` | Lượt cho mỗi phút bắt đầu thêm | 0,7 |
 | `AICEFR_PRICE_PRACTICE_FACTOR` | Phần bài luyện tập phải trả | 0,5 |
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
+| `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); 0 là miễn phí | 0,3 |
+| `AICEFR_COACH_GLOBAL_DAILY` | Tổng số bản nâng cấp mới của cả hệ thống trong 24 giờ, dưới hạn mức miễn phí của nhà cung cấp | 400 |
 | `AICEFR_CREDIT_PACKS` | Gói bán trực tiếp, `lượt:giá_đồng` | `10:19000,30:49000,100:149000` |
+
+**Bản nâng cấp do AI viết (D072).** Giá tính theo bản, không theo token: giữ 0,3 lượt trước khi gọi mô hình, trừ khi AI viết xong, trả lại nếu mô hình lỗi; bản đã viết xem lại không tốn thêm. Số token vào/ra mà nhà cung cấp báo được ghi kèm bút toán (cột `input_tokens`, `output_tokens`, hành động `upgrade`) để tính giá vốn: một bản khoảng 2.000–3.000 token vào và 500–800 token ra. Ngoài giới hạn mỗi người (`AICEFR_COACH_DAILY`, 5/ngày) còn giới hạn chung `AICEFR_COACH_GLOBAL_DAILY` (400/24 giờ) để không vượt hạn mức miễn phí của Gemini 3.5 Flash-Lite (khoảng 500 lượt/ngày). Tắt tính lượt thì chỉ còn hai giới hạn này.
 
 **Bật trên máy chủ.** Mặc định kênh tính lượt TẮT (bản của trường không tính gì). Trước 31/10/2026, `docker-compose.yml` không chuyển các biến trên vào container, nên đặt trong `.env` cũng không có tác dụng; nay đã chuyển cho core và web. Muốn bật: trong `/srv/aicefr/.env` đặt `AICEFR_METERING=1` (bán gói lượt thì cần thêm `AICEFR_BILLING=1` và một cổng thanh toán), rồi chạy lại `docker compose ... up -d core web`. Khi bật sẽ có menu "Lượt của tôi" (`/credits`), trang Nộp bài báo trước số lượt và IDPoint, và bài chỉ bị trừ lượt khi đã có kết quả.
 
