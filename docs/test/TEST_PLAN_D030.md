@@ -147,6 +147,8 @@ Tiêu chí chấp nhận AC-61.1..AC-64.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-BR-I20 | `test_the_waiting_count_leaves_out_what_the_teacher_rates_blind` | AC-62.9 | Con số chờ duyệt không đếm bài bị che khỏi hàng đợi của chính người đó |
 | TC-BR-I21 | `test_an_adjudicator_who_opened_the_machine_result_is_passed_over` | AC-63.2 | Người phân xử đã xem kết quả của máy thì bài đó bị bỏ qua và được đếm |
 | TC-BR-I22 | `test_a_void_sheet_can_be_handed_to_another_rater` | AC-62.10 | Phiếu không còn mù được giao lại cho giám khảo khác ở đúng chỗ chấm; người đang chấm bài đó hoặc đã xem kết quả máy bị bỏ qua |
+| TC-BR-I23 | `test_the_report_rescores_the_batch_with_another_model_on_the_same_ratings` | FR-64 | D067: báo cáo chấm lại cùng các bài bằng `ridge_resp_v2` và `ridge_resp_v2_cal` trên đặc trưng đã lưu; RMSE đúng với điểm từng mô hình, phần hai giám khảo không đổi |
+| TC-BR-I24 | `test_a_response_without_stored_features_is_left_out_of_a_rescore` | FR-64 | Bài không có đặc trưng đã lưu bị bỏ ra và được ghi chú; mô hình không có hoặc không dùng được (ridge_v3) trả 404 |
 
 ### Nhóm E — E2E (`tests/e2e/test_ratings_e2e.py`)
 

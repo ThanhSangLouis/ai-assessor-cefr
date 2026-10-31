@@ -7,7 +7,7 @@ committee can watch being re-run:
     python tools/agreement_report.py --db aicefr.db --list
     python tools/agreement_report.py --db aicefr.db --batch <id> --out bao_cao_dong_thuan.md
 
-Only responses whose owner accepted the terms of use (D058) are included, as on
+Only responses whose owner's account is active (D064) are included, as on
 the screen. The output names no student and holds no transcript, but it is a
 research result about real people: it is written where you point it and is
 never committed by default (`docs/reports/` is the place for a summary, not

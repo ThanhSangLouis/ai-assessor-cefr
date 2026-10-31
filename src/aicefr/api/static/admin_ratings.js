@@ -240,7 +240,7 @@
     return `<div class="sheet-head"><div><h2 id="report-h">Báo cáo đồng thuận · ${escapeHtml(d.batch.name)}</h2>
         <p class="muted">${c.responses} bài · ${c.speakers} người nói · ${c.rated_twice} bài đủ hai phiếu ·
         ${c.adjudicated} đã phân xử, ${c.pending} chờ phân xử · ${c.unscorable} không chấm được ·
-        ${d.withdrawn} bài bỏ ra vì người học đã rút đồng thuận</p></div>
+        ${d.withdrawn} bài bỏ ra vì tài khoản người học đã tắt hoặc đã xoá</p></div>
         <button type="button" class="secondary icon-only" id="report-close" aria-label="Đóng">${window.ui.icon("x")}</button></div>
       <div class="notice">Khoảng tin cậy 95% lấy mẫu lại theo <b>người nói</b>
         (${r.bootstrap.n_boot} lần, hạt giống ${r.bootstrap.seed}). Mốc so sánh là mốc trong kế hoạch khảo sát,
@@ -257,9 +257,13 @@
       ${confusionTable(h.confusion_band, "Giám khảo 1", "Giám khảo 2")}
       <table><thead><tr><th>Tiêu chí</th><th>Pearson giữa hai giám khảo</th><th>Số bài</th></tr></thead><tbody>${criteria}</tbody></table>
       <h3>2. Máy so với điểm đối chiếu của người (${m.n} bài, ${m.speakers} người nói)</h3>
+      <label class="inline-field" for="report-model">Điểm máy
+        <select id="report-model">${modelOptions(d)}</select></label>
       <p class="muted small-note">Điểm đối chiếu: trung bình hai giám khảo (${m.reference_kinds.mean_of_two || 0} bài)
-        hoặc trung vị ba người khi có phân xử (${m.reference_kinds.median_of_three || 0} bài). Điểm máy là kết quả của
-        máy trước mọi quyết định của giảng viên.</p>
+        hoặc trung vị ba người khi có phân xử (${m.reference_kinds.median_of_three || 0} bài).
+        ${d.scored_with.rescored
+          ? `Điểm máy chấm lại bằng <code>${escapeHtml(d.scored_with.model)}</code> trên đặc trưng đã lưu của chính các bài này (D067), để so hai mô hình trên cùng điểm của người; mục 3 vẫn là cờ của lần chấm gốc.`
+          : "Điểm máy là kết quả của máy lúc chấm, trước mọi quyết định của giảng viên."}</p>
       <dl class="facts">
         <div><dt>Pearson</dt><dd>${metric(m.pearson)}</dd></div>
         <div><dt>RMSE</dt><dd>${metric(m.rmse)}</dd></div>
@@ -276,10 +280,21 @@
       ${notes}`;
   }
 
-  async function openReport(batchId) {
-    const d = await call(`/api/v1/admin/ratings/batches/${encodeURIComponent(batchId)}/report`);
+  // D067: the machine's score as graded, or rescored with another scoring model.
+  function modelOptions(d) {
+    const chosen = d.scored_with.model || "";
+    const asGraded = `<option value=""${chosen ? "" : " selected"}>Như lúc chấm</option>`;
+    return asGraded + d.models
+      .map((name) => `<option value="${escapeHtml(name)}"${name === chosen ? " selected" : ""}>Chấm lại bằng ${escapeHtml(name)}</option>`)
+      .join("");
+  }
+
+  async function openReport(batchId, model = "") {
+    const query = model ? `?model=${encodeURIComponent(model)}` : "";
+    const d = await call(`/api/v1/admin/ratings/batches/${encodeURIComponent(batchId)}/report${query}`);
     if (!d) return;
     $("report-body").innerHTML = reportHtml(d);
+    $("report-model").addEventListener("change", (e) => openReport(batchId, e.target.value));
     const dialog = $("report-dialog");
     if (!dialog.open) dialog.showModal();
   }
