@@ -17,7 +17,7 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \
- && /opt/venv/bin/pip install ".[services]"
+ && /opt/venv/bin/pip install ".[services,coach]"
 
 FROM builder AS builder-speech
 # faster-whisper (MIT) for the real recogniser; the energy detector is used when

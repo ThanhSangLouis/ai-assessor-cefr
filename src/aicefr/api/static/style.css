@@ -5567,3 +5567,16 @@ button:not(:disabled):hover,
 .subnav a:hover { color: var(--fg); }
 .tools-more { display: inline-flex; align-items: center; gap: var(--sp-2); }
 .tools-more summary { cursor: pointer; color: var(--fg-muted); font-size: var(--t-sm); }
+
+/* D069: the way to the next band, and saying the task again. */
+.coach-targets, .coach-changes, .coach-phrases { display: grid; gap: var(--sp-2); padding-left: var(--sp-4); }
+.coach-changes .was { text-decoration: line-through; color: var(--fg-muted); }
+.coach-changes .now { font-weight: 600; }
+.upgrade-text { padding: var(--sp-3); border-left: 3px solid var(--accent); background: var(--bg-elevated); border-radius: 0; line-height: 1.7; }
+.retell-rounds { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0; list-style: none; }
+.retell-rounds li { padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--fg-muted); }
+.retell-rounds li.is-current { border-color: var(--accent); color: var(--fg); font-weight: 600; }
+.retell-rounds li.is-done { color: var(--fg); }
+.retell-round { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
+.retell-round h3 { margin: 0; }
+.retell-round audio { width: 100%; }

@@ -950,6 +950,24 @@ class Repository(MongoStore):
         row = self.col("response").find_one({"response_id": response_id}, {"audio_path": 1})
         return row.get("audio_path") if row else None
 
+    # ---------- the upgraded answer (D069) ----------
+    def upgrade_of(self, response_id: str) -> dict | None:
+        """The learner's answer rewritten one band higher, if one was made."""
+        row = self.col("response").find_one({"response_id": response_id}, {"coach_upgrade": 1})
+        return (row or {}).get("coach_upgrade")
+
+    def save_upgrade(self, response_id: str, upgrade: dict) -> None:
+        """Kept with the response, so it is erased with it and paid for once."""
+        self.col("response").update_one(
+            {"response_id": response_id}, {"$set": {"coach_upgrade": upgrade}}
+        )
+
+    def upgrades_since(self, account_id: str, since: str) -> int:
+        """How many upgrades this account asked for since `since` (ISO time)."""
+        return self.col("response").count_documents(
+            {"account_id": account_id, "coach_upgrade.created_at": {"$gte": since}}
+        )
+
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""
         row = self.col("response").find_one({"response_id": response_id}, {"account_id": 1})

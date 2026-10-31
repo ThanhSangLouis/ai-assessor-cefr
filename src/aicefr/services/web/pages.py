@@ -346,6 +346,26 @@ def page_practice_task_gone(task_id: str) -> RedirectResponse:
     return RedirectResponse("/practice", status_code=301)
 
 
+@router.get("/retell/{response_id}", response_class=HTMLResponse, tags=["web"])
+def page_retell(
+    request: Request, response_id: str, account: Account | None = Depends(optional_account)
+):
+    """Say the same task again, three times, shorter each time (D069)."""
+    if account is None:
+        return RedirectResponse(f"/login?next=/retell/{response_id}", status_code=303)
+    lim = _limits()
+    return _page(
+        request,
+        "retell.html",
+        account,
+        "mine",
+        response_id=response_id,
+        min_duration_s=lim["min_duration_s"],
+        max_size_mib=lim["max_size_mib"],
+        sample_rate_hz=lim["sample_rate_hz"],
+    )
+
+
 @router.get("/report/{response_id}", response_class=HTMLResponse, tags=["web"])
 def page_report(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)

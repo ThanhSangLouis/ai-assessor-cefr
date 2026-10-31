@@ -138,6 +138,15 @@ class Settings:
     # back into it with a recovery code from /forgot. Off: accounts come from
     # an administrator (or Google, above) only.
     self_signup: bool = field(default_factory=lambda: _flag("AICEFR_SELF_SIGNUP", True))
+    # D069: who writes the learner's answer one band higher -- off, groq,
+    # gemini, openrouter or anthropic (aicefr.coach.providers) -- an optional
+    # model name over the provider's default, and how many new upgrades one
+    # student may ask for a day, which keeps a free tier within its limits.
+    coach_provider: str = field(
+        default_factory=lambda: os.getenv("AICEFR_COACH_PROVIDER", "off").strip().lower()
+    )
+    coach_model: str = field(default_factory=lambda: os.getenv("AICEFR_COACH_MODEL", "").strip())
+    coach_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_DAILY", 5))
     # The address people reach this instance at, e.g. https://cefr.example.edu.vn.
     # Builds the Google redirect URI behind a proxy; unset, the request's own
     # address is used, which is right for localhost.

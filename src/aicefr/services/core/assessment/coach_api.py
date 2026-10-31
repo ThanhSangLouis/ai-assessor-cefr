@@ -1,0 +1,134 @@
+"""From a result to the next band: targets in numbers and the upgraded answer (D069).
+
+Two things a report adds for its owner:
+
+* `GET  /api/v1/responses/{id}/coach` -- the next band and up to three targets
+  read off the scoring model (`report/next_band.py`), whether an upgraded
+  answer can be made, and the one already made;
+* `POST /api/v1/responses/{id}/upgrade` -- the owner's answer rewritten one
+  band higher by the configured language model (`coach/`), made once and kept
+  with the response: a second request returns the same text and costs nothing.
+
+Only the owner, only a scored assessment with a transcript, never while the
+feedback study holds this learner's feedback back (D040), and a daily cap per
+student so a free tier stays inside its limits.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from aicefr.api.deps import can_view_response, require_login
+from aicefr.coach.providers import provider_from
+from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
+from aicefr.contracts import ResponseStatus
+from aicefr.observability import count
+from aicefr.report.next_band import next_band_plan
+from aicefr.services.core.assessment import study_api
+from aicefr.services.core.assessment.context import svc
+from aicefr.storage.auth_repository import Account, Role
+
+router = APIRouter()
+
+SCORED = (ResponseStatus.COMPLETED, ResponseStatus.REVIEW_REQUIRED)
+NEXT = {"A1": "A2", "A2": "B1", "B1": "B2", "B2": "C1", "C1": "C2"}
+
+
+def _scored(response_id: str, account: Account, owner_only: bool):
+    """The response and its owner, or 404: someone else's is not confirmed to exist."""
+    s = svc()
+    report = s.repo.get(response_id)
+    owner = s.repo.owner_of(response_id)
+    allowed = owner == account.account_id if owner_only else can_view_response(account, owner)
+    if report is None or not allowed:
+        raise HTTPException(404, "không tìm thấy bài này")
+    return report, owner
+
+
+def _plan(report) -> dict | None:
+    a = report.assessment
+    if a is None or a.overall_0_6 is None or report.features is None or not a.model_version:
+        return None
+    from aicefr.scoring.scorer import load_model
+
+    try:
+        model = load_model(a.model_version)
+    except Exception:  # noqa: BLE001 - an artifact no longer installed: no targets, not an error
+        return None
+    return next_band_plan(model, report.features, a.overall_0_6)
+
+
+@router.get("/api/v1/responses/{response_id}/coach", tags=["student"])
+def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
+    report, owner = _scored(response_id, account, owner_only=False)
+    withheld = account.role is Role.STUDENT and study_api.withholds(account.account_id)
+    if withheld or report.status not in SCORED:
+        return {"next_band": None, "upgrade": None, "can_upgrade": False}
+    upgrade = svc().repo.upgrade_of(response_id)
+    can = (
+        owner == account.account_id
+        and provider_from(svc().settings) is not None
+        and bool(report.asr and report.asr.text.strip())
+        and report.assessment is not None
+        and report.assessment.overall_band is not None
+        and report.assessment.overall_band.value in NEXT
+    )
+    return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can}
+
+
+@router.post("/api/v1/responses/{response_id}/upgrade", tags=["student"])
+def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict:
+    s = svc()
+    report, _ = _scored(response_id, account, owner_only=True)
+    kept = s.repo.upgrade_of(response_id)
+    if kept:
+        return kept
+    if study_api.withholds(account.account_id):
+        raise HTTPException(403, "trong thực nghiệm phản hồi, bản nâng cấp tạm thời chưa mở")
+    a = report.assessment
+    if (
+        report.status not in SCORED
+        or a is None
+        or a.overall_band is None
+        or not (report.asr and report.asr.text.strip())
+    ):
+        raise HTTPException(409, "bài này chưa có kết quả và bản chép lời để nâng cấp")
+    band = a.overall_band.value
+    if band not in NEXT:
+        raise HTTPException(409, "bài đã ở band cao nhất")
+    provider = provider_from(s.settings)
+    if provider is None:
+        raise HTTPException(503, "máy chủ chưa bật tính năng bản nâng cấp")
+    since = (datetime.now(UTC) - timedelta(days=1)).isoformat(timespec="seconds")
+    if s.repo.upgrades_since(account.account_id, since) >= s.settings.coach_daily:
+        raise HTTPException(
+            429, f"mỗi ngày tạo được tối đa {s.settings.coach_daily} bản nâng cấp, hãy thử lại sau"
+        )
+    status = s.repo.status_of(response_id) or {}
+    task = s.tasks.get(status.get("task_id") or "")
+    transcript = report.asr.text.strip()
+    try:
+        raw = provider.complete(
+            user_message(task.prompt_text if task else "", transcript, band, NEXT[band])
+        )
+        made = parse(raw, transcript)
+    except UpgradeError as e:
+        count("coach_upgrade_failed_total")
+        raise HTTPException(502, str(e)) from e
+    kept = {
+        "from_band": band,
+        "to_band": NEXT[band],
+        "upgraded": made.upgraded,
+        "changes": made.changes,
+        "phrases": made.phrases,
+        "provider": provider.name,
+        "model": provider.model,
+        "prompt_version": PROMPT_VERSION,
+        "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
+    }
+    s.repo.save_upgrade(response_id, kept)
+    s.repo.write_audit(account.pseudonym, "coach.upgrade", response_id, provider.name)
+    count("coach_upgrade_total")
+    return kept
