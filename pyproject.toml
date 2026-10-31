@@ -138,6 +138,7 @@ extend-immutable-calls = [
 "tests/test_achievements.py" = ["F811"]
 "tests/test_learning_evidence.py" = ["F811"]
 "tests/test_d069_coach.py" = ["F811"]
+"tests/test_d070_practice_more.py" = ["F811"]
 "tests/test_learning_plans.py" = ["F811"]
 
 [tool.pytest.ini_options]

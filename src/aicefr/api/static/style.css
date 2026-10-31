@@ -7705,3 +7705,28 @@ button:not(:disabled):hover,
 .retell-round { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
 .retell-round h3 { margin: 0; }
 .retell-round audio { width: 100%; }
+
+/* D070: shadowing the upgraded answer, the phrase book, the habit charts. */
+.shadow { display: grid; gap: var(--sp-2); }
+.shadow-controls { align-items: center; }
+.shadow-rate { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }
+.shadow-lines { display: grid; gap: var(--sp-1); margin: 0; padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-6); border-left: 3px solid var(--accent); background: var(--bg-elevated); line-height: 1.7; }
+.shadow-lines li { padding: 0 var(--sp-1); border-radius: var(--r-sm, 4px); transition: background-color 0.15s; }
+.shadow-lines li.is-now { background: var(--accent-soft); }
+.shadow-lines li.is-yours { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.phrase-card { display: grid; gap: var(--sp-2); padding: var(--sp-4); border: 1px solid var(--border); border-radius: var(--r-md); background: var(--bg-elevated); }
+.phrase-card p { margin: 0; }
+.phrase-text { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); font-size: var(--t-lg); }
+.phrase-example summary { cursor: pointer; color: var(--fg-muted); font-size: var(--t-sm); }
+.phrase-example p { margin-top: var(--sp-2); }
+.phrase-done { display: flex; align-items: center; gap: var(--sp-2); color: var(--ok); }
+.phrase-list { display: grid; gap: var(--sp-2); padding: 0; list-style: none; }
+.phrase-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--sp-2); padding-bottom: var(--sp-2); border-bottom: 1px solid var(--border); }
+.phrase-box { margin-left: auto; font-size: var(--t-xs); color: var(--fg-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.phrase-box[data-box="3"], .phrase-box[data-box="4"], .phrase-box[data-box="5"] { color: var(--ok); }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.habit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--sp-4); }
+.habit { margin: 0; display: grid; gap: var(--sp-2); align-content: start; }
+.habit figcaption { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: baseline; }
+.habit-chart .axis-label { font-variant-numeric: tabular-nums; }
+.habit-move { margin: 0; font-size: var(--t-sm); }

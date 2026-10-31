@@ -346,6 +346,14 @@ def page_practice_task_gone(task_id: str) -> RedirectResponse:
     return RedirectResponse("/practice", status_code=301)
 
 
+@router.get("/phrases", response_class=HTMLResponse, tags=["web"])
+def page_phrases(request: Request, account: Account | None = Depends(optional_account)):
+    """The phrase book: phrases of the upgraded answers, a few due each day (D070)."""
+    if account is None:
+        return RedirectResponse("/login?next=/phrases", status_code=303)
+    return _page(request, "phrases.html", account, "practice")
+
+
 @router.get("/retell/{response_id}", response_class=HTMLResponse, tags=["web"])
 def page_retell(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)

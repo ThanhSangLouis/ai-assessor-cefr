@@ -440,6 +440,31 @@ function reviewCard(due) {
   );
 }
 
+// D070: the phrase book, shown once it has a card. Loaded beside the path and
+// painted when it arrives; a failure leaves the card out, nothing else.
+let phrases = null;
+fetch("/api/v1/me/phrases")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    phrases = d;
+    if (data && data.path) render();
+  })
+  .catch(() => {});
+
+function phraseCard(p) {
+  if (!p || !p.total) return "";
+  const n = Math.min(Number(p.due_count) || 0, p.per_day);
+  return (
+    '<section class="card side-card phrase-side" aria-labelledby="phrase-side-h">' +
+    `<h2 id="phrase-side-h">${icon("book-open")}Sổ cụm từ</h2>` +
+    `<p class="review-count">${n} <small>cụm hôm nay</small></p>` +
+    (n
+      ? `<a class="button" href="/phrases">${icon("play")}Ôn cụm từ</a>`
+      : `<p class="muted">Đã thuộc ${p.learned}/${p.total} cụm. <a href="/phrases">Xem sổ</a></p>`) +
+    "</section>"
+  );
+}
+
 // ---------------------------------------------------------------- render
 function render() {
   window.clearBusy(page);
@@ -455,7 +480,11 @@ function render() {
   }
   head();
   sideEl.innerHTML =
-    nextCard() + todayCard(data.today) + reviewCard(data.reviews_due) + achievementsCard(data.achievements);
+    nextCard() +
+    todayCard(data.today) +
+    reviewCard(data.reviews_due) +
+    phraseCard(phrases) +
+    achievementsCard(data.achievements);
   trail();
   fitSide();
 }

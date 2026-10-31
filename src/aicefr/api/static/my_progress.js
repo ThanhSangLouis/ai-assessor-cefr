@@ -46,6 +46,7 @@ const progressDone = Promise.all([
     window.clearBusy(panel);
     panel.innerHTML = build(d);
     window.wrapTables(panel);
+    paintHabits(d.habits || []);
   })
   .catch(() => {
     window.clearBusy(panel);
@@ -188,6 +189,87 @@ function chart(rows) {
     ` Bài gần nhất ${rows[rows.length - 1].overall_0_6.toFixed(2)} điểm.">` +
     `${g}<path class="line" d="${path}"></path>${dots}${ends}</svg>`
   );
+}
+
+// ---------------------------------------------------------------- habits (D070)
+// One small chart per habit, its own scale, the better direction named. The
+// movement (first third against last third of the assessments) is the
+// server's; from three assessments on, and called a direction, not progress.
+function habitChart(h) {
+  const W = 320;
+  const H = 120;
+  const PAD_L = 8;
+  const PAD_R = 8;
+  const PAD_T = 18;
+  const PAD_B = 18;
+  const pts = h.points;
+  const values = pts.map((p) => p.value);
+  let lo = Math.min(...values);
+  let hi = Math.max(...values);
+  if (hi - lo < 1e-9) {
+    lo -= 1;
+    hi += 1;
+  }
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+  const x = (i) => PAD_L + (pts.length === 1 ? innerW / 2 : (i / (pts.length - 1)) * innerW);
+  const y = (v) => PAD_T + innerH - ((v - lo) / (hi - lo)) * innerH;
+  const path = pts.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(" ");
+  const dots = pts
+    .map(
+      (p, i) =>
+        `<circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="3.5">` +
+        `<title>${window.escapeHtml(shortDate(p.at))} · ${p.value} ${window.escapeHtml(h.unit)}</title></circle>`
+    )
+    .join("");
+  const first = pts[0];
+  const last = pts[pts.length - 1];
+  const ends =
+    `<text class="axis-label" x="${x(0).toFixed(1)}" y="${(y(first.value) - 7).toFixed(1)}"` +
+    `${pts.length === 1 ? ' text-anchor="middle"' : ""}>${first.value}</text>` +
+    (pts.length > 1
+      ? `<text class="axis-label end" x="${x(pts.length - 1).toFixed(1)}" y="${(y(last.value) - 7).toFixed(1)}" text-anchor="end">${last.value}</text>`
+      : "");
+  return (
+    `<svg class="trend-chart habit-chart" viewBox="0 0 ${W} ${H}" role="img"` +
+    ` aria-label="${window.escapeHtml(h.label)} qua ${pts.length} bài, bài gần nhất ${last.value} ${window.escapeHtml(h.unit)}.">` +
+    `<line class="grid" x1="${PAD_L}" y1="${H - PAD_B}" x2="${W - PAD_R}" y2="${H - PAD_B}"></line>` +
+    `<path class="line" d="${path}"></path>${dots}${ends}</svg>`
+  );
+}
+
+function habitMovement(h) {
+  const m = h.movement;
+  if (!m) return '<p class="muted small-note">Cần ít nhất 3 bài đánh giá để thấy hướng đi.</p>';
+  const n = (v) => String(v).replace(".", ",");
+  const went = m.delta > 0 ? "tăng" : m.delta < 0 ? "giảm" : "giữ nguyên";
+  const chip = m.toward_better
+    ? '<span class="badge ok">đúng hướng</span>'
+    : m.delta === 0
+      ? '<span class="badge">chưa đổi</span>'
+      : '<span class="badge warn">ngược hướng</span>';
+  return (
+    `<p class="habit-move">${chip} ${went} từ ${n(m.first)} đến ${n(m.last)} ${window.escapeHtml(h.unit)}` +
+    ` <span class="muted">(TB ${m.n} bài đầu so với ${m.n} bài gần nhất)</span></p>`
+  );
+}
+
+function paintHabits(habits) {
+  const card = document.getElementById("habits");
+  const shown = habits.filter((h) => h.points.length);
+  if (!card || !shown.length) return;
+  document.getElementById("habits-body").innerHTML = shown
+    .map(
+      (h) =>
+        '<figure class="habit">' +
+        `<figcaption><b>${window.escapeHtml(h.label)}</b>` +
+        ` <span class="muted">${h.better === "up" ? "cao hơn là tốt" : "thấp hơn là tốt"}</span></figcaption>` +
+        habitChart(h) +
+        habitMovement(h) +
+        "</figure>"
+    )
+    .join("");
+  card.hidden = false;
 }
 
 const printButton = document.getElementById("print-progress");

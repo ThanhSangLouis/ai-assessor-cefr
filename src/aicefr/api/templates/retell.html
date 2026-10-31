@@ -21,8 +21,8 @@
 
   <details class="card retell-upgrade" id="retell-upgrade" hidden>
     <summary><b>Đọc bản nâng cấp trước khi nói</b> <span class="muted">(gợi ý của AI)</span></summary>
-    <p class="muted small-note">Đọc to một lần, chú ý các chỗ đổi. Khi ghi âm thì nói bằng lời của bạn, không đọc.</p>
-    <p class="upgrade-text" id="retell-upgrade-text" lang="en"></p>
+    <p class="muted small-note">Nghe và nhại theo một lần, chú ý các chỗ đổi. Khi ghi âm thì nói bằng lời của bạn, không đọc.</p>
+    <div id="retell-upgrade-text"></div>
   </details>
 
   <form class="card recorder-card" id="retell-form">
@@ -42,4 +42,5 @@
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('shadow.js') }}"></script>
 <script src="{{ asset('retell.js') }}"></script>{% endblock %}

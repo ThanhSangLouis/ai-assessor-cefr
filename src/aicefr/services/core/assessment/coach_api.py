@@ -9,6 +9,10 @@ Two things a report adds for its owner:
   band higher by the configured language model (`coach/`), made once and kept
   with the response: a second request returns the same text and costs nothing.
 
+And the phrase book built from those upgrades (D070, `coach/phrasebook.py`):
+`GET /api/v1/me/phrases` lists the cards and the few due today, `POST
+/api/v1/me/phrases/review` records one self-judged review.
+
 Only the owner, only a scored assessment with a transcript, never while the
 feedback study holds this learner's feedback back (D040), and a daily cap per
 student so a free tier stays inside its limits.
@@ -19,8 +23,10 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
 from aicefr.api.deps import can_view_response, require_login
+from aicefr.coach import phrasebook
 from aicefr.coach.providers import provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
 from aicefr.contracts import ResponseStatus
@@ -132,3 +138,45 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     s.repo.write_audit(account.pseudonym, "coach.upgrade", response_id, provider.name)
     count("coach_upgrade_total")
     return kept
+
+
+# ================================================================= phrase book (D070)
+
+
+class PhraseReview(BaseModel):
+    key: str = Field(min_length=1, max_length=200)
+    remembered: bool
+
+
+def _phrase_cards(account_id: str) -> tuple[list[dict], list[dict]]:
+    upgrades = svc().repo.upgrades_of_account(account_id)
+    return upgrades, phrasebook.cards(upgrades, phrasebook.now_utc())
+
+
+@router.get("/api/v1/me/phrases", tags=["student"])
+def my_phrases(account: Account = Depends(require_login)) -> dict:
+    now = phrasebook.now_utc()
+    _, cards = _phrase_cards(account.account_id)
+    return {
+        **phrasebook.summary(cards, now),
+        "due": phrasebook.due_today(cards, now),
+        "cards": sorted(cards, key=lambda c: (c["box"], c["key"])),
+    }
+
+
+@router.post("/api/v1/me/phrases/review", tags=["student"])
+def review_phrase(body: PhraseReview, account: Account = Depends(require_login)) -> dict:
+    now = phrasebook.now_utc()
+    key = phrasebook.key_of(body.key)
+    upgrades, cards = _phrase_cards(account.account_id)
+    card = next((c for c in cards if c["key"] == key), None)
+    if card is None:
+        raise HTTPException(404, "không có cụm từ này trong sổ của bạn")
+    state = phrasebook.reviewed(card, body.remembered, now)
+    # Every upgrade that suggested the phrase carries the same state, so the
+    # card stays one card whichever of them is erased later.
+    for u in upgrades:
+        phrases = u.get("phrases") or []
+        if any(phrasebook.key_of(p.get("phrase") or "") == key for p in phrases):
+            svc().repo.save_upgrade_phrases(u["response_id"], phrasebook.apply(phrases, key, state))
+    return {**card, **state}
