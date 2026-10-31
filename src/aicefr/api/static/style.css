@@ -7709,7 +7709,7 @@ button:not(:disabled):hover,
 /* D070: shadowing the upgraded answer, the phrase book, the habit charts. */
 .shadow { display: grid; gap: var(--sp-2); }
 .shadow-controls { align-items: center; }
-.shadow-rate { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }
+.shadow-rate { display: inline-flex; align-items: center; white-space: nowrap; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }
 .shadow-lines { display: grid; gap: var(--sp-1); margin: 0; padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-6); border-left: 3px solid var(--accent); background: var(--bg-elevated); line-height: 1.7; }
 .shadow-lines li { padding: 0 var(--sp-1); border-radius: var(--r-sm, 4px); transition: background-color 0.15s; }
 .shadow-lines li.is-now { background: var(--accent-soft); }
