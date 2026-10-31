@@ -879,16 +879,20 @@ function coachUpgrade(u) {
     )
     .join("");
   const phrases = (u.phrases || [])
-    .map((p) => `<li><b lang="en">${escapeHtml(p.phrase)}</b>: ${escapeHtml(p.meaning_vi)}</li>`)
+    .map((p) => `<li><b lang="en">${escapeHtml(p.phrase)}</b>: ${escapeHtml(p.meaning_vi)} ${window.speakButton ? window.speakButton(p.phrase) : ""}</li>`)
     .join("");
   return (
     `<h3 class="block-title">Bài của bạn ở mức ${escapeHtml(u.to_band)} <span class="muted">(gợi ý của AI, có thể sai)</span></h3>` +
     // Which model wrote it, so a reader can weigh it and a teacher can report it.
     `<p class="muted small-note coach-model">Viết bởi <code>${escapeHtml(u.model || "?")}</code>` +
     ` (${escapeHtml(u.provider || "?")}) lúc ${escapeHtml(window.ui.localTime(u.created_at))}.</p>` +
-    `<p class="upgrade-text" lang="en">${escapeHtml(u.upgraded)}</p>` +
+    // D070: listen to it and say it after the voice, sentence by sentence.
+    '<div class="shadow-host"></div>' +
     (changes ? `<h4>Các chỗ đổi</h4><ul class="coach-changes">${changes}</ul>` : "") +
-    (phrases ? `<h4>Cụm từ nên dùng</h4><ul class="coach-phrases">${phrases}</ul>` : "") +
+    (phrases
+      ? `<h4>Cụm từ nên dùng</h4><ul class="coach-phrases">${phrases}</ul>` +
+        '<p class="muted small-note">Các cụm này đã vào <a href="/phrases">Sổ cụm từ</a> để ôn mỗi ngày.</p>'
+      : "") +
     `<div class="button-row"><a class="button" href="/retell/${encodeURIComponent(ID)}">Đọc rồi nói lại đề này</a></div>`
   );
 }
@@ -903,6 +907,7 @@ function paintCoach(card, c) {
       '<p class="muted small-note">AI viết lại chính câu trả lời của bạn ở band kế tiếp, giữ ý của bạn. Chỉ bản chép lời được gửi đi, không gửi ghi âm.</p>';
   card.innerHTML = h;
   card.hidden = !(c.next_band || c.upgrade || c.can_upgrade);
+  if (c.upgrade && window.setUpShadowing) window.setUpShadowing(card.querySelector(".shadow-host"), c.upgrade.upgraded);
   const button = document.getElementById("coach-upgrade");
   if (!button) return;
   button.addEventListener("click", async () => {

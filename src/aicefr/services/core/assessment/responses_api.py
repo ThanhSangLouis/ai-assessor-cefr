@@ -456,6 +456,8 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
     differ by measurement noise as much as by learning (`ridge_resp_v2` has an
     RMSE of 0.53 on its own validation data).
     """
+    from aicefr.report.habits import NAMES as HABIT_NAMES
+    from aicefr.report.habits import habit_series
     from aicefr.scoring.scorer import load_model
 
     # The instrument's own error, read from the artifact rather than typed in
@@ -505,6 +507,8 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
         "verified_count": sum(1 for r in rows if r["teacher_verified"]),
         "trend": trend,
         "reliable_change": change,
+        # D070: the habits the next-band targets name, over the same assessments.
+        "habits": habit_series(svc().repo.feature_series(account.account_id, HABIT_NAMES)),
         "note": (
             "Điểm chưa được giảng viên xác nhận chỉ là ước lượng của máy."
             " Biểu đồ vẽ cả hai loại nhưng phân biệt rõ."

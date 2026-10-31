@@ -968,6 +968,73 @@ class Repository(MongoStore):
             {"account_id": account_id, "coach_upgrade.created_at": {"$gte": since}}
         )
 
+    def upgrades_of_account(self, account_id: str, limit: int = 500) -> list[dict]:
+        """Every upgrade this account made, oldest first: the phrase book's source (D070)."""
+        rows = (
+            self.col("response")
+            .find(
+                {"account_id": account_id, "coach_upgrade.phrases": {"$exists": True}},
+                {"response_id": 1, "created_at": 1, "coach_upgrade": 1},
+            )
+            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+            .limit(limit)
+        )
+        return [
+            {
+                "response_id": r["response_id"],
+                "created_at": r.get("created_at"),
+                **r["coach_upgrade"],
+            }
+            for r in rows
+        ]
+
+    def save_upgrade_phrases(self, response_id: str, phrases: list[dict]) -> None:
+        """The phrases of one upgrade with their review state (D070), written back whole."""
+        self.col("response").update_one(
+            {"response_id": response_id}, {"$set": {"coach_upgrade.phrases": phrases}}
+        )
+
+    def feature_series(
+        self, account_id: str, names: tuple[str, ...], limit: int = 100
+    ) -> list[dict]:
+        """The named measurements of one learner's scored assessments, in time order (D070).
+
+        Read from the report each response keeps, so nothing new is stored. A
+        name the recording did not yield is absent from that row's `values`.
+        """
+        rows = (
+            self.col("response")
+            .find(
+                {"account_id": account_id, "overall_0_6": {"$ne": None}},
+                {"response_id": 1, "task_id": 1, "created_at": 1, "report_json": 1},
+            )
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        out = []
+        for r in reversed(list(rows)):
+            try:
+                items = (json.loads(r.get("report_json") or "{}").get("features") or {}).get(
+                    "items"
+                )
+            except (TypeError, ValueError):
+                items = None
+            values = {
+                f["name"]: f["value"]
+                for f in items or []
+                if f.get("name") in names and isinstance(f.get("value"), int | float)
+            }
+            if values:
+                out.append(
+                    {
+                        "response_id": r["response_id"],
+                        "task_id": r.get("task_id"),
+                        "created_at": r.get("created_at"),
+                        "values": values,
+                    }
+                )
+        return out
+
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""
         row = self.col("response").find_one({"response_id": response_id}, {"account_id": 1})

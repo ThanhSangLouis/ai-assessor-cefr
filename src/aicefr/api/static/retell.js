@@ -103,7 +103,7 @@ fetch(`/api/v1/learn/retell/${encodeURIComponent(RID)}`)
     done = (d.done || []).filter((a) => a.result.measured !== false).slice(0, limits.length);
     if (d.upgraded) {
       document.getElementById("retell-upgrade").hidden = false;
-      document.getElementById("retell-upgrade-text").textContent = d.upgraded;
+      window.setUpShadowing(document.getElementById("retell-upgrade-text"), d.upgraded);
     }
     paint();
   })
