@@ -57,13 +57,18 @@ class Assignment:
 
 @dataclass
 class Classroom:
-    """A teacher's class: its join code, its members, what it was set."""
+    """A class: its teachers, its join code, its members, what it was set.
+
+    D071: a class has one or more teachers (`teacher_ids`), an administrator
+    assigns them, and a teacher reviews only the work of their classes'
+    members. One teacher may teach many classes.
+    """
 
     class_id: str
     name: str
     code: str
-    teacher_id: str
     created_at: str
+    teacher_ids: list[str] = field(default_factory=list)  # account ids
     archived: bool = False
     members: list[str] = field(default_factory=list)  # account ids, in joining order
     assignments: list[Assignment] = field(default_factory=list)
@@ -74,7 +79,8 @@ class Classroom:
             class_id=doc["class_id"],
             name=doc["name"],
             code=doc["code"],
-            teacher_id=doc["teacher_id"],
+            # A document from before migration 9 still names one teacher.
+            teacher_ids=list(doc.get("teacher_ids") or [t for t in [doc.get("teacher_id")] if t]),
             created_at=doc["created_at"],
             archived=bool(doc.get("archived", False)),
             members=list(doc.get("members", [])),
@@ -90,7 +96,7 @@ class Classroom:
             "class_id": self.class_id,
             "name": self.name,
             "code": self.code,
-            "teacher_id": self.teacher_id,
+            "teacher_ids": list(self.teacher_ids),
             "created_at": self.created_at,
             "archived": self.archived,
         }
@@ -116,13 +122,13 @@ class ClassroomRepository(MongoStore):
 
     # ------------------------------------------------------------ classes
 
-    def create(self, name: str, teacher_id: str) -> dict:
+    def create(self, name: str, teacher_ids: list[str]) -> dict:
         for _ in range(8):
             made = Classroom(
                 class_id="lop-" + uuid.uuid4().hex[:10],
                 name=name,
                 code=new_code(),
-                teacher_id=teacher_id,
+                teacher_ids=list(dict.fromkeys(teacher_ids)),
                 created_at=_now(),
             )
             try:
@@ -142,12 +148,41 @@ class ClassroomRepository(MongoStore):
 
     def of_teacher(self, teacher_id: str | None) -> list[dict]:
         """A teacher's classes; every class when `teacher_id` is None (an administrator)."""
-        query = {} if teacher_id is None else {"teacher_id": teacher_id}
+        query = {} if teacher_id is None else {"teacher_ids": teacher_id}
         rows = self.col("classroom").find(query).sort([("created_at", DESCENDING)])
         return [Classroom.from_doc(r).view() for r in rows]
 
     def set_archived(self, class_id: str, archived: bool) -> None:
         self.col("classroom").update_one({"class_id": class_id}, {"$set": {"archived": archived}})
+
+    # ------------------------------------------------------------ teachers (D071)
+
+    def add_teacher(self, class_id: str, account_id: str) -> bool:
+        """False when the account teaches the class already."""
+        done = self.col("classroom").update_one(
+            {"class_id": class_id, "teacher_ids": {"$ne": account_id}},
+            {"$push": {"teacher_ids": account_id}},
+        )
+        return bool(done.modified_count)
+
+    def remove_teacher(self, class_id: str, account_id: str) -> bool:
+        done = self.col("classroom").update_one(
+            {"class_id": class_id, "teacher_ids": account_id},
+            {"$pull": {"teacher_ids": account_id}},
+        )
+        return bool(done.modified_count)
+
+    def teaches(self, teacher_id: str, student_id: str) -> bool:
+        """Whether the student is a member of a class the teacher teaches, archived or not."""
+        found = self.col("classroom").find_one(
+            {"teacher_ids": teacher_id, "members": student_id}, {"_id": 1}
+        )
+        return found is not None
+
+    def students_of(self, teacher_id: str) -> set[str]:
+        """Every member of every class the teacher teaches."""
+        rows = self.col("classroom").find({"teacher_ids": teacher_id}, {"members": 1})
+        return {m for r in rows for m in r.get("members", [])}
 
     # ------------------------------------------------------------ members
 
@@ -182,9 +217,12 @@ class ClassroomRepository(MongoStore):
         return len(found.members) if found else 0
 
     def forget_account(self, account_id: str) -> None:
-        """Erasure (FR-37): the account leaves every class."""
+        """Erasure (FR-37): the account leaves every class, as a member or a teacher."""
         self.col("classroom").update_many(
             {"members": account_id}, {"$pull": {"members": account_id}}
+        )
+        self.col("classroom").update_many(
+            {"teacher_ids": account_id}, {"$pull": {"teacher_ids": account_id}}
         )
 
     # ------------------------------------------------------------ assignments

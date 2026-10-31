@@ -21,7 +21,7 @@ from aicefr.platform.bus import MessageBus
 from aicefr.ports import BlobStore
 from aicefr.qc import audio_qc
 from aicefr.services import Peers
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.classroom_repository import ClassroomRepository
 from aicefr.storage.rating_repository import RatingRepository
 from aicefr.storage.replay_repository import ReplayRepository
@@ -89,6 +89,40 @@ def svc() -> Services:
 def plan_allows(feature: PlanFeature) -> None:
     """403 when the plan in force does not include `feature` (D034)."""
     require_plan(svc().peers.billing, feature)
+
+
+# ================================================================= who sees whose work (D071)
+
+
+def can_view(account: Account, owner_id: str | None) -> bool:
+    """Whether this account may read a response owned by `owner_id`.
+
+    D071: an administrator reads every response; a teacher reads the work of
+    the members of the classes they teach, and nothing else -- a student in no
+    class is the administrator's to review; a student reads their own.
+    """
+    if account.role is Role.ADMIN:
+        return True
+    if not owner_id:
+        return False
+    if account.role is Role.TEACHER:
+        rooms = svc().classrooms
+        return rooms is not None and rooms.teaches(account.account_id, owner_id)
+    return owner_id == account.account_id
+
+
+def in_view(account: Account, response_id: str) -> None:
+    """404 unless `can_view`: someone else's response is not confirmed to exist."""
+    if not can_view(account, svc().repo.owner_of(response_id)):
+        raise HTTPException(404, "không tìm thấy bài này")
+
+
+def students_in_view(account: Account) -> set[str] | None:
+    """The owners whose work a staff account reviews; None for every owner (admin)."""
+    if account.role is Role.ADMIN:
+        return None
+    rooms = svc().classrooms
+    return rooms.students_of(account.account_id) if rooms is not None else set()
 
 
 # ================================================================= blind rating (D030)

@@ -88,6 +88,18 @@ class LiveServer:
         AuthRepository(self.db_path).create_account(pseudonym, PASSWORD, Role(role))
         return pseudonym
 
+    def teach(self, teacher: str, *students: str) -> str:
+        """D071: a class the teacher teaches, with these students; returns its id."""
+        from aicefr.storage.auth_repository import AuthRepository
+        from aicefr.storage.classroom_repository import ClassroomRepository
+
+        auth = AuthRepository(self.db_path)
+        rooms = ClassroomRepository(self.db_path)
+        made = rooms.create(f"Lớp của {teacher}", [auth.get_by_pseudonym(teacher)["account_id"]])
+        for s in students:
+            rooms.add_member(made["class_id"], auth.get_by_pseudonym(s)["account_id"])
+        return made["class_id"]
+
 
 def e2e_store(label: str) -> str:
     """A database of its own on the MongoDB server the run was given (D048).
@@ -192,7 +204,7 @@ pytestmark = pytest.mark.e2e
 def login(page, server, pseudonym: str, next_path: str = "/practice") -> None:
     """Log in through the real form, then wait for the target page."""
     page.goto(f"/login?next={next_path}")
-    page.get_by_label("Mã bút danh").fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(pseudonym)
     page.get_by_label("Mật khẩu").fill(server.password)
     page.get_by_role("button", name="Đăng nhập").click()
     # Compare the PATH, not the URL's tail: "/login?next=/practice" also ends in
@@ -313,7 +325,10 @@ def test_teacher_sees_class_practice_without_per_student_rows(student, live_serv
     ctx = browser.new_context(base_url=live_server.base_url)
     try:
         teacher = ctx.new_page()
-        login(teacher, live_server, live_server.account("teacher"), "/review/stats")
+        gv = live_server.account("teacher")
+        # D071: a teacher's statistics count their classes' students.
+        live_server.teach(gv, student.request.get("/api/v1/me").json()["pseudonym"])
+        login(teacher, live_server, gv, "/review/stats")
         section = teacher.get_by_role("heading", name="Luyện tập của lớp")
         expect(section).to_be_visible()
         expect(teacher.locator("#stats-panel")).to_contain_text("lần luyện đã xử lý")

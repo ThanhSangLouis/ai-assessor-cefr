@@ -72,7 +72,7 @@ def test_an_administrator_hands_out_an_account_and_its_first_login_sets_a_passwo
     try:
         page = ctx.new_page()
         page.goto("/login?next=/review/stats")
-        page.get_by_label("Mã bút danh").fill("E2E-GV-NEW")
+        page.get_by_label("Email", exact=True).fill("E2E-GV-NEW")
         page.get_by_label("Mật khẩu").fill(temporary)
         page.get_by_role("button", name="Đăng nhập").click()
         # Wherever it was heading, a temporary password goes to the account page.
@@ -99,7 +99,8 @@ def test_a_teacher_decision_is_a_count_until_the_student_opens_their_list(
     context, browser, live_server
 ):
     student = context.new_page()
-    login(student, live_server, live_server.account(), "/")
+    learner = live_server.account()
+    login(student, live_server, learner, "/")
     student.goto("/")
     expect(student.locator(".task")).not_to_have_count(0)
     student.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
@@ -110,7 +111,9 @@ def test_a_teacher_decision_is_a_count_until_the_student_opens_their_list(
     ctx = fresh_context(browser, live_server)
     try:
         teacher = ctx.new_page()
-        login(teacher, live_server, live_server.account("teacher"), "/review")
+        gv = live_server.account("teacher")
+        live_server.teach(gv, learner)  # D071: the teacher of the student's class
+        login(teacher, live_server, gv, "/review")
         expect(teacher.locator('.nav-badge[data-badge="queue"]')).to_be_visible()
         r = teacher.request.post(
             f"/api/v1/review/{response_id}", data={"reason": "Đã nghe lại toàn bài."}

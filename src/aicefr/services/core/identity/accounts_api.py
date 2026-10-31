@@ -49,6 +49,7 @@ from aicefr.storage.auth_repository import (
     Account,
     AccountLocked,
     AuthRepository,
+    EmailTaken,
     Role,
     WrongPassword,
 )
@@ -110,6 +111,8 @@ ACTIVITY_ACTIONS = (
     "account.recovery_code",
     "account.recover",
     "auth.recover_failed",
+    "account.contact",
+    "account.google_adopt",
 )
 
 
@@ -129,6 +132,10 @@ def my_account(
     return {
         "pseudonym": row["pseudonym"],
         "role": row["role"],
+        # D071: how the person signs in, and the name a teacher reads.
+        "email": row["email"],
+        "email_verified": row["email_verified"],
+        "full_name": row["full_name"],
         "created_at": row["created_at"],
         "last_login_at": row["last_login_at"],
         "password_changed_at": row["password_changed_at"],
@@ -190,6 +197,60 @@ def change_my_profile(
         "avatar_color": row["avatar_color"],
         "daily_goal_s": row["daily_goal_s"],
     }
+
+
+class ContactChange(BaseModel):
+    """D071: the sign-in email and the full name; either may be left out."""
+
+    email: str | None = Field(None, max_length=254)
+    full_name: str | None = Field(None, max_length=80)
+    # Needed to change an email the account already signs in with.
+    current_password: str | None = Field(None, max_length=200)
+
+
+def _contact_view(row: dict) -> dict:
+    return {
+        "email": row["email"],
+        "email_verified": bool(row["email_verified"]),
+        "full_name": row["full_name"],
+    }
+
+
+@router.patch("/api/v1/me/contact", tags=["auth"])
+def change_my_contact(
+    body: ContactChange,
+    account: Account = Depends(require_login),
+    auth: AuthRepository = Depends(get_auth_repo),
+) -> dict:
+    """Set the sign-in email and the full name (D071).
+
+    Adding a first email needs nothing more: the person is signed in. Changing
+    one the account already signs in with needs the password, as changing the
+    password does -- otherwise a borrowed session could move the account to
+    another address and lock its owner out. A wrong password counts as a failed
+    login (NFR-07).
+    """
+    row = auth.get(account.account_id)
+    changing = (
+        body.email is not None and row["email"] and body.email.strip().lower() != row["email"]
+    )
+    if changing:
+        if not body.current_password or not passwords.verify_password(
+            body.current_password, row["password_hash"]
+        ):
+            if body.current_password:
+                auth.record_failure(account.account_id)
+            raise HTTPException(403, "nhập đúng mật khẩu hiện tại để đổi email")
+    try:
+        row = auth.set_contact(account.account_id, email=body.email, full_name=body.full_name)
+    except EmailTaken as e:
+        raise HTTPException(409, "email này đã có tài khoản khác") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    changed = sorted(k for k in ("email", "full_name") if getattr(body, k) is not None)
+    if changed:
+        svc().audit(account.pseudonym, "account.contact", account.account_id, " ".join(changed))
+    return _contact_view(row)
 
 
 @router.get("/api/v1/me/sessions", tags=["auth"])
@@ -467,6 +528,25 @@ def account_detail(
             for r in svc().audit_log.about(account_id, ACTIVITY_ACTIONS, limit=20)
         ],
     }
+
+
+@router.patch("/api/v1/admin/accounts/{account_id}/contact", tags=["admin"])
+def change_account_contact(
+    account_id: str,
+    body: ContactChange,
+    account: Account = ADMIN_ONLY,
+    auth: AuthRepository = Depends(get_auth_repo),
+) -> dict:
+    """An administrator sets a person's email and full name (D071), e.g. for staff accounts."""
+    _target(auth, account_id)
+    try:
+        row = auth.set_contact(account_id, email=body.email, full_name=body.full_name)
+    except EmailTaken as e:
+        raise HTTPException(409, "email này đã có tài khoản khác") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    svc().audit(account.pseudonym, "account.contact", account_id, "admin")
+    return _contact_view(row)
 
 
 @router.post("/api/v1/admin/accounts/{account_id}/role", tags=["admin"])

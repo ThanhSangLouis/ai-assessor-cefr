@@ -6,9 +6,16 @@ from datetime import date, timedelta
 
 import pytest
 from test_billing import boot
-from test_lessons_integration import login_as, submit_assessment
+from test_lessons_integration import login_as as _login_as
+from test_lessons_integration import submit_assessment
 
 from aicefr.services.core.assessment.classes_api import due_at
+
+
+def login_as(m, pseudonym: str, role: str = "student"):
+    """These tests are about classes: no class is arranged for them."""
+    return _login_as(m, pseudonym, role, school=False)
+
 
 pytestmark = pytest.mark.integration
 
@@ -65,7 +72,7 @@ def test_a_submission_of_the_task_counts_as_handed_in(m):
     a = assign(teacher, c["class_id"])
     rid = submit_assessment(student)
     detail = teacher.get(f"/api/v1/assignments/{a['assignment_id']}").json()
-    by = {s["pseudonym"]: s for s in detail["students"]}
+    by = {s["name"]: s for s in detail["students"]}
     assert by["SV-001"]["state"] == "on_time" and by["SV-001"]["response_id"] == rid
     assert by["SV-002"]["state"] == "open"
     assert (detail["on_time"], detail["open"]) == (1, 1)

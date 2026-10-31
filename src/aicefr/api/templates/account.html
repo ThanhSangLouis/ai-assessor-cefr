@@ -21,7 +21,7 @@
   <span class="avatar-lg avatar-{{ account.avatar_color or 'none' }}" id="avatar-preview" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
   <div>
     <p class="eyebrow">Tài khoản</p>
-    <h1>{{ account.pseudonym }}</h1>
+    <h1>{{ account.display_name }}</h1>
     <p class="lede">
       {{ role_names.get(account.role.value, account.role.value) }}. Hệ thống chỉ biết bạn qua bút
       danh này, không lưu họ tên, mã số sinh viên hay email.
@@ -51,6 +51,26 @@
 
 <section id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="0">
   <div class="account-grid">
+    {#- D071: the email signs the person in; the full name is what a teacher reads. -#}
+    <div class="card" id="contact" aria-labelledby="contact-h">
+      <h2 id="contact-h">{{ icon("user") }} Họ tên và email</h2>
+      <form id="contact-form" class="stack" novalidate>
+        <label for="contact-name">Họ và tên</label>
+        <input id="contact-name" autocomplete="name" maxlength="80" required>
+        <label for="contact-email">Email đăng nhập</label>
+        <input id="contact-email" type="email" autocomplete="email" maxlength="254" required
+               autocapitalize="none" spellcheck="false" aria-describedby="contact-email-state">
+        <p class="field-hint" id="contact-email-state"></p>
+        <div id="contact-password-row" hidden>
+          <label for="contact-password">Mật khẩu hiện tại (để đổi email)</label>
+          <input id="contact-password" type="password" autocomplete="current-password">
+        </div>
+        <div class="button-row">
+          <button type="submit" id="contact-save">{{ icon("check") }} Lưu</button>
+        </div>
+        <div id="contact-message" aria-live="polite"></div>
+      </form>
+    </div>
     <div class="card" aria-labelledby="avatar-h">
       <h2 id="avatar-h">{{ icon("sparkle") }} Ảnh đại diện</h2>
       <p class="muted small-note">Một biểu tượng và một màu, hiện ở thanh điều khiển. Không có ảnh chụp, để không
@@ -104,7 +124,7 @@
       <div class="card" aria-labelledby="me-h">
         <h2 id="me-h">{{ icon("user") }} Thông tin đăng nhập</h2>
         <dl class="facts" id="me-facts" aria-busy="true">
-          <div><dt>Bút danh</dt><dd>{{ account.pseudonym }}</dd></div>
+          <div><dt>Mã tài khoản</dt><dd>{{ account.pseudonym }}</dd></div>
           <div><dt>Vai trò</dt><dd>{{ role_names.get(account.role.value, account.role.value) }}</dd></div>
           <div><dt>Tạo lúc</dt><dd data-fact="created_at">—</dd></div>
           <div><dt>Đăng nhập gần nhất</dt><dd data-fact="last_login_at">—</dd></div>

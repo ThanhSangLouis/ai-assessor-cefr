@@ -84,12 +84,75 @@ function loadMe() {
       setFact("last_login_at", when(data.last_login_at));
       setFact("password_changed_at", when(data.password_changed_at));
       document.getElementById("first-time").hidden = !data.must_change_password;
+      paintContact();
       paintGoogle();
       paintRecovery();
       checkRules();
       return data;
     })
     .catch(() => null);
+}
+
+// ---------------------------------------------------------------- contact (D071)
+// The sign-in email and the full name. Changing an email the account already
+// signs in with asks for the password; adding a first one does not.
+const contactForm = document.getElementById("contact-form");
+const contactName = document.getElementById("contact-name");
+const contactEmail = document.getElementById("contact-email");
+const contactPassword = document.getElementById("contact-password");
+const contactPasswordRow = document.getElementById("contact-password-row");
+const contactMessage = document.getElementById("contact-message");
+
+function paintContact() {
+  if (!contactForm || !me) return;
+  contactName.value = me.full_name || "";
+  contactEmail.value = me.email || "";
+  const state = document.getElementById("contact-email-state");
+  state.textContent = !me.email
+    ? "Tài khoản chưa có email. Thêm email để đăng nhập bằng email hoặc Google."
+    : me.email_verified
+      ? "Google đã xác minh email này."
+      : "Email chưa được Google xác minh. Đăng nhập bằng Google với email này để xác minh.";
+  contactPasswordRow.hidden = true;
+  contactPassword.value = "";
+}
+
+if (contactForm) {
+  contactEmail.addEventListener("input", () => {
+    const moving = !!(me && me.email) && contactEmail.value.trim().toLowerCase() !== me.email;
+    contactPasswordRow.hidden = !moving;
+  });
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    contactMessage.innerHTML = "";
+    const body = { full_name: contactName.value.trim(), email: contactEmail.value.trim() };
+    if (!contactPasswordRow.hidden) body.current_password = contactPassword.value;
+    const save = document.getElementById("contact-save");
+    save.disabled = true;
+    try {
+      const r = await fetch("/api/v1/me/contact", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const text = typeof d.detail === "string" ? d.detail : "Chưa lưu được.";
+        contactMessage.innerHTML = `<p class="error">${window.escapeHtml(text)}</p>`;
+        return;
+      }
+      Object.assign(me, d);
+      paintContact();
+      window.toast("Đã lưu họ tên và email.", "ok");
+      const banner = document.getElementById("contact-missing");
+      if (banner && me.email) banner.hidden = true;
+    } catch (err) {
+      contactMessage.innerHTML = '<p class="error">Mất kết nối, hãy thử lại.</p>';
+    } finally {
+      save.disabled = false;
+    }
+  });
 }
 
 // ---------------------------------------------------------------- profile
@@ -423,6 +486,8 @@ const ACTIVITY = {
   "account.google_signup": ["user-plus", "Đăng ký bằng Google"],
   "account.recovery_code": ["key", "Tạo mã khôi phục mới"],
   "account.recover": ["unlock", "Đặt lại mật khẩu bằng mã khôi phục"],
+  "account.contact": ["user", "Đổi họ tên hoặc email"],
+  "account.google_adopt": ["key", "Nối đăng nhập Google theo email"],
   "auth.recover_failed": ["alert", "Thử mã khôi phục không thành công"],
 };
 const DETAIL = {

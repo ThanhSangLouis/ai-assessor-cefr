@@ -31,6 +31,11 @@ class IdentityStub:
     def pseudonyms(self, *, account_ids: list[str]) -> dict[str, str]:
         return {account_id: "SV-001" for account_id in account_ids if account_id == "student-1"}
 
+    def display_names(self, *, account_ids: list[str]) -> dict[str, str]:
+        return {
+            account_id: "Sinh viên Một" for account_id in account_ids if account_id == "student-1"
+        }
+
 
 def build_assessment_service(tmp_path, monkeypatch, request=None):
     monkeypatch.setenv("AICEFR_INTERNAL_TOKEN", INTERNAL_TOKEN)

@@ -16,7 +16,6 @@ import time
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from conftest import on_server
 from dbutil import store
 from fastapi.testclient import TestClient
 
@@ -277,7 +276,7 @@ def test_start_sends_the_browser_to_google_with_state_nonce_and_pkce(m):
     q = {k: v[0] for k, v in parse_qs(target.query).items()}
     assert q["client_id"] == CLIENT_ID
     assert q["redirect_uri"].endswith("/auth/google/callback")
-    assert q["response_type"] == "code" and q["scope"] == "openid email"
+    assert q["response_type"] == "code" and q["scope"] == "openid email profile"
     assert q["state"] == flow.state and q["nonce"] == flow.nonce
     assert q["code_challenge_method"] == "S256"
     assert q["code_challenge"] == google._challenge(flow.verifier)
@@ -294,16 +293,13 @@ def test_linking_then_signing_in_with_google(m, monkeypatch, tmp_path):
     assert student.get("/api/v1/me/account").json()["google"]["linked"] is True
     assert audit(m, "account.google_link")[0].target_id == account_id(m, "SV-001")
 
-    # Only a hash is kept: the email is nowhere in the identity service's store.
+    # A hash of the Google subject is kept, not the subject itself; the
+    # address Google verified becomes the account's sign-in email (D071).
     links = [i for a in store()["account"].find() for i in a.get("identities") or []]
     stored = links[0]["subject_hash"]
     assert stored == google.subject_hash("google-sub-1") and len(stored) == 64
-    if not on_server:
-        # Nothing the provider said about the person is kept anywhere in the store.
-        from bson import json_util
-
-        everything = {n: list(store()[n].find()) for n in store().list_collection_names()}
-        assert "sinhvien@example.edu.vn" not in json_util.dumps(everything)
+    row = store()["account"].find_one({"pseudonym": "SV-001"})
+    assert (row["email"], row["email_verified"]) == ("sinhvien@example.edu.vn", 1)
 
     browser = TestClient(m.app, headers={"user-agent": CHROME_MAC})
     _, flow = start(browser, "login", "/my-progress")
@@ -467,9 +463,11 @@ def test_unlinking_google_by_the_person_or_an_administrator(tmp_path, monkeypatc
             target = account_id(m, "SV-001")
             r = admin.post(f"/api/v1/admin/accounts/{target}/unlink-google")
             assert r.json()["google_linked"] is False
+        # D071: the email is the account, so the same address signs in again;
+        # another Google account, with another address, is not linked.
         browser = TestClient(m.app)
         _, flow = start(browser)
-        r, _ = finish(monkeypatch, browser, flow, sub="g-4")
+        r, _ = finish(monkeypatch, browser, flow, sub="g-5", email="nguoi.khac@example.edu.vn")
         assert google_note(r) == "not_linked"
     assert student.post("/api/v1/me/google/unlink").status_code == 404
     assert len(audit(m, "account.google_unlink")) == 2

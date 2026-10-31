@@ -19,7 +19,7 @@ from fastapi import Response as HttpResponse
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse
 
-from aicefr.api.deps import can_view_response, require_login
+from aicefr.api.deps import require_login
 from aicefr.api.schemas import QueueItem, SubmitResponse
 from aicefr.audio.decoder import SNIFF_BYTES, sniff
 from aicefr.contracts import (
@@ -46,6 +46,7 @@ from aicefr.services.core.assessment.context import (
     CONFIG_VERSION,
     active_model_name,
     blind,
+    can_view,
     measurement_error,
     saw,
     scorable_duration,
@@ -213,7 +214,7 @@ def get_report(response_id: str, account: Account = Depends(require_login)) -> J
     repo = svc().repo
     report = repo.get(response_id)
     owner = repo.owner_of(response_id)
-    if report is None or not can_view_response(account, owner):
+    if report is None or not can_view(account, owner):
         raise HTTPException(404, "không tìm thấy bài này")
     blind(account, response_id)
     saw(account, response_id, "report")
@@ -255,7 +256,7 @@ def get_audio(response_id: str, account: Account = Depends(require_login)) -> Fi
     person, so every access is audited.
     """
     repo = svc().repo
-    if not can_view_response(account, repo.owner_of(response_id)):
+    if not can_view(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
     repo.write_audit(account.account_id, "AUDIO_ACCESS", response_id, None)
     # The returned filename uses the response id, not the original name:
@@ -268,7 +269,7 @@ def response_status(response_id: str, account: Account = Depends(require_login))
     """A lightweight status for the progress page to poll. FR-05."""
     repo = svc().repo
     status_info = repo.status_of(response_id)
-    if status_info is None or not can_view_response(account, repo.owner_of(response_id)):
+    if status_info is None or not can_view(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
     status_info["is_pending"] = ResponseStatus(status_info["status"]).is_pending
     return status_info

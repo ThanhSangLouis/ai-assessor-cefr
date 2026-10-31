@@ -11,7 +11,7 @@ from aicefr.platform.rpc import exposed
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import AuthRepository, Role
 
-ACCOUNT_FIELDS = ("account_id", "pseudonym", "role", "disabled")
+ACCOUNT_FIELDS = ("account_id", "pseudonym", "role", "disabled", "email", "full_name")
 
 
 def _account(row) -> dict | None:
@@ -32,6 +32,16 @@ class IdentityFacade:
     @exposed
     def by_pseudonym(self, pseudonym: str) -> dict | None:
         return _account(self.auth.get_by_pseudonym(pseudonym))
+
+    @exposed
+    def by_sign_in_name(self, identifier: str) -> dict | None:
+        """The account an email (or, before D071, a pseudonym) names, or None."""
+        return _account(self.auth.by_sign_in_name(identifier))
+
+    @exposed
+    def display_names(self, account_ids: list[str]) -> dict[str, str]:
+        """What a teacher reads for each account: the full name, else the pseudonym (D071)."""
+        return self.auth.display_names(account_ids)
 
     @exposed
     def pseudonyms(self, account_ids: list[str]) -> dict[str, str]:

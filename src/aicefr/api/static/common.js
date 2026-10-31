@@ -535,12 +535,12 @@ window.showRecoverySlip = function (pseudonym, code) {
   document.getElementById("slip-pseudonym").textContent = pseudonym;
   document.getElementById("slip-code").textContent = code;
   const text =
-    `AI Assessor CEFR\nBút danh: ${pseudonym}\nMã khôi phục: ${code}\n` +
+    `AI Assessor CEFR\nĐăng nhập: ${pseudonym}\nMã khôi phục: ${code}\n` +
     `Dùng ở ${location.origin}/forgot khi quên mật khẩu. Mã chỉ dùng được một lần.\n`;
   document.getElementById("slip-copy").onclick = async () => {
     try {
       await navigator.clipboard.writeText(text);
-      window.toast("Đã sao chép bút danh và mã khôi phục.", "ok");
+      window.toast("Đã sao chép mã khôi phục.", "ok");
     } catch (err) {
       window.toast("Trình duyệt không cho sao chép; hãy chép tay.", "error");
     }
@@ -548,7 +548,7 @@ window.showRecoverySlip = function (pseudonym, code) {
   document.getElementById("slip-save").onclick = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
-    a.download = `ma-khoi-phuc-${pseudonym}.txt`;
+    a.download = "ma-khoi-phuc-ai-assessor.txt";
     a.click();
     URL.revokeObjectURL(a.href);
   };

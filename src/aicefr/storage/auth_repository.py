@@ -21,7 +21,7 @@ from datetime import UTC, datetime, timedelta
 from enum import Enum
 from pathlib import Path
 
-from aicefr.auth import passwords
+from aicefr.auth import contact, passwords
 from aicefr.auth import sessions as session_tokens
 from aicefr.auth.pseudonyms import validate_pseudonym
 from aicefr.contracts import AuthSession
@@ -51,6 +51,8 @@ INDEXES = {
         (("account_id",), True),
         (("pseudonym",), True),
         (("pseudonym_lower",), False),
+        # D071: one account per email; accounts made before it may have none.
+        (("email",), True, {"email": {"$type": "string"}}),
         (
             ("identities.provider", "identities.subject_hash"),
             True,
@@ -82,6 +84,9 @@ ACCOUNT_FIELDS = (
     "seen_markers",
     "recovery_hash",
     "recovery_issued_at",
+    "email",
+    "email_verified",
+    "full_name",
 )
 
 
@@ -146,10 +151,18 @@ class Account:
     # when its owner last looked at what can change behind their back (D028).
     identities: tuple[str, ...] = ()
     seen_markers: Mapping[str, str] = field(default_factory=dict)
+    # D071: how the person signs in and what a teacher reads. None on an
+    # account made before D071 until its owner adds them.
+    email: str | None = None
+    full_name: str | None = None
 
     @property
     def is_staff(self) -> bool:
         return self.role in (Role.TEACHER, Role.ADMIN)
+
+    @property
+    def display_name(self) -> str:
+        return self.full_name or self.pseudonym
 
 
 class AccountLocked(Exception):
@@ -162,6 +175,10 @@ class WrongPassword(Exception):
 
 class IdentityTaken(Exception):
     """The outside identity is already linked to a different account."""
+
+
+class EmailTaken(Exception):
+    """Another account already signs in with this email (D071)."""
 
 
 # Prefix of generated pseudonyms per role: SV-001 (sinh viên), GV-001 (giảng
@@ -225,6 +242,11 @@ class AuthRepository(MongoStore):
             # D065: the bcrypt hash of the one recovery code in force, or None.
             "recovery_hash": None,
             "recovery_issued_at": None,
+            # D071: absent on accounts made before it; verified once Google
+            # has vouched for the address.
+            "email": None,
+            "email_verified": 0,
+            "full_name": None,
         }
 
     def create_account(
@@ -337,6 +359,9 @@ class AuthRepository(MongoStore):
                     "avatar_icon": r["avatar_icon"],
                     "avatar_color": r["avatar_color"],
                     "google_linked": r["account_id"] in linked,
+                    "email": r["email"],
+                    "email_verified": bool(r["email_verified"]),
+                    "full_name": r["full_name"],
                 }
             )
         return out
@@ -361,6 +386,64 @@ class AuthRepository(MongoStore):
     def get_by_pseudonym(self, pseudonym: str) -> dict | None:
         return _account(self.col("account").find_one({"pseudonym": pseudonym, "disabled": 0}))
 
+    def get_by_email(self, email: str) -> dict | None:
+        """The enabled account that signs in with this email (D071), or None."""
+        try:
+            email = contact.normalize_email(email)
+        except ValueError:
+            return None
+        return _account(self.col("account").find_one({"email": email, "disabled": 0}))
+
+    def by_sign_in_name(self, identifier: str) -> dict | None:
+        """The account a sign-in name points at: an email, or a legacy pseudonym.
+
+        A pseudonym signs in only an account that has no email yet (D071): once
+        its owner adds one, the email is the way in and the pseudonym is an
+        internal code, not a second door.
+        """
+        if contact.looks_like_email(identifier):
+            return self.get_by_email(identifier)
+        row = self.get_by_pseudonym((identifier or "").strip())
+        return row if row is not None and not row["email"] else None
+
+    def display_names(self, account_ids: list[str]) -> dict[str, str]:
+        """What a teacher reads for each account: the full name, else the pseudonym (D071)."""
+        ids = list(dict.fromkeys(account_ids))
+        if not ids:
+            return {}
+        rows = self.col("account").find(
+            {"account_id": {"$in": ids}}, {"account_id": 1, "pseudonym": 1, "full_name": 1}
+        )
+        return {r["account_id"]: r.get("full_name") or r["pseudonym"] for r in rows}
+
+    def set_contact(
+        self, account_id: str, email: str | None = None, full_name: str | None = None
+    ) -> dict:
+        """Set the email and/or full name; returns the account. ValueError, EmailTaken.
+
+        A changed email is no longer one Google vouched for, so it loses its
+        verified mark until a Google sign-in with that address restores it.
+        """
+        row = self.get(account_id)
+        if row is None:
+            raise KeyError(account_id)
+        changes: dict[str, object] = {}
+        if full_name is not None:
+            changes["full_name"] = contact.normalize_name(full_name)
+        if email is not None:
+            email = contact.normalize_email(email)
+            if email != row["email"]:
+                other = self.col("account").find_one({"email": email}, {"account_id": 1})
+                if other is not None and other["account_id"] != account_id:
+                    raise EmailTaken(email)
+                changes.update(email=email, email_verified=0)
+        if changes:
+            try:
+                self.col("account").update_one({"account_id": account_id}, {"$set": changes})
+            except IntegrityError as e:
+                raise EmailTaken(email) from e
+        return self.get(account_id)
+
     def pseudonyms(self, account_ids: list[str]) -> dict[str, str]:
         """Pseudonym of each account id, for screens that list other people's work."""
         ids = list(dict.fromkeys(account_ids))
@@ -373,7 +456,7 @@ class AuthRepository(MongoStore):
 
     # ---------- login ----------
 
-    def login(self, pseudonym: str, raw_password: str, device: str | None = None) -> str | None:
+    def login(self, identifier: str, raw_password: str, device: str | None = None) -> str | None:
         """Check the login credentials and return a session token, or None.
 
         Raises AccountLocked while the account is inside its lockout window. The
@@ -383,11 +466,11 @@ class AuthRepository(MongoStore):
         is wrong. Any hint that distinguishes the two cases would leak which
         accounts really exist.
         """
-        row = self._unlocked_row(pseudonym)
+        row = self._unlocked_row(identifier)
 
         if row is None:
             # Same cost as a real check, so response time does not reveal
-            # whether the pseudonym exists.
+            # whether the email or pseudonym exists.
             passwords.waste_equivalent_time(raw_password)
             return None
 
@@ -401,13 +484,13 @@ class AuthRepository(MongoStore):
         )
         return self._open_session(row["account_id"], device)
 
-    def _unlocked_row(self, pseudonym: str) -> dict | None:
+    def _unlocked_row(self, identifier: str) -> dict | None:
         """The account to check a secret against, or None; AccountLocked inside a lockout.
 
         Shared by the password and the recovery code (D065): both are guesses
         at a secret, so both count towards, and are stopped by, one lockout.
         """
-        row = self.get_by_pseudonym(pseudonym)
+        row = self.by_sign_in_name(identifier)
 
         # Clear the counter once the lock window has passed.
         #
@@ -422,7 +505,7 @@ class AuthRepository(MongoStore):
             and session_tokens.is_expired(row["locked_until"])
         ):
             self._reset_failures(row["account_id"])
-            row = self.get_by_pseudonym(pseudonym)
+            row = self.get(row["account_id"])
         if (
             row is not None
             and row["locked_until"]
@@ -430,6 +513,10 @@ class AuthRepository(MongoStore):
         ):
             raise AccountLocked(row["locked_until"])
         return row
+
+    def record_failure(self, account_id: str) -> None:
+        """A wrong secret given while signed in (a password check on the account page)."""
+        self._record_failure(account_id)
 
     def _record_failure(self, account_id: str) -> None:
         """Tang bo dem NGUYEN TU va khoa ngay khi cham nguong.
@@ -500,6 +587,8 @@ class AuthRepository(MongoStore):
             daily_goal_s=row["daily_goal_s"] or DEFAULT_DAILY_GOAL,
             identities=tuple(i["provider"] for i in row["identities"] or []),
             seen_markers=dict(row["seen_markers"] or {}),
+            email=row["email"],
+            full_name=row["full_name"],
         )
 
     def logout(self, token: str | None) -> None:
@@ -585,15 +674,23 @@ class AuthRepository(MongoStore):
 
     # ---------- self sign-up and recovery codes (D065) ----------
 
-    def signup(self, raw_password: str, device: str | None = None) -> tuple[str, str, str, str]:
-        """Create a student account with a password its owner chose; sign it in.
+    def signup(
+        self, email: str, full_name: str, raw_password: str, device: str | None = None
+    ) -> tuple[str, str, str, str]:
+        """Create a student account with an email, a name and a password; sign it in.
 
-        Returns (account_id, pseudonym, recovery code, session token). The
-        pseudonym is drawn at random ("SV-" and six hex digits, upper case):
-        a chosen one invites a real name (FR-33). The recovery code is the only
-        way back in without an administrator, so it is made here, shown once.
-        Raises ValueError, worded for the person, when the password will not do.
+        Returns (account_id, pseudonym, recovery code, session token). The person
+        signs in with the email (D071); the pseudonym is drawn at random ("SV-"
+        and six hex digits) and stays inside, for research exports and the audit
+        log. The recovery code is the only way back in without an administrator,
+        so it is made here, shown once. Raises ValueError, worded for the
+        person, when the email, the name or the password will not do, and
+        EmailTaken when the email already has an account.
         """
+        email = contact.normalize_email(email)
+        full_name = contact.normalize_name(full_name)
+        if self.col("account").find_one({"email": email}, {"_id": 1}) is not None:
+            raise EmailTaken(email)
         now = _now()
         for _ in range(20):
             try:
@@ -602,7 +699,7 @@ class AuthRepository(MongoStore):
                 continue
             if self.get_by_pseudonym(pseudonym) is not None:
                 continue
-            passwords.check_new_password(raw_password, pseudonym)
+            passwords.check_new_password(raw_password, email.split("@")[0])
             code = passwords.recovery_code()
             aid = uuid.uuid4().hex[:12]
             doc = self._new_account(
@@ -613,10 +710,14 @@ class AuthRepository(MongoStore):
                 last_login_at=now,
                 recovery_hash=passwords.hash_password(code),
                 recovery_issued_at=now,
+                email=email,
+                full_name=full_name,
             )
             try:
                 self.col("account").insert_one(doc)
             except IntegrityError:
+                if self.col("account").find_one({"email": email}, {"_id": 1}) is not None:
+                    raise EmailTaken(email) from None
                 continue  # the pseudonym was taken in between; draw another
             return aid, pseudonym, code, self._open_session(aid, device)
         raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
@@ -638,7 +739,7 @@ class AuthRepository(MongoStore):
         return code
 
     def recover(
-        self, pseudonym: str, code: str, new_password: str, device: str | None = None
+        self, identifier: str, code: str, new_password: str, device: str | None = None
     ) -> tuple[str, dict, str] | None:
         """Replace a forgotten password with the recovery code; sign in.
 
@@ -651,8 +752,8 @@ class AuthRepository(MongoStore):
         inside a lockout and ValueError for an unacceptable new password, which
         is checked first and spends nothing.
         """
-        row = self._unlocked_row(pseudonym)
-        passwords.check_new_password(new_password, row["pseudonym"] if row else pseudonym)
+        row = self._unlocked_row(identifier)
+        passwords.check_new_password(new_password, row["pseudonym"] if row else identifier)
         typed = passwords.normalize_code(code)
         if row is None or row["disabled"] or not row["recovery_hash"]:
             passwords.waste_equivalent_time(typed)
@@ -822,7 +923,13 @@ class AuthRepository(MongoStore):
             # Linked to another account between the check and the update.
             raise IdentityTaken(provider) from e
 
-    def create_with_identity(self, provider: str, subject_hash: str) -> str:
+    def create_with_identity(
+        self,
+        provider: str,
+        subject_hash: str,
+        email: str | None = None,
+        full_name: str | None = None,
+    ) -> str:
         """Sign up a student from an outside identity alone (D063); return the account_id.
 
         The pseudonym is drawn at random ("SV-G" and eight hex digits): Google's
@@ -835,6 +942,16 @@ class AuthRepository(MongoStore):
         """
         if self.account_by_identity(provider, subject_hash) is not None:
             raise IdentityTaken(provider)
+        # D071: the address Google vouched for is the account's sign-in email.
+        email = contact.normalize_email(email) if email else None
+        if email and self.col("account").find_one({"email": email}, {"_id": 1}) is not None:
+            raise EmailTaken(email)
+        name = None
+        if full_name:
+            try:
+                name = contact.normalize_name(full_name)
+            except ValueError:
+                name = None  # Google's name will not do; the owner can set one
         now = _now()
         for _ in range(20):
             try:
@@ -855,6 +972,7 @@ class AuthRepository(MongoStore):
             doc["identities"] = [
                 {"provider": provider, "subject_hash": subject_hash, "linked_at": now}
             ]
+            doc.update(email=email, email_verified=int(bool(email)), full_name=name)
             try:
                 self.col("account").insert_one(doc)
             except IntegrityError as e:
@@ -863,6 +981,56 @@ class AuthRepository(MongoStore):
                 continue  # the pseudonym was taken in between; draw another
             return aid
         raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
+
+    def adopt_by_email(self, account_id: str, provider: str, subject_hash: str) -> bool:
+        """Join a Google sign-in to the account that already has its verified email (D071).
+
+        Google has proved the address belongs to whoever is signing in. If the
+        account's email was never proved -- typed at sign-up -- somebody else
+        may have typed it: the password and the recovery code are replaced by
+        unknown ones and every session ends, so only the address's owner, via
+        Google, gets in. Returns whether that reset happened.
+        """
+        row = self.get(account_id)
+        if row is None:
+            raise KeyError(account_id)
+        self.link_identity(account_id, provider, subject_hash)
+        reset = not row["email_verified"]
+        changes: dict[str, object] = {"email_verified": 1}
+        if reset:
+            changes.update(
+                password_hash=passwords.hash_password(secrets.token_urlsafe(32)),
+                recovery_hash=None,
+                recovery_issued_at=None,
+                must_change_password=0,
+            )
+        self.col("account").update_one({"account_id": account_id}, {"$set": changes})
+        if reset:
+            self.revoke_sessions(account_id)
+        return reset
+
+    def fill_contact(self, account_id: str, email: str | None, full_name: str | None) -> None:
+        """Fill what an older Google account lacks from what Google says, never overwriting."""
+        row = self.get(account_id)
+        if row is None:
+            return
+        changes: dict[str, object] = {}
+        if email and not row["email"]:
+            email = contact.normalize_email(email)
+            if self.col("account").find_one({"email": email}, {"_id": 1}) is None:
+                changes.update(email=email, email_verified=1)
+        elif email and row["email"] == contact.normalize_email(email):
+            changes["email_verified"] = 1
+        if full_name and not row["full_name"]:
+            try:
+                changes["full_name"] = contact.normalize_name(full_name)
+            except ValueError:
+                pass
+        if changes:
+            try:
+                self.col("account").update_one({"account_id": account_id}, {"$set": changes})
+            except IntegrityError:
+                pass  # the address was taken in between: keep the account as it was
 
     def count_identities(self, provider: str) -> int:
         return self.col("account").count_documents({"identities.provider": provider})

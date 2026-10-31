@@ -566,6 +566,19 @@ def _d060(db: Database, target: str) -> None:
         step(db)
 
 
+def _d071_class_teachers(db: Database, target: str) -> None:
+    """A class has teachers, not a teacher (D071): `teacher_id` becomes `teacher_ids`."""
+    if not _has(db, "classroom"):
+        return
+    for c in db["classroom"].find({"teacher_ids": {"$exists": False}}, {"teacher_id": 1}):
+        owner = c.get("teacher_id")
+        db["classroom"].update_one(
+            {"_id": c["_id"]},
+            {"$set": {"teacher_ids": [owner] if owner else []}, "$unset": {"teacher_id": ""}},
+        )
+    ensure_indexes(db, {"classroom": [(("teacher_ids",), False)]}, "migration-9")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -579,6 +592,9 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(6, "terms: research consent replaced by account.terms_accepted_at (D058)", _terms),
     Migration(7, "one collection per aggregate root of the class diagram (D060)", _d060),
     Migration(8, "terms: account.terms_accepted_at dropped, no terms step (D064)", _drop_terms),
+    Migration(
+        9, "classroom.teacher_ids: a class has one or more teachers (D071)", _d071_class_teachers
+    ),
 )
 
 LATEST = MIGRATIONS[-1].version

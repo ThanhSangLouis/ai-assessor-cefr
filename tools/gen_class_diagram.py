@@ -128,6 +128,9 @@ CLASSES = [
         "Account",
         [
             "- accountId: str",
+            "- email: str",
+            "- emailVerified: bool",
+            "- fullName: str",
             "- pseudonym: str",
             "- role: Role",
             "- dailyGoalS: int",
@@ -273,7 +276,7 @@ CLASSES = [
             "- classId: str",
             "- name: str",
             "- code: str",
-            "- teacher: Account [1]",
+            "- teachers: Account [0..*]",
             "- members: Account [0..*]",
             "- assignments: Assignment [0..*]",
             "- archived: bool",
@@ -516,8 +519,10 @@ EDGES = [
     ("Rating", "Account", "0..* : 1", "assoc"),
     ("Study", "Part", "1 : 0..*", "comp"),
     ("Part", "Account", "0..* : 1", "assoc"),
-    ("Class", "Account", "0..* : 1", "assoc"),
-    ("Class", "Account", "0..* : 0..*", "nn"),
+    # D071: a class has its teachers and its members, both many-to-many; the
+    # role name at the far end tells the two lines apart.
+    ("Class", "Account", "0..* : teachers 0..*", "nn"),
+    ("Class", "Account", "0..* : members 0..*", "nn"),
     ("Class", "Asg", "1 : 0..*", "comp"),
     ("Asg", "Task", "0..* : 1", "assoc"),
     ("Path", "Account", "0..* : 0..1", "assoc"),
@@ -668,13 +673,17 @@ def check_relations() -> None:
             if not hits:
                 problems.append(f"{name[src]} uses {name[dst]} but no attribute has that type")
             continue
-        far = label.split(" : ")[1]
+        # The far end may carry the role name before its multiplicity
+        # ("teachers 0..*"); then it must be the attribute that holds the line.
+        far_parts = label.split(" : ")[1].split()
+        far, role = far_parts[-1], (far_parts[0] if len(far_parts) > 1 else None)
         hits = [
             m.group(1)
             for ln in lines
             if (m := typed.match(ln))
             and m.group(2) == name[dst]
             and (m.group(3) or "1") == far
+            and (role is None or m.group(1) == role)
             and (src, m.group(1)) not in claimed
         ]
         if not hits:

@@ -632,7 +632,7 @@ class Repository(MongoStore):
         # The latest `limit`, in time order: "the last three results" must be.
         return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
 
-    def cohort_stats(self, limit: int = 5000) -> dict:
+    def cohort_stats(self, limit: int = 5000, owners: set[str] | None = None) -> dict:
         """What a teacher needs to see about a class rather than one student. FR-29.
 
         Two of these numbers are about the students and the rest are about the
@@ -648,9 +648,11 @@ class Repository(MongoStore):
         # (D023): practice is never scored, and counting it would make "responses"
         # and "scored responses" drift apart for no reason anyone could explain.
         responses = self.col("response")
+        # D071: a teacher's statistics are their classes' students; None, everyone's.
+        scope: dict = {} if owners is None else {"account_id": {"$in": sorted(owners)}}
         assessed = list(
             responses.find(
-                {"purpose": "assessment"},
+                {"purpose": "assessment", **scope},
                 {"overall_band": 1, "task_id": 1, "overall_0_6": 1, "status": 1, "account_id": 1},
             )
         )
@@ -666,7 +668,7 @@ class Repository(MongoStore):
             cell["waiting"] += int(r["status"] == "REVIEW_REQUIRED")
         speakers = len({r["account_id"] for r in assessed if r.get("account_id") is not None})
         waiting = sum(1 for r in assessed if r["status"] == "REVIEW_REQUIRED")
-        verified = responses.count_documents({"teacher_verified": 1})
+        verified = responses.count_documents({"teacher_verified": 1, **scope})
 
         # Only decisions where the machine had proposed a band at all.
         # A review of a response the model refused to score is a teacher doing
@@ -677,7 +679,7 @@ class Repository(MongoStore):
             (
                 r
                 for row in self.col("response").find(
-                    {"reviews.old_band": {"$ne": None}}, {"reviews": 1}
+                    {"reviews.old_band": {"$ne": None}, **scope}, {"reviews": 1}
                 )
                 for r in row.get("reviews") or []
                 if r.get("old_band") is not None
@@ -718,10 +720,10 @@ class Repository(MongoStore):
                 # of zero would read as "teachers never agree with the model".
                 "rate": round(kept / len(decisions), 3) if decisions else None,
             },
-            "practice": self.practice_summary(),
+            "practice": self.practice_summary(owners),
         }
 
-    def practice_summary(self) -> dict:
+    def practice_summary(self, owners: set[str] | None = None) -> dict:
         """How far the class has got with practice, per criterion. D023, outline 1.7.
 
         Totals only, no row per learner: this screen tells a teacher which criterion
@@ -733,7 +735,11 @@ class Repository(MongoStore):
         criterion_of = {t.task_id: t.criterion.value for t in PRACTICE_TASKS}
         rows = list(
             self.col("response").find(
-                {"purpose": "practice", "status": ResponseStatus.COMPLETED.value},
+                {
+                    "purpose": "practice",
+                    "status": ResponseStatus.COMPLETED.value,
+                    **({} if owners is None else {"account_id": {"$in": sorted(owners)}}),
+                },
                 {"account_id": 1, "task_id": 1, "report_json": 1},
             )
         )
@@ -1080,12 +1086,14 @@ class Repository(MongoStore):
             1 for r in rows if since is None or any(x["created_at"] > since for x in r["reviews"])
         )
 
-    def count_waiting_review(self, exclude: Collection[str] = ()) -> int:
-        """How many assessed responses wait in the teacher queue, less the ones in `exclude`."""
-        rows = self.col("response").find(
-            {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"},
-            {"response_id": 1},
-        )
+    def count_waiting_review(
+        self, exclude: Collection[str] = (), owners: set[str] | None = None
+    ) -> int:
+        """Assessed responses waiting in the queue, less `exclude`; `owners` only (D071)."""
+        query: dict = {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"}
+        if owners is not None:
+            query["account_id"] = {"$in": sorted(owners)}
+        rows = self.col("response").find(query, {"response_id": 1})
         hidden = set(exclude)
         return sum(r["response_id"] not in hidden for r in rows)
 
@@ -1100,17 +1108,23 @@ class Repository(MongoStore):
             update={"reviews": [Review(**r) for r in row.get("reviews") or []]}
         )
 
-    def queue_with_locks(self, status: ResponseStatus, limit: int = 50) -> list[dict]:
+    def queue_with_locks(
+        self, status: ResponseStatus, limit: int = 50, owners: set[str] | None = None
+    ) -> list[dict]:
         """The review queue plus, for each response, who currently holds it.
 
         Two reads rather than one read per queued response: the caller used to
         loop over the responses calling `locked_by` on each, which costs one
         round trip per response -- fine with three in a test, linear in the size
-        of the queue in a real term.
+        of the queue in a real term. `owners` keeps a teacher's queue to the
+        students of their classes (D071); None is everyone's.
         """
+        query: dict = {"status": status.value, "purpose": "assessment"}
+        if owners is not None:
+            query["account_id"] = {"$in": sorted(owners)}
         rows = list(
             self.col("response")
-            .find({"status": status.value, "purpose": "assessment"})
+            .find(query)
             .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
             .limit(limit)
         )
@@ -1121,6 +1135,7 @@ class Repository(MongoStore):
             lock = r.get("review_lock")
             held = lock is not None and lock["locked_until"] > now
             item["locked_by"] = lock["reviewer_name"] if held else None  # type: ignore[index]
+            item["account_id"] = r.get("account_id")
             out.append(item)
         return out  # type: ignore[return-value]
 

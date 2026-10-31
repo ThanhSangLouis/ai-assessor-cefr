@@ -35,15 +35,21 @@ def test_a_visitor_signs_up_then_resets_a_forgotten_password(context, live_serve
     page.goto("/login")
     page.locator("#signup-link").click()
     expect(page).to_have_url(re.compile(r"/signup$"))
+    # D071: the email to sign in with, the name a teacher reads, consent.
+    page.locator("#email").fill("hoc.vien.e2e@example.edu.vn")
+    page.locator("#full-name").fill("Nguyễn Văn An")
     page.locator("#password").fill(PASSWORD)
     page.locator("#again").fill(PASSWORD)
+    page.get_by_role("button", name="Tạo tài khoản").click()
+    expect(page.locator("#tb")).to_contain_text("đồng ý")  # consent is required
+    page.locator("#consent").check()
     page.get_by_role("button", name="Tạo tài khoản").click()
 
     slip = page.locator("#recovery-slip")
     expect(slip).to_be_visible()
     pseudonym = page.locator("#slip-pseudonym").inner_text()
     code = page.locator("#slip-code").inner_text()
-    assert re.fullmatch(r"SV-[0-9A-F]{6}", pseudonym)
+    assert pseudonym == "hoc.vien.e2e@example.edu.vn"  # the slip names the sign-in email
     assert re.fullmatch(r"[a-z2-9]{4}(-[a-z2-9]{4}){3}", code)
 
     # The way on waits until the code is kept.

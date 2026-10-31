@@ -15,6 +15,13 @@
       "unique": true
     },
     {
+      "name": "u_email",
+      "keys": [
+        "email"
+      ],
+      "unique": true
+    },
+    {
       "name": "u_identities.provider_identities.subject_hash",
       "keys": [
         "identities.provider",
@@ -108,6 +115,13 @@
       "name": "i_teacher_id",
       "keys": [
         "teacher_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "i_teacher_ids",
+      "keys": [
+        "teacher_ids"
       ],
       "unique": false
     },

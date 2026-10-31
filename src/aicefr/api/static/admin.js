@@ -188,7 +188,9 @@ function renderAccounts() {
   const q = accSearch.value.trim().toLowerCase();
   const role = accFilter.value;
   const rows = accounts.filter(
-    (a) => (!role || a.role === role) && (!q || a.pseudonym.toLowerCase().includes(q))
+    (a) =>
+      (!role || a.role === role) &&
+      (!q || [a.pseudonym, a.email, a.full_name].some((v) => (v || "").toLowerCase().includes(q)))
   );
   const counts = Object.keys(ROLE_NAMES)
     .map((r) => `${ROLE_NAMES[r]} ${accounts.filter((a) => a.role === r).length}`)
@@ -199,7 +201,7 @@ function renderAccounts() {
   }
   let h = `<p class="muted">${escapeHtml(counts)}</p>
     <table class="accounts-table">
-      <thead><tr><th>Bút danh</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>Người dùng</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>`;
   rows.forEach((a) => {
     const last = a.last_login_at ? window.ui.localTime(a.last_login_at) : "Chưa đăng nhập";
@@ -207,8 +209,8 @@ function renderAccounts() {
     h += `<tr class="${a.disabled ? "row-muted" : ""}">
       <td><span class="account-cell">${avatarHtml(a)}<span>
         <button type="button" class="link-button account-open" data-account-open="${escapeHtml(a.account_id)}"
-          aria-label="${escapeHtml("Xem chi tiết " + a.pseudonym)}">${escapeHtml(a.pseudonym)}</button>
-        <span class="cell-sub">${escapeHtml(ROLE_NAMES[a.role] || a.role)}</span></span></span></td>
+          aria-label="${escapeHtml("Xem chi tiết " + (a.full_name || a.pseudonym))}">${escapeHtml(a.full_name || a.pseudonym)}</button>
+        <span class="cell-sub">${escapeHtml(a.email || "chưa có email")} · ${escapeHtml(ROLE_NAMES[a.role] || a.role)} · <code>${escapeHtml(a.pseudonym)}</code></span></span></span></td>
       <td>${escapeHtml(last)}<span class="cell-sub">${escapeHtml(sessions)}</span></td>
       <td>${accountState(a)}</td>
       <td class="action-cell">${accountActions(a)}</td>
@@ -432,6 +434,8 @@ const ACTIVITY_NAMES = {
   "account.google_signup": "Đăng ký bằng Google",
   "account.recovery_code": "Tạo mã khôi phục",
   "account.recover": "Đặt lại mật khẩu bằng mã khôi phục",
+  "account.contact": "Đổi họ tên hoặc email",
+  "account.google_adopt": "Nối đăng nhập Google theo email",
   "auth.recover_failed": "Thử mã khôi phục sai",
   "account.profile": "Sửa hồ sơ",
 };
@@ -456,6 +460,11 @@ function detailHtml(d) {
       <div class="inline-form role-form">
         <div class="field"><label for="role-select">Vai trò</label><select id="role-select">${roleOptions}</select></div>
         <div class="button-row"><button type="button" class="secondary" id="role-save">Đổi vai trò</button></div>
+      </div>
+      <div class="inline-form role-form">
+        <div class="field"><label for="contact-name">Họ và tên</label><input id="contact-name" maxlength="80" value="${escapeHtml(d.full_name || "")}"></div>
+        <div class="field"><label for="contact-email">Email đăng nhập</label><input id="contact-email" type="email" maxlength="254" value="${escapeHtml(d.email || "")}"></div>
+        <div class="button-row"><button type="button" class="secondary" id="contact-save">Lưu họ tên và email</button></div>
       </div>`;
   const sessions = d.sessions.length
     ? `<table><thead><tr><th>Thiết bị</th><th>Cách đăng nhập</th><th>Bắt đầu</th><th>Hết hạn</th></tr></thead><tbody>${d.sessions
@@ -478,11 +487,12 @@ function detailHtml(d) {
     : '<p class="muted">Chưa có hoạt động nào.</p>';
   return `<div class="sheet-head">
       <div class="profile-head">${avatarHtml(d)}
-        <div><h2 id="account-dialog-h">${escapeHtml(d.pseudonym)}</h2>
-        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)}</p></div></div>
+        <div><h2 id="account-dialog-h">${escapeHtml(d.full_name || d.pseudonym)}</h2>
+        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)} · mã <code>${escapeHtml(d.pseudonym)}</code></p></div></div>
       <button type="button" class="secondary icon-only" id="account-dialog-close" aria-label="Đóng">${window.ui.icon("x")}</button>
     </div>
     <dl class="facts">
+      ${fact("Email", d.email ? d.email + (d.email_verified ? " (Google đã xác minh)" : "") : "Chưa có")}
       ${fact("Tạo lúc", when(d.created_at))}
       ${fact("Đăng nhập gần nhất", when(d.last_login_at))}
       ${fact("Đổi mật khẩu gần nhất", when(d.password_changed_at))}
@@ -528,6 +538,30 @@ accountDialogBody.addEventListener("click", async (e) => {
   const button = e.target.closest("[data-account-action]");
   if (button) {
     runAccountAction(button);
+    return;
+  }
+  if (e.target.closest("#contact-save")) {
+    const id = accountDialogBody.querySelector("[data-account]").dataset.account;
+    const body = {};
+    const name = document.getElementById("contact-name").value.trim();
+    const email = document.getElementById("contact-email").value.trim();
+    if (name) body.full_name = name;
+    if (email) body.email = email;
+    if (!Object.keys(body).length) return;
+    const r = await fetch(`/api/v1/admin/accounts/${encodeURIComponent(id)}/contact`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (window.redirectToLoginIfExpired(r)) return;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      window.toast(typeof d.detail === "string" ? d.detail : "Chưa lưu được.", "error");
+      return;
+    }
+    window.toast("Đã lưu họ tên và email.", "ok");
+    await loadAccounts();
+    openAccount(id);
     return;
   }
   if (e.target.closest("#role-save")) {

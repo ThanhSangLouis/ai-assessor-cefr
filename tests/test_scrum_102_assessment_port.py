@@ -210,7 +210,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     assert assessment_json["priorities"][0]["feature_name"] == "ttr"
 
 
-def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessment_service):
+def test_review_queue_includes_pending_response_and_its_reviewer_can_lock_it(assessment_service):
     parts, settings = assessment_service
     report = Response(
         response_id="needs-review",
@@ -225,12 +225,15 @@ def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessme
     )
     context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
+    admin = Account("admin-1", "QT-01", Role.ADMIN)
 
     with TestClient(asgi(parts, settings)) as client:
-        queue = client.get("/api/v1/review/queue", headers=headers(teacher))
+        # D071: the student is in no class, so no teacher sees the response.
+        assert client.get("/api/v1/review/queue", headers=headers(teacher)).json() == []
+        queue = client.get("/api/v1/review/queue", headers=headers(admin))
         assert queue.status_code == 200, queue.text
         assert [item["response_id"] for item in queue.json()] == ["needs-review"]
-        locked = client.post("/api/v1/review/needs-review/lock", headers=headers(teacher))
+        locked = client.post("/api/v1/review/needs-review/lock", headers=headers(admin))
         assert locked.status_code == 200, locked.text
 
 

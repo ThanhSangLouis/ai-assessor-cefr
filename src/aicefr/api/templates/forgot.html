@@ -9,7 +9,7 @@
     <p class="eyebrow">AI Assessor CEFR</p>
     <h2 id="auth-intro-h">Đặt lại mật khẩu bằng mã khôi phục</h2>
     <ul class="auth-points">
-      <li>Hệ thống không lưu email nên không gửi thư đặt lại mật khẩu.</li>
+      <li>Hệ thống chưa gửi thư đặt lại mật khẩu; mã khôi phục thay cho thư.</li>
       <li>Mã khôi phục được cấp khi đăng ký, hoặc tạo ở trang Tài khoản.</li>
       <li>Đặt lại xong, mọi thiết bị khác bị đăng xuất.</li>
     </ul>
@@ -18,8 +18,9 @@
   <section class="card auth-card" aria-labelledby="forgot-h">
     <h1 id="forgot-h">Quên mật khẩu</h1>
     <form id="f" novalidate>
-      <label for="pseudonym">Mã bút danh</label>
-      <input id="pseudonym" autocomplete="username" required autocapitalize="none" spellcheck="false">
+      <label for="pseudonym">Email</label>
+      <input id="pseudonym" type="text" inputmode="email" autocomplete="username" required
+             autocapitalize="none" spellcheck="false">
       <label for="code">Mã khôi phục</label>
       <input id="code" autocomplete="one-time-code" required autocapitalize="none" spellcheck="false"
              aria-describedby="code-hint" placeholder="xxxx-xxxx-xxxx-xxxx">

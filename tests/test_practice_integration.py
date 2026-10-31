@@ -19,6 +19,7 @@ import json
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 from aicefr.asr.fake import FakeAsrEngine
@@ -301,6 +302,7 @@ def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    one_school(pseudonym, role)
     c = TestClient(m.app)
     r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200

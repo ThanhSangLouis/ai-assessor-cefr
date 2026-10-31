@@ -35,7 +35,7 @@ def my_badges(account: Account = Depends(require_login)) -> dict:
             # D068: the sidebar shows "Bài được giao" only to a student in a class.
             "in_class": bool(mine["classes"]),
         }
-    return peers.assessment.staff_badges(account_id=account.account_id)
+    return peers.assessment.staff_badges(account_id=account.account_id, role=account.role.value)
 
 
 @router.post("/api/v1/me/badges/{marker}/seen", tags=["auth"])
