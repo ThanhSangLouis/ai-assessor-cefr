@@ -161,7 +161,7 @@ jobs:
           from aicefr.asr.whisper_adapter import WhisperEngine
           detector = default_vad()
           assert detector.name == "silero", "speech image fell back to EnergyVad"
-          assert WhisperEngine(backend="ct2").model == "large-v3"
+          assert WhisperEngine(backend="ct2").model == "small"
           print("Silero loaded offline")'
       # The `models` volume mounts over HF_HOME. Docker seeds a new volume from
       # the image, so a cache dir the image lacks comes up owned by root and

@@ -234,8 +234,10 @@ Mã tự chọn backend theo nền tảng, bạn không phải khai báo gì:
 
 | Máy | Backend | Model mặc định | Dung lượng tải |
 |---|---|---|---|
-| Mac Apple Silicon (M1–M4) | `mlx-whisper`, chạy trên Metal | `mlx-community/whisper-large-v3-turbo` | ~1,5 GB |
-| Windows / Linux / Mac Intel | `faster-whisper` (CTranslate2) | `large-v3` | ~3 GB |
+| Mac Apple Silicon (M1–M4) | `mlx-whisper`, chạy trên Metal | `mlx-community/whisper-small-mlx` | ~0,5 GB |
+| Windows / Linux / Mac Intel | `faster-whisper` (CTranslate2) | `small` | ~0,5 GB |
+
+Model mặc định là **Whisper small**: đúng bộ nhận dạng mô hình chấm đã học (D066). Model lớn hơn không chấm đúng hơn mà làm lệch đặc trưng `asr_conf_mean` và chậm hơn khoảng 5 lần.
 
 ### B.2. Cài thêm gói ASR
 
@@ -249,14 +251,14 @@ một lệnh này cài `mlx-whisper` trên Mac và `faster-whisper` ở nơi kh�
 ### B.3. Tải model **trước**, đừng để lần nộp bài đầu tiên tải
 
 Nếu không tải trước, lần nộp bài đầu tiên sẽ đứng im vài phút trong lúc tải
-1,5–3 GB, và rất dễ bị hiểu nhầm thành treo máy.
+khoảng 0,5 GB, và rất dễ bị hiểu nhầm thành treo máy.
 
 **Trên Mac (Apple Silicon):**
 
 ```bash
 .venv/bin/python -c "
 from huggingface_hub import snapshot_download
-p = snapshot_download('mlx-community/whisper-large-v3-turbo')
+p = snapshot_download('mlx-community/whisper-small-mlx')
 print('Da tai xong ve:', p)
 "
 ```
@@ -266,7 +268,7 @@ print('Da tai xong ve:', p)
 ```bash
 .venv/bin/python -c "
 from faster_whisper import WhisperModel
-WhisperModel('large-v3', device='cpu', compute_type='int8')
+WhisperModel('small', device='cpu', compute_type='int8')
 print('Da tai xong')
 "
 ```
@@ -301,19 +303,12 @@ lâu hơn đáng kể nếu chạy CPU thuần.
 
 ### B.5. Điều bắt buộc phải biết trước khi nhìn điểm
 
-Báo cáo của bạn gần như chắc chắn sẽ có mã lý do `ASR_VERSION_MISMATCH` và bị
-đẩy sang giảng viên. **Đó không phải lỗi cài đặt.** Mô hình hồi quy hiện tại
-được huấn luyện trên đặc trưng trích từ Whisper **small**, còn hệ thống đang
-chạy large-v3-turbo; hệ thống tự phát hiện chênh lệch đó và từ chối coi điểm là
-chắc chắn. Đây là hành vi cố ý — thà báo là không chắc còn hơn đưa ra một điểm
-số sai mà không ai biết.
-
-Đổi `AICEFR_WHISPER_MODEL` sang model nhỏ hơn để chạy nhanh vẫn được, nhưng
-không làm mất cảnh báo này, chỉ đổi nội dung cảnh báo:
-
-```bash
-AICEFR_ASR=whisper AICEFR_WHISPER_MODEL=mlx-community/whisper-small ./demo.sh
-```
+Mô hình hồi quy được huấn luyện trên đặc trưng trích từ Whisper **small**, và
+hệ thống mặc định chạy đúng model đó (D066). Đổi `AICEFR_WHISPER_MODEL` sang
+model khác (large-v3, large-v3-turbo…) thì báo cáo có mã `ASR_VERSION_MISMATCH`
+và bị đẩy sang giảng viên: model khác làm lệch `asr_conf_mean`, đặc trưng có hệ
+số lớn nhất, nên điểm đổi vì lý do không liên quan tới người nói. Đó là hành vi
+cố ý, không phải lỗi cài đặt.
 
 ---
 

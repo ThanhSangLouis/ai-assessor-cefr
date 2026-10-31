@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi import Response as HttpResponse
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -542,35 +543,48 @@ async def learn_attempt(
     round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
 
     data, kind = await _read_audio(audio)
-    before = lesson_state(
-        lesson, _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id))
-    )
-    attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
-    audio_key = f"lesson-audio-{attempt_id}.{kind}"
-    result = _measure(step, data, kind, round_index, step.answers, keep=audio_key)
-    _compare_with_first_round(account, lesson_id, step_id, result)
 
-    lessons_repo.add_attempt(
-        account.account_id, lesson_id, version, result, audio_key=audio_key, attempt_id=attempt_id
-    )
-    _schedule_reviews(account, lesson, step, result)
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        before = lesson_state(
+            lesson,
+            _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)),
+        )
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(step, data, kind, round_index, step.answers, keep=audio_key)
+        _compare_with_first_round(account, lesson_id, step_id, result)
 
-    after = lesson_state(
-        lesson, _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id))
-    )
-    return {
-        "attempt_id": attempt_id,
-        "result": result.model_dump(mode="json"),
-        "audio_url": _audio_url(attempt_id),
-        "progress": {
-            "passed": after.passed,
-            "total": after.total,
-            "free_done": after.free_done,
-            "completed": is_complete(lesson, after),
-        },
-        "completed_now": is_complete(lesson, after) and not is_complete(lesson, before),
-        "achievements": _just_reached(account),
-    }
+        lessons_repo.add_attempt(
+            account.account_id,
+            lesson_id,
+            version,
+            result,
+            audio_key=audio_key,
+            attempt_id=attempt_id,
+        )
+        _schedule_reviews(account, lesson, step, result)
+
+        after = lesson_state(
+            lesson,
+            _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)),
+        )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+            "progress": {
+                "passed": after.passed,
+                "total": after.total,
+                "free_done": after.free_done,
+                "completed": is_complete(lesson, after),
+            },
+            "completed_now": is_complete(lesson, after) and not is_complete(lesson, before),
+            "achievements": _just_reached(account),
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 def _rand() -> str:
@@ -732,59 +746,65 @@ async def learn_review_attempt(
         raise HTTPException(404, "mục ôn này không còn đến hạn")
     step = Step.model_validate({k: v for k, v in entry["step"].items() if k in Step.model_fields})
     data, kind = await _read_audio(audio)
-    attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
-    audio_key = f"lesson-audio-{attempt_id}.{kind}"
-    result = _measure(
-        step, data, kind, 1 if step.kind is StepKind.FREE else None, None, keep=audio_key
-    )
 
-    lessons_repo = svc().lessons
-    items = [lessons_repo.review(i) for i in entry["items"]]
-    if entry["source"] == "talk":
-        item = items[0]
-        found = lessons_repo.published(item["lesson_id"])
-        lesson_id, version = item["lesson_id"], found[1] if found else 0
-        step_id = item["step_id"]
-    else:
-        lesson_id, version, step_id = "review", 0, "review-words"
-    result = result.model_copy(update={"step_id": step_id})
-    lessons_repo.add_attempt(
-        account.account_id,
-        lesson_id,
-        version,
-        result,
-        audio_key=audio_key,
-        review_item_id=",".join(entry["items"]),
-        attempt_id=attempt_id,
-    )
-    today = _today()
-    outcome = []
-    found_words = [h.text for h in result.found]
-    for item in items:
-        if not result.measured:
-            continue
-        if item["kind"] == "word":
-            ok = any(same_word(item["word"].lower(), w.lower()) for w in found_words)
-        else:
-            ok = result.passed
-        nxt = after_review(item["box"], ok, today)
-        lessons_repo.reschedule(item["item_id"], nxt.box, nxt.due)
-        outcome.append(
-            {
-                "item_id": item["item_id"],
-                "word": item["word"],
-                "passed": ok,
-                "done": nxt.done,
-                "due": nxt.due.isoformat() if nxt.due else None,
-            }
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(
+            step, data, kind, 1 if step.kind is StepKind.FREE else None, None, keep=audio_key
         )
-    return {
-        "attempt_id": attempt_id,
-        "result": result.model_dump(mode="json"),
-        "audio_url": _audio_url(attempt_id),
-        "items": outcome,
-        "achievements": _just_reached(account),
-    }
+
+        lessons_repo = svc().lessons
+        items = [lessons_repo.review(i) for i in entry["items"]]
+        if entry["source"] == "talk":
+            item = items[0]
+            found = lessons_repo.published(item["lesson_id"])
+            lesson_id, version = item["lesson_id"], found[1] if found else 0
+            step_id = item["step_id"]
+        else:
+            lesson_id, version, step_id = "review", 0, "review-words"
+        result = result.model_copy(update={"step_id": step_id})
+        lessons_repo.add_attempt(
+            account.account_id,
+            lesson_id,
+            version,
+            result,
+            audio_key=audio_key,
+            review_item_id=",".join(entry["items"]),
+            attempt_id=attempt_id,
+        )
+        today = _today()
+        outcome = []
+        found_words = [h.text for h in result.found]
+        for item in items:
+            if not result.measured:
+                continue
+            if item["kind"] == "word":
+                ok = any(same_word(item["word"].lower(), w.lower()) for w in found_words)
+            else:
+                ok = result.passed
+            nxt = after_review(item["box"], ok, today)
+            lessons_repo.reschedule(item["item_id"], nxt.box, nxt.due)
+            outcome.append(
+                {
+                    "item_id": item["item_id"],
+                    "word": item["word"],
+                    "passed": ok,
+                    "done": nxt.done,
+                    "due": nxt.due.isoformat() if nxt.due else None,
+                }
+            )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+            "items": outcome,
+            "achievements": _just_reached(account),
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 # ---------------------------------------------------------------- achievements (D032)
@@ -1394,15 +1414,21 @@ async def teach_preview_attempt(
     if step is None:
         raise HTTPException(404, "không tìm thấy bước này")
     data, kind = await _read_audio(audio)
-    limits = step.round_limits()
-    round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
-    result = _measure(step, data, kind, round_index, step.answers)
-    return {
-        "attempt_id": None,
-        "result": result.model_dump(mode="json"),
-        "audio_url": None,
-        "preview": True,
-    }
+
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        limits = step.round_limits()
+        round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
+        result = _measure(step, data, kind, round_index, step.answers)
+        return {
+            "attempt_id": None,
+            "result": result.model_dump(mode="json"),
+            "audio_url": None,
+            "preview": True,
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 # ---------------------------------------------------------------- insights
