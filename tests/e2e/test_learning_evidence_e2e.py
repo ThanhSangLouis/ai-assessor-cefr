@@ -128,10 +128,14 @@ def test_a_score_only_learner_sees_why_and_can_leave(browser, live_server):
 def test_class_page_shows_teacher_time_and_class_pronunciation(browser, live_server):
     teacher = _page(browser, live_server, "/teach", "teacher")
     teacher.goto("/review/stats")
-    body = teacher.locator("#teacher-time-body")
+    expect(teacher.locator("#class-pronunciation-body")).not_to_contain_text("Không tải được")
+    # D068: teacher time is a measurement for the study, read by administrators.
+    expect(teacher.locator("#teacher-time")).to_have_count(0)
+    admin = _page(browser, live_server, "/admin", "admin")
+    admin.goto("/review/stats")
+    body = admin.locator("#teacher-time-body")
     expect(body).to_contain_text("Duyệt một bài, có máy")
     expect(body).to_contain_text("chưa đủ 5 lần")
-    expect(teacher.locator("#class-pronunciation-body")).not_to_contain_text("Không tải được")
 
 
 def test_admin_sets_the_measurement_error_with_its_source(browser, live_server):

@@ -1317,7 +1317,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | Acceptance Criteria |
 | --- |
 | **AC-76.1** — *Given* hai sinh viên cùng mắc lỗi âm cuối, *When* giảng viên mở bản của lớp, *Then* thấy 2 người học, 2 lỗi, ví dụ chỉ có `word` và `said`, không có bút danh hay mã tài khoản; sinh viên nhận 403 (`test_class_profile_is_for_staff_and_names_nobody`). |
-| **AC-76.2** — *Given* giảng viên, *When* mở trang Thống kê lớp, *Then* thẻ "Phát âm của cả lớp" và thẻ "Hiệu quả cho giảng viên" tải được (`test_class_page_shows_teacher_time_and_class_pronunciation`). |
+| **AC-76.2** — *Given* giảng viên và quản trị viên, *When* mở trang Thống kê, *Then* thẻ "Phát âm của cả lớp" tải được; thẻ "Hiệu quả cho giảng viên" chỉ quản trị viên thấy (D068) (`test_class_page_shows_teacher_time_and_class_pronunciation`). |
 
 ### FR-77 — Thực nghiệm phản hồi: chia nhóm và giữ phản hồi lại
 
@@ -1393,7 +1393,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-81.5** — *Given* sinh viên đã có lộ trình riêng, *When* ghép lại với "B2" rồi bỏ lộ trình, *Then* lộ trình mới thay lộ trình cũ và chỉ gồm bài B2; sau khi bỏ thì không còn lộ trình đang dùng (`test_asking_again_replaces_the_plan_and_closing_it_sets_it_aside`). |
 | **AC-81.6** — *Given* một bài đã xuất bản nằm trong lộ trình còn nháp, *When* sinh viên ghép 30 bài và giảng viên ghép, *Then* lộ trình của sinh viên không có bài đó, đề xuất của giảng viên có (`test_a_draft_path_never_reaches_a_learners_plan`). |
 | **AC-81.7** — *Given* sinh viên có lộ trình riêng, *When* tải bản xuất dữ liệu rồi bị xoá dữ liệu, *Then* bản xuất có `learning_plans` kèm mục đích; sau khi xoá không còn lộ trình nào của sinh viên (`test_plans_are_in_the_export_and_go_with_erasure`). |
-| **AC-81.8** — *Given* sinh viên ở trang Luyện tập, *When* nhập mục tiêu, chọn âm cuối, bấm "Ghép lộ trình", tải lại trang rồi bấm "Bỏ lộ trình này", *Then* thấy 6 bài có lý do và đường dẫn tới bài; tải lại vẫn còn; bỏ thì trở về lời mời ghép (`test_a_learner_composes_a_path_and_sets_it_aside`). |
+| **AC-81.8** — *Given* sinh viên ở trang Luyện tập, *When* trang mở, *Then* thấy lộ trình giảng viên đã xuất bản và không có ô tự ghép lộ trình: ghép lộ trình là việc của giảng viên (D068) (`test_a_learner_follows_the_published_path_without_composing_one`). |
 | **AC-81.9** — *Given* bài đánh giá gần nhất ra B1, yếu nhất Độ trôi chảy, *When* sinh viên ghép 4 bài không nhập band, *Then* các bài ở B1 hoặc B2 và có lý do là tiêu chí yếu nhất (`test_the_latest_assessment_steers_the_learners_path`). |
 
 ### FR-82 — Giảng viên ghép lộ trình từ bài có sẵn
