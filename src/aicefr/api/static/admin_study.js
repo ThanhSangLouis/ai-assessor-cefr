@@ -6,7 +6,6 @@ const NEXT = { running: ["survey", "Chuyển sang khảo sát"], survey: ["close
 
 const listPanel = document.getElementById("study-list");
 const listBody = document.getElementById("study-list-body");
-const newPanel = document.getElementById("study-new");
 const reportPanel = document.getElementById("study-report");
 const reportBody = document.getElementById("study-report-body");
 
@@ -38,7 +37,6 @@ async function loadList() {
     listBody.innerHTML = '<p class="error">Không tải được danh sách. Hãy tải lại trang.</p>';
     return;
   }
-  newPanel.hidden = d.studies.some((s) => s.status !== "closed");
   listBody.innerHTML = d.studies.length
     ? '<div class="table-wrap"><table><thead><tr><th>Tên</th><th>Trạng thái</th><th class="num">Tham gia</th>' +
       '<th class="num">Khảo sát</th><th>Bắt đầu</th><th></th></tr></thead><tbody>' +
@@ -94,21 +92,6 @@ listBody.addEventListener("click", async (e) => {
   });
   if (r) {
     window.toast("Đã cập nhật trạng thái thực nghiệm.");
-    loadList();
-  }
-});
-
-document.getElementById("study-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const f = new FormData(e.target);
-  if (!window.confirm("Chia nhóm ngẫu nhiên và bắt đầu? Nhóm “Chỉ điểm” sẽ không thấy nhận xét cho đến khi đóng.")) return;
-  const r = await window.apiJson("/api/v1/admin/studies", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: f.get("name"), min_days: Number(f.get("min_days")) }),
-  });
-  if (r) {
-    window.toast(`Đã chia ${r.participants} học viên vào hai nhóm.`);
     loadList();
   }
 });

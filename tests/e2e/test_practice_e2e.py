@@ -225,34 +225,29 @@ def student(context, live_server):
 
 
 def submit_file(page, live_server, task_id: str, name: str = "full-35s.wav") -> None:
-    page.goto(f"/practice/{task_id}")
-    expect(page.locator("#practice-form")).to_be_visible()
-    page.set_input_files("#audio", str(live_server.files / name))
-    # The shared recorder (D024) shows the file in its listen-back step first.
-    expect(page.locator("#rec-take")).to_contain_text(name)
-    page.get_by_role("button", name="Nộp bài luyện").click()
-    page.wait_for_url(re.compile(r"/practice/results/[0-9a-f]+$"))
+    """A practice attempt sent the way an earlier task page sent it, then its result page.
+
+    The task pages are folded into the lesson path (D068); results of practice
+    attempts are still read on /practice/results/<id>.
+    """
+    r = page.request.post(
+        "/api/v1/responses",
+        multipart={
+            "audio": {
+                "name": name,
+                "mimeType": "audio/wav",
+                "buffer": (live_server.files / name).read_bytes(),
+            },
+            "task_id": task_id,
+        },
+    )
+    assert r.ok, r.text()
+    page.goto(f"/practice/results/{r.json()['response_id']}")
 
 
 # The practice home of D023 (suggestion, goal ring, 15-task path) was replaced
 # by the lesson path of D025; its cases live in tests/e2e/test_lessons_e2e.py.
-# The task pages below remain: a report's "practise this" link still opens one.
-
-
-def test_task_page_shows_missions_before_speaking(student):
-    student.goto("/practice/PR-FLU-A2")
-    expect(student.locator("h1")).to_have_text("Nói liền mạch về một ngày của bạn")
-    missions = student.locator(".mission-label")
-    expect(missions).to_have_count(2)
-    expect(missions.first).to_contain_text("Nói ít nhất 30 giây")
-    expect(student.locator("#practice-form")).to_be_visible()
-
-
-def test_word_task_shows_chips_and_read_aloud_task_shows_passage(student):
-    student.goto("/practice/PR-COH-A2")
-    expect(student.locator(".word-chips li")).to_have_text(["and", "but", "because", "so", "also"])
-    student.goto("/practice/PR-PHO-A2")
-    expect(student.locator(".reference-text")).to_contain_text("My name is Lan")
+# The task pages went in D068: their cases (TC-PR-E02, E03, E09, E14) went with them.
 
 
 def test_uploading_a_file_leads_to_a_result_with_evidence(student, live_server):
@@ -274,10 +269,10 @@ def test_clicking_evidence_seeks_the_recording(student, live_server):
     assert at == pytest.approx(max(0.0, seconds - 0.3), abs=0.6)
 
 
-def test_continue_button_opens_the_next_suggested_task(student, live_server):
+def test_continue_button_opens_the_lesson_path(student, live_server):
     submit_file(student, live_server, "PR-COH-A2")
-    student.get_by_role("link", name=re.compile("^Luyện tiếp")).click()
-    student.wait_for_url(lambda url: urlparse(url).path == "/practice/PR-FLU-A2")
+    student.get_by_role("link", name="Luyện tiếp theo lộ trình").click()
+    student.wait_for_url(lambda url: urlparse(url).path == "/practice")
 
 
 def test_too_short_file_is_rejected_with_reason_and_not_counted(student, live_server):
@@ -286,30 +281,6 @@ def test_too_short_file_is_rejected_with_reason_and_not_counted(student, live_se
     expect(student.locator(".practice-banner")).to_contain_text("quá ngắn")
     daily = student.request.get("/api/v1/practice").json()["daily"]
     assert daily["today"] == 0
-
-
-def test_fake_microphone_recording_is_submitted_and_processed(student):
-    student.goto("/practice/PR-COH-A2")
-    # The recorder shows itself once /api/v1/health has answered; wait for
-    # either outcome before deciding.
-    wait_until(
-        student,
-        "!document.getElementById('rec-live').hidden"
-        " || !document.getElementById('recorder-off').hidden",
-    )
-    if not student.locator("#rec-live").is_visible():
-        pytest.skip("may chu thieu ffmpeg nen giao dien tat ghi am truc tiep")
-    student.get_by_role("button", name="Bắt đầu ghi âm").click()
-    expect(student.get_by_role("button", name="Dừng ghi âm")).to_be_visible()
-    student.wait_for_timeout(3_000)
-    student.get_by_role("button", name="Dừng ghi âm").click()
-    expect(student.locator("#rec-preview")).to_be_visible()
-    expect(student.locator("#rec-take")).to_contain_text("Bản ghi vừa thu")
-    student.get_by_role("button", name="Nộp bài luyện").click()
-    student.wait_for_url(re.compile(r"/practice/results/[0-9a-f]+$"))
-    # Three seconds is below the 20-second QC floor: the recording path runs end to
-    # end and the attempt is rejected with its reason.
-    expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
 
 
 def test_another_learner_cannot_see_your_result(student, live_server, browser):
@@ -349,19 +320,6 @@ def test_teacher_sees_class_practice_without_per_student_rows(student, live_serv
         assert "E2E-ST" not in teacher.locator("#stats-panel").inner_text()
     finally:
         ctx.close()
-
-
-def test_phone_layout_of_a_task_has_no_horizontal_scroll(context, live_server):
-    page = context.new_page()
-    page.set_viewport_size({"width": 375, "height": 812})
-    login(page, live_server, live_server.account())
-    page.goto("/practice/PR-COH-A2")
-    expect(page.locator("#practice-form")).to_be_visible()
-    assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
-    columns = page.evaluate(
-        "getComputedStyle(document.querySelector('.work-split')).gridTemplateColumns"
-    )
-    assert len(columns.split()) == 1
 
 
 def test_states_are_readable_by_screen_readers(student, live_server):

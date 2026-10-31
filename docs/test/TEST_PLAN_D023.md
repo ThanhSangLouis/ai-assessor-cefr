@@ -169,7 +169,7 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I36 | `test_personal_export_includes_practice_and_explains_the_field` | FR-44 | Thuận | Bản xuất dữ liệu cá nhân có bài luyện và giải thích trường practice |
 | TC-PR-I37 | `test_progress_and_profile_ignore_practice` | FR-44 | Âm | Trang tiến độ và hồ sơ năng lực không tính bài luyện |
 | TC-PR-I38 | `test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment` | AC-42.2 | Thuận | API: gợi ý theo tiêu chí yếu nhất của bài đánh giá gần nhất |
-| TC-PR-I39 | `test_practice_pages_mark_navigation_and_load_their_scripts` | FR-40 | Thuận | Trang luyện tập đánh dấu mục điều hướng, nạp đúng script; khách không thấy mục |
+| TC-PR-I39 | `test_practice_pages_mark_navigation_and_load_their_scripts` | FR-40 | Thuận | Trang luyện tập đánh dấu mục điều hướng, nạp đúng script; đường dẫn nhiệm vụ cũ chuyển về lộ trình (D068); khách không thấy mục |
 | TC-PR-I40 | `test_progress_page_sends_practice_to_the_practice_result` | FR-41 | Thuận | Trang chờ xử lý chuyển bài luyện tới trang kết quả luyện |
 | TC-PR-I41 | `test_practice_report_json_round_trips_into_a_response` | FR-41 | Thuận | JSON báo cáo của bài luyện nạp lại được thành Response |
 
@@ -179,22 +179,18 @@ Tệp: `tests/test_practice_integration.py`.
 
 | ID | Hàm test | AC / FR | Loại | Nội dung kiểm |
 | --- | --- | --- | --- | --- |
-| TC-PR-E02 | `test_task_page_shows_missions_before_speaking` | FR-40 | Thuận | Trang nhiệm vụ hiện đúng đề và các mục tiêu trước khi ghi âm |
-| TC-PR-E03 | `test_word_task_shows_chips_and_read_aloud_task_shows_passage` | FR-40 | Thuận | Đề dùng từ hiện thẻ từ; đề đọc to hiện đoạn văn |
 | TC-PR-E04 | `test_uploading_a_file_leads_to_a_result_with_evidence` | AC-41.1 | Thuận | Chọn file, nộp, tự chuyển sang kết quả: hoàn thành 2/2, có chip căn cứ |
 | TC-PR-E05 | `test_clicking_evidence_seeks_the_recording` | FR-41 | Thuận | Bấm chip căn cứ thì trình phát tua đúng giây |
-| TC-PR-E06 | `test_continue_button_opens_the_next_suggested_task` | FR-42 | Thuận | Nút Luyện tiếp mở nhiệm vụ gợi ý kế tiếp |
+| TC-PR-E06 | `test_continue_button_opens_the_lesson_path` | FR-42 | Thuận | Nút "Luyện tiếp theo lộ trình" mở trang lộ trình (D068) |
 | TC-PR-E08 | `test_too_short_file_is_rejected_with_reason_and_not_counted` | FR-43 | Âm | File 10 giây bị từ chối, nói lý do, không tính vào mục tiêu ngày của D023 |
-| TC-PR-E09 | `test_fake_microphone_recording_is_submitted_and_processed` | FR-41 | Âm | Ghi âm bằng micro giả, chuyển mã, xử lý; bản 3 giây bị từ chối có lý do |
 | TC-PR-E11 | `test_another_learner_cannot_see_your_result` | AC-44.3 | Âm | Người khác mở link kết quả thì không thấy gì |
 | TC-PR-E12 | `test_my_responses_tags_practice_and_opens_its_result` | FR-44 | Thuận | Bài của tôi gắn nhãn Luyện tập, Không chấm, mở đúng trang kết quả |
 | TC-PR-E13 | `test_teacher_sees_class_practice_without_per_student_rows` | FR-44 | Thuận | Giảng viên thấy khối Luyện tập của lớp, không có dòng theo sinh viên |
-| TC-PR-E14 | `test_phone_layout_of_a_task_has_no_horizontal_scroll` | FR-43 | Biên | Màn 375 px: trang nhiệm vụ không tràn ngang, một cột |
 | TC-PR-E15 | `test_states_are_readable_by_screen_readers` | FR-43 | Thuận | Trạng thái mục tiêu trên trang kết quả đọc được bằng trình đọc màn hình (chữ ẩn) |
 
 Tệp: `tests/e2e/test_practice_e2e.py`.
 
-TC-PR-E01 và TC-PR-E07 đã bỏ ngày 06/10/2026: D025 thay trang chính luyện tập (gợi ý, vòng mục tiêu, lộ trình 15 ô) bằng lộ trình bài học. Ca tương ứng nay là TC-LS-E01 và TC-LS-E04 trong `docs/test/TEST_PLAN_D025.md`. Mã các ca còn lại giữ nguyên.
+TC-PR-E02, E03, E09 và E14 bỏ ngày 31/10/2026 cùng trang nhiệm vụ (D068): nhiệm vụ luyện tập gộp vào lộ trình; các ca còn lại nộp bài luyện qua API rồi kiểm trang kết quả. TC-PR-E01 và TC-PR-E07 đã bỏ ngày 06/10/2026: D025 thay trang chính luyện tập (gợi ý, vòng mục tiêu, lộ trình 15 ô) bằng lộ trình bài học. Ca tương ứng nay là TC-LS-E01 và TC-LS-E04 trong `docs/test/TEST_PLAN_D025.md`. Mã các ca còn lại giữ nguyên.
 
 ## 7. Kết quả lần chạy ngày 06/10/2026
 

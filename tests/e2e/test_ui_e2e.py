@@ -81,14 +81,10 @@ def submit_assessment(page, live_server) -> str:
 def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, live_server):
     student = context.new_page()
     login_home(student, live_server, live_server.account(), "/practice")
-    # D054 added the class assignments; "Lượt của tôi" shows only where runs are counted.
-    assert nav_texts(student) == [
-        "Luyện tập",
-        "Nộp bài",
-        "Bài được giao",
-        "Bài của tôi",
-        "Tiến độ",
-    ]
+    # D068: one "Kết quả" entry; "Bài được giao" waits for a class (hidden here),
+    # "Lượt của tôi" shows only where runs are counted.
+    assert nav_texts(student) == ["Luyện tập", "Nộp bài", "Bài được giao", "Kết quả"]
+    expect(student.locator(".site-nav a[href='/my-assignments']")).to_be_hidden()
 
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
@@ -98,9 +94,11 @@ def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, l
             "Hàng đợi duyệt",
             "Lớp học",
             "Lộ trình luyện",
-            "Thống kê lớp",
+            "Thống kê",
             "Chấm mù",
         ]
+        # D068: "Chấm mù" shows only while a blind sheet waits.
+        expect(teacher.locator(".site-nav a[href='/rate']")).to_be_hidden()
         teacher.get_by_role("link", name=re.compile("AI Assessor CEFR")).click()
         teacher.wait_for_url(lambda url: urlparse(url).path == "/review")
     finally:
@@ -168,7 +166,7 @@ def test_uploaded_file_is_heard_back_then_submitted_to_a_report(context, live_se
     # D068: four parts; the machine's workings are one fold at the foot.
     expect(page.locator("#report-evidence audio")).to_be_attached()
     expect(page.locator("details#report-detail summary")).to_contain_text("Chi tiết")
-    expect(page.locator(".site-nav a[aria-current='page']")).to_have_text(re.compile("Bài của tôi"))
+    expect(page.locator(".site-nav a[aria-current='page']")).to_have_text(re.compile("Kết quả"))
 
 
 def test_chosen_prompt_sits_above_the_record_button(context, live_server):
@@ -188,10 +186,19 @@ def test_chosen_prompt_sits_above_the_record_button(context, live_server):
 def test_my_responses_filters_assessments_from_practice(context, live_server):
     page = student_page(context, live_server, "/")
     submit_assessment(page, live_server)
-    page.goto("/practice/PR-COH-A2")
-    page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
-    page.get_by_role("button", name="Nộp bài luyện").click()
-    page.wait_for_url(re.compile(r"/practice/results/[0-9a-f]+$"))
+    # A practice attempt, as an earlier task page sent one (D068 folded them into the path).
+    r = page.request.post(
+        "/api/v1/responses",
+        multipart={
+            "audio": {
+                "name": "full-35s.wav",
+                "mimeType": "audio/wav",
+                "buffer": (live_server.files / "full-35s.wav").read_bytes(),
+            },
+            "task_id": "PR-COH-A2",
+        },
+    )
+    assert r.ok
 
     page.goto("/my-responses")
     items = page.locator(".response-item")
@@ -278,7 +285,7 @@ def test_admin_activation_asks_first_and_only_compatible_models_offer_it(context
 # ---------------------------------------------------------------- phone
 
 
-@pytest.mark.parametrize("path", ["/", "/my-responses", "/practice/PR-COH-A2"])
+@pytest.mark.parametrize("path", ["/", "/my-responses", "/my-progress"])
 def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     context, live_server, path
 ):

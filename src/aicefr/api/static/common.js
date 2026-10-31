@@ -353,16 +353,6 @@ if (mainEl && "MutationObserver" in window) {
       `<span class="badge ${window.escapeHtml(s)}">${window.escapeHtml(STATUS_NAMES[s] || s)}</span>`,
     reasonName: (code) => REASON_NAMES[code] || code,
 
-    // The practice task that trains one aspect at one band, e.g. PR-RAN-B1. Same
-    // id scheme as practice/bank.py, which covers A1 to C2 (D059).
-    practiceTaskFor(criterion, band) {
-      const codes = { fluency: "FLU", coherence: "COH", range: "RAN", accuracy: "ACC", phonology: "PHO" };
-      if (!codes[criterion]) return null;
-      const order = ["A1", "A2", "B1", "B2", "C1", "C2"];
-      const i = order.indexOf(band);
-      return `PR-${codes[criterion]}-${i < 0 ? "A2" : order[i]}`;
-    },
-
     // "06/10/2026 18:30", the way a Vietnamese reader writes it.
     localTime(iso) {
       const t = new Date(iso);
@@ -488,6 +478,10 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
         if (!counts) return;
         Object.keys(BADGE_WORDS).forEach((name) => {
           if (name in counts) setBadge(name, counts[name]);
+        });
+        // D068: entries that only matter when there is something there.
+        document.querySelectorAll("a[data-nav-if]").forEach((a) => {
+          if (counts[a.dataset.navIf]) a.hidden = false;
         });
       })
       // A badge is a convenience; a failed count must not disturb the page.

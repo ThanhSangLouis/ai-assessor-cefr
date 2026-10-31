@@ -27,11 +27,13 @@ router = APIRouter()
 def my_badges(account: Account = Depends(require_login)) -> dict:
     peers = pages.svc().peers
     if account.role == Role.STUDENT:
-        todo = peers.assessment.assignments_for(account_id=account.account_id)["todo"]
+        mine = peers.assessment.assignments_for(account_id=account.account_id)
         return {
             **peers.assessment.student_badges(account_id=account.account_id),
             "reviews_due": peers.learning.reviews_due(account_id=account.account_id),
-            "assignments": len(todo),
+            "assignments": len(mine["todo"]),
+            # D068: the sidebar shows "Bài được giao" only to a student in a class.
+            "in_class": bool(mine["classes"]),
         }
     return peers.assessment.staff_badges(account_id=account.account_id)
 

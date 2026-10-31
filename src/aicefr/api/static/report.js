@@ -99,6 +99,7 @@ fetch(`/api/v1/responses/${ID}`)
     reportEl.innerHTML = buildReport(d);
     wirePlayer();
     wireKaraoke(d);
+    loadCoach();
     // D056: guided listening adds its card once the player is on the page.
     document.dispatchEvent(new CustomEvent("report:ready"));
   })
@@ -155,7 +156,8 @@ function buildReport(d) {
   // on, the recording -- stays open; everything about how the machine got
   // there is one fold at the foot.
   return (
-    section("report-summary", "result-h", head + scoreBlock(d, a) + nextStepBlock(a)) +
+    section("report-summary", "result-h", head + scoreBlock(d, a) + nextStepBlock(a, d)) +
+    '<section class="card anchor-target" id="report-coach" aria-labelledby="coach-h" hidden></section>' +
     commentsCard(a) +
     evidenceCard(d, a) +
     detailCard(d, a, false)
@@ -177,7 +179,7 @@ function section(id, labelledBy, inner) {
 // The next step sits in the result card itself. "Khía cạnh nên luyện trước"
 // used to be a line of plain text under a fourteen-row table; it is now a
 // button that opens the practice task for that aspect at this band.
-function nextStepBlock(a) {
+function nextStepBlock(a, d) {
   const weak = a.weakest_criteria || [];
   let h = "";
   if (weak.length) {
@@ -188,13 +190,17 @@ function nextStepBlock(a) {
       "không phải điểm riêng của từng khía cạnh.</span></p>";
   }
   if (!isStudent) return h ? `<div class="next-step">${h}</div>` : "";
-  const task = weak.length ? window.ui.practiceTaskFor(weak[0], a.overall_band || "A2") : null;
-  const practise = task
-    ? `<a class="button" href="/practice/${encodeURIComponent(task)}">` +
-      `Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} ngay</a>`
+  // The lesson path picks its next lesson from this same weakest aspect (D068).
+  const practise = weak.length
+    ? `<a class="button" href="/practice">Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} theo lộ trình</a>`
     : '<a class="button" href="/practice">Mở trang luyện tập</a>';
+  // D069: the same task again, three times, shorter each time.
+  const scored = d && (d.status === "COMPLETED" || d.status === "REVIEW_REQUIRED");
+  const retell = scored
+    ? `<a class="button secondary" href="/retell/${encodeURIComponent(ID)}">Nói lại đề này</a>`
+    : "";
   return (
-    `<div class="next-step">${h}<div class="button-row">${practise}` +
+    `<div class="next-step">${h}<div class="button-row">${practise}${retell}` +
     '<a class="button secondary" href="/">Nộp bài mới</a>' +
     '<a class="button secondary" href="/my-progress">Xem tiến độ</a></div></div>'
   );
@@ -836,4 +842,95 @@ if (printButton) {
     });
     openedForPrint = [];
   });
+}
+
+// ---------------------------------------------------------------- next band (D069)
+// Targets in numbers read off the scoring model, and the learner's own answer
+// rewritten one band higher by a language model, made on request and kept.
+const COACH_DIR = { up: "tăng", down: "giảm" };
+
+function coachTargets(nb) {
+  const rows = nb.targets
+    .map((t) => {
+      const to = t.direction === "up" ? "lên" : "xuống";
+      return (
+        `<li><b>${escapeHtml(t.label)}</b>: ${COACH_DIR[t.direction]} từ ${escapeHtml(String(t.now))} ` +
+        `${to} ${escapeHtml(String(t.target))} ${escapeHtml(t.unit)}</li>`
+      );
+    })
+    .join("");
+  return (
+    `<p>Bài này ở <b>${escapeHtml(nb.from_band)}</b>, còn cách ngưỡng <b>${escapeHtml(nb.to_band)}</b> ` +
+    `khoảng ${escapeHtml(String(nb.gap).replace(".", ","))} điểm. Lần nói tới, nhắm vào:</p>` +
+    `<ul class="coach-targets">${rows}</ul>` +
+    `<p class="muted small-note">${
+      nb.enough ? "Đạt cả ba thì ước lượng của máy đủ để qua ngưỡng." : "Chưa đủ trong một lần: đây là hướng đi cho vài bài tới."
+    } Tính từ chính các phép đo của mô hình trên bài này; giảng viên quyết định band.</p>`
+  );
+}
+
+function coachUpgrade(u) {
+  const changes = (u.changes || [])
+    .map(
+      (c) =>
+        `<li><span class="was" lang="en">${escapeHtml(c.from)}</span> → <span class="now" lang="en">${escapeHtml(c.to)}</span>` +
+        (c.why_vi ? `<br><span class="muted">${escapeHtml(c.why_vi)}</span>` : "") +
+        "</li>"
+    )
+    .join("");
+  const phrases = (u.phrases || [])
+    .map((p) => `<li><b lang="en">${escapeHtml(p.phrase)}</b>: ${escapeHtml(p.meaning_vi)}</li>`)
+    .join("");
+  return (
+    `<h3 class="block-title">Bài của bạn ở mức ${escapeHtml(u.to_band)} <span class="muted">(gợi ý của AI, có thể sai)</span></h3>` +
+    // Which model wrote it, so a reader can weigh it and a teacher can report it.
+    `<p class="muted small-note coach-model">Viết bởi <code>${escapeHtml(u.model || "?")}</code>` +
+    ` (${escapeHtml(u.provider || "?")}) lúc ${escapeHtml(window.ui.localTime(u.created_at))}.</p>` +
+    `<p class="upgrade-text" lang="en">${escapeHtml(u.upgraded)}</p>` +
+    (changes ? `<h4>Các chỗ đổi</h4><ul class="coach-changes">${changes}</ul>` : "") +
+    (phrases ? `<h4>Cụm từ nên dùng</h4><ul class="coach-phrases">${phrases}</ul>` : "") +
+    `<div class="button-row"><a class="button" href="/retell/${encodeURIComponent(ID)}">Đọc rồi nói lại đề này</a></div>`
+  );
+}
+
+function paintCoach(card, c) {
+  let h = '<h2 id="coach-h">Để lên band tiếp theo</h2>';
+  if (c.next_band) h += coachTargets(c.next_band);
+  if (c.upgrade) h += coachUpgrade(c.upgrade);
+  else if (c.can_upgrade)
+    h +=
+      '<div class="button-row"><button type="button" id="coach-upgrade">Xem bài của tôi ở band cao hơn</button></div>' +
+      '<p class="muted small-note">AI viết lại chính câu trả lời của bạn ở band kế tiếp, giữ ý của bạn. Chỉ bản chép lời được gửi đi, không gửi ghi âm.</p>';
+  card.innerHTML = h;
+  card.hidden = !(c.next_band || c.upgrade || c.can_upgrade);
+  const button = document.getElementById("coach-upgrade");
+  if (!button) return;
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "Đang viết lại…";
+    try {
+      const r = await fetch(`/api/v1/responses/${encodeURIComponent(ID)}/upgrade`, { method: "POST" });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        window.toast(typeof d.detail === "string" ? d.detail : "Chưa viết lại được.", "error");
+        button.disabled = false;
+        button.textContent = "Xem bài của tôi ở band cao hơn";
+        return;
+      }
+      paintCoach(card, { ...c, upgrade: d, can_upgrade: false });
+    } catch (err) {
+      window.toast("Mất kết nối, hãy thử lại.", "error");
+      button.disabled = false;
+    }
+  });
+}
+
+function loadCoach() {
+  const card = document.getElementById("report-coach");
+  if (!card) return;
+  fetch(`/api/v1/responses/${encodeURIComponent(ID)}/coach`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((c) => c && paintCoach(card, c))
+    .catch(() => {});
 }

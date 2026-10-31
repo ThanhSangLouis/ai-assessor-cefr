@@ -515,8 +515,9 @@ def test_practice_pages_mark_navigation_and_load_their_scripts(m):
     student = login_as(m, "SV-001")
     hub = student.get("/practice").text
     assert 'href="/practice" aria-current="page"' in hub and "practice_path.js?v=" in hub
-    task = student.get("/practice/PR-COH-A2").text
-    assert 'data-task-id="PR-COH-A2"' in task and "practice_task.js?v=" in task
+    # D068: practice tasks are folded into the lesson path; an old link goes there.
+    gone = student.get("/practice/PR-COH-A2", follow_redirects=False)
+    assert gone.status_code == 301 and gone.headers["location"] == "/practice"
     result = student.get("/practice/results/abc123").text
     assert 'data-response-id="abc123"' in result and "practice_result.js?v=" in result
     assert (

@@ -5559,3 +5559,24 @@ button:not(:disabled):hover,
 /* D068: the daily goal, picked on the Today card. */
 .goal-pick { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }
 .goal-pick select { flex: 1; min-width: 0; }
+
+/* D068: the two pages behind one sidebar entry. */
+.subnav { display: flex; gap: var(--sp-1); margin: 0 0 var(--sp-4); border-bottom: 1px solid var(--border); }
+.subnav a { padding: var(--sp-2) var(--sp-3); color: var(--fg-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subnav a[aria-current="page"] { color: var(--fg); border-bottom-color: var(--accent); font-weight: 600; }
+.subnav a:hover { color: var(--fg); }
+.tools-more { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.tools-more summary { cursor: pointer; color: var(--fg-muted); font-size: var(--t-sm); }
+
+/* D069: the way to the next band, and saying the task again. */
+.coach-targets, .coach-changes, .coach-phrases { display: grid; gap: var(--sp-2); padding-left: var(--sp-4); }
+.coach-changes .was { text-decoration: line-through; color: var(--fg-muted); }
+.coach-changes .now { font-weight: 600; }
+.upgrade-text { padding: var(--sp-3); border-left: 3px solid var(--accent); background: var(--bg-elevated); border-radius: 0; line-height: 1.7; }
+.retell-rounds { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0; list-style: none; }
+.retell-rounds li { padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-md); color: var(--fg-muted); }
+.retell-rounds li.is-current { border-color: var(--accent); color: var(--fg); font-weight: 600; }
+.retell-rounds li.is-done { color: var(--fg); }
+.retell-round { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
+.retell-round h3 { margin: 0; }
+.retell-round audio { width: 100%; }

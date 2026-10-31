@@ -524,6 +524,98 @@ def _compare_with_first_round(account: Account, lesson_id: str, step_id: str, re
         result.changes = compare_rounds(firsts[-1]["result"], result)
 
 
+# ---------------------------------------------------------------- retell (D069)
+# The same task again, right after its report, three times under a shrinking
+# time limit (4/3/2, Nation 1989; task repetition: Bygate 2018). Each round is
+# measured like a lesson's free step and compared with the first: pace and
+# pauses, what repeating under time pressure trains (Thai & Boers 2016).
+
+RETELL_STEP = "retell"
+RETELL_MAX_S = 90  # a P5 talk is retold as its first ninety seconds
+RETELL_FLOOR_S = 20
+
+
+def _retell_lesson(response_id: str) -> str:
+    return f"retell-{response_id}"
+
+
+def _retell_step(source: dict) -> Step:
+    base = max(RETELL_FLOOR_S, min(int(source["max_seconds"]), RETELL_MAX_S))
+    rounds = [base, max(RETELL_FLOOR_S, round(base * 0.75)), max(RETELL_FLOOR_S, round(base * 0.5))]
+    return Step(
+        step_id=RETELL_STEP,
+        kind=StepKind.FREE,
+        title="Nói lại đề này",
+        instruction=source["prompt"],
+        max_seconds=base,
+        rounds=rounds,
+    )
+
+
+def _retell_source(account: Account, response_id: str) -> dict:
+    source = svc().peers.assessment.retell_source(
+        account_id=account.account_id, response_id=response_id
+    )
+    if source is None:
+        raise HTTPException(404, "không tìm thấy bài này")
+    return source
+
+
+@router.get("/api/v1/learn/retell/{response_id}", tags=["student"])
+def retell(response_id: str, account: Account = STUDENT_ONLY) -> dict:
+    """The task, its three rounds, and what this learner already recorded of them."""
+    source = _retell_source(account, response_id)
+    step = _retell_step(source)
+    rows = svc().lessons.attempts(
+        account_id=account.account_id, lesson_id=_retell_lesson(response_id)
+    )
+    return {
+        **source,
+        "rounds": step.round_limits(),
+        "done": [
+            {
+                "attempt_id": r["attempt_id"],
+                "round": r["round"] or 1,
+                "result": r["result"].model_dump(mode="json"),
+                "audio_url": _audio_url(r["attempt_id"]),
+            }
+            for r in rows
+            if r["step_id"] == RETELL_STEP
+        ],
+    }
+
+
+@router.post("/api/v1/learn/retell/{response_id}/rounds", tags=["student"])
+async def retell_round(
+    response_id: str,
+    audio: UploadFile,
+    round: int = Form(1),  # noqa: A002 - the form field is called round
+    account: Account = STUDENT_ONLY,
+) -> dict:
+    source = _retell_source(account, response_id)
+    step = _retell_step(source)
+    round_index = min(max(round, 1), len(step.round_limits()))
+    data, kind = await _read_audio(audio)
+
+    # The speech service answers in seconds; not on the event loop (D066).
+    def measure_and_store() -> dict:
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(step, data, kind, round_index, None, keep=audio_key)
+        lesson_id = _retell_lesson(response_id)
+        _compare_with_first_round(account, lesson_id, RETELL_STEP, result)
+        svc().lessons.add_attempt(
+            account.account_id, lesson_id, 0, result, audio_key=audio_key, attempt_id=attempt_id
+        )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+        }
+
+    return await run_in_threadpool(measure_and_store)
+
+
 @router.post("/api/v1/learn/lessons/{lesson_id}/steps/{step_id}/attempts", tags=["student"])
 async def learn_attempt(
     lesson_id: str,

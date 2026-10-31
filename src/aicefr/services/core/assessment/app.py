@@ -17,6 +17,7 @@ from aicefr.services import Parts, Peers
 from aicefr.services.core.assessment import (
     admin_api,
     classes_api,
+    coach_api,
     context,
     rating_api,
     replay_api,
@@ -94,6 +95,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             study_api.router,
             classes_api.router,
             replay_api.router,
+            coach_api.router,
             internal_router("assessment", facade, settings.internal_token),
         ],
         facade=facade,

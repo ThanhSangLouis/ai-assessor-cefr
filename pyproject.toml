@@ -51,6 +51,9 @@ dev = [
   # D048: an in-memory MongoDB for the tests and quick local runs, ISC licence.
   "mongomock>=4.3,<5",
 ]
+# D069: the upgraded answer through Claude (aicefr.coach.providers); the
+# other providers need nothing beyond the standard library.
+coach = ["anthropic>=1.0,<2"]
 # E2E layer (D023): runs on developer machines only; CI does not install it,
 # so those tests skip themselves there.
 # Install: pip install -e ".[dev,e2e]" && playwright install chromium
@@ -134,6 +137,7 @@ extend-immutable-calls = [
 # The achievement tests reuse the lesson tests' app fixture `m` the same way.
 "tests/test_achievements.py" = ["F811"]
 "tests/test_learning_evidence.py" = ["F811"]
+"tests/test_d069_coach.py" = ["F811"]
 "tests/test_learning_plans.py" = ["F811"]
 
 [tool.pytest.ini_options]
