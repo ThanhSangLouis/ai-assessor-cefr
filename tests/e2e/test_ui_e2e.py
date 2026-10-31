@@ -165,7 +165,9 @@ def test_uploaded_file_is_heard_back_then_submitted_to_a_report(context, live_se
     # The next step sits in the result card: a practice link for a student.
     practise = page.locator("#report-summary .next-step a").first
     expect(practise).to_have_attribute("href", re.compile(r"^/practice"))
-    expect(page.locator(".section-nav a", has_text="Bằng chứng và bản ghi")).to_be_visible()
+    # D068: four parts; the machine's workings are one fold at the foot.
+    expect(page.locator("#report-evidence audio")).to_be_attached()
+    expect(page.locator("details#report-detail summary")).to_contain_text("Chi tiết")
     expect(page.locator(".site-nav a[aria-current='page']")).to_have_text(re.compile("Bài của tôi"))
 
 

@@ -33,7 +33,9 @@ function showTab(tab) {
     t.button.setAttribute("aria-selected", chosen ? "true" : "false");
     t.panel.hidden = !chosen;
   });
-  if (LOADERS[tab.key] && !loaded.has(tab.key)) {
+  // Security is read fresh each time it opens: it shows what just happened
+  // (a session ended, a sign-in), and "#activity" lands on it (D068).
+  if (LOADERS[tab.key] && (!loaded.has(tab.key) || tab.key === "security")) {
     loaded.add(tab.key);
     LOADERS[tab.key]();
   }
