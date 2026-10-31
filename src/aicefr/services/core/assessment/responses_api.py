@@ -16,6 +16,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
 from fastapi import Response as HttpResponse
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse
 
 from aicefr.api.deps import can_view_response, require_login
@@ -115,82 +116,90 @@ async def submit_response(
             415, "không nhận ra định dạng audio. Hãy nộp file wav, flac, mp3, m4a hoặc webm"
         )
 
-    # The stored name comes from the sniffed type, so the uploaded filename never
-    # influences the path written to disk. It is also the recording's key in the
-    # blob store the speech service reads from.
-    audio_key = f"{rid}.{kind}"
+    # The rest -- the blob store, the database, the bus, the metering call --
+    # blocks. Run on the event loop, it held every other request of this
+    # service while one upload was being stored and queued (D066).
+    def accept() -> SubmitResponse:
+        # The stored name comes from the sniffed type, so the uploaded filename never
+        # influences the path written to disk. It is also the recording's key in the
+        # blob store the speech service reads from.
+        audio_key = f"{rid}.{kind}"
 
-    # D049: on the metered channel, hold what the longest recording the task
-    # allows would cost; settled on the real length once there is a result.
-    # Off (the school deployment, BR-29/BR-30) this always allows.
-    metering = getattr(s.peers, "metering", None)
-    action = task.purpose.value
-    refusal = (
-        metering.hold(
-            account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds
+        # D049: on the metered channel, hold what the longest recording the task
+        # allows would cost; settled on the real length once there is a result.
+        # Off (the school deployment, BR-29/BR-30) this always allows.
+        metering = getattr(s.peers, "metering", None)
+        action = task.purpose.value
+        refusal = (
+            metering.hold(
+                account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds
+            )
+            if metering is not None
+            else None
         )
-        if metering is not None
-        else None
-    )
-    if refusal:
-        tmp_path.unlink(missing_ok=True)
-        raise HTTPException(402, refusal)
-    try:
-        s.blobs.put(audio_key, tmp_path.read_bytes())
-    finally:
-        tmp_path.unlink(missing_ok=True)
-    # What the response keeps: the file's path on disk, the bare key in object
-    # storage (D051). `key_of` reads the key back out of either.
-    local = s.blobs.local_path(audio_key)
-    audio_ref = str(local) if local is not None else audio_key
+        if refusal:
+            tmp_path.unlink(missing_ok=True)
+            raise HTTPException(402, refusal)
+        try:
+            s.blobs.put(audio_key, tmp_path.read_bytes())
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        # What the response keeps: the file's path on disk, the bare key in object
+        # storage (D051). `key_of` reads the key back out of either.
+        local = s.blobs.local_path(audio_key)
+        audio_ref = str(local) if local is not None else audio_key
 
-    req = ProcessingRequest(
-        response_id=rid,
-        speaker_id=speaker_id,
-        task_id=task_id,
-        audio_path=audio_ref,
-        prompt_version=task.prompt_version,
-        config_version=CONFIG_VERSION,
-    )
-
-    # Persist immediately in the QUEUED state and reply, instead of waiting for
-    # the pipeline to finish: AC-05.1 wants the 202 back in under 300 ms, while
-    # NFR-01 allows the pipeline up to 60 seconds.
-    s.repo.save(
-        Response(
+        req = ProcessingRequest(
             response_id=rid,
-            status=ResponseStatus.QUEUED,
+            speaker_id=speaker_id,
+            task_id=task_id,
+            audio_path=audio_ref,
+            prompt_version=task.prompt_version,
             config_version=CONFIG_VERSION,
-            prompt_version=req.prompt_version,
-        ),
-        speaker_id,
-        task_id,
-        account_id=account.account_id,
-        audio_path=audio_ref,
-        purpose=task.purpose,
-    )
-    count("submissions_total")
-    try:
-        scoring.dispatch(req, audio_key, task, account.account_id)
-    except Exception as e:
-        # The response is saved and nothing will score it: close it now rather
-        # than leave the student watching a QUEUED page until the next restart.
-        logger.exception("could not hand %s to the speech service", rid)
-        s.repo.set_status(
-            rid,
-            ResponseStatus.FAILED,
-            [ReasonCode.PROCESSING_INTERRUPTED],
-            only_from=(ResponseStatus.QUEUED,),
         )
-        scoring.settle_charge(rid)
-        raise HTTPException(503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút") from e
 
-    response.status_code = 202
-    return SubmitResponse(
-        response_id=rid,
-        status=ResponseStatus.QUEUED.value,
-        message="Đã nhận bài, đang xử lý.",
-    )
+        # Persist immediately in the QUEUED state and reply, instead of waiting for
+        # the pipeline to finish: AC-05.1 wants the 202 back in under 300 ms, while
+        # NFR-01 allows the pipeline up to 60 seconds.
+        s.repo.save(
+            Response(
+                response_id=rid,
+                status=ResponseStatus.QUEUED,
+                config_version=CONFIG_VERSION,
+                prompt_version=req.prompt_version,
+            ),
+            speaker_id,
+            task_id,
+            account_id=account.account_id,
+            audio_path=audio_ref,
+            purpose=task.purpose,
+        )
+        count("submissions_total")
+        try:
+            scoring.dispatch(req, audio_key, task, account.account_id)
+        except Exception as e:
+            # The response is saved and nothing will score it: close it now rather
+            # than leave the student watching a QUEUED page until the next restart.
+            logger.exception("could not hand %s to the speech service", rid)
+            s.repo.set_status(
+                rid,
+                ResponseStatus.FAILED,
+                [ReasonCode.PROCESSING_INTERRUPTED],
+                only_from=(ResponseStatus.QUEUED,),
+            )
+            scoring.settle_charge(rid)
+            raise HTTPException(
+                503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút"
+            ) from e
+
+        response.status_code = 202
+        return SubmitResponse(
+            response_id=rid,
+            status=ResponseStatus.QUEUED.value,
+            message="Đã nhận bài, đang xử lý.",
+        )
+
+    return await run_in_threadpool(accept)
 
 
 @router.get("/api/v1/responses/{response_id}", tags=["student"])

@@ -371,6 +371,10 @@ def test_a_forged_or_altered_result_is_refused(m):
 
 def test_an_upgrade_is_credited_and_a_renewal_waits(m):
     admin = admin_of(m)
+    # A fixed purchase day: six months from 15 October is 182 days, and the
+    # half below is exact. From the 31st the licence is a day shorter and the
+    # credit came out 9.000 đ less, so the test failed on the last day of a month.
+    at(m, morning(date(2026, 10, 15)))
     buy(admin, "standard", 50)  # 3.000.000 đ, 182 days
     day = m.billing.today() + timedelta(days=91)
     at(m, morning(day))

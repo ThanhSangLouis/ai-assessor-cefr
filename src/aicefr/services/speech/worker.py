@@ -104,15 +104,31 @@ class SpeechWorker:
         """
         if self._engine is None:
             if self.settings.asr_engine == "whisper":
-                from aicefr.asr.whisper_adapter import WhisperEngine
+                from aicefr.asr.whisper_adapter import WhisperEngine, threads_per_job
 
                 self._engine = WhisperEngine(
                     model=self.settings.whisper_model or None,
                     temperature=self.settings.asr_temperature,
+                    cpu_threads=threads_per_job(self.settings.max_concurrent_jobs),
                 )
             else:
                 self._engine = fake_engine_from_env()
         return self._engine
+
+    def warm_up(self) -> None:
+        """Load the recogniser before the first recording arrives (D066).
+
+        Runs in the background at start-up; a failure is logged and left to
+        the first real job, which reports it the usual way.
+        """
+        engine = self.engine()
+        if not hasattr(engine, "warm_up"):
+            return
+        try:
+            engine.warm_up()
+            logger.info("recogniser loaded: %s", getattr(engine, "model", "?"))
+        except Exception:  # noqa: BLE001 - the first job will say what is wrong
+            logger.warning("could not load the recogniser ahead of time", exc_info=True)
 
     def processor(self, qc: dict, model: str) -> ResponseProcessor:
         """The pipeline for these thresholds and this model, built once and reused.

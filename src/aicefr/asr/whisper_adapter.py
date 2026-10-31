@@ -14,6 +14,7 @@ applies.
 from __future__ import annotations
 
 import logging
+import os
 import platform
 
 import numpy as np
@@ -26,8 +27,14 @@ logger = logging.getLogger(__name__)
 # 30 giay dau, dung cua so ma chinh Whisper dung de doan ngon ngu.
 LID_SECONDS = 30
 
-DEFAULT_MLX_REPO = "mlx-community/whisper-large-v3-turbo"
-DEFAULT_CT2_MODEL = "large-v3"
+# Whisper small, the recogniser the scoring model was fitted on (its artifact's
+# `trained_with.asr_model`, D066). A larger recogniser does not score better: it
+# shifts `asr_conf_mean`, the model's largest coefficient, and flags every
+# response ASR_VERSION_MISMATCH. It is also about six times the work: on the
+# two-vCPU EC2 host large-v3 took 55 s to transcribe a 42 s answer and 11 s more
+# to tell its language; small takes a few seconds for both.
+DEFAULT_MLX_REPO = "mlx-community/whisper-small-mlx"
+DEFAULT_CT2_MODEL = "small"
 VERBATIM_HINTS = ("crisper", "verbatim")
 
 # Decoding options, and why each one is set rather than left at its default.
@@ -94,12 +101,38 @@ class WhisperEngine:
         model: str | None = None,
         backend: str | None = None,
         temperature: float | None = None,
+        cpu_threads: int = 0,
     ) -> None:
         self.backend = backend or ("mlx" if _is_apple_silicon() else "ct2")
         self.model = model or (DEFAULT_MLX_REPO if self.backend == "mlx" else DEFAULT_CT2_MODEL)
         self.name = f"whisper-{self.backend}"
         self.temperature = temperature
+        # CTranslate2 threads per transcription; 0 is the library's choice.
+        # The speech service sets cores / concurrent jobs, so two jobs on a
+        # two-core host do not each start four threads and fight over two.
+        self.cpu_threads = cpu_threads
         self._ct2 = None
+
+    def _ct2_model(self):
+        from faster_whisper import WhisperModel
+
+        if self._ct2 is None:
+            self._ct2 = WhisperModel(
+                self.model, device="auto", compute_type="int8", cpu_threads=self.cpu_threads
+            )
+        return self._ct2
+
+    def warm_up(self) -> None:
+        """Load the model and run it once, so the first learner does not wait for it.
+
+        Loading takes seconds and, on a fresh volume, a download; without this
+        it happened inside the first submission after every deploy.
+        """
+        silence = np.zeros(16_000, dtype=np.float32)
+        if self.backend == "mlx":
+            self._mlx(silence)
+        else:
+            self._ct2_model()
 
     @property
     def decoding(self) -> str:
@@ -172,15 +205,12 @@ class WhisperEngine:
         return best, float(probs[best])
 
     def _ct2_language(self, pcm: np.ndarray) -> tuple[str, float] | None:
-        from faster_whisper import WhisperModel
-
-        if self._ct2 is None:
-            self._ct2 = WhisperModel(self.model, device="auto", compute_type="int8")
-        if not self._ct2.model.is_multilingual:
+        model = self._ct2_model()
+        if not model.model.is_multilingual:
             return None
         # transcribe() doan ngon ngu ngay khi goi; khong lap qua segment nen
         # khong ton cong giai ma.
-        _, info = self._ct2.transcribe(pcm, language=None, word_timestamps=False)
+        _, info = model.transcribe(pcm, language=None, word_timestamps=False)
         return info.language, float(info.language_probability)
 
     def _mlx(self, pcm: np.ndarray) -> tuple[list[Word], str, int]:
@@ -209,11 +239,7 @@ class WhisperEngine:
         return words, r.get("text", "").strip(), tokens
 
     def _ct2_transcribe(self, pcm: np.ndarray) -> tuple[list[Word], str, int]:
-        from faster_whisper import WhisperModel
-
-        if self._ct2 is None:
-            self._ct2 = WhisperModel(self.model, device="auto", compute_type="int8")
-        segs, _ = self._ct2.transcribe(
+        segs, _ = self._ct2_model().transcribe(
             pcm, word_timestamps=True, language="en", **self._options(CT2_DECODE_OPTIONS)
         )
         words, parts, tokens = [], [], 0
@@ -230,3 +256,8 @@ class WhisperEngine:
                     )
                 )
         return words, "".join(parts).strip(), tokens
+
+
+def threads_per_job(max_jobs: int) -> int:
+    """CPU threads for one transcription when `max_jobs` run at once."""
+    return max(1, (os.cpu_count() or 1) // max(1, max_jobs))

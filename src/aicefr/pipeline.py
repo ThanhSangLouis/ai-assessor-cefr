@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 import numpy as np
 
-from aicefr.asr.base import AsrError
+from aicefr.asr.base import AsrError, model_family
 from aicefr.asr.hallucination import detect_repetition
 from aicefr.asr.vad import default_vad
 from aicefr.contracts import (
@@ -135,7 +135,7 @@ class ResponseProcessor:
         found: list[ReasonCode] = []
 
         expected_asr = trained.get("asr_model")
-        if expected_asr and expected_asr not in (asr.model_version or ""):
+        if expected_asr and model_family(expected_asr) != model_family(asr.model_version):
             found.append(ReasonCode.ASR_VERSION_MISMATCH)
 
         expected_vad = trained.get("vad_name")

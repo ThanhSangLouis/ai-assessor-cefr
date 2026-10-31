@@ -7,6 +7,8 @@ only here, so only this image carries them.
 
 from __future__ import annotations
 
+import threading
+
 from aicefr.config import Settings, get_settings
 from aicefr.infra.blobs import blob_store
 from aicefr.platform.bus import MessageBus
@@ -33,6 +35,8 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     bus.serve(STEP_QUEUE, worker.step, prefetch=settings.max_concurrent_jobs)
     bus.serve(PROBE_QUEUE, worker.probe)
     bus.serve(HEALTH_QUEUE, lambda _request: worker.health())
+    if settings.asr_is_real:
+        threading.Thread(target=worker.warm_up, name="asr-warm-up", daemon=True).start()
     return Parts(name="speech", routers=[], state={"speech": worker, "ready": worker.health})
 
 

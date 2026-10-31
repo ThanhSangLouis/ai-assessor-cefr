@@ -7,6 +7,7 @@ single biggest risk, so it is addressed at the design layer.
 
 from __future__ import annotations
 
+import re
 from typing import Protocol
 
 import numpy as np
@@ -25,3 +26,16 @@ class AsrEngine(Protocol):
     name: str
 
     def transcribe(self, pcm: np.ndarray, sr: int) -> Transcript: ...
+
+
+def model_family(name: str | None) -> str:
+    """The Whisper model a name refers to, whatever the backend calls it.
+
+    "small" (faster-whisper), "whisper-small" (an artifact's `trained_with`)
+    and "mlx-community/whisper-small-mlx" are one model; "small.en" and
+    "large-v3-turbo" are others. Compared exactly: a substring test read
+    "whisper-small" as absent from "small" and flagged the right recogniser.
+    """
+    base = (name or "").strip().lower().rsplit("/", 1)[-1]
+    base = re.sub(r"^(openai-|faster-)?whisper-", "", base)
+    return re.sub(r"-(mlx|ct2|int8|fp16)$", "", base)
