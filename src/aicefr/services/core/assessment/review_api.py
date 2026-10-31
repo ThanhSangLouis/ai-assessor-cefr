@@ -16,7 +16,14 @@ from aicefr.billing.plans import PlanFeature
 from aicefr.contracts import ResponseStatus, Review
 from aicefr.research.teacher_time import kpi as teacher_time_kpi
 from aicefr.research.teacher_time import session_minutes
-from aicefr.services.core.assessment.context import blind, plan_allows, saw, svc
+from aicefr.services.core.assessment.context import (
+    blind,
+    in_view,
+    plan_allows,
+    saw,
+    students_in_view,
+    svc,
+)
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.repository import InvalidStateError
 
@@ -29,13 +36,20 @@ def review_queue(
 ) -> list[QueueItem]:
     """The review queue, including who is currently looking at each response.
 
+    D071: a teacher's queue holds the work of their classes' students, by
+    name; an administrator's holds everyone's, students in no class included.
     Responses this teacher still has to rate blind are left out (D030): the
     queue shows the machine's band, which is what the blind rating must not see.
     """
     s = svc()
     hidden = s.ratings.blinded_responses(account.account_id)
-    rows = s.repo.queue_with_locks(ResponseStatus.REVIEW_REQUIRED, limit + len(hidden))
-    return [QueueItem(**r) for r in rows if r["response_id"] not in hidden][:limit]
+    rows = s.repo.queue_with_locks(
+        ResponseStatus.REVIEW_REQUIRED, limit + len(hidden), owners=students_in_view(account)
+    )
+    rows = [r for r in rows if r["response_id"] not in hidden][:limit]
+    owners = [r["account_id"] for r in rows if r.get("account_id")]
+    names = s.peers.identity.display_names(account_ids=owners) if owners else {}
+    return [QueueItem(**r, student_name=names.get(r.get("account_id") or "")) for r in rows]
 
 
 @router.post("/api/v1/review/{response_id}/lock", tags=["teacher"])
@@ -48,6 +62,7 @@ def lock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
     repo = svc().repo
     if repo.status_of(response_id) is None:
         raise HTTPException(404, "không tìm thấy bài này")
+    in_view(account, response_id)
     blind(account, response_id)
     granted, holder = repo.lock_response(response_id, account.account_id, account.pseudonym)
     if not granted:
@@ -70,6 +85,7 @@ def unlock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
 @router.get("/api/v1/responses/{response_id}/history", tags=["teacher"])
 def history(response_id: str, account: Account = STAFF_ONLY) -> list[Review]:
     """Edit history of a result: value before, value after, reason, and who did it. FR-31."""
+    in_view(account, response_id)
     blind(account, response_id)
     saw(account, response_id, "history")
     return svc().repo.review_history(response_id)
@@ -81,6 +97,7 @@ def submit_review(
 ) -> JSONResponse:
     """A teacher approves or changes a score. Only this path can set teacher_verified."""
     repo = svc().repo
+    in_view(account, response_id)
     blind(account, response_id)
     holder = repo.locked_by(response_id)
     if holder is not None and holder != account.pseudonym:
@@ -110,6 +127,7 @@ def close_review(
 ) -> JSONResponse:
     """Close a response the machine could not score, without a score: it becomes REJECTED."""
     repo = svc().repo
+    in_view(account, response_id)
     blind(account, response_id)
     holder = repo.locked_by(response_id)
     if holder is not None and holder != account.pseudonym:
@@ -153,4 +171,4 @@ def cohort_stats(account: Account = STAFF_ONLY) -> dict:
     tells a teacher whether the machine is worth trusting on their own class.
     """
     plan_allows(PlanFeature.CLASS_INSIGHTS)  # D034: a staff tool of the plan
-    return svc().repo.cohort_stats()
+    return svc().repo.cohort_stats(owners=students_in_view(account))

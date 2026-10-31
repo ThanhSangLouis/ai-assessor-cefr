@@ -254,9 +254,10 @@ def test_the_close_endpoint_takes_an_unscored_response_out_of_the_queue(tmp_path
 
     importlib.reload(m)
     m.repo.save(_unscored("r9"), "SV-001", "P3")
-    m.app.state.auth_repo.create_account("GV-01", PASSWORD, Role.TEACHER)
+    # D071: a response of nobody's class is the administrator's to close.
+    m.app.state.auth_repo.create_account("QT-01", PASSWORD, Role.ADMIN)
     c = TestClient(m.app)
-    c.post("/api/v1/auth/login", json={"pseudonym": "GV-01", "password": PASSWORD})
+    c.post("/api/v1/auth/login", json={"pseudonym": "QT-01", "password": PASSWORD})
     r = c.post("/api/v1/review/r9/close", json={"reason": "khong phai tieng Anh"})
     assert r.status_code == 200
     assert m.repo.get("r9").status is ResponseStatus.REJECTED

@@ -70,7 +70,7 @@ function renderRows(visible) {
     const title = titles[r.task_id] ? ` · ${escapeHtml(titles[r.task_id])}` : "";
     h +=
       `<tr${r.locked_by ? ' class="is-locked"' : ""}>` +
-      `<td><b>${escapeHtml(r.speaker_id)}</b>` +
+      `<td><b>${r.student_name ? escapeHtml(r.student_name) : escapeHtml(r.speaker_id)}</b>` +
       `<span class="cell-sub">Đề <code>${escapeHtml(r.task_id)}</code>${title}</span>` +
       `<span class="cell-sub">${escapeHtml(window.ui.localTime(r.created_at))} · ` +
       `<a href="/report/${encodeURIComponent(r.response_id)}">báo cáo ${escapeHtml(r.response_id)}</a></span></td>` +

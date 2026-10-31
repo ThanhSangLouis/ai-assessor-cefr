@@ -12,6 +12,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import teach
 from fastapi.testclient import TestClient
 
 from aicefr.auth import passwords
@@ -127,9 +128,11 @@ def test_owner_can_view_own_response(app) -> None:
     assert a.get(f"/api/v1/responses/{rid}").status_code == 200
 
 
-def test_teacher_can_view_any_response(app) -> None:
+def test_a_teacher_views_the_responses_of_their_class(app) -> None:
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     teacher = login_as(app, "GV-01", "teacher")
+    assert teacher.get(f"/api/v1/responses/{rid}").status_code == 404  # D071: not their class
+    teach("GV-01", "SV-001")
     assert teacher.get(f"/api/v1/responses/{rid}").status_code == 200
 
 
@@ -239,6 +242,7 @@ def test_audit_records_real_reviewer_account(app) -> None:
     audit log could not prove who had changed a score."""
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     teacher = login_as(app, "GV-01", "teacher")
+    teach("GV-01", "SV-001")
     teacher.post(f"/api/v1/review/{rid}", json={"reason": "nghe lai thay phat am ro hon"})
 
     admin = login_as(app, "QT-01", "admin")
@@ -318,9 +322,11 @@ def test_another_users_audio_returns_404(app) -> None:
     assert b.get(f"/api/v1/responses/{rid}/audio").status_code == 404
 
 
-def test_teacher_can_replay_any_response(app) -> None:
+def test_a_teacher_replays_the_responses_of_their_class(app) -> None:
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     teacher = login_as(app, "GV-01", "teacher")
+    assert teacher.get(f"/api/v1/responses/{rid}/audio").status_code == 404
+    teach("GV-01", "SV-001")
     assert teacher.get(f"/api/v1/responses/{rid}/audio").status_code == 200
 
 
@@ -342,6 +348,8 @@ def test_second_teacher_cannot_lock_a_held_response(app) -> None:
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     a = login_as(app, "GV-01", "teacher")
     b = login_as(app, "GV-02", "teacher")
+    teach("GV-01", "SV-001")
+    teach("GV-02", "SV-001")
     assert a.post(f"/api/v1/review/{rid}/lock").status_code == 200
     r = b.post(f"/api/v1/review/{rid}/lock")
     assert r.status_code == 409
@@ -352,6 +360,8 @@ def test_non_holder_cannot_save(app) -> None:
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     a = login_as(app, "GV-01", "teacher")
     b = login_as(app, "GV-02", "teacher")
+    teach("GV-01", "SV-001")
+    teach("GV-02", "SV-001")
     a.post(f"/api/v1/review/{rid}/lock")
     r = b.post(f"/api/v1/review/{rid}", json={"reason": "thu ghi de quyet dinh nguoi khac"})
     assert r.status_code == 409
@@ -360,9 +370,11 @@ def test_non_holder_cannot_save(app) -> None:
 def test_saving_releases_lock_for_others(app) -> None:
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     a = login_as(app, "GV-01", "teacher")
+    b = login_as(app, "GV-02", "teacher")
+    teach("GV-01", "SV-001")
+    teach("GV-02", "SV-001")
     a.post(f"/api/v1/review/{rid}/lock")
     a.post(f"/api/v1/review/{rid}", json={"reason": "nghe lai thay dat yeu cau"})
-    b = login_as(app, "GV-02", "teacher")
     assert b.post(f"/api/v1/review/{rid}/lock").status_code == 200
 
 
@@ -375,6 +387,7 @@ def test_expired_lock_can_be_reclaimed(app) -> None:
     assert granted
     assert m.repo.locked_by(rid) is None, "an expired lock counts as held by nobody"
     b = login_as(app, "GV-02", "teacher")
+    teach("GV-02", "SV-001")
     assert b.post(f"/api/v1/review/{rid}/lock").status_code == 200
 
 
@@ -393,6 +406,7 @@ def test_history_records_before_and_after_values(app) -> None:
     """FR-31: the history must hold the old value, the new value, the reason and the actor."""
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
     teacher = login_as(app, "GV-01", "teacher")
+    teach("GV-01", "SV-001")
     teacher.post(
         f"/api/v1/review/{rid}",
         json={"new_score": 3.5, "new_band": "B1", "reason": "phat am ro hon may danh gia"},

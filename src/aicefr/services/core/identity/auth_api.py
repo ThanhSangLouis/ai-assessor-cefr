@@ -22,7 +22,13 @@ from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_accou
 from aicefr.platform.rpc import RemoteError, same_key
 from aicefr.services import Peers
 from aicefr.storage.audit_repository import AuditLog, merge
-from aicefr.storage.auth_repository import Account, AccountLocked, AuthRepository, Role
+from aicefr.storage.auth_repository import (
+    Account,
+    AccountLocked,
+    AuthRepository,
+    EmailTaken,
+    Role,
+)
 
 router = APIRouter()
 
@@ -66,10 +72,10 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
     # D029: an account's own history shows its sign-ins and failed attempts.
     # Only for pseudonyms that exist: a typed string that matches no account
     # is attacker input, and the audit log is not a place to keep it.
-    known = s.auth.get_by_pseudonym(info.pseudonym)
+    known = s.auth.by_sign_in_name(info.identifier)
     try:
         token = s.auth.login(
-            info.pseudonym, info.password, device_label(request.headers.get("user-agent"))
+            info.identifier, info.password, device_label(request.headers.get("user-agent"))
         )
     except AccountLocked as e:
         if known is not None:
@@ -83,7 +89,7 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
             s.audit_log.write(
                 known["pseudonym"], "auth.login_failed", known["account_id"], "wrong_password"
             )
-        raise HTTPException(401, "bút danh hoặc mật khẩu không đúng")
+        raise HTTPException(401, "email hoặc mật khẩu không đúng")
     s.audit_log.write(known["pseudonym"], "auth.login", known["account_id"], "method=password")
 
     set_session_cookie(response, token)
@@ -104,10 +110,11 @@ NO_STORE = {"Cache-Control": "no-store"}
 
 @router.post("/api/v1/auth/signup", tags=["auth"])
 def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dict:
-    """Open a student account with a password; sign it in (D065).
+    """Open a student account with an email, a full name and a password; sign it in.
 
-    The pseudonym is the system's choice, and the recovery code that comes
-    back is shown once: it is the one way back in without an administrator.
+    D065, D071. The email is how the person signs in from now on; the
+    pseudonym is the system's choice and stays inside. The recovery code that
+    comes back is shown once: it is the one way back in without an administrator.
     Only students sign themselves up; a teacher or an administrator is given
     their role by somebody with authority (FR-32).
     """
@@ -122,8 +129,15 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
             raise HTTPException(409, reason)
     try:
         aid, pseudonym, code, token = s.auth.signup(
-            info.password, device_label(request.headers.get("user-agent"))
+            info.email,
+            info.full_name,
+            info.password,
+            device_label(request.headers.get("user-agent")),
         )
+    except EmailTaken as e:
+        raise HTTPException(
+            409, "email này đã có tài khoản: hãy đăng nhập, hoặc dùng Quên mật khẩu"
+        ) from e
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     s.audit_log.write(pseudonym, "account.signup", aid, "method=password")
@@ -131,6 +145,7 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     response.headers.update(NO_STORE)
     return {
         "pseudonym": pseudonym,
+        "email": s.auth.get(aid)["email"],
         "recovery_code": code,
         "home": ROLE_HOME[Role.STUDENT],
     }
@@ -140,16 +155,16 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
 def recover(info: RecoverRequest, request: Request, response: HttpResponse) -> dict:
     """Replace a forgotten password with the recovery code; sign in (D065).
 
-    Answers a wrong pseudonym and a wrong code with the same sentence, as the
+    Answers a wrong email and a wrong code with the same sentence, as the
     login does. A wrong code counts towards the lockout (NFR-07). On success
     every other session of the account ends and a new code replaces the one
     just used, shown once.
     """
     s = svc()
-    known = s.auth.get_by_pseudonym(info.pseudonym)
+    known = s.auth.by_sign_in_name(info.identifier)
     try:
         done = s.auth.recover(
-            info.pseudonym,
+            info.identifier,
             info.recovery_code,
             info.new_password,
             device_label(request.headers.get("user-agent")),
@@ -167,13 +182,14 @@ def recover(info: RecoverRequest, request: Request, response: HttpResponse) -> d
             s.audit_log.write(
                 known["pseudonym"], "auth.recover_failed", known["account_id"], "wrong_code"
             )
-        raise HTTPException(401, "bút danh hoặc mã khôi phục không đúng")
+        raise HTTPException(401, "email hoặc mã khôi phục không đúng")
     token, row, code = done
     s.audit_log.write(row["pseudonym"], "account.recover", row["account_id"], None)
     set_session_cookie(response, token)
     response.headers.update(NO_STORE)
     return {
         "pseudonym": row["pseudonym"],
+        "email": row["email"],
         "recovery_code": code,
         "home": ROLE_HOME.get(Role(row["role"]), "/"),
     }
@@ -193,6 +209,8 @@ def me(account: Account = Depends(require_login)) -> dict:
         "account_id": account.account_id,
         "pseudonym": account.pseudonym,
         "role": account.role.value,
+        "email": account.email,
+        "full_name": account.full_name,
     }
 
 

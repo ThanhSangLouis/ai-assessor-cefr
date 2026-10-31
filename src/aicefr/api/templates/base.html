@@ -86,16 +86,16 @@
     {#- The account folds into one menu at the foot of the sidebar: who is signed
         in, theme, sign out. -#}
     <details class="account-menu">
-      <summary class="account-button" aria-label="Tài khoản {{ account.pseudonym }}, {{ role_names.get(role, role) }}">
+      <summary class="account-button" aria-label="Tài khoản {{ account.display_name }}, {{ role_names.get(role, role) }}">
         <span class="avatar avatar-{{ account.avatar_color or 'none' }}" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
         <span class="who">
-          <span class="who-name">{{ account.pseudonym }}</span>
+          <span class="who-name">{{ account.display_name }}</span>
           <span class="who-role">{{ role_names.get(role, role) }}</span>
         </span>
         {{ icon("chevron-down", "icon chevron") }}
       </summary>
       <div class="account-panel">
-        <p class="account-head">Đang đăng nhập là <b>{{ account.pseudonym }}</b><br>{{ role_names.get(role, role) }}</p>
+        <p class="account-head">Đang đăng nhập là <b>{{ account.display_name }}</b>{% if account.email %}<br><span class="muted small">{{ account.email }}</span>{% endif %}<br>{{ role_names.get(role, role) }}</p>
         <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
         {% if role == "admin" and api_docs %}
           <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
@@ -145,6 +145,13 @@
 {% endif %}
 
 <main id="main" tabindex="-1">
+{#- D071: an account made before sign-in by email is asked, everywhere, to add one. -#}
+{% if account and not account.email %}
+<div class="notice notice-info contact-missing" id="contact-missing" role="status">
+  Tài khoản của bạn chưa có email. <a href="/account#contact">Thêm email và họ tên</a> để đăng nhập
+  bằng email hoặc Google{% if account.role.value == "student" %}, và để giảng viên lớp bạn biết bài nào của bạn{% endif %}.
+</div>
+{% endif %}
 {% block content %}{% endblock %}
 </main>
 

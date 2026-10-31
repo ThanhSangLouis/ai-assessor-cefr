@@ -90,17 +90,6 @@ def require_plan(plans, feature: PlanFeature) -> None:
         raise HTTPException(403, reason)
 
 
-def can_view_response(account: Account, owner_account_id: str | None) -> bool:
-    """Owners may read their own response; teachers and admins may read every one.
-
-    Legacy responses with no owner yet (empty account_id) are readable by
-    teachers and admins only.
-    """
-    if account.is_staff:
-        return True
-    return owner_account_id is not None and owner_account_id == account.account_id
-
-
 def set_session_cookie(response: HttpResponse, token: str) -> None:
     """Hand the browser its session cookie: the same flags for every way of signing in."""
     response.set_cookie(

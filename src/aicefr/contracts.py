@@ -823,6 +823,44 @@ class PracticeResult(BaseModel):
         return sum(1 for c in self.checks if c.met)
 
 
+class PhraseCard(BaseModel):
+    """One phrase of an upgraded answer and where it is in its reviews (D070).
+
+    A card of the phrase book: `box` is its Leitner box, `due` when it comes
+    back. Part of the upgrade it came from (`CoachUpgrade ◆ PhraseCard`).
+    """
+
+    phrase: str
+    meaning_vi: str = ""
+    box: int = 0
+    due: str | None = None
+    reviews: int = 0
+    reviewed_at: str | None = None
+
+    def is_due(self, at: str) -> bool:
+        """A card never reviewed is due at once."""
+        return (self.due or "") <= at
+
+
+class CoachUpgrade(BaseModel):
+    """The learner's answer rewritten one band higher (D069), made once and kept.
+
+    Part of the response (`Response ◆ CoachUpgrade`): it is made from the
+    response's transcript and goes with it. `provider` and `model` say which
+    language model wrote it.
+    """
+
+    from_band: Band
+    to_band: Band
+    upgraded: str
+    changes: list[dict] = Field(default_factory=list)
+    phrases: list[PhraseCard] = Field(default_factory=list)
+    provider: str
+    model: str
+    prompt_version: str
+    created_at: str
+
+
 class Response(BaseModel):
     """The pipeline's single output."""
 
@@ -844,6 +882,9 @@ class Response(BaseModel):
     # response (`Response ◆ Review`): they live and go with it. Kept out of the
     # stored report -- the repository keeps them beside it and fills them in.
     reviews: list[Review] = Field(default_factory=list)
+    # D069: the upgraded answer, when its owner asked for one. Kept beside the
+    # stored report like the reviews, and filled in by the repository.
+    upgrade: CoachUpgrade | None = None
 
     @property
     def was_scored(self) -> bool:

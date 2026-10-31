@@ -19,7 +19,7 @@ function fail(message, el) {
 form.onsubmit = async (e) => {
   e.preventDefault();
   box.innerHTML = "";
-  if (!pseudonymEl.value.trim()) return fail("Hãy nhập mã bút danh.", pseudonymEl);
+  if (!pseudonymEl.value.trim()) return fail("Hãy nhập email.", pseudonymEl);
   if (!codeEl.value.trim()) return fail("Hãy nhập mã khôi phục.", codeEl);
   const min = Number(passwordEl.getAttribute("minlength")) || 8;
   if (passwordEl.value.length < min) return fail(`Mật khẩu phải từ ${min} ký tự trở lên.`, passwordEl);
@@ -31,7 +31,7 @@ form.onsubmit = async (e) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pseudonym: pseudonymEl.value.trim(),
+        email: pseudonymEl.value.trim(),
         recovery_code: codeEl.value,
         new_password: passwordEl.value,
       }),
@@ -45,7 +45,7 @@ form.onsubmit = async (e) => {
     }
     form.hidden = true;
     document.getElementById("done").hidden = false;
-    window.showRecoverySlip(d.pseudonym, d.recovery_code);
+    window.showRecoverySlip(d.email || d.pseudonym, d.recovery_code);
     const go = document.getElementById("go");
     if (typeof d.home === "string" && d.home.startsWith("/") && !d.home.startsWith("//")) {
       go.href = d.home;

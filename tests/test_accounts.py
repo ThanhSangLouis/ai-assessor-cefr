@@ -14,6 +14,7 @@ import re
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 from aicefr.auth import passwords
@@ -38,6 +39,7 @@ def m(tmp_path, monkeypatch):
 
 def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    one_school(pseudonym, role)
     return sign_in(m, pseudonym, PASSWORD)
 
 

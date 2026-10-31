@@ -23,6 +23,22 @@ class AssessmentFacade:
         self.ratings = ratings
 
     @exposed
+    def teaches(self, teacher_id: str, student_id: str) -> bool:
+        """Whether the student is in a class the teacher teaches (D071)."""
+        from aicefr.services.core.assessment.context import svc
+
+        rooms = svc().classrooms
+        return rooms is not None and rooms.teaches(teacher_id, student_id)
+
+    @exposed
+    def students_of(self, teacher_id: str) -> list[str]:
+        """Every member of every class the teacher teaches (D071)."""
+        from aicefr.services.core.assessment.context import svc
+
+        rooms = svc().classrooms
+        return sorted(rooms.students_of(teacher_id)) if rooms is not None else []
+
+    @exposed
     def latest_assessment(self, account_id: str) -> dict | None:
         """The latest scored assessment: the basis for suggesting practice (D040-gated)."""
         return study_api.latest_assessment(account_id)
@@ -96,11 +112,20 @@ class AssessmentFacade:
         return _daily_view(attempts)
 
     @exposed
-    def staff_badges(self, account_id: str) -> dict:
-        """Responses waiting for review, less those this person rates blind; their open sheets."""
+    def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
+        """Responses waiting for review, less those this person rates blind; their open sheets.
+
+        D071: a teacher counts the work of their classes' students; an administrator, all.
+        """
+        from aicefr.services.core.assessment.context import svc
+
+        owners = None
+        if role != "admin":
+            rooms = svc().classrooms
+            owners = rooms.students_of(account_id) if rooms is not None else set()
         return {
             "queue": self.repo.count_waiting_review(
-                exclude=self.ratings.blinded_responses(account_id)
+                exclude=self.ratings.blinded_responses(account_id), owners=owners
             ),
             "ratings": self.ratings.open_count(account_id),
         }

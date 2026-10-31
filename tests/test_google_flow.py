@@ -107,7 +107,7 @@ def test_the_administrator_sees_what_to_register_with_google(tmp_path, monkeypat
     assert seen["enabled"] is True and seen["client_id"] == CLIENT_ID
     assert seen["redirect_uri"] == "http://testserver/auth/google/callback"
     assert seen["secret_set"] is True and "x" * 24 not in json.dumps(seen)
-    assert seen["scopes"] == "openid email" and seen["linked_accounts"] == 0
+    assert seen["scopes"] == "openid email profile" and seen["linked_accounts"] == 0
     # http:// on a host that is not localhost: Google will not take it.
     assert any("AICEFR_PUBLIC_URL" in p for p in seen["problems"])
     for who, status in ((login_as(m, "GV-01", "teacher"), 403), (TestClient(m.app), 401)):

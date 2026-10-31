@@ -1,14 +1,15 @@
-"""Classes and assignments (D054): a teacher sets an assessment task to a class, with a due day.
+"""Classes and assignments (D054, D071): the teachers of a class set it assessment tasks.
 
-A teacher makes a class and hands out its join code, or adds students by
-pseudonym; sets one of the assessment tasks with a due day; and sees, for each
-assignment, who handed in on time, late or not yet, and how the class's bands
-spread. A student joins with the code and sees what is set, what is due, and a
-link that opens the submission screen on that task.
+D071: a class has one or more teachers. An administrator makes classes and
+assigns teachers to them (a teacher who makes a class teaches it); one teacher
+may teach many classes, and reviews only the work of their classes' members.
+Students are added by email (a pseudonym still works for an account made
+before D071) or join with the class's code. The teachers set assessment tasks
+with a due day and see, for each assignment, who handed in on time, late or not
+yet, and how the class's bands spread -- by the students' full names.
 
 The submission is the response itself: an assessment of the assigned task by a
-member, made after the task was set (`ClassroomRepository`). A teacher sees
-pseudonyms only, as on every other staff screen.
+member, made after the task was set (`ClassroomRepository`).
 """
 
 from __future__ import annotations
@@ -17,9 +18,9 @@ from collections import Counter
 from datetime import UTC, date, datetime, time, timedelta
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 
-from aicefr.api.deps import STAFF_ONLY, STUDENT_ONLY
+from aicefr.api.deps import ADMIN_ONLY, STAFF_ONLY, STUDENT_ONLY
 from aicefr.contracts import Band
 from aicefr.practice.streak import LOCAL_TZ
 from aicefr.services.core.assessment.context import svc
@@ -29,17 +30,27 @@ from aicefr.storage.db import now_iso
 
 router = APIRouter()
 
-MAX_ADD = 200  # pseudonyms in one request: a large lecture group
+MAX_ADD = 200  # students in one request: a large lecture group
 NOT_SCORED = ("REJECTED", "FAILED")
 WAITING = ("QUEUED", "RUNNING")
 
 
 class ClassIn(BaseModel):
     name: str = Field(min_length=1, max_length=80)
+    # D071: an administrator names the teachers (emails); a teacher who makes
+    # a class teaches it, and these are added beside them.
+    teachers: list[str] = Field(default_factory=list, max_length=20)
 
 
 class MembersIn(BaseModel):
-    pseudonyms: list[str] = Field(min_length=1, max_length=MAX_ADD)
+    # Emails; a pseudonym still names an account made before D071.
+    people: list[str] = Field(
+        min_length=1, max_length=MAX_ADD, validation_alias=AliasChoices("people", "pseudonyms")
+    )
+
+
+class TeacherIn(BaseModel):
+    email: str = Field(min_length=1, max_length=254, validation_alias=AliasChoices("email", "who"))
 
 
 class AssignmentIn(BaseModel):
@@ -59,12 +70,22 @@ def due_at(day: date) -> str:
 
 
 def _owned(class_id: str, account: Account) -> dict:
+    """The class, if this account teaches it or administers; 404 otherwise."""
     found = svc().classrooms.get(class_id)
     if found is None or (
-        account.role is not Role.ADMIN and found["teacher_id"] != account.account_id
+        account.role is not Role.ADMIN and account.account_id not in found["teacher_ids"]
     ):
         raise HTTPException(404, "không có lớp này")
     return found
+
+
+def _person(identifier: str) -> dict | None:
+    return svc().peers.identity.by_sign_in_name(identifier=identifier.strip())
+
+
+def _teacher_views(teacher_ids: list[str]) -> list[dict]:
+    names = svc().peers.identity.display_names(account_ids=teacher_ids) if teacher_ids else {}
+    return [{"account_id": t, "name": names.get(t, "?")} for t in teacher_ids]
 
 
 def _task_title(task_id: str) -> str:
@@ -129,7 +150,17 @@ def _summary(assignment: dict, states: dict[str, dict]) -> dict:
 @router.post("/api/v1/classes", tags=["teacher"])
 def create_class(body: ClassIn, account: Account = STAFF_ONLY) -> dict:
     s = svc()
-    made = s.classrooms.create(body.name.strip(), account.account_id)
+    teachers = [] if account.role is Role.ADMIN else [account.account_id]
+    unknown = []
+    for who in body.teachers:
+        found = _person(who)
+        if found is None or found["role"] != Role.TEACHER.value:
+            unknown.append(who)
+        else:
+            teachers.append(found["account_id"])
+    if unknown:
+        raise HTTPException(422, "không phải tài khoản giảng viên: " + ", ".join(unknown))
+    made = s.classrooms.create(body.name.strip(), teachers)
     s.repo.write_audit(account.pseudonym, "class.create", made["class_id"], body.name.strip())
     return made
 
@@ -144,6 +175,7 @@ def list_classes(account: Account = STAFF_ONLY) -> list[dict]:
     return [
         {
             **c,
+            "teachers": _teacher_views(c["teacher_ids"]),
             "members": s.classrooms.count_members(c["class_id"]),
             "assignments": per_class.get(c["class_id"], 0),
         }
@@ -156,23 +188,36 @@ def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
     s = svc()
     found = _owned(class_id, account)
     members = [m["account_id"] for m in s.classrooms.members(class_id)]
-    names = s.peers.identity.pseudonyms(account_ids=members) if members else {}
+    people = {m: s.peers.identity.account(account_id=m) or {} for m in members}
     assignments = [_summary(a, standing(a, members)) for a in s.classrooms.assignments([class_id])]
+    roster = [
+        {
+            "account_id": m,
+            "name": people[m].get("full_name") or people[m].get("pseudonym") or "?",
+            "email": people[m].get("email"),
+            "pseudonym": people[m].get("pseudonym"),
+        }
+        for m in members
+    ]
     return {
         **found,
-        "members": sorted(names.get(m, "?") for m in members),
+        "teachers": _teacher_views(found["teacher_ids"]),
+        "members": sorted(roster, key=lambda r: r["name"].lower()),
         "assignments": assignments,
     }
 
 
 @router.post("/api/v1/classes/{class_id}/members", tags=["teacher"])
 def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -> dict:
-    """Add students by pseudonym; what was added, already there, and unknown."""
+    """Add students by email (or legacy pseudonym); what was added, already there, unknown."""
     s = svc()
     _owned(class_id, account)
     added, already, unknown = [], [], []
-    for raw in dict.fromkeys(p.strip().upper() for p in body.pseudonyms if p.strip()):
-        who = s.peers.identity.by_pseudonym(pseudonym=raw)
+    # An email is kept lower case, a pseudonym upper case: what was added is
+    # echoed in the form the system keeps.
+    typed = (p.strip() for p in body.people if p.strip())
+    for raw in dict.fromkeys(p.lower() if "@" in p else p.upper() for p in typed):
+        who = _person(raw)
         if who is None or who.get("role") != Role.STUDENT.value:
             unknown.append(raw)
         elif s.classrooms.add_member(class_id, who["account_id"]):
@@ -184,14 +229,41 @@ def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -
     return {"added": added, "already": already, "unknown": unknown}
 
 
-@router.delete("/api/v1/classes/{class_id}/members/{pseudonym}", tags=["teacher"])
-def remove_member(class_id: str, pseudonym: str, account: Account = STAFF_ONLY) -> dict:
+@router.delete("/api/v1/classes/{class_id}/members/{account_id}", tags=["teacher"])
+def remove_member(class_id: str, account_id: str, account: Account = STAFF_ONLY) -> dict:
     s = svc()
     _owned(class_id, account)
-    who = s.peers.identity.by_pseudonym(pseudonym=pseudonym)
+    # By account id; a pseudonym still works for links made before D071.
+    who = s.peers.identity.account(account_id=account_id) or s.peers.identity.by_pseudonym(
+        pseudonym=account_id
+    )
     if who is None or not s.classrooms.remove_member(class_id, who["account_id"]):
         raise HTTPException(404, "sinh viên này không ở trong lớp")
-    return {"removed": pseudonym}
+    return {"removed": account_id}
+
+
+@router.post("/api/v1/classes/{class_id}/teachers", tags=["admin"])
+def add_teacher(class_id: str, body: TeacherIn, account: Account = ADMIN_ONLY) -> dict:
+    """Assign a teacher to a class (D071): only an administrator does."""
+    s = svc()
+    _owned(class_id, account)
+    who = _person(body.email)
+    if who is None or who["role"] != Role.TEACHER.value:
+        raise HTTPException(422, "không có tài khoản giảng viên với email này")
+    added = s.classrooms.add_teacher(class_id, who["account_id"])
+    if added:
+        s.repo.write_audit(account.pseudonym, "class.add_teacher", class_id, who["pseudonym"])
+    return {"added": added, "teachers": _teacher_views(s.classrooms.get(class_id)["teacher_ids"])}
+
+
+@router.delete("/api/v1/classes/{class_id}/teachers/{account_id}", tags=["admin"])
+def remove_teacher(class_id: str, account_id: str, account: Account = ADMIN_ONLY) -> dict:
+    s = svc()
+    _owned(class_id, account)
+    if not s.classrooms.remove_teacher(class_id, account_id):
+        raise HTTPException(404, "giảng viên này không dạy lớp này")
+    s.repo.write_audit(account.pseudonym, "class.remove_teacher", class_id, account_id)
+    return {"teachers": _teacher_views(s.classrooms.get(class_id)["teacher_ids"])}
 
 
 @router.post("/api/v1/classes/{class_id}/archive", tags=["teacher"])
@@ -226,7 +298,7 @@ def create_assignment(class_id: str, body: AssignmentIn, account: Account = STAF
 
 @router.get("/api/v1/assignments/{assignment_id}", tags=["teacher"])
 def assignment_detail(assignment_id: str, account: Account = STAFF_ONLY) -> dict:
-    """Every member's state on one assignment, by pseudonym, with a link to the response."""
+    """Every member's state on one assignment, by name, with a link to the response."""
     s = svc()
     a = s.classrooms.assignment(assignment_id)
     if a is None:
@@ -234,10 +306,10 @@ def assignment_detail(assignment_id: str, account: Account = STAFF_ONLY) -> dict
     found = _owned(a["class_id"], account)
     members = [m["account_id"] for m in s.classrooms.members(a["class_id"])]
     states = standing(a, members)
-    names = s.peers.identity.pseudonyms(account_ids=members) if members else {}
+    names = s.peers.identity.display_names(account_ids=members) if members else {}
     rows = sorted(
-        ({"pseudonym": names.get(m, "?"), **states[m]} for m in members),
-        key=lambda r: r["pseudonym"],
+        ({"name": names.get(m, "?"), **states[m]} for m in members),
+        key=lambda r: r["name"].lower(),
     )
     return {"class_name": found["name"], **_summary(a, states), "students": rows}
 

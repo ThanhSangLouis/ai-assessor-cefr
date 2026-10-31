@@ -7,18 +7,23 @@
   <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
   <section class="auth-intro" aria-labelledby="auth-intro-h">
     <p class="eyebrow">AI Assessor CEFR</p>
-    <h2 id="auth-intro-h">Một tài khoản, không cần tên hay email</h2>
+    <h2 id="auth-intro-h">Một tài khoản theo email của bạn</h2>
     <ul class="auth-points">
-      <li>Hệ thống chọn cho bạn một bút danh ngẫu nhiên, ví dụ SV-3FA9C1.</li>
-      <li>Bạn tự đặt mật khẩu; không ai khác thấy nó.</li>
-      <li>Mã khôi phục thay cho email khi bạn quên mật khẩu.</li>
+      <li>Đăng nhập bằng email và mật khẩu, hoặc bằng Google với cùng email.</li>
+      <li>Giảng viên lớp bạn thấy họ tên của bạn khi chấm bài.</li>
+      <li>Mã khôi phục giúp bạn đặt lại mật khẩu khi quên.</li>
     </ul>
   </section>
 
   <section class="card auth-card" aria-labelledby="signup-h">
     <h1 id="signup-h">Đăng ký tài khoản sinh viên</h1>
     <form id="f" novalidate>
-      <p class="lede">Chỉ cần một mật khẩu. Bút danh do hệ thống chọn để không lộ họ tên thật.</p>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" required autocapitalize="none"
+             spellcheck="false" maxlength="254">
+      <label for="full-name">Họ và tên</label>
+      <input id="full-name" autocomplete="name" required maxlength="80" aria-describedby="name-hint">
+      <p class="field-hint" id="name-hint">Tên giảng viên lớp bạn sẽ thấy. Sửa được ở trang Tài khoản.</p>
       <label for="password">Mật khẩu</label>
       <input id="password" type="password" autocomplete="new-password" required
              minlength="{{ min_length }}" aria-describedby="pw-hint">
@@ -26,6 +31,11 @@
       <label for="again">Nhập lại mật khẩu</label>
       <input id="again" type="password" autocomplete="new-password" required>
       <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
+      {#- D071: email and name are personal data (Nghị định 13/2023/NĐ-CP). -#}
+      <label class="check-row"><input type="checkbox" id="consent" required>
+        Tôi đồng ý để hệ thống lưu email và họ tên của tôi cho việc đăng nhập và để giảng viên lớp
+        tôi biết bài nào của ai. Dữ liệu nghiên cứu chỉ dùng mã ẩn danh. Tôi có thể sửa hoặc xoá ở
+        trang Tài khoản.</label>
       <div class="button-row">
         <button id="b" type="submit">Tạo tài khoản</button>
       </div>
@@ -33,9 +43,9 @@
     </form>
 
     <div id="done" hidden>
-      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập. Ghi lại bút danh và mã khôi phục dưới đây.</p>
+      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập. Ghi lại mã khôi phục dưới đây.</p>
       {% include "_recovery_slip.html" %}
-      <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu bút danh và mã khôi phục</label>
+      <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu mã khôi phục</label>
       <div class="button-row">
         <a class="button" id="go" href="/practice" aria-disabled="true">Bắt đầu luyện nói</a>
       </div>

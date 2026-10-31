@@ -25,7 +25,7 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from aicefr.api.deps import can_view_response, require_login
+from aicefr.api.deps import require_login
 from aicefr.coach import phrasebook
 from aicefr.coach.providers import provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
@@ -33,7 +33,7 @@ from aicefr.contracts import ResponseStatus
 from aicefr.observability import count
 from aicefr.report.next_band import next_band_plan
 from aicefr.services.core.assessment import study_api
-from aicefr.services.core.assessment.context import svc
+from aicefr.services.core.assessment.context import can_view, svc
 from aicefr.storage.auth_repository import Account, Role
 
 router = APIRouter()
@@ -47,7 +47,7 @@ def _scored(response_id: str, account: Account, owner_only: bool):
     s = svc()
     report = s.repo.get(response_id)
     owner = s.repo.owner_of(response_id)
-    allowed = owner == account.account_id if owner_only else can_view_response(account, owner)
+    allowed = owner == account.account_id if owner_only else can_view(account, owner)
     if report is None or not allowed:
         raise HTTPException(404, "không tìm thấy bài này")
     return report, owner

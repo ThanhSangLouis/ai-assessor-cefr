@@ -21,15 +21,17 @@
 
   <section class="card auth-card" aria-labelledby="login-h">
     <h1 id="login-h">Đăng nhập</h1>
-    <p class="lede">Dùng mã bút danh của bạn. Hệ thống không lưu họ tên thật.</p>
+    <p class="lede">Dùng email bạn đã đăng ký, hoặc đăng nhập bằng Google với cùng email đó.</p>
     {% if google_error %}
     <div class="notice notice-danger" role="alert">{{ google_error }}</div>
     {% endif %}
     <form id="f">
-      <label for="pseudonym">Mã bút danh</label>
-      <input id="pseudonym" name="pseudonym" autocomplete="username" required autofocus
-             autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
-      <p class="field-hint" id="pseudonym-hint">Ví dụ: SV-001, GV-02.</p>
+      {#- D071: the email. An account made before D071 that has no email yet
+          still signs in with its code (SV-001, GV-02) and is asked to add one. -#}
+      <label for="pseudonym">Email</label>
+      <input id="pseudonym" name="email" type="text" inputmode="email" autocomplete="username"
+             required autofocus autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
+      <p class="field-hint" id="pseudonym-hint">Tài khoản cũ chưa có email thì nhập mã tài khoản, ví dụ SV-001.</p>
 
       <label for="password">Mật khẩu</label>
       <div class="password-field">
@@ -55,8 +57,8 @@
     </a>
     {% if google_signup %}
     <p class="field-hint">
-      Lần đầu dùng Google, hệ thống tạo cho bạn một tài khoản sinh viên với bút danh ngẫu nhiên.
-      Hệ thống không lưu tên hay email Google của bạn.
+      Cùng một email là cùng một tài khoản, dù đăng nhập bằng mật khẩu hay Google. Email Google
+      chưa có tài khoản thì hệ thống tạo tài khoản sinh viên với tên và email đó.
     </p>
     {% else %}
     <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
@@ -73,9 +75,9 @@
     <details class="auth-help">
       <summary>Quên mật khẩu?</summary>
       <p>
-        Hệ thống không có email của bạn nên không gửi được thư đặt lại mật khẩu. Hãy báo giảng
-        viên hoặc quản trị viên của lớp: họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng
-        nhập tới bạn đặt mật khẩu mới.
+        Hệ thống chưa gửi thư đặt lại mật khẩu. Hãy báo giảng viên hoặc quản trị viên của lớp:
+        họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng nhập tới bạn đặt mật khẩu mới.
+        Đã liên kết Google thì đăng nhập bằng Google.
       </p>
     </details>
     {% endif %}

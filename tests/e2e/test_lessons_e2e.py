@@ -130,13 +130,21 @@ def student(context, live_server):
     return page
 
 
-def teacher_page(browser, live_server):
-    """A teacher in a context of their own, so two roles can act side by side."""
+def teacher_page(browser, live_server, *students):
+    """A teacher in a context of their own, so two roles can act side by side.
+
+    D071: a teacher sees the work of their classes' students only; the pages
+    of `students` are put in a class this teacher teaches.
+    """
     ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
     ctx.set_default_timeout(20_000)
     page = ctx.new_page()
     page.on("dialog", lambda d: d.accept())
-    login(page, live_server, live_server.account("teacher"), "/teach")
+    teacher = live_server.account("teacher")
+    if students:
+        names = [s.request.get("/api/v1/me").json()["pseudonym"] for s in students]
+        live_server.teach(teacher, *names)
+    login(page, live_server, teacher, "/teach")
     return page
 
 
@@ -363,7 +371,7 @@ def test_students_see_the_published_version_until_the_teacher_publishes_again(
 def test_teacher_corrects_a_word_and_the_learner_sees_the_review(browser, student, live_server):
     student.goto(f"/practice/lessons/{LESSON}")
     answer(student, live_server)
-    teacher = teacher_page(browser, live_server)
+    teacher = teacher_page(browser, live_server, student)
     try:
         teacher.goto("/teach/insights?path=path-sample")
         teacher.locator("[data-attempt]").first.click()

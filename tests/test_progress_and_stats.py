@@ -22,7 +22,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import store
+from dbutil import one_school, store
 from fastapi.testclient import TestClient
 
 PASSWORD = "matkhau-kiem-thu"
@@ -41,6 +41,7 @@ def login_as(app, pseudonym: str, role: str) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    one_school(pseudonym, role)
     c = TestClient(app)
     assert (
         c.post(

@@ -1,15 +1,17 @@
-"""Self sign-up with a password and recovery codes for a forgotten one (D065).
+"""Self sign-up with an email and recovery codes for a forgotten password (D065, D071).
 
-The system keeps no email address (FR-33), so a forgotten password cannot be
-reset by mail. A student who signs up gets a random pseudonym and a one-time
-recovery code; the code, with the pseudonym, sets a new password at /forgot and
-is replaced by a new one each time it is used. These tests run the real
-application through TestClient on its own store.
+A student signs up with the email they sign in with, their full name and a
+password; the system draws a pseudonym that stays inside. No mail is sent, so
+a forgotten password is reset with a one-time recovery code: the code, with
+the email, sets a new password at /forgot and is replaced by a new one each
+time it is used. These tests run the real application through TestClient on
+its own store.
 """
 
 from __future__ import annotations
 
 import importlib
+import itertools
 import re
 
 import pytest
@@ -43,25 +45,36 @@ def m(tmp_path, monkeypatch):
     return make_app(monkeypatch, tmp_path)
 
 
+_n = itertools.count(1)
+
+
+def form(password: str = PASSWORD, **extra) -> dict:
+    """A sign-up form with a fresh email each time."""
+    return {
+        "email": f"hoc.vien{next(_n)}@example.edu.vn",
+        "full_name": "Nguyễn Văn An",
+        "password": password,
+        **extra,
+    }
+
+
 def signup(m, password: str = PASSWORD) -> tuple[TestClient, dict]:
     c = TestClient(m.app)
-    r = c.post("/api/v1/auth/signup", json={"password": password})
+    r = c.post("/api/v1/auth/signup", json=form(password))
     assert r.status_code == 200, r.text
     return c, r.json()
 
 
-def recover(m, pseudonym: str, code: str, new: str = NEW_PASSWORD, client=None):
+def recover(m, email: str, code: str, new: str = NEW_PASSWORD, client=None):
     c = client or TestClient(m.app)
     return c.post(
         "/api/v1/auth/recover",
-        json={"pseudonym": pseudonym, "recovery_code": code, "new_password": new},
+        json={"email": email, "recovery_code": code, "new_password": new},
     )
 
 
-def login(m, pseudonym: str, password: str) -> int:
-    r = TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": pseudonym, "password": password}
-    )
+def login(m, email: str, password: str) -> int:
+    r = TestClient(m.app).post("/api/v1/auth/login", json={"email": email, "password": password})
     return r.status_code
 
 
@@ -91,30 +104,32 @@ def test_a_student_signs_up_with_a_password_and_is_signed_in(m) -> None:
     assert body["home"] == "/practice"
     me = c.get("/api/v1/me").json()
     assert me == {**me, "pseudonym": body["pseudonym"], "role": "student"}
-    assert login(m, body["pseudonym"], PASSWORD) == 200
+    assert me["email"] == body["email"] and me["full_name"] == "Nguyễn Văn An"
+    assert login(m, body["email"], PASSWORD) == 200
+    # The pseudonym is an internal code now, not a second way in.
+    assert login(m, body["pseudonym"], PASSWORD) == 401
     row = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])
     assert row["recovery_hash"] and body["recovery_code"] not in str(row)
     assert "account.signup" in actions(m)
 
 
 def test_a_sign_up_is_not_kept_by_the_browser(m) -> None:
-    r = TestClient(m.app).post("/api/v1/auth/signup", json={"password": PASSWORD})
+    r = TestClient(m.app).post("/api/v1/auth/signup", json=form())
     assert r.headers["cache-control"] == "no-store"
 
 
 def test_a_short_password_opens_no_account(m) -> None:
     before = len(m.app.state.auth_repo.list_accounts())
-    r = TestClient(m.app).post("/api/v1/auth/signup", json={"password": "ngan"})
+    r = TestClient(m.app).post("/api/v1/auth/signup", json=form("ngan"))
     assert r.status_code == 422
     assert "8 ký tự" in r.json()["detail"]
     assert len(m.app.state.auth_repo.list_accounts()) == before
 
 
-def test_sign_up_takes_no_name_and_no_role(m) -> None:
+def test_sign_up_chooses_no_pseudonym_and_no_role(m) -> None:
     """Extra fields are ignored: the pseudonym is drawn, the role is student."""
     r = TestClient(m.app).post(
-        "/api/v1/auth/signup",
-        json={"password": PASSWORD, "pseudonym": "NguyenVanA", "role": "admin"},
+        "/api/v1/auth/signup", json=form(pseudonym="NguyenVanA", role="admin")
     )
     assert r.status_code == 200
     assert PSEUDONYM.match(r.json()["pseudonym"])
@@ -129,7 +144,7 @@ def test_sign_up_respects_the_plan_seats(m, monkeypatch) -> None:
     monkeypatch.setattr(
         auth_api.svc().peers.billing, "seat_refusal", lambda n: "gói hiện tại đã đủ chỗ"
     )
-    r = TestClient(m.app).post("/api/v1/auth/signup", json={"password": PASSWORD})
+    r = TestClient(m.app).post("/api/v1/auth/signup", json=form())
     assert r.status_code == 409
     assert r.json()["detail"] == "gói hiện tại đã đủ chỗ"
 
@@ -137,7 +152,7 @@ def test_sign_up_respects_the_plan_seats(m, monkeypatch) -> None:
 def test_sign_up_can_be_turned_off(tmp_path, monkeypatch) -> None:
     m = make_app(monkeypatch, tmp_path, signup=False)
     c = TestClient(m.app, follow_redirects=False)
-    assert c.post("/api/v1/auth/signup", json={"password": PASSWORD}).status_code == 404
+    assert c.post("/api/v1/auth/signup", json=form()).status_code == 404
     assert c.get("/signup").headers["location"] == "/login"
     assert c.get("/forgot").headers["location"] == "/login"
     page = c.get("/login").text
@@ -147,12 +162,10 @@ def test_sign_up_can_be_turned_off(tmp_path, monkeypatch) -> None:
 def test_sign_up_is_rate_limited_apart_from_login(tmp_path, monkeypatch) -> None:
     m = make_app(monkeypatch, tmp_path, rate=2)
     c = TestClient(m.app)
-    codes = [
-        c.post("/api/v1/auth/signup", json={"password": PASSWORD}).status_code for _ in range(3)
-    ]
+    codes = [c.post("/api/v1/auth/signup", json=form()).status_code for _ in range(3)]
     assert codes == [200, 200, 429]
     # The login count is its own: two sign-ups did not use it up.
-    body = {"pseudonym": "SV-KHONG", "password": PASSWORD}
+    body = {"email": "khong.co@example.edu.vn", "password": PASSWORD}
     assert c.post("/api/v1/auth/login", json=body).status_code == 401
 
 
@@ -161,7 +174,7 @@ def test_sign_up_is_rate_limited_apart_from_login(tmp_path, monkeypatch) -> None
 
 def test_the_recovery_code_sets_a_new_password_once(m) -> None:
     other_device, body = signup(m)
-    pseudonym, code = body["pseudonym"], body["recovery_code"]
+    pseudonym, code = body["email"], body["recovery_code"]
 
     r = recover(m, pseudonym, code)
     assert r.status_code == 200, r.text
@@ -182,13 +195,13 @@ def test_the_recovery_code_sets_a_new_password_once(m) -> None:
 def test_the_code_is_read_however_it_was_typed(m) -> None:
     _, body = signup(m)
     typed = body["recovery_code"].upper().replace("-", "")
-    assert recover(m, body["pseudonym"], typed).status_code == 200
+    assert recover(m, body["email"], typed).status_code == 200
 
 
-def test_a_wrong_code_and_a_wrong_pseudonym_read_the_same(m) -> None:
+def test_a_wrong_code_and_a_wrong_email_read_the_same(m) -> None:
     _, body = signup(m)
-    wrong_code = recover(m, body["pseudonym"], passwords.recovery_code())
-    wrong_name = recover(m, "SV-KHONGCO", body["recovery_code"])
+    wrong_code = recover(m, body["email"], passwords.recovery_code())
+    wrong_name = recover(m, "khong.co@example.edu.vn", body["recovery_code"])
     assert wrong_code.status_code == wrong_name.status_code == 401
     assert wrong_code.json() == wrong_name.json()
     assert "auth.recover_failed" in actions(m)
@@ -197,17 +210,17 @@ def test_a_wrong_code_and_a_wrong_pseudonym_read_the_same(m) -> None:
 def test_guessing_codes_locks_the_account_like_guessing_passwords(m) -> None:
     _, body = signup(m)
     for _ in range(MAX_FAILED_ATTEMPTS):
-        assert recover(m, body["pseudonym"], passwords.recovery_code()).status_code == 401
+        assert recover(m, body["email"], passwords.recovery_code()).status_code == 401
     # Locked now: even the right code waits, and so does the password.
-    assert recover(m, body["pseudonym"], body["recovery_code"]).status_code == 429
-    assert login(m, body["pseudonym"], PASSWORD) == 429
+    assert recover(m, body["email"], body["recovery_code"]).status_code == 429
+    assert login(m, body["email"], PASSWORD) == 429
 
 
 def test_an_unacceptable_new_password_spends_nothing(m) -> None:
     _, body = signup(m)
-    r = recover(m, body["pseudonym"], body["recovery_code"], new="ngan")
+    r = recover(m, body["email"], body["recovery_code"], new="ngan")
     assert r.status_code == 422
-    r = recover(m, body["pseudonym"], body["recovery_code"], new=body["pseudonym"] + "-x")
+    r = recover(m, body["email"], body["recovery_code"], new=body["pseudonym"] + "-x")
     assert r.status_code == 200
     row = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])
     assert row["failed_attempts"] == 0
@@ -223,7 +236,7 @@ def test_a_disabled_account_cannot_be_recovered(m) -> None:
     _, body = signup(m)
     aid = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])["account_id"]
     m.app.state.auth_repo.set_disabled(aid, True)
-    assert recover(m, body["pseudonym"], body["recovery_code"]).status_code == 401
+    assert recover(m, body["email"], body["recovery_code"]).status_code == 401
 
 
 def test_an_administrator_reset_voids_the_recovery_code(m) -> None:
@@ -231,7 +244,7 @@ def test_an_administrator_reset_voids_the_recovery_code(m) -> None:
     _, body = signup(m)
     aid = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])["account_id"]
     m.app.state.auth_repo.set_temporary_password(aid)
-    assert recover(m, body["pseudonym"], body["recovery_code"]).status_code == 401
+    assert recover(m, body["email"], body["recovery_code"]).status_code == 401
 
 
 # ================================================================= a code from the account page
@@ -243,8 +256,8 @@ def test_a_signed_in_person_makes_a_new_code_and_the_old_one_stops(m) -> None:
     r = c.post("/api/v1/me/recovery-code")
     assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
     fresh = r.json()["recovery_code"]
-    assert recover(m, body["pseudonym"], body["recovery_code"]).status_code == 401
-    assert recover(m, body["pseudonym"], fresh).status_code == 200
+    assert recover(m, body["email"], body["recovery_code"]).status_code == 401
+    assert recover(m, body["email"], fresh).status_code == 200
 
 
 def test_making_a_code_needs_a_session(m) -> None:
@@ -255,9 +268,9 @@ def test_the_history_shows_sign_up_and_recovery(m) -> None:
     c, body = signup(m)
     c.post("/api/v1/me/recovery-code")
     later = TestClient(m.app)
-    recover(m, body["pseudonym"], passwords.recovery_code(), client=later)
+    recover(m, body["email"], passwords.recovery_code(), client=later)
     code = c.post("/api/v1/me/recovery-code").json()["recovery_code"]
-    assert recover(m, body["pseudonym"], code, client=later).status_code == 200
+    assert recover(m, body["email"], code, client=later).status_code == 200
     seen = {a["action"] for a in later.get("/api/v1/me/activity").json()}
     assert {"account.signup", "account.recovery_code", "account.recover"} <= seen
     assert "auth.recover_failed" in seen

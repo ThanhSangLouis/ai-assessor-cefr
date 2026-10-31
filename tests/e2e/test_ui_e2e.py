@@ -37,7 +37,7 @@ pytestmark = pytest.mark.e2e
 def login_home(page, server, pseudonym: str, home: str) -> None:
     """Log in WITHOUT `?next=`, and wait for the role's own start page."""
     page.goto("/login")
-    page.get_by_label("Mã bút danh").fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(pseudonym)
     page.get_by_label("Mật khẩu").fill(server.password)
     page.get_by_role("button", name="Đăng nhập").click()
     page.wait_for_url(lambda url: urlparse(url).path == home)
@@ -212,10 +212,13 @@ def test_my_responses_filters_assessments_from_practice(context, live_server):
 
 
 def test_teacher_opens_the_next_free_response_and_reads_names_not_codes(context, live_server):
-    submit_assessment(student_page(context, live_server, "/"), live_server)
+    learner = student_page(context, live_server, "/")
+    submit_assessment(learner, live_server)
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
-        login(teacher, live_server, live_server.account("teacher"), "/review")
+        gv = live_server.account("teacher")
+        live_server.teach(gv, learner.request.get("/api/v1/me").json()["pseudonym"])
+        login(teacher, live_server, gv, "/review")
         next_button = teacher.get_by_role("link", name="Duyệt bài tiếp theo")
         expect(next_button).not_to_have_attribute("aria-disabled", "true")
         next_button.click()

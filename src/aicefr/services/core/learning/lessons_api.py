@@ -71,7 +71,7 @@ from aicefr.pronunciation.vietnamese import profile as pronunciation_profile
 from aicefr.services import Peers
 from aicefr.services.speech.worker import PROBE_QUEUE, STEP_QUEUE, STEP_TIMEOUT_S
 from aicefr.storage.audit_repository import AuditLog
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.lesson_repository import LessonRepository, NotFound
 
 router = APIRouter()
@@ -692,7 +692,7 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
     except NotFound:
         raise HTTPException(404, "không tìm thấy bản ghi") from None
     # 404 rather than 403 for someone else's attempt: a 403 would confirm it exists.
-    if row["account_id"] != account.account_id and not account.is_staff:
+    if not _may_see(account, row["account_id"]):
         raise HTTPException(404, "không tìm thấy bản ghi")
     key = row.get("audio_key")
     if not key:
@@ -1069,7 +1069,7 @@ def class_pronunciation(account: Account = STAFF_ONLY) -> dict:
     A class figure only: examples keep the word and what was heard, never the
     attempt, the date or anything else that leads back to one learner.
     """
-    rows = svc().lessons.attempts(limit=PRONUNCIATION_WINDOW * 10)
+    rows = _in_view(account, svc().lessons.attempts(limit=PRONUNCIATION_WINDOW * 10))
     out = pronunciation_profile(rows)
     for item in out["patterns"]:
         item["examples"] = [{"word": e["word"], "said": e["said"]} for e in item["examples"]]
@@ -1539,7 +1539,7 @@ def teach_insights(
     outline = lessons_repo.outline(chosen["path_id"], published_only=True)
     order = [(item["lesson"], u) for u in outline for item in u["lessons"]]
     ids = [ls.lesson_id for ls, _ in order]
-    rows = lessons_repo.attempts(lesson_ids=ids)
+    rows = _in_view(account, lessons_repo.attempts(lesson_ids=ids))
     by_lesson: dict[str, list[dict]] = {}
     for r in rows:
         by_lesson.setdefault(r["lesson_id"], []).append(r)
@@ -1589,7 +1589,7 @@ def teach_insights(
                 entry["count"] += 1
                 entry["lessons"].add(lesson.title)
 
-    names = svc().peers.identity.pseudonyms(account_ids=[r["account_id"] for r in rows[-60:]])
+    names = svc().peers.identity.display_names(account_ids=[r["account_id"] for r in rows[-60:]])
     titles = {ls.lesson_id: ls for ls, _ in order}
     recent = []
     for r in reversed(rows[-60:]):
@@ -1620,6 +1620,23 @@ def teach_insights(
     }
 
 
+def _in_view(account: Account, rows: list[dict]) -> list[dict]:
+    """A teacher's figures count their classes' students only (D071); an admin's, everyone."""
+    if account.role is Role.ADMIN:
+        return rows
+    mine = set(svc().peers.assessment.students_of(teacher_id=account.account_id))
+    return [r for r in rows if r.get("account_id") in mine]
+
+
+def _may_see(account: Account, owner_id: str) -> bool:
+    """D071: the owner, an administrator, or a teacher of one of the owner's classes."""
+    if owner_id == account.account_id or account.role is Role.ADMIN:
+        return True
+    return account.role is Role.TEACHER and bool(
+        svc().peers.assessment.teaches(teacher_id=account.account_id, student_id=owner_id)
+    )
+
+
 @router.get("/api/v1/teach/attempts/{attempt_id}", tags=["teacher"])
 def teach_attempt(attempt_id: str, request: Request, account: Account = STAFF_ONLY) -> dict:
     lessons_repo = svc().lessons
@@ -1627,10 +1644,12 @@ def teach_attempt(attempt_id: str, request: Request, account: Account = STAFF_ON
         row = lessons_repo.attempt(attempt_id)
     except NotFound:
         raise HTTPException(404, "không tìm thấy lượt luyện") from None
+    if not _may_see(account, row["account_id"]):
+        raise HTTPException(404, "không tìm thấy lượt luyện")
     found = lessons_repo.published(row["lesson_id"], row["lesson_version"])
     lesson = found[0] if found else None
     step = lesson.step(row["step_id"]) if lesson else None
-    names = svc().peers.identity.pseudonyms(account_ids=[row["account_id"]])
+    names = svc().peers.identity.display_names(account_ids=[row["account_id"]])
     name = names.get(row["account_id"], "?")
     return {
         **_attempt_view(row),
@@ -1652,6 +1671,8 @@ def teach_override(attempt_id: str, body: OverrideIn, account: Account = STAFF_O
         row = lessons_repo.attempt(attempt_id)
     except NotFound:
         raise HTTPException(404, "không tìm thấy lượt luyện") from None
+    if not _may_see(account, row["account_id"]):
+        raise HTTPException(404, "không tìm thấy lượt luyện")
     valid = {m.index for m in row["result"].words}
     words = {i: s.value for i, s in body.words.items() if i in valid}
     override = {"words": words, "note": body.note}

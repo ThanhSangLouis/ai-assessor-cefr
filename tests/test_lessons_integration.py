@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 from aicefr.asr.fake import FakeAsrEngine
@@ -127,8 +128,14 @@ def freeze(monkeypatch, moment: datetime) -> None:
     monkeypatch.setattr("aicefr.services.core.learning.lessons_api._now", lambda: moment)
 
 
-def login_as(m, pseudonym: str, role: str = "student", raise_errors: bool = True) -> TestClient:
+def login_as(
+    m, pseudonym: str, role: str = "student", raise_errors: bool = True, school: bool = True
+) -> TestClient:
+    """`school`: every test teacher teaches every test student (D071), unless the
+    test is about classes themselves."""
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    if school:
+        one_school(pseudonym, role)
     client = TestClient(m.app, raise_server_exceptions=raise_errors)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text

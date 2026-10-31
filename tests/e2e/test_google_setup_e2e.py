@@ -93,7 +93,7 @@ def test_the_google_button_leaves_with_a_pkce_challenge(context, live_server):
     [url] = sent
     assert url.startswith("https://accounts.google.com/o/oauth2/v2/auth?")
     q = {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
-    assert q["response_type"] == "code" and q["scope"] == "openid email"
+    assert q["response_type"] == "code" and q["scope"] == "openid email profile"
     assert q["code_challenge_method"] == "S256" and len(q["code_challenge"]) == 43
     assert q["client_id"] == CLIENT_ID and q["prompt"] == "select_account"
     assert q["redirect_uri"] == f"{live_server.base_url}/auth/google/callback"

@@ -39,7 +39,7 @@ form.onsubmit = async (e) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        pseudonym: document.getElementById("pseudonym").value,
+        email: document.getElementById("pseudonym").value.trim(),
         password: document.getElementById("password").value,
       }),
     });
