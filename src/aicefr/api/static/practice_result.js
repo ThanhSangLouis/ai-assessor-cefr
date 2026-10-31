@@ -112,28 +112,10 @@ function qcWarnings(d) {
   return `<div class="notice notice-warn"><b>Lưu ý về bản ghi.</b><ul>${items}</ul></div>`;
 }
 
-// The next step stays on screen at the bottom while the learner reads the
-// missions: "practise the next one" should never be a scroll away.
-function nextActions(d) {
-  const retry = `<a class="button secondary" href="/practice/${encodeURIComponent(
-    d.task.task_id
-  )}">Thử lại nhiệm vụ này</a>`;
-  const n = d.next;
-  const next =
-    n && n.task_id !== d.task.task_id
-      ? `<a class="button" href="/practice/${encodeURIComponent(n.task_id)}">` +
-        `Luyện tiếp: ${escapeHtml(n.title)}</a>`
-      : "";
-  return (
-    `<div class="action-bar">${next}${retry}<span class="spacer"></span>` +
-    '<a class="button secondary" href="/practice">Về trang luyện tập</a></div>'
-  );
-}
-
-function nextReason(d) {
-  const n = d.next;
-  if (!n || n.task_id === d.task.task_id) return "";
-  return `<p class="muted next-reason"><b>Vì sao gợi ý nhiệm vụ tiếp theo:</b> ${escapeHtml(n.reason)}</p>`;
+// An earlier practice task's result (D023). Practising goes on in the lesson
+// path, which picks the next lesson from the weakest aspect (D068).
+function nextActions() {
+  return '<div class="action-bar"><a class="button" href="/practice">Luyện tiếp theo lộ trình</a></div>';
 }
 
 const CAVEAT =
@@ -181,7 +163,7 @@ function render(d) {
     ${checks}
     ${CAVEAT}
     ${today(d)}
-    ${nextReason(d)}
+
     ${nextActions(d)}`;
   document.title = "Kết quả: " + d.task.title;
   const player = document.getElementById("player");

@@ -188,10 +188,9 @@ function nextStepBlock(a) {
       "không phải điểm riêng của từng khía cạnh.</span></p>";
   }
   if (!isStudent) return h ? `<div class="next-step">${h}</div>` : "";
-  const task = weak.length ? window.ui.practiceTaskFor(weak[0], a.overall_band || "A2") : null;
-  const practise = task
-    ? `<a class="button" href="/practice/${encodeURIComponent(task)}">` +
-      `Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} ngay</a>`
+  // The lesson path picks its next lesson from this same weakest aspect (D068).
+  const practise = weak.length
+    ? `<a class="button" href="/practice">Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} theo lộ trình</a>`
     : '<a class="button" href="/practice">Mở trang luyện tập</a>';
   return (
     `<div class="next-step">${h}<div class="button-row">${practise}` +

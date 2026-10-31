@@ -98,14 +98,17 @@ function build(d) {
   h += `<div class="stat"><b>${d.teacher_verified}</b><span>bài đã xác nhận</span></div>`;
   h += "</div>";
 
-  // Khối này đặt trước phân bố band, vì nó quyết định phân bố band bên dưới
-  // đáng tin đến đâu.
-  h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
-  if (!ag.decisions) {
+  // How often teachers keep the machine's band: a measurement of the model
+  // for the study, read by administrators only (D068).
+  if (!document.body.classList.contains("role-admin")) {
+    // nothing: a teacher reads the class, not the model
+  } else if (!ag.decisions) {
+    h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
     h +=
       '<div class="notice notice-info">Chưa có lượt duyệt nào để so sánh. ' +
       "Con số này chỉ có nghĩa sau vài chục quyết định.</div>";
   } else {
+    h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
     const rate = ag.rate == null ? null : Math.round(ag.rate * 100);
     const weak = rate != null && rate < 70;
     h += '<div class="stat-grid">';
@@ -146,9 +149,7 @@ function build(d) {
   }
   h += "</tbody></table>";
   h +=
-    '<p class="muted">Phân bố này là band <b>máy ước lượng</b>. Trên dữ liệu kiểm định, ' +
-    "mô hình còn xếp sai band ở một phần đáng kể số bài và nhận ra mức A2 kém nhất, nên đừng đọc " +
-    "bảng này như bức tranh trình độ thật của lớp.</p>";
+    '<p class="muted">Band <b>máy ước lượng</b>, chưa phải trình độ thật của lớp.</p>';
 
   h += '<h2 style="margin-top:var(--sp-6)">Theo đề bài</h2>';
   h += "<table><thead><tr><th>Đề</th><th>Số bài</th><th>Điểm trung bình</th>" +
@@ -161,9 +162,7 @@ function build(d) {
   }
   h += "</tbody></table>";
   h +=
-    '<p class="muted">Điểm trung bình theo đề không so sánh được trực tiếp với nhau: ' +
-    "đề dài được chấm bằng cách cắt cửa sổ rồi lấy trung vị, một cách tính khác hẳn " +
-    "với đề ngắn chấm nguyên bài.</p>";
+    '<p class="muted">Điểm trung bình giữa các đề không so sánh trực tiếp được.</p>';
   return h + practiceSection(d.practice);
 }
 
