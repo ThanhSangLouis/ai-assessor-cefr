@@ -241,7 +241,7 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | Mã | Quy tắc | Yêu cầu liên quan | Từ bản | Giữ bằng |
 | --- | --- | --- | --- | --- |
 | BR-01 | Hệ thống **không cấp chứng chỉ** và không quyết định đậu/rớt. Mọi điểm và band là ước lượng; giảng viên quyết định cuối cùng | FR-21, FR-30, C-09 | 1.0 | Tuyên bố bắt buộc ở mọi trang; `tests/test_web.py` (`test_every_page_carries_required_disclaimer`, chuỗi cấm) |
-| BR-02 | Hệ thống chỉ biết **bút danh**: không lưu họ tên, mã số sinh viên, email hay số điện thoại. Mối nối bút danh – người thật nằm trên giấy | FR-33, FR-52, FR-59 | 1.0 | `auth/pseudonyms.py` (`validate_pseudonym`); bảng `account` không có cột liên lạc; Google chỉ để lại mã băm (BR-15) |
+| BR-02 | ~~Hệ thống chỉ biết **bút danh**: không lưu họ tên, mã số sinh viên, email hay số điện thoại.~~ *Thay bởi D071 (31/10/2026):* tài khoản đăng nhập bằng **email** (mật khẩu hoặc Google, cùng email là cùng tài khoản) và lưu **họ tên** để giảng viên lớp biết bài của ai; vẫn không lưu mã số sinh viên hay số điện thoại. Bút danh còn là **mã tài khoản**: dữ liệu nghiên cứu và nhật ký kiểm toán chỉ mang mã này | FR-33, FR-52, FR-59 | 1.0 → D071 | `auth/contact.py`, `auth/pseudonyms.py`; `account.email` (duy nhất), `account.full_name` |
 | BR-03 | **Chỉ sinh viên tự đăng ký (D063, D065).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên tự đăng ký bằng Google hoặc bằng mật khẩu ở `/signup`, nhận bút danh ngẫu nhiên và (với mật khẩu) một mã khôi phục dùng một lần; tắt bằng `AICEFR_GOOGLE_SIGNUP=0`, `AICEFR_SELF_SIGNUP=0` | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
 | BR-04 | Chưa đồng ý điều khoản sử dụng thì hệ thống **không nhận** bài nói hay lượt luyện nào | FR-01 | 1.0, đổi ở D058 | `TERMS_NOT_ACCEPTED` ở `POST /api/v1/responses` và API lượt luyện; `tests/test_terms.py` |
 | BR-05 | Chỉ dữ liệu của người **đã đồng ý điều khoản sử dụng** mới vào bản xuất nghiên cứu, đợt chấm mù, báo cáo đồng thuận và bản xuất phiếu chấm; xoá dữ liệu là rút khỏi tất cả | FR-34, FR-35, FR-61, FR-64 | 1.0, mở rộng 1.3 (D030), đổi ở D058 | `AuthRepository.accounts_with_terms`; `tests/test_terms.py` (`test_research_use_covers_the_accounts_that_accepted`) |
@@ -1007,7 +1007,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 ## 3.9d. Hồ sơ cá nhân, đăng nhập Google, quản lý tài khoản đầy đủ — D029
 
-Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý tài khoản và hồ sơ cá nhân, có đăng nhập bằng Google. Năm yêu cầu dưới đây giữ nguyên ba ràng buộc cũ: không tự đăng ký (FR-32), không lưu tên thật, email hay thông tin liên lạc (FR-33), không thêm thư viện.
+Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý tài khoản và hồ sơ cá nhân, có đăng nhập bằng Google. Năm yêu cầu dưới đây giữ nguyên ba ràng buộc cũ: không tự đăng ký (FR-32), không lưu tên thật, email hay thông tin liên lạc (FR-33), không thêm thư viện. *(Hai ràng buộc đầu đã được thay: D065 mở tự đăng ký, D071 lưu email và họ tên — xem BR-02.)*
 
 ### FR-56 — Hồ sơ cá nhân
 

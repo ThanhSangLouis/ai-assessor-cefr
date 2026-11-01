@@ -14,6 +14,7 @@ member, made after the task was set (`ClassroomRepository`).
 
 from __future__ import annotations
 
+import logging
 from collections import Counter
 from datetime import UTC, date, datetime, time, timedelta
 
@@ -28,6 +29,7 @@ from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.classroom_repository import as_assignment
 from aicefr.storage.db import now_iso
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 MAX_ADD = 200  # students in one request: a large lecture group
@@ -183,6 +185,18 @@ def list_classes(account: Account = STAFF_ONLY) -> list[dict]:
     ]
 
 
+def _bands_of(members: list[str]) -> dict[str, dict]:
+    """The bands each member studies (D074), from the learning service; none if it is down."""
+    learning = getattr(svc().peers, "learning", None)
+    if learning is None or not members:
+        return {}
+    try:
+        return learning.band_choices(account_ids=members)
+    except Exception:  # noqa: BLE001 - the roster still shows without the bands
+        logger.warning("class roster without bands: learning service did not answer")
+        return {}
+
+
 @router.get("/api/v1/classes/{class_id}", tags=["teacher"])
 def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
     s = svc()
@@ -190,12 +204,14 @@ def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
     members = [m["account_id"] for m in s.classrooms.members(class_id)]
     people = {m: s.peers.identity.account(account_id=m) or {} for m in members}
     assignments = [_summary(a, standing(a, members)) for a in s.classrooms.assignments([class_id])]
+    bands = _bands_of(members)
     roster = [
         {
             "account_id": m,
             "name": people[m].get("full_name") or people[m].get("pseudonym") or "?",
             "email": people[m].get("email"),
             "pseudonym": people[m].get("pseudonym"),
+            "bands": bands.get(m),
         }
         for m in members
     ]

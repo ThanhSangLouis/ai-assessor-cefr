@@ -1,5 +1,11 @@
 """Paths composed by the path model (D046): a learner's own, a teacher's draft.
 
+D074: a learner chooses the bands to study, from where they are (suggested
+by their latest assessment) to where they want to be, and gets a path of the
+published lessons of those bands; a teacher sees the bands of their class,
+composes a path for a group of them and assigns it to the group, which then
+replaces each learner's own plan.
+
 A learner asks for a path in their own words and gets an ordered list of
 published lessons with the reasons each was picked; it stays on their practice
 page until they ask again or set it aside. A teacher describes a path, reviews
@@ -11,11 +17,13 @@ lesson content: the model only picks and orders lessons teachers wrote.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from aicefr.api.deps import STAFF_ONLY, STUDENT_ONLY
 from aicefr.contracts import Band, Criterion
 from aicefr.lessons.composer import (
+    BAND_RANK,
+    BANDS,
     COMPOSER_VERSION,
     MAX_LENGTH,
     MIN_LENGTH,
@@ -37,7 +45,7 @@ from aicefr.services.core.learning.lessons_api import (
     _infos,
     svc,
 )
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.lesson_repository import NotFound
 from aicefr.storage.plan_repository import PlanRepository
 
@@ -215,6 +223,134 @@ def my_plan(account: Account = STUDENT_ONLY) -> dict:
 @router.delete("/api/v1/learn/plan", tags=["student"])
 def close_my_plan(account: Account = STUDENT_ONLY) -> dict:
     return {"closed": plans().close(account.account_id)}
+
+
+# ================================================================= bands (D074)
+
+# Lessons a band brings into a learner's path, up to the composer's maximum.
+LESSONS_PER_BAND = 6
+
+
+class BandsIn(BaseModel):
+    band_from: Band
+    band_to: Band
+
+    @model_validator(mode="after")
+    def _ordered(self) -> BandsIn:
+        if BAND_RANK[self.band_from] > BAND_RANK[self.band_to]:
+            raise ValueError("band bắt đầu phải thấp hơn hoặc bằng band mục tiêu")
+        return self
+
+
+def _next(band: Band) -> Band:
+    return BANDS[min(BAND_RANK[band] + 1, len(BANDS) - 1)]
+
+
+@router.get("/api/v1/learn/bands", tags=["student"])
+def my_bands(account: Account = STUDENT_ONLY) -> dict:
+    """The learner's bands: a suggestion from their latest assessment, and the plan in force."""
+    latest = svc().peers.assessment.latest_assessment(account_id=account.account_id)
+    known = latest and latest.get("band") in Band._value2member_map_
+    assessed = Band(latest["band"]) if known else None
+    start = assessed or BANDS[0]
+    stored = plans().active(account.account_id)
+    return {
+        "assessed_band": assessed.value if assessed else None,
+        "suggested_from": start.value,
+        "suggested_to": _next(start).value,
+        "plan": _view(stored, account) if stored else None,
+    }
+
+
+@router.post("/api/v1/learn/bands", tags=["student"])
+def choose_bands(body: BandsIn, account: Account = STUDENT_ONLY) -> dict:
+    """A path of the published lessons from `band_from` to `band_to`, replacing their own.
+
+    Each band gets its own share (`LESSONS_PER_BAND`), composed band by band
+    and joined in order, so a band with many lessons never crowds out the next.
+    """
+    candidates, paths = _catalog(published_paths_only=True)
+    if not candidates:
+        raise HTTPException(409, "chưa có bài học nào được xuất bản để ghép lộ trình")
+    learner = _learner(account, candidates)
+    chosen = BANDS[BAND_RANK[body.band_from] : BAND_RANK[body.band_to] + 1]
+    units: list[dict] = []
+    warnings: list[str] = []
+    for band in chosen:
+        goal = Goal(band_from=band, band_to=band, length=LESSONS_PER_BAND)
+        part = compose(candidates, paths, goal, learner).as_dict()
+        units.extend(u for u in part["units"] if u["band"] == band.value)
+        warnings.extend(w for w in part["warnings"] if "liền kề" in w or "Chỉ tìm được" in w)
+    if not units:
+        raise HTTPException(422, "chưa có bài đã xuất bản nào ở các band này")
+    goal = {"band_from": body.band_from.value, "band_to": body.band_to.value}
+    data = {"goal": goal, "units": units, "warnings": list(dict.fromkeys(warnings))}
+    plan_id = plans().save(account.account_id, "student", goal, data, COMPOSER_VERSION)
+    return _view(plans().get(plan_id), account)
+
+
+class AssignIn(BaseModel):
+    account_ids: list[str] = Field(min_length=1, max_length=200)
+
+
+@router.post("/api/v1/teach/paths/{path_id}/assign", tags=["teacher"])
+def assign_path(path_id: str, body: AssignIn, account: Account = STAFF_ONLY) -> dict:
+    """A published path as the plan of each of these learners (D074).
+
+    A teacher assigns to the learners of their own classes, an administrator
+    to anyone. The learner sees it in place of their own plan, with who
+    assigned it, and may choose their own bands again later.
+    """
+    repo = svc().lessons
+    path = next((p for p in repo.paths(published_only=True) if p["path_id"] == path_id), None)
+    if path is None:
+        raise HTTPException(404, "không tìm thấy lộ trình đã xuất bản này")
+    if account.role is not Role.ADMIN:
+        outside = [
+            a
+            for a in body.account_ids
+            if not svc().peers.assessment.teaches(teacher_id=account.account_id, student_id=a)
+        ]
+        if outside:
+            raise HTTPException(403, "có học viên không thuộc lớp bạn phụ trách")
+    units = []
+    for u in repo.outline(path_id, published_only=True):
+        lessons = [
+            {
+                "lesson_id": item["lesson"].lesson_id,
+                "title": item["lesson"].title,
+                "summary": item["lesson"].summary,
+                "band": item["lesson"].band.value,
+                "steps": len(item["lesson"].steps),
+                "reasons": [],
+            }
+            for item in u["lessons"]
+        ]
+        if lessons:
+            units.append(
+                {
+                    "title": u["title"],
+                    "band": u["band"],
+                    "topic": u["topic"],
+                    "criterion": None,
+                    "lessons": lessons,
+                }
+            )
+    if not units:
+        raise HTTPException(409, "lộ trình này chưa có bài nào được xuất bản")
+    bands = [u["band"] for u in units]
+    goal = {
+        "band_from": min(bands, key=lambda b: BAND_RANK[Band(b)]),
+        "band_to": max(bands, key=lambda b: BAND_RANK[Band(b)]),
+        "assigned_by": account.display_name,
+        "path_id": path_id,
+        "path_title": path["title"],
+    }
+    data = {"goal": goal, "units": units, "warnings": []}
+    for learner in dict.fromkeys(body.account_ids):
+        plans().save(learner, "student", goal, data, "teacher-assigned")
+    _audit(account, "lesson.path.assign", path_id, f"learners={len(set(body.account_ids))}")
+    return {"assigned": len(set(body.account_ids)), "path_title": path["title"]}
 
 
 # ================================================================= teachers

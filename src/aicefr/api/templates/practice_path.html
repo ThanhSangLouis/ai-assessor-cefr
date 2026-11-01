@@ -5,7 +5,8 @@
 {#- The learner's lesson path (D025, M13; drawn as a trail in D027): three
     levels, each through units on different topics, each unit a winding trail of
     lessons. Beside it: what to study next, today's speaking time, reviews due.
-    No score, no band and no ranking anywhere on this page. -#}
+    No score and no ranking on this page; since D074 the learner chooses the
+    bands they study, from where they are to where they want to be. -#}
 <div id="path-page" class="path-page" aria-busy="true" data-goals="{{ daily_goals | join(',') }}">
   <header class="path-head" id="path-head">
     <div class="skeleton skeleton-title"></div>
@@ -15,6 +16,12 @@
 
   {#- D055: reminders, computed when the page opens; none when nothing waits. -#}
   <section class="nudges" id="nudges" aria-label="Nhắc việc" hidden></section>
+
+  {#- D074: the bands the learner chose, or the path a teacher assigned. -#}
+  <section class="card band-plan" id="band-plan" aria-busy="true" aria-live="polite">
+    <div class="skeleton skeleton-title"></div>
+    <div class="skeleton skeleton-row"></div>
+  </section>
 
   <div class="path-grid">
     <div class="path-trail" id="path-units" aria-live="polite">
@@ -28,4 +35,5 @@
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('practice_path.js') }}"></script>
-<script src="{{ asset('nudges.js') }}"></script>{% endblock %}
+<script src="{{ asset('nudges.js') }}"></script>
+<script src="{{ asset('band_plan.js') }}"></script>{% endblock %}

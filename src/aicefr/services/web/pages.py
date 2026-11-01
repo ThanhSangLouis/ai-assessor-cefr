@@ -63,6 +63,18 @@ def _page(request: Request, template: str, account: Account | None, nav: str, **
     )
 
 
+def _login_gate(request: Request, account: Account | None) -> RedirectResponse | None:
+    """Send a visitor to the login page, and back here once signed in.
+
+    The data of these screens is refused by the API (401) anyway; without this
+    a visitor saw the empty shell of a screen that could never fill.
+    """
+    if account is None:
+        target = request.url.path + (f"?{request.url.query}" if request.url.query else "")
+        return RedirectResponse(f"/login?next={quote(target)}", status_code=303)
+    return None
+
+
 def _admin_gate(request: Request, account: Account | None) -> RedirectResponse | None:
     """Keep the administrator's screens to administrators.
 
@@ -248,6 +260,8 @@ def page_account(request: Request, account: Account | None = Depends(optional_ac
 @router.get("/my-responses", response_class=HTMLResponse, tags=["web"])
 def page_my_responses(request: Request, account: Account | None = Depends(optional_account)):
     """A student's own submission history. FR-04."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "my_responses.html", account, "mine")
 
 
@@ -256,24 +270,32 @@ def page_progress(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)
 ):
     """Processing progress screen. FR-05."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "progress.html", account, _response_nav(account), response_id=response_id)
 
 
 @router.get("/my-progress", response_class=HTMLResponse, tags=["web"])
 def page_my_progress(request: Request, account: Account | None = Depends(optional_account)):
     """A student's own results over time. FR-27: "am I getting better", not "what happened"."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "my_progress.html", account, "progress")
 
 
 @router.get("/my-assignments", response_class=HTMLResponse, tags=["web"])
 def page_my_assignments(request: Request, account: Account | None = Depends(optional_account)):
     """What a student's classes set them, and joining a class with its code (D054)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "my_assignments.html", account, "assignments")
 
 
 @router.get("/teach/classes", response_class=HTMLResponse, tags=["web"])
 def page_classes(request: Request, account: Account | None = Depends(optional_account)):
     """A teacher's classes and what each has been set (D054)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "classes.html", account, "classes", class_id="")
 
 
@@ -281,12 +303,16 @@ def page_classes(request: Request, account: Account | None = Depends(optional_ac
 def page_class(
     request: Request, class_id: str, account: Account | None = Depends(optional_account)
 ):
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "classes.html", account, "classes", class_id=class_id)
 
 
 @router.get("/credits", response_class=HTMLResponse, tags=["web"])
 def page_credits(request: Request, account: Account | None = Depends(optional_account)):
     """A learner's runs: what is left, what each recording cost, and the packs on sale (D053)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "credits.html", account, "credits")
 
 
@@ -296,12 +322,16 @@ def page_practice(request: Request, account: Account | None = Depends(optional_a
 
     The daily goal is chosen here, on the card that measures it (D068).
     """
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "practice_path.html", account, "practice", daily_goals=DAILY_GOALS)
 
 
 @router.get("/practice/review", response_class=HTMLResponse, tags=["web"])
 def page_practice_review(request: Request, account: Account | None = Depends(optional_account)):
     """Today's spaced review (D025, M15). Declared before /practice/{task_id}."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "lesson.html", account, "practice", mode="review", lesson_id="")
 
 
@@ -317,6 +347,8 @@ def page_lesson(
     in a refusal at the first step; the preview runs the same steps and stores
     nothing.
     """
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     lim = _limits()
     teacher_preview = account is not None and account.is_staff
     return _page(
@@ -337,6 +369,8 @@ def page_practice_result(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)
 ):
     """Result of one practice attempt (D023). Declared before `/practice/{task_id}`."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "practice_result.html", account, "practice", response_id=response_id)
 
 
@@ -381,6 +415,8 @@ def page_report(
     """Result report. The QC limits in force go to the page so that a rejection
     reason quotes the threshold actually applied, not a number copied into the
     script."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     lim = _limits()
     return _page(
         request,
@@ -417,6 +453,8 @@ def page_cohort_stats(request: Request, account: Account | None = Depends(option
     and with the parameterised route first this path would be read as the
     review of a response whose id is "stats".
     """
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "cohort_stats.html", account, "stats")
 
 
@@ -425,17 +463,23 @@ def page_review_one(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)
 ):
     """Single-response review screen, two-column layout. FR-30, FR-31."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "review_one.html", account, "queue", response_id=response_id)
 
 
 @router.get("/review", response_class=HTMLResponse, tags=["web"])
 def page_queue(request: Request, account: Account | None = Depends(optional_account)):
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "queue.html", account, "queue")
 
 
 @router.get("/rate", response_class=HTMLResponse, tags=["web"])
 def page_rate_list(request: Request, account: Account | None = Depends(optional_account)):
     """A rater's own sheets, batch by batch, in their own order (D030)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "rate_list.html", account, "rate")
 
 
@@ -444,6 +488,8 @@ def page_rate_one(
     request: Request, assignment_id: str, account: Account | None = Depends(optional_account)
 ):
     """One sheet: the task, the recording, the form. Nothing about the machine."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(
         request,
         "rate_one.html",
@@ -459,12 +505,16 @@ def page_rate_one(
 @router.get("/teach", response_class=HTMLResponse, tags=["web"])
 def page_teach(request: Request, account: Account | None = Depends(optional_account)):
     """Teachers author paths, units and lessons (D025, M16)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "teach_paths.html", account, "teach")
 
 
 @router.get("/teach/insights", response_class=HTMLResponse, tags=["web"])
 def page_teach_insights(request: Request, account: Account | None = Depends(optional_account)):
     """How the class moves through a path; listen and correct the machine (D025, M18)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(request, "teach_insights.html", account, "stats")
 
 
@@ -473,6 +523,8 @@ def page_teach_lesson(
     request: Request, lesson_id: str, account: Account | None = Depends(optional_account)
 ):
     """The lesson builder (D025, M17)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
     return _page(
         request,
         "teach_lesson.html",

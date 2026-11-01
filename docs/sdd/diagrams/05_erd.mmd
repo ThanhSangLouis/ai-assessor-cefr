@@ -6,7 +6,7 @@
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    account ||--o{ classroom : "dạy · teacher_id, học · members"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
     classroom }o--o{ task : "giao · assignments.task_id"
 
     account {
@@ -43,12 +43,13 @@ erDiagram
         array review_visits "mở bài, kết thúc, hành động (D041)"
         array replay_labels "tự nghe lại (D056)"
         array machine_seen "ai đã thấy điểm máy, qua đâu"
+        object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
     }
 
     classroom {
         string class_id PK
         string code UK "mã tham gia"
-        string teacher_id
+        array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
         array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
@@ -63,7 +64,7 @@ erDiagram
     }
 
     system {
-        string key PK "assessment.active_model, billing.organization, ..."
+        string key PK "assessment.active_model, assessment.coach_tier (D073), billing.organization, coach_usage.ngày (D072), ..."
         string value
         string version "chỉ với cấu hình assessment.*"
     }

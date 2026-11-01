@@ -160,5 +160,17 @@
         if (e.message !== "expired") window.toast(sentence(e.message), "error");
       }
     });
+
+    // D074: "Soạn lộ trình cho nhóm" on a class opens this with the group's bands.
+    const asked = new URLSearchParams(location.search);
+    if (asked.get("compose") === "1") {
+      const pick = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value && [...el.options].some((o) => o.value === value)) el.value = value;
+      };
+      pick("tc-band-from", asked.get("band_from"));
+      pick("tc-band-to", asked.get("band_to"));
+      opener.click();
+    }
   }
 })();

@@ -299,6 +299,38 @@ def _lesson_view(lesson: Lesson) -> dict:
 # ================================================================= learners
 
 
+def _next_in_plan(account: Account) -> dict | None:
+    """The first lesson not yet done of the learner's band plan (D074), if they have one.
+
+    A learner who chose their bands, or was assigned a path, studies that path:
+    what comes next follows it, not the sample path the page also shows.
+    """
+    if account.role is not Role.STUDENT:
+        return None
+    from aicefr.services.core.learning import plans_api  # imports this module
+
+    try:
+        stored = plans_api.plans().active(account.account_id)
+    except RuntimeError:  # pragma: no cover - plans not configured in this process
+        return None
+    if stored is None:
+        return None
+    plan = plans_api._view(stored, account)
+    goal = plan.get("goal") or {}
+    for u in plan["units"]:
+        for item in u["lessons"]:
+            if item["status"] not in ("completed", "unavailable"):
+                lo, hi = goal.get("band_from"), goal.get("band_to")
+                where = f"{lo} → {hi}" if lo != hi else lo
+                return {
+                    "lesson_id": item["lesson_id"],
+                    "title": item["title"],
+                    "basis": "band_plan",
+                    "reason": f"Bài tiếp theo trong lộ trình {where} của bạn.",
+                }
+    return None
+
+
 @router.get("/api/v1/learn", tags=["student"])
 def learn_home(path_id: str | None = None, account: Account = Depends(require_login)) -> dict:
     """The learner's path: units and lessons with progress, today, reviews, what next."""
@@ -357,6 +389,7 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
     )
     nxt = next_lesson(ordered, states, weakest, band)
     title = {ls.lesson_id: ls.title for ls, _ in ordered}
+    planned = _next_in_plan(account)
     all_rows = lessons_repo.attempts(account_id=account.account_id)
     # The learner's own daily goal (D029), chosen on the account page.
     today = today_summary(_infos(all_rows), _now(), goal_seconds=account.daily_goal_s)
@@ -377,7 +410,8 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
             "lessons_total": len(ordered),
             "lessons_completed": done_total,
         },
-        "next": (
+        "next": planned
+        or (
             {
                 "lesson_id": nxt.lesson_id,
                 "title": title.get(nxt.lesson_id, ""),

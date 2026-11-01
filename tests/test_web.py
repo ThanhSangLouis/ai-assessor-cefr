@@ -106,8 +106,23 @@ def test_no_external_resources_embedded() -> None:
         assert "https://" not in t
 
 
+def _signed_in(pseudonym: str, role: str) -> TestClient:
+    """A client signed in on this test's own store: these screens send a visitor to log in."""
+    import importlib
+
+    from aicefr.api import main
+    from aicefr.storage.auth_repository import Role
+
+    importlib.reload(main)
+    main.app.state.auth_repo.create_account(pseudonym, "matkhau-kiem-thu", Role(role))
+    c = TestClient(main.app)
+    body = {"pseudonym": pseudonym, "password": "matkhau-kiem-thu"}
+    assert c.post("/api/v1/auth/login", json=body).status_code == 200
+    return c
+
+
 def test_report_page_carries_the_response_id() -> None:
-    t = client.get("/report/xyz789").text
+    t = _signed_in("SV-WEB1", "student").get("/report/xyz789").text
     assert "xyz789" in t
 
 
@@ -120,7 +135,7 @@ def test_class_stats_page_is_not_mistaken_for_a_response_id() -> None:
     "duyệt bài stats" and then "không tìm thấy bài này" -- a page that is
     wrong in a way no 404 or exception ever reports.
     """
-    body = client.get("/review/stats").text
+    body = _signed_in("GV-WEB1", "teacher").get("/review/stats").text
     assert "Thống kê lớp" in body
     assert "Duyệt bài" not in body
 
