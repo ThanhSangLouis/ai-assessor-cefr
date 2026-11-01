@@ -51,10 +51,11 @@ def test_a_student_has_one_results_entry_for_history_and_progress(m):
         assert f'href="{tab}" aria-current="page"' in subnav
 
 
-def test_blind_rating_appears_only_while_sheets_wait(m):
+def test_the_teacher_menu_has_no_blind_rating(m):
+    # D078: the blind rating is gone.
     teacher = login_as(m, "GV-N03", "teacher")
     nav = sidebar(teacher.get("/review").text)
-    assert 'href="/rate" data-nav-if="ratings" hidden' in nav
+    assert 'href="/rate"' not in nav
     assert "Thống kê" in nav and "Thống kê lớp" not in nav
 
 
@@ -68,18 +69,18 @@ def test_practice_tasks_lead_to_the_lesson_path(m):
 
 def test_the_study_measurements_are_for_administrators_only(m):
     teacher = login_as(m, "GV-N05", "teacher")
-    assert 'id="teacher-time"' not in teacher.get("/review/stats").text
     admin = login_as(m, "QT-N05", "admin")
-    assert 'id="teacher-time"' in admin.get("/review/stats").text
+    # D078: the teacher-time card is gone for everyone.
+    assert all('id="teacher-time"' not in c.get("/review/stats").text for c in (teacher, admin))
     for c in (teacher, admin):
         insights = c.get("/teach/insights").text
         assert 'href="/teach/insights" aria-current="page"' in insights
         assert 'href="/review/stats" aria-current="page"' in insights  # sidebar: Thống kê
 
 
-def test_the_feedback_study_screen_no_longer_starts_one(m):
-    """D068: a study holds feedback back from real learners; only closing remains."""
+def test_the_feedback_study_screen_is_gone(m):
+    """D068 stopped the study; D078 removed it."""
     admin = login_as(m, "QT-N06", "admin")
-    page = admin.get("/admin/study").text
-    assert 'id="study-form"' not in page and "Đã ngừng" in page
-    assert "Thực nghiệm phản hồi (đã ngừng)" in admin.get("/admin").text
+    gone = admin.get("/admin/study", follow_redirects=False)
+    assert (gone.status_code, gone.headers["location"]) == (301, "/")
+    assert "Thực nghiệm phản hồi" not in admin.get("/admin").text

@@ -19,7 +19,7 @@ from aicefr.api.deps import ROLE_HOME, optional_account
 from aicefr.api.web import templates
 from aicefr.auth import google, passwords
 from aicefr.config import Settings
-from aicefr.research.agreement import BANDS, CRITERIA
+from aicefr.notify.email import sender_from
 from aicefr.services import Peers
 from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
@@ -28,7 +28,6 @@ from aicefr.storage.auth_repository import (
     Account,
     Role,
 )
-from aicefr.storage.rating_repository import UNSCORABLE_REASONS
 
 router = APIRouter()
 
@@ -177,6 +176,8 @@ def _signed_out_page(request: Request, account: Account | None, template: str):
             "min_length": passwords.MIN_LENGTH,
             "google_enabled": settings.google_enabled,
             "google_signup": settings.google_signup,
+            # D079: a forgotten password by a code sent to the email, when email is on.
+            "email_on": sender_from(settings) is not None,
         },
     )
 
@@ -189,7 +190,7 @@ def page_signup(request: Request, account: Account | None = Depends(optional_acc
 
 @router.get("/forgot", response_class=HTMLResponse, tags=["web"])
 def page_forgot(request: Request, account: Account | None = Depends(optional_account)):
-    """A forgotten password replaced with the recovery code (D065)."""
+    """A forgotten password: a code by email (D079), or the recovery code (D065)."""
     return _signed_out_page(request, account, "forgot.html")
 
 
@@ -433,14 +434,8 @@ def page_report(
 
 @router.get("/admin", response_class=HTMLResponse, tags=["web"])
 def page_admin(request: Request, account: Account | None = Depends(optional_account)):
-    """Administration screen. FR-08, FR-34, FR-35, FR-36."""
+    """Administration screen. FR-08, FR-35, FR-36."""
     return _admin_gate(request, account) or _page(request, "admin.html", account, "admin")
-
-
-@router.get("/admin/study", response_class=HTMLResponse, tags=["web"])
-def page_study(request: Request, account: Account | None = Depends(optional_account)):
-    """The feedback study (D040)."""
-    return _admin_gate(request, account) or _page(request, "admin_study.html", account, "admin")
 
 
 @router.get("/review/stats", response_class=HTMLResponse, tags=["web"])
@@ -473,31 +468,22 @@ def page_queue(request: Request, account: Account | None = Depends(optional_acco
     return _page(request, "queue.html", account, "queue")
 
 
-@router.get("/rate", response_class=HTMLResponse, tags=["web"])
-def page_rate_list(request: Request, account: Account | None = Depends(optional_account)):
-    """A rater's own sheets, batch by batch, in their own order (D030)."""
-    if (gate := _login_gate(request, account)) is not None:
-        return gate
-    return _page(request, "rate_list.html", account, "rate")
+@router.get("/rate", include_in_schema=False)
+@router.get("/rate/{assignment_id}", include_in_schema=False)
+@router.get("/admin/study", include_in_schema=False)
+def page_research_gone() -> RedirectResponse:
+    """The blind rating (D030) and the feedback study (D040) are gone (D078)."""
+    return RedirectResponse("/", status_code=301)
 
 
-@router.get("/rate/{assignment_id}", response_class=HTMLResponse, tags=["web"])
-def page_rate_one(
-    request: Request, assignment_id: str, account: Account | None = Depends(optional_account)
-):
-    """One sheet: the task, the recording, the form. Nothing about the machine."""
+@router.get("/teach/tasks", response_class=HTMLResponse, tags=["web"])
+def page_teach_tasks(request: Request, account: Account | None = Depends(optional_account)):
+    """The assessment prompts by band: add, reword, retire (D076)."""
     if (gate := _login_gate(request, account)) is not None:
         return gate
-    return _page(
-        request,
-        "rate_one.html",
-        account,
-        "rate",
-        assignment_id=assignment_id,
-        criteria=CRITERIA,
-        bands=BANDS,
-        unscorable_reasons=UNSCORABLE_REASONS,
-    )
+    if account.role is Role.STUDENT:
+        return RedirectResponse(ROLE_HOME[account.role], status_code=303)
+    return _page(request, "teach_tasks.html", account, "tasks")
 
 
 @router.get("/teach", response_class=HTMLResponse, tags=["web"])

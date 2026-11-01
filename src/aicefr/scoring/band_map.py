@@ -61,6 +61,28 @@ def near_boundary(score: float, thresholds: dict[str, float], margin: float) -> 
     return any(abs(score - t) <= margin for t in thresholds_of(thresholds).values())
 
 
+def position(score: float, band: str | None, thresholds: dict[str, float]) -> dict | None:
+    """Where a score sits inside its band, the way a learner reads it (D078).
+
+    `share` runs 0-1 from the band's lower boundary to its upper one, `part`
+    names the third (`low`, `mid`, `high`) and `next` the band above. The two
+    outer bands are open-ended; they are read as one point wide. None when the
+    stated band is not the score's (a teacher moved it): then only the band
+    stands.
+    """
+    spans = band_spans(thresholds)
+    i = next((k for k, (_b, _lo, hi) in enumerate(spans) if score < hi), len(spans) - 1)
+    b, lo, hi = spans[i]
+    if band is not None and b.value != band:
+        return None
+    lo = lo if math.isfinite(lo) else hi - 1.0
+    hi = hi if math.isfinite(hi) else lo + 1.0
+    share = min(max((score - lo) / (hi - lo), 0.0), 1.0)
+    part = "low" if share < 1 / 3 else "mid" if share < 2 / 3 else "high"
+    above = spans[i + 1][0].value if i + 1 < len(spans) else None
+    return {"band": b.value, "share": round(share, 2), "part": part, "next": above}
+
+
 def bands_between(low: float, high: float, thresholds: dict[str, float]) -> list[Band]:
     """Every band with a part inside [low, high], from A1 to C2."""
     return [b for b, lo, hi in band_spans(thresholds) if low < hi and high >= lo]

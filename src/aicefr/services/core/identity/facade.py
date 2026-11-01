@@ -63,11 +63,6 @@ class IdentityFacade:
         return self.auth.count_role(Role(role))
 
     @exposed
-    def research_allowed(self) -> list[str]:
-        """Accounts whose data research may use: every account still switched on (D064)."""
-        return sorted(self.auth.active_account_ids())
-
-    @exposed
     def seen_at(self, account_id: str, marker: str) -> str | None:
         """When the owner last looked at `marker` (D028): the account keeps it (D060)."""
         return self.auth.seen_at(account_id, marker)

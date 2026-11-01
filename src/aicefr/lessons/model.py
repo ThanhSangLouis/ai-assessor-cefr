@@ -234,7 +234,7 @@ class Lesson(BaseModel):
     lesson_id: str = Field(default_factory=lambda: new_id("l"))
     title: str = Field(min_length=1, max_length=160)
     summary: str = Field(default="", max_length=600)
-    band: Band = Band.A2
+    band: Band
     criterion: Criterion | None = None
     model_text: str = Field(default="", max_length=3000)
     keywords: list[str] = Field(default_factory=list, max_length=12)

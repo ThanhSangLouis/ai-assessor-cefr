@@ -13,8 +13,6 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
 from aicefr.api.schemas import EraseRequest, QueueItem
@@ -22,22 +20,13 @@ from aicefr.observability import count
 from aicefr.platform.bus import BusTimeout
 from aicefr.platform.rpc import RemoteError
 from aicefr.qc import audio_qc
-from aicefr.research.reliable_change import MIN_PAIRS as MIN_RETEST_PAIRS
-from aicefr.research.reliable_change import (
-    RELIABLE_CHANGE_VERSION,
-    RETEST_WINDOW,
-    retest_pairs,
-    sem_from_pairs,
-)
 from aicefr.services.core.assessment.context import (
     ACTIVE_MODEL_KEY,
     CONFIG_VERSION,
-    MEASUREMENT_ERROR_KEY,
     QC_CONFIG_KEY,
     QC_EDITABLE,
     active_model_name,
     active_qc,
-    measurement_error,
     scorable_duration,
     svc,
 )
@@ -53,12 +42,8 @@ HEALTH_QUEUE = "speech.health"
 def list_responses(
     limit: int = Query(200, ge=1, le=500), account: Account = ADMIN_ONLY
 ) -> list[QueueItem]:
-    """Every response with the machine's band; an administrator may be a rater too (D030),
-    so what they still have to rate blind is left out, as in the review queue."""
-    s = svc()
-    hidden = s.ratings.blinded_responses(account.account_id)
-    rows = s.repo.list_all(limit + len(hidden))
-    return [QueueItem(**r) for r in rows if r["response_id"] not in hidden][:limit]
+    """Every response with the machine's band."""
+    return [QueueItem(**r) for r in svc().repo.list_all(limit)]
 
 
 @router.get("/api/v1/stats", tags=["admin"])
@@ -227,48 +212,6 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
     return {"qc_config_version": version, "thresholds": merged}
 
 
-# ================================================================= research export (FR-34)
-
-
-@router.get("/api/v1/admin/export/research.json", tags=["admin"])
-def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
-    """Export the analysis set: only speakers who accepted the terms of use (D058).
-
-    The export carries the size of the allowed set alongside the rows, so a
-    reviewer can check the filter did something, and no transcript.
-    """
-    s = svc()
-    allowed = set(s.peers.identity.research_allowed())
-    rows = s.repo.research_rows(allowed)
-    # Refused rather than thinned out: an export quietly missing rows is worse
-    # than one that has to wait for a few sheets (D030).
-    owed = s.ratings.blinded_responses(account.account_id) & {r["response_id"] for r in rows}
-    if owed:
-        raise HTTPException(
-            409,
-            f"bạn còn {len(owed)} phiếu chấm mù chưa nộp trên bài có trong bản xuất: nộp xong ở"
-            " trang Chấm mù rồi xuất",
-        )
-    s.repo.write_audit(
-        account.pseudonym,
-        "export.research",
-        None,
-        f"accounts_allowed={len(allowed)} rows={len(rows)}",
-    )
-    return JSONResponse(
-        {
-            "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "accounts": len(allowed),
-            "row_count": len(rows),
-            "note": (
-                "Gồm bài của mọi tài khoản đang dùng; tài khoản đã tắt bị bỏ ra (D064)."
-                " Không chứa bản chép lời."
-            ),
-            "rows": rows,
-        }
-    )
-
-
 # ================================================================= erasure (FR-35)
 
 
@@ -299,8 +242,7 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
     result["lesson_attempts"] = 0
     if who:
         # Lesson attempts (D025) live in the learning service; erase them there,
-        # recordings included. The study keeps no audio, but who was in which
-        # arm and the survey answers are about this person too (D040).
+        # recordings included.
         try:
             result["lesson_attempts"] = s.peers.learning.erase_account(account_id=who["account_id"])
         except RemoteError as e:
@@ -310,7 +252,6 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
                 "đã xoá bài đánh giá nhưng chưa xoá được bài học: dịch vụ bài học không trả lời."
                 " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
             ) from e
-        s.studies.erase_account(who["account_id"])
         if s.classrooms is not None:
             s.classrooms.forget_account(who["account_id"])
         if s.replays is not None:
@@ -321,58 +262,6 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
         "lần huấn luyện sau."
     )
     return result
-
-
-# ================================================================= measurement error (D042)
-
-
-class MeasurementIn(BaseModel):
-    use: str = Field(pattern="^(retest|manual)$")
-    sem: float | None = Field(default=None, gt=0, le=3)
-    note: str | None = Field(default=None, max_length=300)
-
-
-@router.get("/api/v1/admin/measurement-error", tags=["admin"])
-def get_measurement_error(account: Account = ADMIN_ONLY) -> dict:
-    """The SEM in force and the one today's test-retest pairs would give. FR-80."""
-    pairs = retest_pairs(svc().repo.scored_assessments(machine_only=True))
-    return {
-        "current": measurement_error(),
-        "candidate": {"pairs": len(pairs), "sem": sem_from_pairs(pairs)},
-        "min_pairs": MIN_RETEST_PAIRS,
-        "window_hours": int(RETEST_WINDOW.total_seconds() // 3600),
-    }
-
-
-@router.post("/api/v1/admin/measurement-error", tags=["admin"])
-def set_measurement_error(body: MeasurementIn, account: Account = ADMIN_ONLY) -> dict:
-    """Put an SEM in force: from today's test-retest pairs, or typed in with a source. FR-80.
-
-    A typed value must say where it comes from (`note`), so the progress page
-    never shows a bar for "progress" whose origin nobody can trace.
-    """
-    repo = svc().repo
-    if body.use == "retest":
-        pairs = retest_pairs(repo.scored_assessments(machine_only=True))
-        sem = sem_from_pairs(pairs)
-        if sem is None:
-            raise HTTPException(
-                422,
-                f"Mới có {len(pairs)} cặp bài thử lại, cần ít nhất {MIN_RETEST_PAIRS} cặp.",
-            )
-        value = {"sem": round(sem, 4), "source": "retest", "pairs": len(pairs), "note": None}
-    else:
-        if body.sem is None or not (body.note or "").strip():
-            raise HTTPException(422, "Nhập sai số đo và ghi rõ nguồn của con số.")
-        value = {"sem": body.sem, "source": "manual", "pairs": None, "note": body.note.strip()}
-    value["set_at"] = datetime.now(UTC).isoformat(timespec="seconds")
-    repo.set_config(
-        MEASUREMENT_ERROR_KEY, json.dumps(value), RELIABLE_CHANGE_VERSION, account.pseudonym
-    )
-    repo.write_audit(
-        account.pseudonym, "measurement_error.set", value["source"], f"sem={value['sem']}"
-    )
-    return value
 
 
 # ================================================================= health

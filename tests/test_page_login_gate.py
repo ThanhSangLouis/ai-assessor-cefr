@@ -19,7 +19,6 @@ SIGNED_IN = [
     "/credits",
     "/review",
     "/review/stats",
-    "/rate",
     "/teach",
     "/teach/insights",
     "/teach/classes",

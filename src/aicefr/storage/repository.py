@@ -548,61 +548,6 @@ class Repository(MongoStore):
         visits.sort(key=lambda v: v["decided_at"], reverse=True)
         return visits[:limit]
 
-    def settled_counts(self) -> tuple[int, int]:
-        """(scored assessments the machine settled alone, scored assessments that reached a result).
-
-        Alone: COMPLETED with no teacher confirmation. Reached a result:
-        COMPLETED or REVIEW_REQUIRED, with a machine score.
-        """
-        rows = self.col("response").find(
-            {
-                "purpose": "assessment",
-                "overall_0_6": {"$ne": None},
-                "status": {"$in": ["COMPLETED", "REVIEW_REQUIRED"]},
-            },
-            {"status": 1, "teacher_verified": 1},
-        )
-        alone = total = 0
-        for r in rows:
-            total += 1
-            alone += int(r["status"] == "COMPLETED" and not r.get("teacher_verified"))
-        return alone, total
-
-    def scored_assessments(
-        self,
-        accounts: Collection[str] | None = None,
-        machine_only: bool = False,
-        limit: int = 20000,
-    ) -> list[dict]:
-        """Scored assessments, oldest first; the latest `limit` when there are more.
-
-        The test-retest pairs of D042 and the outcomes of the feedback study
-        (D040) come from here. `accounts` narrows to those learners;
-        `machine_only` keeps the machine's own scores, leaving out the responses
-        a teacher's decision overwrote -- a test-retest pair compares the
-        instrument with itself.
-        """
-        query: dict = {
-            "overall_0_6": {"$ne": None},
-            "purpose": "assessment",
-            "account_id": {"$ne": None},
-        }
-        if accounts is not None:
-            ids = list(accounts)
-            if not ids:
-                return []
-            query["account_id"] = {"$in": ids}
-        if machine_only:
-            query["teacher_verified"] = 0
-        rows = (
-            self.col("response")
-            .find(query)
-            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-            .limit(limit)
-        )
-        names = ("account_id", "task_id", "overall_0_6", "model_version", "created_at")
-        return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
-
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         """One learner's results over time, machine estimate and verified alike.
 
@@ -654,19 +599,34 @@ class Repository(MongoStore):
         assessed = list(
             responses.find(
                 {"purpose": "assessment", **scope},
-                {"overall_band": 1, "task_id": 1, "overall_0_6": 1, "status": 1, "account_id": 1},
+                {"overall_band": 1, "task_id": 1, "status": 1, "account_id": 1},
             )
         )
         by_band: dict[str, int] = {}
-        tasks: dict[str, dict] = {}
+        # D078: by the band of the prompt answered -- did learners answering a
+        # band's prompts land at that band, under it or above it?
+        prompt_band = {
+            t["task_id"]: t.get("band") for t in self.db["task"].find({}, {"task_id": 1, "band": 1})
+        }
+        order = ["A1", "A2", "B1", "B2", "C1", "C2"]
+        bands: dict[str, dict] = {}
         for r in assessed:
-            if r.get("overall_band") is not None:
-                by_band[r["overall_band"]] = by_band.get(r["overall_band"], 0) + 1
-            cell = tasks.setdefault(r["task_id"], {"n": 0, "scores": [], "waiting": 0})
+            got = r.get("overall_band")
+            if got is not None:
+                by_band[got] = by_band.get(got, 0) + 1
+            asked = prompt_band.get(r["task_id"])
+            if asked not in order:
+                continue
+            cell = bands.setdefault(
+                asked,
+                {"n": 0, "learners": set(), "at": 0, "below": 0, "above": 0, "waiting": 0},
+            )
             cell["n"] += 1
-            if r.get("overall_0_6") is not None:
-                cell["scores"].append(r["overall_0_6"])
+            cell["learners"].add(r.get("account_id"))
             cell["waiting"] += int(r["status"] == "REVIEW_REQUIRED")
+            if got in order:
+                gap = order.index(got) - order.index(asked)
+                cell["at" if gap == 0 else "below" if gap < 0 else "above"] += 1
         speakers = len({r["account_id"] for r in assessed if r.get("account_id") is not None})
         waiting = sum(1 for r in assessed if r["status"] == "REVIEW_REQUIRED")
         verified = responses.count_documents({"teacher_verified": 1, **scope})
@@ -702,16 +662,10 @@ class Repository(MongoStore):
             "waiting_for_review": waiting,
             "teacher_verified": verified,
             "by_band": by_band,
-            "by_task": [
-                {
-                    "task_id": task_id,
-                    "n": cell["n"],
-                    "avg_score": round(sum(cell["scores"]) / len(cell["scores"]), 2)
-                    if cell["scores"]
-                    else None,
-                    "waiting": cell["waiting"],
-                }
-                for task_id, cell in sorted(tasks.items(), key=lambda kv: str(kv[0]))
+            "by_prompt_band": [
+                {**cell, "band": b, "learners": len(cell["learners"] - {None})}
+                for b in order
+                if (cell := bands.get(b))
             ],
             "agreement": {
                 "decisions": len(decisions),
@@ -860,22 +814,15 @@ class Repository(MongoStore):
         }
 
     def _forget_responses(self, ids: list[str]) -> None:
-        """Everything that hangs off these responses, then the responses.
+        """The responses, with everything their documents hold.
 
-        What a foreign key's ON DELETE CASCADE did in SQL: the blind-rating
-        sheets and their ratings go with the response they are about; the
-        review history, the lock and who saw the machine's result are part of
-        the response's own document (D060).
+        The review history, the lock and the replay labels are part of the
+        response's own document (D060) and go with it.
         """
         if not ids:
             return
         db = self.db
         within = {"response_id": {"$in": ids}}
-        # The blind-rating sheets about them, from whichever batch holds them.
-        db["rating_batch"].update_many(
-            {"ratings.response_id": {"$in": ids}},
-            {"$pull": {"ratings": {"response_id": {"$in": ids}}}},
-        )
         # The reviews, the lock, the visits and the replay labels are part of
         # the response document and go with it.
         db["response"].delete_many(within)
@@ -907,46 +854,6 @@ class Repository(MongoStore):
             f"{preview['responses']} responses, {preview['audio_files']} audio files",
         )
         return preview
-
-    def erase_one_response(self, response_id: str, actor_id: str) -> bool:
-        """Delete a single response: its document, its review history, its audio file.
-
-        Separate from `erase_speaker` because the two answer different requests.
-        `erase_speaker` is an administrator acting on a request to erase and
-        removes everything a person ever submitted. This is a person deleting one
-        recording of their own -- "I mumbled through that one, take it off" --
-        and it must not require asking anybody. A right that needs someone else
-        to act on your behalf is a queue, not a right.
-
-        A response a teacher has already verified is refused, and the caller is
-        told why. The verified result is a record of a decision somebody made,
-        and the audit trail behind it has to keep pointing at something real.
-
-        Returns False when there is nothing to delete, so the caller can answer
-        404 rather than claim success for a response that never existed.
-        """
-        row = self.col("response").find_one(
-            {"response_id": response_id}, {"audio_path": 1, "teacher_verified": 1}
-        )
-        if row is None:
-            return False
-        if row.get("teacher_verified"):
-            raise InvalidStateError(
-                "bài đã được giảng viên xác nhận nên không tự xoá được;"
-                " hãy liên hệ giảng viên phụ trách"
-            )
-
-        # The recording, not only the document. A recording of someone's voice
-        # is personal data whether or not a document still points at it.
-        self._drop_audio(row.get("audio_path"))
-        self._forget_responses([response_id])
-        # The entry records that a deletion happened and who asked for it. It
-        # carries no transcript and no score: an audit log that keeps a copy of
-        # what was deleted has not deleted it.
-        _audit(
-            self.db, actor_id, "ERASE_OWN_RESPONSE", response_id, "người học tự xoá bài của mình"
-        )
-        return True
 
     def audio_path_of(self, response_id: str) -> str | None:
         """Filesystem path of a response's audio file.
@@ -1343,50 +1250,6 @@ class Repository(MongoStore):
         )
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
-
-    def research_rows(self, allowed_account_ids: set[str], limit: int = 5000) -> list[dict]:
-        """Rows for the research export, restricted to accounts that allow it.
-
-        The caller passes the allowed set rather than this method reading the
-        accounts itself. Two reasons: the scoring store and the accounts are
-        separate concerns, and a caller holding an explicit
-        set is auditable -- you can print it, count it, and show it to an ethics
-        reviewer. A join hidden inside the query cannot be shown to anybody.
-
-        Never returns the transcript. The export exists to analyse scores
-        against human ratings; shipping the words of a recording around is a
-        risk with no matching benefit.
-        """
-        if not allowed_account_ids:
-            return []
-        # Filtered in the query, then limited: limiting first and filtering
-        # after would silently drop the newer responses of allowed learners
-        # once there were more than `limit` in all.
-        rows = self.col("response").find(
-            {
-                "account_id": {"$in": sorted(allowed_account_ids)},
-                # D023: practice attempts are constrained exercises (given
-                # words, reading aloud), not free speech to compare with
-                # teacher ratings.
-                "purpose": "assessment",
-            }
-        )
-        names = (
-            "response_id",
-            "speaker_id",
-            "task_id",
-            "status",
-            "overall_0_6",
-            "overall_band",
-            "teacher_verified",
-            "model_version",
-            "config_version",
-            "created_at",
-            "account_id",
-        )
-        out = [fields(r, names) for r in rows]
-        out.sort(key=lambda r: r["created_at"])  # type: ignore[index]
-        return out[:limit]  # type: ignore[return-value]
 
     # ---------- runtime configuration (FR-08, FR-36) ----------
     #

@@ -249,36 +249,6 @@
       "unique": true
     }
   ],
-  "rating_batch": [
-    {
-      "name": "i_ratings.assignment_id",
-      "keys": [
-        "ratings.assignment_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_ratings.rater_id",
-      "keys": [
-        "ratings.rater_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_ratings.response_id",
-      "keys": [
-        "ratings.response_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_batch_id",
-      "keys": [
-        "batch_id"
-      ],
-      "unique": true
-    }
-  ],
   "response": [
     {
       "name": "i_account_id_created_at",
@@ -365,30 +335,6 @@
       "name": "u_token_hash",
       "keys": [
         "token_hash"
-      ],
-      "unique": true
-    }
-  ],
-  "study": [
-    {
-      "name": "i_participants.account_id",
-      "keys": [
-        "participants.account_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_status_created_at",
-      "keys": [
-        "status",
-        "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_study_id",
-      "keys": [
-        "study_id"
       ],
       "unique": true
     }

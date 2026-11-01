@@ -8,8 +8,6 @@ from __future__ import annotations
 from aicefr import maintenance_cli
 from aicefr.contracts import Assessment, Band, Response, ResponseStatus
 from aicefr.pronunciation.vietnamese import Pattern, opportunities
-from aicefr.research.reliable_change import retest_pairs
-from aicefr.research.teacher_time import kpi, session_minutes
 from aicefr.storage.repository import Repository
 
 # ------------------------------------------------- maintenance on a wrong store
@@ -115,39 +113,4 @@ def test_letters_that_are_not_said_are_not_final_consonants() -> None:
 
 # ------------------------------------------------- D041: what counts as a review done
 
-
-def test_only_reviews_that_ended_in_a_decision_are_timed() -> None:
-    sessions = [
-        {"opened_at": "2026-10-12T10:00:00+00:00", "decided_at": "2026-10-12T10:04:00+00:00",
-         "action": "decision"},
-        {"opened_at": "2026-10-12T10:00:00+00:00", "decided_at": "2026-10-12T10:01:00+00:00",
-         "action": "released"},
-        {"opened_at": "2026-10-12T10:00:00+00:00", "decided_at": "2026-10-12T10:02:00+00:00",
-         "action": "close_unscorable"},
-        {"opened_at": "2026-10-12T10:00:00+00:00", "decided_at": "2026-10-12T11:00:00+00:00",
-         "action": "decision"},
-    ]  # fmt: skip
-    kept, idle = session_minutes(sessions)
-    assert kept == [4.0]
-    assert idle == 1
-
-
-def test_idle_rating_sheets_are_left_out_like_idle_reviews() -> None:
-    result = kpi([4.0], 0, [5.0, 6.0, 240.0], 0, 0, 0, 0)
-    assert result["rating_without_machine"]["idle_left_out"] == 1
-    assert result["rating_without_machine"]["n"] == 2
-
-
 # ------------------------------------------------- D042: a pair is one instrument
-
-
-def test_retest_pairs_never_span_two_scoring_models() -> None:
-    rows = [
-        {"account_id": "a", "task_id": "P3", "overall_0_6": 3.0, "model_version": "m1",
-         "created_at": "2026-10-12T10:00:00+00:00"},
-        {"account_id": "a", "task_id": "P3", "overall_0_6": 4.5, "model_version": "m2",
-         "created_at": "2026-10-12T11:00:00+00:00"},
-    ]  # fmt: skip
-    assert retest_pairs(rows) == []
-    rows[1]["model_version"] = "m1"
-    assert retest_pairs(rows) == [(3.0, 4.5)]

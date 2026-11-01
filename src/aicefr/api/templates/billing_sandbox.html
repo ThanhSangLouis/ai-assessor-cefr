@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Cổng thanh toán thử · AI Assessor CEFR{% endblock %}
+{% block title %}Cổng thanh toán thử · SpeakUp{% endblock %}
 {% block content %}
 {#- D033. Stands in for a real gateway's payment page when no money should move:
     the person picks the outcome, and the result comes back signed the way a
@@ -16,7 +16,7 @@
     <h1 id="pay-h" class="pay-amount">{{ order.amount_vnd | vnd }}</h1>
     <dl class="pay-facts">
       <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
-      <dt>Đơn vị nhận</dt><dd>AI Assessor CEFR</dd>
+      <dt>Đơn vị nhận</dt><dd>SpeakUp</dd>
 <dt>Nội dung</dt><dd>{{ order.plan_name }} dùng AI chấm và viết lại bài nói</dd>
     </dl>
     {% if payable %}

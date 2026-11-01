@@ -126,3 +126,15 @@ def test_what_comes_next_follows_the_bands_the_learner_chose(m):
     assert after["basis"] == "band_plan" and "B1 → B2" in after["reason"]
     student.delete("/api/v1/learn/plan")
     assert student.get("/api/v1/learn").json()["next"]["lesson_id"] == before["lesson_id"]
+
+
+def test_a_unit_has_a_band_inside_its_paths_bands(m):
+    teacher = login_as(m, "GV-01", "teacher")
+    body = {"title": "Lộ trình B1–B2", "band_from": "B1", "band_to": "B2"}
+    pid = teacher.post("/api/v1/teach/paths", json=body).json()["path_id"]
+    units = f"/api/v1/teach/paths/{pid}/units"
+    assert teacher.post(units, json={"title": "Không band"}).status_code == 422
+    assert teacher.post(units, json={"title": "Quá thấp", "band": "A2"}).status_code == 422
+    uid = teacher.post(units, json={"title": "Vừa", "band": "B2"}).json()["unit_id"]
+    moved = teacher.patch(f"/api/v1/teach/units/{uid}", json={"title": "Vừa", "band": "C1"})
+    assert moved.status_code == 422 and "B1–B2" in moved.json()["detail"]

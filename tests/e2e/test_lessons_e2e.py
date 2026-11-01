@@ -194,9 +194,8 @@ def test_read_aloud_step_marks_words_and_moves_on(student, live_server):
     expect(student.locator("#step-h")).to_have_text("Đọc to có từ gợi ý")
     expect(student.locator(".read-text .hint-word")).to_have_count(6)
     answer(student, live_server)
-    # The server runs the simulated recogniser: the result must say so where it
-    # is read, not only in the banner at the top of the page.
-    expect(student.locator("#step-feedback .notice-danger")).to_contain_text("Kết quả giả lập")
+    # D078: no "simulated" notice for learners, whichever recogniser runs.
+    expect(student.locator("#step-feedback .notice-danger")).to_have_count(0)
     expect(student.locator(".verdict")).to_have_text("Đạt bước này.")
     expect(student.locator("#step-feedback .w.heard")).not_to_have_count(0)
     expect(student.locator("#step-feedback .w.missed")).to_have_count(0)

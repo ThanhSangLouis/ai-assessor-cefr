@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_subnav.html" import subnav %}
 {% from "_icons.html" import icon %}
-{% block title %}Tiến độ của tôi · AI Assessor CEFR{% endblock %}
+{% block title %}Tiến độ của tôi · SpeakUp{% endblock %}
 {% block content %}
 {{ subnav('Kết quả', [['/my-progress', 'Tiến độ', 'progress'], ['/my-responses', 'Bài đã nộp', 'mine']], 'progress') }}
 <div class="page-head page-head-row">
@@ -39,11 +39,6 @@
   <div id="replay-notes-body"></div>
 </section>
 
-{#- D040. Shown only to a learner enrolled in the feedback study. -#}
-<section class="card" id="study" aria-labelledby="study-title" hidden>
-  <div class="card-head"><h2 id="study-title">Thực nghiệm phản hồi</h2></div>
-  <div id="study-body"></div>
-</section>
 
 <section class="card" id="pronunciation" aria-labelledby="pron-title" aria-busy="true">
   <div class="card-head"><h2 id="pron-title">Phát âm cần chú ý</h2></div>

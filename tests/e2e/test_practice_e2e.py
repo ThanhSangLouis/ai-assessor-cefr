@@ -291,7 +291,8 @@ def test_too_short_file_is_rejected_with_reason_and_not_counted(student, live_se
     submit_file(student, live_server, "PR-COH-A2", name="short-10s.wav")
     expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
     expect(student.locator(".practice-banner")).to_contain_text("quá ngắn")
-    daily = student.request.get("/api/v1/practice").json()["daily"]
+    rid = urlparse(student.url).path.rsplit("/", 1)[-1]
+    daily = student.request.get(f"/api/v1/practice/attempts/{rid}").json()["daily"]
     assert daily["today"] == 0
 
 

@@ -6,9 +6,9 @@ flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
         direction TB
         GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
-        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
-        SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
+        CO["core<br/>tài khoản, đề, bài nộp, duyệt,<br/>lớp, lộ trình band, lượt"]
+        WE["web<br/>trang, tệp tĩnh, số đếm"]
+        SP["speech<br/>QC, Whisper, chấm điểm<br/>có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
         MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]

@@ -151,17 +151,6 @@ def test_a_score_and_a_band_that_disagree_are_refused(tmp_path) -> None:
 
 # ------------------------------------------- muc 20: export cat truoc khi loc
 
-
-def test_the_research_export_filters_before_it_limits(tmp_path) -> None:
-    repo = Repository(tmp_path / "t.db")
-    for i in range(3):
-        repo.save(_report(f"cu{i}"), "SV-X", "P3", account_id="khong-dong-y")
-    for i in range(2):
-        repo.save(_report(f"moi{i}"), "SV-Y", "P3", account_id="dong-y")
-    rows = repo.research_rows({"dong-y"}, limit=2)
-    assert {r["response_id"] for r in rows} == {"moi0", "moi1"}
-
-
 # ------------------------------------------- muc 14: transcript lot vao log
 
 

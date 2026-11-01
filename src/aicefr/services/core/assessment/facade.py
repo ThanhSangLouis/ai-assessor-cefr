@@ -11,16 +11,13 @@ from __future__ import annotations
 from aicefr.platform.rpc import exposed
 from aicefr.qc import audio_qc
 from aicefr.scoring.band_map import thresholds_of
-from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import PREP_SECONDS, active_model_name, active_qc
-from aicefr.storage.rating_repository import RatingRepository
 from aicefr.storage.repository import Repository
 
 
 class AssessmentFacade:
-    def __init__(self, repo: Repository, ratings: RatingRepository) -> None:
+    def __init__(self, repo: Repository) -> None:
         self.repo = repo
-        self.ratings = ratings
 
     @exposed
     def teaches(self, teacher_id: str, student_id: str) -> bool:
@@ -40,8 +37,8 @@ class AssessmentFacade:
 
     @exposed
     def latest_assessment(self, account_id: str) -> dict | None:
-        """The latest scored assessment: the basis for suggesting practice (D040-gated)."""
-        return study_api.latest_assessment(account_id)
+        """The latest scored assessment: the basis for suggesting the bands to study."""
+        return self.repo.latest_assessment(account_id)
 
     @exposed
     def retell_source(self, account_id: str, response_id: str) -> dict | None:
@@ -97,16 +94,8 @@ class AssessmentFacade:
         }
 
     @exposed
-    def practice_daily(self, account_id: str) -> dict:
-        """Today's practice against the daily goal, and the streak (D023), for reminders."""
-        from aicefr.services.core.assessment.responses_api import _daily_view, _practice_state
-
-        _bank, attempts, _progress = _practice_state(account_id)
-        return _daily_view(attempts)
-
-    @exposed
     def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
-        """Responses waiting for review, less those this person rates blind; their open sheets.
+        """Responses waiting for review.
 
         D071: a teacher counts the work of their classes' students; an administrator, all.
         """
@@ -116,12 +105,7 @@ class AssessmentFacade:
         if role != "admin":
             rooms = svc().classrooms
             owners = rooms.students_of(account_id) if rooms is not None else set()
-        return {
-            "queue": self.repo.count_waiting_review(
-                exclude=self.ratings.blinded_responses(account_id), owners=owners
-            ),
-            "ratings": self.ratings.open_count(account_id),
-        }
+        return {"queue": self.repo.count_waiting_review(owners=owners)}
 
     @exposed
     def page_limits(self) -> dict:

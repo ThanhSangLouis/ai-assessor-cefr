@@ -1,4 +1,4 @@
-"""The D028..D075 test plans and their test code must name the same test cases.
+"""The D028..D078 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
@@ -67,18 +67,6 @@ PLANS = [
         21,
     ),
     Plan(
-        "D030",
-        ROOT / "docs" / "test" / "TEST_PLAN_D030.md",
-        {
-            "TC-BR-U": ROOT / "tests" / "test_assign_unit.py",
-            "TC-BR-S": ROOT / "tests" / "test_agreement.py",
-            "TC-BR-I": ROOT / "tests" / "test_ratings.py",
-            "TC-BR-E": ROOT / "tests" / "e2e" / "test_ratings_e2e.py",
-        },
-        "6[1-4]",
-        20,  # AC-64.2 (withdrawn consent) dropped with D058
-    ),
-    Plan(
         "D032",
         ROOT / "docs" / "test" / "TEST_PLAN_D032.md",
         {
@@ -131,8 +119,8 @@ PLANS = [
             "TC-LE-I": ROOT / "tests" / "test_learning_evidence.py",
             "TC-LE-E": ROOT / "tests" / "e2e" / "test_learning_evidence_e2e.py",
         },
-        "7[5-9]|80",
-        33,  # AC-77.6 (withdrawing research consent) dropped with D058
+        "7[569]",
+        10,  # D078 removed the study (FR-77, FR-78), teacher time (AC-79.2..79.5), FR-80
     ),
     Plan(
         "D045-D047",

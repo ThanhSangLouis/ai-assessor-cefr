@@ -23,6 +23,7 @@ from aicefr.metering.pricing import (
 )
 from aicefr.observability import count
 from aicefr.platform.rpc import exposed
+from aicefr.services.core.metering.price_book import PriceBook
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.metering_repository import (
     InsufficientCredits,
@@ -37,12 +38,22 @@ class MeteringFacade:
         store: MeteringRepository,
         audit: AuditLog,
         enabled: bool,
-        prices: PriceList = DEFAULT_PRICES,
+        prices: PriceList | PriceBook = DEFAULT_PRICES,
     ) -> None:
         self.store = store
         self.audit = audit
         self.enabled = enabled
-        self.prices = prices
+        self.book = prices if isinstance(prices, PriceBook) else PriceBook(store, prices)
+
+    @property
+    def prices(self) -> PriceList:
+        """The prices in force now (D078): an administrator may change them any time."""
+        return self.book.current()
+
+    @exposed
+    def run_packs(self) -> list[list[int]]:
+        """The run packs on sale, `[[runs, price_vnd], ...]` (D078: set on the dashboard)."""
+        return [list(p) for p in self.book.packs()]
 
     @exposed
     def is_enabled(self) -> bool:

@@ -249,6 +249,23 @@ def _choose_path(path_id: str | None, published_only: bool) -> dict | None:
     return paths[0] if paths else None
 
 
+def daily(account_id: str, goal_seconds: int) -> dict:
+    """Today's speaking on the lesson path against the goal, and the streak (D055, D079).
+
+    What a reminder -- on the home screen or by email -- is about: the lessons
+    the learner studies now, not the practice tasks of D023.
+    """
+    rows = svc().lessons.attempts(account_id=account_id)
+    today = today_summary(_infos(rows), _now(), goal_seconds=goal_seconds)
+    return {
+        "streak": today.streak,
+        "practiced_today": today.seconds > 0,
+        "seconds": today.seconds,
+        "goal_seconds": today.goal_seconds,
+        "goal_met": today.goal_met,
+    }
+
+
 def _infos(rows: list[dict]) -> list[AttemptInfo]:
     return [
         AttemptInfo(
@@ -558,7 +575,7 @@ def _compare_with_first_round(account: Account, lesson_id: str, step_id: str, re
 # pauses, what repeating under time pressure trains (Thai & Boers 2016).
 
 RETELL_STEP = "retell"
-RETELL_MAX_S = 90  # a P5 talk is retold as its first ninety seconds
+RETELL_MAX_S = 90  # a long recording is retold as its first ninety seconds
 RETELL_FLOOR_S = 20
 
 
@@ -737,27 +754,6 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
         media_type=AUDIO_TYPES.get(ext, "application/octet-stream"),
         headers={"Cache-Control": "private, no-store"},
     )
-
-
-@router.delete("/api/v1/learn/attempts/{attempt_id}", tags=["student"])
-def delete_attempt(attempt_id: str, account: Account = Depends(require_login)) -> dict:
-    """A learner removes one of their own recordings (FR-35, learner side)."""
-    lessons_repo = svc().lessons
-    try:
-        row = lessons_repo.attempt(attempt_id)
-    except NotFound:
-        raise HTTPException(404, "không tìm thấy bản ghi") from None
-    if row["account_id"] != account.account_id:
-        raise HTTPException(404, "không tìm thấy bản ghi")
-    key = lessons_repo.delete_attempt(attempt_id)
-    if key:
-        try:
-            svc().blobs.delete(key)
-        except (FileNotFoundError, OSError):
-            pass
-    # Who asked and what went, never what it contained (AC-35.5).
-    svc().audit_log.write(account.account_id, "ERASE_OWN_LESSON_ATTEMPT", attempt_id, None)
-    return {"status": "ok"}
 
 
 @router.get("/api/v1/learn/media/{key}", tags=["student"])
@@ -1138,7 +1134,7 @@ class PathPatch(BaseModel):
 class UnitIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     function: str = Field(default="", max_length=300)
-    band: Band | None = None
+    band: Band
     criterion: Criterion | None = None
     topic: Topic | None = None
 
@@ -1149,7 +1145,8 @@ class MoveIn(BaseModel):
 
 class LessonIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
-    band: Band = Band.A2
+    # D078: the unit's band when left out; another band is refused.
+    band: Band | None = None
     criterion: Criterion | None = None
     summary: str = Field(default="", max_length=600)
     model_text: str = Field(default="", max_length=3000)
@@ -1250,9 +1247,33 @@ async def teach_import(request: Request, account: Account = STAFF_ONLY) -> dict:
     return {"path_id": pid}
 
 
+def _lesson_band(unit: dict, band: Band | None) -> Band:
+    """A lesson is at its unit's band (D078): a learner's band path picks lessons
+    by the unit they sit in, so a lesson of another band would be met out of place."""
+    own = Band(unit["band"]) if unit.get("band") else None
+    if band is not None and own is not None and band is not own:
+        raise HTTPException(422, f"bài học phải cùng band {own.value} với chặng")
+    if band is None and own is None:
+        raise HTTPException(422, "chặng chưa có band: đặt band cho chặng trước")
+    return band or own  # type: ignore[return-value]
+
+
+def _check_unit_band(path: dict, band: Band) -> None:
+    """A unit sits inside its path's bands: a learner's band path is composed from
+    the units of the bands they chose (D074), so a unit outside would never be met."""
+    order = list(Band)
+    lo, hi = path.get("band_from"), path.get("band_to")
+    if (lo and order.index(band) < order.index(Band(lo))) or (
+        hi and order.index(band) > order.index(Band(hi))
+    ):
+        span = f"{lo or 'A1'}–{hi or 'C2'}"
+        raise HTTPException(422, f"band {band.value} nằm ngoài khoảng {span} của lộ trình")
+
+
 @router.post("/api/v1/teach/paths/{path_id}/units", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(path_id), body.band)
         uid = svc().lessons.add_unit(
             path_id, body.title, body.function, body.band, body.criterion, topic=body.topic
         )
@@ -1264,6 +1285,7 @@ def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) ->
 @router.patch("/api/v1/teach/units/{unit_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_patch_unit(unit_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(svc().lessons.unit(unit_id)["path_id"]), body.band)
         svc().lessons.update_unit(unit_id, **body.model_dump())
     except NotFound:
         raise HTTPException(404, "không tìm thấy chặng") from None
@@ -1291,6 +1313,11 @@ def teach_move_unit(unit_id: str, body: MoveIn, account: Account = STAFF_ONLY) -
 @router.post("/api/v1/teach/units/{unit_id}/lessons", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_lesson(unit_id: str, body: LessonIn, account: Account = STAFF_ONLY) -> dict:
     """A new lesson: from a model text and key words, from key words alone, or one free step."""
+    try:
+        unit = svc().lessons.unit(unit_id)
+    except NotFound:
+        raise HTTPException(404, "không tìm thấy chặng") from None
+    body.band = _lesson_band(unit, body.band)
     if body.model_text.strip():
         lesson = build_lesson(
             body.title,
@@ -1367,9 +1394,10 @@ def teach_lesson(lesson_id: str, account: Account = STAFF_ONLY) -> dict:
 
 @router.put("/api/v1/teach/lessons/{lesson_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_save_lesson(lesson_id: str, body: Lesson, account: Account = STAFF_ONLY) -> dict:
-    current, _ = _draft_or_404(lesson_id)
+    current, meta = _draft_or_404(lesson_id)
     if body.lesson_id != lesson_id:
         raise HTTPException(422, "mã bài học không khớp")
+    _lesson_band(svc().lessons.unit(meta["unit_id"]), body.band)
     # Media keys can only come from an upload through this API, never from the form.
     known = {s.step_id: s for s in current.steps}
     for step in body.steps:

@@ -55,31 +55,12 @@ const progressDone = Promise.all([
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
   });
 
-// D042: "progress" only when the rise is larger than the measurement error.
-const RELIABLE_TEXT = {
-  tien_bo: ["ok", "Tiến bộ đáng tin"],
-  giam: ["warn", "Giảm đáng tin"],
-  chua_vuot_sai_so: ["", "Chưa vượt sai số đo"],
-  chua_co_sai_so: ["", "Chưa đo được sai số"],
-  chua_du_du_lieu: ["", "Chưa đủ bài để so"],
-};
-function reliableBlock(rc) {
-  if (!rc) return "";
-  const [kind, title] = RELIABLE_TEXT[rc.verdict] || RELIABLE_TEXT.chua_du_du_lieu;
-  const n = (v) => Number(v).toFixed(2).replace(".", ",");
-  let body;
-  if (rc.verdict === "chua_du_du_lieu") {
-    body = "Cần ít nhất hai bài có điểm.";
-  } else if (rc.verdict === "chua_co_sai_so") {
-    body =
-      `Trung bình ${rc.k} bài gần nhất so với ${rc.k} bài đầu: ${rc.difference >= 0 ? "+" : ""}${n(rc.difference)} điểm. ` +
-      "Hệ thống chưa đo được sai số giữa hai lần nói của cùng một người, nên chưa kết luận là tiến bộ.";
-  } else {
-    body =
-      `Trung bình ${rc.k} bài gần nhất so với ${rc.k} bài đầu: ${rc.difference >= 0 ? "+" : ""}${n(rc.difference)} điểm; ` +
-      `cần vượt ±${n(rc.threshold)} điểm (95%, sai số đo ${n(rc.sem)}) mới chắc không phải do khác ngày, khác đề.`;
-  }
-  return `<div class="notice ${kind}"><b>${title}.</b> ${window.escapeHtml(body)}</div>`;
+const PLACE = { low: "đầu", mid: "giữa", high: "cuối" };
+// "3,62 · B1 cuối": the score, the band and the third of it the result sits in (D078).
+function bandLabel(r) {
+  const p = r.band_position;
+  const score = r.overall_0_6 == null ? "" : `${r.overall_0_6.toFixed(2)} · `;
+  return `${score}${r.overall_band || "—"}${p ? ` ${PLACE[p.part]}` : ""}`;
 }
 
 function build(d) {
@@ -106,25 +87,24 @@ function build(d) {
   const last = rows[rows.length - 1];
   h += `<div class="stat"><b>${last.overall_0_6.toFixed(2)}</b><span>bài gần nhất · ${window.escapeHtml(
     last.overall_band || "—"
-  )}</span></div>`;
+  )}${last.band_position ? ` ${PLACE[last.band_position.part]} band` : ""}</span></div>`;
   h += "</div>";
 
   h += `<div class="notice ${label.kind}"><b>${label.text}.</b> ${window.escapeHtml(t.note || "")}</div>`;
-  h += reliableBlock(d.reliable_change);
 
-  h += chart(rows);
+  h += chart(rows, d.band_thresholds || {});
   h +=
     '<p class="trend-legend"><span><i class="verified"></i>Giảng viên đã xác nhận</span>' +
     "<span><i></i>Máy ước lượng, chưa ai xác nhận</span></p>";
 
   h += '<h2 style="margin-top:var(--sp-6)">Từng bài</h2>';
-  h += "<table><thead><tr><th>Nộp lúc</th><th>Đề</th><th>Ước lượng</th>" +
+  h += "<table><thead><tr><th>Nộp lúc</th><th>Đề</th><th>Điểm · band</th>" +
     "<th>Trạng thái</th><th>Xác nhận</th><th>Báo cáo</th></tr></thead><tbody>";
   for (const r of [...rows].reverse()) {
     h +=
       `<tr><td>${window.escapeHtml(shortDate(r.created_at))}</td>` +
       `<td>${window.escapeHtml(titles[r.task_id] || r.task_id)}</td>` +
-      `<td>${r.overall_0_6.toFixed(2)} · ${window.escapeHtml(r.overall_band || "—")}</td>` +
+      `<td>${window.escapeHtml(bandLabel(r))}</td>` +
       `<td>${window.escapeHtml(window.ui.statusName(r.status))}</td>` +
       `<td>${r.teacher_verified ? "Đã xác nhận" : '<span class="muted">Chưa</span>'}</td>` +
       `<td><a href="/report/${encodeURIComponent(r.response_id)}">Xem báo cáo</a></td></tr>`;
@@ -140,15 +120,18 @@ function build(d) {
 // Một biểu đồ SVG viết tay, không kéo thư viện: cả trang chỉ cần đúng một
 // đường gấp khúc, và một thư viện vẽ biểu đồ sẽ nặng hơn toàn bộ phần còn lại
 // của giao diện. Trục y luôn phủ hết thang 0-6 thay vì co theo dữ liệu — co
-// trục là cách dễ nhất để biến dao động 0,2 điểm thành một ngọn núi.
+// trục là cách dễ nhất để biến dao động 0,2 điểm thành một ngọn núi. D078: bên
+// phải ghi band, vạch đứt là ranh giới giữa hai band.
 const Y_MIN = 0;
 const Y_MAX = 6;
+const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const EDGES = ["A1_A2", "A2_B1", "B1_B2", "B2_C1", "C1_C2"];
 
-function chart(rows) {
+function chart(rows, limits) {
   const W = 720;
   const H = 240;
   const PAD_L = 34;
-  const PAD_R = 14;
+  const PAD_R = 30;
   const PAD_T = 14;
   const PAD_B = 28;
   const innerW = W - PAD_L - PAD_R;
@@ -157,11 +140,16 @@ function chart(rows) {
   const x = (i) => PAD_L + (rows.length === 1 ? innerW / 2 : (i / (rows.length - 1)) * innerW);
   const y = (v) => PAD_T + innerH - ((v - Y_MIN) / (Y_MAX - Y_MIN)) * innerH;
 
+  const edges = [Y_MIN, ...EDGES.map((k, i) => Number(limits[k] ?? i + 1.75)), Y_MAX];
   let g = "";
   for (let v = Y_MIN; v <= Y_MAX; v += 1) {
     g += `<line class="grid" x1="${PAD_L}" y1="${y(v)}" x2="${W - PAD_R}" y2="${y(v)}"></line>`;
     g += `<text class="axis-label" x="4" y="${y(v) + 4}">${v}</text>`;
   }
+  BANDS.forEach((b, i) => {
+    if (i) g += `<line class="grid band-edge" x1="${PAD_L}" y1="${y(edges[i]).toFixed(1)}" x2="${W - PAD_R}" y2="${y(edges[i]).toFixed(1)}"></line>`;
+    g += `<text class="axis-label" x="${W - 4}" text-anchor="end" y="${(y((edges[i] + edges[i + 1]) / 2) + 4).toFixed(1)}">${b}</text>`;
+  });
 
   const path = rows.map((r, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(r.overall_0_6).toFixed(1)}`).join(" ");
   let dots = "";
@@ -169,8 +157,7 @@ function chart(rows) {
     dots +=
       `<circle class="dot${r.teacher_verified ? " verified" : ""}" cx="${x(i).toFixed(1)}"` +
       ` cy="${y(r.overall_0_6).toFixed(1)}" r="4.5"><title>` +
-      `${window.escapeHtml(shortDate(r.created_at))} · ${r.overall_0_6.toFixed(2)} · ` +
-      `${window.escapeHtml(r.overall_band || "—")}</title></circle>`;
+      `${window.escapeHtml(shortDate(r.created_at))} · ${window.escapeHtml(bandLabel(r))}</title></circle>`;
   });
 
   // Nhãn hai đầu trục hoành. Vẽ đủ mọi mốc thời gian sẽ chồng chữ lên nhau khi
@@ -185,8 +172,8 @@ function chart(rows) {
 
   return (
     `<svg class="trend-chart" viewBox="0 0 ${W} ${H}" role="img"` +
-    ` aria-label="Biểu đồ điểm ${rows.length} bài nói theo thời gian, thang 0 đến 6.` +
-    ` Bài gần nhất ${rows[rows.length - 1].overall_0_6.toFixed(2)} điểm.">` +
+    ` aria-label="Biểu đồ điểm ${rows.length} bài nói theo thời gian, thang 0 đến 6, band A1 đến C2.` +
+    ` Bài gần nhất ${window.escapeHtml(bandLabel(rows[rows.length - 1]))}.">` +
     `${g}<path class="line" d="${path}"></path>${dots}${ends}</svg>`
   );
 }
@@ -368,74 +355,6 @@ fetch("/api/v1/me/pronunciation")
     window.clearBusy(pronPanel);
     pronBody.innerHTML = '<p class="error">Không tải được phần phát âm. Hãy tải lại trang.</p>';
   });
-
-// D040: the learner's place in the feedback study, the survey and the way out.
-const studyPanel = document.getElementById("study");
-const studyBody = document.getElementById("study-body");
-const AGREE = ["Hoàn toàn không đồng ý", "Không đồng ý", "Phân vân", "Đồng ý", "Hoàn toàn đồng ý"];
-
-function studyView(s) {
-  if (s.withdrawn) {
-    return '<p class="muted">Bạn đã rời thực nghiệm. Báo cáo của bạn hiện đầy đủ như bình thường.</p>';
-  }
-  let h =
-    `<p>Bạn đang tham gia <b>${window.escapeHtml(s.name)}</b>, nhóm <b>${window.escapeHtml(s.arm_name)}</b>. ` +
-    "Hai nhóm được chia ngẫu nhiên để xem nhận xét chi tiết có giúp luyện nói tốt hơn chỉ xem điểm hay không.</p>";
-  if (s.status === "survey") {
-    if (s.survey_done) {
-      h += '<p class="muted">Cảm ơn bạn, câu trả lời khảo sát đã được ghi lại.</p>';
-    } else {
-      h += '<form id="study-survey" class="survey"><p><b>Năm câu hỏi ngắn</b> (1 = hoàn toàn không đồng ý, 5 = hoàn toàn đồng ý):</p>';
-      for (const item of s.survey_items) {
-        h += `<fieldset><legend>${window.escapeHtml(item.text)}</legend><div class="survey-scale">`;
-        for (let v = 1; v <= 5; v++) {
-          h +=
-            `<label title="${window.escapeHtml(AGREE[v - 1])}"><input type="radio" required ` +
-            `name="${encodeURIComponent(item.key)}" value="${v}"> ${v}</label>`;
-        }
-        h += "</div></fieldset>";
-      }
-      h += '<div class="button-row"><button type="submit" class="button">Gửi khảo sát</button></div></form>';
-    }
-  }
-  h +=
-    '<div class="button-row"><button type="button" class="button secondary small" id="study-leave">' +
-    "Rời thực nghiệm</button></div>";
-  return h;
-}
-
-function drawStudy(s) {
-  if (!s || !s.enrolled) return;
-  studyPanel.hidden = false;
-  studyBody.innerHTML = studyView(s);
-  const form = document.getElementById("study-survey");
-  if (form) {
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const answers = {};
-      for (const item of s.survey_items) answers[item.key] = Number(new FormData(form).get(item.key));
-      const r = await window.apiJson("/api/v1/me/study/survey", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
-      });
-      if (r) drawStudy({ ...s, survey_done: true });
-    });
-  }
-  const leave = document.getElementById("study-leave");
-  if (leave) {
-    leave.addEventListener("click", async () => {
-      if (!window.confirm("Rời thực nghiệm? Từ giờ báo cáo của bạn sẽ hiện đầy đủ nhận xét.")) return;
-      const r = await window.apiJson("/api/v1/me/study/withdraw", { method: "POST" });
-      if (r) drawStudy({ ...s, withdrawn: true });
-    });
-  }
-}
-
-fetch("/api/v1/me/study")
-  .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : null))
-  .then(drawStudy)
-  .catch(() => {});
 
 // Arriving at #achievements from the practice page: the browser jumped to the
 // section before the panel above it had grown, so jump again once both are drawn.

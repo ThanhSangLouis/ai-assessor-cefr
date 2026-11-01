@@ -37,21 +37,20 @@ class Migration:
 
 
 def _baseline(db: Database, target: str) -> None:
-    """Every collection and index up to D044, as the repositories create them."""
+    """Every collection and index up to D044, as the repositories create them.
+
+    D078: the blind rating and the feedback study are gone, so a new store no
+    longer gets their collections (migration 11 drops them from an older one)."""
     from aicefr.storage.audit_repository import AuditLog
     from aicefr.storage.auth_repository import AuthRepository
     from aicefr.storage.billing_repository import BillingRepository
     from aicefr.storage.lesson_repository import LessonRepository
-    from aicefr.storage.rating_repository import RatingRepository
     from aicefr.storage.repository import Repository
-    from aicefr.storage.study_repository import StudyRepository
     from aicefr.storage.task_repository import TaskRepository
 
     Repository(target)
     AuthRepository(target)
     TaskRepository(target)
-    RatingRepository(target)
-    StudyRepository(target)
     BillingRepository(target)
     LessonRepository(target, seed=False)
     AuditLog(target, "identity")
@@ -594,6 +593,42 @@ def _d075_classroom_code(db: Database, target: str) -> None:
             db["classroom"].drop_index(name)
 
 
+def _d078_research_data(db: Database, target: str) -> None:
+    """The data of what D078 removed goes with it: blind rating, feedback study, exam part.
+
+    `rating_batch` and `study` are dropped; `response.machine_seen` (who saw the
+    machine's result, for the blind rating), `task.part` (P3/P4/P5) and the
+    measurement error an administrator set (D042) are removed, and the shipped
+    path loses its "sample, waiting for review" wording. Approved by the project
+    owner on 01/11/2026. It cannot be undone.
+    """
+    for name in ("rating_batch", "study"):
+        if _has(db, name):
+            db.drop_collection(name)
+    if _has(db, "response"):
+        db["response"].update_many(
+            {"machine_seen": {"$exists": True}}, {"$unset": {"machine_seen": ""}}
+        )
+    if _has(db, "task"):
+        db["task"].update_many({"part": {"$exists": True}}, {"$unset": {"part": ""}})
+    if _has(db, "system"):
+        db["system"].delete_many({"key": "assessment.measurement_error"})
+    # The path shipped with the system is approved content now: its "sample,
+    # waiting for review" title and note go -- unless a teacher already changed them.
+    if _has(db, "path"):
+        db["path"].update_one(
+            {"path_id": "path-sample", "title": "Lộ trình mẫu: Nói tiếng Anh A1 → C2"},
+            {"$set": {"title": "Nói tiếng Anh A1 → C2"}},
+        )
+        row = db["path"].find_one({"path_id": "path-sample"}, {"description": 1}) or {}
+        note = " Nội dung mẫu, chờ giảng viên Khoa Ngoại ngữ duyệt."
+        if note in (row.get("description") or ""):
+            db["path"].update_one(
+                {"path_id": "path-sample"},
+                {"$set": {"description": row["description"].replace(note, "")}},
+            )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -612,6 +647,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(
         10, "classroom: no join code, assignment or teacher_id index (D075)", _d075_classroom_code
+    ),
+    Migration(
+        11,
+        "blind rating, feedback study and exam part removed with their data (D078)",
+        _d078_research_data,
     ),
 )
 
@@ -644,7 +684,12 @@ def migrate(target: str | Path) -> list[int]:
     for m in MIGRATIONS:
         if m.version in done:
             continue
-        m.apply(db, str(target))
+        try:
+            m.apply(db, str(target))
+        except IntegrityError:
+            # Another process starting at the same time inserted the same row
+            # first; every step is idempotent, so running it again finishes it.
+            m.apply(db, str(target))
         try:
             ledger.insert_one({"version": m.version, "name": m.name, "applied_at": now_iso()})
         except IntegrityError:

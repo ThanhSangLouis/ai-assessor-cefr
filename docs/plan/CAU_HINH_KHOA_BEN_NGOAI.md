@@ -93,6 +93,34 @@ Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (develo
 
 Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com/webhooks (mục "Verify webhook signatures manually"), docs.stripe.com/currencies.
 
+## 2b. Email qua Resend (D079)
+
+**Đã làm sẵn.** Gửi mã 6 số khi quên mật khẩu (dùng được 10 phút, 5 lần thử, mỗi phút gửi một lần), mã xác minh email khi đăng ký và ở trang Tài khoản, và thư nhắc học mỗi tối cho học viên đã xác minh email, chưa luyện trong ngày, đang có chuỗi ngày hoặc bài ôn đến hạn. Mỗi thư nhắc có liên kết tắt nhắc, không cần đăng nhập.
+
+**Cần một tên miền riêng.** Resend chỉ gửi tới mọi địa chỉ khi tên miền của người gửi đã được xác minh. Địa chỉ `sslip.io` hiện tại không xác minh được, vì mình không sửa được DNS của nó. Chưa có tên miền thì Resend chỉ gửi tới chính email chủ tài khoản Resend.
+
+1. Mua tên miền, ví dụ trên Namecheap.
+2. Đăng ký tại <https://resend.com/signup>.
+3. **Domains → Add domain**: nhập tên miền, nên dùng tên miền con như `mail.ten-mien.app`, vùng *Tokyo (ap-northeast-1)*. Resend hiện các bản ghi DNS (TXT cho SPF và DKIM, MX cho phản hồi).
+4. Ở Namecheap: **Domain List → Manage → Advanced DNS → Add new record**. Thêm đúng từng bản ghi Resend đưa (loại, Host, Value). Quay lại Resend bấm **Verify**, thường xong trong vài phút đến vài giờ.
+5. **API Keys → Create API Key**: quyền *Sending access*, chỉ cho tên miền vừa xác minh. Chép chuỗi `re_…`; Resend chỉ hiện chuỗi này một lần.
+6. Điền `.env` trên máy chủ:
+
+   ```bash
+   AICEFR_EMAIL_PROVIDER=resend
+   AICEFR_RESEND_API_KEY=re_...
+   AICEFR_EMAIL_FROM="SpeakUp <no-reply@mail.ten-mien.app>"
+   AICEFR_PUBLIC_URL=https://ten-mien.app
+   AICEFR_REMINDER_HOUR=19
+   ```
+
+   `AICEFR_PUBLIC_URL` là địa chỉ người học mở trang web; liên kết trong thư nhắc dùng nó. Thiếu biến này thì hệ thống không gửi thư nhắc (nhật ký ghi lý do), nhưng mã OTP vẫn gửi được.
+7. Khởi động lại dịch vụ `core`. Thử: trang **Quên mật khẩu** → nhập email → thư có mã 6 số → đặt mật khẩu mới.
+
+**Gói miễn phí của Resend:** 3.000 thư mỗi tháng, 100 thư mỗi ngày. Mỗi học viên nhận nhiều nhất một thư nhắc mỗi ngày.
+
+Tài liệu gốc: resend.com/docs/api-reference/emails/send-email, resend.com/docs/dashboard/domains/introduction.
+
 ## 3. MoMo (đã gỡ bởi D075)
 
 **Đã làm sẵn.** Tạo giao dịch `captureWallet` ở `/v2/gateway/api/create` ký HMAC-SHA256, kết quả trả về và IPN ký theo thứ tự trường MoMo công bố, IPN được trả lời 204. Mặc định gọi môi trường thử `test-payment.momo.vn`.
@@ -126,4 +154,5 @@ Tài liệu gốc: developers.momo.vn/v3/docs/payment/api/wallet/onetime và m�
 
 - `tab Cấu hình`: khung Google ghi "Đang bật", không có mục "Cần xem lại".
 - Trang `Lượt của tôi` (học viên): có các gói lượt và ghi "Môi trường thử"; nhật ký `core` không có dòng "billing: Stripe chưa bật".
+- Trang `Quên mật khẩu` có ô "Gửi mã qua email"; thư tới hộp thư trong khoảng một phút.
 - `git status` không có `.env`.

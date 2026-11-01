@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% from "_art.html" import terraces %}
-{% block title %}Đăng ký · AI Assessor CEFR{% endblock %}
+{% block title %}Đăng ký · SpeakUp{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
 <div class="auth-split">
   <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
   <section class="auth-intro" aria-labelledby="auth-intro-h">
-    <p class="eyebrow">AI Assessor CEFR</p>
+    <p class="eyebrow">SpeakUp</p>
     <h2 id="auth-intro-h">Một tài khoản theo email của bạn</h2>
     <ul class="auth-points">
       <li>Đăng nhập bằng email và mật khẩu, hoặc bằng Google với cùng email.</li>
@@ -31,11 +31,6 @@
       <label for="again">Nhập lại mật khẩu</label>
       <input id="again" type="password" autocomplete="new-password" required>
       <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
-      {#- D071: email and name are personal data (Nghị định 13/2023/NĐ-CP). -#}
-      <label class="check-row"><input type="checkbox" id="consent" required>
-        Tôi đồng ý để hệ thống lưu email và họ tên của tôi cho việc đăng nhập và để giảng viên lớp
-        tôi biết bài nào của ai. Dữ liệu nghiên cứu chỉ dùng mã ẩn danh. Tôi có thể sửa hoặc xoá ở
-        trang Tài khoản.</label>
       <div class="button-row">
         <button id="b" type="submit">Tạo tài khoản</button>
       </div>
@@ -44,6 +39,7 @@
 
     <div id="done" hidden>
       <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập. Ghi lại mã khôi phục dưới đây.</p>
+      <p class="notice" id="verify-note" hidden>Đã gửi mã xác minh tới email của bạn. Nhập mã ở trang Tài khoản để nhận nhắc học và đặt lại mật khẩu qua email.</p>
       {% include "_recovery_slip.html" %}
       <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu mã khôi phục</label>
       <div class="button-row">

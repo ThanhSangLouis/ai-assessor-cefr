@@ -165,7 +165,9 @@ def test_erasing_a_response_deletes_its_object(on_objects):
     m = on_objects
     student = login_as(m, "SV-001")
     rid = submit_assessment(student)
-    assert student.delete(f"/api/v1/responses/{rid}").status_code in (200, 204)
+    admin = login_as(m, "QT-01", "admin")
+    body = {"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+    assert admin.post("/api/v1/admin/erase", json=body).status_code == 200  # D078: admin only
     assert not m.store.exists(f"{rid}.wav")
     assert student.get(f"/api/v1/responses/{rid}/audio").status_code == 404
 

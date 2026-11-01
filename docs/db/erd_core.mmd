@@ -1,4 +1,4 @@
-%% ERD - các collection sau D060 (lược đồ phiên bản 8): một aggregate root
+%% ERD - các collection sau D060, D075, D078 (lược đồ phiên bản 10): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
@@ -15,8 +15,6 @@ erDiagram
     account ||--o{ order : "mua"
 
     task ||--o{ response : "đề của"
-    rating_batch }o--o{ response : "phiếu chấm mù"
-    study }o--o{ account : "người tham gia"
     classroom }o--o{ task : "bài giao"
 
     path ||--o{ lesson : "chặng gồm bài"
@@ -57,24 +55,11 @@ erDiagram
         object review_lock
         array review_visits
         array replay_labels
-        array machine_seen
-    }
-    rating_batch {
-        string batch_id PK
-        bool closed
-        array ratings "Rating: phiếu và điểm"
-    }
-    study {
-        string study_id PK
-        string status
-        array participants "Participant kèm khảo sát"
     }
     classroom {
         string class_id PK
-        string code UK
-        string teacher_id
+        array teacher_ids
         array members
-        array assignments "Assignment"
     }
     path {
         string path_id PK

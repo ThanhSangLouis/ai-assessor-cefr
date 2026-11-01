@@ -108,7 +108,9 @@ def test_student_view_of_a_lesson_never_carries_gap_answers():
         answers=["quiet", "nearby"],
         hint_words=["quiet", "nearby", "busy", "far"],
     )
-    lesson = Lesson(title="Khu phố", steps=[gap, Step(kind=StepKind.FREE, text="Tả khu phố.")])
+    lesson = Lesson(
+        band=Band.A2, title="Khu phố", steps=[gap, Step(kind=StepKind.FREE, text="Tả khu phố.")]
+    )
 
     view = lesson.for_student()
 
@@ -127,7 +129,7 @@ def test_step_and_lesson_reject_inconsistent_configuration():
         Step(kind=StepKind.FREE, rounds=[45, 5])  # a round must last 10..180 seconds
     twin = Step(kind=StepKind.FREE, step_id="s1")
     with pytest.raises(ValidationError):
-        Lesson(title="t", steps=[twin, twin.model_copy()])
+        Lesson(band=Band.A2, title="t", steps=[twin, twin.model_copy()])
     # Teacher lists are trimmed and de-duplicated, keeping the teacher's order.
     step = Step(kind=StepKind.KEYWORDS, keywords=[" go ", "Go", "", "bus   stop"])
     assert step.keywords == ["go", "bus stop"]
@@ -620,6 +622,7 @@ def test_word_lesson_practises_keywords_in_threes_then_reuses_them_in_free_speec
 def test_linter_warns_about_asr_traps():
     text = "I have 3 cats, and my room is a nice colour."
     lesson = Lesson(
+        band=Band.A2,
         title="Phòng của tôi",
         model_text=text,
         steps=[
@@ -655,7 +658,9 @@ def test_linter_flags_gap_answers_that_cannot_be_told_apart_by_ear():
         answers=["walked", "two"],
         hint_words=["walked", "walks", "two", "far"],
     )
-    lesson = Lesson(title="t", steps=[gap, Step(kind=StepKind.FREE, text="Kể chuyện.")])
+    lesson = Lesson(
+        band=Band.A2, title="t", steps=[gap, Step(kind=StepKind.FREE, text="Kể chuyện.")]
+    )
 
     warnings = [i for i in lint_lesson(lesson) if i.level == "warn" and i.step_id == gap.step_id]
 
@@ -665,6 +670,7 @@ def test_linter_flags_gap_answers_that_cannot_be_told_apart_by_ear():
 
 def test_linter_warns_about_a_missing_free_step_and_absent_keywords():
     lesson = Lesson(
+        band=Band.A2,
         title="t",
         model_text="I live near a quiet park.",
         keywords=["quiet", "traffic"],
@@ -698,6 +704,7 @@ def test_review_boxes_follow_leitner_intervals():
 
 def _five_steps() -> Lesson:
     return Lesson(
+        band=Band.A2,
         title="Năm bước",
         steps=[
             Step(kind=StepKind.READ_ALOUD, text="the people are friendly"),
@@ -763,12 +770,13 @@ def test_today_counts_seconds_spoken_per_vietnam_day():
 
 
 def test_next_lesson_without_assessment_follows_path_order_and_says_why():
-    done = Lesson(title="A", steps=[Step(kind=StepKind.FREE, text="x")])
+    done = Lesson(band=Band.A2, title="A", steps=[Step(kind=StepKind.FREE, text="x")])
     half = Lesson(
+        band=Band.A2,
         title="B",
         steps=[Step(kind=StepKind.KEYWORDS, keywords=["go"]), Step(kind=StepKind.FREE, text="y")],
     )
-    fresh = Lesson(title="C", steps=[Step(kind=StepKind.FREE, text="z")])
+    fresh = Lesson(band=Band.A2, title="C", steps=[Step(kind=StepKind.FREE, text="z")])
     ordered = [(done, None), (half, Criterion.RANGE), (fresh, Criterion.FLUENCY)]
     states = {
         done.lesson_id: lesson_state(done, [_attempt(done, done.steps[0].step_id, True)]),

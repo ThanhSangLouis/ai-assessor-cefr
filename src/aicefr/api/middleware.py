@@ -135,7 +135,16 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
     shared store would be a dependency bought for very little.
     """
 
-    PATHS = frozenset({"/api/v1/auth/login", "/api/v1/auth/signup", "/api/v1/auth/recover"})
+    PATHS = frozenset(
+        {
+            "/api/v1/auth/login",
+            "/api/v1/auth/signup",
+            "/api/v1/auth/recover",
+            # D079: asking for and using a code sent by email.
+            "/api/v1/auth/forgot/email",
+            "/api/v1/auth/forgot/email/reset",
+        }
+    )
 
     def __init__(self, app) -> None:
         super().__init__(app)

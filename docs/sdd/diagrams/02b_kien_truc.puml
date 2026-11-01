@@ -29,7 +29,7 @@ package "web" as Web {
 
 package "core — mỗi phần một facade" as Core {
   component "identity\ntài khoản, đồng thuận\n(IdentityFacade)" as Identity
-  component "assessment\nbài nộp, duyệt, chấm mù,\nlớp học, nghe lại\n(AssessmentFacade)" as Assessment
+  component "assessment\nbài nộp, duyệt, đề theo band,\nlớp học, nghe lại\n(AssessmentFacade)" as Assessment
   component "learning\nlộ trình, bài học, ôn tập\n(LearningFacade)" as Learning
   component "billing\ngói, đơn, gói lượt\n(BillingFacade)" as Billing
   component "metering\ngiữ chỗ, thu, hoàn lượt\n(MeteringFacade)" as Metering

@@ -87,6 +87,7 @@ ACCOUNT_FIELDS = (
     "email",
     "email_verified",
     "full_name",
+    "email_reminders",
 )
 
 
@@ -131,6 +132,12 @@ AVATAR_COLORS = (
     "society",
 )
 # Seconds of speaking a learner aims for each day; 180 is the D025 default.
+# D079: a code sent by email -- six digits, ten minutes, five tries, one a minute.
+EMAIL_CODE_MINUTES = 10
+EMAIL_CODE_TRIES = 5
+EMAIL_CODE_GAP_S = 60
+EMAIL_CODE_PURPOSES = ("reset", "verify")
+
 DAILY_GOALS = (60, 120, 180, 300, 600)
 DEFAULT_DAILY_GOAL = 180
 
@@ -788,6 +795,134 @@ class AuthRepository(MongoStore):
         token = self._open_session(row["account_id"], device, method="recovery")
         return token, self.get(row["account_id"]), following
 
+    # ---------- email codes, verification, reminders (D079) ----------
+
+    def issue_email_code(self, account_id: str, purpose: str) -> str | None:
+        """A new six-digit code for `purpose`, kept hashed; None within a minute of the last.
+
+        A new code replaces the one before, so only the latest email works.
+        """
+        if purpose not in EMAIL_CODE_PURPOSES:
+            raise ValueError(purpose)
+        row = self.col("account").find_one({"account_id": account_id}, {"email_codes": 1})
+        last = ((row or {}).get("email_codes") or {}).get(purpose)
+        now = datetime.now(UTC)
+        if last and (now - datetime.fromisoformat(last["sent_at"])).total_seconds() < (
+            EMAIL_CODE_GAP_S
+        ):
+            return None
+        code = f"{secrets.randbelow(10**6):06d}"
+        self.col("account").update_one(
+            {"account_id": account_id},
+            {
+                "$set": {
+                    f"email_codes.{purpose}": {
+                        "hash": passwords.hash_password(code),
+                        "sent_at": now.isoformat(timespec="seconds"),
+                        "expires_at": (now + timedelta(minutes=EMAIL_CODE_MINUTES)).isoformat(
+                            timespec="seconds"
+                        ),
+                        "tries": 0,
+                    }
+                }
+            },
+        )
+        return code
+
+    def _spend_email_code(self, account_id: str, purpose: str, code: str) -> bool:
+        """Whether `code` is the live one for `purpose`; a right one is spent, a wrong counts."""
+        row = self.col("account").find_one({"account_id": account_id}, {"email_codes": 1})
+        held = ((row or {}).get("email_codes") or {}).get(purpose)
+        typed = "".join(ch for ch in str(code) if ch.isdigit())
+        if (
+            not held
+            or held["tries"] >= EMAIL_CODE_TRIES
+            or session_tokens.is_expired(held["expires_at"])
+        ):
+            passwords.waste_equivalent_time(typed)
+            return False
+        if not passwords.verify_password(typed, held["hash"]):
+            self.col("account").update_one(
+                {"account_id": account_id}, {"$inc": {f"email_codes.{purpose}.tries": 1}}
+            )
+            return False
+        # Conditional on the hash just checked: of two requests racing, one spends it.
+        done = self.col("account").update_one(
+            {"account_id": account_id, f"email_codes.{purpose}.hash": held["hash"]},
+            {"$unset": {f"email_codes.{purpose}": ""}},
+        )
+        return done.modified_count == 1
+
+    def reset_with_email_code(
+        self, email: str, code: str, new_password: str, device: str | None = None
+    ) -> tuple[str, dict] | None:
+        """Replace a forgotten password with a code sent to the account's email; sign in.
+
+        None for an unknown email, a disabled account or a wrong, used or late
+        code, all alike. Receiving the code shows the mailbox is theirs, so the
+        email counts as verified from now on. Every other session ends.
+        """
+        row = self._unlocked_row(email)
+        passwords.check_new_password(new_password, row["pseudonym"] if row else email)
+        if row is None or row["disabled"] or not row.get("email"):
+            passwords.waste_equivalent_time(code)
+            return None
+        if not self._spend_email_code(row["account_id"], "reset", code):
+            self._record_failure(row["account_id"])
+            return None
+        now = _now()
+        self.col("account").update_one(
+            {"account_id": row["account_id"]},
+            {
+                "$set": {
+                    "password_hash": passwords.hash_password(new_password),
+                    "must_change_password": 0,
+                    "password_changed_at": now,
+                    "last_login_at": now,
+                    "failed_attempts": 0,
+                    "locked_until": None,
+                    "email_verified": 1,
+                }
+            },
+        )
+        self.revoke_sessions(row["account_id"])
+        token = self._open_session(row["account_id"], device, method="email_code")
+        return token, self.get(row["account_id"])
+
+    def verify_email(self, account_id: str, code: str) -> bool:
+        """Mark the account's email verified with the code sent to it."""
+        if not self._spend_email_code(account_id, "verify", code):
+            return False
+        self.col("account").update_one({"account_id": account_id}, {"$set": {"email_verified": 1}})
+        return True
+
+    def set_email_reminders(self, account_id: str, on: bool) -> None:
+        self.col("account").update_one(
+            {"account_id": account_id}, {"$set": {"email_reminders": int(on)}}
+        )
+
+    def reminder_candidates(self, day: str) -> list[dict]:
+        """Learners a study reminder may go to today: verified email, reminders on, none sent."""
+        rows = self.col("account").find(
+            {
+                "role": Role.STUDENT.value,
+                "disabled": 0,
+                "email_verified": 1,
+                "email_reminders": {"$ne": 0},
+                "reminder_sent_on": {"$ne": day},
+            },
+            {"account_id": 1, "pseudonym": 1, "email": 1, "full_name": 1, "daily_goal_s": 1},
+        )
+        return [dict(r) for r in rows]
+
+    def claim_reminder(self, account_id: str, day: str) -> bool:
+        """Take today's reminder for this learner; False when another process took it."""
+        done = self.col("account").update_one(
+            {"account_id": account_id, "reminder_sent_on": {"$ne": day}},
+            {"$set": {"reminder_sent_on": day}},
+        )
+        return done.modified_count == 1
+
     def set_disabled(self, account_id: str, disabled: bool) -> None:
         """Turn an account off or on. Turning it off ends its sessions at once."""
         done = self.col("account").update_one(
@@ -871,11 +1006,6 @@ class AuthRepository(MongoStore):
         if not changes:
             return
         self.col("account").update_one({"account_id": account_id}, {"$set": changes})
-
-    def active_account_ids(self) -> set[str]:
-        """Accounts that are switched on: whose data research may use (D064)."""
-        rows = self.col("account").find({"disabled": 0}, {"account_id": 1})
-        return {r["account_id"] for r in rows}
 
     def set_role(self, account_id: str, role: Role) -> str:
         """Give an account another role; returns the role it had."""

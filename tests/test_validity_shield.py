@@ -166,7 +166,8 @@ def test_a_failing_language_detector_does_not_break_recognition(monkeypatch) -> 
 def test_default_tasks_carry_topic_keywords(tmp_path) -> None:
     repo = TaskRepository(tmp_path / "t.db")
     assert repo.get("P3").topic_keywords and repo.get("P4").topic_keywords
-    assert repo.get("P5").topic_keywords == ()
+    # D076: every prompt of the band bank carries its own topic words.
+    assert all(t.topic_keywords for t in repo.list_active())
 
 
 def test_keywords_an_admin_edited_are_kept(tmp_path) -> None:

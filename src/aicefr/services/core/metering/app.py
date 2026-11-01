@@ -19,6 +19,7 @@ from aicefr.platform.rpc import internal_router
 from aicefr.services import Parts, Peers
 from aicefr.services.core.metering import metering_api
 from aicefr.services.core.metering.facade import MeteringFacade
+from aicefr.services.core.metering.price_book import PriceBook
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.metering_repository import MeteringRepository
 
@@ -37,11 +38,10 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         idpoint_per_run=settings.idpoint_per_run,
         upgrade_runs=settings.price_upgrade_runs,
     )
-    facade = MeteringFacade(store, audit_log, enabled, prices)
+    book = PriceBook(store, prices, settings.credit_packs)
+    facade = MeteringFacade(store, audit_log, enabled, book)
     metering_api.configure(
-        metering_api.Services(
-            store=store, audit=audit_log, peers=peers, enabled=enabled, prices=prices
-        )
+        metering_api.Services(store=store, audit=audit_log, peers=peers, enabled=enabled, book=book)
     )
     stop = threading.Event()
 

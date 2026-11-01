@@ -449,14 +449,13 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
 
 // ---------------------------------------------------------------- badges
 // How many things wait behind a sidebar item (D028): teacher decisions a
-// student has not seen, reviews due today, the review queue, blind ratings. A
+// student has not seen, reviews due today, the review queue. A
 // number for the eye and a sentence for a screen reader; nothing at zero.
 {
   const BADGE_WORDS = {
     results: "kết quả mới được giảng viên xác nhận",
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
-    ratings: "phiếu chấm mù chưa làm",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {
@@ -477,10 +476,6 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
         if (!counts) return;
         Object.keys(BADGE_WORDS).forEach((name) => {
           if (name in counts) setBadge(name, counts[name]);
-        });
-        // D068: entries that only matter when there is something there.
-        document.querySelectorAll("a[data-nav-if]").forEach((a) => {
-          if (counts[a.dataset.navIf]) a.hidden = false;
         });
       })
       // A badge is a convenience; a failed count must not disturb the page.
@@ -534,7 +529,7 @@ window.showRecoverySlip = function (pseudonym, code) {
   document.getElementById("slip-pseudonym").textContent = pseudonym;
   document.getElementById("slip-code").textContent = code;
   const text =
-    `AI Assessor CEFR\nĐăng nhập: ${pseudonym}\nMã khôi phục: ${code}\n` +
+    `SpeakUp\nĐăng nhập: ${pseudonym}\nMã khôi phục: ${code}\n` +
     `Dùng ở ${location.origin}/forgot khi quên mật khẩu. Mã chỉ dùng được một lần.\n`;
   document.getElementById("slip-copy").onclick = async () => {
     try {

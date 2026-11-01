@@ -14,7 +14,13 @@ from aicefr.practice.nudges import MAX_NUDGES, nudges
 # 10:00 and 19:00 in Vietnam on 24/10/2026.
 MORNING = datetime(2026, 10, 24, 3, 0, tzinfo=UTC)
 EVENING = datetime(2026, 10, 24, 12, 0, tzinfo=UTC)
-QUIET = {"streak": 0, "practiced_today": False, "today": 0, "goal": 2, "goal_met": False}
+QUIET = {
+    "streak": 0,
+    "practiced_today": False,
+    "seconds": 0,
+    "goal_seconds": 300,
+    "goal_met": False,
+}
 
 
 @pytest.mark.unit
@@ -35,14 +41,16 @@ def test_a_streak_not_kept_today_is_said_kindly_and_more_firmly_in_the_evening()
     evening = nudges(EVENING, daily, 0, None)[0]
     assert morning.kind == "streak" and "ngày nghỉ" in morning.text
     assert (morning.urgent, evening.urgent) == (False, True)
-    kept = {**daily, "practiced_today": True, "today": 2, "goal_met": True}
+    kept = {**daily, "practiced_today": True, "seconds": 300, "goal_met": True}
     assert nudges(EVENING, kept, 0, None) == []
 
 
 @pytest.mark.unit
 def test_a_goal_begun_says_what_is_left():
-    found = nudges(MORNING, {**QUIET, "today": 1, "practiced_today": True}, 0, None)
-    assert [(n.kind, n.text) for n in found] == [("goal", "Còn 1 bài nữa là đạt mục tiêu hôm nay.")]
+    found = nudges(MORNING, {**QUIET, "seconds": 130, "practiced_today": True}, 0, None)
+    assert [(n.kind, n.text) for n in found] == [
+        ("goal", "Còn 3 phút nói nữa là đạt mục tiêu hôm nay.")
+    ]
 
 
 @pytest.mark.unit
@@ -54,7 +62,7 @@ def test_running_out_of_runs_is_said_only_where_runs_count():
 
 @pytest.mark.unit
 def test_never_more_than_three():
-    found = nudges(EVENING, {**QUIET, "streak": 5, "today": 1, "practiced_today": False}, 4, 0.0)
+    found = nudges(EVENING, {**QUIET, "streak": 5, "seconds": 60, "practiced_today": False}, 4, 0.0)
     assert len(found) <= MAX_NUDGES
 
 

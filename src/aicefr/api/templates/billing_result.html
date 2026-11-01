@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Kết quả thanh toán · AI Assessor CEFR{% endblock %}
+{% block title %}Kết quả thanh toán · SpeakUp{% endblock %}
 {% block content %}
 {#- D033, D035. Where the gateway sends the browser back. The route has applied
     the result the gateway vouched for already; this page says what the
@@ -66,7 +66,6 @@
       <p>
         {% if state == "amount" %}Số tiền cổng báo về không khớp với đơn, nên kết quả không được ghi nhận.
         {% else %}Địa chỉ trả về không có chữ ký hợp lệ hoặc không khớp đơn nào, nên không có gì thay đổi.{% endif %}
-        Nếu tài khoản đã bị trừ tiền, hãy liên hệ bộ phận hỗ trợ kèm mã giao dịch của ngân hàng.
       </p>
       <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% endif %}

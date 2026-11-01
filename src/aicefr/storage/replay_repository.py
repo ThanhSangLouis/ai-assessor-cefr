@@ -70,12 +70,6 @@ class ReplayRepository(MongoStore):
         mine = [x for x in _labels(rows) if x["account_id"] == account_id]
         return sorted(mine, key=lambda x: (x["created_at"], x["moment_id"]))
 
-    def all(self) -> list[dict]:
-        rows = self.col("response").find(
-            {"replay_labels.0": {"$exists": True}}, {"replay_labels": 1}
-        )
-        return _labels(rows)
-
     def forget_account(self, account_id: str) -> None:
         """Erasure (FR-35): the learner's answers go with their recordings."""
         self.col("response").update_many(

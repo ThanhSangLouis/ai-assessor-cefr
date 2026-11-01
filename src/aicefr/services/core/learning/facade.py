@@ -97,6 +97,11 @@ class LearningFacade:
         return lessons_api.reviews_due(account_id)
 
     @exposed
+    def daily(self, account_id: str, goal_seconds: int) -> dict:
+        """Today's speaking on the lesson path and the streak, for reminders (D055, D079)."""
+        return lessons_api.daily(account_id, goal_seconds)
+
+    @exposed
     def count_attempts(self, account_id: str) -> int:
         return self.lessons.count_attempts(account_id)
 

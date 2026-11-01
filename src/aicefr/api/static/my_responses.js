@@ -70,7 +70,7 @@ function badgeFor(r) {
 //     so it is never read as a final result.
 function resultText(r) {
   if (isPractice(r)) return '<span class="muted">Không chấm</span>';
-  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Không có điểm</span>';
+  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Chưa có kết quả</span>';
   if (r.overall_band == null && r.overall_0_6 == null) return "";
   let h = "";
   if (r.overall_band != null) h += `Band <b>${escapeHtml(r.overall_band)}</b>`;
@@ -85,22 +85,6 @@ function hrefFor(r) {
   const id = encodeURIComponent(r.response_id);
   if (PENDING_STATUSES.includes(r.status)) return `/progress/${id}`;
   return isPractice(r) ? `/practice/results/${id}` : `/report/${id}`;
-}
-
-// FR-35, the learner's side. A response a teacher has verified cannot be deleted
-// by its owner, and the row says so on the spot instead of offering a button
-// that only leads to a 409.
-function deleteControl(r) {
-  const id = escapeHtml(r.response_id);
-  if (r.teacher_verified) {
-    return '<span class="muted small-note" title="Bài đã được giảng viên xác nhận">Không xoá được</span>';
-  }
-  // One visible word, but a full accessible name: "Xoá" alone is clear to
-  // someone who sees the whole row and vague to someone hearing one button.
-  return (
-    `<button type="button" class="link-button danger" data-delete="${id}"` +
-    ` aria-label="Xoá bài ${id} và bản ghi âm của nó">Xoá</button>`
-  );
 }
 
 function item(r) {
@@ -118,7 +102,6 @@ function item(r) {
         </p>
         <p class="response-id muted">Mã bài <code>${escapeHtml(r.response_id)}</code></p>
       </div>
-      <div class="response-side">${deleteControl(r)}</div>
     </li>`;
 }
 
@@ -153,7 +136,6 @@ function render() {
   listEl.innerHTML = rows.length
     ? `<ul class="response-list">${rows.map(item).join("")}</ul>`
     : '<p class="muted">Không có bài nào thuộc loại này.</p>';
-  wireDeletes();
 }
 
 filterEl.addEventListener("click", (e) => {
@@ -162,32 +144,6 @@ filterEl.addEventListener("click", (e) => {
   kind = b.getAttribute("data-kind");
   render();
 });
-
-// Deleting cannot be undone, so it asks once more. `confirm` rather than a
-// home-made dialog: the browser's own handles focus, Escape and screen readers,
-// and getting any of those wrong is worse than its plain look.
-function wireDeletes() {
-  listEl.querySelectorAll("[data-delete]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.delete;
-      if (!window.confirm(`Xoá vĩnh viễn bài ${id}? Cả bản ghi âm cũng bị xoá.`)) return;
-
-      btn.disabled = true;
-      const r = await fetch(`/api/v1/responses/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      });
-      if (window.redirectToLoginIfExpired(r)) return;
-      if (!r.ok) {
-        btn.disabled = false;
-        const d = await r.json().catch(() => ({}));
-        window.toast(d.detail || "Không xoá được bài này.", "error");
-        return;
-      }
-      window.toast(`Đã xoá bài ${id} và bản ghi âm của nó.`, "ok");
-      load();
-    });
-  });
-}
 
 // Read the mark first, show the list against it, then move it to now: the
 // rows stay marked for this visit and the sidebar count clears.

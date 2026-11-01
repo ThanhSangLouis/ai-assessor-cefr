@@ -137,23 +137,6 @@ def test_with_reduced_motion_the_scene_is_simply_there(browser, live_server):
         ctx.close()
 
 
-def test_the_terraces_drift_against_the_scene(browser, live_server):
-    ctx = new_context(browser, live_server)
-    try:
-        page = ctx.new_page()
-        page.goto("/")
-        hero = page.locator(".lp-hero").bounding_box()
-        page.mouse.move(hero["x"] + hero["width"] * 0.95, hero["y"] + hero["height"] * 0.2, steps=6)
-        wait_until(
-            page, "Number(document.querySelector('.lp-hero').style.getPropertyValue('--px')) > 0.3"
-        )
-        # The scene turns toward the pointer on the right; the hills slide the other way.
-        drift = page.evaluate("getComputedStyle(document.querySelector('.lp-terraces')).translate")
-        assert float(drift.split()[0].removesuffix("px")) < 0, drift
-    finally:
-        ctx.close()
-
-
 def test_any_width_gets_the_whole_far_hill_and_a_round_sun(browser, live_server):
     measure = """(cls) => {
       const box = document.querySelector(cls).getBoundingClientRect();

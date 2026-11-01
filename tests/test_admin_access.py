@@ -31,6 +31,12 @@ PUBLIC_API = {
     # after five wrong codes like a login.
     ("POST", "/api/v1/auth/signup"),
     ("POST", "/api/v1/auth/recover"),
+    # D079: a code by email for a forgotten password, rate limited and locked
+    # like a login; the link in a reminder that stops reminders, signed per account.
+    ("POST", "/api/v1/auth/forgot/email"),
+    ("POST", "/api/v1/auth/forgot/email/reset"),
+    ("GET", "/api/v1/email/unsubscribe"),
+    ("POST", "/api/v1/email/unsubscribe"),
     # Payment gateways call back without a session; each checks its signature.
     ("GET", "/api/v1/billing/notify/{gateway}"),
     ("POST", "/api/v1/billing/notify/{gateway}"),
@@ -136,7 +142,7 @@ def test_the_guards_are_where_the_paths_say(app) -> None:
             if guard == "none" and (method, route.path) not in PUBLIC_API:
                 wrong.append(f"{method} {route.path}: no guard")
     assert not wrong, wrong
-    assert len(list(_calls(app, "admin"))) >= 40
+    assert len(list(_calls(app, "admin"))) >= 25  # D078 took the research routes away
 
 
 def test_a_visitor_is_asked_to_sign_in_everywhere_guarded(app) -> None:
@@ -217,7 +223,7 @@ def test_an_admin_cannot_lock_themself_out(app) -> None:
     assert admin.get("/api/v1/admin/accounts").status_code == 200
 
 
-@pytest.mark.parametrize("path", ["/admin", "/admin/study"])
+@pytest.mark.parametrize("path", ["/admin"])
 def test_admin_pages_open_only_for_an_admin(app, path: str) -> None:
     visitor = TestClient(app, follow_redirects=False)
     r = visitor.get(path)

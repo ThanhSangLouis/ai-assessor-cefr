@@ -18,6 +18,7 @@ from aicefr.metering.pricing import (
     as_runs,
     hold_for,
 )
+from aicefr.services.core.metering.price_book import PriceBook
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.metering_repository import MeteringRepository, cycle
@@ -31,7 +32,11 @@ class Services:
     audit: AuditLog
     peers: Any
     enabled: bool
-    prices: PriceList
+    book: PriceBook
+
+    @property
+    def prices(self) -> PriceList:
+        return self.book.current()
 
 
 _services: Services | None = None
@@ -127,3 +132,40 @@ def grant_credits(body: GrantIn, account: Account = ADMIN_ONLY) -> dict:
     if credited:
         s.audit.write(account.account_id, "metering.grant", who["account_id"], f"runs={body.runs}")
     return {"credited": credited, "wallet_runs": as_runs(s.store.wallet(who["account_id"]))}
+
+
+# ================================================================= prices (D078)
+
+
+class PackIn(BaseModel):
+    runs: int = Field(ge=1, le=10_000)
+    price_vnd: int = Field(ge=1, le=100_000_000)
+
+
+class PricesIn(BaseModel):
+    first_minute_runs: float = Field(ge=0, le=100)
+    extra_minute_runs: float = Field(ge=0, le=100)
+    practice_factor: float = Field(gt=0, le=1)
+    upgrade_runs: float = Field(ge=0, le=100)
+    idpoint_per_run: int = Field(ge=0, le=10_000_000)
+    free_runs: float = Field(ge=0, le=1000)
+    packs: list[PackIn] = Field(min_length=1, max_length=10)
+
+
+@router.get("/api/v1/admin/prices", tags=["admin"])
+def prices(account: Account = ADMIN_ONLY) -> dict:
+    """The prices in force, where they come from, and the earlier versions."""
+    s = svc()
+    return {"metering": s.enabled, **s.book.view()}
+
+
+@router.put("/api/v1/admin/prices", tags=["admin"])
+def set_prices(body: PricesIn, account: Account = ADMIN_ONLY) -> dict:
+    """A new version of the prices; charges already made keep theirs."""
+    s = svc()
+    try:
+        saved = s.book.set(body.model_dump(), account.account_id)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    s.audit.write(account.account_id, "metering.prices", None, saved["version"])
+    return {"metering": s.enabled, **s.book.view()}
