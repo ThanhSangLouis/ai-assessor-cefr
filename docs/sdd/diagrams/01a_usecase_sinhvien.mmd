@@ -12,6 +12,7 @@ flowchart LR
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
         UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
         UC19["UC-19 Sinh viên học theo lộ trình band"]
         UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
@@ -27,6 +28,7 @@ flowchart LR
     end
 
     SV --> UC17
+    SV --> UC35
     SV --> UC24
     SV --> UC19
     SV --> UC01

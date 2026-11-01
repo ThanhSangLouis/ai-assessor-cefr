@@ -94,14 +94,6 @@ class AssessmentFacade:
         }
 
     @exposed
-    def practice_daily(self, account_id: str) -> dict:
-        """Today's practice against the daily goal, and the streak (D023), for reminders."""
-        from aicefr.services.core.assessment.responses_api import _daily_view, _practice_state
-
-        _bank, attempts, _progress = _practice_state(account_id)
-        return _daily_view(attempts)
-
-    @exposed
     def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
         """Responses waiting for review.
 

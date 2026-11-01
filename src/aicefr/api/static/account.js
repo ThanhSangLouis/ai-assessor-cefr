@@ -556,3 +556,56 @@ if (exportAll) {
 }
 
 loadMe();
+
+// ---------------------------------------------------------------- email (D079)
+// Verify the address with a code; a verified one may get the daily reminder.
+(function () {
+  const card = document.getElementById("email-card");
+  if (!card) return;
+  const state = document.getElementById("email-state");
+  const form = document.getElementById("verify-form");
+  const message = document.getElementById("email-message");
+  const toggle = document.getElementById("reminders");
+  const post = (url, body) =>
+    window.apiJson(url, {
+      method: url.endsWith("reminders") ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {}),
+    });
+
+  function paint(d) {
+    if (!d || !d.email) return;
+    card.hidden = false;
+    const email = `<b>${window.escapeHtml(d.email)}</b>`;
+    state.innerHTML = d.verified
+      ? `${email} đã xác minh.`
+      : `${email} chưa xác minh.` + (d.sending ? " Bấm Gửi mã rồi nhập mã trong email." : " Hệ thống chưa bật gửi email.");
+    form.hidden = d.verified || !d.sending;
+    document.getElementById("reminder-row").hidden = !(d.verified && d.sending);
+    toggle.checked = d.reminders;
+  }
+
+  const load = () => window.apiJson("/api/v1/me/email").then(paint);
+
+  document.getElementById("verify-send").addEventListener("click", async () => {
+    const d = await post("/api/v1/me/email/verify/send");
+    if (!d) return;
+    message.innerHTML =
+      d.status === "wait"
+        ? '<p class="muted">Mã vừa được gửi; chờ một phút rồi gửi lại.</p>'
+        : '<p class="muted">Đã gửi mã tới email. Mã dùng được 10 phút.</p>';
+  });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = await post("/api/v1/me/email/verify", { code: document.getElementById("verify-code").value.trim() });
+    if (!d) return;
+    message.innerHTML = "";
+    window.toast("Đã xác minh email.", "ok");
+    load();
+  });
+  toggle.addEventListener("change", async () => {
+    const d = await post("/api/v1/me/email/reminders", { on: toggle.checked });
+    if (d) window.toast(d.reminders ? "Đã bật nhắc học qua email." : "Đã tắt nhắc học qua email.", "ok");
+  });
+  load();
+})();

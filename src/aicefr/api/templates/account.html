@@ -71,6 +71,23 @@
         <div id="contact-message" aria-live="polite"></div>
       </form>
     </div>
+    {#- D079: verify the email with a code, and the daily study reminder. -#}
+    <div class="card" id="email-card" aria-labelledby="email-card-h" hidden>
+      <h2 id="email-card-h">{{ icon("message") }} Email và nhắc học</h2>
+      <p id="email-state"></p>
+      <form id="verify-form" class="inline-form" novalidate hidden>
+        <div class="field">
+          <label for="verify-code">Mã 6 số trong email</label>
+          <input id="verify-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+        </div>
+        <button type="submit">Xác minh</button>
+        <button type="button" class="secondary" id="verify-send">Gửi mã</button>
+      </form>
+      <label class="check-row" id="reminder-row" hidden>
+        <input type="checkbox" id="reminders"> Nhắc tôi qua email lúc tối nếu hôm đó chưa luyện
+      </label>
+      <div id="email-message" aria-live="polite"></div>
+    </div>
     <div class="card" aria-labelledby="avatar-h">
       <h2 id="avatar-h">{{ icon("sparkle") }} Ảnh đại diện</h2>
       <p class="muted small-note">Một biểu tượng và một màu, hiện ở thanh điều khiển. Không có ảnh chụp, để không

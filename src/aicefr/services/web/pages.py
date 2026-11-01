@@ -19,6 +19,7 @@ from aicefr.api.deps import ROLE_HOME, optional_account
 from aicefr.api.web import templates
 from aicefr.auth import google, passwords
 from aicefr.config import Settings
+from aicefr.notify.email import sender_from
 from aicefr.services import Peers
 from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
@@ -175,6 +176,8 @@ def _signed_out_page(request: Request, account: Account | None, template: str):
             "min_length": passwords.MIN_LENGTH,
             "google_enabled": settings.google_enabled,
             "google_signup": settings.google_signup,
+            # D079: a forgotten password by a code sent to the email, when email is on.
+            "email_on": sender_from(settings) is not None,
         },
     )
 
@@ -187,7 +190,7 @@ def page_signup(request: Request, account: Account | None = Depends(optional_acc
 
 @router.get("/forgot", response_class=HTMLResponse, tags=["web"])
 def page_forgot(request: Request, account: Account | None = Depends(optional_account)):
-    """A forgotten password replaced with the recovery code (D065)."""
+    """A forgotten password: a code by email (D079), or the recovery code (D065)."""
     return _signed_out_page(request, account, "forgot.html")
 
 

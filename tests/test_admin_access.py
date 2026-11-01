@@ -31,6 +31,12 @@ PUBLIC_API = {
     # after five wrong codes like a login.
     ("POST", "/api/v1/auth/signup"),
     ("POST", "/api/v1/auth/recover"),
+    # D079: a code by email for a forgotten password, rate limited and locked
+    # like a login; the link in a reminder that stops reminders, signed per account.
+    ("POST", "/api/v1/auth/forgot/email"),
+    ("POST", "/api/v1/auth/forgot/email/reset"),
+    ("GET", "/api/v1/email/unsubscribe"),
+    ("POST", "/api/v1/email/unsubscribe"),
     # Payment gateways call back without a session; each checks its signature.
     ("GET", "/api/v1/billing/notify/{gateway}"),
     ("POST", "/api/v1/billing/notify/{gateway}"),

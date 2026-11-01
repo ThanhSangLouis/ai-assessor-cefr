@@ -168,6 +168,20 @@ class Settings:
     # address is used, which is right for localhost.
     public_url: str | None = field(default_factory=lambda: os.getenv("AICEFR_PUBLIC_URL") or None)
 
+    # --- email (D079) ---
+    # `resend` sends through Resend from a verified domain; `outbox` keeps the
+    # messages in memory (tests, a machine without a key); `off` sends nothing.
+    email_provider: str = field(
+        default_factory=lambda: os.getenv("AICEFR_EMAIL_PROVIDER", "off").strip().lower()
+    )
+    resend_api_key: str = field(default_factory=lambda: os.getenv("AICEFR_RESEND_API_KEY", ""))
+    # e.g. "AI Assessor CEFR <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
+    email_from: str = field(default_factory=lambda: os.getenv("AICEFR_EMAIL_FROM", ""))
+    # When the daily study reminder goes out, Vietnam time (hour 0-23); -1 is off.
+    reminder_hour: int = field(
+        default_factory=lambda: int(os.getenv("AICEFR_REMINDER_HOUR", "19") or 19)
+    )
+
     # --- payments (D035, D075) ---
     # The payment gateways that sell run packs. Off by default: nothing is
     # sold until a deployment opts in. No service plans any more (D075).

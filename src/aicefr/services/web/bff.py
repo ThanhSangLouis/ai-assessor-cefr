@@ -50,7 +50,7 @@ def my_nudges(account: Account = Depends(require_login)) -> dict:
     who = account.account_id
     found = nudges(
         datetime.now(UTC),
-        daily=peers.assessment.practice_daily(account_id=who),
+        daily=peers.learning.daily(account_id=who, goal_seconds=account.daily_goal_s),
         reviews_due=peers.learning.reviews_due(account_id=who),
         runs_left=peers.metering.runs_left(account_id=who),
     )

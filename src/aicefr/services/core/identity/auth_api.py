@@ -21,6 +21,7 @@ from aicefr.contracts import AuditEntry
 from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_account
 from aicefr.platform.rpc import RemoteError, same_key
 from aicefr.services import Peers
+from aicefr.services.core.identity import email_api
 from aicefr.storage.audit_repository import AuditLog, merge
 from aicefr.storage.auth_repository import (
     Account,
@@ -137,11 +138,19 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     s.audit_log.write(pseudonym, "account.signup", aid, "method=password")
     set_session_cookie(response, token)
     response.headers.update(NO_STORE)
+    row = s.auth.get(aid)
+    # D079: a code to verify the address goes out at once; a failure to send
+    # never undoes the account, the account page sends another.
+    try:
+        verification = email_api.send_code(row, "verify")
+    except HTTPException:
+        verification = "error"
     return {
         "pseudonym": pseudonym,
-        "email": s.auth.get(aid)["email"],
+        "email": row["email"],
         "recovery_code": code,
         "home": ROLE_HOME[Role.STUDENT],
+        "email_verification": verification,
     }
 
 

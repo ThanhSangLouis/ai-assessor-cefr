@@ -33,7 +33,6 @@ from aicefr.storage.db import database  # noqa: E402
 pytestmark = pytest.mark.e2e
 
 
-
 def desktop(browser, live_server, **extra):
     ctx = browser.new_context(
         base_url=live_server.base_url,

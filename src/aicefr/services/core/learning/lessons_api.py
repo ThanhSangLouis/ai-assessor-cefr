@@ -249,6 +249,23 @@ def _choose_path(path_id: str | None, published_only: bool) -> dict | None:
     return paths[0] if paths else None
 
 
+def daily(account_id: str, goal_seconds: int) -> dict:
+    """Today's speaking on the lesson path against the goal, and the streak (D055, D079).
+
+    What a reminder -- on the home screen or by email -- is about: the lessons
+    the learner studies now, not the practice tasks of D023.
+    """
+    rows = svc().lessons.attempts(account_id=account_id)
+    today = today_summary(_infos(rows), _now(), goal_seconds=goal_seconds)
+    return {
+        "streak": today.streak,
+        "practiced_today": today.seconds > 0,
+        "seconds": today.seconds,
+        "goal_seconds": today.goal_seconds,
+        "goal_met": today.goal_met,
+    }
+
+
 def _infos(rows: list[dict]) -> list[AttemptInfo]:
     return [
         AttemptInfo(

@@ -37,7 +37,7 @@
 | **1.13** | **24/10/2026** | **+5 FR (đề xuất).** FR-86 hiệu chuẩn band tuỳ chọn, FR-87 gói lượt mua qua cổng thanh toán, FR-88 lớp học và giao bài, FR-89 nhắc việc trong ứng dụng, FR-90 tự nghe lại có mốc đối chứng | D052–D056 (PROPOSED) |
 | **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
-| **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt | D078 (APPROVED) |
+| **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt; D079: FR-92..FR-94 (mã qua email khi quên mật khẩu, xác minh email, nhắc học qua email), UC-35 | D078, D079 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1539,6 +1539,35 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* trừ 0,3 lượt trong ví của giảng viên kèm số token, lịch sử ghi "Soạn bài bằng AI" (`test_metered_the_teachers_runs_pay_for_the_draft`). |
 | **AC-91.6** — *Given* trang Lượt của tôi, *When* học viên mua gói 10 lượt qua cổng thử, *Then* trang kết quả báo 10 lượt và có biên nhận (`test_a_learner_buys_a_pack_and_gets_a_receipt`). |
 
+### FR-92 — Đặt lại mật khẩu bằng mã gửi qua email (D079)
+
+**Mô tả:** Người quên mật khẩu nhập email; nếu email có tài khoản, hệ thống gửi một mã 6 số dùng được 10 phút, tối đa 5 lần thử, mỗi phút gửi được một mã. Câu trả lời giống nhau dù email có tài khoản hay không. Đặt mật khẩu mới bằng mã thì đăng nhập, kết thúc mọi phiên khác và đánh dấu email đã xác minh. Mã khôi phục (D065) vẫn là đường dự phòng; khi hệ thống chưa bật gửi email, chỉ còn đường đó.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-92.1** — *Given* một email có tài khoản và một email không có, *When* yêu cầu mã cho cả hai, *Then* hai câu trả lời giống hệt, chỉ một thư được gửi, và yêu cầu lần nữa trong một phút không gửi thêm (`test_a_forgotten_password_is_replaced_with_a_code_from_the_email`). |
+| **AC-92.2** — *Given* mã đúng, *When* đặt mật khẩu mới, *Then* người đó đăng nhập, phiên cũ bị kết thúc, mã không dùng lại được và mật khẩu mới đăng nhập được (`test_a_forgotten_password_is_replaced_with_a_code_from_the_email`). |
+| **AC-92.3** — *Given* hệ thống chưa bật gửi email, *When* yêu cầu mã, *Then* nhận 503 và trang Quên mật khẩu chỉ có đường mã khôi phục (`test_with_email_off_the_recovery_code_is_the_way`). |
+
+### FR-93 — Xác minh email (D079)
+
+**Mô tả:** Đăng ký xong, hệ thống gửi mã xác minh tới email; trang Tài khoản cho gửi lại và nhập mã. Chỉ email đã xác minh mới nhận thư nhắc học.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-93.1** — *Given* một người vừa đăng ký, *When* nhập mã trong thư, *Then* email thành đã xác minh; mã sai bị từ chối và mã đã dùng không dùng lại được (`test_signing_up_sends_a_code_that_verifies_the_address_once`). |
+
+### FR-94 — Nhắc học qua email (D079)
+
+**Mô tả:** Mỗi ngày từ giờ đã đặt (mặc định 19:00 giờ Việt Nam), học viên có email đã xác minh, chưa tắt nhắc, hôm đó chưa nói trên lộ trình và đang có chuỗi ngày hoặc bài ôn đến hạn nhận một thư nhắc. Không ai nhận hai thư một ngày. Mỗi thư có liên kết tắt nhắc, có chữ ký riêng từng tài khoản, không cần đăng nhập; trang Tài khoản cũng bật, tắt được.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-94.1** — *Given* học viên đã xác minh email, đang có chuỗi 3 ngày và chưa luyện hôm nay, *When* tới giờ nhắc, *Then* nhận đúng một thư; trước giờ, khi đã luyện, khi không có lý do hoặc lần chạy thứ hai trong ngày thì không có thư; liên kết trong thư tắt được nhắc và liên kết giả bị từ chối (`test_the_daily_reminder_goes_once_to_who_needs_it_and_stops_on_request`). |
+
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
 | Mã | Nội dung | Lý do |
@@ -1593,6 +1622,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-32 | Quản trị viên đặt giá lượt và gói lượt | Quản trị viên | — | FR-85, FR-87, D078 | S |
 | UC-33 | Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp | Quản trị viên | — | D072, D073 | S |
 | UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
+| UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên | — | FR-92, FR-93 (D079) | S |
 
 > **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Ba use case
 > không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-18
@@ -2293,6 +2323,33 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **2a. Mã tham chiếu đã dùng:** Không cộng thêm.
 
 **Hậu điều kiện:** Ví có thêm số lượt; nhật ký ghi lần cộng.
+
+---
+
+### UC-35 — Đặt lại mật khẩu bằng mã gửi qua email *(mới ở bản 1.16: D079)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-35 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Đặt mật khẩu mới khi quên, bằng mã 6 số gửi tới email của tài khoản (FR-92) |
+| **Tiền điều kiện** | Hệ thống bật gửi email; tài khoản có email |
+| **Kích hoạt** | Sinh viên bấm "Quên mật khẩu?" ở trang Đăng nhập |
+
+**Luồng chính:**
+
+1. Sinh viên nhập email và bấm "Gửi mã qua email".
+2. Hệ thống gửi một mã 6 số, dùng được 10 phút, và trả cùng một câu dù email có tài khoản hay không.
+3. Sinh viên nhập mã và mật khẩu mới.
+4. Hệ thống kiểm mã, đặt mật khẩu mới, kết thúc mọi phiên khác, đánh dấu email đã xác minh và đăng nhập sinh viên.
+
+**Luồng thay thế:**
+
+- **2a. Yêu cầu lại trong một phút:** Không gửi thêm mã.
+- **4a. Mã sai, hết hạn hoặc đã dùng:** Từ chối; sai năm lần thì mã hết hiệu lực, sai nhiều như đăng nhập thì tài khoản tạm khoá.
+- **1a. Không nhận được thư:** Dùng mã khôi phục ở cùng trang.
+
+**Hậu điều kiện:** Mật khẩu mới có hiệu lực; mã đã dùng.
 
 ---
 
