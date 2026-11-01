@@ -110,16 +110,28 @@ Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com
    AICEFR_EMAIL_PROVIDER=resend
    AICEFR_RESEND_API_KEY=re_...
    AICEFR_EMAIL_FROM="SpeakUp <no-reply@mail.ten-mien.app>"
-   AICEFR_PUBLIC_URL=https://ten-mien.app
    AICEFR_REMINDER_HOUR=19
    ```
 
-   `AICEFR_PUBLIC_URL` là địa chỉ người học mở trang web; liên kết trong thư nhắc dùng nó. Thiếu biến này thì hệ thống không gửi thư nhắc (nhật ký ghi lý do), nhưng mã OTP vẫn gửi được.
-7. Khởi động lại dịch vụ `core`. Thử: trang **Quên mật khẩu** → nhập email → thư có mã 6 số → đặt mật khẩu mới.
+   Liên kết trong thư nhắc dùng `AICEFR_PUBLIC_URL`. Trên máy chủ, `docker-compose.prod.yml` tự đặt biến này thành `https://<AICEFR_DOMAIN>`, nên **không** điền nó vào `.env`. Muốn liên kết trỏ về tên miền mới thì đổi `AICEFR_DOMAIN` theo mục "Trỏ trang web về tên miền" bên dưới. Máy mình (không chạy lớp production) thì tự điền `AICEFR_PUBLIC_URL`; thiếu nó thì hệ thống không gửi thư nhắc (nhật ký ghi lý do), nhưng mã OTP vẫn gửi được.
+7. Chạy lại dịch vụ: trên máy chủ, `cd /srv/aicefr && docker compose up -d` (container nào có biến đổi sẽ được tạo lại). Thử: trang **Quên mật khẩu** → nhập email → thư có mã 6 số → đặt mật khẩu mới.
 
 **Gói miễn phí của Resend:** 3.000 thư mỗi tháng, 100 thư mỗi ngày. Mỗi học viên nhận nhiều nhất một thư nhắc mỗi ngày.
 
 Tài liệu gốc: resend.com/docs/api-reference/emails/send-email, resend.com/docs/dashboard/domains/introduction.
+
+### Trỏ trang web về tên miền
+
+Làm việc này trước hoặc cùng lúc với Resend, để trang web và địa chỉ gửi thư dùng chung một tên miền.
+
+1. Namecheap → **Domain List → Manage → Advanced DNS**. Xoá hai bản ghi đỗ sẵn Namecheap tạo (`CNAME www → parkingpage.namecheap.com` và `URL Redirect @`).
+2. Thêm **A Record**: Host `@`, Value `52.64.179.250` (Elastic IP), TTL Automatic.
+3. Chờ tên miền trỏ đúng: `dig +short ten-mien.app` in ra `52.64.179.250`. **Phải chờ tới bước này rồi mới làm bước 4**: Caddy chỉ xin được chứng chỉ HTTPS khi tên miền đã trỏ về máy chủ; đổi sớm thì trang web không vào được cho tới khi DNS xong.
+4. Trên máy chủ, sửa `/srv/aicefr/.env`: `AICEFR_DOMAIN=ten-mien.app` (không có `https://`), rồi `cd /srv/aicefr && docker compose up -d`. Caddy tự xin chứng chỉ Let's Encrypt trong khoảng một phút. Kiểm tra: `curl https://ten-mien.app/healthz`.
+5. Đăng nhập bằng Google: thêm `https://ten-mien.app/auth/google/callback` vào **Authorized redirect URIs** (mục 1). Giữ dòng `sslip.io` cũ cho tới khi chắc chắn tên miền mới chạy ổn.
+6. GitHub → Settings → Secrets → Actions: `EC2_HOST` để nguyên IP thì không cần sửa gì. Nếu đổi sang tên miền thì sửa luôn `EC2_KNOWN_HOSTS` như `TRIEN_KHAI_EC2.md` bước 5.
+
+`www.ten-mien.app` không cần: Caddy chỉ phục vụ đúng `AICEFR_DOMAIN`.
 
 ## 3. MoMo (đã gỡ bởi D075)
 
