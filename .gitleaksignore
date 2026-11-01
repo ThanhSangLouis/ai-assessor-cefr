@@ -13,3 +13,4 @@ df711965876ed15a683558999daa7438ac5481b9:tests/test_review_medium.py:generic-api
 0f1db5bdde1fca45d72ef92bc536935586677995:tests/test_signup_recovery.py:generic-api-key:21
 # D071 test fixture: a made-up password for throwaway test accounts, not a secret.
 c2b7d495674c04dd3af0c981d053edfbc22dcd8a:tests/test_d071_accounts_and_classes.py:generic-api-key:25
+a4fa8a665fe9389222bff455685de7a9863ab501:.env.production.example:generic-api-key:54
