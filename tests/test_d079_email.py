@@ -3,7 +3,7 @@
 * signing up sends a code; the code verifies the address, once;
 * a forgotten password: the same answer for any address, a code that lasts ten
   minutes and is spent once, a new password and every other session ended;
-* with email off, the pages say so and the recovery code is the way in;
+* with email off, the page says to ask an administrator for a temporary password;
 * the daily reminder: only to a verified address with reminders on, only when
   the learner has not spoken today and has a reason, once a day, and the link
   in it turns reminders off without signing in.
@@ -103,18 +103,19 @@ def test_a_forgotten_password_is_replaced_with_a_code_from_the_email(m):
 
 
 @pytest.mark.integration
-def test_with_email_off_the_recovery_code_is_the_way(tmp_path, monkeypatch):
+def test_with_email_off_the_page_names_whom_to_ask(tmp_path, monkeypatch):
     m = boot(tmp_path, monkeypatch)
     anon = TestClient(m.app)
-    assert anon.post("/api/v1/auth/forgot/email", json={"email": EMAIL}).status_code == 503
+    refused = anon.post("/api/v1/auth/forgot/email", json={"email": EMAIL})
+    assert refused.status_code == 503 and "mật khẩu tạm" in refused.json()["detail"]
     page = anon.get("/forgot").text
-    assert 'id="fe"' not in page and 'id="code"' in page
+    assert 'id="fe"' not in page and "mật khẩu tạm" in page and "khôi phục" not in page
 
 
 @pytest.mark.integration
 def test_the_forgot_page_offers_the_email_code_first(m):
     page = TestClient(m.app).get("/forgot").text
-    assert 'id="fe"' in page and "Dùng mã khôi phục thay cho email" in page
+    assert 'id="fe"' in page and "khôi phục" not in page
 
 
 class Learning:

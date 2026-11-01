@@ -3,8 +3,8 @@
 `AICEFR_EMAIL_PROVIDER` picks the sender: `resend` (needs `AICEFR_RESEND_API_KEY`
 and a sender on a domain verified at Resend, `AICEFR_EMAIL_FROM`), `outbox`
 (kept in memory, for tests and a machine without a key) or `off`. With no
-sender nothing is sent and the pages say so; the recovery code (D065) still
-works.
+sender nothing is sent and the pages say so: a forgotten password then needs a
+temporary one from an administrator.
 
 The message never carries a password, a session or anything but the code or
 the reminder: a mailbox is read on many devices.

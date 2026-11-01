@@ -323,6 +323,15 @@
       "unique": true
     }
   ],
+  "review_session": [
+    {
+      "name": "u_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
   "session": [
     {
       "name": "i_account_id",

@@ -134,9 +134,9 @@ class Settings:
     # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
     # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
     google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
-    # D065: a student opens an account with a password from /signup, and gets
-    # back into it with a recovery code from /forgot. Off: accounts come from
-    # an administrator (or Google, above) only.
+    # D065: a student opens an account with a password from /signup; a
+    # forgotten one is replaced with a code sent by email from /forgot (D079).
+    # Off: accounts come from an administrator (or Google, above) only.
     self_signup: bool = field(default_factory=lambda: _flag("AICEFR_SELF_SIGNUP", True))
     # D069: who writes the learner's answer one band higher -- off, groq,
     # gemini, openrouter or anthropic (aicefr.coach.providers) -- an optional

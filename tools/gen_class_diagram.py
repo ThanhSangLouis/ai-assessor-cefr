@@ -195,8 +195,6 @@ CLASSES = [
             "- replayLabels: List<str>",
             "- reviews: Review [0..*]",
             "- upgrade: CoachUpgrade [0..1]",
-            "- reviewLock: str",
-            "- reviewVisits: List<str>",
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
@@ -216,6 +214,17 @@ CLASSES = [
             "- reason: str",
             "- openedAt: datetime",
             "- decidedAt: datetime",
+        ],
+    ),
+    # D082: reviewing a response, apart from it: who holds it now and every visit.
+    _e(
+        "RevSess",
+        "ReviewSession",
+        [
+            "- response: Response [1]",
+            "- lockedBy: Account [0..1]",
+            "- lockedUntil: datetime",
+            "- visits: List<str>",
         ],
     ),
     # D069: the learner's answer rewritten one band higher, made once on request
@@ -490,6 +499,8 @@ EDGES = [
     ("Resp", "Upgrade", "1 : 0..1", "comp"),
     ("Upgrade", "Phrase", "1 : 0..*", "comp"),
     ("Review", "Account", "0..* : 1", "assoc"),
+    ("RevSess", "Resp", "0..1 : 1", "assoc"),
+    ("RevSess", "Account", "0..* : lockedBy 0..1", "assoc"),
     # D071: a class has its teachers and its members, both many-to-many; the
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
@@ -555,7 +566,7 @@ ZONES = [
     ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
-      (3, ["Purpose", "Status", "Band", "Criterion"])]),
+      (3, ["Purpose", "Status", "Band", "Criterion", "RevSess"])]),
     ("learning", "Học tập", 1,
      [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["PathSt", ("StepKind", "Step")])]),

@@ -1,4 +1,4 @@
-// Self sign-up (D065, D071): an email, a full name and a password in; a recovery code out.
+// Self sign-up (D065, D071): an email, a full name and a password in; signed in.
 const form = document.getElementById("f");
 const button = document.getElementById("b");
 const box = document.getElementById("tb");
@@ -43,14 +43,12 @@ form.onsubmit = async (e) => {
     }
     form.hidden = true;
     document.getElementById("done").hidden = false;
-    window.showRecoverySlip(d.email || d.pseudonym, d.recovery_code);
     // D079: a verification code went out with the account.
     document.getElementById("verify-note").hidden = d.email_verification !== "sent";
     const go = document.getElementById("go");
     if (typeof d.home === "string" && d.home.startsWith("/") && !d.home.startsWith("//")) {
       go.href = d.home;
     }
-    window.guardUntilKept(document.getElementById("kept"), go);
   } catch (err) {
     fail("Không kết nối được máy chủ. Tài khoản chưa được tạo.");
   } finally {

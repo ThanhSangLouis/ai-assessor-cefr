@@ -4,8 +4,8 @@ verifying an address, and the switch for study reminders.
 * A forgotten password: the learner types their email, gets a six-digit code
   valid ten minutes, and sets a new password with it. The answer to "send me a
   code" is the same whether the email has an account or not, so nobody learns
-  who is registered. The recovery code of D065 stays as the way in without
-  email.
+  who is registered. With email off, an administrator hands out a temporary
+  password (the recovery code of D065 is gone, D081).
 * Verifying an address: signing up sends a code; the account page sends another
   on request. Only a verified address gets study reminders.
 * Reminders: on by default for a verified address, off from the account page
@@ -40,7 +40,7 @@ from aicefr.storage.auth_repository import (
 router = APIRouter()
 
 NO_STORE = {"Cache-Control": "no-store"}
-OFF = "hệ thống chưa bật gửi email; hãy dùng mã khôi phục"
+OFF = "hệ thống chưa bật gửi email; hãy báo quản trị viên để nhận mật khẩu tạm"
 
 
 @dataclass

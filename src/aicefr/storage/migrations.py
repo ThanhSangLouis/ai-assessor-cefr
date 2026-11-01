@@ -629,6 +629,55 @@ def _d078_research_data(db: Database, target: str) -> None:
             )
 
 
+def _d081_recovery_code(db: Database, target: str) -> None:
+    """The recovery codes of D065 go: a forgotten password is replaced by email (D079).
+
+    Only the bcrypt hash of each code and when it was made were kept; both are
+    removed from every account. Approved by the project owner on 01/11/2026.
+    """
+    if _has(db, "account"):
+        db["account"].update_many(
+            {
+                "$or": [
+                    {"recovery_hash": {"$exists": True}},
+                    {"recovery_issued_at": {"$exists": True}},
+                ]
+            },
+            {"$unset": {"recovery_hash": "", "recovery_issued_at": ""}},
+        )
+
+
+def _d082_review_session(db: Database, target: str) -> None:
+    """Reviewing a response becomes its own `review_session` (D082).
+
+    `response.review_lock` (who may decide now) and `response.review_visits`
+    (when each teacher opened it and left, D041) move into one session per
+    response, `lock` and `visits`; the response keeps the submission, the
+    result and the decisions. Nothing is lost: a response with neither gets no
+    session, which is what a response nobody has opened has.
+    """
+    ensure_indexes(db, {"review_session": [(("response_id",), True)]}, "migration-13")
+    if not _has(db, "response"):
+        return
+    moved = {"review_lock": 1, "review_visits": 1, "response_id": 1}
+    held = {"$or": [{"review_lock": {"$ne": None}}, {"review_visits.0": {"$exists": True}}]}
+    for r in db["response"].find(held, moved):
+        db["review_session"].update_one(
+            {"response_id": r["response_id"]},
+            {
+                "$setOnInsert": {
+                    "lock": r.get("review_lock"),
+                    "visits": r.get("review_visits") or [],
+                }
+            },
+            upsert=True,
+        )
+    db["response"].update_many(
+        {"$or": [{"review_lock": {"$exists": True}}, {"review_visits": {"$exists": True}}]},
+        {"$unset": {"review_lock": "", "review_visits": ""}},
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -652,6 +701,10 @@ MIGRATIONS: tuple[Migration, ...] = (
         11,
         "blind rating, feedback study and exam part removed with their data (D078)",
         _d078_research_data,
+    ),
+    Migration(12, "account: the recovery code of D065 removed (D081)", _d081_recovery_code),
+    Migration(
+        13, "review_session: lock and visits leave the response (D082)", _d082_review_session
     ),
 )
 

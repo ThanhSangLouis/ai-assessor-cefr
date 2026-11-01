@@ -2,8 +2,8 @@
 
 FR-32 (sign-in), FR-36 (audit). There is no terms-of-use step any more (D064):
 a signed-in learner records straight away. D065: a student may open an account
-with a password (/signup) and replace a forgotten one with a recovery code
-(/forgot) -- the system keeps no email address to send a reset link to.
+with a password (/signup); a forgotten one is replaced with a code sent by
+email (D079, `email_api`). The recovery code of D065 is gone (D081).
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi import Response as HttpResponse
 
 from aicefr.api.deps import ADMIN_ONLY, ROLE_HOME, require_login, set_session_cookie
-from aicefr.api.schemas import LoginRequest, RecoverRequest, SignupRequest
+from aicefr.api.schemas import LoginRequest, SignupRequest
 from aicefr.auth.sessions import COOKIE_NAME, device_label
 from aicefr.config import get_settings
 from aicefr.contracts import AuditEntry
@@ -105,7 +105,7 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
     }
 
 
-# A response carrying a recovery code must not be kept by a browser or a proxy.
+# A response that signs somebody in must not be kept by a browser or a proxy.
 NO_STORE = {"Cache-Control": "no-store"}
 
 
@@ -114,16 +114,16 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     """Open a student account with an email, a full name and a password; sign it in.
 
     D065, D071. The email is how the person signs in from now on; the
-    pseudonym is the system's choice and stays inside. The recovery code that
-    comes back is shown once: it is the one way back in without an administrator.
-    Only students sign themselves up; a teacher or an administrator is given
-    their role by somebody with authority (FR-32).
+    pseudonym is the system's choice and stays inside. A forgotten password is
+    replaced with a code sent to the email (D079). Only students sign
+    themselves up; a teacher or an administrator is given their role by
+    somebody with authority (FR-32).
     """
     if not get_settings().self_signup:
         raise HTTPException(404, "máy chủ này không cho tự đăng ký")
     s = svc()
     try:
-        aid, pseudonym, code, token = s.auth.signup(
+        aid, pseudonym, token = s.auth.signup(
             info.email,
             info.full_name,
             info.password,
@@ -148,53 +148,8 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     return {
         "pseudonym": pseudonym,
         "email": row["email"],
-        "recovery_code": code,
         "home": ROLE_HOME[Role.STUDENT],
         "email_verification": verification,
-    }
-
-
-@router.post("/api/v1/auth/recover", tags=["auth"])
-def recover(info: RecoverRequest, request: Request, response: HttpResponse) -> dict:
-    """Replace a forgotten password with the recovery code; sign in (D065).
-
-    Answers a wrong email and a wrong code with the same sentence, as the
-    login does. A wrong code counts towards the lockout (NFR-07). On success
-    every other session of the account ends and a new code replaces the one
-    just used, shown once.
-    """
-    s = svc()
-    known = s.auth.by_sign_in_name(info.identifier)
-    try:
-        done = s.auth.recover(
-            info.identifier,
-            info.recovery_code,
-            info.new_password,
-            device_label(request.headers.get("user-agent")),
-        )
-    except AccountLocked as e:
-        if known is not None:
-            s.audit_log.write(
-                known["pseudonym"], "auth.recover_failed", known["account_id"], "locked"
-            )
-        raise HTTPException(429, f"tài khoản tạm khóa đến {e.args[0]}, thử lại sau") from e
-    except ValueError as e:
-        raise HTTPException(422, str(e)) from e
-    if done is None:
-        if known is not None:
-            s.audit_log.write(
-                known["pseudonym"], "auth.recover_failed", known["account_id"], "wrong_code"
-            )
-        raise HTTPException(401, "email hoặc mã khôi phục không đúng")
-    token, row, code = done
-    s.audit_log.write(row["pseudonym"], "account.recover", row["account_id"], None)
-    set_session_cookie(response, token)
-    response.headers.update(NO_STORE)
-    return {
-        "pseudonym": row["pseudonym"],
-        "email": row["email"],
-        "recovery_code": code,
-        "home": ROLE_HOME.get(Role(row["role"]), "/"),
     }
 
 

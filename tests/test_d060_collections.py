@@ -237,3 +237,21 @@ def test_units_versions_media_and_attempts_find_their_lessons_and_paths(db):
     gone = {"lesson_path", "lesson_unit", "lesson_version", "lesson_media", "step_attempt",
             "lesson_meta"}  # fmt: skip
     assert not gone & set(db.list_collection_names())
+
+
+def test_d082_moves_the_lock_and_the_visits_into_a_review_session(db):
+    db["response"].insert_many(
+        [
+            {"response_id": "r1", "review_lock": {"reviewer_id": "t", "locked_until": "t9"},
+             "review_visits": [{"reviewer_id": "t", "opened_at": "t1", "decided_at": None}]},
+            {"response_id": "r2", "review_lock": None, "review_visits": []},
+        ]
+    )  # fmt: skip
+
+    _twice(lambda d: migrations._d082_review_session(d, "mongomock://x"), db)
+
+    session = db["review_session"].find_one({"response_id": "r1"})
+    assert session["lock"]["reviewer_id"] == "t" and session["visits"][0]["opened_at"] == "t1"
+    assert db["review_session"].count_documents({"response_id": "r2"}) == 0  # never opened
+    for r in db["response"].find():
+        assert "review_lock" not in r and "review_visits" not in r

@@ -11,7 +11,7 @@
     <ul class="auth-points">
       <li>Đăng nhập bằng email và mật khẩu, hoặc bằng Google với cùng email.</li>
       <li>Giảng viên lớp bạn thấy họ tên của bạn khi chấm bài.</li>
-      <li>Mã khôi phục giúp bạn đặt lại mật khẩu khi quên.</li>
+      <li>Quên mật khẩu thì nhận mã đặt lại qua email.</li>
     </ul>
   </section>
 
@@ -38,12 +38,10 @@
     </form>
 
     <div id="done" hidden>
-      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập. Ghi lại mã khôi phục dưới đây.</p>
+      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập.</p>
       <p class="notice" id="verify-note" hidden>Đã gửi mã xác minh tới email của bạn. Nhập mã ở trang Tài khoản để nhận nhắc học và đặt lại mật khẩu qua email.</p>
-      {% include "_recovery_slip.html" %}
-      <label class="check-row"><input type="checkbox" id="kept"> Tôi đã lưu mã khôi phục</label>
       <div class="button-row">
-        <a class="button" id="go" href="/practice" aria-disabled="true">Bắt đầu luyện nói</a>
+        <a class="button" id="go" href="/practice">Bắt đầu luyện nói</a>
       </div>
     </div>
 

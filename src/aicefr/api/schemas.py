@@ -58,14 +58,6 @@ class SignupRequest(BaseModel):
     password: str = Field(min_length=1, max_length=256)
 
 
-class RecoverRequest(BaseModel):
-    """A forgotten password replaced with the recovery code (D065)."""
-
-    identifier: str = Field(min_length=1, max_length=254, validation_alias=SIGN_IN_NAME)
-    recovery_code: str = Field(min_length=1, max_length=64)
-    new_password: str = Field(min_length=1, max_length=256)
-
-
 class EraseRequest(BaseModel):
     """Erasure request. The id is sent twice on purpose.
 

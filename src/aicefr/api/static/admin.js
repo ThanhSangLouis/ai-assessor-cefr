@@ -441,6 +441,7 @@ const ACTIVITY_NAMES = {
   "account.google_unlink": "Gỡ liên kết Google",
   "account.signup": "Tự đăng ký",
   "account.google_signup": "Đăng ký bằng Google",
+  // The recovery code (D065) is gone since D081; its past entries stay in the log.
   "account.recovery_code": "Tạo mã khôi phục",
   "account.recover": "Đặt lại mật khẩu bằng mã khôi phục",
   "account.contact": "Đổi họ tên hoặc email",

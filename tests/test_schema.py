@@ -44,6 +44,7 @@ def test_every_identifier_a_table_had_as_key_is_unique():
     # (a review, a lesson version) needs no key of its own.
     keys = {
         "response": ["response_id"],
+        "review_session": ["response_id"],  # D082: one per response
         "account": ["account_id"],
         "session": ["token_hash"],
         "task": ["task_id"],

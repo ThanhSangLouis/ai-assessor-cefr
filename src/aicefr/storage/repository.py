@@ -48,9 +48,10 @@ from aicefr.storage.db import now_iso as _now
 # response.purpose is 'practice' for a practice attempt (D023): never in the
 # teacher queue, the research export, or the class scoring statistics.
 # A response's document holds its parts (D060): `reviews` (each teacher
-# decision), `review_lock` (who may decide right now), `review_visits` (when a
-# teacher opened it and when they left, D041 -- the lock is cleared on decision,
-# so its start is kept here) and `replay_labels` (guided listening, D056).
+# decision) and `replay_labels` (guided listening, D056). Reviewing it is a
+# `review_session` of its own (D082), at most one per response: `lock` (who may
+# decide right now) and `visits` (when a teacher opened it and when they left,
+# D041 -- the lock is cleared on decision, so its start is kept there).
 # The settings an administrator changes at run time live in `system` under
 # `assessment.` (D060). When a person last looked at something that can change
 # behind their back (D028) is on their account, asked of the identity part.
@@ -64,6 +65,7 @@ INDEXES = {
         (("reviews.created_at",), False),
         (("replay_labels.account_id",), False),
     ],
+    "review_session": [(("response_id",), True)],
 }
 
 LIST_FIELDS = (
@@ -109,14 +111,14 @@ def _record_decision(
     """
     _claim_decision(db, response_id, status)
     owner = db["response"].find_one(
-        {"response_id": response_id},
-        {"speaker_id": 1, "task_id": 1, "account_id": 1, "review_visits": 1},
+        {"response_id": response_id}, {"speaker_id": 1, "task_id": 1, "account_id": 1}
     )
+    session = db["review_session"].find_one({"response_id": response_id}, {"visits": 1})
     old_score, new_score, old_band, new_band = scores
     visit = next(
         (
             v
-            for v in (owner or {}).get("review_visits") or []
+            for v in (session or {}).get("visits") or []
             if v["reviewer_id"] == reviewer_id and v.get("decided_at") is None
         ),
         None,
@@ -424,37 +426,43 @@ class Repository(MongoStore):
         """
         until = (datetime.now(UTC) + timedelta(minutes=minutes)).isoformat(timespec="seconds")
         claim = {"reviewer_id": reviewer_id, "reviewer_name": reviewer_name, "locked_until": until}
-        # One conditional write on the response, so the check and the claim
-        # cannot be interleaved. Reading the lock and then writing it left a
-        # window in which two teachers both read "nobody holds this" and both
-        # wrote their own claim. Here the update takes the response only when
-        # nobody holds it, the lock has run out, or it is one's own.
-        self.col("response").update_one(
-            {
-                "response_id": response_id,
-                "$or": [
-                    {"review_lock": None},
-                    {"review_lock.locked_until": {"$lte": _now()}},
-                    {"review_lock.reviewer_id": reviewer_id},
-                ],
-            },
-            {"$set": {"review_lock": claim}},
-        )
+        # One conditional write, so the check and the claim cannot be
+        # interleaved. Reading the lock and then writing it left a window in
+        # which two teachers both read "nobody holds this" and both wrote their
+        # own claim. Here the update takes the session only when nobody holds
+        # it, the lock has run out, or it is one's own; with no session yet it
+        # makes one, and the unique index on `response_id` lets only one of two
+        # racing teachers make it.
+        try:
+            self.col("review_session").update_one(
+                {
+                    "response_id": response_id,
+                    "$or": [
+                        {"lock": None},
+                        {"lock.locked_until": {"$lte": _now()}},
+                        {"lock.reviewer_id": reviewer_id},
+                    ],
+                },
+                {"$set": {"lock": claim}, "$setOnInsert": {"visits": []}},
+                upsert=True,
+            )
+        except IntegrityError:
+            pass  # somebody else holds the session; read below who
         lock = self._lock(response_id)
         if lock is not None and not lock.is_held_by(reviewer_id):
             return False, lock.reviewer_name
         return True, None
 
     def _lock(self, response_id: str) -> ReviewLock | None:
-        row = self.col("response").find_one({"response_id": response_id}, {"review_lock": 1})
-        held = (row or {}).get("review_lock")
+        row = self.col("review_session").find_one({"response_id": response_id}, {"lock": 1})
+        held = (row or {}).get("lock")
         return ReviewLock(response_id=response_id, **held) if held else None
 
     def unlock_response(self, response_id: str, reviewer_id: str) -> None:
         """Release the lock. Only the current holder can release it."""
-        self.col("response").update_one(
-            {"response_id": response_id, "review_lock.reviewer_id": reviewer_id},
-            {"$set": {"review_lock": None}},
+        self.col("review_session").update_one(
+            {"response_id": response_id, "lock.reviewer_id": reviewer_id},
+            {"$set": {"lock": None}},
         )
 
     def locked_by(self, response_id: str) -> str | None:
@@ -494,17 +502,20 @@ class Repository(MongoStore):
         return [_profile_row(fields(r, names)) for r in rows]  # type: ignore[arg-type]
 
     def open_review_session(self, response_id: str, reviewer_id: str) -> None:
-        """Note that a teacher opened a response for review; once per open visit."""
-        self.col("response").update_one(
+        """Note that a teacher opened a response for review; once per open visit.
+
+        Called after `lock_response`, which made the session.
+        """
+        self.col("review_session").update_one(
             {
                 "response_id": response_id,
-                "review_visits": {
+                "visits": {
                     "$not": {"$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}}
                 },
             },
             {
                 "$push": {
-                    "review_visits": {
+                    "visits": {
                         "reviewer_id": reviewer_id,
                         "opened_at": _now(),
                         "decided_at": None,
@@ -518,35 +529,15 @@ class Repository(MongoStore):
         now = _now()
         # One open visit per reviewer at a time; the loop closes a stray second.
         for _ in range(4):
-            done = self.col("response").update_one(
+            done = self.col("review_session").update_one(
                 {
                     "response_id": response_id,
-                    "review_visits": {
-                        "$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}
-                    },
+                    "visits": {"$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}},
                 },
-                {
-                    "$set": {
-                        "review_visits.$.decided_at": now,
-                        "review_visits.$.action": action,
-                    }
-                },
+                {"$set": {"visits.$.decided_at": now, "visits.$.action": action}},
             )
             if not done.modified_count:
                 return
-
-    def review_sessions(self, limit: int = 5000) -> list[dict]:
-        rows = self.col("response").find(
-            {"review_visits.decided_at": {"$ne": None}}, {"review_visits": 1}
-        )
-        visits = [
-            {"opened_at": v["opened_at"], "decided_at": v["decided_at"], "action": v["action"]}
-            for r in rows
-            for v in r.get("review_visits") or []
-            if v.get("decided_at") is not None
-        ]
-        visits.sort(key=lambda v: v["decided_at"], reverse=True)
-        return visits[:limit]
 
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         """One learner's results over time, machine estimate and verified alike.
@@ -816,16 +807,16 @@ class Repository(MongoStore):
     def _forget_responses(self, ids: list[str]) -> None:
         """The responses, with everything their documents hold.
 
-        The review history, the lock and the replay labels are part of the
-        response's own document (D060) and go with it.
+        The review history and the replay labels are part of the response's
+        own document (D060) and go with it; its review session (D082) is
+        removed beside it.
         """
         if not ids:
             return
         db = self.db
         within = {"response_id": {"$in": ids}}
-        # The reviews, the lock, the visits and the replay labels are part of
-        # the response document and go with it.
         db["response"].delete_many(within)
+        db["review_session"].delete_many(within)
 
     def erase_speaker(self, speaker_id: str, actor_id: str) -> dict:
         """Delete one participant's recordings and reports. Irreversible.
@@ -1099,10 +1090,17 @@ class Repository(MongoStore):
             .limit(limit)
         )
         now = _now()
+        locks = {
+            x["response_id"]: x.get("lock")
+            for x in self.col("review_session").find(
+                {"response_id": {"$in": [r["response_id"] for r in rows]}},
+                {"response_id": 1, "lock": 1},
+            )
+        }
         out = []
         for r in rows:
             item = fields(r, LIST_FIELDS)
-            lock = r.get("review_lock")
+            lock = locks.get(r["response_id"])
             held = lock is not None and lock["locked_until"] > now
             item["locked_by"] = lock["reviewer_name"] if held else None  # type: ignore[index]
             item["account_id"] = r.get("account_id")

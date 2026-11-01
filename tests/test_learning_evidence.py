@@ -104,10 +104,13 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     assert teacher.post(f"/api/v1/review/{rid}/lock").status_code == 200
     r = teacher.post(f"/api/v1/review/{rid}", json={"new_band": "B1", "reason": "đúng mức"})
     assert r.status_code == 200, r.text
-    sessions = m.repo.review_sessions()
-    assert len(sessions) == 1
-    assert sessions[0]["action"] == "decision" and sessions[0]["decided_at"]
-    visits = store()["response"].find_one({"response_id": rid})["review_visits"]
+    # D082: the lock and the visits are the response's review session, apart.
+    session = store()["review_session"].find_one({"response_id": rid})
+    visits = session["visits"]
     assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
+    assert visits[0]["action"] == "decision" and visits[0]["decided_at"]
+    assert session["lock"] is None  # cleared by the decision
+    response = store()["response"].find_one({"response_id": rid})
+    assert "review_lock" not in response and "review_visits" not in response
     # The decision carries when the teacher opened the response (D041, D060).
     assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
