@@ -46,7 +46,6 @@ from aicefr.services.core.assessment.context import (
     svc,
 )
 from aicefr.storage.auth_repository import Account
-from aicefr.storage.repository import InvalidStateError
 from aicefr.storage.task_repository import Task
 
 logger = logging.getLogger(__name__)
@@ -221,31 +220,6 @@ def _band_thresholds() -> dict[str, float]:
     from aicefr.scoring.scorer import load_model
 
     return thresholds_of(load_model(active_model_name()).get("band_thresholds"))
-
-
-@router.delete("/api/v1/responses/{response_id}", tags=["student"])
-def delete_my_response(response_id: str, account: Account = Depends(require_login)) -> dict:
-    """A student deletes one of their own recordings. FR-35.
-
-    Ownership is checked before anything else, and a response belonging to
-    someone else answers **404, not 403**: 403 would confirm that the id exists.
-    The everyday case -- one bad recording somebody wants gone -- must not wait
-    on a request to staff.
-    """
-    repo = svc().repo
-    if repo.owner_of(response_id) != account.account_id:
-        raise HTTPException(404, "không tìm thấy bài này")
-    try:
-        deleted = repo.erase_one_response(response_id, account.account_id)
-    except InvalidStateError as e:
-        # 409, not 403: the request is well formed and the caller is entitled to
-        # it; the response is simply in a state that no longer accepts deletion.
-        raise HTTPException(409, str(e)) from e
-    if not deleted:
-        raise HTTPException(404, "không tìm thấy bài này")
-    if svc().replays is not None:
-        svc().replays.forget_response(response_id)
-    return {"deleted": response_id}
 
 
 @router.get("/api/v1/responses/{response_id}/audio", tags=["student"])

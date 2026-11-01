@@ -756,27 +756,6 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
     )
 
 
-@router.delete("/api/v1/learn/attempts/{attempt_id}", tags=["student"])
-def delete_attempt(attempt_id: str, account: Account = Depends(require_login)) -> dict:
-    """A learner removes one of their own recordings (FR-35, learner side)."""
-    lessons_repo = svc().lessons
-    try:
-        row = lessons_repo.attempt(attempt_id)
-    except NotFound:
-        raise HTTPException(404, "không tìm thấy bản ghi") from None
-    if row["account_id"] != account.account_id:
-        raise HTTPException(404, "không tìm thấy bản ghi")
-    key = lessons_repo.delete_attempt(attempt_id)
-    if key:
-        try:
-            svc().blobs.delete(key)
-        except (FileNotFoundError, OSError):
-            pass
-    # Who asked and what went, never what it contained (AC-35.5).
-    svc().audit_log.write(account.account_id, "ERASE_OWN_LESSON_ATTEMPT", attempt_id, None)
-    return {"status": "ok"}
-
-
 @router.get("/api/v1/learn/media/{key}", tags=["student"])
 def lesson_media(key: str, account: Account = Depends(require_login)) -> HttpResponse:
     try:

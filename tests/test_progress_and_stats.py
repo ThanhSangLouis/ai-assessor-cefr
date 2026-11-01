@@ -263,76 +263,30 @@ def test_signed_in_pages_mark_the_current_nav_item_for_each_role(app) -> None:
 # ---------------------------------------------------------------- FR-35 (tự xoá)
 
 
-def test_nguoi_hoc_tu_xoa_duoc_bai_cua_minh(app, tmp_path) -> None:
-    """Quyền xoá phải tự thực hiện được, không phải xin ai.
-
-    Erasure by participant đã có ở `/api/v1/admin/erase`, nhưng đó là việc của
-    quản trị viên khi có người rút đồng thuận. Trường hợp thường ngày — một bản
-    ghi nói vấp muốn bỏ đi — mà phải nhờ người khác thì quyền đó biến thành một
-    hàng đợi.
-    """
+def test_chi_quan_tri_vien_xoa_duoc_bai_nguoi_hoc_khong_tu_xoa(app) -> None:
+    """D078: học viên không tự xoá bài; chỉ quản trị viên xoá dữ liệu của một người."""
     c = login_as(app, "SV-001", "student")
     rid = _submit(c)
+    assert c.delete(f"/api/v1/responses/{rid}").status_code == 405
+    assert len(c.get("/api/v1/me/responses").json()) == 1
 
-    assert c.delete(f"/api/v1/responses/{rid}").status_code == 200
-    assert c.get("/api/v1/me/responses").json() == []
 
-
-def test_xoa_bai_thi_xoa_ca_tep_ghi_am(app) -> None:
+def test_quan_tri_vien_xoa_thi_xoa_ca_tep_ghi_am(app) -> None:
     """Xoá dòng mà để lại tệp thì lời hứa xoá là lời nói dối.
 
     Giọng nói của một người là dữ liệu cá nhân dù còn dòng nào trỏ tới nó hay không.
     """
     import pathlib
 
+    from aicefr.api import main as m
+
     c = login_as(app, "SV-001", "student")
     rid = _submit(c)
-    path = app.state.repo.audio_path_of(rid) if hasattr(app.state, "repo") else None
-    if path is None:
-        from aicefr.api import main as m
-
-        path = m.repo.audio_path_of(rid)
+    path = m.repo.audio_path_of(rid)
     assert path and pathlib.Path(path).is_file()
 
-    c.delete(f"/api/v1/responses/{rid}")
+    admin = login_as(app, "QT-01", "admin")
+    body = {"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+    assert admin.post("/api/v1/admin/erase", json=body).status_code == 200
     assert not pathlib.Path(path).exists()
-
-
-def test_khong_xoa_duoc_bai_cua_nguoi_khac_va_tra_404_chu_khong_403(app) -> None:
-    """403 tự nó đã là một tiết lộ: nó xác nhận mã bài đó có thật."""
-    a = login_as(app, "SV-001", "student")
-    b = login_as(app, "SV-002", "student")
-    rid = _submit(a)
-
-    assert b.delete(f"/api/v1/responses/{rid}").status_code == 404
-    assert len(a.get("/api/v1/me/responses").json()) == 1
-
-
-def test_bai_giang_vien_da_xac_nhan_thi_khong_tu_xoa_duoc(app) -> None:
-    """Kết quả đã xác nhận là bản ghi của một quyết định có người chịu trách nhiệm.
-
-    Nhật ký kiểm toán đứng sau nó phải còn trỏ tới một thứ có thật.
-    """
-    student = login_as(app, "SV-001", "student")
-    rid = _submit(student)
-    _force_score(app, rid, 3.5)
-
-    teacher = login_as(app, "GV-01", "teacher")
-    teacher.post(f"/api/v1/review/{rid}/lock")
-    teacher.post(f"/api/v1/review/{rid}", json={"reason": "Nghe lại, đồng ý với máy."})
-
-    r = student.delete(f"/api/v1/responses/{rid}")
-    assert r.status_code == 409
-    assert "giảng viên" in r.json()["detail"]
-
-
-def test_tu_xoa_bai_duoc_ghi_vao_nhat_ky_kiem_toan(app) -> None:
-    """Ghi lại rằng đã có một lần xoá, nhưng không ghi lại nội dung đã xoá."""
-    c = login_as(app, "SV-001", "student")
-    rid = _submit(c)
-    c.delete(f"/api/v1/responses/{rid}")
-
-    rows = login_as(app, "QT-01", "admin").get("/api/v1/audit").json()
-    entry = next(r for r in rows if r["action"] == "ERASE_OWN_RESPONSE")
-    assert entry["target_id"] == rid
-    assert entry["actor_id"]
+    assert c.get("/api/v1/me/responses").json() == []

@@ -393,12 +393,12 @@ def test_assessment_response_cannot_be_opened_as_practice(m):
     assert student.get("/api/v1/practice/attempts/no-such-id").status_code == 404
 
 
-def test_deleting_your_practice_attempt_removes_it_from_the_path(m):
+def test_a_learner_cannot_delete_a_practice_attempt(m):
+    """D078: only an administrator erases a learner's data."""
     student = login_as(m, "SV-001")
     rid = submit(student, "PR-COH-A2")
-    assert student.delete(f"/api/v1/responses/{rid}").status_code == 200
-    assert student.get(f"/api/v1/practice/attempts/{rid}").status_code == 404
-    assert student.get("/api/v1/me/responses").json() == []
+    assert student.delete(f"/api/v1/responses/{rid}").status_code == 405
+    assert student.get(f"/api/v1/practice/attempts/{rid}").status_code == 200
 
 
 def test_class_stats_keep_practice_apart_from_scoring_numbers(m):

@@ -855,46 +855,6 @@ class Repository(MongoStore):
         )
         return preview
 
-    def erase_one_response(self, response_id: str, actor_id: str) -> bool:
-        """Delete a single response: its document, its review history, its audio file.
-
-        Separate from `erase_speaker` because the two answer different requests.
-        `erase_speaker` is an administrator acting on a request to erase and
-        removes everything a person ever submitted. This is a person deleting one
-        recording of their own -- "I mumbled through that one, take it off" --
-        and it must not require asking anybody. A right that needs someone else
-        to act on your behalf is a queue, not a right.
-
-        A response a teacher has already verified is refused, and the caller is
-        told why. The verified result is a record of a decision somebody made,
-        and the audit trail behind it has to keep pointing at something real.
-
-        Returns False when there is nothing to delete, so the caller can answer
-        404 rather than claim success for a response that never existed.
-        """
-        row = self.col("response").find_one(
-            {"response_id": response_id}, {"audio_path": 1, "teacher_verified": 1}
-        )
-        if row is None:
-            return False
-        if row.get("teacher_verified"):
-            raise InvalidStateError(
-                "bài đã được giảng viên xác nhận nên không tự xoá được;"
-                " hãy liên hệ giảng viên phụ trách"
-            )
-
-        # The recording, not only the document. A recording of someone's voice
-        # is personal data whether or not a document still points at it.
-        self._drop_audio(row.get("audio_path"))
-        self._forget_responses([response_id])
-        # The entry records that a deletion happened and who asked for it. It
-        # carries no transcript and no score: an audit log that keeps a copy of
-        # what was deleted has not deleted it.
-        _audit(
-            self.db, actor_id, "ERASE_OWN_RESPONSE", response_id, "người học tự xoá bài của mình"
-        )
-        return True
-
     def audio_path_of(self, response_id: str) -> str | None:
         """Filesystem path of a response's audio file.
 

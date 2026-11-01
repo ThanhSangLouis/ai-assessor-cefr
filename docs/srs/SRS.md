@@ -761,7 +761,9 @@ Yêu cầu khó của màn hình này không phải vẽ biểu đồ mà là **
 | **AC-34.1** — *Given* sinh viên gửi yêu cầu xuất, *When* admin chạy `POST /api/v1/admin/export/{participant_id}`, *Then* sinh file JSON chứa đủ các response của người đó và danh sách các trường dữ liệu kèm mục đích sử dụng. |
 | **AC-34.2** — *Given* gói xuất đã sinh, *When* kiểm tra nội dung, *Then* không chứa dữ liệu của bất kỳ `participant_id` nào khác. |
 
-### FR-35 — Xóa dữ liệu khi rút đồng thuận
+### FR-35 — Quản trị viên xoá dữ liệu của một người học
+
+> **D078 (01/11/2026).** Chỉ quản trị viên xoá dữ liệu (UC-07); học viên không còn tự xoá bài hay lượt học (AC-35.5..AC-35.7 thành lịch sử). Học viên vẫn tải được toàn bộ dữ liệu của mình (FR-34, UC-16) và báo quản trị viên khi muốn xoá.
 
 **Mô tả:** Quản trị viên thực hiện quy trình xóa: xác minh `participant_id` → liệt kê artifact liên quan → xóa audio gốc, audio chuẩn hóa, transcript, feature, báo cáo → ghi deletion log không chứa PII.
 **Ưu tiên:** M
@@ -772,9 +774,9 @@ Yêu cầu khó của màn hình này không phải vẽ biểu đồ mà là **
 | **AC-35.2** — *Given* xác nhận xóa thật, *When* lệnh hoàn tất, *Then* không còn file audio nào của `participant_id` đó trên đĩa và các bản ghi DB bị xóa hoặc đánh dấu `withdrawn = true` theo chính sách retention đã duyệt. |
 | **AC-35.3** — *Given* xóa đã hoàn tất, *When* đọc deletion log, *Then* log chứa `participant_id` giả danh, số artifact đã xử lý, thời điểm, người thực hiện — và **không** chứa họ tên, email hoặc nội dung transcript. |
 | **AC-35.4** — *Given* mô hình đã huấn luyện trước thời điểm rút, *When* sinh thông báo cho người dùng, *Then* thông báo nêu rõ mốc cutoff và không hứa xóa dữ liệu khỏi mô hình đã phát hành. |
-| **AC-35.5** — *Given* người học có một bài chưa được giảng viên xác nhận, *When* họ tự xoá bài đó, *Then* dòng dữ liệu **và tệp ghi âm** đều biến mất, và nhật ký kiểm toán ghi lại rằng đã có một lần xoá cùng người yêu cầu — nhưng **không** giữ lại nội dung đã xoá. |
-| **AC-35.6** — *Given* một bài thuộc về người học khác, *When* ai đó gọi lệnh xoá bài đó, *Then* hệ thống trả **404 chứ không phải 403** — 403 tự nó xác nhận mã bài đó có thật. |
-| **AC-35.7** — *Given* một bài đã được giảng viên xác nhận, *When* người học tự xoá, *Then* hệ thống từ chối kèm lý do: kết quả đã xác nhận là bản ghi của một quyết định, và nhật ký kiểm toán đứng sau nó phải còn trỏ tới một thứ có thật. |
+| ~~AC-35.5~~ *(gỡ bởi D078)* — *Given* người học có một bài chưa được giảng viên xác nhận, *When* họ tự xoá bài đó, *Then* dòng dữ liệu **và tệp ghi âm** đều biến mất, và nhật ký kiểm toán ghi lại rằng đã có một lần xoá cùng người yêu cầu — nhưng **không** giữ lại nội dung đã xoá. |
+| ~~AC-35.6~~ *(gỡ bởi D078)* — *Given* một bài thuộc về người học khác, *When* ai đó gọi lệnh xoá bài đó, *Then* hệ thống trả **404 chứ không phải 403** — 403 tự nó xác nhận mã bài đó có thật. |
+| ~~AC-35.7~~ *(gỡ bởi D078)* — *Given* một bài đã được giảng viên xác nhận, *When* người học tự xoá, *Then* hệ thống từ chối kèm lý do: kết quả đã xác nhận là bản ghi của một quyết định, và nhật ký kiểm toán đứng sau nó phải còn trỏ tới một thứ có thật. |
 
 > **Ghi chú phạm vi.** FR-35 nay có **hai đường**, phục vụ hai tình huống khác nhau. Quản trị viên xoá theo người tham gia khi có người rút đồng thuận (các AC 35.1–35.4). Người học tự xoá **một** bài của mình cho trường hợp thường ngày — một bản ghi nói vấp muốn bỏ đi (AC 35.5–35.7). Bắt tình huống thứ hai phải nhờ người khác sẽ biến quyền xoá thành một hàng đợi.
 
@@ -1601,7 +1603,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-11 | Xuất hồ sơ năng lực nói đã kiểm duyệt | Giảng viên | — | FR-38 | S |
 | UC-12 | Huấn luyện lại mô hình từ manifest đã khóa | Quản trị viên | — | FR-18..20 | S |
 | ~~UC-13~~ *(gỡ bởi D064)* | Sinh viên ký phiếu đồng thuận | Sinh viên | — | — | — |
-| UC-14 | Sinh viên tự xoá bài và dữ liệu của mình | Sinh viên | — | FR-35 | M |
+| ~~UC-14~~ *(gỡ bởi D078)* | Sinh viên tự xoá bài và dữ liệu của mình | Sinh viên | — | FR-35 | — |
 | UC-15 | Sinh viên xem kết quả theo thời gian | Sinh viên | — | FR-27a, FR-65 (D032), D078 | S |
 | UC-16 | Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực | Sinh viên | — | FR-34, FR-38 | S |
 | UC-17 | Đăng nhập và kết thúc phiên | Sinh viên, Giảng viên, Quản trị viên | — | FR-32, FR-51 (D028), FR-56..FR-59 (D029), FR-74 (D036) | M |
@@ -1624,11 +1626,11 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
 | UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên | — | FR-92, FR-93 (D079) | S |
 
-> **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Ba use case
-> không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-18
+> **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Các use case
+> không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-14 (học viên tự xoá; nay chỉ quản trị viên xoá, UC-07), UC-18
 > (luyện theo nhiệm vụ gộp vào lộ trình ở D068, API gỡ ở D078), UC-21 và UC-22
-> (chấm mù, D078), UC-23 (gói dịch vụ của trường, D075). UC-07 và UC-14 bỏ phần
-> "rút đồng thuận", còn việc xoá dữ liệu. Mười một use case mới (UC-24..UC-34)
+> (chấm mù, D078), UC-23 (gói dịch vụ của trường, D075). UC-07 bỏ phần "rút đồng thuận", còn
+> việc quản trị viên xoá dữ liệu. Mười một use case mới (UC-24..UC-34)
 > ghi những gì sinh viên, giảng viên và quản trị viên làm được từ D069 tới D078:
 > học theo band, AI viết lại, sổ cụm từ, nạp lượt, ngân hàng đề theo band, lớp và
 > giao lộ trình, thống kê theo band, giá lượt, gói nhà cung cấp AI. UC-25 và UC-28

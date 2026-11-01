@@ -986,17 +986,12 @@ def test_attempt_recordings_belong_to_their_learner(m):
     assert teacher.get(url).status_code == 200  # a teacher may listen back (FR-49)
     assert other.get(url).status_code == 404  # 404, not 403: the id is not confirmed
 
+    # D078: nobody deletes an attempt from the learner's side; an administrator
+    # erases a learner's data (FR-35), the recording with it.
     delete = f"/api/v1/learn/attempts/{attempt['attempt_id']}"
-    assert other.delete(delete).status_code == 404
-    assert teacher.delete(delete).status_code == 404
+    for who in (student, other, teacher):
+        assert who.delete(delete).status_code in (404, 405)
     assert m.blobs.exists(key)
-    assert student.delete(delete).json() == {"status": "ok"}
-
-    assert m.lessons.count_attempts(account_id(m, "SV-001")) == 0
-    assert not m.blobs.exists(key)  # the recording, not only the row
-    assert student.get(url).status_code == 404
-    lesson = student.get(f"/api/v1/learn/lessons/{SAMPLE}").json()
-    assert lesson["latest"] == {} and lesson["progress"]["passed"] == 0
 
 
 def test_listening_to_a_lesson_recording_is_audited(m):
@@ -1010,16 +1005,13 @@ def test_listening_to_a_lesson_recording_is_audited(m):
     assert [e["actor_id"] for e in heard] == [account_id(m, "GV-01")]
 
 
-def test_deleting_an_attempt_is_audited_without_its_content(m):
+def test_a_learner_cannot_delete_an_attempt(m):
+    """D078: only an administrator erases a learner's data (FR-35)."""
     student = login_as(m, "SV-001")
     attempt_id = record(student, SAMPLE, KEYWORDS)["attempt_id"]
 
-    assert student.delete(f"/api/v1/learn/attempts/{attempt_id}").status_code == 200
-
-    entries = audit_entries(m, attempt_id)
-    assert len(entries) == 1
-    assert entries[0]["actor_id"] in {"SV-001", account_id(m, "SV-001")}
-    assert "morning" not in (entries[0]["detail"] or "")  # no transcript in the log
+    assert student.delete(f"/api/v1/learn/attempts/{attempt_id}").status_code in (404, 405)
+    assert m.lessons.attempt(attempt_id)["attempt_id"] == attempt_id
 
 
 def test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media(tmp_path):

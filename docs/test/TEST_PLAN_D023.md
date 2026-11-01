@@ -149,7 +149,7 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I30 | `test_second_attempt_compares_with_the_previous_one_on_the_same_task` | AC-43.1 | Biên | Lần sau so với lần trước cùng đề, kể cả nộp cùng một giây |
 | TC-PR-I31 | `test_only_the_owner_can_open_a_practice_result` | AC-44.3 | Âm | Chỉ chủ bài xem được; sinh viên khác và giảng viên nhận 404 |
 | TC-PR-I32 | `test_assessment_response_cannot_be_opened_as_practice` | FR-44 | Âm | Bài đánh giá và mã không tồn tại không mở được bằng trang luyện |
-| TC-PR-I33 | `test_deleting_your_practice_attempt_removes_it_from_the_path` | FR-44 | Thuận | Tự xoá bài luyện thì biến mất khỏi lộ trình |
+| TC-PR-I33 | `test_a_learner_cannot_delete_a_practice_attempt` | FR-44 | Âm | Học viên không tự xoá bài luyện; chỉ quản trị viên xoá (D078) |
 | TC-PR-I34 | `test_class_stats_keep_practice_apart_from_scoring_numbers` | FR-44 | Thuận | Thống kê lớp tách bài luyện khỏi số liệu máy chấm |
 | TC-PR-I36 | `test_personal_export_includes_practice_and_explains_the_field` | FR-44 | Thuận | Bản xuất dữ liệu cá nhân có bài luyện và giải thích trường practice |
 | TC-PR-I37 | `test_progress_and_profile_ignore_practice` | FR-44 | Âm | Trang tiến độ và hồ sơ năng lực không tính bài luyện |

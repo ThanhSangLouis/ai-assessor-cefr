@@ -200,7 +200,6 @@ flowchart LR
         UC26["UC-26 Sinh viên ôn sổ cụm từ"]
         UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
-        UC14["UC-14 Sinh viên tự xoá bài và dữ liệu của mình"]
     end
 
     SV --> UC17
@@ -213,7 +212,6 @@ flowchart LR
     SV --> UC26
     SV --> UC27
     SV --> UC16
-    SV --> UC14
     UC27 --- CTT
 
     %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
