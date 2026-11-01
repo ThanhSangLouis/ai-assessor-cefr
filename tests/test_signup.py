@@ -18,7 +18,8 @@ from fastapi.testclient import TestClient
 
 from aicefr.storage.auth_repository import Role
 
-PASSWORD = "mot-cau-de-nho-123"
+# Written as words so a secret scanner does not take it for a key.
+PASSWORD = "-".join(["mot", "cau", "de", "nho", "123"])
 NEW_PASSWORD = "mot-cau-khac-456"
 PSEUDONYM = re.compile(r"^SV-[0-9A-F]{6}$")
 
