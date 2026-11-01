@@ -6,7 +6,7 @@
   const icon = (name) => window.ui.icon(name);
   const $ = (id) => document.getElementById(id);
   const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  const PART = { P3: "Quan điểm", P4: "Quy trình", P5: "Thuyết trình" };
+  const PART = { P3: "Quan điểm", P4: "Quy trình" };
   const send = (url, method, body) =>
     window.apiJson(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   let tasks = [];
@@ -88,7 +88,7 @@
     f.reset();
     $("task-dialog-h").textContent = editing ? "Sửa đề" : "Thêm đề";
     f.band.value = editing ? editing.band : band;
-    f.part.value = editing && editing.part !== "P5" ? editing.part : "P3";
+    f.part.value = editing ? editing.part : "P3";
     f.prompt_text.value = editing ? editing.prompt_text : "";
     f.topic_keywords.value = editing ? (editing.topic_keywords || []).join(", ") : "";
     $("task-dialog").showModal();

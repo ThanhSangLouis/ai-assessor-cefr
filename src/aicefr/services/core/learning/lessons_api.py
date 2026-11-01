@@ -1138,7 +1138,7 @@ class PathPatch(BaseModel):
 class UnitIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     function: str = Field(default="", max_length=300)
-    band: Band | None = None
+    band: Band
     criterion: Criterion | None = None
     topic: Topic | None = None
 
@@ -1250,9 +1250,22 @@ async def teach_import(request: Request, account: Account = STAFF_ONLY) -> dict:
     return {"path_id": pid}
 
 
+def _check_unit_band(path: dict, band: Band) -> None:
+    """A unit sits inside its path's bands: a learner's band path is composed from
+    the units of the bands they chose (D074), so a unit outside would never be met."""
+    order = list(Band)
+    lo, hi = path.get("band_from"), path.get("band_to")
+    if (lo and order.index(band) < order.index(Band(lo))) or (
+        hi and order.index(band) > order.index(Band(hi))
+    ):
+        span = f"{lo or 'A1'}–{hi or 'C2'}"
+        raise HTTPException(422, f"band {band.value} nằm ngoài khoảng {span} của lộ trình")
+
+
 @router.post("/api/v1/teach/paths/{path_id}/units", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(path_id), body.band)
         uid = svc().lessons.add_unit(
             path_id, body.title, body.function, body.band, body.criterion, topic=body.topic
         )
@@ -1264,6 +1277,7 @@ def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) ->
 @router.patch("/api/v1/teach/units/{unit_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_patch_unit(unit_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(svc().lessons.unit(unit_id)["path_id"]), body.band)
         svc().lessons.update_unit(unit_id, **body.model_dump())
     except NotFound:
         raise HTTPException(404, "không tìm thấy chặng") from None

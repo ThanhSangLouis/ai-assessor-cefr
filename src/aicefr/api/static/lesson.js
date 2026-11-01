@@ -303,7 +303,7 @@ function renderHead() {
   }
   const l = data.lesson;
   headEl.innerHTML =
-    `<p class="eyebrow">${escapeHtml(data.unit.title)} · ${escapeHtml(l.band)}${l.sample ? " · Nội dung mẫu" : ""}</p>` +
+    `<p class="eyebrow">${escapeHtml(data.unit.title)} · ${escapeHtml(l.band)}</p>` +
     `<h1>${escapeHtml(l.title)}</h1>` +
     (l.summary ? `<p class="lede">${escapeHtml(l.summary)}</p>` : "") +
     '<div class="lesson-progress"><div class="lesson-progress-track"><span id="lesson-progress"></span></div>' +

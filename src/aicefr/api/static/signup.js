@@ -6,7 +6,6 @@ const passwordEl = document.getElementById("password");
 const againEl = document.getElementById("again");
 const emailEl = document.getElementById("email");
 const nameEl = document.getElementById("full-name");
-const consentEl = document.getElementById("consent");
 
 document.getElementById("show").addEventListener("change", (e) => {
   [passwordEl, againEl].forEach((el) => (el.type = e.target.checked ? "text" : "password"));
@@ -25,7 +24,6 @@ form.onsubmit = async (e) => {
   const min = Number(passwordEl.getAttribute("minlength")) || 8;
   if (passwordEl.value.length < min) return fail(`Mật khẩu phải từ ${min} ký tự trở lên.`, passwordEl);
   if (passwordEl.value !== againEl.value) return fail("Hai lần nhập mật khẩu chưa khớp nhau.", againEl);
-  if (!consentEl.checked) return fail("Hãy đánh dấu đồng ý để tạo tài khoản.", consentEl);
   button.disabled = true;
   button.textContent = "Đang tạo…";
   try {

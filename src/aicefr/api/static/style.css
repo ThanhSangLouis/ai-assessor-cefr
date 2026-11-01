@@ -5231,7 +5231,6 @@ button.window-chunk:hover { background: var(--bg-hover); }
 .path-switch { display: flex; align-items: center; gap: var(--sp-2); }
 .path-switch label { margin: 0; white-space: nowrap; }
 .path-switch select { width: auto; max-width: 320px; padding: var(--sp-2) var(--sp-3); }
-.sample-badge { background: var(--accent-soft); color: var(--accent); }
 
 .overall { display: flex; align-items: center; gap: var(--sp-3); max-width: 560px; }
 .overall-track, .lesson-progress-track {

@@ -188,7 +188,7 @@ function renderHead() {
   $("builder-head").innerHTML =
     `<p class="eyebrow">${escapeHtml(path.title)} · ${escapeHtml(unit.title)}</p>` +
     `<h1>${escapeHtml(lesson.title || "Bài học chưa đặt tên")}</h1>` +
-    `<div class="unit-tags">${state}${lesson.sample ? '<span class="badge sample-badge">Nội dung mẫu</span>' : ""}</div>`;
+    `<div class="unit-tags">${state}</div>`;
   document.title = lesson.title + " · Soạn bài";
 }
 

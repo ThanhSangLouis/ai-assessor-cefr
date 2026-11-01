@@ -68,7 +68,6 @@ function head() {
   headEl.innerHTML =
     '<div class="path-title">' +
     `<h1>${escapeHtml(p.title)}</h1>` +
-    (p.sample ? `<span class="badge sample-badge" title="Nội dung do nhóm phát triển soạn, chờ giảng viên duyệt">Nội dung mẫu</span>` : "") +
     "</div>" +
     '<div class="path-head-row">' +
     `<div class="overall" title="${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành">` +

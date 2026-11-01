@@ -54,7 +54,6 @@ function lessonRow(l) {
   return (
     "<tr>" +
     `<td><a class="t-lesson-link" href="/teach/lessons/${id}">${escapeHtml(l.title)}</a>` +
-    (l.sample ? ' <span class="badge sample-badge">Mẫu</span>' : "") +
     `<div class="muted">${escapeHtml(l.band)}${l.criterion ? ` · ${escapeHtml(criterionName(l.criterion))}` : ""}</div></td>` +
     `<td class="t-steps">${ladder(l.kinds)} <span class="muted">${Number(l.steps)} bước</span></td>` +
     `<td>${state}</td>` +
@@ -93,7 +92,7 @@ function unitBlock(u) {
     (u.lessons.length
       ? ""
       : `<button type="button" class="small secondary" data-action="delete-unit" data-id="${uid}" data-name="${name}">${icon("trash")}<span>Xoá chặng</span></button>`) +
-    `<button type="button" class="small" data-action="add-lesson" data-id="${uid}" data-band="${escapeHtml(u.band || "A2")}">${icon("plus")}<span>Thêm bài học</span></button>` +
+    `<button type="button" class="small" data-action="add-lesson" data-id="${uid}" data-band="${escapeHtml(u.band || "")}">${icon("plus")}<span>Thêm bài học</span></button>` +
     "</div></div>" +
     table +
     "</div>"
@@ -115,7 +114,6 @@ function pathCard(p, i) {
     (published
       ? '<span class="badge state-on">Sinh viên đang thấy lộ trình này</span>'
       : '<span class="badge state-off">Nháp: sinh viên chưa thấy</span>') +
-    (p.sample ? '<span class="badge sample-badge">Nội dung mẫu, chờ giảng viên duyệt</span>' : "") +
     "</div>" +
     (p.description ? `<p class="muted">${escapeHtml(p.description)}</p>` : "") +
     '</div><div class="t-actions">' +
@@ -194,13 +192,25 @@ $("path-form").addEventListener("submit", async (e) => {
   }
 });
 
+// A unit's band stays inside its path's bands (D074 composes a learner's path
+// from them); a new unit starts at the band of the path's last unit.
+const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
 function openUnit(pathId, unitId) {
   unitTarget = { path: pathId, unit: unitId };
   const u = unitId ? findUnit(unitId) : null;
+  const p = paths.find((x) => (u ? x.units.includes(u) : x.path_id === pathId));
+  const lo = BAND_ORDER.indexOf((p && p.band_from) || "A1");
+  const hi = BAND_ORDER.indexOf((p && p.band_to) || "C2");
+  [...$("unit-band").options].forEach((o) => {
+    const i = BAND_ORDER.indexOf(o.value);
+    o.disabled = o.hidden = i < lo || i > hi;
+  });
+  const last = p && p.units.length ? p.units[p.units.length - 1].band : null;
   $("unit-dialog-h").textContent = u ? "Sửa chặng" : "Chặng mới";
   $("unit-title").value = u ? u.title : "";
   $("unit-function").value = u ? u.function || "" : "";
-  $("unit-band").value = (u && u.band) || "A2";
+  $("unit-band").value = (u && u.band) || last || BAND_ORDER[lo];
   $("unit-topic").value = (u && u.topic) || "";
   $("unit-criterion").value = (u && u.criterion) || "";
   $("unit-dialog").showModal();
@@ -229,7 +239,7 @@ $("unit-form").addEventListener("submit", async (e) => {
 function openLesson(unitId, band) {
   lessonUnit = unitId;
   $("lesson-form").reset();
-  $("lesson-band").value = band || "A2";
+  if (band) $("lesson-band").value = band;
   $("lesson-dialog").showModal();
   offerDraft();
 }

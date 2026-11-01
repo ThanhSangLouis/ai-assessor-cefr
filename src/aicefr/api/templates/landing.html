@@ -117,7 +117,7 @@
   <div class="lp-head center">
     <p class="eyebrow">{{ icon("sparkle") }} Trải nghiệm trực quan</p>
     <h2 id="studio-h">Máy nghe ra từng từ của bạn</h2>
-    <p class="lp-subhead center">Chọn một mẫu câu thực tế từ A1 đến C2 để xem máy nghe ra từng từ, chỗ ngập ngừng và từ chưa rõ. Đây là bài minh hoạ, không phải kết quả thật.</p>
+    <p class="lp-subhead center">Chọn một câu mẫu từ A1 đến C1 để xem máy nghe ra từng từ, chỗ ngập ngừng và từ chưa rõ. Đây là bài minh hoạ, không phải kết quả thật.</p>
   </div>
 
   <div class="lp-studio-card lp-rise">
@@ -454,15 +454,15 @@
     <div class="lp-bento-card featured lp-rise">
       <div class="lp-bento-header">
         <span class="lp-bento-icon">{{ icon("lock") }}</span>
-        <span class="lp-bento-pill secure">Bảo mật tuyệt đối</span>
+        <span class="lp-bento-pill secure">Riêng tư</span>
       </div>
       <div class="lp-bento-two-col">
         <div>
           <h3>Dữ liệu thuộc về bạn</h3>
-          <p>Đăng ký bằng email, với mật khẩu hoặc Google. Email và họ tên chỉ dùng để đăng nhập và để giảng viên lớp bạn biết bài nào của ai; dữ liệu dùng cho nghiên cứu chỉ mang mã tài khoản. Bạn có thể tải về hay xóa bản ghi của bạn bất kỳ lúc nào.</p>
+          <p>Đăng ký bằng email, với mật khẩu hoặc Google. Email và họ tên chỉ dùng để đăng nhập và để giảng viên biết bài nào của ai. Bạn tải về hay xóa bản ghi của mình bất kỳ lúc nào.</p>
         </div>
         <div class="lp-bento-chips-secure">
-          <span>{{ icon("lock") }} Mã hóa đầu cuối</span>
+          <span>{{ icon("lock") }} Kết nối HTTPS</span>
           <span>{{ icon("trash") }} Quyền xóa vĩnh viễn</span>
         </div>
       </div>
@@ -487,7 +487,7 @@
     </details>
     <details>
       <summary>Ai là người có thể nghe được bản ghi âm của tôi?</summary>
-      <p>Chỉ duy nhất bạn và giảng viên phụ trách lớp học mới có quyền truy cập bản ghi. Bạn có toàn quyền tải về hoặc xóa bỏ vĩnh viễn bài ghi âm bất kỳ lúc nào.</p>
+      <p>Chỉ bạn và giảng viên của trung tâm nghe được bản ghi. Bạn có toàn quyền tải về hoặc xóa bỏ vĩnh viễn bài ghi âm bất kỳ lúc nào.</p>
     </details>
   </div>
 </section>
@@ -498,9 +498,9 @@
     <h2 id="cta-h">Sẵn sàng nâng tầm kỹ năng nói tiếng Anh?</h2>
     <p>Đăng ký miễn phí bằng email, bắt đầu bài học đầu tiên hôm nay.</p>
     <div class="lp-cta-trust">
-      <span>{{ icon("check") }} Miễn phí sinh viên</span>
+      <span>{{ icon("check") }} {% if metered() %}3 lượt miễn phí mỗi tháng{% else %}Miễn phí{% endif %}</span>
       <span>{{ icon("headphones") }} Không cần cài đặt</span>
-      <span>{{ icon("lock") }} Nghiên cứu chỉ dùng mã ẩn danh</span>
+      <span>{{ icon("trash") }} Xoá bản ghi bất kỳ lúc nào</span>
     </div>
   </div>
   <a class="button lp-cta-btn" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
