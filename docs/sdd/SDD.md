@@ -984,7 +984,7 @@ File: `docs/sdd/diagrams/05_erd.mmd`
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    account ||--o{ classroom : "dạy · teacher_id, học · members"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
     classroom }o--o{ task : "giao · assignments.task_id"
 
     account {
@@ -1021,12 +1021,13 @@ erDiagram
         array review_visits "mở bài, kết thúc, hành động (D041)"
         array replay_labels "tự nghe lại (D056)"
         array machine_seen "ai đã thấy điểm máy, qua đâu"
+        object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
     }
 
     classroom {
         string class_id PK
         string code UK "mã tham gia"
-        string teacher_id
+        array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
         array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
@@ -1041,7 +1042,7 @@ erDiagram
     }
 
     system {
-        string key PK "assessment.active_model, billing.organization, ..."
+        string key PK "assessment.active_model, assessment.coach_tier (D073), billing.organization, coach_usage.ngày (D072), ..."
         string value
         string version "chỉ với cấu hình assessment.*"
     }
@@ -1068,7 +1069,10 @@ erDiagram
 
     account {
         string account_id PK
-        string pseudonym UK
+        string pseudonym UK "mã tài khoản (SV-001…), dữ liệu nghiên cứu chỉ mang mã này"
+        string email UK "D071: đăng nhập, viết thường; trống ở tài khoản cũ"
+        int email_verified "D071: Google đã xác minh"
+        string full_name "D071: giảng viên lớp thấy"
         string password_hash "scrypt"
         string role "student · teacher · admin"
         int failed_attempts
@@ -1078,7 +1082,7 @@ erDiagram
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
-        array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
+        array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
         object seen_markers "tên dấu → lúc xem (D028)"
     }
 

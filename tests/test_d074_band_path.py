@@ -114,3 +114,15 @@ def test_a_teacher_assigns_only_to_their_own_learners(m):
         ).status_code
         == 403
     )
+
+
+def test_what_comes_next_follows_the_bands_the_learner_chose(m):
+    student = login_as(m, "SV-001")
+    before = student.get("/api/v1/learn").json()["next"]
+    plan = student.post(BANDS, json={"band_from": "B1", "band_to": "B2"}).json()
+    first = _lessons(plan)[0]
+    after = student.get("/api/v1/learn").json()["next"]
+    assert after["lesson_id"] == first["lesson_id"] != before["lesson_id"]
+    assert after["basis"] == "band_plan" and "B1 → B2" in after["reason"]
+    student.delete("/api/v1/learn/plan")
+    assert student.get("/api/v1/learn").json()["next"]["lesson_id"] == before["lesson_id"]
