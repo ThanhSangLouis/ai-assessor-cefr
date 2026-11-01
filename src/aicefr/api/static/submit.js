@@ -197,7 +197,7 @@ function draw(pinned) {
 function paintTasks() {
   const chips = BANDS.filter((b) => allTasks.some((t) => t.band === b))
     .map(
-      (b) => `<label class="band-chip${b === band ? " on" : ""}"><input type="radio" name="task-band" value="${b}"${b === band ? " checked" : ""}>${b}</label>`,
+      (b) => `<label class="task-band-chip${b === band ? " on" : ""}"><input type="radio" name="task-band" value="${b}"${b === band ? " checked" : ""}>${b}</label>`,
     )
     .join("");
   const pool = allTasks.filter((t) => t.band === band).length;
