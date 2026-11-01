@@ -43,6 +43,11 @@ x-env: &env
   AICEFR_GEMINI_API_KEY: ${AICEFR_GEMINI_API_KEY:-}
   # D073: the paid tier's key, used while an administrator has switched to it.
   AICEFR_COACH_PAID_API_KEY: ${AICEFR_COACH_PAID_API_KEY:-}
+  # D079: email (codes, verification, study reminders); off until a domain is verified at Resend.
+  AICEFR_EMAIL_PROVIDER: ${AICEFR_EMAIL_PROVIDER:-off}
+  AICEFR_RESEND_API_KEY: ${AICEFR_RESEND_API_KEY:-}
+  AICEFR_EMAIL_FROM: ${AICEFR_EMAIL_FROM:-}
+  AICEFR_REMINDER_HOUR: ${AICEFR_REMINDER_HOUR:-19}
   AICEFR_OPENROUTER_API_KEY: ${AICEFR_OPENROUTER_API_KEY:-}
   AICEFR_ANTHROPIC_API_KEY: ${AICEFR_ANTHROPIC_API_KEY:-}
   # D049/D057: the metered channel (runs and IDPoint, NetID). Off unless set;
