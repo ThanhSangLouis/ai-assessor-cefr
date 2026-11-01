@@ -1,6 +1,6 @@
 """The ledger of the metered channel (D049): holds, charges, releases, balances.
 
-Two collections (D060), as the class diagram has them:
+Three collections (D060, D078), as the class diagram has them:
 
 * `wallet` -- one document per account (`Wallet`): what it has paid for in
   advance (on the NetID channel, what NetID reports as prepaid IDPoint), the
@@ -11,7 +11,12 @@ Two collections (D060), as the class diagram has them:
   recording came in, what was charged when it had a result, or that it was
   released. Unique on (key, action), so a retried submission or a duplicated
   event never charges twice. Entries grow with every recording, so they are
-  documents of their own, pointing at the wallet by its owner.
+  documents of their own, pointing at the wallet by its owner;
+* `price_list` -- one document, the prices an administrator set on the
+  dashboard (D078): what a recording, a practice attempt and an upgraded
+  answer cost, the free runs each month and the run packs on sale, with every
+  earlier version and who set it. Absent until the first change: the settings
+  (`AICEFR_PRICE_*`) stand until then.
 
 No multi-document transactions (D048): every step that must not race is one
 conditional update of one document. A top-up records itself and raises the
@@ -32,7 +37,7 @@ from pathlib import Path
 from pymongo import DESCENDING, ReturnDocument
 
 from aicefr.contracts import TaskPurpose
-from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, TokenUsage
+from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, UNITS_PER_RUN, TokenUsage
 from aicefr.storage.db import IntegrityError, MongoStore
 from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import ensure_current
@@ -146,8 +151,43 @@ def cycle(now: datetime | None = None) -> str:
 class MeteringRepository(MongoStore):
     def __init__(self, db_path: str | Path, free_units: int = FREE_UNITS_PER_CYCLE) -> None:
         self.db_path = str(db_path)
-        self.free_units = free_units
+        self._free_units = free_units
         ensure_current(self.db_path)
+
+    # ------------------------------------------------------------ prices (D078)
+
+    def price_list(self) -> dict | None:
+        """The prices an administrator set, or None while the settings stand."""
+        return self.col("price_list").find_one({"_id": "current"}, {"_id": 0, "history": 0})
+
+    def price_history(self, limit: int = 10) -> list[dict]:
+        row = self.col("price_list").find_one({"_id": "current"}, {"history": 1})
+        return list(reversed((row or {}).get("history", [])))[:limit]
+
+    def set_price_list(self, values: dict, by: str) -> dict:
+        """A new version of the prices; the one before goes into the history."""
+        before = self.price_list()
+        number = int((before or {}).get("number", 0)) + 1
+        doc = {
+            **values,
+            "number": number,
+            "version": f"price-admin-{number}",
+            "changed_by": by,
+            "changed_at": _now(),
+        }
+        update: dict = {"$set": doc}
+        if before:
+            update["$push"] = {"history": before}
+        self.col("price_list").update_one({"_id": "current"}, update, upsert=True)
+        return doc
+
+    @property
+    def free_units(self) -> int:
+        """Free runs each month, in thousandths: the administrator's, else the setting."""
+        doc = self.price_list()
+        if doc and doc.get("free_runs") is not None:
+            return int(round(float(doc["free_runs"]) * UNITS_PER_RUN))
+        return self._free_units
 
     def _wallet(self, user_ref: str) -> Wallet:
         row = self.col("wallet").find_one({"user_ref": user_ref})

@@ -69,9 +69,9 @@ def test_practice_tasks_lead_to_the_lesson_path(m):
 
 def test_the_study_measurements_are_for_administrators_only(m):
     teacher = login_as(m, "GV-N05", "teacher")
-    assert 'id="teacher-time"' not in teacher.get("/review/stats").text
     admin = login_as(m, "QT-N05", "admin")
-    assert 'id="teacher-time"' in admin.get("/review/stats").text
+    # D078: the teacher-time card is gone for everyone.
+    assert all('id="teacher-time"' not in c.get("/review/stats").text for c in (teacher, admin))
     for c in (teacher, admin):
         insights = c.get("/teach/insights").text
         assert 'href="/teach/insights" aria-current="page"' in insights

@@ -10,9 +10,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from aicefr.api.deps import ADMIN_ONLY, STUDENT_ONLY, require_login
+from aicefr.api.deps import STUDENT_ONLY, require_login
 from aicefr.contracts import ResponseStatus
-from aicefr.report.replay import CHOICES, analyse, moments
+from aicefr.report.replay import CHOICES, moments
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.replay_repository import ReplayRepository
@@ -105,10 +105,3 @@ def my_labels(account_id: str) -> list[dict]:
 def my_replay_labels(account: Account = Depends(require_login)) -> list[dict]:
     """What I said about my own recordings, to read back on my progress page."""
     return my_labels(account.account_id)
-
-
-@router.get("/api/v1/admin/replay/report", tags=["admin"])
-def replay_report(account: Account = ADMIN_ONLY) -> dict:
-    """Machine moments against random ones, over learners who allowed research use."""
-    allowed = set(svc().peers.identity.research_allowed())
-    return analyse([x for x in labels().all() if x["account_id"] in allowed])

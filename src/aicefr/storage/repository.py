@@ -548,61 +548,6 @@ class Repository(MongoStore):
         visits.sort(key=lambda v: v["decided_at"], reverse=True)
         return visits[:limit]
 
-    def settled_counts(self) -> tuple[int, int]:
-        """(scored assessments the machine settled alone, scored assessments that reached a result).
-
-        Alone: COMPLETED with no teacher confirmation. Reached a result:
-        COMPLETED or REVIEW_REQUIRED, with a machine score.
-        """
-        rows = self.col("response").find(
-            {
-                "purpose": "assessment",
-                "overall_0_6": {"$ne": None},
-                "status": {"$in": ["COMPLETED", "REVIEW_REQUIRED"]},
-            },
-            {"status": 1, "teacher_verified": 1},
-        )
-        alone = total = 0
-        for r in rows:
-            total += 1
-            alone += int(r["status"] == "COMPLETED" and not r.get("teacher_verified"))
-        return alone, total
-
-    def scored_assessments(
-        self,
-        accounts: Collection[str] | None = None,
-        machine_only: bool = False,
-        limit: int = 20000,
-    ) -> list[dict]:
-        """Scored assessments, oldest first; the latest `limit` when there are more.
-
-        The test-retest pairs of D042 and the outcomes of the feedback study
-        (D040) come from here. `accounts` narrows to those learners;
-        `machine_only` keeps the machine's own scores, leaving out the responses
-        a teacher's decision overwrote -- a test-retest pair compares the
-        instrument with itself.
-        """
-        query: dict = {
-            "overall_0_6": {"$ne": None},
-            "purpose": "assessment",
-            "account_id": {"$ne": None},
-        }
-        if accounts is not None:
-            ids = list(accounts)
-            if not ids:
-                return []
-            query["account_id"] = {"$in": ids}
-        if machine_only:
-            query["teacher_verified"] = 0
-        rows = (
-            self.col("response")
-            .find(query)
-            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-            .limit(limit)
-        )
-        names = ("account_id", "task_id", "overall_0_6", "model_version", "created_at")
-        return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
-
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         """One learner's results over time, machine estimate and verified alike.
 
@@ -869,36 +814,18 @@ class Repository(MongoStore):
         }
 
     def _forget_responses(self, ids: list[str]) -> None:
-        """Everything that hangs off these responses, then the responses.
+        """The responses, with everything their documents hold.
 
-        What a foreign key's ON DELETE CASCADE did in SQL: the blind-rating
-        sheets and their ratings go with the response they are about; the
-        review history, the lock and who saw the machine's result are part of
-        the response's own document (D060).
+        The review history, the lock and the replay labels are part of the
+        response's own document (D060) and go with it.
         """
         if not ids:
             return
         db = self.db
         within = {"response_id": {"$in": ids}}
-        # The blind-rating sheets about them, from whichever batch holds them.
-        db["rating_batch"].update_many(
-            {"ratings.response_id": {"$in": ids}},
-            {"$pull": {"ratings": {"response_id": {"$in": ids}}}},
-        )
         # The reviews, the lock, the visits and the replay labels are part of
         # the response document and go with it.
         db["response"].delete_many(within)
-
-    def forget_study_participant(self, account_id: str) -> None:
-        """Take one person out of the feedback studies an older store still holds.
-
-        The study is gone (D078) but its stored arms and survey answers name
-        people, so erasure (FR-35) still reaches them.
-        """
-        self.db["study"].update_many(
-            {"participants.account_id": account_id},
-            {"$pull": {"participants": {"account_id": account_id}}},
-        )
 
     def erase_speaker(self, speaker_id: str, actor_id: str) -> dict:
         """Delete one participant's recordings and reports. Irreversible.

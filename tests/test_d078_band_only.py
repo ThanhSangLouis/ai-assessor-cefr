@@ -138,3 +138,35 @@ def test_a_lesson_is_at_its_units_band(m):
     lesson["band"] = "A2"
     saved = teacher.put(f"/api/v1/teach/lessons/{lesson['lesson_id']}", json=lesson)
     assert saved.status_code == 422
+
+
+@pytest.mark.unit
+def test_migration_11_removes_the_data_of_what_was_removed():
+    from aicefr.storage.db import database
+    from aicefr.storage.migrations import _d078_research_data
+
+    db = database("mongomock://d078_migration")
+    db["rating_batch"].insert_one({"batch_id": "b1", "ratings": []})
+    db["study"].insert_one({"study_id": "s1", "participants": []})
+    db["response"].insert_one({"response_id": "r1", "machine_seen": [{"account_id": "t"}]})
+    db["task"].insert_one({"task_id": "P3", "part": "P3", "band": "B1"})
+    db["system"].insert_many(
+        [{"key": "assessment.measurement_error"}, {"key": "assessment.coach_tier"}]
+    )
+    db["path"].insert_one(
+        {
+            "path_id": "path-sample",
+            "title": "Lộ trình mẫu: Nói tiếng Anh A1 → C2",
+            "description": "Sáu bậc. Nội dung mẫu, chờ giảng viên Khoa Ngoại ngữ duyệt.",
+        }
+    )
+
+    _d078_research_data(db, "mongomock://d078_migration")
+
+    assert {"rating_batch", "study"}.isdisjoint(db.list_collection_names())
+    assert "machine_seen" not in db["response"].find_one()
+    task = db["task"].find_one()
+    assert "part" not in task and task["band"] == "B1"
+    assert [r["key"] for r in db["system"].find()] == ["assessment.coach_tier"]
+    path = db["path"].find_one()
+    assert (path["title"], path["description"]) == ("Nói tiếng Anh A1 → C2", "Sáu bậc.")

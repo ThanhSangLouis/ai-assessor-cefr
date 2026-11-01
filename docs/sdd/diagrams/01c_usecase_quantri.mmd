@@ -1,28 +1,37 @@
 %% So do use case 1c: tac nhan Quan tri vien
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): mot trung tam, hoc vien tra theo luot -- quan tri vien dat
+%% gia luot va goi luot, theo doi AI viet lai; khong con goi dich vu (D075).
 flowchart LR
     QT(("Quản trị viên"))
-    SV(("Sinh viên"))
-    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
+        UC07["UC-07 Quản trị viên xoá dữ liệu của một người học"]
         UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
         UC09["UC-09 Quản trị viên kích hoạt phiên bản mô hình"]
-        UC07["UC-07 Quản trị viên xử lý yêu cầu rút đồng thuận"]
         UC12["UC-12 Huấn luyện lại mô hình từ manifest đã khóa"]
-        UC23["UC-23 Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ"]
+        UC32["UC-32 Quản trị viên đặt giá lượt và gói lượt"]
+        UC34["UC-34 Quản trị viên cộng lượt cho một tài khoản"]
+        UC33["UC-33 Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp"]
     end
 
     QT --> UC17
     QT --> UC10
     QT --> UC08
     QT --> UC09
-    QT --> UC07
     QT --> UC12
-    QT --> UC23
-    SV --> UC07
-    UC23 --- CTT
+    QT --> UC32
+    QT --> UC34
+    QT --> UC33
+    QT --> UC07
+
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia chin
+    %% use case thanh hai cot (tai khoan va mo hinh; luot va AI) cho hinh vua A4.
+    UC17 ~~~ UC12
+    UC10 ~~~ UC32
+    UC07 ~~~ UC34
+    UC08 ~~~ UC33

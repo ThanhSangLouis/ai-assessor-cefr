@@ -55,33 +55,6 @@ const progressDone = Promise.all([
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
   });
 
-// D042: "progress" only when the rise is larger than the measurement error.
-const RELIABLE_TEXT = {
-  tien_bo: ["ok", "Tiến bộ đáng tin"],
-  giam: ["warn", "Giảm đáng tin"],
-  chua_vuot_sai_so: ["", "Chưa vượt sai số đo"],
-  chua_co_sai_so: ["", "Chưa đo được sai số"],
-  chua_du_du_lieu: ["", "Chưa đủ bài để so"],
-};
-function reliableBlock(rc) {
-  if (!rc) return "";
-  const [kind, title] = RELIABLE_TEXT[rc.verdict] || RELIABLE_TEXT.chua_du_du_lieu;
-  const n = (v) => Number(v).toFixed(2).replace(".", ",");
-  let body;
-  if (rc.verdict === "chua_du_du_lieu") {
-    body = "Cần ít nhất hai bài có điểm.";
-  } else if (rc.verdict === "chua_co_sai_so") {
-    body =
-      `Trung bình ${rc.k} bài gần nhất so với ${rc.k} bài đầu: ${rc.difference >= 0 ? "+" : ""}${n(rc.difference)} điểm. ` +
-      "Hệ thống chưa đo được sai số giữa hai lần nói của cùng một người, nên chưa kết luận là tiến bộ.";
-  } else {
-    body =
-      `Trung bình ${rc.k} bài gần nhất so với ${rc.k} bài đầu: ${rc.difference >= 0 ? "+" : ""}${n(rc.difference)} điểm; ` +
-      `cần vượt ±${n(rc.threshold)} điểm (95%, sai số đo ${n(rc.sem)}) mới chắc không phải do khác ngày, khác đề.`;
-  }
-  return `<div class="notice ${kind}"><b>${title}.</b> ${window.escapeHtml(body)}</div>`;
-}
-
 const PLACE = { low: "đầu", mid: "giữa", high: "cuối" };
 // "3,62 · B1 cuối": the score, the band and the third of it the result sits in (D078).
 function bandLabel(r) {
@@ -118,7 +91,6 @@ function build(d) {
   h += "</div>";
 
   h += `<div class="notice ${label.kind}"><b>${label.text}.</b> ${window.escapeHtml(t.note || "")}</div>`;
-  h += reliableBlock(d.reliable_change);
 
   h += chart(rows, d.band_thresholds || {});
   h +=

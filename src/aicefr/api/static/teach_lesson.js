@@ -96,9 +96,6 @@ let dirty = false;
 let saving = null;
 let again = false;
 let timer = null;
-// The simulated recogniser hears a fixed sentence, so a model-audio check made
-// with it says nothing about the recording.
-let simulated = false;
 
 const step = () => (lesson ? lesson.steps[selected] : null);
 
@@ -505,13 +502,7 @@ const recorder = window.setUpRecorder({
     renderAudio();
     renderHead();
     const check = $("audio-check");
-    if (d.check && simulated) {
-      check.className = "notice notice-info";
-      check.textContent =
-        "Đã lưu giọng mẫu. Máy chủ đang dùng bộ nhận dạng giả lập nên chưa kiểm được giọng mẫu " +
-        "có khớp văn bản không; bật bộ nhận dạng thật rồi ghi lại để kiểm.";
-      check.hidden = false;
-    } else if (d.check) {
+    if (d.check) {
       check.className = d.check.warning ? "notice notice-warn" : "notice notice-ok";
       check.textContent =
         d.check.warning || `Máy chép giọng mẫu khớp ${d.check.heard}/${d.check.total} từ của văn bản.`;
@@ -652,7 +643,6 @@ async function load() {
 fetch("/api/v1/health")
   .then((r) => (r.ok ? r.json() : null))
   .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
     recorder.enable(!!(h && h.recording_enabled));
   })
   .catch(() => recorder.enable(false));

@@ -37,7 +37,7 @@
 | **1.13** | **24/10/2026** | **+5 FR (đề xuất).** FR-86 hiệu chuẩn band tuỳ chọn, FR-87 gói lượt mua qua cổng thanh toán, FR-88 lớp học và giao bài, FR-89 nhắc việc trong ứng dụng, FR-90 tự nghe lại có mốc đối chứng | D052–D056 (PROPOSED) |
 | **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
-| **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề | D078 (APPROVED) |
+| **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt | D078 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -279,7 +279,7 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | BR-35 | Kết quả của một cổng chỉ ghi nhận đơn **đặt qua chính cổng đó**, ở đúng chế độ tiền lúc đặt và về đúng phiên thanh toán đơn đã mở; khi phải hỏi lại cổng (Stripe), hệ thống chỉ hỏi về phiên do chính nó mở và chưa xong | FR-71, FR-72 | 1.7 (D035) | `BillingService.settle` (so `gateway` của đơn), `billing_api.billing_return` (`order_by_checkout`); `test_one_gateway_cannot_settle_another_gateways_order`, `test_stripe_is_asked_only_about_checkouts_this_system_opened` |
 | BR-36 | Luồng đăng nhập Google chỉ đi tiếp khi cookie mang `state`, `nonce` và verifier PKCE có **chữ ký của bản triển khai**; cookie không do máy chủ ký bị bỏ trước khi hỏi Google. Sau TLS, cookie là cookie `__Host-` mà tên miền con không đặt được; địa chỉ chuyển hướng là `https` mà chưa bật `AICEFR_HTTPS_ONLY` thì luồng không bắt đầu | FR-59, FR-74 | 1.7 (D036) | `auth/google.py` (`encode_flow`, `decode_flow`), `google_api.py` (`_cookie`); `test_a_flow_cookie_this_server_did_not_sign_is_ignored`, `test_behind_tls_the_flow_cookie_is_a_host_cookie` |
 | BR-37 | Trong thực nghiệm phản hồi, phản hồi của nhóm "Chỉ điểm" được **máy chủ** giữ lại, không phải trang ẩn đi; chỉ áp cho báo cáo bài đánh giá của chính người học, không bao giờ cho giảng viên, quản trị viên, bài học hay luyện tập. Chỉ sinh viên **đang cho phép dùng dữ liệu nghiên cứu** được chia nhóm; người học rời được bất cứ lúc nào và nhận lại phản hồi đầy đủ ngay; rút đồng ý nghiên cứu hay bị xoá dữ liệu cũng là rời | FR-77, FR-78 | 1.8 (D040) | `api/study_api.py` (`gate_report`); `test_score_only_arm_gets_the_score_and_nothing_more`, `test_leaving_the_study_or_closing_it_brings_feedback_back` |
-| BR-38 | Trang Tiến độ chỉ gọi là **tiến bộ** khi chênh lệch vượt 1,96 lần sai số của chênh lệch tính từ **sai số đo (SEM)** đo bằng cặp bài thử lại hoặc nhập tay **kèm nguồn**; chưa có SEM thì nói là chưa đo được sai số. RMSE của mô hình không được dùng thay SEM | FR-80 | 1.8 (D042) | `research/reliable_change.py`; `test_reliable_change_verdicts`, `test_progress_says_no_error_measured_until_an_admin_sets_one` |
+| ~~BR-38~~ *(gỡ bởi D078)* | Trang Tiến độ chỉ gọi là **tiến bộ** khi chênh lệch vượt 1,96 lần sai số của chênh lệch tính từ **sai số đo (SEM)** đo bằng cặp bài thử lại hoặc nhập tay **kèm nguồn**; chưa có SEM thì nói là chưa đo được sai số. RMSE của mô hình không được dùng thay SEM | FR-80 | 1.8 (D042) | `research/reliable_change.py`; `test_reliable_change_verdicts`, `test_progress_says_no_error_measured_until_an_admin_sets_one` |
 | BR-39 | Chẩn đoán phát âm **không phải điểm phát âm** và không vào điểm tổng: nó đếm chỗ chữ máy nghe được lệch khỏi chữ viết theo năm lỗi đặc trưng, chỉ nêu tỉ lệ khi đủ 8 lần gặp, và từ giảng viên đã sửa thành "nghe được" không tính là lỗi. Bản của cả lớp không chỉ ra ai | FR-75, FR-76 | 1.8 (D039) | `pronunciation/vietnamese.py`; `test_profile_reports_a_rate_only_from_enough_opportunities`, `test_class_profile_is_for_staff_and_names_nobody` |
 | BR-40 | Model lộ trình (D046) chỉ **chọn và xếp thứ tự** bài giảng viên đã xuất bản; không viết câu chữ, không sửa bài. Mỗi bài được chọn kèm lý do. Lộ trình của sinh viên chỉ gồm bài đã xuất bản trong lộ trình đã xuất bản; lộ trình giảng viên lưu ra luôn là bản nháp | FR-81, FR-82 | 1.11 (D046, đề xuất) | `lessons/composer.py`; `test_a_draft_path_never_reaches_a_learners_plan`, `test_a_teacher_saves_the_kept_lessons_as_a_draft_path_of_copies` |
 
@@ -1327,7 +1327,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | Acceptance Criteria |
 | --- |
 | **AC-76.1** — *Given* hai sinh viên cùng mắc lỗi âm cuối, *When* giảng viên mở bản của lớp, *Then* thấy 2 người học, 2 lỗi, ví dụ chỉ có `word` và `said`, không có bút danh hay mã tài khoản; sinh viên nhận 403 (`test_class_profile_is_for_staff_and_names_nobody`). |
-| **AC-76.2** — *Given* giảng viên và quản trị viên, *When* mở trang Thống kê, *Then* thẻ "Phát âm của cả lớp" tải được; thẻ "Hiệu quả cho giảng viên" chỉ quản trị viên thấy (D068) (`test_class_page_shows_teacher_time_and_class_pronunciation`). |
+| **AC-76.2** — *Given* giảng viên và quản trị viên, *When* mở trang Thống kê, *Then* thẻ "Phát âm của cả lớp" tải được; thẻ "Hiệu quả cho giảng viên" chỉ quản trị viên thấy (D068) (`test_class_page_shows_class_pronunciation`). |
 
 ### FR-77 — Thực nghiệm phản hồi: chia nhóm và giữ phản hồi lại
 
@@ -1362,30 +1362,34 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-79 — Thời gian giảng viên tiết kiệm được và phần máy tự xử lý
 
+> **D078 (01/11/2026).** Số đo thời gian giảng viên (thẻ "Hiệu quả cho giảng viên", API `/api/v1/review/kpi`) được gỡ: mốc so sánh của nó là thời gian chấm mù, đã gỡ cùng D030. Hệ thống vẫn ghi lúc giảng viên mở và kết thúc một lần duyệt (AC-79.1) vì lịch sử duyệt cần nó. AC-79.2..AC-79.5 thành lịch sử.
+
 **Mô tả:** Khoá một bài để duyệt mở một phiên (`review_session`), quyết định hay đóng bài thì kết thúc phiên. Thẻ "Hiệu quả cho giảng viên" ở Thống kê lớp so trung vị phút duyệt một bài có máy với trung vị phút chấm mù một bài không có máy (phiếu D030), thời gian tiết kiệm = 1 − tỉ số hai trung vị; phiên quá 30 phút không tính và được đếm riêng; không nêu trung vị dưới 5 mẫu. Kèm tỉ lệ bài máy tự xong (hoàn tất, không cần giảng viên xác nhận, trên số bài đánh giá có điểm) và tỉ lệ giảng viên giữ nguyên mức của máy, cả hai có khoảng Wilson 95 %. `GET /api/v1/review/kpi` cho giảng viên và quản trị viên, theo gói như thống kê lớp.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
 | **AC-79.1** — *Given* một bài cần duyệt, *When* giảng viên khoá rồi quyết định, *Then* có đúng một phiên đã kết thúc, hành động `decision`, đúng bài và đúng người duyệt (`test_review_lock_and_decision_leave_a_timed_session`). |
-| **AC-79.2** — *Given* một phiên 4 phút, một phiên 60 phút, một phiên chưa xong, *When* tính phút, *Then* giữ 4 phút, 1 phiên bị bỏ vì quá 30 phút (`test_idle_review_sessions_are_left_out_and_counted`). |
-| **AC-79.3** — *Given* 8 trên 10, *When* tính khoảng Wilson, *Then* ra [0,490; 0,943]; với 0 trên 0 thì không có khoảng (`test_wilson_interval_matches_the_textbook_value`). |
-| **AC-79.4** — *Given* 4 phiên duyệt, rồi 5 phiên 2 phút và 5 phiếu 8 phút, *When* tính, *Then* lần đầu không có trung vị và không có thời gian tiết kiệm; lần sau tiết kiệm 75 % (`test_kpi_reports_time_saved_only_from_enough_samples`). |
-| **AC-79.5** — *Given* chưa có phiên nào, rồi 5 phiên 2–6 phút và một phiên 45 phút, *When* giảng viên mở số đo, *Then* lần đầu n = 0 và không có trung vị; lần sau n = 5, trung vị 4 phút, 1 phiên bỏ dở; sinh viên nhận 403 (`test_teacher_kpi_reports_minutes_only_from_enough_sessions`). |
+| ~~AC-79.2~~ *(gỡ bởi D078)* — *Given* một phiên 4 phút, một phiên 60 phút, một phiên chưa xong, *When* tính phút, *Then* giữ 4 phút, 1 phiên bị bỏ vì quá 30 phút (`test_idle_review_sessions_are_left_out_and_counted`). |
+| ~~AC-79.3~~ *(gỡ bởi D078)* — *Given* 8 trên 10, *When* tính khoảng Wilson, *Then* ra [0,490; 0,943]; với 0 trên 0 thì không có khoảng (`test_wilson_interval_matches_the_textbook_value`). |
+| ~~AC-79.4~~ *(gỡ bởi D078)* — *Given* 4 phiên duyệt, rồi 5 phiên 2 phút và 5 phiếu 8 phút, *When* tính, *Then* lần đầu không có trung vị và không có thời gian tiết kiệm; lần sau tiết kiệm 75 % (`test_kpi_reports_time_saved_only_from_enough_samples`). |
+| ~~AC-79.5~~ *(gỡ bởi D078)* — *Given* chưa có phiên nào, rồi 5 phiên 2–6 phút và một phiên 45 phút, *When* giảng viên mở số đo, *Then* lần đầu n = 0 và không có trung vị; lần sau n = 5, trung vị 4 phút, 1 phiên bỏ dở; sinh viên nhận 403 (`test_teacher_kpi_reports_minutes_only_from_enough_sessions`). |
 
 ### FR-80 — Tiến bộ đáng tin theo sai số đo
+
+> **Đã gỡ bởi D078 (01/11/2026).** Sai số đo do quản trị viên đặt và dòng "Tiến bộ đáng tin" trên trang Kết quả được gỡ; trang Kết quả còn xu hướng theo sai số của mô hình. Các tiêu chí giữ lại làm lịch sử.
 
 **Mô tả:** Trang Tiến độ so trung bình tối đa 3 bài đầu với cùng số bài cuối; khác biệt chỉ là "tiến bộ" hay "giảm" khi |RCI| > 1,96 với RCI = chênh lệch / (SEM · √(2/k)); còn lại là "chưa vượt sai số đo"; dưới 2 bài là chưa đủ dữ liệu; chưa có SEM thì nói chưa đo được sai số (BR-38). Quản trị viên đặt SEM ở tab Cấu hình: từ cặp bài thử lại (hai bài cùng người, cùng đề, cách nhau tối đa 48 giờ, mỗi bài một cặp, SEM = SD hiệu / √2, ít nhất 10 cặp) hoặc nhập tay kèm nguồn; có nhật ký. `GET/POST /api/v1/admin/measurement-error`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-80.1** — *Given* ba bài trong một ngày và hai bài cách nhau bốn ngày, *When* lấy cặp thử lại, *Then* ba bài cho đúng một cặp, hai bài xa nhau không cho cặp nào (`test_retest_pairs_use_each_response_once_and_respect_the_window`). |
-| **AC-80.2** — *Given* 10 cặp chênh ±0,2, *When* tính SEM, *Then* bằng SD hiệu / √2; 9 cặp thì không có SEM (`test_sem_is_sd_of_differences_over_root_two_and_needs_enough_pairs`). |
-| **AC-80.3** — *Given* một bài, chưa có SEM, tăng 1 điểm với SEM 0,2, giảm 1 điểm, tăng 0,1 với SEM 0,3, *When* đánh giá, *Then* lần lượt chưa đủ dữ liệu, chưa có sai số, tiến bộ, giảm, chưa vượt sai số với ngưỡng 1,96 · SEM · √(2/k) (`test_reliable_change_verdicts`). |
-| **AC-80.4** — *Given* sinh viên có 6 bài tăng 1,2 điểm, *When* xem tiến độ trước và sau khi quản trị viên nhập SEM 0,25 kèm nguồn, *Then* trước là chưa có sai số; nhập thiếu nguồn bị 422; sau là tiến bộ, nguồn `manual`, chênh lệch 1,2 vượt ngưỡng; sinh viên đặt SEM bị 403 (`test_progress_says_no_error_measured_until_an_admin_sets_one`). |
-| **AC-80.5** — *Given* chưa có cặp nào rồi có 10 cặp, *When* quản trị viên chọn dùng bài thử lại, *Then* lần đầu 422 nói số cặp; lần sau SEM nguồn `retest` từ 10 cặp (`test_measured_error_needs_enough_retest_pairs`). |
-| **AC-80.6** — *Given* quản trị viên ở tab Cấu hình, *When* chưa có cặp thử lại và nhập tay 0,25 kèm nguồn, *Then* khung ghi "Chưa đặt", nút dùng bài thử lại bị tắt, sau khi lưu ghi nguồn đã nhập (`test_admin_sets_the_measurement_error_with_its_source`). |
+| ~~AC-80.1~~ *(gỡ bởi D078)* — *Given* ba bài trong một ngày và hai bài cách nhau bốn ngày, *When* lấy cặp thử lại, *Then* ba bài cho đúng một cặp, hai bài xa nhau không cho cặp nào (`test_retest_pairs_use_each_response_once_and_respect_the_window`). |
+| ~~AC-80.2~~ *(gỡ bởi D078)* — *Given* 10 cặp chênh ±0,2, *When* tính SEM, *Then* bằng SD hiệu / √2; 9 cặp thì không có SEM (`test_sem_is_sd_of_differences_over_root_two_and_needs_enough_pairs`). |
+| ~~AC-80.3~~ *(gỡ bởi D078)* — *Given* một bài, chưa có SEM, tăng 1 điểm với SEM 0,2, giảm 1 điểm, tăng 0,1 với SEM 0,3, *When* đánh giá, *Then* lần lượt chưa đủ dữ liệu, chưa có sai số, tiến bộ, giảm, chưa vượt sai số với ngưỡng 1,96 · SEM · √(2/k) (`test_reliable_change_verdicts`). |
+| ~~AC-80.4~~ *(gỡ bởi D078)* — *Given* sinh viên có 6 bài tăng 1,2 điểm, *When* xem tiến độ trước và sau khi quản trị viên nhập SEM 0,25 kèm nguồn, *Then* trước là chưa có sai số; nhập thiếu nguồn bị 422; sau là tiến bộ, nguồn `manual`, chênh lệch 1,2 vượt ngưỡng; sinh viên đặt SEM bị 403 (`test_progress_says_no_error_measured_until_an_admin_sets_one`). |
+| ~~AC-80.5~~ *(gỡ bởi D078)* — *Given* chưa có cặp nào rồi có 10 cặp, *When* quản trị viên chọn dùng bài thử lại, *Then* lần đầu 422 nói số cặp; lần sau SEM nguồn `retest` từ 10 cặp (`test_measured_error_needs_enough_retest_pairs`). |
+| ~~AC-80.6~~ *(gỡ bởi D078)* — *Given* quản trị viên ở tab Cấu hình, *When* chưa có cặp thử lại và nhập tay 0,25 kèm nguồn, *Then* khung ghi "Chưa đặt", nút dùng bài thử lại bị tắt, sau khi lưu ghi nguồn đã nhập (`test_admin_sets_the_measurement_error_with_its_source`). |
 
 ## 3.9k. Lộ trình ghép từ bài có sẵn, lược đồ có phiên bản, triển khai máy chủ — D045..D047
 
@@ -1555,29 +1559,51 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 | Mã | Tên | Actor chính | Actor phụ | FR liên quan | Ưu tiên |
 | --- | --- | --- | --- | --- | --- |
-| UC-01 | Nộp bài nói và nhận kết quả | Sinh viên | — | FR-01..05, FR-18..22, FR-39, FR-55 | M |
+| UC-01 | Nộp bài nói theo band và nhận kết quả | Sinh viên | — | FR-01..05, FR-18..22, FR-39, FR-55, D076 | M |
 | UC-02 | Nộp lại bài khi bị từ chối vì chất lượng | Sinh viên | — | FR-06..09, FR-02 | M |
 | UC-03 | Xử lý bài nói qua pipeline chấm điểm | — *(use case nội bộ, được UC-01 `include`)* | — | FR-05, FR-10..22 | M |
-| UC-04 | Xem báo cáo có bằng chứng | Sinh viên | — | FR-24..27, FR-53, FR-54 | M |
+| UC-04 | Xem báo cáo có bằng chứng | Sinh viên | — | FR-24..27, FR-53, FR-54, D078 (điểm kèm band) | M |
 | UC-05 | Giảng viên duyệt bài trong hàng đợi | Giảng viên | — | FR-28..31, FR-53 | M |
 | UC-06 | Giảng viên sửa kết quả AI | Giảng viên | — | FR-30, FR-31 | M |
-| UC-07 | Quản trị viên xử lý yêu cầu rút đồng thuận | Quản trị viên | Sinh viên | FR-34, FR-35 | M |
+| UC-07 | Quản trị viên xoá dữ liệu của một người học | Quản trị viên | — | FR-35 | M |
 | UC-08 | Quản trị viên cấu hình ngưỡng QC | Quản trị viên | — | FR-08 | S |
 | UC-09 | Quản trị viên kích hoạt phiên bản mô hình | Quản trị viên | — | FR-36 | S |
 | UC-10 | Quản trị viên tạo tài khoản và phân vai trò | Quản trị viên | — | FR-32, FR-52 (D028), FR-60 (D029) | M |
 | UC-11 | Xuất hồ sơ năng lực nói đã kiểm duyệt | Giảng viên | — | FR-38 | S |
 | UC-12 | Huấn luyện lại mô hình từ manifest đã khóa | Quản trị viên | — | FR-18..20 | S |
-| UC-13 | Sinh viên ký phiếu đồng thuận | Sinh viên | — | *(chưa có FR — xem ghi chú)* | M |
-| UC-14 | Sinh viên rút đồng thuận và tự xóa bài | Sinh viên | — | FR-35 | M |
-| UC-15 | Sinh viên xem tiến độ theo thời gian | Sinh viên | — | FR-27a, FR-65 (D032) | S |
+| ~~UC-13~~ *(gỡ bởi D064)* | Sinh viên ký phiếu đồng thuận | Sinh viên | — | — | — |
+| UC-14 | Sinh viên tự xoá bài và dữ liệu của mình | Sinh viên | — | FR-35 | M |
+| UC-15 | Sinh viên xem kết quả theo thời gian | Sinh viên | — | FR-27a, FR-65 (D032), D078 | S |
 | UC-16 | Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực | Sinh viên | — | FR-34, FR-38 | S |
 | UC-17 | Đăng nhập và kết thúc phiên | Sinh viên, Giảng viên, Quản trị viên | — | FR-32, FR-51 (D028), FR-56..FR-59 (D029), FR-74 (D036) | M |
-| UC-18 | Sinh viên luyện tập theo nhiệm vụ gợi ý | Sinh viên | — | FR-40..FR-44 (D023) | S |
-| UC-19 | Sinh viên học theo lộ trình bài học | Sinh viên | — | FR-45, FR-46, FR-48, FR-50 (D025), FR-65, FR-66 (D032) | S |
-| UC-20 | Giáo viên soạn lộ trình và theo dõi lượt luyện | Giảng viên | — | FR-45, FR-47, FR-49 (D025) | S |
-| ~~UC-21~~ *(gỡ bởi D078)* | Giảng viên chấm mù bài nói trong đợt chấm | Giảng viên | — | FR-62, FR-63 (D030) | S |
-| ~~UC-22~~ *(gỡ bởi D078)* | Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận | Quản trị viên | — | FR-61, FR-63, FR-64 (D030) | S |
-| UC-23 | Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ | Quản trị viên | Cổng thanh toán | FR-67..FR-70 (D034), FR-71..FR-73 (D035) | S |
+| ~~UC-18~~ *(gỡ bởi D068, D078)* | Sinh viên luyện tập theo nhiệm vụ gợi ý | Sinh viên | — | FR-40..FR-44 (D023) | — |
+| UC-19 | Sinh viên học theo lộ trình band | Sinh viên | — | FR-45, FR-46, FR-48, FR-50 (D025), FR-65, FR-66 (D032), FR-81 (D074) | S |
+| UC-20 | Giảng viên soạn lộ trình theo band và theo dõi lượt luyện | Giảng viên | — | FR-45, FR-47, FR-49 (D025), FR-82, D074, D078 | S |
+| ~~UC-21~~ *(gỡ bởi D078)* | Giảng viên chấm mù bài nói trong đợt chấm | Giảng viên | — | FR-62, FR-63 (D030) | — |
+| ~~UC-22~~ *(gỡ bởi D078)* | Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận | Quản trị viên | — | FR-61, FR-63, FR-64 (D030) | — |
+| ~~UC-23~~ *(gỡ bởi D075)* | Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ | Quản trị viên | Cổng thanh toán | FR-67..FR-70 (D034) | — |
+| UC-24 | Sinh viên chọn band bắt đầu và band đích | Sinh viên | — | FR-81, D074 | S |
+| UC-25 | Sinh viên nhờ AI viết lại bài lên band kế | — *(use case mở rộng của UC-04)* | — | D069, D072 | C |
+| UC-26 | Sinh viên ôn sổ cụm từ | Sinh viên | — | D070 | C |
+| UC-27 | Sinh viên nạp lượt qua Stripe | Sinh viên | Cổng thanh toán | FR-85, FR-87, FR-91 (D075) | S |
+| UC-28 | Giảng viên nhờ AI soạn nháp bài học | — *(use case mở rộng của UC-20)* | — | FR-91 (D075) | C |
+| UC-29 | Giảng viên quản lý ngân hàng đề theo band | Giảng viên | — | FR-01, D076, D078 | S |
+| UC-30 | Giảng viên quản lý lớp và giao lộ trình band | Giảng viên | — | FR-88 (D054, D071, D075), D074 | S |
+| UC-31 | Giảng viên xem thống kê lớp theo band | Giảng viên | — | FR-29, FR-76, D078 | S |
+| UC-32 | Quản trị viên đặt giá lượt và gói lượt | Quản trị viên | — | FR-85, FR-87, D078 | S |
+| UC-33 | Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp | Quản trị viên | — | D072, D073 | S |
+| UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
+
+> **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Ba use case
+> không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-18
+> (luyện theo nhiệm vụ gộp vào lộ trình ở D068, API gỡ ở D078), UC-21 và UC-22
+> (chấm mù, D078), UC-23 (gói dịch vụ của trường, D075). UC-07 và UC-14 bỏ phần
+> "rút đồng thuận", còn việc xoá dữ liệu. Mười một use case mới (UC-24..UC-34)
+> ghi những gì sinh viên, giảng viên và quản trị viên làm được từ D069 tới D078:
+> học theo band, AI viết lại, sổ cụm từ, nạp lượt, ngân hàng đề theo band, lớp và
+> giao lộ trình, thống kê theo band, giá lượt, gói nhà cung cấp AI. UC-25 và UC-28
+> là use case mở rộng (`extend`) nên không có tác nhân riêng: sinh viên khởi tạo
+> từ báo cáo (UC-04), giảng viên từ form soạn bài (UC-20).
 
 > **Vì sao không dòng nào còn ghi "Hệ thống" ở cột actor.** Bốn dòng trước đây
 > ghi như vậy — UC-01, UC-03, UC-05, UC-11 — và đó là một **lỗi mô hình hoá**:
@@ -1762,13 +1788,13 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ---
 
-### UC-07 — Quản trị viên xử lý yêu cầu rút đồng thuận
+### UC-07 — Quản trị viên xoá dữ liệu của một người học *(cập nhật bản 1.16: D064, D078)*
 
 | Mục | Nội dung |
 | --- | --- |
 | **Mã** | UC-07 |
 | **Actor chính** | Quản trị viên |
-| **Mô tả** | Thực hiện xóa dữ liệu của một người tham gia khi họ rút đồng thuận |
+| **Mô tả** | Xoá toàn bộ bản ghi, báo cáo và lượt học của một người học khi họ yêu cầu (không còn bước đồng thuận từ D064) |
 | **Tiền điều kiện** | Có yêu cầu rút bằng văn bản; danh tính đã xác minh ngoài hệ thống; GVHD đã phê duyệt nếu protocol yêu cầu |
 | **Kích hoạt** | Quản trị viên mở trang "Xử lý yêu cầu dữ liệu" |
 
@@ -1887,6 +1913,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### UC-21 — Giảng viên chấm mù bài nói trong đợt chấm *(mới ở bản 1.3: D030)*
 
+> **Đã gỡ bởi D078:** chấm mù kép là công cụ nghiên cứu, đã gỡ cùng dữ liệu của nó (migration 11). Đặc tả dưới đây giữ lại làm lịch sử.
+
 | Mục | Nội dung |
 | --- | --- |
 | **Mã** | UC-21 |
@@ -1919,6 +1947,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 ---
 
 ### UC-22 — Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận *(mới ở bản 1.3: D030)*
+
+> **Đã gỡ bởi D078:** chấm mù kép là công cụ nghiên cứu, đã gỡ cùng dữ liệu của nó (migration 11). Đặc tả dưới đây giữ lại làm lịch sử.
 
 | Mục | Nội dung |
 | --- | --- |
@@ -1954,6 +1984,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### UC-23 — Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ *(mới ở bản 1.6: D034; cập nhật bản 1.7: D035)*
 
+> **Đã gỡ bởi D075:** hệ thống phục vụ một trung tâm, không còn gói dịch vụ; người học trả theo lượt (UC-27, UC-32). Đặc tả dưới đây giữ lại làm lịch sử.
+
 | Mục | Nội dung |
 | --- | --- |
 | **Mã** | UC-23 |
@@ -1988,6 +2020,281 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **1a. Trường trả theo hợp đồng:** quản trị viên dán mã giấy phép thay cho bước 2–6.
 
 **Hậu điều kiện:** Đơn ở trạng thái cuối, mỗi thông điệp của cổng được lưu; nếu đã thanh toán thì có một giấy phép mới; nhật ký có dòng đặt đơn và dòng kết quả. Không có số thẻ hay tài khoản ngân hàng nào trong hệ thống.
+
+### UC-24 — Sinh viên chọn band bắt đầu và band đích *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-24 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Chọn từ band nào tới band nào để hệ thống ghép lộ trình gồm các bài đã xuất bản của đúng những band đó (D074) |
+| **Tiền điều kiện** | Đã đăng nhập |
+| **Kích hoạt** | Sinh viên mở trang Luyện tập, khối "Học theo band" |
+
+**Luồng chính:**
+
+1. Hệ thống gợi ý band bắt đầu theo bài đánh giá gần nhất (chưa có bài thì A1) và band đích kế tiếp.
+2. Sinh viên chọn band bắt đầu và band đích.
+3. Hệ thống ghép lộ trình từ các chặng có band nằm trong khoảng đã chọn và lưu làm lộ trình đang học.
+4. Trang Luyện tập và trang Nộp bài lấy band bắt đầu này làm band mặc định.
+
+**Luồng thay thế:**
+
+- **2a. Band đích thấp hơn band bắt đầu:** Hệ thống từ chối, nêu lý do.
+- **3a. Giảng viên đã giao lộ trình:** Lộ trình của giảng viên đang áp dụng; sinh viên thấy ai giao.
+
+**Hậu điều kiện:** Sinh viên có một lộ trình band đang học.
+
+---
+
+### UC-25 — Sinh viên nhờ AI viết lại bài lên band kế *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-25 |
+| **Actor chính** | — *(mở rộng UC-04)* |
+| **Mô tả** | Từ báo cáo một bài đã chấm, mô hình ngôn ngữ viết lại câu trả lời của chính sinh viên ở band kế tiếp, kèm các chỗ đổi (D069, D072) |
+| **Tiền điều kiện** | Bài đã có kết quả và bản chép lời; hệ thống bật AI; còn lượt (bản tính lượt) |
+| **Kích hoạt** | Sinh viên bấm "Viết lại lên band …" trên báo cáo |
+
+**Luồng chính:**
+
+1. Hệ thống giữ trước giá một lần viết lại (UC-32).
+2. Hệ thống gửi bản chép lời tới nhà cung cấp mô hình đang chọn (UC-33).
+3. Hệ thống lưu bản viết lại cùng bài, trừ lượt và thêm các cụm từ mới vào sổ cụm từ (UC-26).
+
+**Luồng thay thế:**
+
+- **1a. Hết lượt hoặc hết hạn mức chung trong ngày:** Hệ thống từ chối, nói rõ lý do và lúc mở lại.
+- **2a. Nhà cung cấp lỗi:** Hoàn lượt đã giữ; báo lỗi.
+
+**Hậu điều kiện:** Bài có đúng một bản viết lại; bấm lại chỉ đọc bản đã có, không trừ thêm.
+
+---
+
+### UC-26 — Sinh viên ôn sổ cụm từ *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-26 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Ôn các cụm từ rút ra từ những bản viết lại của chính mình, theo lịch ôn giãn cách (D070) |
+| **Tiền điều kiện** | Có ít nhất một bản viết lại |
+| **Kích hoạt** | Sinh viên mở trang Cụm từ |
+
+**Luồng chính:**
+
+1. Hệ thống hiện các thẻ đến hạn hôm nay.
+2. Sinh viên tự đánh giá nhớ hay chưa nhớ từng thẻ.
+3. Hệ thống dời lịch ôn của thẻ theo câu trả lời.
+
+**Luồng thay thế:**
+
+- **1a. Không có thẻ đến hạn:** Hiện tổng số thẻ và ngày ôn kế tiếp.
+
+**Hậu điều kiện:** Lịch ôn của các thẻ đã ôn được cập nhật.
+
+---
+
+### UC-27 — Sinh viên nạp lượt qua Stripe *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-27 |
+| **Actor chính** | Sinh viên; actor phụ: Cổng thanh toán |
+| **Mô tả** | Mua một gói lượt do quản trị viên đặt (UC-32), trả qua Stripe Checkout; lượt vào ví khi Stripe báo đã trả (D053, D075) |
+| **Tiền điều kiện** | Bản triển khai tính lượt và bật Stripe |
+| **Kích hoạt** | Sinh viên bấm mua một gói ở trang Lượt của tôi |
+
+**Luồng chính:**
+
+1. Hệ thống tạo đơn với số lượt và giá của gói đang bán.
+2. Hệ thống chuyển sinh viên sang trang thanh toán của Stripe.
+3. Stripe gọi lại hệ thống với chữ ký; hệ thống xác minh và đánh dấu đơn đã trả.
+4. Hệ thống cộng lượt vào ví đúng một lần cho đơn đó.
+
+**Luồng thay thế:**
+
+- **3a. Chữ ký sai hoặc số tiền lệch:** Không cộng lượt; đơn giữ trạng thái chờ.
+- **3b. Sinh viên huỷ thanh toán:** Đơn hết hạn, không trừ gì.
+
+**Hậu điều kiện:** Ví có thêm số lượt của gói; đơn có biên nhận.
+
+---
+
+### UC-28 — Giảng viên nhờ AI soạn nháp bài học *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-28 |
+| **Actor chính** | — *(mở rộng UC-20)* |
+| **Mô tả** | Trong form "Bài học mới", mô hình ngôn ngữ viết nháp tên, tóm tắt, đoạn văn mẫu, từ khoá và đề nói tự do theo band của chặng, tiêu chí và chủ đề (D075) |
+| **Tiền điều kiện** | Hệ thống bật AI; giảng viên còn lượt (bản tính lượt) |
+| **Kích hoạt** | Giảng viên bấm "Nhờ AI soạn nháp" |
+
+**Luồng chính:**
+
+1. Hệ thống giữ trước giá một lần soạn.
+2. Hệ thống gửi yêu cầu kèm band của chặng và độ dài đoạn văn theo band.
+3. Hệ thống điền nháp vào form, bỏ từ khoá không có trong đoạn văn; giảng viên sửa rồi tạo bài.
+
+**Luồng thay thế:**
+
+- **2a. Nhà cung cấp lỗi:** Hoàn lượt; form giữ nguyên.
+
+**Hậu điều kiện:** Form có nháp; chưa có bài nào được lưu cho tới khi giảng viên tạo.
+
+---
+
+### UC-29 — Giảng viên quản lý ngân hàng đề theo band *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-29 |
+| **Actor chính** | Giảng viên |
+| **Mô tả** | Thêm, sửa lời, tắt hoặc bật các đề đánh giá của từng band A1–C2; đề nói 40–60 giây, có từ khoá tiếng Anh để kiểm tra lạc đề (D076, D078) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò giảng viên hoặc quản trị viên |
+| **Kích hoạt** | Giảng viên mở trang Đề đánh giá |
+
+**Luồng chính:**
+
+1. Hệ thống hiện các tab band với số đề đang bật mỗi band.
+2. Giảng viên chọn band, tìm hoặc lọc đề.
+3. Giảng viên thêm đề mới hoặc sửa lời đề trong hộp thoại.
+4. Sửa lời đề tạo phiên bản mới; báo cáo cũ giữ lời đề cũ.
+5. Giảng viên tắt hoặc bật một đề.
+
+**Luồng thay thế:**
+
+- **3a. Thiếu band hoặc lời đề quá ngắn:** Hệ thống từ chối, nêu trường cần sửa.
+
+**Hậu điều kiện:** Trang Nộp bài của sinh viên chỉ bốc đề đang bật của band họ chọn.
+
+---
+
+### UC-30 — Giảng viên quản lý lớp và giao lộ trình band *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-30 |
+| **Actor chính** | Giảng viên |
+| **Mô tả** | Tạo lớp, thêm học viên bằng email, xem học viên theo band đang học và giao một lộ trình đã xuất bản cho một nhóm band (D054, D071, D074, D075) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò giảng viên |
+| **Kích hoạt** | Giảng viên mở trang Lớp học |
+
+**Luồng chính:**
+
+1. Giảng viên tạo lớp hoặc mở một lớp của mình.
+2. Giảng viên thêm học viên bằng email.
+3. Hệ thống nhóm học viên theo band bắt đầu–band đích họ đang học.
+4. Giảng viên chọn một nhóm và giao một lộ trình đã xuất bản.
+5. Lộ trình đó thay lộ trình riêng của từng học viên trong nhóm, ghi ai giao.
+
+**Luồng thay thế:**
+
+- **2a. Email không có tài khoản:** Báo không tìm thấy, không thêm.
+- **4a. Học viên ngoài lớp của giảng viên:** Từ chối.
+
+**Hậu điều kiện:** Học viên trong nhóm học theo lộ trình được giao.
+
+---
+
+### UC-31 — Giảng viên xem thống kê lớp theo band *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-31 |
+| **Actor chính** | Giảng viên |
+| **Mô tả** | Xem bài nộp, bài chờ duyệt, phân bố band và, theo band của đề, bao nhiêu bài đạt đúng band, thấp hơn, cao hơn; kèm phát âm của cả lớp (D078) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò giảng viên |
+| **Kích hoạt** | Giảng viên mở trang Thống kê |
+
+**Luồng chính:**
+
+1. Hệ thống tính số liệu trên học viên các lớp của giảng viên (quản trị viên: mọi học viên).
+2. Hệ thống hiện phân bố band và bảng theo band của đề.
+3. Hệ thống hiện phát âm của cả lớp, không chỉ ra ai.
+
+**Luồng thay thế:**
+
+- **1a. Chưa có bài nào:** Hiện trạng thái trống.
+
+**Hậu điều kiện:** Không có số liệu nào xếp hạng học viên hay giảng viên.
+
+---
+
+### UC-32 — Quản trị viên đặt giá lượt và gói lượt *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-32 |
+| **Actor chính** | Quản trị viên |
+| **Mô tả** | Đặt giá bài nói đến 1 phút, mỗi phút thêm, hệ số bài luyện, giá một lần AI viết lại hoặc soạn bài, IDPoint mỗi lượt, lượt miễn phí mỗi tháng và các gói lượt bán qua Stripe (D078) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên |
+| **Kích hoạt** | Quản trị viên mở tab Cấu hình, thẻ Giá lượt |
+
+**Luồng chính:**
+
+1. Hệ thống hiện giá đang áp dụng, nguồn (cấu hình máy chủ hay phiên bản quản trị) và các phiên bản trước.
+2. Quản trị viên sửa giá và gói lượt rồi lưu.
+3. Hệ thống kiểm tra giá hợp lệ, lưu thành phiên bản mới `price-admin-N` và ghi nhật ký kiểm toán.
+4. Báo giá, lượt miễn phí và gói đang bán đổi theo ngay.
+
+**Luồng thay thế:**
+
+- **3a. Giá âm, hệ số bài luyện ngoài (0; 1] hoặc không có gói nào:** Từ chối, nêu lý do.
+
+**Hậu điều kiện:** Lượt đã trừ trước đó giữ phiên bản giá lúc trừ.
+
+---
+
+### UC-33 — Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-33 |
+| **Actor chính** | Quản trị viên |
+| **Mô tả** | Xem số yêu cầu gửi nhà cung cấp mô hình hôm nay so với hạn mức miễn phí hoặc ngân sách trả phí, token, chi phí ước tính, từ chối, lỗi, 14 ngày gần nhất; chuyển giữa gói miễn phí và trả phí (D072, D073) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên |
+| **Kích hoạt** | Quản trị viên mở tab AI viết lại |
+
+**Luồng chính:**
+
+1. Hệ thống hiện mức dùng hôm nay theo ngày của nhà cung cấp.
+2. Quản trị viên xem 14 ngày gần nhất.
+3. Quản trị viên chuyển gói; hệ thống ghi ai chuyển và lúc nào.
+
+**Luồng thay thế:**
+
+- **3a. Chuyển sang trả phí mà chưa đặt ngân sách mỗi ngày, hoặc máy chủ chưa có khoá trả phí:** Không cho chuyển, nêu lý do.
+
+**Hậu điều kiện:** Các yêu cầu sau đó đi theo gói đã chọn và hạn mức của gói.
+
+---
+
+### UC-34 — Quản trị viên cộng lượt cho một tài khoản *(mới ở bản 1.16: D078)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-34 |
+| **Actor chính** | Quản trị viên |
+| **Mô tả** | Cộng một số lượt vào ví của một tài khoản, kèm mã tham chiếu, mỗi mã chỉ cộng một lần (D049) |
+| **Tiền điều kiện** | Bản triển khai tính lượt |
+| **Kích hoạt** | Quản trị viên nhập tài khoản, số lượt và mã tham chiếu |
+
+**Luồng chính:**
+
+1. Hệ thống tìm tài khoản.
+2. Hệ thống cộng lượt nếu mã tham chiếu chưa dùng và ghi nhật ký kiểm toán.
+
+**Luồng thay thế:**
+
+- **1a. Không có tài khoản:** Báo không tìm thấy.
+- **2a. Mã tham chiếu đã dùng:** Không cộng thêm.
+
+**Hậu điều kiện:** Ví có thêm số lượt; nhật ký ghi lần cộng.
+
+---
 
 # 5. USER STORY VÀ ACCEPTANCE CRITERIA
 

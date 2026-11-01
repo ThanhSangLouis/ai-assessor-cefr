@@ -3,56 +3,51 @@
 %% Day la so do THIET KE: no mo ta he thong PHAI LAM GI, khong phai da lam
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
+%% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
+%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua Stripe.
 flowchart LR
     SV(("Sinh viên"))
+    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC13["UC-13 Sinh viên ký phiếu đồng thuận"]
-        UC01["UC-01 Nộp bài nói và nhận kết quả"]
+        UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
+        UC19["UC-19 Sinh viên học theo lộ trình band"]
+        UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
         UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
         UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
         UC04["UC-04 Xem báo cáo có bằng chứng"]
-        UC15["UC-15 Sinh viên xem tiến độ theo thời gian"]
+        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
+        UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
+        UC26["UC-26 Sinh viên ôn sổ cụm từ"]
+        UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
-        UC14["UC-14 Sinh viên rút đồng thuận và tự xóa bài"]
-        UC18["UC-18 Sinh viên luyện tập theo nhiệm vụ gợi ý"]
-        UC19["UC-19 Sinh viên học theo lộ trình bài học"]
+        UC14["UC-14 Sinh viên tự xoá bài và dữ liệu của mình"]
     end
 
     SV --> UC17
-    SV --> UC13
+    SV --> UC24
+    SV --> UC19
     SV --> UC01
     SV --> UC04
     SV --> UC15
+    SV --> UC26
+    SV --> UC27
     SV --> UC16
     SV --> UC14
-    SV --> UC18
-    SV --> UC19
+    UC27 --- CTT
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML.
-    %% Can no vi mot nghich ly cua trinh ve: quan he `extend` di tu use case mo
-    %% rong VE use case co so, nen Mermaid xep use case mo rong len rank TRUOC,
-    %% tuc sang ben trai, chen vao dung cot cua tac nhan. Lien ket vo hinh nay
-    %% dat UC-02 SAU UC-01, nen UC-01 dung chung cot voi cac use case khac ma
-    %% tac nhan khoi tao, con UC-02 nam ben phai va mui ten `extend` tro nguoc
-    %% ve trai vao UC-01 -- dung chuan UML va van co nhan.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
+    %% case mo rong SAU use case co so de mui ten `extend` tro nguoc ve trai.
     UC01 ~~~ UC02
+    UC04 ~~~ UC25
 
-    %% Chieu mui ten theo chuan UML, va hai chieu nay NGUOC nhau:
-    %%   include: tu use case GOC --> use case duoc gop (luon xay ra)
-    %%   extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
+    %% include: tu use case GOC --> use case duoc gop (luon xay ra)
+    %% extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
     %% UC-03 khong co tac nhan: no la use case noi bo, chay vi UC-01 include no.
-    %% Use case MO RONG khong noi truc tiep voi tac nhan: tac nhan khoi tao use
-    %% case CO SO, con phan mo rong duoc chen vao co dieu kien. Ban truoc ve
-    %% `SV --> UC02`, tuc sinh vien khoi tao duoc "nop lai bai" tu con so khong
-    %% -- chua tung nop thi lay dau ra bai ma nop lai.
-    %% `UC-13 ky dong thuan` la TIEN DIEU KIEN cua `UC-01`, khong phai include
-    %% hay extend -- tien dieu kien khong ve thanh quan he tren so do use case.
-    %% Ban truoc ve `UC14 -. extend .-> UC13`: sai ban chat. `extend` nghia la
-    %% hanh vi duoc CHEN VAO GIUA LUONG cua use case co so tai mot diem mo rong,
-    %% nhung `withdraw_consent` la mot tuyen doc lap co kich hoat rieng, khong
-    %% nam trong luong cua `sign_consent`.
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sinh vien mo bao cao
+    %% (UC-04) roi moi nho AI viet lai (UC-25); nop bai (UC-01) roi moi nop lai.
     UC01 -. include .-> UC03
     UC02 -. extend .-> UC01
+    UC25 -. extend .-> UC04

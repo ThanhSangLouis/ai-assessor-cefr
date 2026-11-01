@@ -179,59 +179,54 @@ File: `docs/sdd/diagrams/01a_usecase_sinhvien.mmd`
 %% Day la so do THIET KE: no mo ta he thong PHAI LAM GI, khong phai da lam
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
+%% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
+%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua Stripe.
 flowchart LR
     SV(("Sinh viên"))
+    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC13["UC-13 Sinh viên ký phiếu đồng thuận"]
-        UC01["UC-01 Nộp bài nói và nhận kết quả"]
+        UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
+        UC19["UC-19 Sinh viên học theo lộ trình band"]
+        UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
         UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
         UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
         UC04["UC-04 Xem báo cáo có bằng chứng"]
-        UC15["UC-15 Sinh viên xem tiến độ theo thời gian"]
+        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
+        UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
+        UC26["UC-26 Sinh viên ôn sổ cụm từ"]
+        UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
-        UC14["UC-14 Sinh viên rút đồng thuận và tự xóa bài"]
-        UC18["UC-18 Sinh viên luyện tập theo nhiệm vụ gợi ý"]
-        UC19["UC-19 Sinh viên học theo lộ trình bài học"]
+        UC14["UC-14 Sinh viên tự xoá bài và dữ liệu của mình"]
     end
 
     SV --> UC17
-    SV --> UC13
+    SV --> UC24
+    SV --> UC19
     SV --> UC01
     SV --> UC04
     SV --> UC15
+    SV --> UC26
+    SV --> UC27
     SV --> UC16
     SV --> UC14
-    SV --> UC18
-    SV --> UC19
+    UC27 --- CTT
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML.
-    %% Can no vi mot nghich ly cua trinh ve: quan he `extend` di tu use case mo
-    %% rong VE use case co so, nen Mermaid xep use case mo rong len rank TRUOC,
-    %% tuc sang ben trai, chen vao dung cot cua tac nhan. Lien ket vo hinh nay
-    %% dat UC-02 SAU UC-01, nen UC-01 dung chung cot voi cac use case khac ma
-    %% tac nhan khoi tao, con UC-02 nam ben phai va mui ten `extend` tro nguoc
-    %% ve trai vao UC-01 -- dung chuan UML va van co nhan.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
+    %% case mo rong SAU use case co so de mui ten `extend` tro nguoc ve trai.
     UC01 ~~~ UC02
+    UC04 ~~~ UC25
 
-    %% Chieu mui ten theo chuan UML, va hai chieu nay NGUOC nhau:
-    %%   include: tu use case GOC --> use case duoc gop (luon xay ra)
-    %%   extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
+    %% include: tu use case GOC --> use case duoc gop (luon xay ra)
+    %% extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
     %% UC-03 khong co tac nhan: no la use case noi bo, chay vi UC-01 include no.
-    %% Use case MO RONG khong noi truc tiep voi tac nhan: tac nhan khoi tao use
-    %% case CO SO, con phan mo rong duoc chen vao co dieu kien. Ban truoc ve
-    %% `SV --> UC02`, tuc sinh vien khoi tao duoc "nop lai bai" tu con so khong
-    %% -- chua tung nop thi lay dau ra bai ma nop lai.
-    %% `UC-13 ky dong thuan` la TIEN DIEU KIEN cua `UC-01`, khong phai include
-    %% hay extend -- tien dieu kien khong ve thanh quan he tren so do use case.
-    %% Ban truoc ve `UC14 -. extend .-> UC13`: sai ban chat. `extend` nghia la
-    %% hanh vi duoc CHEN VAO GIUA LUONG cua use case co so tai mot diem mo rong,
-    %% nhung `withdraw_consent` la mot tuyen doc lap co kich hoat rieng, khong
-    %% nam trong luong cua `sign_consent`.
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sinh vien mo bao cao
+    %% (UC-04) roi moi nho AI viet lai (UC-25); nop bai (UC-01) roi moi nop lai.
     UC01 -. include .-> UC03
     UC02 -. extend .-> UC01
+    UC25 -. extend .-> UC04
 ```
 
 ![Hình 1a. Use case Sinh viên](images/01a_usecase_sinhvien.png)
@@ -246,34 +241,42 @@ File: `docs/sdd/diagrams/01b_usecase_giangvien.mmd`
 %% So do use case 1b: tac nhan Giang vien danh gia
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): giang vien duyet va cham lai bai, soan lo trinh theo band
+%% (co the nho AI soan nhap), giu ngan hang de theo band, xep lop va giao lo
+%% trinh band, xem thong ke lop theo band.
 flowchart LR
     GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
-        UC20["UC-20 Giáo viên soạn lộ trình và theo dõi lượt luyện"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
+        UC20["UC-20 Giảng viên soạn lộ trình theo band và theo dõi lượt luyện"]
+        UC28["UC-28 Giảng viên nhờ AI soạn nháp bài học"]
+        UC29["UC-29 Giảng viên quản lý ngân hàng đề theo band"]
+        UC30["UC-30 Giảng viên quản lý lớp và giao lộ trình band"]
+        UC31["UC-31 Giảng viên xem thống kê lớp theo band"]
+        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
     end
 
-    %% UC-05 o cuoi cot: mui ten `extend` tu UC-06 vong ve UC-05 di qua khoang
-    %% trong ben duoi, khong sat hop nao khac.
     GV --> UC17
-    GV --> UC11
-    GV --> UC20
     GV --> UC05
+    GV --> UC20
+    GV --> UC29
+    GV --> UC30
+    GV --> UC31
+    GV --> UC11
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Dat UC-06
-    %% sau UC-05 de mui ten `extend` tro nguoc ve trai. Xem giai thich day du o 01a.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Xem 01a.
     UC05 ~~~ UC06
+    UC20 ~~~ UC28
 
-    %% Use case MO RONG khong noi truc tiep voi tac nhan. Giang vien khoi tao
-    %% UC-05 (mo hang doi ra duyet); UC-06 sua ket qua duoc chen vao giua luong
-    %% do khi ho khong dong y voi may. Khong the sua ket qua khi chua mo bai ra.
-    %% extend: tu use case MO RONG --> use case goc
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sua ket qua (UC-06)
+    %% chen vao luong duyet (UC-05); nho AI soan nhap (UC-28) chen vao form
+    %% "Bai hoc moi" cua UC-20.
     UC06 -. extend .-> UC05
+    UC28 -. extend .-> UC20
 ```
 
 ![Hình 1b. Use case Giảng viên](images/01b_usecase_giangvien.png)
@@ -288,31 +291,40 @@ File: `docs/sdd/diagrams/01c_usecase_quantri.mmd`
 %% So do use case 1c: tac nhan Quan tri vien
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): mot trung tam, hoc vien tra theo luot -- quan tri vien dat
+%% gia luot va goi luot, theo doi AI viet lai; khong con goi dich vu (D075).
 flowchart LR
     QT(("Quản trị viên"))
-    SV(("Sinh viên"))
-    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
+        UC07["UC-07 Quản trị viên xoá dữ liệu của một người học"]
         UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
         UC09["UC-09 Quản trị viên kích hoạt phiên bản mô hình"]
-        UC07["UC-07 Quản trị viên xử lý yêu cầu rút đồng thuận"]
         UC12["UC-12 Huấn luyện lại mô hình từ manifest đã khóa"]
-        UC23["UC-23 Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ"]
+        UC32["UC-32 Quản trị viên đặt giá lượt và gói lượt"]
+        UC34["UC-34 Quản trị viên cộng lượt cho một tài khoản"]
+        UC33["UC-33 Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp"]
     end
 
     QT --> UC17
     QT --> UC10
     QT --> UC08
     QT --> UC09
-    QT --> UC07
     QT --> UC12
-    QT --> UC23
-    SV --> UC07
-    UC23 --- CTT
+    QT --> UC32
+    QT --> UC34
+    QT --> UC33
+    QT --> UC07
+
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia chin
+    %% use case thanh hai cot (tai khoan va mo hinh; luot va AI) cho hinh vua A4.
+    UC17 ~~~ UC12
+    UC10 ~~~ UC32
+    UC07 ~~~ UC34
+    UC08 ~~~ UC33
 ```
 
 ![Hình 1c. Use case Quản trị viên](images/01c_usecase_quantri.png)
@@ -1101,7 +1113,7 @@ erDiagram
 
 #### 3.5b. Chấm mù hai người (D030) — đã gỡ
 
-D078 (01/11/2026) gỡ chấm mù kép (D030) và thực nghiệm phản hồi (D040): hệ thống phục vụ một trung tâm, nội dung đã được duyệt. Kho mới không tạo `rating_batch`, `study`; kho cũ giữ dữ liệu nhưng không đọc nữa, và xoá dữ liệu một người (FR-35) vẫn rút phiếu chấm và tư cách tham gia của họ. Sơ đồ 5d bỏ đi cùng hai collection.
+D078 (01/11/2026) gỡ chấm mù kép (D030) và thực nghiệm phản hồi (D040): hệ thống phục vụ một trung tâm, nội dung đã được duyệt. Kho mới không tạo `rating_batch`, `study`; migration 11 xoá hai collection này cùng trường `response.machine_seen` ở kho cũ (chủ dự án duyệt). Sơ đồ 5d bỏ đi cùng hai collection.
 
 #### 3.5c. Lược đồ nghiên cứu dự kiến (chưa hiện thực)
 
@@ -1335,9 +1347,9 @@ flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
         direction TB
         GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, bài nộp, duyệt,<br/>lớp học, bài học, lượt"]
-        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
-        SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
+        CO["core<br/>tài khoản, đề, bài nộp, duyệt,<br/>lớp, lộ trình band, lượt"]
+        WE["web<br/>trang, tệp tĩnh, số đếm"]
+        SP["speech<br/>QC, Whisper, chấm điểm<br/>có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
         MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]

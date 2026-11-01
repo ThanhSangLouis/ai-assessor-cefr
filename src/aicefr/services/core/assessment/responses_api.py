@@ -1,7 +1,7 @@
 """The student's side of the assessment service: submit, report, progress, practice, own data.
 
-FR-01..FR-05, FR-27, FR-35, FR-38, D023 (practice), D042 (reliable change). Moved out of
-the single application with D043; the rules are unchanged.
+FR-01..FR-05, FR-27, FR-35, FR-38, D023 (practice). Moved out of the single application
+with D043; the rules are unchanged.
 """
 
 from __future__ import annotations
@@ -37,14 +37,12 @@ from aicefr.practice.feedback import previous_measures, takeaway
 from aicefr.practice.missions import describe_measure
 from aicefr.practice.streak import summarize
 from aicefr.qc import audio_qc
-from aicefr.research.reliable_change import reliable_change
 from aicefr.scoring.band_map import position, thresholds_of
 from aicefr.services.core.assessment import replay_api, scoring
 from aicefr.services.core.assessment.context import (
     CONFIG_VERSION,
     active_model_name,
     can_view,
-    measurement_error,
     svc,
 )
 from aicefr.storage.auth_repository import Account
@@ -484,11 +482,6 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
             f" Hiện có {len(scores)} bài."
         )
 
-    error = measurement_error()
-    change = reliable_change(scores, error["sem"] if error else None)
-    change["sem_source"] = error["source"] if error else None
-    change["sem_pairs"] = error.get("pairs") if error else None
-
     limits = _band_thresholds()
     for r in rows:
         r["band_position"] = (
@@ -502,7 +495,6 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
         "results": rows,
         "verified_count": sum(1 for r in rows if r["teacher_verified"]),
         "trend": trend,
-        "reliable_change": change,
         # D070: the habits the next-band targets name, over the same assessments.
         "habits": habit_series(svc().repo.feature_series(account.account_id, HABIT_NAMES)),
         "note": (

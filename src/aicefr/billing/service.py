@@ -64,6 +64,9 @@ class BillingService:
         # D053: put runs in a buyer's wallet once per order -- the metering
         # service's `credit`; None where nothing is metered.
         credit: Callable[[str, int, str], bool] | None = None,
+        # D078: the run packs on sale, as an administrator set them; the
+        # settings' packs where nothing is metered.
+        packs: Callable[[], tuple[tuple[int, int], ...]] | None = None,
     ) -> None:
         self.store = store
         self.settings = settings
@@ -73,6 +76,7 @@ class BillingService:
         self._audit = audit
         self._clock = clock
         self._credit = credit
+        self._packs = packs or (lambda: tuple(self.settings.credit_packs))
 
     # ------------------------------------------------------------ basics
 
@@ -149,12 +153,12 @@ class BillingService:
 
     @property
     def sells_credits(self) -> bool:
-        return self.enabled and self._credit is not None and bool(self.settings.credit_packs)
+        return self.enabled and self._credit is not None and bool(self._packs())
 
     def credit_packs(self) -> list[dict]:
         return [
             {"runs": runs, "price_vnd": price, "per_run_vnd": round(price / runs)}
-            for runs, price in self.settings.credit_packs
+            for runs, price in self._packs()
         ]
 
     def place_credit_order(
@@ -173,7 +177,7 @@ class BillingService:
         """
         if not self.sells_credits:
             raise BillingOff
-        price = dict(self.settings.credit_packs).get(runs)
+        price = dict(self._packs()).get(runs)
         if price is None:
             raise OrderError("không có gói lượt này")
         gateway = self._chosen_gateway(gateway_name)

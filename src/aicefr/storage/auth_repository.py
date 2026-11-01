@@ -872,11 +872,6 @@ class AuthRepository(MongoStore):
             return
         self.col("account").update_one({"account_id": account_id}, {"$set": changes})
 
-    def active_account_ids(self) -> set[str]:
-        """Accounts that are switched on: whose data research may use (D064)."""
-        rows = self.col("account").find({"disabled": 0}, {"account_id": 1})
-        return {r["account_id"] for r in rows}
-
     def set_role(self, account_id: str, role: Role) -> str:
         """Give an account another role; returns the role it had."""
         row = self.get(account_id)

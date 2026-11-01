@@ -13,7 +13,6 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
 from aicefr.api.schemas import EraseRequest, QueueItem
@@ -21,22 +20,13 @@ from aicefr.observability import count
 from aicefr.platform.bus import BusTimeout
 from aicefr.platform.rpc import RemoteError
 from aicefr.qc import audio_qc
-from aicefr.research.reliable_change import MIN_PAIRS as MIN_RETEST_PAIRS
-from aicefr.research.reliable_change import (
-    RELIABLE_CHANGE_VERSION,
-    RETEST_WINDOW,
-    retest_pairs,
-    sem_from_pairs,
-)
 from aicefr.services.core.assessment.context import (
     ACTIVE_MODEL_KEY,
     CONFIG_VERSION,
-    MEASUREMENT_ERROR_KEY,
     QC_CONFIG_KEY,
     QC_EDITABLE,
     active_model_name,
     active_qc,
-    measurement_error,
     scorable_duration,
     svc,
 )
@@ -262,7 +252,6 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
                 "đã xoá bài đánh giá nhưng chưa xoá được bài học: dịch vụ bài học không trả lời."
                 " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
             ) from e
-        s.repo.forget_study_participant(who["account_id"])
         if s.classrooms is not None:
             s.classrooms.forget_account(who["account_id"])
         if s.replays is not None:
@@ -273,58 +262,6 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
         "lần huấn luyện sau."
     )
     return result
-
-
-# ================================================================= measurement error (D042)
-
-
-class MeasurementIn(BaseModel):
-    use: str = Field(pattern="^(retest|manual)$")
-    sem: float | None = Field(default=None, gt=0, le=3)
-    note: str | None = Field(default=None, max_length=300)
-
-
-@router.get("/api/v1/admin/measurement-error", tags=["admin"])
-def get_measurement_error(account: Account = ADMIN_ONLY) -> dict:
-    """The SEM in force and the one today's test-retest pairs would give. FR-80."""
-    pairs = retest_pairs(svc().repo.scored_assessments(machine_only=True))
-    return {
-        "current": measurement_error(),
-        "candidate": {"pairs": len(pairs), "sem": sem_from_pairs(pairs)},
-        "min_pairs": MIN_RETEST_PAIRS,
-        "window_hours": int(RETEST_WINDOW.total_seconds() // 3600),
-    }
-
-
-@router.post("/api/v1/admin/measurement-error", tags=["admin"])
-def set_measurement_error(body: MeasurementIn, account: Account = ADMIN_ONLY) -> dict:
-    """Put an SEM in force: from today's test-retest pairs, or typed in with a source. FR-80.
-
-    A typed value must say where it comes from (`note`), so the progress page
-    never shows a bar for "progress" whose origin nobody can trace.
-    """
-    repo = svc().repo
-    if body.use == "retest":
-        pairs = retest_pairs(repo.scored_assessments(machine_only=True))
-        sem = sem_from_pairs(pairs)
-        if sem is None:
-            raise HTTPException(
-                422,
-                f"Mới có {len(pairs)} cặp bài thử lại, cần ít nhất {MIN_RETEST_PAIRS} cặp.",
-            )
-        value = {"sem": round(sem, 4), "source": "retest", "pairs": len(pairs), "note": None}
-    else:
-        if body.sem is None or not (body.note or "").strip():
-            raise HTTPException(422, "Nhập sai số đo và ghi rõ nguồn của con số.")
-        value = {"sem": body.sem, "source": "manual", "pairs": None, "note": body.note.strip()}
-    value["set_at"] = datetime.now(UTC).isoformat(timespec="seconds")
-    repo.set_config(
-        MEASUREMENT_ERROR_KEY, json.dumps(value), RELIABLE_CHANGE_VERSION, account.pseudonym
-    )
-    repo.write_audit(
-        account.pseudonym, "measurement_error.set", value["source"], f"sem={value['sem']}"
-    )
-    return value
 
 
 # ================================================================= health

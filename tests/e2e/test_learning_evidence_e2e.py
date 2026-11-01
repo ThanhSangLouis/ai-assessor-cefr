@@ -62,26 +62,9 @@ def test_progress_page_names_the_pronunciation_patterns(student, live_server):
     expect(ed.locator(".badge")).to_contain_text("Chưa đủ dữ liệu · 3/8")
 
 
-def test_class_page_shows_teacher_time_and_class_pronunciation(browser, live_server):
+def test_class_page_shows_class_pronunciation(browser, live_server):
     teacher = _page(browser, live_server, "/teach", "teacher")
     teacher.goto("/review/stats")
     expect(teacher.locator("#class-pronunciation-body")).not_to_contain_text("Không tải được")
-    # D068: teacher time is a measurement for the study, read by administrators.
+    # D078: the teacher-time measurement is gone, for everyone.
     expect(teacher.locator("#teacher-time")).to_have_count(0)
-    admin = _page(browser, live_server, "/admin", "admin")
-    admin.goto("/review/stats")
-    body = admin.locator("#teacher-time-body")
-    expect(body).to_contain_text("Duyệt một bài, có máy")
-    expect(body).to_contain_text("chưa đủ 5 lần")
-
-
-def test_admin_sets_the_measurement_error_with_its_source(browser, live_server):
-    admin = _page(browser, live_server, "/admin", "admin")
-    admin.get_by_role("tab", name="Cấu hình").click()
-    box = admin.locator("#measurement-error")
-    expect(box).to_contain_text("Chưa đặt")
-    expect(box.get_by_role("button", name="Dùng sai số từ bài thử lại")).to_be_disabled()
-    box.get_by_label("Nhập tay").fill("0.25")
-    box.get_by_label("Nguồn của con số").fill("Pilot thử lại 30 sinh viên")
-    box.get_by_role("button", name="Lưu").click()
-    expect(box).to_contain_text("nhập tay: Pilot thử lại 30 sinh viên")

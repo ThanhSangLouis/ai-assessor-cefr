@@ -45,6 +45,11 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
                 account_id=account_id, runs=runs, order_id=order_id))
             if settings.metering_enabled else None
         ),
+        # D078: the packs an administrator put on sale, from the metering service.
+        packs=(
+            (lambda: tuple(tuple(p) for p in peers.metering.run_packs()))
+            if settings.metering_enabled else None
+        ),
     )  # fmt: skip
     facade = BillingFacade(service, audit_log)
     billing_api.configure(billing_api.Services(billing=service))

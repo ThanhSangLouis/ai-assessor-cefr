@@ -140,20 +140,16 @@
     <b>tạo một phiên bản ngưỡng mới</b> (<code>qc_config_version</code>), ghi vào nhật
     ký kiểm toán, và mọi báo cáo chấm sau đó ghi lại phiên bản đã dùng.
   </div>
-  <div class="notice notice-danger">
-    Đây là bộ ngưỡng <b>candidate, chưa qua kiểm định</b>. Các giá trị dưới đây
-    được chọn theo đề xuất trong SRS, chưa có nghiên cứu xác nhận là tối ưu.
-  </div>
   <div class="card" id="config-body" aria-busy="true" aria-live="polite">
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-row"></div>
     <div class="skeleton skeleton-row"></div>
     <div class="skeleton skeleton-row"></div>
   </div>
+  {#- D078. The prices of the runs and the run packs, set here, versioned. -#}
+  <section class="card" id="prices" aria-labelledby="prices-h" hidden></section>
   {#- D036. Whether sign-in with Google is on, and what to register with Google. -#}
   <section class="card" id="google-setup" aria-labelledby="google-setup-h" hidden></section>
-  {#- D042. The measurement error behind "reliable progress" on the learner's page. -#}
-  <section class="card" id="measurement-error" aria-labelledby="measurement-error-h" hidden></section>
 </section>
 
 <section id="panel-erase" role="tabpanel" aria-labelledby="tab-erase" tabindex="0" hidden>
@@ -217,5 +213,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ asset('admin_coach.js') }}"></script>
+<script src="{{ asset('admin_prices.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

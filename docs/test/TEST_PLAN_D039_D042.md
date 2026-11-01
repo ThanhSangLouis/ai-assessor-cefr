@@ -63,16 +63,16 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | AC-78.4 | TC-LE-I09 |
 | AC-78.5 | TC-LE-I10 |
 | AC-79.1 | TC-LE-I12 |
-| AC-79.2 | TC-LE-U10 |
-| AC-79.3 | TC-LE-U11 |
-| AC-79.4 | TC-LE-U12 |
-| AC-79.5 | TC-LE-I13 |
-| AC-80.1 | TC-LE-U13 |
-| AC-80.2 | TC-LE-U14 |
-| AC-80.3 | TC-LE-U15 |
-| AC-80.4 | TC-LE-I14 |
-| AC-80.5 | TC-LE-I15 |
-| AC-80.6 | TC-LE-E04 |
+| ~~AC-79.2~~ (gỡ bởi D078) | — |
+| ~~AC-79.3~~ (gỡ bởi D078) | — |
+| ~~AC-79.4~~ (gỡ bởi D078) | — |
+| ~~AC-79.5~~ (gỡ bởi D078) | — |
+| ~~AC-80.1~~ (gỡ bởi D078) | — |
+| ~~AC-80.2~~ (gỡ bởi D078) | — |
+| ~~AC-80.3~~ (gỡ bởi D078) | — |
+| ~~AC-80.4~~ (gỡ bởi D078) | — |
+| ~~AC-80.5~~ (gỡ bởi D078) | — |
+| ~~AC-80.6~~ (gỡ bởi D078) | — |
 
 ## 6. Danh mục test case
 
@@ -85,12 +85,6 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-LE-U03 | `test_opportunities_count_what_a_word_lets_the_speaker_show` | FR-75 | Số lần gặp của mỗi từ: -ed kèm âm cuối, cụm phụ âm, th; e câm không là âm cuối; "bus" không là số nhiều |
 | TC-LE-U04 | `test_profile_reports_a_rate_only_from_enough_opportunities` | AC-75.3 | 1 lần gặp: không có tỉ lệ; 8 lần: có tỉ lệ, ví dụ dừng ở 5, lỗi đủ dữ liệu đứng đầu |
 | TC-LE-U05 | `test_profile_respects_teacher_corrections_and_skips_unmeasured_steps` | AC-75.4 | Từ giảng viên sửa thành nghe được không là lỗi; bước không đo được không tính |
-| TC-LE-U10 | `test_idle_review_sessions_are_left_out_and_counted` | AC-79.2 | Phiên quá 30 phút bị bỏ và đếm riêng; phiên chưa xong không tính |
-| TC-LE-U11 | `test_wilson_interval_matches_the_textbook_value` | AC-79.3 | Wilson 8/10 = [0,490; 0,943]; 0/0 không có khoảng |
-| TC-LE-U12 | `test_kpi_reports_time_saved_only_from_enough_samples` | AC-79.4 | Dưới 5 mẫu không có trung vị; đủ mẫu: tiết kiệm 75 %, tỉ lệ máy tự xử lý 75 % |
-| TC-LE-U13 | `test_retest_pairs_use_each_response_once_and_respect_the_window` | AC-80.1 | Mỗi bài một cặp; quá 48 giờ không là cặp |
-| TC-LE-U14 | `test_sem_is_sd_of_differences_over_root_two_and_needs_enough_pairs` | AC-80.2 | SEM = SD hiệu / √2; dưới 10 cặp không có SEM |
-| TC-LE-U15 | `test_reliable_change_verdicts` | AC-80.3 | Năm kết luận và ngưỡng 1,96 · SEM · √(2/k) |
 
 ### Tầng 2 — Integration (`tests/test_learning_evidence.py`)
 
@@ -100,17 +94,13 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-LE-I02 | `test_learner_profile_counts_errors_against_opportunities` | AC-75.6 | Hai lượt cùng lỗi: âm cuối 2 lỗi, đủ dữ liệu, ví dụ dẫn về bài học |
 | TC-LE-I03 | `test_class_profile_is_for_staff_and_names_nobody` | AC-76.1 | Bản của lớp: 2 người học, ví dụ chỉ có từ và chữ máy nghe, không bút danh; sinh viên 403 |
 | TC-LE-I12 | `test_review_lock_and_decision_leave_a_timed_session` | AC-79.1 | Khoá rồi quyết định: một phiên đã kết thúc, đúng bài, đúng người |
-| TC-LE-I13 | `test_teacher_kpi_reports_minutes_only_from_enough_sessions` | AC-79.5 | Chưa có phiên: không có trung vị; 5 phiên và 1 phiên bỏ dở: trung vị 4 phút; sinh viên 403 |
-| TC-LE-I14 | `test_progress_says_no_error_measured_until_an_admin_sets_one` | AC-80.4 | Chưa có SEM: chưa kết luận; SEM nhập tay kèm nguồn: tiến bộ; thiếu nguồn 422; sinh viên 403 |
-| TC-LE-I15 | `test_measured_error_needs_enough_retest_pairs` | AC-80.5 | Dưới 10 cặp: 422; đủ 10 cặp: SEM nguồn `retest` |
 
 ### Tầng 3 — E2E (`tests/e2e/test_learning_evidence_e2e.py`)
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
 | TC-LE-E01 | `test_progress_page_names_the_pronunciation_patterns` | AC-75.7 | Trang Tiến độ: âm cuối 3/12 · 25 %, ví dụ và cách luyện; đuôi -ed chưa đủ dữ liệu |
-| TC-LE-E03 | `test_class_page_shows_teacher_time_and_class_pronunciation` | AC-76.2 | Giảng viên thấy phát âm của cả lớp, không thấy thời gian giảng viên; quản trị viên thấy thẻ thời gian (chưa đủ 5 lần) (D068) |
-| TC-LE-E04 | `test_admin_sets_the_measurement_error_with_its_source` | AC-80.6 | Tab Cấu hình: chưa đặt, nút bài thử lại tắt; nhập tay kèm nguồn rồi thấy nguồn |
+| TC-LE-E03 | `test_class_page_shows_class_pronunciation` | AC-76.2 | Giảng viên thấy phát âm của cả lớp, không thấy thời gian giảng viên; quản trị viên thấy thẻ thời gian (chưa đủ 5 lần) (D068) |
 
 ## 7. Kết quả chạy
 

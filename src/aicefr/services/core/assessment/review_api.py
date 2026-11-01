@@ -13,8 +13,6 @@ from fastapi.responses import JSONResponse
 from aicefr.api.deps import STAFF_ONLY
 from aicefr.api.schemas import QueueItem, ReviewClose, ReviewDecision
 from aicefr.contracts import ResponseStatus, Review
-from aicefr.research.teacher_time import kpi as teacher_time_kpi
-from aicefr.research.teacher_time import session_minutes
 from aicefr.services.core.assessment.context import (
     in_view,
     students_in_view,
@@ -127,24 +125,6 @@ def close_review(
     repo.close_review_session(response_id, account.account_id, "closed")
     repo.unlock_response(response_id, account.account_id)
     return JSONResponse(out.model_dump(mode="json"))
-
-
-@router.get("/api/v1/review/kpi", tags=["teacher"])
-def teacher_kpi(account: Account = STAFF_ONLY) -> dict:
-    """Teacher time with and without the machine, and what the machine settles alone. FR-79."""
-    s = svc()
-    review_minutes, idle = session_minutes(s.repo.review_sessions())
-    alone, reached = s.repo.settled_counts()
-    agreement = s.repo.cohort_stats().get("agreement") or {}
-    return teacher_time_kpi(
-        review_minutes,
-        idle,
-        [],
-        alone,
-        reached,
-        int(agreement.get("band_kept") or 0),
-        int(agreement.get("decisions") or 0),
-    )
 
 
 @router.get("/api/v1/review/stats", tags=["teacher"])

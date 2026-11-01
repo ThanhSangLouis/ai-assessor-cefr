@@ -1,4 +1,4 @@
-"""The sample path shipped with a fresh install (D025, laid out by topic in D027).
+"""The path shipped with a fresh install (D025, laid out by topic in D027).
 
 Six levels (A1 to C2, D059), each going through units on different topics. The
 lessons are sixteen written in full -- three here, thirteen in `seed_topics` --
@@ -28,11 +28,11 @@ SAMPLE_PATH_ID = "path-sample"
 SAMPLE_LAYOUT = 3
 SAMPLE_PATH = {
     "path_id": SAMPLE_PATH_ID,
-    "title": "Lộ trình mẫu: Nói tiếng Anh A1 → C2",
+    "title": "Nói tiếng Anh A1 → C2",
     "description": (
         "Sáu bậc từ Làm quen tới Thành thạo; mỗi bậc đi qua nhiều chủ đề như giáo dục, du "
         "lịch, nghề nghiệp, công nghệ. Mỗi bài đi từ đọc theo văn bản có từ gợi ý tới nói tự "
-        "do. Nội dung mẫu, chờ giảng viên Khoa Ngoại ngữ duyệt."
+        "do."
     ),
     "band_from": Band.A1,
     "band_to": Band.C2,

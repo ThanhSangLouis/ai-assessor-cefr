@@ -202,7 +202,7 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
 
     [path] = repo.paths(published_only=True)
     assert path["path_id"] == SAMPLE_PATH_ID and path["sample"] == 1
-    assert "chờ giảng viên" in path["description"]  # labelled as content awaiting review
+    assert "chờ giảng viên" not in path["description"]  # D078: approved content, no label
     units = repo.outline(SAMPLE_PATH_ID)
     # Six levels in order (D059), each through units on different topics.
     assert [u["band"] for u in units] == (

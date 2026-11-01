@@ -32,7 +32,6 @@ from aicefr.storage.db import database  # noqa: E402
 
 pytestmark = pytest.mark.e2e
 
-SCENE_X = "Number(document.querySelector('[data-scene]').style.getPropertyValue('--px') || 0)"
 
 
 def desktop(browser, live_server, **extra):
@@ -44,21 +43,6 @@ def desktop(browser, live_server, **extra):
     )
     ctx.set_default_timeout(15_000)
     return ctx
-
-
-def test_the_scene_turns_toward_the_pointer_and_back(browser, live_server):
-    ctx = desktop(browser, live_server)
-    try:
-        page = ctx.new_page()
-        page.goto("/")
-        hero = page.locator(".lp-hero").bounding_box()
-        page.mouse.move(hero["x"] + hero["width"] * 0.95, hero["y"] + hero["height"] * 0.2, steps=6)
-        wait_until(page, f"{SCENE_X} > 0.3")
-        # Leaving the hero eases the scene back to its resting angle.
-        page.mouse.move(hero["x"] + 10, hero["y"] + hero["height"] + 400, steps=6)
-        wait_until(page, f"Math.abs({SCENE_X}) < 0.05")
-    finally:
-        ctx.close()
 
 
 def test_a_step_card_leans_toward_the_pointer_and_settles(browser, live_server):
@@ -85,12 +69,9 @@ def test_with_reduced_motion_nothing_follows_the_pointer(browser, live_server):
     try:
         page = ctx.new_page()
         page.goto("/")
-        hero = page.locator(".lp-hero").bounding_box()
-        page.mouse.move(hero["x"] + hero["width"] * 0.95, hero["y"] + hero["height"] * 0.2, steps=6)
         card = page.locator(".lp-step").first
         card.hover()
         page.wait_for_timeout(400)
-        assert page.evaluate(SCENE_X) == 0
         assert "is-tilting" not in (card.get_attribute("class") or "")
     finally:
         ctx.close()

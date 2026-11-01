@@ -1,17 +1,14 @@
-"""Layer 2 for the learning-evidence features D039-D042, through the API.
+"""Layer 2 for the learning-evidence features D039 and D041, through the API.
 
 * D039: lesson word marks name the Vietnamese-learner pattern, and the learner
   and the teacher each read a profile of them -- the teacher's without names.
-* D041: opening and deciding a review leaves a session, and the KPI reports
-  minutes only from enough of them.
-* D042: progress is called progress only past the measurement error, and that
-  error is either measured from test-retest pairs or typed in with its source.
+* D041: opening and deciding a review leaves a session (D078 removed the KPI
+  built on it, and D042's measurement error).
 """
 
 from __future__ import annotations
 
 import json
-import uuid
 
 import pytest
 from dbutil import store
@@ -114,68 +111,3 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
     # The decision carries when the teacher opened the response (D041, D060).
     assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
-
-
-def test_teacher_kpi_reports_minutes_only_from_enough_sessions(m):
-    teacher = login_as(m, "GV-01", "teacher")
-    body = teacher.get("/api/v1/review/kpi").json()
-    assert body["review_with_machine"] == {"n": 0, "median_minutes": None, "idle_left_out": 0}
-    assert body["time_saved"] is None and body["settled_alone"]["ci95"] is None
-
-    for minutes in (2, 3, 4, 5, 6, 45):
-        store()["response"].insert_one(
-            {
-                "response_id": uuid.uuid4().hex,
-                "review_visits": [
-                    {
-                        "reviewer_id": "t",
-                        "opened_at": "2026-10-01T10:00:00+00:00",
-                        "decided_at": f"2026-10-01T10:{minutes:02d}:00+00:00",
-                        "action": "decision",
-                    }
-                ],
-            }
-        )
-    body = teacher.get("/api/v1/review/kpi").json()
-    assert body["review_with_machine"] == {"n": 5, "median_minutes": 4.0, "idle_left_out": 1}
-    assert login_as(m, "SV-001").get("/api/v1/review/kpi").status_code == 403
-
-
-# ================================================================= D042
-
-
-def test_progress_says_no_error_measured_until_an_admin_sets_one(m):
-    student = login_as(m, "SV-001")
-    for score in (3.0, 3.0, 3.0, 4.2, 4.2, 4.2):
-        _with_feedback(submit_assessment(student), score)
-    change = student.get("/api/v1/me/progress").json()["reliable_change"]
-    assert change["verdict"] == "chua_co_sai_so" and change["sem_source"] is None
-
-    admin = login_as(m, "AD-01", "admin")
-    url = "/api/v1/admin/measurement-error"
-    assert admin.post(url, json={"use": "manual", "sem": 0.25}).status_code == 422
-    r = admin.post(url, json={"use": "manual", "sem": 0.25, "note": "Pilot thử lại tháng 9"})
-    assert r.status_code == 200 and r.json()["source"] == "manual"
-
-    change = student.get("/api/v1/me/progress").json()["reliable_change"]
-    assert change["verdict"] == "tien_bo" and change["sem_source"] == "manual"
-    assert change["difference"] == 1.2 and change["threshold"] < 1.2
-    assert admin.get(url).json()["current"]["note"] == "Pilot thử lại tháng 9"
-    assert student.post(url, json={"use": "manual", "sem": 0.1, "note": "x"}).status_code == 403
-
-
-def test_measured_error_needs_enough_retest_pairs(m, monkeypatch):
-    admin = login_as(m, "AD-01", "admin")
-    url = "/api/v1/admin/measurement-error"
-    r = admin.post(url, json={"use": "retest"})
-    assert r.status_code == 422 and "cặp" in r.json()["detail"]
-
-    rows = []
-    for i in range(10):
-        for hour, score in ((8, 3.0), (9, 3.0 + (0.2 if i % 2 else -0.2))):
-            rows.append({"account_id": f"u{i}", "task_id": "P3", "overall_0_6": score,
-                         "created_at": f"2026-10-01T{hour:02d}:00:00+00:00"})  # fmt: skip
-    monkeypatch.setattr(m.repo, "scored_assessments", lambda *a, **k: rows)
-    assert admin.get(url).json()["candidate"]["pairs"] == 10
-    body = admin.post(url, json={"use": "retest"}).json()
-    assert body["source"] == "retest" and body["pairs"] == 10 and 0.1 < body["sem"] < 0.2

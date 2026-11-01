@@ -401,6 +401,25 @@ CLASSES = [
             "+ available(): int",
         ],
     ),
+    # D078: the prices an administrator sets on the dashboard, one version at a
+    # time; a ledger entry keeps the version it was held under (`priceVersion`).
+    _e(
+        "Price",
+        "PriceList",
+        [
+            "- version: str",
+            "- firstMinuteRuns: float",
+            "- extraMinuteRuns: float",
+            "- practiceFactor: float",
+            "- upgradeRuns: float",
+            "- idpointPerRun: int",
+            "- freeRuns: float",
+            "- packs: List<str>",
+            "- changedBy: Account [1]",
+            "- changedAt: datetime",
+            "- history: List<str>",
+        ],
+    ),
     _e(
         "Ledger",
         "LedgerEntry",
@@ -486,6 +505,7 @@ EDGES = [
     ("Plan", "Path", "0..1 : 0..1", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
+    ("Price", "Account", "0..* : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
     # A recording and, since D072, its upgraded answer: two entries at most; a
     # teacher's lesson draft (D075) pays for no response.
@@ -528,7 +548,7 @@ ZONES = [
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
      [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),
-      (6, ["OrderSt"])]),
+      (6, ["OrderSt", "Price"])]),
     ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),

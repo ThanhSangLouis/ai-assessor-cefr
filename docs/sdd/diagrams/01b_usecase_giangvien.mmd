@@ -1,31 +1,39 @@
 %% So do use case 1b: tac nhan Giang vien danh gia
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): giang vien duyet va cham lai bai, soan lo trinh theo band
+%% (co the nho AI soan nhap), giu ngan hang de theo band, xep lop va giao lo
+%% trinh band, xem thong ke lop theo band.
 flowchart LR
     GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
-        UC20["UC-20 Giáo viên soạn lộ trình và theo dõi lượt luyện"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
+        UC20["UC-20 Giảng viên soạn lộ trình theo band và theo dõi lượt luyện"]
+        UC28["UC-28 Giảng viên nhờ AI soạn nháp bài học"]
+        UC29["UC-29 Giảng viên quản lý ngân hàng đề theo band"]
+        UC30["UC-30 Giảng viên quản lý lớp và giao lộ trình band"]
+        UC31["UC-31 Giảng viên xem thống kê lớp theo band"]
+        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
     end
 
-    %% UC-05 o cuoi cot: mui ten `extend` tu UC-06 vong ve UC-05 di qua khoang
-    %% trong ben duoi, khong sat hop nao khac.
     GV --> UC17
-    GV --> UC11
-    GV --> UC20
     GV --> UC05
+    GV --> UC20
+    GV --> UC29
+    GV --> UC30
+    GV --> UC31
+    GV --> UC11
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Dat UC-06
-    %% sau UC-05 de mui ten `extend` tro nguoc ve trai. Xem giai thich day du o 01a.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Xem 01a.
     UC05 ~~~ UC06
+    UC20 ~~~ UC28
 
-    %% Use case MO RONG khong noi truc tiep voi tac nhan. Giang vien khoi tao
-    %% UC-05 (mo hang doi ra duyet); UC-06 sua ket qua duoc chen vao giua luong
-    %% do khi ho khong dong y voi may. Khong the sua ket qua khi chua mo bai ra.
-    %% extend: tu use case MO RONG --> use case goc
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sua ket qua (UC-06)
+    %% chen vao luong duyet (UC-05); nho AI soan nhap (UC-28) chen vao form
+    %% "Bai hoc moi" cua UC-20.
     UC06 -. extend .-> UC05
+    UC28 -. extend .-> UC20

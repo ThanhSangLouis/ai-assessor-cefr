@@ -119,8 +119,8 @@ PLANS = [
             "TC-LE-I": ROOT / "tests" / "test_learning_evidence.py",
             "TC-LE-E": ROOT / "tests" / "e2e" / "test_learning_evidence_e2e.py",
         },
-        "7[569]|80",
-        20,  # the feedback study (FR-77, FR-78) was removed with D078
+        "7[569]",
+        10,  # D078 removed the study (FR-77, FR-78), teacher time (AC-79.2..79.5), FR-80
     ),
     Plan(
         "D045-D047",

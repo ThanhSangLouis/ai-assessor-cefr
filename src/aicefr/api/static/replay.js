@@ -43,8 +43,7 @@
     return `<section class="card anchor-target" id="report-replay" aria-labelledby="replay-h">
       <h2 id="replay-h">Tự nghe lại bài của mình</h2>
       <p class="muted">Nghe từng đoạn ngắn rồi chọn câu đúng nhất với cảm nhận của bạn. Không có đáp án đúng sai;
-      câu trả lời chỉ dùng để hiện lại cho bạn trên trang Tiến độ và, nếu bạn đã cho phép dùng cho nghiên cứu, để
-      kiểm tra xem các đoạn máy chọn có thật sự hữu ích không.</p>
+      câu trả lời hiện lại cho bạn trên trang Kết quả.</p>
       <ol class="plain-list replay-list">${items}</ol>
     </section>`;
   }

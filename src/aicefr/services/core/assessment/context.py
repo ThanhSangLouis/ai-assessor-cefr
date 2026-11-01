@@ -2,7 +2,7 @@
 
 The stores of this service, the bus, the other services' facades, and the few
 rules several routers apply: the QC thresholds and the scoring model in force,
-the measurement error of D042. Wired once when the service is built
+Wired once when the service is built
 (`configure`), read through `svc()`.
 """
 
@@ -32,7 +32,6 @@ PREP_SECONDS = 30
 
 ACTIVE_MODEL_KEY = "active_model"
 QC_CONFIG_KEY = "qc_thresholds"
-MEASUREMENT_ERROR_KEY = "measurement_error"
 
 # Only these may be changed at runtime, and each carries the range it must stay
 # inside. A threshold set to an impossible value does not fail loudly -- it
@@ -135,12 +134,6 @@ def active_model_name() -> str:
 
     row = svc().repo.get_config(ACTIVE_MODEL_KEY)
     return row.value if row else DEFAULT_MODEL
-
-
-def measurement_error() -> dict | None:
-    """The SEM in force, with where it came from; None until an administrator sets one (D042)."""
-    row = svc().repo.get_config(MEASUREMENT_ERROR_KEY)
-    return json.loads(row.value) if row else None
 
 
 def scorable_duration(model: dict) -> dict:

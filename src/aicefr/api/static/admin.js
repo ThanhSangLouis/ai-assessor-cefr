@@ -9,7 +9,15 @@
 const TABS = [
   { button: "tab-accounts", panel: "panel-accounts", load: loadAccounts },
   { button: "tab-models", panel: "panel-models", load: loadModels },
-  { button: "tab-config", panel: "panel-config", load: loadConfig },
+  // D078. The prices of the runs live in admin_prices.js, loaded first.
+  {
+    button: "tab-config",
+    panel: "panel-config",
+    load: () => {
+      loadConfig();
+      window.adminPrices.load();
+    },
+  },
   { button: "tab-erase", panel: "panel-erase", load: null },
   // D072. The language model's use lives in admin_coach.js, loaded first.
   { button: "tab-coach", panel: "panel-coach", load: () => window.adminCoach.load() },
@@ -746,7 +754,7 @@ const CONFIG_LABELS = {
   changed_by: "Người sửa gần nhất",
   changed_at: "Lúc sửa gần nhất",
   config_version: "Phiên bản cấu hình",
-  candidate_thresholds: "Là ngưỡng candidate, chưa kiểm định",
+  candidate_thresholds: "Ngưỡng mặc định ban đầu",
   max_bytes: "Kích thước tệp tối đa (byte)",
   target_sr: "Tần số lấy mẫu chuẩn hoá (Hz)",
   reject_below: "Dưới mức này thì từ chối bài",
@@ -827,52 +835,6 @@ async function loadConfig() {
   const form = document.getElementById("config-form");
   if (form) form.addEventListener("submit", saveConfig);
   loadGoogleSetup();
-  loadMeasurementError();
-}
-
-// D042. The SEM behind "reliable progress": in force, and what today's
-// test-retest pairs would give. A typed value must name its source.
-let measurementWired = false;
-async function loadMeasurementError() {
-  const box = document.getElementById("measurement-error");
-  const m = await getJson("/api/v1/admin/measurement-error", null);
-  if (!box || !m) return;
-  const cur = m.current;
-  const now = cur
-    ? `<b>${window.escapeHtml(String(cur.sem))}</b> điểm · ${cur.source === "retest" ? `từ ${cur.pairs} cặp bài thử lại` : `nhập tay: ${window.escapeHtml(cur.note || "")}`} · đặt lúc ${window.escapeHtml(window.ui.localTime(cur.set_at))}`
-    : "Chưa đặt. Trang Tiến độ của sinh viên chỉ báo chênh lệch, không kết luận tiến bộ.";
-  const cand = m.candidate.sem != null
-    ? `Dữ liệu hiện có ${m.candidate.pairs} cặp bài thử lại (cùng người, cùng đề, cách nhau ≤ ${m.window_hours} giờ) cho sai số đo <b>${m.candidate.sem.toFixed(3)}</b>.`
-    : `Mới có ${m.candidate.pairs} cặp bài thử lại, cần ít nhất ${m.min_pairs} cặp để tính.`;
-  box.innerHTML =
-    '<h2 id="measurement-error-h">Sai số đo cho "tiến bộ đáng tin"</h2>' +
-    `<p>Đang dùng: ${now}</p><p class="muted">${cand}</p>` +
-    '<div class="button-row">' +
-    `<button type="button" id="me-use-retest"${m.candidate.sem == null ? " disabled" : ""}>Dùng sai số từ bài thử lại</button></div>` +
-    '<form id="me-manual" class="form-row"><label>Nhập tay <input name="sem" type="number" step="0.001" min="0.001" max="3" required></label>' +
-    '<label>Nguồn của con số <input name="note" maxlength="300" required placeholder="Ví dụ: đo thử lại 30 sinh viên, 05/11/2026"></label>' +
-    '<button type="submit" class="secondary">Lưu</button></form>' +
-    '<div id="me-message" aria-live="polite"></div>';
-  box.hidden = false;
-  if (measurementWired) return;
-  measurementWired = true;
-  box.addEventListener("click", async (e) => {
-    if (e.target.id !== "me-use-retest") return;
-    const d = await window.apiJson("/api/v1/admin/measurement-error", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ use: "retest" }),
-    });
-    if (d) { window.toast("Đã đặt sai số đo từ bài thử lại.", "ok"); loadMeasurementError(); }
-  });
-  box.addEventListener("submit", async (e) => {
-    if (e.target.id !== "me-manual") return;
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const d = await window.apiJson("/api/v1/admin/measurement-error", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ use: "manual", sem: Number(f.get("sem")), note: String(f.get("note")) }),
-    });
-    if (d) { window.toast("Đã lưu sai số đo.", "ok"); loadMeasurementError(); }
-  });
 }
 
 // D036. Sign-in with Google: on or off, the redirect address to register with
