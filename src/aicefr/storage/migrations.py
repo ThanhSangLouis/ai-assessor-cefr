@@ -17,6 +17,7 @@ so two processes upgrading at once both run it and exactly one records it.
 from __future__ import annotations
 
 import json
+import logging
 import threading
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -27,6 +28,7 @@ from pymongo.database import Database
 from aicefr.storage.db import IntegrityError, database, ensure_indexes, now_iso
 
 COLLECTION = "schema_migrations"
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -629,6 +631,157 @@ def _d078_research_data(db: Database, target: str) -> None:
             )
 
 
+def _d081_recovery_code(db: Database, target: str) -> None:
+    """The recovery codes of D065 go: a forgotten password is replaced by email (D079).
+
+    Only the bcrypt hash of each code and when it was made were kept; both are
+    removed from every account. Approved by the project owner on 01/11/2026.
+    """
+    if _has(db, "account"):
+        db["account"].update_many(
+            {
+                "$or": [
+                    {"recovery_hash": {"$exists": True}},
+                    {"recovery_issued_at": {"$exists": True}},
+                ]
+            },
+            {"$unset": {"recovery_hash": "", "recovery_issued_at": ""}},
+        )
+
+
+def _d082_review_session(db: Database, target: str) -> None:
+    """Reviewing a response becomes its own `review_session` (D082).
+
+    `response.review_lock` (who may decide now) and `response.review_visits`
+    (when each teacher opened it and left, D041) move into one session per
+    response, `lock` and `visits`; the response keeps the submission, the
+    result and the decisions. Nothing is lost: a response with neither gets no
+    session, which is what a response nobody has opened has.
+    """
+    ensure_indexes(db, {"review_session": [(("response_id",), True)]}, "migration-13")
+    if not _has(db, "response"):
+        return
+    moved = {"review_lock": 1, "review_visits": 1, "response_id": 1}
+    held = {"$or": [{"review_lock": {"$ne": None}}, {"review_visits.0": {"$exists": True}}]}
+    for r in db["response"].find(held, moved):
+        db["review_session"].update_one(
+            {"response_id": r["response_id"]},
+            {
+                "$setOnInsert": {
+                    "lock": r.get("review_lock"),
+                    "visits": r.get("review_visits") or [],
+                }
+            },
+            upsert=True,
+        )
+    db["response"].update_many(
+        {"$or": [{"review_lock": {"$exists": True}}, {"review_visits": {"$exists": True}}]},
+        {"$unset": {"review_lock": "", "review_visits": ""}},
+    )
+
+
+def _d083_practice_tasks(db: Database, target: str) -> None:
+    """The practice tasks of D023 go, with every attempt at them (D083).
+
+    The path's lessons are what a learner practises with (D025, D068); nobody
+    could start a practice task since D078. Their tasks, the responses made on
+    them and those recordings are deleted; `response.purpose` and the practice
+    fields of a task go, and the task index on (`purpose`, `active`) becomes one
+    on `active`. The ledger keeps its entries: what was charged stays charged.
+    Approved by the project owner on 01/11/2026. It cannot be undone.
+    """
+    if _has(db, "response"):
+        practice = {"purpose": "practice"}
+        recordings = [r.get("audio_path") for r in db["response"].find(practice, {"audio_path": 1})]
+        ids = [r["response_id"] for r in db["response"].find(practice, {"response_id": 1})]
+        db["response"].delete_many(practice)
+        if _has(db, "review_session"):
+            db["review_session"].delete_many({"response_id": {"$in": ids}})
+        db["response"].update_many({"purpose": {"$exists": True}}, {"$unset": {"purpose": ""}})
+        _drop_recordings(recordings)
+    if _has(db, "task"):
+        db["task"].delete_many({"purpose": "practice"})
+        db["task"].update_many(
+            {},
+            {
+                "$unset": {
+                    "purpose": "",
+                    "criterion": "",
+                    "missions_json": "",
+                    "tips_json": "",
+                    "reference_text": "",
+                }
+            },
+        )
+        present = {ix["name"] for ix in db["task"].list_indexes()}
+        if "i_purpose_active" in present:
+            db["task"].drop_index("i_purpose_active")
+    ensure_indexes(db, {"task": [(("active",), False)]}, "migration-14")
+
+
+def _drop_recordings(paths: list[str | None]) -> None:
+    """Delete recordings where the speech service keeps them; a miss is logged, not fatal."""
+    from aicefr.config import get_settings
+    from aicefr.infra.blobs import blob_store, key_of
+
+    found = [(p, key_of(p)) for p in paths if key_of(p)]
+    if not found:
+        return
+    blobs = blob_store(get_settings())
+    for path, key in found:
+        try:
+            blobs.delete(key)
+            if path and Path(path).is_absolute():
+                Path(path).unlink(missing_ok=True)
+        except Exception:  # noqa: BLE001 - the documents are gone; a stray file is not
+            logger.warning("could not delete recording %s", key)
+
+
+PAYMENT_FIELDS = (
+    "gateway", "live", "checkout_ref", "reference", "result_code", "settled_at", "events"
+)  # fmt: skip
+
+
+def _d084_payment(db: Database, target: str) -> None:
+    """How the gateway took the money leaves the order for its `payment` (D084).
+
+    Each order keeps what was bought -- runs, money, status, buyer, deadline,
+    when the runs reached the wallet -- and gets one payment holding the
+    gateway, real money or not, the checkout and transaction numbers, the
+    result code, when it was settled and the gateway's messages. The order's
+    index on (`gateway`, `checkout_ref`) moves with them. Nothing is lost.
+    """
+    ensure_indexes(
+        db,
+        {"payment": [(("order_id",), True), (("gateway", "checkout_ref"), False)]},
+        "migration-15",
+    )
+    if not _has(db, "order"):
+        return
+    for o in db["order"].find({"gateway": {"$exists": True}}):
+        paid = {f: o.get(f) for f in PAYMENT_FIELDS}
+        paid["gateway"] = paid["gateway"] or "none"
+        paid["live"] = bool(paid["live"])
+        paid["events"] = paid["events"] or []
+        db["payment"].update_one({"order_id": o["order_id"]}, {"$setOnInsert": paid}, upsert=True)
+    db["order"].update_many(
+        {"gateway": {"$exists": True}}, {"$unset": {f: "" for f in PAYMENT_FIELDS}}
+    )
+    present = {ix["name"] for ix in db["order"].list_indexes()}
+    if "i_gateway_checkout_ref" in present:
+        db["order"].drop_index("i_gateway_checkout_ref")
+
+
+def _d085_built_in(db: Database, target: str) -> None:
+    """A path shipped with the system is `built_in`, no longer `sample` (D085).
+
+    Only the name changes: the path is approved content since D078. A lesson
+    keeps `sample` inside the versions already saved, which read it either way.
+    """
+    if _has(db, "path"):
+        db["path"].update_many({"sample": {"$exists": True}}, {"$rename": {"sample": "built_in"}})
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -653,6 +806,13 @@ MIGRATIONS: tuple[Migration, ...] = (
         "blind rating, feedback study and exam part removed with their data (D078)",
         _d078_research_data,
     ),
+    Migration(12, "account: the recovery code of D065 removed (D081)", _d081_recovery_code),
+    Migration(
+        13, "review_session: lock and visits leave the response (D082)", _d082_review_session
+    ),
+    Migration(14, "practice tasks and their attempts removed (D083)", _d083_practice_tasks),
+    Migration(15, "payment: the gateway's part of an order on its own (D084)", _d084_payment),
+    Migration(16, "path: sample renamed built_in (D085)", _d085_built_in),
 )
 
 LATEST = MIGRATIONS[-1].version

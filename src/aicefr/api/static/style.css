@@ -2064,7 +2064,6 @@ button.evidence:hover {
   text-transform: uppercase;
   color: var(--fg-muted);
 }
-.task-tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: 0 0 var(--sp-2); }
 
 .practice-top {
   display: grid;
@@ -2177,7 +2176,6 @@ button.evidence:hover {
 
 .review-list { margin: 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-1); }
 
-.mission-list { list-style: none; padding: 0; margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-3); }
 .mission {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -2188,23 +2186,9 @@ button.evidence:hover {
   border-radius: var(--r-md);
   background: var(--bg-elevated);
 }
-.mission-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-weight: 700;
-  background: var(--bg-sunken);
-  color: var(--fg-muted);
-}
 .mission.met { border-color: var(--ok); }
-.mission.met .mission-icon { background: var(--ok); color: var(--bg-elevated); }
 .mission.unmet { border-color: var(--warn); }
-.mission.unmet .mission-icon { background: var(--warn-soft); color: var(--warn); }
-.mission-label { margin: 0; font-weight: 650; }
-.mission-measure { margin: var(--sp-1) 0 0; }
-.word-chips, .hits {
+.word-chips {
   list-style: none;
   padding: 0;
   margin: var(--sp-2) 0 0;
@@ -2221,18 +2205,7 @@ button.evidence:hover {
 }
 .hit { padding: 0; background: none; }
 .hit:not(:has(button)) { padding: 2px var(--sp-3); background: var(--warn-soft); }
-.hit-seek {
-  margin: 0;
-  padding: 2px var(--sp-3);
-  border-radius: var(--r-pill);
-  background: var(--brand-soft);
-  color: var(--fg);
-  font-size: var(--t-sm);
-  font-weight: 500;
-}
-.hit-seek:hover { background: var(--bg-hover); color: var(--fg); }
 .hit-time { font-family: var(--font-mono); color: var(--fg-muted); }
-.hits-label { margin: var(--sp-2) 0 0; font-size: var(--t-sm); color: var(--fg-muted); }
 .reference-text {
   margin: 0;
   padding: var(--sp-4);
@@ -2243,16 +2216,6 @@ button.evidence:hover {
   line-height: 1.8;
   max-width: 70ch;
 }
-.takeaway {
-  margin: 0 0 var(--sp-5);
-  padding: var(--sp-4) var(--sp-5);
-  border-radius: var(--r-lg);
-  background: var(--brand-soft);
-  border: 1px solid var(--brand);
-}
-.takeaway p:last-child { margin: 0; font-size: var(--t-lg); }
-.practice-banner { font-size: var(--t-base); }
-.practice-day { margin: var(--sp-4) 0 0; }
 .practice-rules summary { cursor: pointer; }
 .practice-rules ol { margin: var(--sp-3) 0; }
 #player { width: 100%; }
@@ -2281,7 +2244,6 @@ button.evidence:hover {
 }
 @media (max-width: 640px) {
   .path-nodes { grid-template-columns: minmax(0, 1fr); }
-  .hit-seek { width: auto; }
 }
 
 /* --- shared recorder (submit + practice) ----------------------------------
@@ -6828,10 +6790,6 @@ button:not(:disabled):hover,
 .replay-moment:last-child { border-bottom: 0; }
 .replay-head { display: flex; align-items: center; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); }
 .replay-moment fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: var(--sp-1); }
-
-/* D065: the recovery code, shown once where it is made. */
-.recovery-slip { margin: var(--sp-3) 0; }
-.recovery-slip .button-row { margin-top: var(--sp-3); }
 
 /* D068: the daily goal, picked on the Today card. */
 .goal-pick { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--t-sm); color: var(--fg-muted); }

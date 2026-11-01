@@ -124,13 +124,13 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class LoginRateLimitMiddleware(BaseHTTPMiddleware):
-    """Cap login, sign-up and recovery attempts per client address.
+    """Cap login, sign-up and password-reset attempts per client address.
 
     The per-account lockout already stops an attacker grinding one account.
     This stops the other shape of the same attack: one guess, every account.
-    Sign-up and recovery (D065) are counted apart from login, each on its own:
-    a script opening accounts by the hundred, or trying recovery codes, is held
-    to the same pace as one guessing passwords.
+    Sign-up and the codes sent by email (D079) are counted apart from login,
+    each on its own: a script opening accounts by the hundred, or guessing
+    reset codes, is held to the same pace as one guessing passwords.
     Kept in memory on purpose -- a single process serves this deployment, and a
     shared store would be a dependency bought for very little.
     """
@@ -139,7 +139,6 @@ class LoginRateLimitMiddleware(BaseHTTPMiddleware):
         {
             "/api/v1/auth/login",
             "/api/v1/auth/signup",
-            "/api/v1/auth/recover",
             # D079: asking for and using a code sent by email.
             "/api/v1/auth/forgot/email",
             "/api/v1/auth/forgot/email/reset",

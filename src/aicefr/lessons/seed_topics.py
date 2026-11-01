@@ -25,7 +25,7 @@ from aicefr.lessons.model import Lesson
 def _sample(lesson: Lesson, lesson_id: str) -> Lesson:
     """Mark a built lesson as sample content, with a fixed id and fixed step ids."""
     lesson.lesson_id = lesson_id
-    lesson.sample = True
+    lesson.built_in = True
     for i, step in enumerate(lesson.steps, 1):
         step.step_id = f"{lesson_id}-s{i}"
     return lesson

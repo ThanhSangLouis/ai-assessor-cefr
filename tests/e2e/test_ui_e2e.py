@@ -182,10 +182,10 @@ def test_chosen_prompt_sits_above_the_record_button(context, live_server):
 # ---------------------------------------------------------------- student lists
 
 
-def test_my_responses_filters_assessments_from_practice(context, live_server):
+def test_my_responses_lists_assessments_without_a_kind_filter(context, live_server):
     page = student_page(context, live_server, "/")
     submit_assessment(page, live_server)
-    # A practice attempt, as an earlier task page sent one (D068 folded them into the path).
+    # D083: a practice task is refused; there is one kind of response left.
     r = page.request.post(
         "/api/v1/responses",
         multipart={
@@ -197,17 +197,11 @@ def test_my_responses_filters_assessments_from_practice(context, live_server):
             "task_id": "PR-COH-A2",
         },
     )
-    assert r.ok
+    assert r.status == 422
 
     page.goto("/my-responses")
-    items = page.locator(".response-item")
-    expect(items).to_have_count(2)
-    page.get_by_role("button", name=re.compile(r"^Luyện tập \(1\)")).click()
-    expect(items).to_have_count(1)
-    expect(items.first).to_contain_text("Không chấm")
-    page.get_by_role("button", name=re.compile(r"^Đánh giá \(1\)")).click()
-    expect(items).to_have_count(1)
-    expect(items.first).not_to_contain_text("Luyện tập ·")
+    expect(page.locator(".response-item")).to_have_count(1)
+    expect(page.locator("#list-filter")).to_have_count(0)
 
 
 def test_teacher_opens_the_next_free_response_and_reads_names_not_codes(context, live_server):

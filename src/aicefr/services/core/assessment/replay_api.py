@@ -39,7 +39,7 @@ def _own_moments(response_id: str, account: Account):
     if s.repo.owner_of(response_id) != account.account_id:
         raise HTTPException(404, "không có bài này")
     report = s.repo.get(response_id)
-    if report is None or report.status not in SCORED or report.practice is not None:
+    if report is None or report.status not in SCORED:
         raise HTTPException(409, "bài chưa có kết quả đánh giá")
     return moments(report)
 

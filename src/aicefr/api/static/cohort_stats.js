@@ -37,52 +37,12 @@ fetch("/api/v1/review/stats")
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
   });
 
-// D023. Practice across the class, per criterion. Totals only: this tells a
-// teacher which criterion the class is stumbling on, not who to rank.
-const PRACTICE_SKILLS = [
-  ["fluency", "Độ trôi chảy"],
-  ["coherence", "Mạch lạc"],
-  ["range", "Vốn từ"],
-  ["accuracy", "Ngữ pháp"],
-  ["phonology", "Phát âm dễ nghe"],
-];
-
-function practiceSection(p) {
-  let h = '<h2 style="margin-top:var(--sp-6)">Luyện tập của lớp</h2>';
-  if (!p || !p.attempts) {
-    return (
-      h +
-      '<div class="notice notice-info">Chưa có lần luyện tập nào được xử lý xong.</div>'
-    );
-  }
-  h += '<div class="stat-grid">';
-  h += `<div class="stat"><b>${Number(p.attempts)}</b><span>lần luyện đã xử lý</span></div>`;
-  h += `<div class="stat"><b>${Number(p.learners)}</b><span>người có luyện</span></div>`;
-  h += `<div class="stat"><b>${Math.round((p.completed / p.attempts) * 100)}%</b>` +
-    "<span>lần luyện hoàn thành mọi mục tiêu</span></div>";
-  h += "</div>";
-  h += "<table><thead><tr><th>Tiêu chí</th><th>Lần luyện</th><th>Hoàn thành</th>" +
-    "<th>Tỷ lệ</th></tr></thead><tbody>";
-  for (const [code, name] of PRACTICE_SKILLS) {
-    const c = (p.by_criterion || {})[code] || { attempts: 0, completed: 0 };
-    const rate = c.attempts ? `${Math.round((c.completed / c.attempts) * 100)}%` : "—";
-    h += `<tr><td><b>${name}</b></td><td>${Number(c.attempts)}</td>` +
-      `<td>${Number(c.completed)}</td><td>${rate}</td></tr>`;
-  }
-  h += "</tbody></table>";
-  h +=
-    '<p class="muted">Không có số liệu theo từng sinh viên. Tỷ lệ hoàn thành thấp ở một ' +
-    "tiêu chí là gợi ý để chọn bài cho cả lớp, không phải điểm của ai.</p>";
-  return h;
-}
-
 function build(d) {
   if (!d.responses) {
     return (
       '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◎</div>' +
       "<h2>Chưa có bài nào được chấm</h2>" +
-      "<p>Thống kê xuất hiện khi lớp bắt đầu nộp bài.</p></div>" +
-      practiceSection(d.practice)
+      "<p>Thống kê xuất hiện khi lớp bắt đầu nộp bài.</p></div>"
     );
   }
 
@@ -165,7 +125,7 @@ function build(d) {
   h +=
     '<p class="muted">Bài làm đề band nào thì so với chính band đó. Nhiều bài "thấp hơn" ' +
     "nghĩa là đề đang khó so với lớp.</p>";
-  return h + practiceSection(d.practice);
+  return h;
 }
 
 const printButton = document.getElementById("print-stats");

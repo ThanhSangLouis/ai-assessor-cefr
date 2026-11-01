@@ -12,21 +12,19 @@ student answered the new wording.
 
 from __future__ import annotations
 
-import json
 import re
 import secrets
 from dataclasses import dataclass
 from pathlib import Path
 
-from aicefr.contracts import Band, Criterion, Mission, TaskPurpose
+from aicefr.contracts import Band
 from aicefr.practice.assessment_bank import (
     ASSESSMENT_PROMPTS,
     MAX_SECONDS,
     MIN_SECONDS,
     title_of,
 )
-from aicefr.practice.bank import PRACTICE_TASKS
-from aicefr.storage.db import IntegrityError, MongoStore, ensure_indexes
+from aicefr.storage.db import MongoStore, ensure_indexes
 from aicefr.storage.db import now_iso as _now
 
 # One document per task. min_seconds/max_seconds default to 40-60, not 60-180:
@@ -35,20 +33,11 @@ from aicefr.storage.db import now_iso as _now
 # topic_keywords: ENGLISH topic words, comma separated (D022) -- the prompt is in
 # Vietnamese while the learner speaks English, so speech is compared with this
 # list; empty means an open prompt, never checked for being off topic.
-# purpose, criterion, band, missions_json, tips_json, reference_text: D023,
-# filled on practice tasks only.
-INDEXES = {"task": [(("task_id",), True), (("purpose", "active"), False)]}
+# Every task is an assessment prompt with a band (D076); the practice tasks of
+# D023 and their fields are gone (D083, migration 14).
+INDEXES = {"task": [(("task_id",), True), (("active",), False)]}
 
-_NEW_TASK = {
-    "active": 1,
-    "topic_keywords": "",
-    "purpose": "assessment",
-    "criterion": None,
-    "band": None,
-    "missions_json": "[]",
-    "tips_json": "[]",
-    "reference_text": None,
-}
+_NEW_TASK = {"active": 1, "topic_keywords": "", "band": None}
 
 # Recommended durations come from the SCORING MODEL's training distribution,
 # not from the SRS. The SRS suggests 60-180 seconds and the quality check passes
@@ -120,17 +109,7 @@ class Task:
     min_seconds: int
     max_seconds: int
     topic_keywords: tuple[str, ...] = ()
-    # D023. Assessment by default; the fields below exist only on practice tasks.
-    purpose: TaskPurpose = TaskPurpose.ASSESSMENT
-    criterion: Criterion | None = None
     band: Band | None = None
-    missions: tuple[Mission, ...] = ()
-    tips: tuple[str, ...] = ()
-    reference_text: str | None = None
-
-    @property
-    def is_practice(self) -> bool:
-        return self.purpose is TaskPurpose.PRACTICE
 
 
 class TaskRepository(MongoStore):
@@ -138,7 +117,6 @@ class TaskRepository(MongoStore):
         self.db_path = str(db_path)
         ensure_indexes(self.db, INDEXES, "task")
         self.seed_defaults()
-        self.seed_practice()
 
     def seed_defaults(self) -> None:
         """Insert the built-in prompts that are missing.
@@ -205,50 +183,11 @@ class TaskRepository(MongoStore):
                 upsert=True,
             )
 
-    def seed_practice(self) -> None:
-        """Load the practice task bank into the `task` collection. D023.
-
-        Differs from `seed_defaults` on one point, on purpose: practice tasks are
-        decided by the bank in code and nobody edits them on screen, so when the bank
-        bumps a task's `prompt_version` the document is updated to match. Documents
-        with the same version are left alone -- earlier results keep pointing at the
-        wording that produced them, because `prompt_version` is copied onto every
-        submission.
-        """
-        tasks = self.col("task")
-        for t in PRACTICE_TASKS:
-            content = {
-                "title": t.title,
-                "prompt_text": t.prompt_text,
-                "prompt_version": t.prompt_version,
-                "min_seconds": t.min_seconds,
-                "max_seconds": t.max_seconds,
-                "purpose": TaskPurpose.PRACTICE.value,
-                "criterion": t.criterion.value,
-                "band": t.band.value,
-                "missions_json": json.dumps(
-                    [m.model_dump(mode="json") for m in t.missions], ensure_ascii=False
-                ),
-                "tips_json": json.dumps(list(t.tips), ensure_ascii=False),
-                "reference_text": t.reference_text,
-            }
-            try:
-                tasks.update_one(
-                    {"task_id": t.task_id, "prompt_version": {"$ne": t.prompt_version}},
-                    {
-                        "$set": content,
-                        "$setOnInsert": {"active": 1, "topic_keywords": "", "created_at": _now()},
-                    },
-                    upsert=True,
-                )
-            except IntegrityError:
-                pass  # there already, at this version: left alone
-
     # ------------------------------------------------------------ teachers' prompts (D076)
 
     def assessment_rows(self) -> list[dict]:
         """Every assessment prompt, retired ones too, for the teachers' screen."""
-        rows = self.col("task").find({"purpose": TaskPurpose.ASSESSMENT.value})
+        rows = self.col("task").find()
         out = []
         for r in rows:
             t = self._to_task(r)
@@ -278,9 +217,7 @@ class TaskRepository(MongoStore):
 
     def edit_assessment(self, task_id: str, changes: dict) -> bool:
         """Change a prompt. A new wording is a new version: earlier reports keep the old one."""
-        row = self.col("task").find_one(
-            {"task_id": task_id, "purpose": TaskPurpose.ASSESSMENT.value}
-        )
+        row = self.col("task").find_one({"task_id": task_id})
         if row is None:
             return False
         sets = dict(changes)
@@ -294,14 +231,9 @@ class TaskRepository(MongoStore):
         self.col("task").update_one({"task_id": task_id}, {"$set": sets})
         return True
 
-    def list_active(self, purpose: TaskPurpose = TaskPurpose.ASSESSMENT) -> list[Task]:
-        """Active tasks for one purpose. Assessment by default.
-
-        The default deliberately matches the behaviour before D023: the submission
-        screen and every older caller want assessment tasks only, and a practice task
-        slipping into that list could be picked as an exam task.
-        """
-        rows = self.col("task").find({"active": 1, "purpose": purpose.value}).sort("task_id", 1)
+    def list_active(self) -> list[Task]:
+        """The prompts a learner may be given."""
+        rows = self.col("task").find({"active": 1}).sort("task_id", 1)
         return [self._to_task(r) for r in rows]
 
     def get(self, task_id: str) -> Task | None:
@@ -310,12 +242,9 @@ class TaskRepository(MongoStore):
 
     @staticmethod
     def _to_task(row: dict) -> Task:
-        purpose = TaskPurpose(row.get("purpose") or TaskPurpose.ASSESSMENT.value)
-        # D078: an assessment prompt is called by its band; a title stored
-        # before (an exam part's name) is not read.
-        title = row["title"]
-        if purpose is TaskPurpose.ASSESSMENT and row.get("band"):
-            title = title_of(row["band"])
+        # D078: a prompt is called by its band; a title stored before (an exam
+        # part's name) is not read.
+        title = title_of(row["band"]) if row.get("band") else row["title"]
         return Task(
             task_id=row["task_id"],
             title=title,
@@ -326,14 +255,7 @@ class TaskRepository(MongoStore):
             topic_keywords=tuple(
                 k.strip() for k in (row.get("topic_keywords") or "").split(",") if k.strip()
             ),
-            purpose=purpose,
-            criterion=Criterion(row["criterion"]) if row.get("criterion") else None,
             band=Band(row["band"]) if row.get("band") else None,
-            missions=tuple(
-                Mission.model_validate(m) for m in json.loads(row.get("missions_json") or "[]")
-            ),
-            tips=tuple(json.loads(row.get("tips_json") or "[]")),
-            reference_text=row.get("reference_text"),
         )
 
 
@@ -347,12 +269,7 @@ def task_message(task: Task) -> dict:
         "min_seconds": task.min_seconds,
         "max_seconds": task.max_seconds,
         "topic_keywords": list(task.topic_keywords),
-        "purpose": task.purpose.value,
-        "criterion": task.criterion.value if task.criterion else None,
         "band": task.band.value if task.band else None,
-        "missions": [m.model_dump(mode="json") for m in task.missions],
-        "tips": list(task.tips),
-        "reference_text": task.reference_text,
     }
 
 
@@ -365,10 +282,5 @@ def task_from_message(data: dict) -> Task:
         min_seconds=data["min_seconds"],
         max_seconds=data["max_seconds"],
         topic_keywords=tuple(data["topic_keywords"]),
-        purpose=TaskPurpose(data["purpose"]),
-        criterion=Criterion(data["criterion"]) if data["criterion"] else None,
-        band=Band(data["band"]) if data["band"] else None,
-        missions=tuple(Mission.model_validate(m) for m in data["missions"]),
-        tips=tuple(data["tips"]),
-        reference_text=data["reference_text"],
+        band=Band(data["band"]) if data.get("band") else None,
     )

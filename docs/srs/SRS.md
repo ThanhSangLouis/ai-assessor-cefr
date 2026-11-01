@@ -38,6 +38,7 @@
 | **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
 | **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt; D079: FR-92..FR-94 (mã qua email khi quên mật khẩu, xác minh email, nhắc học qua email), UC-35 | D078, D079 (APPROVED) |
+| **1.17** | **01/11/2026** | **D079..D085.** Email: mã quên mật khẩu, xác minh email, nhắc học (FR-92..FR-94). D080 tên hiển thị SpeakUp. D081 gỡ mã khôi phục: quên mật khẩu bằng mã qua email, email tắt thì nhờ quản trị viên. D082 việc duyệt tách thành `ReviewSession`. D083 gỡ bài luyện theo nhiệm vụ: gạch AC-40.2, 40.4, 41.1, 41.4, 42.3, 43.1, 44.1, 44.3, FR-42, FR-44; ngân hàng bài và luật đo mục tiêu ở lại cho bài học. D084 đơn nạp lượt tách `Order` và `Payment`. D085 `LessonPath.builtIn` thay `sample`. |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -244,10 +245,10 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | --- | --- | --- | --- | --- |
 | BR-01 | Hệ thống **không cấp chứng chỉ** và không quyết định đậu/rớt. Mọi điểm và band là ước lượng; giảng viên quyết định cuối cùng | FR-21, FR-30, C-09 | 1.0 | Tuyên bố bắt buộc ở mọi trang; `tests/test_web.py` (`test_every_page_carries_required_disclaimer`, chuỗi cấm) |
 | BR-02 | ~~Hệ thống chỉ biết **bút danh**: không lưu họ tên, mã số sinh viên, email hay số điện thoại.~~ *Thay bởi D071 (31/10/2026):* tài khoản đăng nhập bằng **email** (mật khẩu hoặc Google, cùng email là cùng tài khoản) và lưu **họ tên** để giảng viên lớp biết bài của ai; vẫn không lưu mã số sinh viên hay số điện thoại. Bút danh còn là **mã tài khoản**: dữ liệu nghiên cứu và nhật ký kiểm toán chỉ mang mã này | FR-33, FR-52, FR-59 | 1.0 → D071 | `auth/contact.py`, `auth/pseudonyms.py`; `account.email` (duy nhất), `account.full_name` |
-| BR-03 | **Chỉ sinh viên tự đăng ký (D063, D065).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên tự đăng ký bằng Google hoặc bằng mật khẩu ở `/signup`, nhận bút danh ngẫu nhiên và (với mật khẩu) một mã khôi phục dùng một lần; tắt bằng `AICEFR_GOOGLE_SIGNUP=0`, `AICEFR_SELF_SIGNUP=0` | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
+| BR-03 | **Chỉ sinh viên tự đăng ký (D063, D065).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên tự đăng ký bằng Google hoặc bằng email và mật khẩu ở `/signup`, nhận bút danh ngẫu nhiên (mã khôi phục của D065 đã gỡ bởi D081); tắt bằng `AICEFR_GOOGLE_SIGNUP=0`, `AICEFR_SELF_SIGNUP=0` | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
 | BR-04 | Chưa đồng ý điều khoản sử dụng thì hệ thống **không nhận** bài nói hay lượt luyện nào | FR-01 | 1.0, đổi ở D058 | `TERMS_NOT_ACCEPTED` ở `POST /api/v1/responses` và API lượt luyện; `tests/test_terms.py` |
 | BR-05 | Chỉ dữ liệu của người **đã đồng ý điều khoản sử dụng** mới vào bản xuất nghiên cứu, đợt chấm mù, báo cáo đồng thuận và bản xuất phiếu chấm; xoá dữ liệu là rút khỏi tất cả | FR-34, FR-35, FR-61, FR-64 | 1.0, mở rộng 1.3 (D030), đổi ở D058 | `AuthRepository.accounts_with_terms`; `tests/test_terms.py` (`test_research_use_covers_the_accounts_that_accepted`) |
-| BR-06 | Bài luyện **không** qua mô hình chấm, không có band, không vào hàng đợi duyệt hay thống kê chấm | FR-44, FR-49 | 1.3 (D023, D025) | cột `purpose`; `tests/test_lessons_integration.py` (`test_lesson_attempts_stay_out_of_queue_and_class_statistics`) |
+| BR-06 | Lượt nói trong bài học **không** qua mô hình chấm, không có band, không vào hàng đợi duyệt hay thống kê chấm (từ D083 không còn bài luyện riêng) | FR-49 | 1.3 (D023, D025, D083) | `tests/test_lessons_integration.py` (`test_lesson_attempts_stay_out_of_queue_and_class_statistics`) |
 | BR-07 | `teacher_verified` chỉ bật khi một giảng viên lưu quyết định **có lý do** | FR-30, FR-31 | 1.0 | `Repository.apply_review`; `tests/test_auth.py` |
 | BR-08 | Năm lần đăng nhập sai liên tiếp thì khoá 15 phút; nhập sai mật khẩu hiện tại khi đổi mật khẩu cũng tính là một lần sai | NFR-07, FR-51 | 1.0, mở rộng 1.3 (D028) | `AuthRepository._record_failure`; `tests/test_accounts.py` (`test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`) |
 | BR-09 | Một phiên đăng nhập sống tối đa 8 giờ; đăng xuất, đổi mật khẩu hay bị tắt tài khoản là thu hồi phiên ngay | NFR-07, FR-32, FR-51, FR-52 | 1.0, mở rộng 1.3 | `auth/sessions.py` (`LIFETIME_HOURS`), `AuthRepository.revoke_sessions` |
@@ -823,9 +824,9 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 | Acceptance Criteria |
 | --- |
 | **AC-40.1** — *Given* ngân hàng nhiệm vụ, *When* đếm theo tiêu chí và band, *Then* mỗi ô trong 5 × 3 có đúng một nhiệm vụ và mọi nhiệm vụ có ít nhất một mục tiêu (`test_bank_has_one_task_per_criterion_and_band`). |
-| **AC-40.2** — *Given* sinh viên mở trang nộp bài đánh giá, *When* tải `/api/v1/tasks`, *Then* không có nhiệm vụ luyện tập nào trong danh sách (`test_practice_tasks_never_appear_in_the_assessment_task_list`). |
+| ~~AC-40.2~~ *(gỡ bởi D083)* — *Given* sinh viên mở trang nộp bài đánh giá, *When* tải `/api/v1/tasks`, *Then* không có nhiệm vụ luyện tập nào trong danh sách (`test_practice_tasks_never_appear_in_the_assessment_task_list`). |
 | **AC-40.3** — *Given* một đoạn văn đọc to, *When* kiểm tra nội dung, *Then* đoạn văn không chứa chữ số hay từ có hai cách viết Anh/Mỹ (`test_read_aloud_passages_have_no_digits_or_dual_spellings`). |
-| **AC-40.4** — *Given* ngân hàng tăng `prompt_version` của một nhiệm vụ, *When* khởi động lại, *Then* dòng trong CSDL được cập nhật; cùng phiên bản thì không bị đụng tới (`test_bank_version_bump_updates_the_row_and_same_version_leaves_it`). |
+| ~~AC-40.4~~ *(gỡ bởi D083)* — *Given* ngân hàng tăng `prompt_version` của một nhiệm vụ, *When* khởi động lại, *Then* dòng trong CSDL được cập nhật; cùng phiên bản thì không bị đụng tới (`test_bank_version_bump_updates_the_row_and_same_version_leaves_it`). |
 
 ### FR-41 — Đo mục tiêu luyện tập bằng luật, có căn cứ
 
@@ -834,10 +835,10 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 
 | Acceptance Criteria |
 | --- |
-| **AC-41.1** — *Given* một bài luyện hợp lệ, *When* pipeline xử lý xong, *Then* `status = COMPLETED`, `assessment` rỗng và `practice` có kết quả từng mục tiêu (`test_practice_attempt_is_measured_not_scored_and_not_routed`). |
+| ~~AC-41.1~~ *(gỡ bởi D083)* — *Given* một bài luyện hợp lệ, *When* pipeline xử lý xong, *Then* `status = COMPLETED`, `assessment` rỗng và `practice` có kết quả từng mục tiêu (`test_practice_attempt_is_measured_not_scored_and_not_routed`). |
 | **AC-41.2** — *Given* VAD không trả đoạn nói nào, *When* đo khoảng lặng dài nhất, *Then* mục tiêu rỗng kèm `FEATURE_NOT_COMPUTABLE` (`test_pause_is_unmeasured_without_segments_rather_than_zero`). |
 | **AC-41.3** — *Given* câu "If so, fine." đứng sau một câu có "would", *When* đếm câu điều kiện, *Then* câu đó không được tính vì không có động từ khuyết thiếu trong cùng câu (`test_conditionals_need_if_and_a_modal_in_the_same_sentence`). |
-| **AC-41.4** — *Given* bài luyện không phải tiếng Anh hoặc không có lời, *When* pipeline xử lý, *Then* bài bị `REJECTED` kèm lý do thay vì chờ giảng viên (`test_non_english_practice_is_rejected_not_sent_to_a_teacher`). |
+| ~~AC-41.4~~ *(gỡ bởi D083)* — *Given* bài luyện không phải tiếng Anh hoặc không có lời, *When* pipeline xử lý, *Then* bài bị `REJECTED` kèm lý do thay vì chờ giảng viên (`test_non_english_practice_is_rejected_not_sent_to_a_teacher`). |
 
 ### FR-42 — Gợi ý nhiệm vụ tiếp theo bằng luật minh bạch
 
@@ -850,7 +851,7 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 | --- |
 | ~~AC-42.1~~ *(gỡ bởi D078)* — *Given* sinh viên chưa có bài đánh giá nào, *When* mở trang luyện tập, *Then* gợi ý là nhiệm vụ độ trôi chảy A2 với căn cứ `no_assessment` (`test_new_learner_gets_an_a2_suggestion_and_the_full_path`). |
 | ~~AC-42.2~~ *(gỡ bởi D078)* — *Given* bài đánh giá gần nhất band B1, tiêu chí yếu nhất là Range, *When* mở trang luyện tập, *Then* gợi ý là `PR-RAN-B1` với căn cứ `weakest_criterion` (`test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment`). |
-| **AC-42.3** — *Given* một kết quả giảng viên đã xác nhận có tiêu chí yếu nhất Fluency, band B1, *When* xuất hồ sơ, *Then* dòng đó có `next_task_id = "PR-FLU-B1"` (`test_speaking_profile_carries_the_practice_task_for_the_weakest_criterion`). |
+| ~~AC-42.3~~ *(gỡ bởi D083)* — *Given* một kết quả giảng viên đã xác nhận có tiêu chí yếu nhất Fluency, band B1, *When* xuất hồ sơ, *Then* dòng đó có `next_task_id = "PR-FLU-B1"` (`test_speaking_profile_carries_the_practice_task_for_the_weakest_criterion`). |
 
 ### FR-43 — Phản hồi sau mỗi lần luyện và thói quen luyện tập
 
@@ -859,7 +860,7 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 
 | Acceptance Criteria |
 | --- |
-| **AC-43.1** — *Given* hai lần luyện cùng nhiệm vụ, *When* xem kết quả lần sau, *Then* mỗi mục tiêu có số đo lần trước, kể cả khi hai lần nộp trong cùng một giây (`test_second_attempt_compares_with_the_previous_one_on_the_same_task`). |
+| ~~AC-43.1~~ *(gỡ bởi D083)* — *Given* hai lần luyện cùng nhiệm vụ, *When* xem kết quả lần sau, *Then* mỗi mục tiêu có số đo lần trước, kể cả khi hai lần nộp trong cùng một giây (`test_second_attempt_compares_with_the_previous_one_on_the_same_task`). |
 | **AC-43.2** — *Given* có luyện ngày 1, 2, 4, 5, *When* tính chuỗi ngày 5, *Then* chuỗi là 4; nghỉ hai ngày liền thì chuỗi đứt (`test_one_rest_day_per_week_keeps_streak_but_does_not_count`). |
 | **AC-43.3** — *Given* lần luyện lúc 18:30 UTC ngày 05/10, *When* xếp vào ngày, *Then* đó là ngày 06/10 theo giờ Việt Nam (`test_days_follow_vietnam_time`). |
 
@@ -870,9 +871,9 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 
 | Acceptance Criteria |
 | --- |
-| **AC-44.1** — *Given* một bài luyện đã xử lý, *When* giảng viên mở hàng đợi duyệt, *Then* bài đó không có trong hàng đợi (`test_practice_submission_gets_a_result_without_band_and_skips_the_queue`). |
+| ~~AC-44.1~~ *(gỡ bởi D083)* — *Given* một bài luyện đã xử lý, *When* giảng viên mở hàng đợi duyệt, *Then* bài đó không có trong hàng đợi (`test_practice_submission_gets_a_result_without_band_and_skips_the_queue`). |
 | ~~AC-44.2~~ *(gỡ bởi D078)* — *Given* một sinh viên có một bài đánh giá và một bài luyện, *When* quản trị viên xuất dữ liệu nghiên cứu, *Then* chỉ có bài đánh giá (`test_admin_research_export_excludes_practice`). |
-| **AC-44.3** — *Given* sinh viên khác hoặc giảng viên, *When* mở kết quả luyện của người khác, *Then* nhận 404 (`test_only_the_owner_can_open_a_practice_result`). |
+| ~~AC-44.3~~ *(gỡ bởi D083)* — *Given* sinh viên khác hoặc giảng viên, *When* mở kết quả luyện của người khác, *Then* nhận 404 (`test_only_the_owner_can_open_a_practice_result`). |
 | AC-44.4 (đã bỏ) — Theo D048: kho MongoDB được dựng mới, không có dữ liệu nào tạo trước D023 để nâng cấp. |
 
 ## 3.9b. Module M10 — Lộ trình bài học do giáo viên soạn (`src/aicefr/lessons/`) — D025
@@ -1550,7 +1551,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | --- |
 | **AC-92.1** — *Given* một email có tài khoản và một email không có, *When* yêu cầu mã cho cả hai, *Then* hai câu trả lời giống hệt, chỉ một thư được gửi, và yêu cầu lần nữa trong một phút không gửi thêm (`test_a_forgotten_password_is_replaced_with_a_code_from_the_email`). |
 | **AC-92.2** — *Given* mã đúng, *When* đặt mật khẩu mới, *Then* người đó đăng nhập, phiên cũ bị kết thúc, mã không dùng lại được và mật khẩu mới đăng nhập được (`test_a_forgotten_password_is_replaced_with_a_code_from_the_email`). |
-| **AC-92.3** — *Given* hệ thống chưa bật gửi email, *When* yêu cầu mã, *Then* nhận 503 và trang Quên mật khẩu chỉ có đường mã khôi phục (`test_with_email_off_the_recovery_code_is_the_way`). |
+| **AC-92.3** — *Given* hệ thống chưa bật gửi email, *When* yêu cầu mã, *Then* nhận 503 và trang Quên mật khẩu chỉ dẫn nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (`test_with_email_off_the_page_names_whom_to_ask`, D081). |
 
 ### FR-93 — Xác minh email (D079)
 
@@ -1936,8 +1937,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **5. Đổi mật khẩu:** ở mục Bảo mật của `/account`, nhập mật khẩu hiện tại và mật khẩu mới đạt quy tắc (BR-10); các phiên khác kết thúc.
 - **6. Liên kết Google:** ở mục Bảo mật, bấm "Liên kết tài khoản Google", xác nhận ở Google; hệ thống lưu mã băm định danh (BR-15, BR-16). Gỡ liên kết ở cùng chỗ.
 - **7. Thấy phiên lạ:** ở mục Bảo mật, đăng xuất phiên đó hoặc mọi thiết bị khác, rồi đổi mật khẩu; mục Hoạt động cho biết lần đăng nhập và lần sai gần đây.
-- **0a. Tự đăng ký (sinh viên, D065):** ở `/signup` nhập mật khẩu hai lần; hệ thống chọn bút danh ngẫu nhiên `SV-` + 6 ký tự hex, mở phiên và hiện **một lần** bút danh cùng mã khôi phục 16 ký tự (sao chép hoặc tải tệp .txt); người dùng đánh dấu đã lưu mới đi tiếp. Không có ô họ tên, email hay vai trò.
-- **8. Quên mật khẩu (D065):** ở `/forgot` nhập bút danh, mã khôi phục và mật khẩu mới; mã đúng thì mật khẩu được thay, mọi phiên khác kết thúc, mã cũ hết hiệu lực và mã mới hiện một lần. Mã sai tính như một lần đăng nhập sai (BR-08). Chưa có mã thì tạo ở mục Bảo mật của `/account` (cả tài khoản đăng ký bằng Google), hoặc nhờ quản trị viên cấp mật khẩu tạm (UC-10; cấp mật khẩu tạm cũng huỷ mã khôi phục).
+- **0a. Tự đăng ký (sinh viên, D065, D071):** ở `/signup` nhập email, họ tên và mật khẩu hai lần; hệ thống chọn bút danh nội bộ ngẫu nhiên `SV-` + 6 ký tự hex, mở phiên và gửi mã xác minh email (D079). Không có ô vai trò. Không còn mã khôi phục (D081).
+- **8. Quên mật khẩu (D079, D081):** ở `/forgot` nhập email, nhận mã 6 số qua email rồi đặt mật khẩu mới (UC-35); mọi phiên khác kết thúc. Hệ thống chưa bật gửi email thì nhờ quản trị viên cấp mật khẩu tạm (UC-10). Tài khoản tạo bằng Google cũng đặt mật khẩu riêng theo cách này, bằng chính email Google.
 
 **Hậu điều kiện:** Có đúng một phiên mới cho lần đăng nhập thành công, mang cách đăng nhập và tên thiết bị; nhật ký có dòng đăng nhập hoặc lần sai (chỉ với bút danh có thật).
 
@@ -2349,7 +2350,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 - **2a. Yêu cầu lại trong một phút:** Không gửi thêm mã.
 - **4a. Mã sai, hết hạn hoặc đã dùng:** Từ chối; sai năm lần thì mã hết hiệu lực, sai nhiều như đăng nhập thì tài khoản tạm khoá.
-- **1a. Không nhận được thư:** Dùng mã khôi phục ở cùng trang.
+- **1a. Không nhận được thư:** Xem mục Spam, hoặc nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (D081).
 
 **Hậu điều kiện:** Mật khẩu mới có hiệu lực; mã đã dùng.
 
@@ -2722,11 +2723,11 @@ Cột "Module code" ghi **đường dẫn có thật trong repository** tại th
 | FR-37 Kiểm soát log | UC-03 | TC-101 `test_log_key_whitelist`, TC-102 `test_log_privacy_scan` | **chưa hiện thực** (chưa có structured logging và whitelist trường) |
 | FR-38 Xuất hồ sơ | UC-11 | TC-103 `test_profile_only_verified`, TC-104 `test_profile_schema_valid`, TC-105 `test_empty_profile_no_guess` | **chưa hiện thực** (chưa có chức năng xuất hồ sơ năng lực nói) |
 | FR-39 Ghi âm trực tiếp | UC-01 | TC-106 `test_recording_hidden_without_ffmpeg`, TC-107 `test_webm_transcoded_to_wav_16k`, TC-108 `test_transcode_failure_returns_422`, TC-109 `test_mic_recording_goes_through_qc` | **chưa hiện thực** (chưa có nút ghi âm ở tầng giao diện và chưa có bước chuyển mã `ffmpeg` ở tầng máy chủ) |
-| FR-40 Ngân hàng nhiệm vụ luyện | UC-18 | `test_bank_has_one_task_per_criterion_and_band`, `test_practice_tasks_never_appear_in_the_assessment_task_list` | `src/aicefr/practice/bank.py`, `src/aicefr/storage/task_repository.py` (`seed_practice`) |
-| FR-41 Đo mục tiêu luyện | UC-18 | `tests/test_practice_unit.py` (bộ đo), `tests/test_practice_integration.py` (pipeline) | `src/aicefr/practice/missions.py`, `src/aicefr/pipeline.py` (`_practice`) |
-| FR-42 Gợi ý nhiệm vụ | UC-18 | `test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment`, `test_speaking_profile_carries_the_practice_task_for_the_weakest_criterion` | `src/aicefr/practice/recommend.py`, `src/aicefr/storage/repository.py` (`latest_assessment`, `_profile_row`) |
-| FR-43 Phản hồi và thói quen | UC-18 | `test_second_attempt_compares_with_the_previous_one_on_the_same_task`, các test chuỗi ngày | `src/aicefr/practice/feedback.py`, `src/aicefr/practice/streak.py`, `src/aicefr/api/static/practice_*.js` |
-| FR-44 Tách bài luyện | UC-18 | `tests/test_practice_integration.py`, `tests/e2e/test_practice_e2e.py` | `src/aicefr/storage/repository.py` (cột `purpose`, `practice_summary`), `src/aicefr/api/main.py` |
+| FR-40 Ngân hàng bài (nguồn dựng bài học) | UC-19 | `test_bank_has_one_task_per_criterion_and_band`, `test_read_aloud_passages_have_no_digits_or_dual_spellings` | `src/aicefr/practice/bank.py`, `src/aicefr/lessons/seed.py`. D083 gỡ đề luyện tập riêng |
+| FR-41 Đo mục tiêu | UC-19 | `tests/test_practice_unit.py` (bộ đo) | `src/aicefr/practice/missions.py`, `src/aicefr/lessons/checks.py`. D083 gỡ luồng chấm bài luyện trong pipeline |
+| ~~FR-42 Gợi ý nhiệm vụ~~ *(gỡ bởi D078, D083)* | — | — | — |
+| FR-43 Thói quen (chuỗi ngày) | UC-19 | các test chuỗi ngày ở `tests/test_practice_unit.py` | `src/aicefr/practice/streak.py`. D083 gỡ phản hồi so lần trước của bài luyện |
+| ~~FR-44 Tách bài luyện~~ *(gỡ bởi D083: không còn bài luyện)* | — | `tests/test_d083_no_practice.py` | — |
 | FR-45 Lộ trình, bài học, phiên bản | UC-19, UC-20 | `test_students_see_the_published_version_until_republished`, `test_attempt_records_lesson_version_and_rules_version`, `test_fresh_install_seeds_the_sample_path`, `test_lesson_completes_only_with_enough_passed_steps_and_the_free_step` | `src/aicefr/lessons/model.py`, `src/aicefr/lessons/progress.py`, `src/aicefr/lessons/seed.py`, `src/aicefr/storage/lesson_repository.py` |
 | FR-46 Chín dạng bước, bộ đo bằng luật | UC-19 | `test_read_aloud_marks_each_reference_word_heard_missed_or_unsure`, `test_keyword_counts_any_form_of_the_word`, `test_gap_classifies_each_blank`, `test_words_outside_speech_are_not_counted`, `test_free_step_compares_rounds`, `test_practice_clip_qc_accepts_short_recordings_assessment_does_not` | `src/aicefr/lessons/checks.py`, `src/aicefr/lessons/align.py`, `src/aicefr/lessons/text.py`, `src/aicefr/lessons/runner.py` |
 | FR-47 Giáo viên soạn bài | UC-20 | `test_generator_builds_the_four_stage_ladder_from_one_text`, `test_linter_warns_about_asr_traps`, `test_students_cannot_edit_paths`, `test_model_audio_that_does_not_match_its_text_is_flagged`, `test_path_export_import_roundtrip` | `src/aicefr/lessons/generate.py`, `src/aicefr/lessons/lint.py`, `src/aicefr/api/lessons_api.py`, `src/aicefr/api/static/teach_*.js` |

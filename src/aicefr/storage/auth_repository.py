@@ -82,8 +82,6 @@ ACCOUNT_FIELDS = (
     "daily_goal_s",
     "identities",
     "seen_markers",
-    "recovery_hash",
-    "recovery_issued_at",
     "email",
     "email_verified",
     "full_name",
@@ -246,9 +244,6 @@ class AuthRepository(MongoStore):
             "daily_goal_s": DEFAULT_DAILY_GOAL,
             "identities": [],
             "seen_markers": {},
-            # D065: the bcrypt hash of the one recovery code in force, or None.
-            "recovery_hash": None,
-            "recovery_issued_at": None,
             # D071: absent on accounts made before it; verified once Google
             # has vouched for the address.
             "email": None,
@@ -494,8 +489,8 @@ class AuthRepository(MongoStore):
     def _unlocked_row(self, identifier: str) -> dict | None:
         """The account to check a secret against, or None; AccountLocked inside a lockout.
 
-        Shared by the password and the recovery code (D065): both are guesses
-        at a secret, so both count towards, and are stopped by, one lockout.
+        Shared by the password and the code sent by email (D079): both are
+        guesses at a secret, so both count towards, and are stopped by, one lockout.
         """
         row = self.by_sign_in_name(identifier)
 
@@ -667,10 +662,6 @@ class AuthRepository(MongoStore):
                     "must_change_password": 1,
                     "failed_attempts": 0,
                     "locked_until": None,
-                    # Whoever held the account may have made a recovery code;
-                    # a reset by the administrator voids it too (D065).
-                    "recovery_hash": None,
-                    "recovery_issued_at": None,
                 }
             },
         )
@@ -679,18 +670,17 @@ class AuthRepository(MongoStore):
         self.revoke_sessions(account_id)
         return temporary
 
-    # ---------- self sign-up and recovery codes (D065) ----------
+    # ---------- self sign-up (D065) ----------
 
     def signup(
         self, email: str, full_name: str, raw_password: str, device: str | None = None
-    ) -> tuple[str, str, str, str]:
+    ) -> tuple[str, str, str]:
         """Create a student account with an email, a name and a password; sign it in.
 
-        Returns (account_id, pseudonym, recovery code, session token). The person
+        Returns (account_id, pseudonym, session token). The person
         signs in with the email (D071); the pseudonym is drawn at random ("SV-"
         and six hex digits) and stays inside, for research exports and the audit
-        log. The recovery code is the only way back in without an administrator,
-        so it is made here, shown once. Raises ValueError, worded for the
+        log. Raises ValueError, worded for the
         person, when the email, the name or the password will not do, and
         EmailTaken when the email already has an account.
         """
@@ -707,7 +697,6 @@ class AuthRepository(MongoStore):
             if self.get_by_pseudonym(pseudonym) is not None:
                 continue
             passwords.check_new_password(raw_password, email.split("@")[0])
-            code = passwords.recovery_code()
             aid = uuid.uuid4().hex[:12]
             doc = self._new_account(
                 aid, pseudonym, passwords.hash_password(raw_password), Role.STUDENT, False, now
@@ -715,8 +704,6 @@ class AuthRepository(MongoStore):
             doc.update(
                 password_changed_at=now,
                 last_login_at=now,
-                recovery_hash=passwords.hash_password(code),
-                recovery_issued_at=now,
                 email=email,
                 full_name=full_name,
             )
@@ -726,74 +713,8 @@ class AuthRepository(MongoStore):
                 if self.col("account").find_one({"email": email}, {"_id": 1}) is not None:
                     raise EmailTaken(email) from None
                 continue  # the pseudonym was taken in between; draw another
-            return aid, pseudonym, code, self._open_session(aid, device)
+            return aid, pseudonym, self._open_session(aid, device)
         raise RuntimeError("không tạo được mã tài khoản ngẫu nhiên chưa dùng")
-
-    def issue_recovery_code(self, account_id: str) -> str:
-        """A new recovery code for a signed-in owner, in clear, once; the old one stops working."""
-        code = passwords.recovery_code()
-        done = self.col("account").update_one(
-            {"account_id": account_id},
-            {
-                "$set": {
-                    "recovery_hash": passwords.hash_password(code),
-                    "recovery_issued_at": _now(),
-                }
-            },
-        )
-        if done.matched_count == 0:
-            raise KeyError(account_id)
-        return code
-
-    def recover(
-        self, identifier: str, code: str, new_password: str, device: str | None = None
-    ) -> tuple[str, dict, str] | None:
-        """Replace a forgotten password with the recovery code; sign in.
-
-        Returns (session token, account row, the next recovery code), or None
-        for a wrong pseudonym, a wrong code, a disabled account or one with no
-        code, all alike, as a login does. A wrong code counts as a failed login
-        (NFR-07): the lockout stops guessing codes as it stops guessing
-        passwords. On success the code is spent and replaced, every session of
-        the account ends, and the failures are cleared. Raises AccountLocked
-        inside a lockout and ValueError for an unacceptable new password, which
-        is checked first and spends nothing.
-        """
-        row = self._unlocked_row(identifier)
-        passwords.check_new_password(new_password, row["pseudonym"] if row else identifier)
-        typed = passwords.normalize_code(code)
-        if row is None or row["disabled"] or not row["recovery_hash"]:
-            passwords.waste_equivalent_time(typed)
-            if row is not None:
-                self._record_failure(row["account_id"])
-            return None
-        if not passwords.verify_password(typed, row["recovery_hash"]):
-            self._record_failure(row["account_id"])
-            return None
-        now = _now()
-        following = passwords.recovery_code()
-        # Conditional on the hash just checked: of two requests racing with the
-        # same code, only one spends it.
-        done = self.col("account").update_one(
-            {"account_id": row["account_id"], "recovery_hash": row["recovery_hash"]},
-            {
-                "$set": {
-                    "password_hash": passwords.hash_password(new_password),
-                    "must_change_password": 0,
-                    "password_changed_at": now,
-                    "last_login_at": now,
-                    "failed_attempts": 0,
-                    "locked_until": None,
-                    "recovery_hash": passwords.hash_password(following),
-                    "recovery_issued_at": now,
-                }
-            },
-        )
-        if done.modified_count == 0:
-            return None
-        self.revoke_sessions(row["account_id"])
-        token = self._open_session(row["account_id"], device, method="recovery")
-        return token, self.get(row["account_id"]), following
 
     # ---------- email codes, verification, reminders (D079) ----------
 
@@ -1117,8 +1038,8 @@ class AuthRepository(MongoStore):
 
         Google has proved the address belongs to whoever is signing in. If the
         account's email was never proved -- typed at sign-up -- somebody else
-        may have typed it: the password and the recovery code are replaced by
-        unknown ones and every session ends, so only the address's owner, via
+        may have typed it: the password is replaced by an unknown one and every
+        session ends, so only the address's owner, via
         Google, gets in. Returns whether that reset happened.
         """
         row = self.get(account_id)
@@ -1130,8 +1051,6 @@ class AuthRepository(MongoStore):
         if reset:
             changes.update(
                 password_hash=passwords.hash_password(secrets.token_urlsafe(32)),
-                recovery_hash=None,
-                recovery_issued_at=None,
                 must_change_password=0,
             )
         self.col("account").update_one({"account_id": account_id}, {"$set": changes})

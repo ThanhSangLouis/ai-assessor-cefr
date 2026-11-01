@@ -26,11 +26,8 @@ ROLE_REFUSAL = "tài khoản không có quyền thực hiện việc này"
 PUBLIC_API = {
     ("POST", "/api/v1/auth/login"),  # signing in
     ("POST", "/api/v1/auth/logout"),  # ending a session that may already be gone
-    # D065: opening an account and replacing a forgotten password, both before
-    # any session exists; rate limited per address and, for recovery, locked
-    # after five wrong codes like a login.
+    # D065: opening an account before any session exists; rate limited per address.
     ("POST", "/api/v1/auth/signup"),
-    ("POST", "/api/v1/auth/recover"),
     # D079: a code by email for a forgotten password, rate limited and locked
     # like a login; the link in a reminder that stops reminders, signed per account.
     ("POST", "/api/v1/auth/forgot/email"),

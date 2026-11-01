@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
-from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import (
     MAX_SECONDS,
     UNITS_PER_RUN,
@@ -85,7 +84,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
         "wallet_runs": as_runs(balance["wallet"]),
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
         # What a one-minute recording costs, for people to read (D057).
-        "one_minute": {a.value: as_runs(hold_for(s.prices, a, 60.0)) for a in TaskPurpose},
+        "one_minute": {"assessment": as_runs(hold_for(s.prices, 60.0))},
         "history": [_entry(e, s.prices) for e in s.store.history(account.account_id, limit=20)],
     }
 
@@ -93,14 +92,13 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
 @router.get("/api/v1/me/credits/quote", tags=["student"])
 def quote(
     seconds: float = Query(gt=0, le=MAX_SECONDS),
-    action: TaskPurpose = TaskPurpose.ASSESSMENT,
     account: Account = Depends(require_login),
 ) -> dict:
     """The most a recording of up to `seconds` costs: what the submission screen shows (D057)."""
     s = svc()
     if not s.enabled:
         return {"metering": False}
-    units = hold_for(s.prices, action, seconds)
+    units = hold_for(s.prices, seconds)
     return {
         "metering": True,
         "runs": as_runs(units),
@@ -145,7 +143,6 @@ class PackIn(BaseModel):
 class PricesIn(BaseModel):
     first_minute_runs: float = Field(ge=0, le=100)
     extra_minute_runs: float = Field(ge=0, le=100)
-    practice_factor: float = Field(gt=0, le=1)
     upgrade_runs: float = Field(ge=0, le=100)
     idpoint_per_run: int = Field(ge=0, le=10_000_000)
     free_runs: float = Field(ge=0, le=1000)

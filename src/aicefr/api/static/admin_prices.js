@@ -12,7 +12,6 @@
   const FIELDS = [
     ["first_minute_runs", "Bài nói đến 1 phút", "lượt", "0.1"],
     ["extra_minute_runs", "Mỗi phút thêm", "lượt", "0.1"],
-    ["practice_factor", "Hệ số bài luyện", "× giá bài đánh giá", "0.05"],
     ["upgrade_runs", "Một lần AI viết lại / soạn bài", "lượt", "0.1"],
     ["idpoint_per_run", "Một lượt bằng", "IDPoint", "100"],
     ["free_runs", "Lượt miễn phí mỗi tháng", "lượt / người", "1"],

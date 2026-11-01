@@ -161,7 +161,7 @@ def page_login(request: Request):
 
 
 def _signed_out_page(request: Request, account: Account | None, template: str):
-    """Sign-up and recovery (D065) are for somebody signed out; a signed-in
+    """Sign-up and a forgotten password are for somebody signed out; a signed-in
     person goes to the start page of their role. Off with AICEFR_SELF_SIGNUP=0."""
     settings = svc().settings
     if not settings.self_signup:
@@ -190,7 +190,7 @@ def page_signup(request: Request, account: Account | None = Depends(optional_acc
 
 @router.get("/forgot", response_class=HTMLResponse, tags=["web"])
 def page_forgot(request: Request, account: Account | None = Depends(optional_account)):
-    """A forgotten password: a code by email (D079), or the recovery code (D065)."""
+    """A forgotten password: a code by email (D079); with email off, whom to ask."""
     return _signed_out_page(request, account, "forgot.html")
 
 
@@ -361,16 +361,6 @@ def page_lesson(
         sample_rate_hz=lim["sample_rate_hz"],
         min_duration_s=lim["min_duration_s"],
     )
-
-
-@router.get("/practice/results/{response_id}", response_class=HTMLResponse, tags=["web"])
-def page_practice_result(
-    request: Request, response_id: str, account: Account | None = Depends(optional_account)
-):
-    """Result of one practice attempt (D023). Declared before `/practice/{task_id}`."""
-    if (gate := _login_gate(request, account)) is not None:
-        return gate
-    return _page(request, "practice_result.html", account, "practice", response_id=response_id)
 
 
 @router.get("/practice/{task_id}", include_in_schema=False)

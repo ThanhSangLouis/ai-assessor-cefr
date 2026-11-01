@@ -1,7 +1,7 @@
 """The prices in force (D078): the administrator's latest version, else the settings'.
 
-An administrator sets them on the dashboard -- what a recording, a practice
-attempt and an upgraded answer cost, what a run is in IDPoint, the free runs
+An administrator sets them on the dashboard -- what a recording and an
+upgraded answer cost, what a run is in IDPoint, the free runs
 each month and the run packs on sale -- and every change is a new version
 (`price-admin-N`). A charge keeps the version it was held under, so changing
 the prices never rewrites what was already paid. Until the first change the
@@ -13,7 +13,7 @@ from __future__ import annotations
 from aicefr.metering.pricing import UNITS_PER_RUN, PriceList
 from aicefr.storage.metering_repository import MeteringRepository
 
-FIELDS = ("first_minute_runs", "extra_minute_runs", "practice_factor", "upgrade_runs")
+FIELDS = ("first_minute_runs", "extra_minute_runs", "upgrade_runs")
 
 
 class PriceBook:

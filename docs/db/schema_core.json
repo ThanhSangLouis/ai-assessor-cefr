@@ -210,14 +210,6 @@
       "unique": false
     },
     {
-      "name": "i_gateway_checkout_ref",
-      "keys": [
-        "gateway",
-        "checkout_ref"
-      ],
-      "unique": false
-    },
-    {
       "name": "i_status_expires_at",
       "keys": [
         "status",
@@ -245,6 +237,23 @@
       "name": "u_path_id",
       "keys": [
         "path_id"
+      ],
+      "unique": true
+    }
+  ],
+  "payment": [
+    {
+      "name": "i_gateway_checkout_ref",
+      "keys": [
+        "gateway",
+        "checkout_ref"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_order_id",
+      "keys": [
+        "order_id"
       ],
       "unique": true
     }
@@ -323,6 +332,15 @@
       "unique": true
     }
   ],
+  "review_session": [
+    {
+      "name": "u_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
   "session": [
     {
       "name": "i_account_id",
@@ -350,9 +368,8 @@
   ],
   "task": [
     {
-      "name": "i_purpose_active",
+      "name": "i_active",
       "keys": [
-        "purpose",
         "active"
       ],
       "unique": false

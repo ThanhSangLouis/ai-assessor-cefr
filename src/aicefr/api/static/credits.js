@@ -36,7 +36,7 @@ async function load() {
       <div class="stat"><b>${runs(credits.free_runs_left)}</b><span>Miễn phí chu kỳ ${escapeHtml(credits.cycle)}</span></div>
       <div class="stat"><b>${runs(credits.wallet_runs)}</b><span>Đã mua</span></div>
     </div>
-    <p class="muted">Bài đánh giá tới 1 phút: <b>${runs(credits.one_minute.assessment)}</b> (${idp(credits.prices.first_minute_runs)}), mỗi phút thêm ${runs(credits.prices.extra_minute_runs)} (${idp(credits.prices.extra_minute_runs)}), tối đa ${credits.prices.max_minutes} phút. Bài luyện tập trả ${Math.round(credits.prices.practice_factor * 100)}%. Mỗi bản nâng cấp hay bản soạn bài do AI viết: ${runs(credits.prices.upgrade_runs)} (${idp(credits.prices.upgrade_runs)}), chỉ trừ khi viết xong. Lượt miễn phí được dùng trước và làm mới vào ngày 16 hằng tháng.</p>`;
+    <p class="muted">Bài đánh giá tới 1 phút: <b>${runs(credits.one_minute.assessment)}</b> (${idp(credits.prices.first_minute_runs)}), mỗi phút thêm ${runs(credits.prices.extra_minute_runs)} (${idp(credits.prices.extra_minute_runs)}), tối đa ${credits.prices.max_minutes} phút. Mỗi bản nâng cấp hay bản soạn bài do AI viết: ${runs(credits.prices.upgrade_runs)} (${idp(credits.prices.upgrade_runs)}), chỉ trừ khi viết xong. Lượt miễn phí được dùng trước và làm mới vào ngày 16 hằng tháng.</p>`;
   historyEl.innerHTML = credits.history.length
     ? `<ul class="plain-list">${credits.history
         .map(

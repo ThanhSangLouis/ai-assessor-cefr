@@ -162,15 +162,11 @@ CLASSES = [
         [
             "- taskId: str",
             "- title: str",
-            "- purpose: TaskPurpose",
             "- promptText: str",
             "- minSeconds: int",
             "- maxSeconds: int",
             "- topicKeywords: List<str>",
-            "- criterion: Criterion",
             "- band: Band",
-            "- referenceText: str",
-            "- missions: List<str>",
             "- promptVersion: str",
         ],
     ),
@@ -181,7 +177,6 @@ CLASSES = [
             "- responseId: str",
             "- speaker: Account [1]",
             "- task: Task [1]",
-            "- purpose: TaskPurpose",
             "- status: ResponseStatus",
             "- reasonCodes: List<str>",
             "- durationMs: int",
@@ -195,8 +190,6 @@ CLASSES = [
             "- replayLabels: List<str>",
             "- reviews: Review [0..*]",
             "- upgrade: CoachUpgrade [0..1]",
-            "- reviewLock: str",
-            "- reviewVisits: List<str>",
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
@@ -216,6 +209,17 @@ CLASSES = [
             "- reason: str",
             "- openedAt: datetime",
             "- decidedAt: datetime",
+        ],
+    ),
+    # D082: reviewing a response, apart from it: who holds it now and every visit.
+    _e(
+        "RevSess",
+        "ReviewSession",
+        [
+            "- response: Response [1]",
+            "- lockedBy: Account [0..1]",
+            "- lockedUntil: datetime",
+            "- visits: List<str>",
         ],
     ),
     # D069: the learner's answer rewritten one band higher, made once on request
@@ -270,7 +274,7 @@ CLASSES = [
             "- bandTo: Band",
             "- status: PathStatus",
             "- units: Unit [0..*]",
-            "- sample: bool",
+            "- builtIn: bool",
         ],
     ),
     _e(
@@ -379,16 +383,24 @@ CLASSES = [
             "- runs: int",
             "- amountVnd: int",
             "- status: OrderStatus",
-            "- gateway: str",
-            "- live: bool",
             "- createdBy: Account [1]",
             "- createdAt: datetime",
             "- expiresAt: datetime",
+            "- creditedAt: datetime",
+        ],
+    ),
+    # D084: how the gateway took the money for an order, apart from what was bought.
+    _e(
+        "Payment",
+        "Payment",
+        [
+            "- order: Order [1]",
+            "- gateway: str",
+            "- live: bool",
             "- checkoutRef: str",
             "- reference: str",
             "- resultCode: str",
             "- settledAt: datetime",
-            "- creditedAt: datetime",
             "- events: List<str>",
         ],
     ),
@@ -413,7 +425,6 @@ CLASSES = [
             "- version: str",
             "- firstMinuteRuns: float",
             "- extraMinuteRuns: float",
-            "- practiceFactor: float",
             "- upgradeRuns: float",
             "- idpointPerRun: int",
             "- freeRuns: float",
@@ -446,13 +457,12 @@ CLASSES = [
 # buoc bai hoc (quyet dinh cach cham buoc), loai don va goi dich vu. Tap gia tri
 # chi la chi tiet (ma ly do, nhiem vu, chu de, cong thanh toan, nguon license, do
 # chat) ghi `str`; hai trang thai thi ghi `bool`; enum trung nghia thi dung lai
-# (`LedgerEntry.action: TaskPurpose`, `LearningPlan.audience: Role`).
+# (`LearningPlan.audience: Role`).
 # Ten khac code: `ResponseStatus` (code: Status).
 ENUMS = [
     _n("Role", "Role", ["STUDENT", "TEACHER", "ADMIN"]),
     _n("Band", "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
     _n("Criterion", "Criterion", ["RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "PHONOLOGY"]),
-    _n("Purpose", "TaskPurpose", ["ASSESSMENT", "PRACTICE"]),
     _n(
         "Status",
         "ResponseStatus",
@@ -490,6 +500,8 @@ EDGES = [
     ("Resp", "Upgrade", "1 : 0..1", "comp"),
     ("Upgrade", "Phrase", "1 : 0..*", "comp"),
     ("Review", "Account", "0..* : 1", "assoc"),
+    ("RevSess", "Resp", "0..1 : 1", "assoc"),
+    ("RevSess", "Account", "0..* : lockedBy 0..1", "assoc"),
     # D071: a class has its teachers and its members, both many-to-many; the
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
@@ -507,6 +519,7 @@ EDGES = [
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
     ("Plan", "Path", "0..1 : 0..1", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
+    ("Payment", "Order", "0..1 : 1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
     ("Price", "Account", "0..* : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
@@ -529,11 +542,8 @@ EDGES += [
         ("Path", "Band"),
         ("Unit", "Band"),
         ("Lesson", "Band"),
-        ("Task", "Criterion"),
         ("Lesson", "Criterion"),
         ("Unit", "Criterion"),
-        ("Task", "Purpose"),
-        ("Resp", "Purpose"),
         ("Resp", "Status"),
         ("Path", "PathSt"),
         ("Step", "StepKind"),
@@ -550,12 +560,12 @@ EDGES += [
 ZONES = [
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),
+     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order", "Payment"]),
       (6, ["OrderSt", "Price"])]),
     ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
-      (3, ["Purpose", "Status", "Band", "Criterion"])]),
+      (3, ["Status", "Band", "Criterion", "RevSess"])]),
     ("learning", "Học tập", 1,
      [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["PathSt", ("StepKind", "Step")])]),

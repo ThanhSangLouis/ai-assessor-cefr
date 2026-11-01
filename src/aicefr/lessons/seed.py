@@ -261,7 +261,7 @@ def _a2_neighborhood() -> Lesson:
             band=Band.A2,
             model_text=text,
             keywords=keywords,
-            sample=True,
+            built_in=True,
             steps=[
                 Step(
                     kind=StepKind.READ_ALOUD,
@@ -353,7 +353,7 @@ def _b1_trip() -> Lesson:
             band=Band.B1,
             model_text=text,
             keywords=keywords,
-            sample=True,
+            built_in=True,
             steps=[
                 Step(
                     kind=StepKind.READ_ALOUD,
@@ -447,7 +447,7 @@ def _b2_online() -> Lesson:
             band=Band.B2,
             model_text=text,
             keywords=keywords,
-            sample=True,
+            built_in=True,
             steps=[
                 Step(
                     kind=StepKind.READ_ALOUD,
@@ -608,7 +608,7 @@ def from_practice_task(seed: PracticeSeed) -> Lesson:
             band=seed.band,
             criterion=seed.criterion,
             steps=steps,
-            sample=True,
+            built_in=True,
         )
     )
 

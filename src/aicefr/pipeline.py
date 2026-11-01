@@ -3,9 +3,6 @@
 Flow: quality check -> speech recognition -> voice activity detection ->
 feature extraction -> scoring -> evidence -> routing decision -> report.
 
-A practice task (D023) leaves the flow after feature extraction: its missions
-are measured by fixed rules, it is never scored and never routed to a teacher.
-
 A failure at any step still produces a Response carrying a status and
 reason codes. Nothing escapes as an exception: the caller is a web request that
 must answer the student either way.
@@ -27,18 +24,14 @@ from aicefr.contracts import (
     Assessment,
     FeatureSet,
     ProcessingRequest,
-    QcResult,
     ReasonCode,
     Response,
     ResponseStatus,
-    TaskPurpose,
-    Transcript,
 )
 from aicefr.features.extract import FeatureExtractor
 from aicefr.features.relevance import TaskLike, validity_flags
 from aicefr.observability import timed
 from aicefr.ports import AsrEngine, Scorer, VoiceActivityDetector
-from aicefr.practice.missions import MissionChecker
 from aicefr.qc.audio_qc import AudioQualityChecker
 from aicefr.report.comments import CommentBuilder
 from aicefr.report.evidence import EvidenceBuilder
@@ -113,7 +106,6 @@ class ResponseProcessor:
         router: ReviewRouter | None = None,
         task_lookup: Callable[[str], TaskLike | None] | None = None,
         lid_min_prob: float = LID_MIN_PROB,
-        mission_checker: MissionChecker | None = None,
     ) -> None:
         self.asr_engine = asr_engine
         self.vad = vad or default_vad()
@@ -127,7 +119,6 @@ class ResponseProcessor:
         # qua la chan, khong doan de.
         self.task_lookup = task_lookup
         self.lid_min_prob = lid_min_prob
-        self.mission_checker = mission_checker or MissionChecker()
 
     def _version_mismatches(self, asr) -> list[ReasonCode]:
         """Flag when the recogniser or detector differs from the trained-with pair."""
@@ -256,39 +247,6 @@ class ResponseProcessor:
         ]
         return merged
 
-    def _practice(
-        self,
-        base: dict,
-        task,
-        qc: QcResult,
-        asr: Transcript,
-        features: FeatureSet,
-        segments: list[tuple[float, float]],
-        extra_reasons: list[ReasonCode],
-    ) -> Response:
-        """Finish a practice attempt: measure its missions, no scoring, no routing (D023).
-
-        The scoring model is not called. A practice task is a short constrained
-        exercise -- use given words, read a passage aloud -- that lies outside the
-        exam responses the model learned from, so a band here would be a number from
-        outside the region the model can be trusted in. And even where it were valid,
-        the model's error is larger than the real progress between two attempts:
-        printing a band each time teaches the learner to read noise as progress.
-
-        QC reasons (for example a recording with a lot of silence) are kept so the
-        result page can say so.
-        """
-        result = self.mission_checker.check(task, asr, segments)
-        return Response(
-            **base,
-            status=ResponseStatus.COMPLETED,
-            qc=qc,
-            asr=asr,
-            features=features,
-            practice=result,
-            reasons=[*qc.reasons, *extra_reasons],
-        )
-
     def process(
         self,
         request: ProcessingRequest,
@@ -299,12 +257,6 @@ class ResponseProcessor:
     ) -> Response:
         """Run the full flow for one response."""
         task = self.task_lookup(request.task_id) if self.task_lookup else None
-        # D023. A practice attempt never waits for a teacher: wherever an
-        # assessment would go to a teacher, a practice attempt is rejected with
-        # its reason, so the learner knows why and can try again instead of
-        # waiting for someone who will never come.
-        is_practice = getattr(task, "purpose", None) is TaskPurpose.PRACTICE
-        needs_teacher = ResponseStatus.REJECTED if is_practice else ResponseStatus.REVIEW_REQUIRED
         base = {
             "response_id": request.response_id,
             "config_version": request.config_version,
@@ -358,7 +310,7 @@ class ResponseProcessor:
         if not asr.text.strip():
             return Response(
                 **base,
-                status=needs_teacher,
+                status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
                 reasons=[ReasonCode.ASR_EMPTY_TRANSCRIPT],
@@ -370,7 +322,7 @@ class ResponseProcessor:
         if asr.is_foreign(self.lid_min_prob):
             return Response(
                 **base,
-                status=needs_teacher,
+                status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
                 reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
@@ -393,9 +345,6 @@ class ResponseProcessor:
 
         with timed("pipeline_stage_seconds", stage="features"):
             features = self.extractor.extract(asr.words, segments, total_dur_s)
-        if is_practice:
-            return self._practice(base, task, qc, asr, features, segments, extra_reasons)
-
         # A recording longer than the model can take is cut into windows that
         # each sit inside the trained range, scored separately, and combined.
         # The alternative -- refusing outright -- was what a student met after

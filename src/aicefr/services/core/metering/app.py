@@ -34,7 +34,6 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     prices = PriceList(
         first_minute_runs=settings.price_first_minute_runs,
         extra_minute_runs=settings.price_extra_minute_runs,
-        practice_factor=settings.price_practice_factor,
         idpoint_per_run=settings.idpoint_per_run,
         upgrade_runs=settings.price_upgrade_runs,
     )

@@ -16,3 +16,6 @@ c2b7d495674c04dd3af0c981d053edfbc22dcd8a:tests/test_d071_accounts_and_classes.py
 c1059eccc15f92b0990c322a576e075a6ab3be12:tests/test_d071_accounts_and_classes.py:generic-api-key:25
 # D072: an empty example key read as a key with the next line as its value.
 a4fa8a665fe9389222bff455685de7a9863ab501:.env.production.example:generic-api-key:54
+# Bao nham (D081): mat khau THU khi doi ten tests/test_signup_recovery.py thanh
+# tests/test_signup.py; commit sau viet bang join. Khong phai khoa.
+7937de5520200fef7230aef45004b0edb37afc83:tests/test_signup.py:generic-api-key:21
