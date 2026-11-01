@@ -23,21 +23,27 @@
           aria-selected="false" aria-controls="panel-ratings">Chấm mù</button>
   <button id="tab-billing" data-panel="panel-billing" role="tab"
           aria-selected="false" aria-controls="panel-billing">Gói dịch vụ</button>
+  <button id="tab-coach" data-panel="panel-coach" role="tab"
+          aria-selected="false" aria-controls="panel-coach">AI viết lại</button>
   <button id="tab-ops" data-panel="panel-ops" role="tab"
           aria-selected="false" aria-controls="panel-ops">Vận hành</button>
 </div>
 
-{#- D028. Accounts are created and looked after here instead of through the
-    command line on the server. Pseudonyms only (FR-33); a one-time password is
-    shown once, on a slip meant to be printed, and must be replaced at the first
-    login. -#}
+{#- D028, D071. Accounts handed out ready-made are created and looked after
+    here instead of through the command line on the server: a code and a
+    one-time password, shown once on a slip meant to be printed and replaced at
+    the first login; the person then adds an email and a full name and signs
+    in with the email. -#}
 <section id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" tabindex="0">
   <div class="card" aria-labelledby="acc-create-h">
     <h2 id="acc-create-h">{{ icon("user-plus") }} Tạo tài khoản</h2>
     <p class="muted">
-      Hệ thống chỉ dùng bút danh. Tạo cả lớp theo dãy số (SV-001, SV-002, …) hoặc một bút danh
-      cụ thể. Mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một lần</b> ngay dưới đây; người
-      dùng phải đặt mật khẩu riêng ở lần đăng nhập đầu.
+      Dùng cho tài khoản bạn cấp sẵn (giảng viên, cả lớp chưa có email). Tạo theo dãy mã
+      (SV-001, SV-002, …) hoặc một mã cụ thể; mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một
+      lần</b> ngay dưới đây. Lần đầu đăng nhập bằng mã và mật khẩu tạm, người dùng đặt mật khẩu
+      riêng rồi thêm email và họ tên ở trang Tài khoản (bạn cũng điền giúp được trong chi tiết tài
+      khoản); từ đó họ đăng nhập bằng email. Người tự đăng ký hoặc đăng nhập bằng Google không cần
+      tạo ở đây.
     </p>
     <form id="acc-form" class="inline-form" novalidate>
       <div class="field">
@@ -52,7 +58,7 @@
         <label for="acc-mode">Cách tạo</label>
         <select id="acc-mode">
           <option value="series">Theo dãy số</option>
-          <option value="one">Một bút danh</option>
+          <option value="one">Một mã</option>
         </select>
       </div>
       <div class="field" data-mode="series">
@@ -64,7 +70,7 @@
         <input id="acc-prefix" type="text" maxlength="6" placeholder="SV" autocomplete="off">
       </div>
       <div class="field" data-mode="one" hidden>
-        <label for="acc-pseudonym">Bút danh</label>
+        <label for="acc-pseudonym">Mã tài khoản</label>
         <input id="acc-pseudonym" type="text" maxlength="32" placeholder="Ví dụ: GV-NN-01" autocomplete="off">
       </div>
       <div class="button-row">
@@ -85,7 +91,7 @@
     </div>
     <div class="notice notice-danger slips-warning">
       Mật khẩu tạm <b>chỉ hiện một lần</b>: máy chủ không lưu bản rõ. In hoặc tải về trước khi ẩn.
-      Dòng "Họ tên" ghi tay trên bản giấy và cất ngoài hệ thống; trong hệ thống không có tên thật nào.
+      Mã trên phiếu dùng để đăng nhập cho tới khi tài khoản có email.
     </div>
     <div class="slip-grid" id="slip-grid"></div>
   </div>
@@ -95,8 +101,8 @@
       <h2>{{ icon("users") }} Danh sách tài khoản</h2>
       <div class="toolbar-controls">
         <button type="button" class="secondary small" id="acc-csv">{{ icon("download") }} Tải danh sách (CSV)</button>
-        <label class="visually-hidden" for="acc-search">Tìm bút danh</label>
-        <input id="acc-search" type="search" placeholder="Tìm bút danh" autocomplete="off">
+        <label class="visually-hidden" for="acc-search">Tìm theo tên, email hoặc mã</label>
+        <input id="acc-search" type="search" placeholder="Tìm theo tên, email hoặc mã" autocomplete="off">
         <label class="visually-hidden" for="acc-filter">Lọc theo vai trò</label>
         <select id="acc-filter">
           <option value="">Mọi vai trò</option>
@@ -174,14 +180,15 @@
   </div>
   <div class="card">
     <h2>Xoá dữ liệu của một người học</h2>
-    <label for="speaker-id">Mã bút danh của người học</label>
+    <label for="speaker-id">Mã tài khoản của người học</label>
+    <p class="field-hint">Mã ghi trong chi tiết tài khoản; nút "Xoá dữ liệu…" ở đó điền sẵn ô này.</p>
     <input id="speaker-id" type="text" placeholder="Ví dụ: SV-001" autocomplete="off">
     <div class="button-row">
       <button id="preview-button" type="button" class="secondary">Xem trước</button>
     </div>
     <div id="preview-body" aria-live="polite"></div>
     <div id="confirm-body" hidden>
-      <label for="speaker-id-again">Nhập lại mã bút danh để xác nhận</label>
+      <label for="speaker-id-again">Nhập lại mã tài khoản để xác nhận</label>
       <input id="speaker-id-again" type="text" placeholder="Nhập lại đúng mã ở trên"
              autocomplete="off" aria-describedby="erase-hint">
       <div class="button-row">
@@ -197,7 +204,7 @@
     the agreement report (humans first) and the ratings as CSV. -#}
 <section id="panel-ratings" role="tabpanel" aria-labelledby="tab-ratings" tabindex="0" hidden>
   <div class="notice">
-    Hai giám khảo chấm mỗi bài <b>độc lập và mù</b>: không thấy bút danh, điểm của máy hay điểm của
+    Hai giám khảo chấm mỗi bài <b>độc lập và mù</b>: không thấy tên, email hay mã của người học, điểm của máy hay điểm của
     nhau; thứ tự bài xáo riêng cho từng người. Chỉ bài của người học có <b>tài khoản đang bật</b>
     được đưa vào đợt, báo cáo và bản xuất (D064). Bài lệch từ 1 điểm hoặc lệch band thì chuyển
     người thứ ba phân xử (kế hoạch khảo sát, mục 6).
@@ -253,6 +260,19 @@
   </div>
 </section>
 
+{#- D072. The language model behind the upgraded answer: today's requests
+    against the provider's daily quota (or the budget on a paid tier), tokens,
+    cost, refusals and errors, and the last 14 days. -#}
+<section id="panel-coach" role="tabpanel" aria-labelledby="tab-coach" tabindex="0" hidden>
+  <div id="coach-body" aria-busy="true" aria-live="polite">
+    <div class="card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>
+  </div>
+</section>
+
 <section id="panel-ops" role="tabpanel" aria-labelledby="tab-ops" tabindex="0" hidden>
   <div class="card" id="health-body" aria-busy="true">
     <div class="skeleton skeleton-title"></div>
@@ -274,5 +294,6 @@
 {% block scripts %}
 <script src="{{ asset('admin_ratings.js') }}"></script>
 <script src="{{ asset('admin_billing.js') }}"></script>
+<script src="{{ asset('admin_coach.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

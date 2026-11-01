@@ -35,6 +35,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         extra_minute_runs=settings.price_extra_minute_runs,
         practice_factor=settings.price_practice_factor,
         idpoint_per_run=settings.idpoint_per_run,
+        upgrade_runs=settings.price_upgrade_runs,
     )
     facade = MeteringFacade(store, audit_log, enabled, prices)
     metering_api.configure(

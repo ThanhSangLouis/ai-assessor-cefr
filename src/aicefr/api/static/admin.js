@@ -1,4 +1,4 @@
-// Administration screen: seven tabs behind one page. FR-08, FR-32 (accounts,
+// Administration screen: eight tabs behind one page. FR-08, FR-32 (accounts,
 // D028), FR-34, FR-35, FR-36, NFR-11.
 //
 // Tabs switch without reloading, and each tab fetches its data the first time
@@ -15,11 +15,16 @@ const TABS = [
   { button: "tab-ratings", panel: "panel-ratings", load: () => window.adminRatings.load() },
   // D033. The plan and payment tab lives in admin_billing.js, loaded first.
   { button: "tab-billing", panel: "panel-billing", load: () => window.adminBilling.load() },
+  // D072. The language model's use lives in admin_coach.js, loaded first.
+  { button: "tab-coach", panel: "panel-coach", load: () => window.adminCoach.load() },
   { button: "tab-ops", panel: "panel-ops", load: loadOps },
 ];
 
 const loaded = new Set();
 const escapeHtml = window.escapeHtml;
+// How a person is named to the administrator: the full name, else the email,
+// else the account code of an account that has neither yet (D071).
+const nameOf = (a) => a.full_name || a.email || a.pseudonym;
 
 // Every admin endpoint is behind require_role(ADMIN). A 401 means the session
 // expired; a 403 means the account is logged in but is a student or a teacher.
@@ -172,7 +177,7 @@ function iconButton(action, a, icon, label, extra = "") {
 }
 
 function accountActions(a) {
-  const who = a.pseudonym;
+  const who = nameOf(a);
   if (a.account_id === myAccountId) {
     return '<span class="muted small-note">Tài khoản của bạn</span>';
   }
@@ -259,12 +264,12 @@ function slipHtml(x) {
   return `<article class="slip">
     <p class="slip-brand">AI Assessor CEFR · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
     <div class="slip-codes">
-      <div><span class="slip-label">Bút danh</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
+      <div><span class="slip-label">Mã đăng nhập</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
       <div><span class="slip-label">Mật khẩu tạm</span><span class="slip-code">${escapeHtml(x.temporary_password)}</span></div>
     </div>
     <p class="slip-note">Đăng nhập tại <b>${escapeHtml(origin)}</b>. Lần đầu, hệ thống yêu cầu đặt
       mật khẩu của riêng bạn; từ đó mật khẩu tạm hết hiệu lực.</p>
-    <p class="slip-name">Họ tên (ghi tay, không nhập vào hệ thống): ...........................</p>
+    <p class="slip-name">Sau đó thêm email và họ tên ở trang Tài khoản để đăng nhập bằng email.</p>
   </article>`;
 }
 
@@ -324,7 +329,7 @@ accForm.addEventListener("submit", async (e) => {
   if (accMode.value === "one") {
     body.pseudonym = accPseudonym.value.trim();
     if (!body.pseudonym) {
-      window.toast("Hãy nhập bút danh.", "error");
+      window.toast("Hãy nhập mã tài khoản.", "error");
       accPseudonym.focus();
       return;
     }
@@ -348,39 +353,39 @@ accForm.addEventListener("submit", async (e) => {
 
 const ACCOUNT_ACTIONS = {
   revoke: {
-    ask: (a) => "Đăng xuất " + a.pseudonym + " khỏi mọi thiết bị? Mật khẩu giữ nguyên.",
+    ask: (a) => "Đăng xuất " + nameOf(a) + " khỏi mọi thiết bị? Mật khẩu giữ nguyên.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/revoke-sessions`,
-    done: (a, d) => window.toast("Đã đăng xuất " + a.pseudonym + " khỏi " + d.revoked + " phiên.", "ok"),
+    done: (a, d) => window.toast("Đã đăng xuất " + nameOf(a) + " khỏi " + d.revoked + " phiên.", "ok"),
   },
   unlinkGoogle: {
-    ask: (a) => "Gỡ liên kết Google của " + a.pseudonym + "? Họ vẫn đăng nhập được bằng mật khẩu.",
+    ask: (a) => "Gỡ liên kết Google của " + nameOf(a) + "? Họ vẫn đăng nhập được bằng mật khẩu.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/unlink-google`,
-    done: (a) => window.toast("Đã gỡ liên kết Google của " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã gỡ liên kết Google của " + nameOf(a) + ".", "ok"),
   },
   reset: {
     // Plain strings for confirm() and toast(), which never parse HTML; joined
     // rather than templated so the escaping check sees no unescaped markup.
-    ask: (a) => "Cấp mật khẩu tạm mới cho " + a.pseudonym + "? Mọi phiên đăng nhập của tài khoản này sẽ kết thúc.",
+    ask: (a) => "Cấp mật khẩu tạm mới cho " + nameOf(a) + "? Mọi phiên đăng nhập của tài khoản này sẽ kết thúc.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/reset-password`,
     done: (a, d) => {
       addSlips([d], a.role);
-      window.toast("Đã cấp mật khẩu tạm mới cho " + a.pseudonym + ".", "ok");
+      window.toast("Đã cấp mật khẩu tạm mới cho " + nameOf(a) + ".", "ok");
     },
   },
   disable: {
-    ask: (a) => "Tắt tài khoản " + a.pseudonym + "? Người dùng bị đăng xuất ngay; dữ liệu vẫn giữ nguyên.",
+    ask: (a) => "Tắt tài khoản " + nameOf(a) + "? Người dùng bị đăng xuất ngay; dữ liệu vẫn giữ nguyên.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/disable`,
-    done: (a) => window.toast("Đã tắt " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã tắt " + nameOf(a) + ".", "ok"),
   },
   enable: {
     ask: null,
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/enable`,
-    done: (a) => window.toast("Đã bật lại " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã bật lại " + nameOf(a) + ".", "ok"),
   },
   unlock: {
     ask: null,
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/unlock`,
-    done: (a) => window.toast("Đã gỡ khoá " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã gỡ khoá " + nameOf(a) + ".", "ok"),
   },
 };
 
@@ -569,10 +574,10 @@ accountDialogBody.addEventListener("click", async (e) => {
     const a = accounts.find((x) => x.account_id === id);
     const role = document.getElementById("role-select").value;
     if (!a || role === a.role) return;
-    if (!window.confirm("Đổi vai trò của " + a.pseudonym + " thành " + ROLE_NAMES[role] + "?")) return;
+    if (!window.confirm("Đổi vai trò của " + nameOf(a) + " thành " + ROLE_NAMES[role] + "?")) return;
     const d = await postJson(`/api/v1/admin/accounts/${encodeURIComponent(id)}/role`, { role });
     if (!d) return;
-    window.toast("Đã đổi vai trò của " + a.pseudonym + ".", "ok");
+    window.toast("Đã đổi vai trò của " + nameOf(a) + ".", "ok");
     await loadAccounts();
     openAccount(id);
   }
@@ -582,11 +587,11 @@ accountDialogBody.addEventListener("click", async (e) => {
 // hash, nothing that opens an account.
 document.getElementById("acc-csv").addEventListener("click", () => {
   const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const head = ["but_danh", "vai_tro", "tao_luc", "dang_nhap_gan_nhat", "da_tat", "cho_doi_mat_khau", "co_google"];
+  const head = ["ma_tai_khoan", "email", "ho_ten", "vai_tro", "tao_luc", "dang_nhap_gan_nhat", "da_tat", "cho_doi_mat_khau", "co_google"];
   const lines = [head.join(",")];
   accounts.forEach((a) =>
     lines.push(
-      [a.pseudonym, a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
+      [a.pseudonym, a.email || "", a.full_name || "", a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
         .map(cell)
         .join(",")
     )
@@ -993,7 +998,7 @@ document.getElementById("preview-button").addEventListener("click", async () => 
   const speakerId = speakerInput.value.trim();
   resetErasePanel();
   if (!speakerId) {
-    previewBody.innerHTML = '<p class="error">Hãy nhập mã bút danh.</p>';
+    previewBody.innerHTML = '<p class="error">Hãy nhập mã tài khoản.</p>';
     return;
   }
   const data = await getJson(
@@ -1014,7 +1019,7 @@ document.getElementById("preview-button").addEventListener("click", async () => 
     </table>`;
   h += ids.length
     ? `<p>Mã các bài sẽ bị xoá:</p><p><code>${ids.map(escapeHtml).join("</code> <code>")}</code></p>`
-    : '<p class="muted">Không có bài nào thuộc mã bút danh này.</p>';
+    : '<p class="muted">Không có bài nào thuộc mã tài khoản này.</p>';
   h += `<div class="notice notice-danger">Bấm xác nhận là xoá ngay và
     <b>không hoàn tác được</b>.</div>`;
   previewBody.innerHTML = h;

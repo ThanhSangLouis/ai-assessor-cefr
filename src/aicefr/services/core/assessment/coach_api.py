@@ -16,6 +16,15 @@ And the phrase book built from those upgrades (D070, `coach/phrasebook.py`):
 Only the owner, only a scored assessment with a transcript, never while the
 feedback study holds this learner's feedback back (D040), and a daily cap per
 student so a free tier stays inside its limits.
+
+D072: what it costs. A cap for everyone together keeps the system under the
+provider's free daily quota: every request sent, retries and failures
+included, in the provider's day (`coach/usage.py`); on a paid tier a daily
+budget in USD replaces it. `GET /api/v1/admin/coach` gives the administrator
+those counters for the last days. On the metered channel an upgrade costs
+`AICEFR_PRICE_UPGRADE_RUNS` runs: held before the model is asked, charged when
+the upgrade is made, released when the model fails. The provider's own token
+counts go to the ledger entry and the day's counters, not into the upgrade.
 """
 
 from __future__ import annotations
@@ -25,9 +34,9 @@ from datetime import UTC, datetime, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from aicefr.api.deps import require_login
-from aicefr.coach import phrasebook
-from aicefr.coach.providers import provider_from
+from aicefr.api.deps import ADMIN_ONLY, require_login
+from aicefr.coach import phrasebook, usage
+from aicefr.coach.providers import OPENAI_COMPATIBLE, provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
 from aicefr.contracts import ResponseStatus
 from aicefr.observability import count
@@ -81,7 +90,9 @@ def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
         and report.assessment.overall_band is not None
         and report.assessment.overall_band.value in NEXT
     )
-    return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can}
+    metering = getattr(svc().peers, "metering", None)
+    price = metering.upgrade_price() if metering is not None and can else None
+    return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can, "price": price}
 
 
 @router.post("/api/v1/responses/{response_id}/upgrade", tags=["student"])
@@ -107,20 +118,49 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     provider = provider_from(s.settings)
     if provider is None:
         raise HTTPException(503, "máy chủ chưa bật tính năng bản nâng cấp")
+    day = usage.provider_day()
     since = (datetime.now(UTC) - timedelta(days=1)).isoformat(timespec="seconds")
     if s.repo.upgrades_since(account.account_id, since) >= s.settings.coach_daily:
+        s.repo.record_coach(day, refused_user=1)
         raise HTTPException(
             429, f"mỗi ngày tạo được tối đa {s.settings.coach_daily} bản nâng cấp, hãy thử lại sau"
         )
+    refusal = usage.global_refusal(s.settings, s.repo.coach_days([day])[0])
+    if refusal:
+        s.repo.record_coach(day, refused_global=1)
+        count("coach_upgrade_global_cap_total")
+        raise HTTPException(429, refusal)
+    metering = getattr(s.peers, "metering", None)
+    key = f"upgrade-{response_id}"
+    if metering is not None:
+        refusal = metering.hold_upgrade(account_id=account.account_id, key=key)
+        if refusal:
+            raise HTTPException(402, refusal)
     status = s.repo.status_of(response_id) or {}
     task = s.tasks.get(status.get("task_id") or "")
     transcript = report.asr.text.strip()
+    message = user_message(task.prompt_text if task else "", transcript, band, NEXT[band])
+    calls = usage.Calls()
+    used: dict = {}
     try:
-        raw = provider.complete(
-            user_message(task.prompt_text if task else "", transcript, band, NEXT[band])
-        )
+        with_usage = getattr(provider, "complete_with_usage", None)
+        if with_usage:
+            raw, used = with_usage(message, calls)
+        else:
+            calls.requests += 1
+            raw = provider.complete(message)
         made = parse(raw, transcript)
     except UpgradeError as e:
+        s.repo.record_coach(
+            day,
+            account_id=account.account_id,
+            error=str(e),
+            requests=calls.requests,
+            failed=1,
+            **_tokens(s.settings, used),
+        )
+        if metering is not None:
+            metering.settle_upgrade(key=key, result=False)
         count("coach_upgrade_failed_total")
         raise HTTPException(502, str(e)) from e
     kept = {
@@ -135,9 +175,61 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     s.repo.save_upgrade(response_id, kept)
+    s.repo.record_coach(
+        day,
+        account_id=account.account_id,
+        requests=calls.requests,
+        upgrades=1,
+        **_tokens(s.settings, used),
+    )
+    if metering is not None:
+        metering.settle_upgrade(
+            key=key,
+            result=True,
+            input_tokens=used.get("input_tokens"),
+            output_tokens=used.get("output_tokens"),
+        )
     s.repo.write_audit(account.pseudonym, "coach.upgrade", response_id, provider.name)
     count("coach_upgrade_total")
     return kept
+
+
+def _tokens(settings, used: dict) -> dict:
+    """The day's token and cost counters for one answer of the provider."""
+    i, o = used.get("input_tokens") or 0, used.get("output_tokens") or 0
+    return {"input_tokens": i, "output_tokens": o, "cost_usd": usage.cost_usd(settings, i, o)}
+
+
+# ================================================================= the dashboard (D072)
+
+DASHBOARD_DAYS = 14
+
+
+@router.get("/api/v1/admin/coach", tags=["admin"], dependencies=[ADMIN_ONLY])
+def coach_dashboard() -> dict:
+    """The language model's use: today against the cap, and the last 14 days."""
+    st = svc().settings
+    provider = provider_from(st)
+    name = st.coach_provider
+    preset = OPENAI_COMPATIBLE.get(name)
+    days = svc().repo.coach_days(usage.last_days(DASHBOARD_DAYS))
+    return {
+        "provider": name,
+        "model": provider.model
+        if provider
+        else (st.coach_model or (preset.model if preset else "")),
+        "enabled": provider is not None,
+        "missing_key": preset.key_env if preset and provider is None and name != "off" else None,
+        "mode": "budget" if usage.budget_mode(st) else "requests",
+        "daily_requests": st.coach_global_daily,
+        "daily_budget_usd": st.coach_budget_usd,
+        "per_student_daily": st.coach_daily,
+        "price_input_usd": st.coach_price_input_usd,
+        "price_output_usd": st.coach_price_output_usd,
+        "today": days[-1],
+        "resets_at": usage.resets_at(),
+        "days": days,
+    }
 
 
 # ================================================================= phrase book (D070)

@@ -64,13 +64,13 @@ Chỉ có dữ liệu trên bản triển khai bật `AICEFR_METERING`, tức k�
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
 | `wallet` | CN | Ví của một tài khoản: số lượt trả trước (1/1000 lượt), chu kỳ hiện tại (bắt đầu ngày 16) và số lượt miễn phí đã dùng trong chu kỳ đó | `grants`: mỗi lần cộng lượt, nguồn (`admin`, `order` cho gói lượt mua qua cổng (D053), sau này `netid`), số tham chiếu, ai cộng; một khoản nạp chỉ cộng một lần | Duy nhất `user_ref` |
-| `ledger` | CN | Sổ lượt: mỗi bài một bút toán gồm mục đích (`assessment`, `practice`), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
+| `ledger` | CN | Sổ lượt: mỗi bài một bút toán, và mỗi bản nâng cấp do AI viết một bút toán (D072, khoá `upgrade-<mã bài>`), gồm hành động (`assessment`, `practice`, `upgrade`), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
 
 ### 2.6. Hệ thống
 
 | Collection | CN | Nội dung | Khoá và ràng buộc |
 | --- | --- | --- | --- |
-| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`) | PK `key` |
+| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`), bộ đếm dùng mô hình ngôn ngữ mỗi ngày của nhà cung cấp (`coach_usage.<YYYY-MM-DD>`, D072: số yêu cầu gửi đi gồm cả lỗi và gọi lại, bản viết xong, lỗi theo lý do, số lần bị từ chối vì giới hạn chung hay mỗi người, token vào/ra, chi phí ước tính USD, danh sách `account_id` đã dùng; không chứa nội dung bài) | PK `key` |
 | `schema_migrations` | | Các phiên bản cấu trúc đã áp dụng và thời điểm (nội bộ, không trong `schema_core.json`) | Duy nhất `version` |
 
 ## 3. Đổi cấu trúc

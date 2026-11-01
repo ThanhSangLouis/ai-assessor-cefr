@@ -54,7 +54,7 @@ def test_an_administrator_hands_out_an_account_and_its_first_login_sets_a_passwo
     expect(admin.get_by_role("tab", name="Tài khoản")).to_have_attribute("aria-selected", "true")
     admin.get_by_label("Vai trò", exact=True).select_option("teacher")
     admin.get_by_label("Cách tạo").select_option("one")
-    admin.get_by_label("Bút danh", exact=True).fill("E2E-GV-NEW")
+    admin.get_by_label("Mã tài khoản", exact=True).fill("E2E-GV-NEW")
     admin.get_by_role("button", name="Tạo tài khoản").click()
 
     slip = admin.locator(".slip").filter(has_text="E2E-GV-NEW")

@@ -92,6 +92,16 @@ class Services:
             for a in self.peers.identity.accounts(enabled_only=False)
         }
 
+    def staff_names(self) -> dict[str, str]:
+        """How the administrator's screens name a rater: full name, else email, else code (D071).
+
+        The research export keeps `pseudonyms()`: no name leaves with the ratings.
+        """
+        return {
+            a["account_id"]: a.get("full_name") or a.get("email") or a["pseudonym"]
+            for a in self.peers.identity.accounts(enabled_only=False)
+        }
+
 
 _services: Services | None = None
 
@@ -299,7 +309,12 @@ class AdjudicationIn(BaseModel):
 def _raters() -> list[dict]:
     """Enabled teachers and administrators: who can be asked to rate."""
     return [
-        {"account_id": a["account_id"], "pseudonym": a["pseudonym"], "role": a["role"]}
+        {
+            "account_id": a["account_id"],
+            "pseudonym": a["pseudonym"],
+            "name": a.get("full_name") or a.get("email") or a["pseudonym"],
+            "role": a["role"],
+        }
         for a in svc().peers.identity.accounts(roles=[Role.TEACHER.value, Role.ADMIN.value])
     ]
 
@@ -363,11 +378,11 @@ def create_batch(
 
 @router.get("/api/v1/admin/ratings/batches", tags=["admin"])
 def list_batches(account: Account = ADMIN_ONLY):
-    names = svc().pseudonyms()
+    names = svc().staff_names()
     out = []
     for b in svc().ratings.batches():
         b["raters"] = [
-            {"account_id": rid, "pseudonym": names.get(rid, rid), **progress}
+            {"account_id": rid, "name": names.get(rid, rid), **progress}
             for rid, progress in sorted(b["raters"].items(), key=lambda kv: names.get(kv[0], kv[0]))
         ]
         out.append(b)

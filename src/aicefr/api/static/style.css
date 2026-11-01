@@ -7730,3 +7730,51 @@ button:not(:disabled):hover,
 .habit figcaption { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: baseline; }
 .habit-chart .axis-label { font-variant-numeric: tabular-nums; }
 .habit-move { margin: 0; font-size: var(--t-sm); }
+
+/* ------------------------------------------------------------------ AI viết lại (D072)
+   The administrator's view of the language model: one gauge that answers
+   "how much is left today", readings under it, then the last 14 days. */
+.coach-head { display: grid; gap: var(--sp-1); margin-bottom: var(--sp-4); }
+.coach-head h2 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: 0; }
+.coach-head h2 code { font-size: var(--t-sm); font-weight: 500; }
+.coach-head p { margin: 0; }
+.coach-gauge { display: grid; gap: var(--sp-2); }
+.coach-gauge-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--sp-2); }
+.coach-gauge-head p { margin: 0; }
+.coach-gauge-num { font-variant-numeric: tabular-nums; }
+.coach-gauge-num b { font-size: var(--t-2xl); font-weight: 700; letter-spacing: -0.02em; }
+.coach-gauge-num span { color: var(--fg-muted); font-size: var(--t-lg); }
+.coach-meter { height: 12px; border-radius: var(--r-pill); background: var(--bg-sunken); overflow: hidden; }
+.coach-meter > span { display: block; height: 100%; background: var(--ok); border-radius: var(--r-pill); }
+.coach-gauge.high .coach-meter > span { background: var(--warn); }
+.coach-gauge.full .coach-meter > span { background: var(--danger); }
+.coach-gauge.high .coach-gauge-num b { color: var(--warn); }
+.coach-gauge.full .coach-gauge-num b { color: var(--danger); }
+.coach-reset { margin: 0; font-size: var(--t-sm); }
+.coach-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 640px) { .coach-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.coach-chart { margin-top: var(--sp-3); }
+.coach-chart .bar-ok { fill: var(--brand); }
+.coach-chart .bar-rest { fill: var(--warn); }
+.coach-chart .bar-none { fill: var(--border); }
+.coach-chart .cap-line { stroke: var(--danger); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.coach-chart .cap-hit { fill: var(--danger); }
+.coach-chart .axis-label { font-variant-numeric: tabular-nums; }
+.coach-chart .axis-label.today { fill: var(--fg); font-weight: 600; }
+.trend-legend i.key { border: 0; border-radius: 2px; }
+.trend-legend i.key.bar-ok { background: var(--brand); }
+.trend-legend i.key.bar-rest { background: var(--warn); }
+.trend-legend i.key.cap-line { height: 0; width: 14px; border-top: 2px dashed var(--danger); border-radius: 0; }
+.trend-legend i.key.cap-hit { background: var(--danger); border-radius: 50%; }
+.coach-period {
+  display: grid; gap: var(--sp-3); margin: var(--sp-4) 0;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+.coach-period div { display: grid; gap: 2px; }
+.coach-period dt { font-size: var(--t-sm); color: var(--fg-muted); }
+.coach-period dd { margin: 0; font-size: var(--t-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.coach-errors { list-style: none; padding: 0; margin: 0 0 var(--sp-3); display: grid; gap: var(--sp-1); }
+.coach-errors li { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-1) 0; border-bottom: 1px solid var(--border); }
+.coach-errors b { font-variant-numeric: tabular-nums; }
+.coach-table summary { cursor: pointer; font-weight: 600; margin-top: var(--sp-2); }
+.coach-table td, .coach-table th { font-variant-numeric: tabular-nums; }

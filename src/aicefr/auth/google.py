@@ -83,12 +83,12 @@ MESSAGES = {
     "domain": "Tài khoản Google này không thuộc tên miền mà trường cho phép.",
     "unverified": "Email của tài khoản Google này chưa được xác minh.",
     "not_linked": (
-        "Tài khoản Google này chưa liên kết với bút danh nào. Đăng nhập bằng bút danh và "
+        "Tài khoản Google này chưa liên kết với tài khoản nào. Đăng nhập bằng email và "
         "mật khẩu, rồi liên kết Google ở trang Tài khoản."
     ),
     "disabled": "Tài khoản này đã bị tắt. Hãy liên hệ quản trị viên.",
-    "taken": "Tài khoản Google này đã liên kết với một bút danh khác.",
-    "signin": "Cần đăng nhập bằng bút danh trước khi liên kết Google.",
+    "taken": "Tài khoản Google này đã liên kết với một tài khoản khác.",
+    "signin": "Cần đăng nhập trước khi liên kết Google.",
     "insecure": (
         "Máy chủ chạy qua https nhưng chưa bật AICEFR_HTTPS_ONLY, nên chưa đăng nhập bằng "
         "Google được. Quản trị viên xem khung Đăng nhập bằng Google ở tab Cấu hình."

@@ -38,6 +38,16 @@ from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import ensure_current
 
 
+class MeteredAction(str, Enum):
+    """What a ledger entry paid for: a recording of either purpose, or (D072) an
+    upgraded answer. The first two carry the values of `TaskPurpose`, so the
+    entries written before D072 read back unchanged."""
+
+    ASSESSMENT = "assessment"
+    PRACTICE = "practice"
+    UPGRADE = "upgrade"
+
+
 class LedgerState(str, Enum):
     """Where a ledger entry is: held at submission, then charged or released, once."""
 
@@ -52,8 +62,8 @@ class LedgerEntry:
 
     entry_id: str
     user_ref: str  # the wallet's owner
-    action: TaskPurpose
-    key: str  # the response
+    action: MeteredAction
+    key: str  # the response; "upgrade-<response id>" for an upgraded answer
     held: int
     from_free: int
     from_wallet: int
@@ -71,7 +81,7 @@ class LedgerEntry:
     def from_doc(cls, doc: dict) -> LedgerEntry:
         known = cls.__dataclass_fields__
         found = {k: v for k, v in doc.items() if k in known}
-        found["action"] = TaskPurpose(doc["action"])
+        found["action"] = MeteredAction(doc["action"])
         found["state"] = LedgerState(doc["state"])
         return cls(**found)
 
@@ -234,13 +244,13 @@ class MeteringRepository(MongoStore):
             )
         self._add_to_wallet(user_ref, wallet)
 
-    def entry(self, key: str, action: TaskPurpose) -> dict | None:
+    def entry(self, key: str, action: TaskPurpose | MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
     def hold(
         self,
         user_ref: str,
-        action: TaskPurpose,
+        action: TaskPurpose | MeteredAction,
         key: str,
         units: int,
         version: str = PRICE_VERSION,
@@ -267,7 +277,7 @@ class MeteringRepository(MongoStore):
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
             user_ref=user_ref,
-            action=action,
+            action=MeteredAction(action.value),
             key=key,
             held=units,
             from_free=free,
@@ -289,7 +299,7 @@ class MeteringRepository(MongoStore):
     def settle(
         self,
         key: str,
-        action: TaskPurpose,
+        action: TaskPurpose | MeteredAction,
         result: bool,
         charge: int | None = None,
         usage: TokenUsage | None = None,
@@ -336,7 +346,7 @@ class MeteringRepository(MongoStore):
         )
         released = []
         for row in list(stale):
-            done = self.settle(row["key"], TaskPurpose(row["action"]), result=False)
+            done = self.settle(row["key"], MeteredAction(row["action"]), result=False)
             if done and done["state"] == LedgerState.RELEASED.value:
                 released.append(row["key"])
         return released

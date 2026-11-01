@@ -147,6 +147,22 @@ class Settings:
     )
     coach_model: str = field(default_factory=lambda: os.getenv("AICEFR_COACH_MODEL", "").strip())
     coach_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_DAILY", 5))
+    # D072: requests to the provider for everyone together in the provider's
+    # day (aicefr.coach.usage), failures and retries included, under its free
+    # daily quota (Gemini 3.5 Flash-Lite: 500).
+    coach_global_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_GLOBAL_DAILY", 475))
+    # On a paid tier: a daily budget in USD replaces the request cap when set,
+    # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
+    # prices by default; output includes thinking tokens).
+    coach_budget_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_DAILY_BUDGET_USD", 0.0)
+    )
+    coach_price_input_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_PRICE_INPUT_USD", 0.30)
+    )
+    coach_price_output_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_PRICE_OUTPUT_USD", 2.50)
+    )
     # The address people reach this instance at, e.g. https://cefr.example.edu.vn.
     # Builds the Google redirect URI behind a proxy; unset, the request's own
     # address is used, which is right for localhost.
@@ -237,6 +253,10 @@ class Settings:
         default_factory=lambda: _float("AICEFR_PRICE_PRACTICE_FACTOR", 0.5)
     )
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
+    # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
+    price_upgrade_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
+    )
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.
     credit_packs: tuple[tuple[int, int], ...] = field(

@@ -904,6 +904,11 @@ function paintCoach(card, c) {
   else if (c.can_upgrade)
     h +=
       '<div class="button-row"><button type="button" id="coach-upgrade">Xem bài của tôi ở band cao hơn</button></div>' +
+      // D072: the price is said before the button is pressed, on the metered channel.
+      (c.price && c.price.runs
+        ? `<p class="small-note"><b>Tốn ${escapeHtml(String(c.price.runs).replace(".", ","))} lượt` +
+          ` (${escapeHtml(Number(c.price.idpoint).toLocaleString("vi-VN"))} IDPoint)</b>, chỉ trừ khi AI viết xong.</p>`
+        : "") +
       '<p class="muted small-note">AI viết lại chính câu trả lời của bạn ở band kế tiếp, giữ ý của bạn. Chỉ bản chép lời được gửi đi, không gửi ghi âm.</p>';
   card.innerHTML = h;
   card.hidden = !(c.next_band || c.upgrade || c.can_upgrade);
