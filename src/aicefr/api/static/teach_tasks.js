@@ -1,78 +1,140 @@
-// The assessment prompts by band (D076): add, reword, retire. A prompt is
-// edited in place; saving a new wording makes a new version on the server.
+// The assessment prompts by band (D076), one band at a time: tabs by band,
+// a search and a state filter, one row per prompt. Adding and editing happen
+// in a dialog; saving a new wording makes a new version on the server.
 (function () {
   const escapeHtml = window.escapeHtml;
+  const icon = (name) => window.ui.icon(name);
   const $ = (id) => document.getElementById(id);
-  const PART = { P3: "Nêu quan điểm", P4: "Mô tả một quy trình", P5: "Thuyết trình (đã ngừng)" };
+  const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const PART = { P3: "Quan điểm", P4: "Quy trình", P5: "Thuyết trình" };
   const send = (url, method, body) =>
     window.apiJson(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  let tasks = [];
+  let band = "A1";
+  let editing = null; // the prompt in the dialog, or null for a new one
 
-  function row(t) {
-    return `<li class="bank-item${t.active ? "" : " off"}" data-id="${escapeHtml(t.task_id)}">
-      <div class="bank-meta"><span class="band-badge">${escapeHtml(t.band || "—")}</span>
-        <b>${escapeHtml(PART[t.part] || t.part)}</b>
-        <span class="muted small">${escapeHtml(t.prompt_version)}${t.active ? "" : " · đã tắt"}</span></div>
-      <textarea class="bank-text" rows="2" maxlength="600" aria-label="Đề bài">${escapeHtml(t.prompt_text)}</textarea>
-      <input class="bank-keywords" maxlength="600" lang="en" aria-label="Từ khóa" value="${escapeHtml((t.topic_keywords || []).join(", "))}">
-      <div class="button-row">
-        <button type="button" class="secondary small" data-save>Lưu</button>
-        <button type="button" class="secondary small" data-toggle>${t.active ? "Tắt đề" : "Bật lại"}</button>
-      </div>
-    </li>`;
+  function remember() {
+    try {
+      localStorage.setItem("teach-tasks-band", band);
+    } catch (e) {
+      /* a private window: the first band it is */
+    }
   }
 
-  async function load() {
+  function tabs() {
+    $("bank-tabs").innerHTML = BANDS.map((b) => {
+      const on = tasks.filter((t) => t.band === b && t.active).length;
+      return `<button type="button" role="tab" data-band="${b}" class="${b === band ? "chosen" : ""}"
+        aria-selected="${b === band}">${b} <span class="tab-count">${on}</span></button>`;
+    }).join("");
+    $("bank-tabs").querySelectorAll("button").forEach((b) =>
+      b.addEventListener("click", () => {
+        band = b.dataset.band;
+        remember();
+        paint();
+      }),
+    );
+  }
+
+  function visible() {
+    const q = $("bank-search").value.trim().toLowerCase();
+    const state = $("bank-state").value;
+    return tasks.filter(
+      (t) =>
+        t.band === band &&
+        (state === "all" || (state === "on") === t.active) &&
+        (!q || t.prompt_text.toLowerCase().includes(q) || (t.topic_keywords || []).join(" ").includes(q)),
+    );
+  }
+
+  function paint() {
+    tabs();
+    const rows = visible();
     const el = $("task-bank");
-    const tasks = await window.apiJson("/api/v1/teach/tasks");
-    if (!tasks) return;
     window.clearBusy(el);
-    const bands = ["A1", "A2", "B1", "B2", "C1", "C2", ""];
-    el.innerHTML = bands
-      .map((b) => {
-        const mine = tasks.filter((t) => (t.band || "") === b);
-        if (!mine.length) return "";
-        const on = mine.filter((t) => t.active).length;
-        return `<section class="card" aria-label="Band ${escapeHtml(b || "khác")}">
-          <div class="card-head"><h2><span class="band-badge">${escapeHtml(b || "—")}</span> ${on} đề đang dùng</h2></div>
-          <ul class="bank-list">${mine.map(row).join("")}</ul></section>`;
-      })
-      .join("");
-    el.querySelectorAll(".bank-item").forEach((li) => {
-      const id = li.dataset.id;
-      const t = tasks.find((x) => x.task_id === id);
-      li.querySelector("[data-save]").addEventListener("click", async () => {
-        const d = await send(`/api/v1/teach/tasks/${encodeURIComponent(id)}`, "PATCH", {
-          prompt_text: li.querySelector(".bank-text").value,
-          topic_keywords: li.querySelector(".bank-keywords").value,
-        });
-        if (d) {
-          window.toast("Đã lưu đề.", "ok");
+    if (!rows.length) {
+      el.innerHTML = `<p class="muted bank-empty">Không có đề nào ${$("bank-search").value ? "khớp tìm kiếm" : "ở band " + band}.</p>`;
+      return;
+    }
+    el.innerHTML = `<table class="bank-table"><thead><tr><th scope="col">Dạng</th><th scope="col">Đề bài</th>
+      <th scope="col">Từ khóa</th><th scope="col">Bản</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>${rows
+      .map(
+        (t) => `<tr class="${t.active ? "" : "off"}">
+          <td><span class="part-pill part-${escapeHtml(t.part)}">${escapeHtml(PART[t.part] || t.part)}</span></td>
+          <td class="bank-text" title="${escapeHtml(t.prompt_text)}">${escapeHtml(t.prompt_text)}</td>
+          <td class="num">${(t.topic_keywords || []).length}</td>
+          <td class="num">${escapeHtml(t.prompt_version)}</td>
+          <td class="bank-actions">
+            <button type="button" class="icon-only" data-edit="${escapeHtml(t.task_id)}" aria-label="Sửa đề" title="Sửa">${icon("pencil")}</button>
+            <button type="button" class="secondary small" data-toggle="${escapeHtml(t.task_id)}">${t.active ? "Tắt" : "Bật"}</button>
+          </td></tr>`,
+      )
+      .join("")}</tbody></table>`;
+    el.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => open(b.dataset.edit)));
+    el.querySelectorAll("[data-toggle]").forEach((b) =>
+      b.addEventListener("click", async () => {
+        const t = tasks.find((x) => x.task_id === b.dataset.toggle);
+        if (await send(`/api/v1/teach/tasks/${encodeURIComponent(t.task_id)}`, "PATCH", { active: !t.active })) {
+          window.toast(t.active ? "Đã tắt đề." : "Đã bật lại đề.", "ok");
           load();
         }
-      });
-      li.querySelector("[data-toggle]").addEventListener("click", async () => {
-        const d = await send(`/api/v1/teach/tasks/${encodeURIComponent(id)}`, "PATCH", { active: !t.active });
-        if (d) load();
-      });
-    });
+      }),
+    );
+  }
+
+  function open(taskId) {
+    editing = tasks.find((t) => t.task_id === taskId) || null;
+    const f = $("task-form");
+    f.reset();
+    $("task-dialog-h").textContent = editing ? "Sửa đề" : "Thêm đề";
+    f.band.value = editing ? editing.band : band;
+    f.part.value = editing && editing.part !== "P5" ? editing.part : "P3";
+    f.prompt_text.value = editing ? editing.prompt_text : "";
+    f.topic_keywords.value = editing ? (editing.topic_keywords || []).join(", ") : "";
+    $("task-dialog").showModal();
+    f.prompt_text.focus();
   }
 
   $("task-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const f = e.target;
-    const d = await send("/api/v1/teach/tasks", "POST", {
+    if (f.prompt_text.value.trim().length < 10) {
+      window.toast("Đề bài cần ít nhất 10 ký tự.", "error");
+      return;
+    }
+    const body = {
       band: f.band.value,
       part: f.part.value,
       prompt_text: f.prompt_text.value,
       topic_keywords: f.topic_keywords.value,
-    });
-    if (d) {
-      window.toast("Đã thêm đề.", "ok");
-      f.prompt_text.value = "";
-      f.topic_keywords.value = "";
-      load();
-    }
+    };
+    const d = editing
+      ? await send(`/api/v1/teach/tasks/${encodeURIComponent(editing.task_id)}`, "PATCH", body)
+      : await send("/api/v1/teach/tasks", "POST", body);
+    if (!d) return;
+    $("task-dialog").close();
+    band = body.band;
+    remember();
+    window.toast(editing ? "Đã lưu đề." : "Đã thêm đề.", "ok");
+    load();
   });
+  $("task-cancel").addEventListener("click", () => $("task-dialog").close());
+  $("bank-add").addEventListener("click", () => open(null));
+  $("bank-search").addEventListener("input", paint);
+  $("bank-state").addEventListener("change", paint);
 
+  async function load() {
+    const d = await window.apiJson("/api/v1/teach/tasks");
+    if (!d) return;
+    tasks = d.map((t) => ({ ...t, band: t.band || "B1" }));
+    paint();
+  }
+
+  try {
+    const kept = localStorage.getItem("teach-tasks-band");
+    if (BANDS.includes(kept)) band = kept;
+  } catch (e) {
+    /* no storage: start at A1 */
+  }
   load();
 })();

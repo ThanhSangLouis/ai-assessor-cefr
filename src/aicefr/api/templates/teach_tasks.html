@@ -2,23 +2,42 @@
 {% from "_icons.html" import icon %}
 {% block title %}Đề đánh giá · AI Assessor CEFR{% endblock %}
 {% block content %}
-{#- D076: the assessment prompts by band. Two kinds only, the ones the scoring
-    model knows (P3 opinion, P4 process), 40-60 seconds; a new wording is a new
-    version, so earlier reports keep the words their learner saw. -#}
+{#- D076: the assessment prompts by band, one band at a time. Two kinds only,
+    the ones the scoring model knows (P3 opinion, P4 process), 40-60 seconds; a
+    new wording is a new version, so earlier reports keep the words their
+    learner saw. Adding and editing happen in a dialog. -#}
 <div class="page-head">
   <p class="eyebrow">Ngân hàng đề</p>
   <h1><span class="head-icon">{{ icon("mic") }}</span>Đề đánh giá theo band</h1>
-  <p class="lede">Học viên được bốc ngẫu nhiên 3 đề trong band của mình.</p>
+  <p class="lede">Học viên được bốc ngẫu nhiên 3 đề đang dùng trong band của mình.</p>
 </div>
 
-<section class="card" aria-labelledby="task-new-h">
-  <div class="card-head"><h2 id="task-new-h">{{ icon("plus") }} Thêm đề</h2></div>
-  <form id="task-form" class="stack" novalidate>
+<section class="card task-bank" aria-label="Ngân hàng đề">
+  <div class="tabs bank-tabs" role="tablist" aria-label="Band" id="bank-tabs"></div>
+  <div class="bank-toolbar">
+    <label class="visually-hidden" for="bank-search">Tìm đề</label>
+    <input id="bank-search" type="search" placeholder="Tìm theo nội dung hoặc từ khóa" autocomplete="off">
+    <label class="visually-hidden" for="bank-state">Trạng thái</label>
+    <select id="bank-state">
+      <option value="on">Đang dùng</option>
+      <option value="off">Đã tắt</option>
+      <option value="all">Tất cả</option>
+    </select>
+    <button type="button" id="bank-add">{{ icon("plus") }}<span>Thêm đề</span></button>
+  </div>
+  <div id="task-bank" aria-busy="true" aria-live="polite">
+    <div class="skeleton skeleton-block"></div>
+  </div>
+</section>
+
+<dialog class="sheet wide" id="task-dialog" aria-labelledby="task-dialog-h">
+  <form id="task-form" class="stack" method="dialog" novalidate>
+    <h2 id="task-dialog-h">Thêm đề</h2>
     <div class="field-row three">
       <div>
         <label for="task-band">Band</label>
         <select id="task-band" name="band">
-          {%- for b in ["A1", "A2", "B1", "B2", "C1", "C2"] %}<option value="{{ b }}"{% if b == "B1" %} selected{% endif %}>{{ b }}</option>{% endfor %}
+          {%- for b in ["A1", "A2", "B1", "B2", "C1", "C2"] %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
         </select>
       </div>
       <div>
@@ -29,19 +48,18 @@
         </select>
       </div>
     </div>
-    <label for="task-text">Đề bài (tiếng Việt, học viên nói tiếng Anh 40–60 giây)</label>
-    <textarea id="task-text" name="prompt_text" rows="2" maxlength="600" required
+    <label for="task-text">Đề bài <span class="muted">(tiếng Việt; học viên nói tiếng Anh 40–60 giây)</span></label>
+    <textarea id="task-text" name="prompt_text" rows="3" maxlength="600" required
               placeholder="Ví dụ: Bạn thích sống ở thành phố hay nông thôn? Vì sao?"></textarea>
-    <label for="task-keywords">Từ khóa tiếng Anh, cách nhau bằng dấu phẩy</label>
+    <label for="task-keywords">Từ khóa tiếng Anh <span class="muted">(cách nhau bằng dấu phẩy)</span></label>
     <input id="task-keywords" name="topic_keywords" maxlength="600" lang="en" autocomplete="off"
            placeholder="city, countryside, village, quiet, traffic, nature">
-    <p class="field-hint">Bài nói không chạm từ nào trong danh sách sẽ bị gắn cờ lạc đề. Để trống là đề mở.</p>
-    <div class="button-row"><button type="submit">{{ icon("plus") }}<span>Thêm đề</span></button></div>
+    <p class="field-hint">Bài nói không chạm từ nào sẽ bị gắn cờ lạc đề. Đổi lời đề sẽ tạo phiên bản mới; báo cáo cũ giữ lời đề cũ.</p>
+    <div class="button-row">
+      <button type="submit" id="task-save">Lưu</button>
+      <button type="button" class="secondary" id="task-cancel">Huỷ</button>
+    </div>
   </form>
-</section>
-
-<div id="task-bank" aria-busy="true" aria-live="polite">
-  <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
-</div>
+</dialog>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('teach_tasks.js') }}"></script>{% endblock %}
