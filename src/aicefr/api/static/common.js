@@ -457,7 +457,6 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
     ratings: "phiếu chấm mù chưa làm",
-    assignments: "bài được giao chưa nộp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {

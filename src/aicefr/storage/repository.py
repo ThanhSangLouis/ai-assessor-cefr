@@ -1054,6 +1054,7 @@ class Repository(MongoStore):
         "paid_requests",
         "paid_cost_usd",
         "upgrades",
+        "drafts",
         "failed",
         "refused_user",
         "refused_global",
@@ -1200,25 +1201,6 @@ class Repository(MongoStore):
             item["account_id"] = r.get("account_id")
             out.append(item)
         return out  # type: ignore[return-value]
-
-    def assessments_since(self, account_ids: list[str], task_id: str, since: str) -> list[dict]:
-        """Assessment responses of `task_id` by these accounts from `since` on, oldest first.
-
-        What a class assignment counts as handed in (D054).
-        """
-        rows = (
-            self.col("response")
-            .find(
-                {
-                    "account_id": {"$in": account_ids},
-                    "task_id": task_id,
-                    "purpose": {"$ne": "practice"},
-                    "created_at": {"$gte": since},
-                }
-            )
-            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
-        )
-        return [fields(r, (*LIST_FIELDS, "account_id")) for r in rows]  # type: ignore[misc]
 
     def list_all(self, limit: int = 200) -> list[dict]:
         rows = (

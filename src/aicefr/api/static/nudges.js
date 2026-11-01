@@ -11,7 +11,7 @@
   el.innerHTML = nudges
     .map(
       (n) => `<a class="nudge${n.urgent ? " nudge-urgent" : ""}" href="${escapeHtml(n.href)}">
-        <span class="nudge-kind">${{ assignment: "Bài được giao", streak: "Chuỗi ngày", reviews: "Ôn tập", goal: "Mục tiêu hôm nay", credits: "Lượt chấm" }[n.kind] || ""}</span>
+        <span class="nudge-kind">${{ streak: "Chuỗi ngày", reviews: "Ôn tập", goal: "Mục tiêu hôm nay", credits: "Lượt chấm" }[n.kind] || ""}</span>
         <span>${escapeHtml(n.text)}</span></a>`,
     )
     .join("");

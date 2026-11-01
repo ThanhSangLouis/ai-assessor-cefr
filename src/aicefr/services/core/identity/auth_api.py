@@ -121,12 +121,6 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     if not get_settings().self_signup:
         raise HTTPException(404, "máy chủ này không cho tự đăng ký")
     s = svc()
-    # A plan's student seats (D033, BR-31) bind self sign-up as they bind the
-    # administrator's account creation.
-    if s.peers.billing is not None:
-        reason = s.peers.billing.seat_refusal(n=1)
-        if reason:
-            raise HTTPException(409, reason)
     try:
         aid, pseudonym, code, token = s.auth.signup(
             info.email,

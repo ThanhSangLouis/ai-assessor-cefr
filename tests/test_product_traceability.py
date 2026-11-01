@@ -1,4 +1,4 @@
-"""The D028..D049 test plans and their test code must name the same test cases.
+"""The D028..D075 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
@@ -90,15 +90,16 @@ PLANS = [
         14,
     ),
     Plan(
-        "D034",
-        ROOT / "docs" / "test" / "TEST_PLAN_D034.md",
+        "D075",
+        ROOT / "docs" / "test" / "TEST_PLAN_D075.md",
         {
-            "TC-GD-U": ROOT / "tests" / "test_billing_unit.py",
-            "TC-GD-I": ROOT / "tests" / "test_billing.py",
-            "TC-GD-E": ROOT / "tests" / "e2e" / "test_billing_e2e.py",
+            "TC-TL-U": ROOT / "tests" / "test_billing_unit.py",
+            "TC-TL-I": ROOT / "tests" / "test_billing.py",
+            "TC-TL-A": ROOT / "tests" / "test_d075_lesson_draft.py",
+            "TC-TL-E": ROOT / "tests" / "e2e" / "test_billing_e2e.py",
         },
-        "6[7-9]|70",
-        24,
+        "91",
+        6,  # D034's plans, licences and keys (FR-67..FR-70) were removed with D075
     ),
     Plan(
         "D035",
@@ -109,7 +110,7 @@ PLANS = [
             "TC-CT-E": ROOT / "tests" / "e2e" / "test_gateways_e2e.py",
         },
         "7[1-3]",
-        21,
+        18,  # AC-73.1..AC-73.3 (MoMo) removed with D075
     ),
     Plan(
         "D036",

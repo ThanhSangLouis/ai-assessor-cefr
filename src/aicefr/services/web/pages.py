@@ -284,11 +284,9 @@ def page_my_progress(request: Request, account: Account | None = Depends(optiona
 
 
 @router.get("/my-assignments", response_class=HTMLResponse, tags=["web"])
-def page_my_assignments(request: Request, account: Account | None = Depends(optional_account)):
-    """What a student's classes set them, and joining a class with its code (D054)."""
-    if (gate := _login_gate(request, account)) is not None:
-        return gate
-    return _page(request, "my_assignments.html", account, "assignments")
+def page_my_assignments_gone():
+    """Classes set no assessments any more (D075): the old address goes to the path."""
+    return RedirectResponse("/practice", status_code=301)
 
 
 @router.get("/teach/classes", response_class=HTMLResponse, tags=["web"])

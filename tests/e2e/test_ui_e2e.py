@@ -81,10 +81,10 @@ def submit_assessment(page, live_server) -> str:
 def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, live_server):
     student = context.new_page()
     login_home(student, live_server, live_server.account(), "/practice")
-    # D068: one "Kết quả" entry; "Bài được giao" waits for a class (hidden here),
-    # "Lượt của tôi" shows only where runs are counted.
-    assert nav_texts(student) == ["Luyện tập", "Nộp bài", "Bài được giao", "Kết quả"]
-    expect(student.locator(".site-nav a[href='/my-assignments']")).to_be_hidden()
+    # D068: one "Kết quả" entry; D075: no "Bài được giao" any more; "Lượt của
+    # tôi" shows only where runs are counted.
+    assert nav_texts(student) == ["Luyện tập", "Nộp bài", "Kết quả"]
+    expect(student.locator(".site-nav a[href='/my-assignments']")).to_have_count(0)
 
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:

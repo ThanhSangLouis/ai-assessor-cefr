@@ -43,9 +43,7 @@ from pydantic import BaseModel, Field
 from aicefr.api.deps import (
     ADMIN_ONLY,
     STAFF_ONLY,
-    require_plan,
 )
-from aicefr.billing.plans import PlanFeature
 from aicefr.infra.blobs import audio_response
 from aicefr.research.agreement import (
     CRITERIA,
@@ -345,7 +343,6 @@ def create_batch(
     account: Account = ADMIN_ONLY,
 ) -> dict:
     """Two raters per response drawn from the chosen ones; one seed decides sample and orders."""
-    require_plan(svc().peers.billing, PlanFeature.BLIND_RATING)
     known = {r["account_id"] for r in _raters()}
     chosen = sorted(set(body.rater_ids))
     if len(chosen) < 2 or not set(chosen) <= known:

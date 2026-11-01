@@ -94,20 +94,24 @@ class MeteringFacade:
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
     @exposed
-    def hold_upgrade(self, account_id: str, key: str) -> str | None:
-        """Hold the price of an upgraded answer before the model is asked; the refusal, or None.
+    def hold_upgrade(self, account_id: str, key: str, action: str = "upgrade") -> str | None:
+        """Hold the price of one language-model answer before the model is asked.
 
-        Free runs first, then the wallet, as for a recording. Settled with
-        `settle_upgrade` once the model has answered or failed.
+        `action` is "upgrade", a learner's upgraded answer (D072), or
+        "lesson_draft", a teacher's lesson draft (D075): one price for both.
+        Free runs first, then the wallet, as for a recording. The refusal, or
+        None; settled with `settle_upgrade` once the model answered or failed.
         """
         units = upgrade_units(self.prices)
         if not self.enabled or units <= 0:
             return None
+        what = MeteredAction(action)
         try:
-            self.store.hold(account_id, MeteredAction.UPGRADE, key, units, self.prices.version)
+            self.store.hold(account_id, what, key, units, self.prices.version)
         except InsufficientCredits as e:
+            thing = "bản soạn bài bằng AI" if what is MeteredAction.LESSON_DRAFT else "bản nâng cấp"
             return (
-                f"bản nâng cấp cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
+                f"{thing} cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
                 f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
             )
         return None
@@ -119,8 +123,9 @@ class MeteringFacade:
         result: bool,
         input_tokens: int | None = None,
         output_tokens: int | None = None,
+        action: str = "upgrade",
     ) -> None:
-        """Charge the hold when the upgrade was made, release it when the model failed.
+        """Charge the hold when the model answered, release it when it failed.
 
         The language model's own token counts are kept with the entry, for the
         cost per request and the reconciliation, as Whisper's are for a recording.
@@ -132,9 +137,10 @@ class MeteringFacade:
                        estimated=input_tokens is None or output_tokens is None)
             if result else None
         )  # fmt: skip
-        entry = self.store.settle(key, MeteredAction.UPGRADE, result, None, usage)
+        what = MeteredAction(action)
+        entry = self.store.settle(key, what, result, None, usage)
         if entry is not None:
-            count("metering_units_total", entry["charged"], action="upgrade", state=entry["state"])
+            count("metering_units_total", entry["charged"], action=what.value, state=entry["state"])
 
     @exposed
     def runs_left(self, account_id: str) -> float | None:

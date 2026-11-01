@@ -12,14 +12,12 @@ from fastapi.responses import JSONResponse
 
 from aicefr.api.deps import STAFF_ONLY
 from aicefr.api.schemas import QueueItem, ReviewClose, ReviewDecision
-from aicefr.billing.plans import PlanFeature
 from aicefr.contracts import ResponseStatus, Review
 from aicefr.research.teacher_time import kpi as teacher_time_kpi
 from aicefr.research.teacher_time import session_minutes
 from aicefr.services.core.assessment.context import (
     blind,
     in_view,
-    plan_allows,
     saw,
     students_in_view,
     svc,
@@ -146,7 +144,6 @@ def close_review(
 @router.get("/api/v1/review/kpi", tags=["teacher"])
 def teacher_kpi(account: Account = STAFF_ONLY) -> dict:
     """Teacher time with and without the machine, and what the machine settles alone. FR-79."""
-    plan_allows(PlanFeature.CLASS_INSIGHTS)
     s = svc()
     review_minutes, idle = session_minutes(s.repo.review_sessions())
     rating_minutes = [t / 60 for t in s.ratings.all_times_to_rate()]
@@ -170,5 +167,4 @@ def cohort_stats(account: Account = STAFF_ONLY) -> dict:
     Teacher-only rather than admin-only on purpose: this is the screen that
     tells a teacher whether the machine is worth trusting on their own class.
     """
-    plan_allows(PlanFeature.CLASS_INSIGHTS)  # D034: a staff tool of the plan
     return svc().repo.cohort_stats(owners=students_in_view(account))

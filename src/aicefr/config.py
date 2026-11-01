@@ -37,7 +37,7 @@ def _temperature(name: str) -> float | None:
 
 
 def _names(name: str, default: str) -> tuple[str, ...]:
-    """A comma-separated list, lower-cased, blanks dropped: "Stripe, vnpay" -> (stripe, vnpay)."""
+    """A comma-separated list, lower-cased, blanks dropped: "Stripe, x" -> (stripe, x)."""
     # Set but empty (a blank line in .env) means the same as not set.
     raw = (os.getenv(name) or "").strip() or default
     return tuple(n.strip().lower() for n in raw.split(",") if n.strip())
@@ -168,25 +168,18 @@ class Settings:
     # address is used, which is right for localhost.
     public_url: str | None = field(default_factory=lambda: os.getenv("AICEFR_PUBLIC_URL") or None)
 
-    # --- service plans and payment (D033) ---
-    # Off by default: a deployment that runs the thesis' data collection must
-    # never meet a limit (BR-30), and an existing deployment keeps behaving as
-    # before until it opts in.
+    # --- payments (D035, D075) ---
+    # The payment gateways that sell run packs. Off by default: nothing is
+    # sold until a deployment opts in. No service plans any more (D075).
     billing_enabled: bool = field(default_factory=lambda: _flag("AICEFR_BILLING"))
-    # The gateways offered, in the order the administrator sees them (D035):
-    # "sandbox", a payment page inside the app where no money moves; "vnpay",
-    # "stripe", "momo", each with the keys below. Every gateway defaults to its
-    # own test environment; see aicefr.billing.registry for the rules.
+    # The gateways offered, in the order the buyer sees them (D035, D075):
+    # "stripe" with the keys below, and "sandbox", a payment page inside the
+    # app where no money moves. See aicefr.billing.registry for the rules.
     payment_gateways: tuple[str, ...] = field(
         default_factory=lambda: _names("AICEFR_PAYMENT_GATEWAYS", "sandbox")
     )
     # A gateway that moves real money runs only with this on.
     payments_live: bool = field(default_factory=lambda: _flag("AICEFR_PAYMENTS_LIVE"))
-    vnpay_tmn_code: str = field(default_factory=lambda: os.getenv("AICEFR_VNPAY_TMN_CODE", ""))
-    vnpay_hash_secret: str = field(
-        default_factory=lambda: os.getenv("AICEFR_VNPAY_HASH_SECRET", "")
-    )
-    vnpay_url: str | None = field(default_factory=lambda: os.getenv("AICEFR_VNPAY_URL") or None)
     # Stripe: the secret key (sk_test_... for test mode) and the signing secret
     # of the webhook endpoint (whsec_...), from Stripe's dashboard or
     # `stripe listen`.
@@ -196,30 +189,6 @@ class Settings:
     stripe_webhook_secret: str = field(
         default_factory=lambda: os.getenv("AICEFR_STRIPE_WEBHOOK_SECRET", "").strip()
     )
-    # MoMo: what MoMo's business portal issues; the endpoint defaults to MoMo's
-    # test environment.
-    momo_partner_code: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_PARTNER_CODE", "").strip()
-    )
-    momo_access_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_ACCESS_KEY", "").strip()
-    )
-    momo_secret_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_SECRET_KEY", "").strip()
-    )
-    momo_endpoint: str | None = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_ENDPOINT") or None
-    )
-    # Signs licence keys for contracts paid outside the system. Unset: keys
-    # cannot be installed.
-    license_secret: str = field(default_factory=lambda: os.getenv("AICEFR_LICENSE_SECRET", ""))
-    # Demonstration prices, dong per student per month: not a price list, which
-    # needs the measured costs of the proposal (DE_XUAT_GOI_DICH_VU.md, mục 3).
-    price_standard: int = field(default_factory=lambda: _int("AICEFR_PRICE_STANDARD", 10_000))
-    price_advanced: int = field(default_factory=lambda: _int("AICEFR_PRICE_ADVANCED", 15_000))
-    # The trial: every feature, for this many students and days, once.
-    trial_seats: int = field(default_factory=lambda: _int("AICEFR_TRIAL_SEATS", 50))
-    trial_days: int = field(default_factory=lambda: _int("AICEFR_TRIAL_DAYS", 30))
 
     # --- services (D043, D044) ---
     # Where the core service keeps its documents: a mongodb:// URL naming its

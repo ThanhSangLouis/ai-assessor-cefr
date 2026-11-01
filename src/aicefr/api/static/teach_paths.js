@@ -29,8 +29,7 @@ async function api(method, url, body) {
     const msg = typeof d.detail === "string" ? d.detail : "Không lưu được. Kiểm tra lại các ô đã nhập.";
     const err = new Error(msg);
     err.status = r.status;
-    // A 403 on reading means no rights (the page says so); on writing it is
-    // the plan (D034), and its message says which plan includes it.
+    // A 403 on reading means no rights, and the page says so.
     if (r.status !== 403 || method !== "GET") window.toast(msg.charAt(0).toUpperCase() + msg.slice(1), "error");
     throw err;
   }
@@ -143,24 +142,7 @@ function render() {
   root.innerHTML = paths.map(pathCard).join("");
 }
 
-// The school's plan (D034): without lesson writing, the sample path is still
-// there to teach with, and the page says what would open the rest.
-async function planNote() {
-  const r = await fetch("/api/v1/plan");
-  if (!r.ok) return;
-  const plan = await r.json();
-  if (!plan.enabled || plan.features.includes("lesson_authoring")) return;
-  const note = $("plan-note");
-  note.innerHTML =
-    `Trường đang dùng gói <b>${escapeHtml(plan.plan_name)}</b>: dạy bằng lộ trình mẫu và các lộ trình ` +
-    "đã xuất bản, sinh viên học như thường. Tạo, sửa và xuất bản lộ trình có ở gói Chuẩn và Nâng cao; " +
-    "quản trị viên nâng cấp ở tab Gói dịch vụ.";
-  note.hidden = false;
-  for (const id of ["new-path", "import-path"]) $(id).disabled = true;
-}
-
 async function load() {
-  planNote().catch(() => {});
   try {
     paths = await api("GET", "/api/v1/teach/paths");
     render();
@@ -249,7 +231,54 @@ function openLesson(unitId, band) {
   $("lesson-form").reset();
   $("lesson-band").value = band || "A2";
   $("lesson-dialog").showModal();
+  offerDraft();
 }
+
+// ---------------------------------------------------------------- AI draft (D075)
+// The language model writes the form's fields from a few words; the teacher
+// reads and corrects them before creating the lesson. Paid from the teacher's
+// own runs on a metered deployment, like a learner's upgraded answer.
+async function offerDraft() {
+  const box = $("ai-draft");
+  const r = await fetch("/api/v1/teach/lessons/draft");
+  const d = r.ok ? await r.json() : { available: false };
+  box.hidden = !d.available;
+  if (d.available && d.price) {
+    $("ai-draft-hint").textContent =
+      `Mỗi lần AI viết nháp trừ ${d.price.runs} lượt (${new Intl.NumberFormat("vi-VN").format(d.price.idpoint)} IDPoint) ` +
+      "trong ví của bạn, chỉ trừ khi viết xong. Bạn đọc lại và sửa trước khi tạo.";
+  }
+}
+
+$("ai-draft-go").addEventListener("click", async () => {
+  const topic = $("ai-draft-topic").value.trim();
+  if (topic.length < 3) {
+    window.toast("Hãy viết vài chữ về chủ đề của bài.", "error");
+    $("ai-draft-topic").focus();
+    return;
+  }
+  const button = $("ai-draft-go");
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  try {
+    const d = await api("POST", "/api/v1/teach/lessons/draft", {
+      band: $("lesson-band").value,
+      criterion: $("lesson-criterion").value || null,
+      topic,
+    });
+    $("lesson-title").value = d.title;
+    $("lesson-summary").value = d.summary;
+    $("lesson-text").value = d.model_text;
+    $("lesson-keywords").value = d.keywords.join(", ");
+    $("lesson-prompt").value = d.free_prompt;
+    window.toast("AI đã viết nháp. Đọc lại và sửa trước khi tạo bài.", "ok");
+  } catch (err) {
+    /* the toast of api() says why */
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+});
 
 $("lesson-form").addEventListener("submit", async (e) => {
   e.preventDefault();

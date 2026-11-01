@@ -1,4 +1,6 @@
-# Cài khoá cho dịch vụ bên ngoài: Google, Stripe, MoMo, VNPay
+# Cài khoá cho dịch vụ bên ngoài: Google, Stripe
+
+> **D075 (01/11/2026):** hệ thống phục vụ một trung tâm, học viên (và giảng viên, cho bản soạn bài bằng AI) mua **gói lượt** qua **Stripe**; không còn gói dịch vụ của trường. VNPay và MoMo đã gỡ khỏi mã: mục 3 và 4 chỉ còn làm lịch sử.
 
 Tài liệu này dành cho người vận hành một bản triển khai: lấy khoá ở đâu, đặt vào đâu, và kiểm tra thế nào là đã đúng. Mã đã làm sẵn cả bốn dịch vụ (D029, D034, D035, D036); **mọi dịch vụ đều tắt cho tới khi có khoá**, và mọi cổng thanh toán mặc định chạy ở môi trường thử của chính nó.
 
@@ -8,7 +10,7 @@ Các bước dưới đây đã được đối chiếu với tài liệu chính
 
 1. **Khoá chỉ nằm trong `.env` hoặc biến môi trường của máy chủ.** Tệp `.env` đã có trong `.gitignore`; sao `.env.example` thành `.env` rồi điền. `demo.sh` tự đọc `.env` nếu có; chạy cách khác thì nạp bằng `set -a; . ./.env; set +a`. Không commit `.env`, không dán client secret hay khoá bí mật vào chat, issue hay ảnh chụp màn hình.
 2. **Không có tiền thật trong đồ án.** Cổng thu tiền thật — khoá Stripe `sk_live_`, địa chỉ thật của VNPay hay MoMo — chỉ chạy khi đặt `AICEFR_PAYMENTS_LIVE=on` (khi đó mọi cổng ở môi trường thử tự tắt, để không ai mua gói thật bằng thẻ thử), và việc đó cần một pháp nhân, hợp đồng với cổng, và giải quyết giấy phép dữ liệu huấn luyện (xem `DE_XUAT_GOI_DICH_VU.md`). Trong đồ án, không đặt biến này.
-3. **Kiểm tra trên chính ứng dụng.** Sau khi đặt khoá và khởi động lại, đăng nhập bằng tài khoản quản trị: tab **Cấu hình** có khung "Đăng nhập bằng Google", tab **Gói dịch vụ** liệt kê các cổng đang bật và nói rõ cổng nào còn thiếu khoá — bằng tên biến, không bao giờ bằng giá trị.
+3. **Kiểm tra trên chính ứng dụng.** Sau khi đặt khoá và khởi động lại, đăng nhập bằng tài khoản quản trị: tab **Cấu hình** có khung "Đăng nhập bằng Google", trang **Lượt của tôi** của học viên liệt kê các cổng đang bật; cổng nào còn thiếu khoá thì nhật ký của dịch vụ `core` ghi rõ tên biến, không bao giờ ghi giá trị.
 
 ## 1. Đăng nhập bằng Google (OAuth 2.0, luồng mã uỷ quyền có PKCE)
 
@@ -78,19 +80,20 @@ Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (develo
 
    ```bash
    AICEFR_BILLING=on
-   AICEFR_PAYMENT_GATEWAYS=stripe,sandbox
+   AICEFR_METERING=1
+   AICEFR_PAYMENT_GATEWAYS=stripe
    AICEFR_STRIPE_SECRET_KEY=sk_test_...
    AICEFR_STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 
-   Thiếu khoá webhook thì Stripe ở chế độ thử vẫn chạy, nhưng tab Gói dịch vụ cảnh báo: đơn chỉ được ghi nhận khi trình duyệt quay về. Khoá `sk_live_` thì bắt buộc có khoá webhook.
-5. Thử: tab **Gói dịch vụ** → chọn gói → ở "Thanh toán qua" chọn **Stripe** → **Thanh toán** → trang của Stripe → thẻ `4242 4242 4242 4242`, hạn bất kỳ trong tương lai, CVC bất kỳ → về trang kết quả. Thẻ `4000 0000 0000 0002` cho kết quả bị từ chối.
+   Thiếu khoá webhook thì Stripe ở chế độ thử vẫn chạy, nhưng nhật ký cảnh báo: đơn chỉ được ghi nhận khi trình duyệt quay về. Khoá `sk_live_` thì bắt buộc có khoá webhook.
+5. Thử: đăng nhập học viên → **Lượt của tôi** → **Mua gói này** → trang của Stripe → thẻ `4242 4242 4242 4242`, hạn bất kỳ trong tương lai, CVC bất kỳ → về trang kết quả. Thẻ `4000 0000 0000 0002` cho kết quả bị từ chối.
 
-**Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên một khoản nâng cấp rất nhỏ có thể bị từ chối; khi đó tab báo lý do và có thể chọn cổng khác.
+**Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên gói lượt quá rẻ có thể bị từ chối; khi đó trang báo lý do.
 
 Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com/webhooks (mục "Verify webhook signatures manually"), docs.stripe.com/currencies.
 
-## 3. MoMo (môi trường thử)
+## 3. MoMo (đã gỡ bởi D075)
 
 **Đã làm sẵn.** Tạo giao dịch `captureWallet` ở `/v2/gateway/api/create` ký HMAC-SHA256, kết quả trả về và IPN ký theo thứ tự trường MoMo công bố, IPN được trả lời 204. Mặc định gọi môi trường thử `test-payment.momo.vn`.
 
@@ -112,7 +115,7 @@ Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com
 
 Tài liệu gốc: developers.momo.vn/v3/docs/payment/api/wallet/onetime và mục "Result code".
 
-## 4. VNPay (sandbox)
+## 4. VNPay (đã gỡ bởi D075)
 
 1. Đăng ký môi trường sandbox của VNPay để nhận **mã website (TMN code)** và **chuỗi bí mật (hash secret)**.
 2. Điền `.env`: `AICEFR_PAYMENT_GATEWAYS=vnpay,…`, `AICEFR_VNPAY_TMN_CODE`, `AICEFR_VNPAY_HASH_SECRET`. Không đặt `AICEFR_VNPAY_URL` thì dùng địa chỉ sandbox của VNPay.
@@ -122,5 +125,5 @@ Tài liệu gốc: developers.momo.vn/v3/docs/payment/api/wallet/onetime và m�
 ## 5. Kiểm tra cuối
 
 - `tab Cấu hình`: khung Google ghi "Đang bật", không có mục "Cần xem lại".
-- `tab Gói dịch vụ`: mỗi cổng muốn dùng có trong ô "Thanh toán qua" với nhãn "Thử"; không có khung "Cấu hình cổng thanh toán cần xem lại".
+- Trang `Lượt của tôi` (học viên): có các gói lượt và ghi "Môi trường thử"; nhật ký `core` không có dòng "billing: Stripe chưa bật".
 - `git status` không có `.env`.

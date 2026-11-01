@@ -22,7 +22,6 @@ from urllib.parse import parse_qsl
 import pytest
 
 from aicefr.billing import registry, transport
-from aicefr.billing.momo_gateway import TEST_ENDPOINT, MomoGateway
 from aicefr.billing.payments import GatewayError, Incoming, OrderStatus
 from aicefr.billing.stripe_gateway import StripeGateway
 from aicefr.billing.transport import Reply, Unreachable
@@ -231,127 +230,6 @@ def test_stripe_keys_decide_the_mode():
             StripeGateway(key, webhook)
 
 
-# ================================================================= MoMo
-
-MOMO_SECRET = "bi-mat-momo-cua-bai-kiem-thu"
-
-
-def momo_mac(values: dict, fields: tuple[str, ...]) -> str:
-    raw = "&".join(f"{k}={values[k]}" for k in fields)
-    return hmac.new(MOMO_SECRET.encode(), raw.encode(), hashlib.sha256).hexdigest()
-
-
-def momo() -> MomoGateway:
-    return MomoGateway("MOMOTHU01", "ACCESSTHU", MOMO_SECRET, transport=FakeHttp())
-
-
-def momo_result(code: int = 0, amount: int = 6_000_000, as_text: bool = False) -> dict:
-    """What MoMo sends back, signed: JSON numbers in the IPN, text in the return address."""
-    values = {
-        "partnerCode": "MOMOTHU01",
-        "orderId": ORDER,
-        "requestId": ORDER,
-        "amount": amount,
-        "orderInfo": "Thanh toan don",
-        "orderType": "momo_wallet",
-        "transId": 4088878653,
-        "resultCode": code,
-        "message": "Thành công.",
-        "payType": "qr",
-        "responseTime": 1791345600000,
-        "extraData": "",
-    }
-    order = (
-        "accessKey amount extraData message orderId orderInfo orderType partnerCode payType"
-        " requestId responseTime resultCode transId"
-    ).split()
-    values["signature"] = momo_mac(values | {"accessKey": "ACCESSTHU"}, tuple(order))
-    return {k: str(v) for k, v in values.items()} if as_text else values
-
-
-def test_momo_signs_the_create_request_as_documented():
-    http = FakeHttp(answer(200, {"resultCode": 0, "payUrl": "https://test-payment.momo.vn/pay/x"}))
-    gw = MomoGateway("MOMOTHU01", "ACCESSTHU", MOMO_SECRET, transport=http)
-
-    checkout = gw.checkout(
-        ORDER, 6_000_000, "Thanh toan don", "https://x.vn/r", "https://x.vn/n", "1.2.3.4", NOW
-    )
-
-    assert checkout.url == "https://test-payment.momo.vn/pay/x"
-    [(method, url, headers, body)] = http.calls
-    assert (method, url) == ("POST", TEST_ENDPOINT)
-    assert headers["Content-Type"].startswith("application/json")
-    sent = json.loads(body)
-    assert sent["amount"] == 6_000_000 and sent["requestType"] == "captureWallet"
-    assert (sent["redirectUrl"], sent["ipnUrl"]) == ("https://x.vn/r", "https://x.vn/n")
-    order = (
-        "accessKey amount extraData ipnUrl orderId orderInfo partnerCode redirectUrl requestId"
-        " requestType"
-    ).split()
-    assert sent["signature"] == momo_mac(sent | {"accessKey": "ACCESSTHU"}, tuple(order))
-    assert "accessKey" not in sent and MOMO_SECRET not in body.decode()
-    assert gw.live is False and gw.note
-    # More than MoMo takes in one payment (50,000,000 dong): said without asking MoMo.
-    quiet = FakeHttp()
-    too_much = MomoGateway("MOMOTHU01", "ACCESSTHU", MOMO_SECRET, transport=quiet)
-    with pytest.raises(GatewayError) as caught:
-        too_much.checkout(ORDER, 90_000_000, "x", "https://x.vn/r", "https://x.vn/n", "", NOW)
-    assert caught.value.code == "22" and "50.000.000 đ" in str(caught.value)
-    assert quiet.calls == []
-    refused = MomoGateway(
-        "MOMOTHU01",
-        "ACCESSTHU",
-        MOMO_SECRET,
-        transport=FakeHttp(answer(200, {"resultCode": 13, "message": "Merchant auth failed"})),
-    )
-    with pytest.raises(GatewayError) as caught:
-        refused.checkout(ORDER, 6_000_000, "x", "https://x.vn/r", "https://x.vn/n", "", NOW)
-    assert caught.value.code == "13" and "không xác thực được" in str(caught.value)
-
-
-def test_momo_results_map_to_outcomes_and_forgeries_are_refused():
-    gw = momo()
-
-    def ipn(values: dict):
-        return gw.verify_notification(Incoming({}, {}, json.dumps(values).encode()), NOW)
-
-    paid = ipn(momo_result())
-    assert (paid.order_id, paid.outcome, paid.amount_vnd, paid.reference) == (
-        ORDER,
-        OrderStatus.PAID,
-        6_000_000,
-        "4088878653",
-    )
-    assert paid.details == {"pay_type": "qr", "response_time": "1791345600000"}
-    assert paid.checkout == ORDER  # the request this result answers
-    assert gw.verify_return(momo_result(as_text=True)).outcome is OrderStatus.PAID
-    assert ipn(momo_result(1006)).outcome is OrderStatus.CANCELLED
-    assert ipn(momo_result(1000)).outcome is OrderStatus.PENDING
-    assert ipn(momo_result(1001)).outcome is OrderStatus.FAILED
-    assert ipn(momo_result(4001)).outcome is OrderStatus.FAILED
-    # A code MoMo's table does not call final stays open for a later word.
-    assert ipn(momo_result(8000)).outcome is OrderStatus.PENDING
-    assert ipn(momo_result() | {"signature": "\u00e9"}) is None
-    deep = Incoming({}, {}, b"[" * 100_000 + b"]" * 100_000)
-    assert gw.verify_notification(deep, NOW) is None
-    assert ipn(momo_result() | {"amount": 6_000}) is None  # a changed amount
-    assert ipn(momo_result() | {"partnerCode": "KHAC"}) is None
-    assert ipn({k: v for k, v in momo_result().items() if k != "transId"}) is None
-    other = MomoGateway("MOMOTHU01", "ACCESSTHU", "khoa-khac", transport=FakeHttp())
-    message = Incoming({}, {}, json.dumps(momo_result()).encode())
-    assert other.verify_notification(message, NOW) is None  # another secret
-    assert gw.verify_notification(Incoming({}, {}, b"khong-phai-json"), NOW) is None
-    assert [gw.acknowledge(w).status for w in ("ok", "already", "signature", "error")] == [
-        204,
-        204,
-        400,
-        500,
-    ]
-    assert gw.acknowledge("ok").body is None
-    with pytest.raises(ValueError):
-        MomoGateway("", "ACCESSTHU", MOMO_SECRET)
-
-
 # ================================================================= the registry
 
 
@@ -360,15 +238,8 @@ def settings(**changes) -> Settings:
         Settings(),
         payment_gateways=("sandbox",),
         payments_live=False,
-        vnpay_tmn_code="",
-        vnpay_hash_secret="",
-        vnpay_url=None,
         stripe_secret_key="",
         stripe_webhook_secret="",
-        momo_partner_code="",
-        momo_access_key="",
-        momo_secret_key="",
-        momo_endpoint=None,
     )
     return replace(base, **changes)
 
@@ -381,31 +252,22 @@ def test_the_registry_builds_what_the_settings_ask_for(monkeypatch):
     # The list as written in .env: a blank line means the default, not "none".
     monkeypatch.setenv("AICEFR_PAYMENT_GATEWAYS", "  ")
     assert Settings().payment_gateways == ("sandbox",)
-    monkeypatch.setenv("AICEFR_PAYMENT_GATEWAYS", " Stripe , momo,,")
-    assert Settings().payment_gateways == ("stripe", "momo")
-    keys = dict(
-        vnpay_tmn_code="TMNTHU01",
-        vnpay_hash_secret="CHUOIBIMAT",
-        stripe_secret_key=SK,
-        stripe_webhook_secret=WHSEC,
-        momo_partner_code="MOMOTHU01",
-        momo_access_key="ACCESSTHU",
-        momo_secret_key=MOMO_SECRET,
-    )
+    monkeypatch.setenv("AICEFR_PAYMENT_GATEWAYS", " Stripe , sandbox,,")
+    assert Settings().payment_gateways == ("stripe", "sandbox")
+    keys = dict(stripe_secret_key=SK, stripe_webhook_secret=WHSEC)
 
-    gateways, problems = build(payment_gateways=("stripe", "momo", "vnpay", "sandbox"), **keys)
+    gateways, problems = build(payment_gateways=("stripe", "sandbox"), **keys)
 
-    assert list(gateways) == ["stripe", "momo", "vnpay", "sandbox"]
+    assert list(gateways) == ["stripe", "sandbox"]
     assert problems == []
     assert not any(g.live for g in gateways.values())
-    # Nothing set but the names: each one missing says what is missing.
-    gateways, problems = build(payment_gateways=("stripe", "momo", "vnpay", "paypal", "stripe"))
+    # Nothing set but the names: each one missing says what is missing; D075
+    # removed VNPay and MoMo, which are now names like any unknown one.
+    gateways, problems = build(payment_gateways=("stripe", "momo", "vnpay", "stripe"))
     assert gateways == {}
     assert any("AICEFR_STRIPE_SECRET_KEY" in p for p in problems)
-    assert any("AICEFR_MOMO_PARTNER_CODE" in p for p in problems)
-    assert any("AICEFR_VNPAY_TMN_CODE" in p for p in problems)
-    assert any("paypal" in p for p in problems)
-    assert len(problems) == 4  # the second "stripe" is not reported twice
+    assert any("momo" in p for p in problems) and any("vnpay" in p for p in problems)
+    assert len(problems) == 3  # the second "stripe" is not reported twice
     # Stripe in test mode without its webhook secret runs, with a warning.
     gateways, problems = build(payment_gateways=("stripe",), stripe_secret_key=SK)
     assert list(gateways) == ["stripe"]
@@ -427,23 +289,6 @@ def test_real_money_is_never_a_default():
     gateways, problems = build(payments_live=True, **live)
     assert list(gateways) == ["stripe"] and gateways["stripe"].live
     assert any("Cổng thử đã tắt" in p for p in problems)
-    # Next to a gateway that takes real money, no test environment runs: a
-    # Stripe test key beside VNPay's real page would sell a plan for a test card.
-    gateways, problems = build(
-        payments_live=True,
-        payment_gateways=("vnpay", "stripe"),
-        vnpay_tmn_code="TMNTHU01",
-        vnpay_hash_secret="CHUOIBIMAT",
-        vnpay_url="https://pay.vnpay.vn/vpcpay.html",
-        stripe_secret_key=SK,
-    )
-    assert list(gateways) == ["vnpay"]
-    assert any(p.startswith("Stripe đã tắt") for p in problems)
-    gateways, _ = build(
-        payment_gateways=("momo",),
-        momo_partner_code="P",
-        momo_access_key="A",
-        momo_secret_key="S",
-        momo_endpoint="https://payment.momo.vn/v2/gateway/api/create",
-    )
-    assert gateways == {}  # MoMo's real address, without the switch
+    # Next to a gateway that takes real money, no test environment runs: the
+    # sandbox beside a live Stripe key would sell real runs for a test card.
+    assert "sandbox" not in gateways

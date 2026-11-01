@@ -31,17 +31,18 @@ counts go to the ledger entry and the day's counters, not into the upgrade.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from aicefr.api.deps import ADMIN_ONLY, require_login
-from aicefr.coach import phrasebook, usage
+from aicefr.api.deps import ADMIN_ONLY, STAFF_ONLY, require_login
+from aicefr.coach import lesson_draft, phrasebook, usage
 from aicefr.coach.providers import OPENAI_COMPATIBLE, PAID_KEY_ENV, provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
-from aicefr.contracts import ResponseStatus
+from aicefr.contracts import Band, Criterion, ResponseStatus
 from aicefr.observability import count
 from aicefr.report.next_band import next_band_plan
 from aicefr.services.core.assessment import study_api
@@ -210,6 +211,83 @@ def _counts(settings, tier: usage.Tier, calls: usage.Calls, used: dict) -> dict:
     i, o = used.get("input_tokens") or 0, used.get("output_tokens") or 0
     cost = usage.cost_usd(settings, i, o)
     return {"input_tokens": i, "output_tokens": o, **usage.day_counts(tier, calls.requests, cost)}
+
+
+# ================================================================= lesson drafts (D075)
+
+
+class DraftIn(BaseModel):
+    band: Band
+    criterion: Criterion | None = None
+    topic: str = Field(min_length=3, max_length=300)
+
+
+@router.get("/api/v1/teach/lessons/draft", tags=["teacher"])
+def lesson_draft_offer(account: Account = STAFF_ONLY) -> dict:
+    """Whether a teacher can ask the model for a lesson draft now, and what it costs."""
+    metering = getattr(svc().peers, "metering", None)
+    available = _provider(_tier()) is not None
+    price = metering.upgrade_price() if metering is not None and available else None
+    return {"available": available, "price": price}
+
+
+@router.post("/api/v1/teach/lessons/draft", tags=["teacher"])
+def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
+    """A first draft of a lesson by the language model, for the teacher to correct (D075).
+
+    Paid like a learner's upgraded answer: the same price held from the
+    teacher's own runs, the same daily cap and tier, the same day's counters.
+    Nothing is saved: the draft fills the teacher's "Bài học mới" form.
+    """
+    s = svc()
+    tier = _tier()
+    provider = _provider(tier)
+    if provider is None:
+        raise HTTPException(503, "máy chủ chưa bật mô hình ngôn ngữ")
+    day = usage.provider_day()
+    refusal = usage.global_refusal(s.settings, tier, s.repo.coach_days([day])[0])
+    if refusal:
+        s.repo.record_coach(day, refused_global=1)
+        raise HTTPException(429, refusal)
+    metering = getattr(s.peers, "metering", None)
+    key = f"lesson-draft-{uuid.uuid4().hex[:12]}"
+    if metering is not None:
+        refused = metering.hold_upgrade(
+            account_id=account.account_id, key=key, action="lesson_draft"
+        )
+        if refused:
+            raise HTTPException(402, refused)
+    calls = usage.Calls()
+    used: dict = {}
+    criterion = body.criterion.value if body.criterion else None
+    message = lesson_draft.user_message(body.band.value, criterion, " ".join(body.topic.split()))
+    try:
+        raw, used = provider.complete_with_usage(
+            message, calls, system=lesson_draft.SYSTEM, schema=lesson_draft.SCHEMA
+        )
+        draft = lesson_draft.parse(raw)
+    except UpgradeError as e:
+        s.repo.record_coach(
+            day, account_id=account.account_id, error=str(e), failed=1,
+            **_counts(s.settings, tier, calls, used),
+        )  # fmt: skip
+        if metering is not None:
+            metering.settle_upgrade(key=key, result=False, action="lesson_draft")
+        raise HTTPException(502, str(e)) from e
+    s.repo.record_coach(
+        day, account_id=account.account_id, drafts=1, **_counts(s.settings, tier, calls, used)
+    )
+    if metering is not None:
+        metering.settle_upgrade(
+            key=key,
+            result=True,
+            input_tokens=used.get("input_tokens"),
+            output_tokens=used.get("output_tokens"),
+            action="lesson_draft",
+        )
+    s.repo.write_audit(account.pseudonym, "coach.lesson_draft", None, body.band.value)
+    count("coach_lesson_draft_total")
+    return {"band": body.band.value, "criterion": criterion, **draft.as_dict()}
 
 
 # ================================================================= the dashboard (D072)

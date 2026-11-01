@@ -48,7 +48,6 @@ def test_every_identifier_a_table_had_as_key_is_unique():
         "session": ["token_hash"],
         "task": ["task_id"],
         "order": ["order_id"],
-        "license": ["license_id"],
         "rating_batch": ["batch_id"],
         "study": ["study_id"],
         "classroom": ["class_id"],

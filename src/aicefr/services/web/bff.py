@@ -27,13 +27,9 @@ router = APIRouter()
 def my_badges(account: Account = Depends(require_login)) -> dict:
     peers = pages.svc().peers
     if account.role == Role.STUDENT:
-        mine = peers.assessment.assignments_for(account_id=account.account_id)
         return {
             **peers.assessment.student_badges(account_id=account.account_id),
             "reviews_due": peers.learning.reviews_due(account_id=account.account_id),
-            "assignments": len(mine["todo"]),
-            # D068: the sidebar shows "Bài được giao" only to a student in a class.
-            "in_class": bool(mine["classes"]),
         }
     return peers.assessment.staff_badges(account_id=account.account_id, role=account.role.value)
 
@@ -56,7 +52,6 @@ def my_nudges(account: Account = Depends(require_login)) -> dict:
         datetime.now(UTC),
         daily=peers.assessment.practice_daily(account_id=who),
         reviews_due=peers.learning.reviews_due(account_id=who),
-        assignments=peers.assessment.assignments_for(account_id=who)["todo"],
         runs_left=peers.metering.runs_left(account_id=who),
     )
     return {"nudges": [n.as_dict() for n in found]}

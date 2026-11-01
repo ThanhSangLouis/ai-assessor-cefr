@@ -16,7 +16,6 @@ SIGNED_IN = [
     "/practice",
     "/my-responses",
     "/my-progress",
-    "/my-assignments",
     "/credits",
     "/review",
     "/review/stats",

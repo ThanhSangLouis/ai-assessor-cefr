@@ -17,13 +17,7 @@
     <dl class="pay-facts">
       <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
       <dt>Đơn vị nhận</dt><dd>AI Assessor CEFR</dd>
-      {% if order.kind == "credits" %}
-      <dt>Nội dung</dt><dd>{{ order.plan_name }} chấm bài nói</dd>
-      {% else %}
-      <dt>Nội dung</dt><dd>Gói {{ order.plan_name }} · {{ order.seats }} sinh viên · {{ order.months }} tháng</dd>
-      <dt>Thời hạn</dt><dd>{{ order.starts_on | dmy }} – {{ order.ends_on | dmy }}</dd>
-      <dt>Bên mua</dt><dd>{{ organization or "—" }}</dd>
-      {% endif %}
+<dt>Nội dung</dt><dd>{{ order.plan_name }} dùng AI chấm và viết lại bài nói</dd>
     </dl>
     {% if payable %}
     <p class="muted">Chọn kết quả muốn thử. Hệ thống nhận kết quả đúng như từ một cổng thật: có chữ ký,

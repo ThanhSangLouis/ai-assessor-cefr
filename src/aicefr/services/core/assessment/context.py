@@ -14,8 +14,6 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from aicefr.api.deps import require_plan
-from aicefr.billing.plans import PlanFeature
 from aicefr.config import Settings
 from aicefr.platform.bus import MessageBus
 from aicefr.ports import BlobStore
@@ -84,11 +82,6 @@ def svc() -> Services:
     if _services is None:  # pragma: no cover - configured when the service is built
         raise RuntimeError("assessment service used before configure()")
     return _services
-
-
-def plan_allows(feature: PlanFeature) -> None:
-    """403 when the plan in force does not include `feature` (D034)."""
-    require_plan(svc().peers.billing, feature)
 
 
 # ================================================================= who sees whose work (D071)

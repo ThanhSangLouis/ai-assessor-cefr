@@ -133,6 +133,7 @@ CLASSES = [
             "- fullName: str",
             "- pseudonym: str",
             "- role: Role",
+            "- mustChangePassword: bool",
             "- dailyGoalS: int",
             "- identities: List<str>",
             "- seenMarkers: List<str>",
@@ -143,12 +144,13 @@ CLASSES = [
         "Audit",
         "AuditEntry",
         [
-            "- entryId: int",
+            "- id: int",
+            "- service: str",
             "- actor: Account [0..1]",
             "- action: str",
             "- targetId: str",
-            "- service: str",
-            "- at: datetime",
+            "- detail: str",
+            "- createdAt: datetime",
         ],
     ),
     _e(
@@ -306,22 +308,9 @@ CLASSES = [
         [
             "- classId: str",
             "- name: str",
-            "- code: str",
             "- teachers: Account [0..*]",
             "- members: Account [0..*]",
-            "- assignments: Assignment [0..*]",
             "- archived: bool",
-        ],
-    ),
-    _e(
-        "Asg",
-        "Assignment",
-        [
-            "- assignmentId: str",
-            "- task: Task [1]",
-            "- note: str",
-            "- dueOn: date",
-            "+ isLate(at: datetime): bool",
         ],
     ),
     _e(
@@ -435,35 +424,26 @@ CLASSES = [
             "- modelVersion: str",
         ],
     ),
+    # D075: one centre, no plans -- every order is a pack of runs for its buyer.
     _e(
         "Order",
         "Order",
         [
             "- orderId: str",
-            "- placedBy: Account [1]",
-            "- kind: OrderKind",
-            "- plan: ServicePlan",
-            "- seats: int",
-            "- valueVnd: int",
-            "- gateway: str",
+            "- runs: int",
+            "- amountVnd: int",
             "- status: OrderStatus",
-            "- events: List<str>",
+            "- gateway: str",
+            "- live: bool",
+            "- createdBy: Account [1]",
+            "- createdAt: datetime",
+            "- expiresAt: datetime",
+            "- checkoutRef: str",
+            "- reference: str",
+            "- resultCode: str",
+            "- settledAt: datetime",
             "- creditedAt: datetime",
-        ],
-    ),
-    _e(
-        "License",
-        "License",
-        [
-            "- licenseId: str",
-            "- organization: str",
-            "- plan: ServicePlan",
-            "- seats: int",
-            "- validFrom: date",
-            "- validTo: date",
-            "- source: str",
-            "- order: Order [0..1]",
-            "+ isActive(today: date): bool",
+            "- events: List<str>",
         ],
     ),
     _e(
@@ -484,7 +464,7 @@ CLASSES = [
         [
             "- entryId: str",
             "- wallet: Wallet [1]",
-            "- response: Response [1]",
+            "- response: Response [0..1]",
             "- action: MeteredAction",
             "- held: int",
             "- fromFree: int",
@@ -502,7 +482,7 @@ CLASSES = [
 # chi la chi tiet (ma ly do, nhiem vu, chu de, cong thanh toan, nguon license, do
 # chat) ghi `str`; hai trang thai thi ghi `bool`; enum trung nghia thi dung lai
 # (`LedgerEntry.action: TaskPurpose`, `LearningPlan.audience: Role`).
-# Ten khac code: `ResponseStatus` (code: Status), `ServicePlan` (code: Plan).
+# Ten khac code: `ResponseStatus` (code: Status).
 ENUMS = [
     _n("Role", "Role", ["STUDENT", "TEACHER", "ADMIN"]),
     _n("Band", "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
@@ -530,12 +510,10 @@ ENUMS = [
             "FREE",
         ],
     ),
-    _n("OrderKind", "OrderKind", ["NEW", "RENEWAL", "UPGRADE", "DOWNGRADE", "CREDITS"]),
     _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
-    _n("SvcPlan", "ServicePlan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
     _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
     # D072: what a ledger entry paid for -- a recording, or an upgraded answer.
-    _n("MeterAct", "MeteredAction", ["ASSESSMENT", "PRACTICE", "UPGRADE"]),
+    _n("MeterAct", "MeteredAction", ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT"]),
 ]
 
 # (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
@@ -558,8 +536,6 @@ EDGES = [
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
     ("Class", "Account", "0..* : members 0..*", "nn"),
-    ("Class", "Asg", "1 : 0..*", "comp"),
-    ("Asg", "Task", "0..* : 1", "assoc"),
     ("Path", "Account", "0..* : 0..1", "assoc"),
     ("Path", "Unit", "1 : 0..*", "comp"),
     ("Unit", "Lesson", "1 : 0..*", "comp"),
@@ -573,11 +549,11 @@ EDGES = [
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
     ("Plan", "Path", "0..1 : 0..1", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
-    ("License", "Order", "0..1 : 0..1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
-    # A recording and, since D072, its upgraded answer: two entries at most.
-    ("Ledger", "Resp", "0..2 : 1", "assoc"),
+    # A recording and, since D072, its upgraded answer: two entries at most; a
+    # teacher's lesson draft (D075) pays for no response.
+    ("Ledger", "Resp", "0..2 : 0..1", "assoc"),
 ]
 
 # Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
@@ -604,10 +580,7 @@ EDGES += [
         ("Study", "StudySt"),
         ("Path", "PathSt"),
         ("Step", "StepKind"),
-        ("Order", "OrderKind"),
-        ("Order", "SvcPlan"),
         ("Order", "OrderSt"),
-        ("License", "SvcPlan"),
         ("Ledger", "LedgerSt"),
         ("Ledger", "MeterAct"),
     ]
@@ -621,10 +594,10 @@ ZONES = [
     ("research", "Nghiên cứu: chấm mù, thực nghiệm", 0,
      [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
-    ("commerce", "Thương mại: gói dịch vụ, tính lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order", "License"]),
-      (6, ["OrderKind", "OrderSt", "SvcPlan"])]),
-    ("classroom", "Lớp học", 1, [(0, ["Class", "Asg"])]),
+    ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
+     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),
+      (6, ["OrderSt"])]),
+    ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
       (3, ["Purpose", "Status", "Band", "Criterion"])]),

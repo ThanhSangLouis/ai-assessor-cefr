@@ -74,19 +74,26 @@ class Provider:
         """The model's raw answer to the upgrade request."""
         return self.complete_with_usage(user)[0]
 
-    def complete_with_usage(self, user: str, calls: Calls | None = None) -> tuple[str, dict]:
+    def complete_with_usage(
+        self,
+        user: str,
+        calls: Calls | None = None,
+        system: str = SYSTEM,
+        schema: dict = SCHEMA,
+    ) -> tuple[str, dict]:
         """The raw answer and the tokens the provider says it used (D072).
 
         `{"input_tokens": n, "output_tokens": m}`, either None when the
-        provider did not say: kept with the upgrade and its ledger entry.
+        provider did not say: kept with the ledger entry and the day's counters.
         `calls` counts every request sent, retries and failures included,
-        as the provider's quota counts them.
+        as the provider's quota counts them. `system` and `schema` are the
+        upgraded answer's by default; a teacher's lesson draft (D075) has its own.
         """
         calls = calls if calls is not None else Calls()
         if self.name == "anthropic":
-            return _anthropic(self.model, self.key, user, calls)
+            return _anthropic(self.model, self.key, user, calls, system, schema)
         base_url = OPENAI_COMPATIBLE[self.name].base_url
-        return _openai_compatible(base_url, self.model, self.key, user, calls)
+        return _openai_compatible(base_url, self.model, self.key, user, calls, system)
 
 
 # D073: the key of a project with billing on, used while an administrator has
@@ -141,11 +148,11 @@ def _usage(input_tokens, output_tokens) -> dict:
 
 
 def _openai_compatible(
-    base_url: str, model: str, key: str, user: str, calls: Calls
+    base_url: str, model: str, key: str, user: str, calls: Calls, system: str = SYSTEM
 ) -> tuple[str, dict]:
     body = {
         "model": model,
-        "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
+        "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "response_format": {"type": "json_object"},
     }
     request = urllib.request.Request(
@@ -172,7 +179,9 @@ def _openai_compatible(
     return text, _usage(used.get("prompt_tokens"), used.get("completion_tokens"))
 
 
-def _anthropic(model: str, key: str, user: str, calls: Calls) -> tuple[str, dict]:
+def _anthropic(
+    model: str, key: str, user: str, calls: Calls, system: str = SYSTEM, schema: dict = SCHEMA
+) -> tuple[str, dict]:
     try:
         import anthropic
     except ImportError as e:  # the `coach` extra is not installed
@@ -184,10 +193,10 @@ def _anthropic(model: str, key: str, user: str, calls: Calls) -> tuple[str, dict
         response = client.messages.create(
             model=model,
             max_tokens=4000,
-            system=SYSTEM,
+            system=system,
             messages=[{"role": "user", "content": user}],
             # A rewrite needs little deliberation; the schema keeps the JSON valid.
-            output_config={"effort": "low", "format": {"type": "json_schema", "schema": SCHEMA}},
+            output_config={"effort": "low", "format": {"type": "json_schema", "schema": schema}},
         )
     except anthropic.RateLimitError as e:
         raise UpgradeError("nhà cung cấp mô hình đang giới hạn lượt, hãy thử lại sau") from e

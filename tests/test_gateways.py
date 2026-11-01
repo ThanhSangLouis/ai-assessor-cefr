@@ -1,4 +1,4 @@
-"""Layer 2 -- INTEGRATION: paying through Stripe and MoMo, and the choice of gateway (D035).
+"""Layer 2 -- INTEGRATION: a run pack paid through Stripe, the gateway chosen (D035, D075).
 
 The application is reloaded per test as in `test_billing.py`, with the
 gateways named in `AICEFR_PAYMENT_GATEWAYS`. Stripe's and MoMo's servers are
@@ -19,14 +19,22 @@ from datetime import UTC, datetime
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 import pytest
-from test_billing import admin_of, boot, overview
-from test_gateways_unit import MOMO_SECRET, SK, WHSEC, momo_mac, signed
+from test_billing import PACKS, boot
+from test_gateways_unit import SK, WHSEC, signed
+from test_lessons_integration import login_as
 
 from aicefr.billing.transport import Reply, Unreachable
 
 pytestmark = pytest.mark.integration
 
-BODY = {"plan": "standard", "seats": 50, "months": 6}  # 3,000,000 dong
+BODY = {"runs": 10}  # 49,000 dong
+PRICE = 49_000
+PAYMENTS = {"AICEFR_BILLING": "on", "AICEFR_METERING": "on", "AICEFR_CREDIT_PACKS": PACKS}
+
+
+def buyer_of(m):
+    """A learner who buys runs (D075: every order is a pack of runs)."""
+    return login_as(m, "SV-001")
 
 
 def answer(status: int, data: dict) -> Reply:
@@ -88,8 +96,7 @@ def stripe(tmp_path, monkeypatch):
     m = boot(
         tmp_path,
         monkeypatch,
-        AICEFR_BILLING="on",
-        AICEFR_TRIAL_SEATS="3",
+        **PAYMENTS,
         AICEFR_PAYMENT_GATEWAYS="stripe,sandbox",
         AICEFR_STRIPE_SECRET_KEY=SK,
         AICEFR_STRIPE_WEBHOOK_SECRET=WHSEC,
@@ -100,7 +107,7 @@ def stripe(tmp_path, monkeypatch):
 
 
 def place(admin, gateway: str = "stripe", **changes) -> dict:
-    r = admin.post("/api/v1/admin/billing/orders", json=BODY | {"gateway": gateway} | changes)
+    r = admin.post("/api/v1/me/credit-orders", json=BODY | {"gateway": gateway} | changes)
     assert r.status_code == 200, r.text
     return r.json()
 
@@ -123,7 +130,7 @@ def webhook(client, kind: str, session: dict, secret: str = WHSEC):
 
 def test_paying_through_stripe_is_read_back_and_counted_once(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
 
     placed = place(admin)
 
@@ -132,15 +139,15 @@ def test_paying_through_stripe_is_read_back_and_counted_once(stripe):
     assert url == f"https://checkout.stripe.com/c/pay/{sid}"
     assert (order["gateway"], order["gateway_title"], order["live"]) == ("stripe", "Stripe", False)
     assert m.billing_store.order(order["order_id"])["checkout_ref"] == sid
-    assert fake.sessions[sid]["amount_total"] == 3_000_000
+    assert fake.sessions[sid]["amount_total"] == PRICE
     assert fake.sessions[sid]["success_url"].startswith("http://testserver/billing/return/stripe?")
     # The payer pays; Stripe sends the browser back with the session's id only.
     page = admin.get(path_of(fake.pay(sid)))
     assert "Thanh toán thành công" in page.text and "Môi trường thử của Stripe" in page.text
     assert fake.calls[-1] == ("GET", f"https://api.stripe.com/v1/checkout/sessions/{sid}")
-    now = overview(admin)
-    assert now["plan"] == "standard"
-    assert (now["orders"][0]["status"], now["orders"][0]["reference"]) == ("paid", "pi_" + sid[8:])
+    now = m.billing_store.order(order["order_id"])
+    assert (now["status"], now["reference"]) == ("paid", "pi_" + sid[8:])
+    assert now["credited_at"]
     # Stripe's webhook for the same payment, then the browser again: nothing
     # more -- and the settled order is shown without asking Stripe again.
     assert webhook(admin, "checkout.session.completed", fake.sessions[sid]).json() == {
@@ -149,17 +156,17 @@ def test_paying_through_stripe_is_read_back_and_counted_once(stripe):
     asked = len(fake.calls)
     again = admin.get(path_of(fake.pay(sid)))
     assert "Thanh toán thành công" in again.text and len(fake.calls) == asked
-    events = m.billing_store.events(order["order_id"])
+    # The runs reaching the wallet is an event of its own, between the two messages.
+    events = [e for e in m.billing_store.events(order["order_id"]) if e["kind"] != "credited"]
     assert [e["kind"] for e in events] == ["created", "return", "notify"]
     assert [e["detail"]["applied"] for e in events[1:]] == [True, False]
-    assert len(m.billing_store.licenses()) == 2
     receipt = admin.get(f"/billing/orders/{order['order_id']}/receipt").text
     assert "Stripe (môi trường thử, không có tiền thật)" in receipt
 
 
-def test_the_stripe_webhook_alone_installs_the_plan(stripe):
+def test_the_stripe_webhook_alone_credits_the_runs(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     order = place(admin)["order"]
     [sid] = fake.sessions
     fake.pay(sid)  # paid, and the tab closed before coming back
@@ -178,12 +185,11 @@ def test_the_stripe_webhook_alone_installs_the_plan(stripe):
 
     assert (forged.status_code, bare.status_code, as_get.status_code) == (400, 400, 400)
     assert (odd.status_code, huge.status_code, elsewhere.status_code) == (400, 413, 200)
-    assert overview(admin)["plan"] == "trial"
     assert m.billing_store.order(order["order_id"])["status"] == "pending"
     ok = webhook(admin, "checkout.session.completed", fake.sessions[sid])
     assert (ok.status_code, ok.json()) == (200, {"received": True})
-    assert overview(admin)["plan"] == "standard"
     assert m.billing_store.order(order["order_id"])["status"] == "paid"
+    assert m.billing_store.order(order["order_id"])["credited_at"]
     # An event about something else on the same Stripe account is received and dropped.
     other = webhook(admin, "customer.created", {"object": "customer", "id": "cus_1"})
     assert other.status_code == 200
@@ -191,7 +197,7 @@ def test_the_stripe_webhook_alone_installs_the_plan(stripe):
 
 def test_leaving_stripe_changes_nothing_until_the_session_expires(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     order = place(admin)["order"]
     [sid] = fake.sessions
 
@@ -202,31 +208,30 @@ def test_leaving_stripe_changes_nothing_until_the_session_expires(stripe):
     fake.sessions[sid]["status"] = "expired"
     assert webhook(admin, "checkout.session.expired", fake.sessions[sid]).status_code == 200
     assert m.billing_store.order(order["order_id"])["status"] == "cancelled"
-    assert overview(admin)["plan"] == "trial"
 
 
 def test_a_gateway_that_will_not_open_fails_the_order_with_a_reason(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     fake.next = answer(400, {"error": {"code": "amount_too_small"}})
 
-    refused = admin.post("/api/v1/admin/billing/orders", json=BODY | {"gateway": "stripe"})
+    refused = admin.post("/api/v1/me/credit-orders", json=BODY | {"gateway": "stripe"})
 
     assert refused.status_code == 502
     assert refused.json()["detail"].startswith("Stripe: ")
     assert "mức tối thiểu" in refused.json()["detail"]
-    [failed] = overview(admin)["orders"]
+    [failed] = admin.get("/api/v1/me/credit-packs").json()["orders"]
     assert (failed["status"], failed["result_code"]) == ("failed", "amount_too_small")
     fake.next = Unreachable("timeout")
-    down = admin.post("/api/v1/admin/billing/orders", json=BODY | {"gateway": "stripe"})
+    down = admin.post("/api/v1/me/credit-orders", json=BODY | {"gateway": "stripe"})
     assert down.status_code == 502 and "Không kết nối được Stripe" in down.json()["detail"]
-    assert not [o for o in overview(admin)["orders"] if o["status"] == "pending"]
-    assert overview(admin)["plan"] == "trial"
+    orders = admin.get("/api/v1/me/credit-packs").json()["orders"]
+    assert not [o for o in orders if o["status"] == "pending"]
 
 
 def test_a_return_stripe_cannot_confirm_says_so(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     order = place(admin)["order"]
     [sid] = fake.sessions
     back = path_of(fake.pay(sid))
@@ -241,7 +246,7 @@ def test_a_return_stripe_cannot_confirm_says_so(stripe):
 
 def test_stripe_is_asked_only_about_checkouts_this_system_opened(stripe):
     m, fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     place(admin)
     asked = len(fake.calls)
 
@@ -250,15 +255,15 @@ def test_stripe_is_asked_only_about_checkouts_this_system_opened(stripe):
         assert "Không xác nhận được kết quả thanh toán" in page.text
 
     assert len(fake.calls) == asked  # Stripe was not asked about any of them
-    assert overview(admin)["orders"][0]["status"] == "pending"
+    assert admin.get("/api/v1/me/credit-packs").json()["orders"][0]["status"] == "pending"
 
 
 def test_one_gateway_cannot_settle_another_gateways_order(stripe):
     m, _fake = stripe
-    admin = admin_of(m)
+    admin = buyer_of(m)
     order = place(admin)["order"]
     sandbox = m.billing.gateways["sandbox"]
-    forged = sandbox.result(order["order_id"], 3_000_000, "paid", datetime.now(UTC))
+    forged = sandbox.result(order["order_id"], PRICE, "paid", datetime.now(UTC))
 
     answered = admin.get("/api/v1/billing/notify/sandbox?" + urlencode(forged)).json()
 
@@ -270,7 +275,6 @@ def test_one_gateway_cannot_settle_another_gateways_order(stripe):
     ]
     page = admin.get("/billing/return/sandbox?" + urlencode(forged))
     assert "Không xác nhận được kết quả thanh toán" in page.text
-    assert overview(admin)["plan"] == "trial"
     # The same gateway in the other money mode: a key switched to live after
     # this test-mode order was placed never settles it, and the reverse.
     [sid] = _fake.sessions
@@ -285,124 +289,49 @@ def test_one_gateway_cannot_settle_another_gateways_order(stripe):
     assert sandbox_page.status_code == 404
 
 
-# ================================================================= MoMo
-
-
-class FakeMomo:
-    def __init__(self) -> None:
-        self.sent: list[dict] = []
-
-    def __call__(self, method, url, headers, body):
-        request = json.loads(body)
-        self.sent.append(request)
-        pay = f"https://test-payment.momo.vn/v2/gateway/pay?t={request['orderId']}"
-        return answer(200, {"resultCode": 0, "payUrl": pay, "requestId": request["requestId"]})
-
-
-def momo_reply(request: dict, code: int = 0) -> dict:
-    """What MoMo sends back for `request`, signed as MoMo signs it."""
-    values = {
-        "partnerCode": request["partnerCode"],
-        "orderId": request["orderId"],
-        "requestId": request["requestId"],
-        "amount": request["amount"],
-        "orderInfo": request["orderInfo"],
-        "orderType": "momo_wallet",
-        "transId": 4088878653,
-        "resultCode": code,
-        "message": "Thành công.",
-        "payType": "qr",
-        "responseTime": 1791345600000,
-        "extraData": "",
-    }
-    order = (
-        "accessKey amount extraData message orderId orderInfo orderType partnerCode payType"
-        " requestId responseTime resultCode transId"
-    ).split()
-    return values | {"signature": momo_mac(values | {"accessKey": "ACCESSTHU"}, tuple(order))}
-
-
-def test_momo_is_paid_through_its_ipn_answered_204(tmp_path, monkeypatch):
-    m = boot(
-        tmp_path,
-        monkeypatch,
-        AICEFR_BILLING="on",
-        AICEFR_PAYMENT_GATEWAYS="momo",
-        AICEFR_MOMO_PARTNER_CODE="MOMOTHU01",
-        AICEFR_MOMO_ACCESS_KEY="ACCESSTHU",
-        AICEFR_MOMO_SECRET_KEY=MOMO_SECRET,
-    )
-    fake = FakeMomo()
-    m.billing.gateways["momo"]._send = fake
-    admin = admin_of(m)
-
-    placed = place(admin, gateway="momo")
-
-    [request] = fake.sent
-    assert placed["checkout_url"].startswith("https://test-payment.momo.vn/")
-    assert request["ipnUrl"] == "http://testserver/api/v1/billing/notify/momo"
-    assert request["redirectUrl"] == "http://testserver/billing/return/momo"
-    reply = momo_reply(request)
-    ipn = admin.post("/api/v1/billing/notify/momo", json=reply)
-    assert (ipn.status_code, ipn.content) == (204, b"")
-    assert overview(admin)["plan"] == "standard"
-    back = admin.get("/billing/return/momo?" + urlencode({k: str(v) for k, v in reply.items()}))
-    assert "Thanh toán thành công" in back.text and "Môi trường thử của MoMo" in back.text
-    assert admin.post("/api/v1/billing/notify/momo", json=reply).status_code == 204  # repeat
-    forged = admin.post("/api/v1/billing/notify/momo", json=reply | {"amount": 1_000})
-    assert forged.status_code == 400
-    events = m.billing_store.events(placed["order"]["order_id"])
-    seen = [(e["kind"], e["detail"].get("applied"), e["repeats"]) for e in events]
-    assert seen[1:3] == [("notify", True, 1), ("return", False, 0)]
-
-
 # ================================================================= choosing a gateway
 
 
-def test_the_administrator_picks_the_gateway_and_sees_what_is_off(tmp_path, monkeypatch):
+def test_the_buyer_picks_the_gateway_and_the_problems_are_logged(tmp_path, monkeypatch):
     m = boot(
         tmp_path,
         monkeypatch,
-        AICEFR_BILLING="on",
-        AICEFR_PAYMENT_GATEWAYS="stripe, momo, vnpay, sandbox",
+        **PAYMENTS,
+        AICEFR_PAYMENT_GATEWAYS="stripe, momo, sandbox",
         AICEFR_STRIPE_SECRET_KEY=SK,
     )
     m.billing.gateways["stripe"]._send = FakeStripe()
-    admin = admin_of(m)
+    buyer = buyer_of(m)
 
-    seen = overview(admin)
+    seen = buyer.get("/api/v1/me/credit-packs").json()
 
     assert [(g["name"], g["title"], g["live"]) for g in seen["gateways"]] == [
         ("stripe", "Stripe", False),
         ("sandbox", "Cổng thử", False),
     ]
-    assert "4242 4242 4242 4242" in seen["gateways"][0]["note"]
-    problems = " ".join(seen["gateway_problems"])
-    assert "MoMo chưa bật" in problems and "VNPay chưa bật" in problems
+    problems = " ".join(m.billing.gateway_problems)
+    assert "momo" in problems  # D075: removed, read as an unknown gateway
     assert "AICEFR_STRIPE_WEBHOOK_SECRET" in problems
-    assert SK not in json.dumps(seen)  # a key is never shown, only its name
-    off = admin.post("/api/v1/admin/billing/orders", json=BODY | {"gateway": "momo"})
+    assert SK not in json.dumps(seen)  # a key is never shown
+    off = buyer.post("/api/v1/me/credit-orders", json=BODY | {"gateway": "momo"})  # not offered
     assert off.status_code == 422
-    first = admin.post("/api/v1/admin/billing/orders", json=BODY).json()
+    first = buyer.post("/api/v1/me/credit-orders", json=BODY).json()
     assert first["order"]["gateway"] == "stripe"  # the first one offered
-    other = place(admin, gateway="sandbox")
+    other = place(buyer, gateway="sandbox")
     assert other["checkout_url"].startswith("/billing/sandbox/")
 
 
 def test_real_money_needs_to_be_switched_on(tmp_path, monkeypatch):
     live = dict(
-        AICEFR_BILLING="on",
+        **PAYMENTS,
         AICEFR_PAYMENT_GATEWAYS="stripe,sandbox",
         AICEFR_STRIPE_SECRET_KEY="sk_live_khong-phai-khoa-that",
         AICEFR_STRIPE_WEBHOOK_SECRET=WHSEC,
     )
     m = boot(tmp_path, monkeypatch, **live)
-    admin = admin_of(m)
 
-    seen = overview(admin)
-
-    assert [g["name"] for g in seen["gateways"]] == ["sandbox"]
-    assert any("AICEFR_PAYMENTS_LIVE" in p for p in seen["gateway_problems"])
+    assert list(m.billing.gateways) == ["sandbox"]
+    assert any("AICEFR_PAYMENTS_LIVE" in p for p in m.billing.gateway_problems)
     elsewhere = tmp_path / "switched-on"  # a deployment of its own
     elsewhere.mkdir()
     m = boot(
@@ -413,8 +342,6 @@ def test_real_money_needs_to_be_switched_on(tmp_path, monkeypatch):
         AICEFR_PAYMENTS_LIVE="on",
         **live,
     )
-    admin = admin_of(m)
-    seen = overview(admin)
-    assert [(g["name"], g["live"]) for g in seen["gateways"]] == [("stripe", True)]
-    assert any("Cổng thử đã tắt" in p for p in seen["gateway_problems"])
-    assert admin.get("/billing/sandbox/DH1?t=x").status_code == 404
+    assert [(g.name, g.live) for g in m.billing.gateways.values()] == [("stripe", True)]
+    assert any("Cổng thử đã tắt" in p for p in m.billing.gateway_problems)
+    assert buyer_of(m).get("/billing/sandbox/DL1?t=x").status_code == 404

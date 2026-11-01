@@ -1,11 +1,12 @@
-"""Layer 3 -- E2E for service plans and payment (D033, D034), in a real browser.
+"""Layer 3 -- E2E for buying a pack of runs (D053, D075), in a real browser.
 
-A server of its own, with `AICEFR_BILLING=on` and the sandbox gateway: the
-administrator buys a plan the way a person would -- the tab, the quote, the
-gateway's page, the return page, the receipt -- and a cancelled payment leaves
-the plan as it was. Students are shown nothing of it.
+A server of its own with payments and the metered channel on, and the sandbox
+gateway: a learner buys runs the way a person would -- the "Lượt của tôi"
+page, the gateway's page, the return page, the receipt -- and a cancelled
+payment credits nothing. D075 removed the institution's plans this layer used
+to buy.
 
-Test case ids (TC-GD-Exx) are listed in `docs/test/TEST_PLAN_D034.md`.
+Test case ids (TC-TL-Exx) are listed in `docs/test/TEST_PLAN_D075.md`.
 
 Run:  pytest -m e2e   (developer machines only; CI skips this layer)
 """
@@ -37,7 +38,7 @@ pytestmark = pytest.mark.e2e
 
 
 def serve(root, **settings: str) -> Iterator[LiveServer]:
-    """A server of its own, billing on and `settings` on top; stopped when the caller is done."""
+    """A server of its own, payments and runs on, `settings` on top; stopped when done."""
     db = e2e_store("billing")
     port = _free_port()
     env = {k: v for k, v in os.environ.items() if not k.startswith("AICEFR_")}
@@ -50,7 +51,8 @@ def serve(root, **settings: str) -> Iterator[LiveServer]:
         AICEFR_MODEL_PINS=os.environ["AICEFR_MODEL_PINS"],
         AICEFR_LOGIN_RATE="1000",
         AICEFR_BILLING="on",
-        AICEFR_TRIAL_SEATS="40",
+        AICEFR_METERING="on",
+        AICEFR_CREDIT_PACKS="10:49000,30:129000",
     )
     env.update(settings)
     proc = subprocess.Popen(
@@ -106,81 +108,49 @@ def context(browser, live_server):
     ctx.close()
 
 
-def billing_tab(context, live_server):
+def runs_page(context, live_server):
     page = context.new_page()
-    login(page, live_server, live_server.account("admin"), "/admin")
-    page.goto("/admin#billing")
-    expect(page.locator("#bill-pay")).to_be_enabled()
+    login(page, live_server, live_server.account("student"), "/credits")
+    expect(page.locator("#packs-card")).to_be_visible()
     return page
 
 
-def test_an_administrator_buys_a_plan_and_gets_a_receipt(context, live_server):
-    page = billing_tab(context, live_server)
-    expect(page.locator(".bill-plan-name")).to_have_text("Dùng thử")
-    expect(page.locator("#billing-body .notice-warn").first).to_contain_text("Môi trường thử")
-    # The plans side by side: what each step up adds.
-    ladder = page.locator("table.ladder")
-    expect(ladder.locator("thead")).to_contain_text("Miễn phí")
-    expect(ladder.locator("thead")).to_contain_text("Chuẩn")
-    expect(ladder.locator("thead")).to_contain_text("Nâng cao")
-    expect(
-        ladder.locator("tr", has_text="Soạn lộ trình riêng").locator(".ladder-yes")
-    ).to_have_count(2)
-    expect(ladder.locator("tr", has_text="Chấm mù kép").locator(".ladder-yes")).to_have_count(1)
-    page.get_by_role("button", name="Chọn gói Chuẩn").click()
+def test_a_learner_buys_a_pack_and_gets_a_receipt(context, live_server):
+    page = runs_page(context, live_server)
+    expect(page.locator("#packs-note")).to_contain_text("Môi trường thử")
+    expect(page.locator(".pack")).to_have_count(2)
 
-    page.locator("#bill-seats").fill("60")
-    expect(page.locator("#bill-quote")).to_contain_text("60 sinh viên × 6 tháng")
-    expect(page.locator("#bill-pay")).to_contain_text("Thanh toán 3.600.000")
-    page.locator("#bill-pay").click()
+    page.locator(".pack", has_text="49.000").get_by_role("button", name="Mua gói này").click()
 
-    page.wait_for_url(re.compile(r"/billing/sandbox/DH\w+\?t="))
-    expect(page.locator(".pay-amount")).to_contain_text("3.600.000")
+    page.wait_for_url(re.compile(r"/billing/sandbox/DL\w+\?t="))
+    expect(page.locator(".pay-amount")).to_contain_text("49.000")
     page.get_by_role("button", name="Thanh toán thành công").click()
     page.wait_for_url(re.compile(r"/billing/return/sandbox\?"))
     expect(page.get_by_role("heading", name="Thanh toán thành công")).to_be_visible()
+    expect(page.locator(".pay-lede")).to_contain_text("10 lượt")
     page.get_by_role("link", name="Xem biên nhận").click()
     page.wait_for_url(re.compile(r"/receipt$"))
-    expect(page.locator(".receipt-lines tfoot")).to_contain_text("3.600.000")
+    expect(page.locator(".receipt-lines tfoot")).to_contain_text("49.000")
     expect(page.locator(".receipt-note")).to_contain_text("không phải hoá đơn")
-
-    page.goto("/admin#billing")
-    expect(page.locator(".bill-plan-name")).to_have_text("Chuẩn")
-    expect(page.locator(".ladder-col.is-current")).to_contain_text("Đang dùng")
-    orders = page.locator('section[aria-labelledby="bill-orders-h"]')
-    expect(orders.locator("tbody tr").first).to_contain_text("Đã thanh toán")
+    page.get_by_role("link", name="← Lượt của tôi").click()
+    expect(page.locator("#orders")).to_contain_text("Đã thanh toán")
 
 
-def test_a_cancelled_payment_leaves_the_plan_as_it_was(context, live_server):
-    page = billing_tab(context, live_server)
-    before = page.locator(".bill-plan-name").inner_text()
-    page.locator('input[name="bill-plan"][value="advanced"]').check()
-    expect(page.locator("#bill-quote")).to_contain_text("15.000")
-    page.locator("#bill-pay").click()
+def test_a_cancelled_payment_credits_nothing(context, live_server):
+    page = runs_page(context, live_server)
+    page.locator(".pack", has_text="129.000").get_by_role("button", name="Mua gói này").click()
     page.wait_for_url(re.compile(r"/billing/sandbox/"))
 
     page.get_by_role("button", name="Huỷ giao dịch").click()
 
     page.wait_for_url(re.compile(r"/billing/return/sandbox\?"))
     expect(page.get_by_role("heading", name="Đã huỷ giao dịch")).to_be_visible()
-    page.get_by_role("link", name="Về trang Gói dịch vụ").click()
-    expect(page.locator(".bill-plan-name")).to_have_text(before)
-    orders = page.locator('section[aria-labelledby="bill-orders-h"]')
-    expect(orders.locator("tbody tr").first).to_contain_text("Đã huỷ")
+    expect(page.locator(".pay-card")).to_contain_text("Ví lượt không thay đổi")
 
 
-def test_the_tab_fits_a_phone_and_students_see_no_plan(context, live_server):
-    page = billing_tab(context, live_server)
+def test_the_runs_page_fits_a_phone(context, live_server):
+    page = runs_page(context, live_server)
     page.set_viewport_size({"width": 390, "height": 844})
     page.reload()
-    expect(page.locator("#bill-pay")).to_be_enabled()
+    expect(page.locator(".pack").first).to_be_visible()
     assert page.evaluate("document.documentElement.scrollWidth") <= 390
-
-    student = context.browser.new_context(base_url=live_server.base_url, locale="vi-VN")
-    learner = student.new_page()
-    login(learner, live_server, live_server.account())
-    for path in ("/practice", "/my-progress", "/account"):
-        learner.goto(path)
-        text = learner.locator("body").inner_text().lower()
-        assert "gói dịch vụ" not in text and "thanh toán" not in text
-    student.close()

@@ -1,6 +1,6 @@
-// "Classes" (D054, D071): the classes, one class's teachers, members and
-// assignments, and who handed in what -- by the students' names; D074: the
-// bands each student studies, grouped by target, and a path for each group. An
+// "Classes" (D054, D071, D075): the classes, one class's teachers and members
+// by name; D074: the bands each student studies, grouped by target, and a path
+// for each group. Classes set no assessments any more (D075). An
 // administrator sees every class and assigns its teachers.
 const escapeHtml = window.escapeHtml;
 const root = document.getElementById("classes-root");
@@ -10,9 +10,6 @@ const teacherNames = (c) => (c.teachers || []).map((t) => escapeHtml(t.name)).jo
 const list = (raw) => raw.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean);
 
 const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
-const STATE_CLASS = { on_time: "state-on", late: "state-warn", open: "state-off", missing: "state-warn" };
-const STATE = { open: "Chưa nộp", missing: "Chưa nộp (quá hạn)", on_time: "Đúng hạn", late: "Muộn" };
-const dmy = (iso) => window.ui.dmy(iso, "—");
 const post = (url, body) =>
   window.apiJson(url, {
     method: "POST",
@@ -115,7 +112,7 @@ async function listView() {
           ? `<ul class="plain-list">${classes
               .map(
                 (c) => `<li class="assign-row"><div><a href="/teach/classes/${encodeURIComponent(c.class_id)}"><b>${escapeHtml(c.name)}</b></a>
-                  <div class="muted small">Mã lớp <code>${escapeHtml(c.code)}</code> · ${c.members} sinh viên · ${c.assignments} bài đã giao${c.archived ? " · đã lưu trữ" : ""}</div>
+                  <div class="muted small">${c.members} sinh viên${c.archived ? " · đã lưu trữ" : ""}</div>
                   <div class="muted small">Giảng viên: ${teacherNames(c) || "chưa phân công"}</div></div></li>`,
               )
               .join("")}</ul>`
@@ -131,53 +128,13 @@ async function listView() {
   });
 }
 
-function bandBar(bands) {
-  const total = BAND_ORDER.reduce((n, b) => n + (bands[b] || 0), 0);
-  if (!total) return '<span class="muted small">chưa có band</span>';
-  return `<span class="band-spread">${BAND_ORDER.map(
-    (b) => `<span class="band-chip">${b}: <b>${bands[b] || 0}</b></span>`,
-  ).join("")}</span>`;
-}
-
 async function detailView() {
-  const [c, tasks] = await Promise.all([
-    window.apiJson(`/api/v1/classes/${encodeURIComponent(classId)}`),
-    window.apiJson("/api/v1/tasks"),
-  ]);
+  const c = await window.apiJson(`/api/v1/classes/${encodeURIComponent(classId)}`);
   if (!c) return;
   document.getElementById("page-title").textContent = c.name;
   document.getElementById("page-lede").innerHTML =
-    `Mã lớp <code class="join-code">${escapeHtml(c.code)}</code>: sinh viên vào trang <b>Bài được giao</b> và nhập mã này để tự tham gia. <a href="/teach/classes">Tất cả lớp</a>`;
-  const today = new Date().toISOString().slice(0, 10);
+    `${c.archived ? "Lớp đã lưu trữ. " : ""}Thêm sinh viên theo email ở cuối trang. <a href="/teach/classes">Tất cả lớp</a>`;
   root.innerHTML = `
-    <section class="card" aria-labelledby="assign-h">
-      <div class="card-head"><h2 id="assign-h">Bài đã giao</h2></div>
-      ${
-        c.assignments.length
-          ? `<ul class="plain-list">${c.assignments
-              .map(
-                (a) => `<li class="assign-row"><div><b>${escapeHtml(a.task_title)}</b> · hạn ${dmy(a.due_on)}
-                  <div class="muted small">${a.on_time} đúng hạn · ${a.late} muộn · ${a.open + a.missing} chưa nộp / ${a.members} sinh viên · ${a.verified} bài đã duyệt</div>
-                  <div class="small">${bandBar(a.bands)}</div></div>
-                  <button class="button secondary small" data-detail="${escapeHtml(a.assignment_id)}">Xem từng sinh viên</button></li>
-                  <li id="detail-${escapeHtml(a.assignment_id)}" hidden></li>`,
-              )
-              .join("")}</ul>`
-          : '<p class="muted">Chưa giao bài nào.</p>'
-      }
-      ${
-        c.archived
-          ? '<p class="muted">Lớp đã lưu trữ.</p>'
-          : `<form id="assign-form" class="inline-form">
-        <label class="field"><span>Đề</span><select name="task_id">${(tasks || [])
-          .map((t) => `<option value="${escapeHtml(t.task_id)}">${escapeHtml(t.task_id)} · ${escapeHtml(t.title)}</option>`)
-          .join("")}</select></label>
-        <label class="field"><span>Hạn nộp</span><input type="date" name="due_on" min="${today}" value="${today}" required></label>
-        <label class="field"><span>Ghi chú cho lớp</span><input name="note" maxlength="300"></label>
-        <button class="button" type="submit">Giao bài</button>
-      </form>`
-      }
-    </section>
     <section class="card" aria-labelledby="teachers-h">
       <div class="card-head"><h2 id="teachers-h">Giảng viên (${c.teachers.length})</h2></div>
       <ul class="plain-list">${
@@ -250,24 +207,6 @@ async function detailView() {
         detailView();
       }
     });
-  root.querySelectorAll("button[data-detail]").forEach((b) =>
-    b.addEventListener("click", () => showStudents(b.dataset.detail)),
-  );
-  const assignForm = document.getElementById("assign-form");
-  if (assignForm)
-    assignForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const f = e.target;
-      const made = await post(`/api/v1/classes/${encodeURIComponent(classId)}/assignments`, {
-        task_id: f.task_id.value,
-        due_on: f.due_on.value,
-        note: f.note.value,
-      });
-      if (made) {
-        window.toast("Đã giao bài.", "ok");
-        detailView();
-      }
-    });
   document.getElementById("members-form").addEventListener("submit", async (e) => {
     e.preventDefault();
     const people = list(e.target.list.value);
@@ -280,25 +219,6 @@ async function detailView() {
     window.toast(parts.join(" · "), d.unknown.length ? "warn" : "ok");
     detailView();
   });
-}
-
-async function showStudents(assignmentId) {
-  const el = document.getElementById(`detail-${assignmentId}`);
-  if (!el.hidden) {
-    el.hidden = true;
-    return;
-  }
-  const d = await window.apiJson(`/api/v1/assignments/${encodeURIComponent(assignmentId)}`);
-  if (!d) return;
-  el.hidden = false;
-  el.innerHTML = `<div class="table-scroll" tabindex="0" role="region" aria-label="Bảng sinh viên"><table><thead><tr><th>Sinh viên</th><th>Trạng thái</th><th>Nộp lúc</th><th>Band</th><th></th></tr></thead><tbody>${d.students
-    .map(
-      (s) => `<tr><td>${escapeHtml(s.name)}</td><td><span class="badge ${STATE_CLASS[s.state] || ""}">${STATE[s.state] || s.state}</span></td>
-        <td>${s.submitted_at ? new Date(s.submitted_at).toLocaleString("vi-VN") : "—"}</td>
-        <td>${s.band ? escapeHtml(s.band) + (s.teacher_verified ? " ✓" : "") : "—"}</td>
-        <td>${s.response_id ? `<a href="/review/${encodeURIComponent(s.response_id)}">Mở bài</a>` : ""}</td></tr>`,
-    )
-    .join("")}</tbody></table></div>`;
 }
 
 if (classId) detailView();

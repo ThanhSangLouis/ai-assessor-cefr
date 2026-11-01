@@ -1,5 +1,7 @@
 # Kế hoạch và kết quả kiểm thử D034 — Gói dịch vụ của trường và thanh toán
 
+> **Thay bởi D075 (01/11/2026).** Gói dịch vụ, dùng thử, giới hạn chỗ và mã giấy phép đã gỡ; các test dưới đây không còn trong mã và kế hoạch này chỉ còn là lịch sử. Phần còn lại của thanh toán (cổng thử, gói lượt) được kiểm trong `TEST_PLAN_D075.md`.
+
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Tính năng | D034: thang gói Miễn phí, Dùng thử, Chuẩn, Nâng cao; giới hạn số sinh viên và công cụ của giảng viên theo gói; mua, nâng cấp, gia hạn qua cổng thanh toán (cổng thử, VNPay); mã giấy phép theo hợp đồng (FR-67..FR-70, BR-29..BR-33, UC-23). Mô hình bán cho trường của D033 vẫn là đề xuất |

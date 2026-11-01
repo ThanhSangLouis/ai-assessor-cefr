@@ -363,7 +363,7 @@ nào*, đúng tầng thiết kế của chúng.
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
 | Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
-| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 19 bộ chuyển đổi, 13 kho kế thừa `MongoStore` |
+| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 17 bộ chuyển đổi (D075 bỏ VNPay và MoMo), 13 kho kế thừa `MongoStore` |
 
 **Vì sao sơ đồ lớp dùng draw.io chứ không phải PlantUML.** PlantUML tự đặt vị
 trí các hộp; người đọc không sắp xếp lại được. Sơ đồ lớp là hình phải chỉnh tay

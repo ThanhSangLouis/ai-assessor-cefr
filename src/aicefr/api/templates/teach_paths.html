@@ -24,7 +24,6 @@
 </div>
 
 {#- D034: on a plan without lesson writing, said here before anyone types. -#}
-<div id="plan-note" class="notice notice-info" hidden></div>
 
 <div id="teach-paths" aria-busy="true" aria-live="polite">
   <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
@@ -120,6 +119,16 @@
     <p class="muted">Viết một đoạn văn mẫu và chọn vài từ khóa: hệ thống dựng sẵn các bước theo
       luật cố định (đọc to, nhắc lại, chỗ trống, đọc rồi nói lại, từ khóa, dàn ý, nói tự do). Bạn
       sửa từng bước trước khi xuất bản. Để trống đoạn văn thì bài chỉ có bước từ khóa và nói tự do.</p>
+    {#- D075: the language model writes a first draft from a few words; the teacher corrects it. -#}
+    <div class="ai-draft" id="ai-draft" hidden>
+      <label for="ai-draft-topic">{{ icon("sparkle") }} Nhờ AI viết nháp: bài nói về gì?</label>
+      <div class="ai-draft-row">
+        <input id="ai-draft-topic" maxlength="300" autocomplete="off"
+               placeholder="Ví dụ: kể về món ăn quê nhà, dùng thì quá khứ">
+        <button type="button" class="secondary" id="ai-draft-go">{{ icon("sparkle") }}<span>AI viết nháp</span></button>
+      </div>
+      <p class="field-hint" id="ai-draft-hint">AI điền các ô bên dưới theo band và tiêu chí đã chọn; bạn đọc lại và sửa trước khi tạo.</p>
+    </div>
     <label for="lesson-title">Tên bài học</label>
     <input id="lesson-title" name="title" required maxlength="160" autocomplete="off">
     <div class="field-row">
