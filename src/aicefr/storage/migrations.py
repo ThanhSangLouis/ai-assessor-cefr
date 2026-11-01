@@ -675,8 +675,19 @@ def pending(target: str | Path) -> list[Migration]:
     return [m for m in MIGRATIONS if m.version not in done]
 
 
+_migrate_lock = threading.Lock()
+
+
 def migrate(target: str | Path) -> list[int]:
     """Bring the store at `target` to LATEST; the versions this call recorded."""
+    # One at a time within a process: the in-memory store of development and
+    # the tests does not enforce a unique index atomically, so two threads could
+    # both record a version. Processes on a real server still meet at the ledger.
+    with _migrate_lock:
+        return _migrate(target)
+
+
+def _migrate(target: str | Path) -> list[int]:
     db = database(target)
     ledger = _ledger(db)
     done = applied(target)
