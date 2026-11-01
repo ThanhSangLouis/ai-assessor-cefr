@@ -290,7 +290,7 @@ class AuthRepository(MongoStore):
         """
         names = [validate_pseudonym(n) for n in pseudonyms]
         if len({n.lower() for n in names}) != len(names):
-            raise ValueError("danh sách bút danh bị trùng")
+            raise ValueError("danh sách mã tài khoản bị trùng")
         accounts = self.col("account")
         taken = list(
             accounts.find(
@@ -299,7 +299,7 @@ class AuthRepository(MongoStore):
         )
         if taken:
             raise ValueError(
-                "bút danh đã tồn tại: " + ", ".join(sorted(r["pseudonym"] for r in taken))
+                "mã tài khoản đã tồn tại: " + ", ".join(sorted(r["pseudonym"] for r in taken))
             )
         temporaries = [passwords.temporary_password() for _ in names]
         workers = max(1, min(8, os.cpu_count() or 1, len(names)))
@@ -316,7 +316,7 @@ class AuthRepository(MongoStore):
         except IntegrityError as e:
             # Taken between the check and the insert: undo the ones that went in.
             accounts.delete_many({"account_id": {"$in": [d["account_id"] for d in documents]}})
-            raise ValueError("bút danh vừa được tạo bởi người khác, hãy thử lại") from e
+            raise ValueError("mã tài khoản vừa được tạo bởi người khác, hãy thử lại") from e
         return created
 
     def get(self, account_id: str) -> dict | None:
@@ -720,7 +720,7 @@ class AuthRepository(MongoStore):
                     raise EmailTaken(email) from None
                 continue  # the pseudonym was taken in between; draw another
             return aid, pseudonym, code, self._open_session(aid, device)
-        raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
+        raise RuntimeError("không tạo được mã tài khoản ngẫu nhiên chưa dùng")
 
     def issue_recovery_code(self, account_id: str) -> str:
         """A new recovery code for a signed-in owner, in clear, once; the old one stops working."""
@@ -980,7 +980,7 @@ class AuthRepository(MongoStore):
                     raise IdentityTaken(provider) from e
                 continue  # the pseudonym was taken in between; draw another
             return aid
-        raise RuntimeError("không tạo được bút danh ngẫu nhiên chưa dùng")
+        raise RuntimeError("không tạo được mã tài khoản ngẫu nhiên chưa dùng")
 
     def adopt_by_email(self, account_id: str, provider: str, subject_hash: str) -> bool:
         """Join a Google sign-in to the account that already has its verified email (D071).

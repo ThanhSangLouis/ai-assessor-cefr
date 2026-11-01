@@ -83,7 +83,7 @@ def test_an_administrator_opens_an_account_and_changes_its_role(context, live_se
     target = live_server.account()
     admin = context.new_page()
     login(admin, live_server, live_server.account("admin"), "/admin")
-    admin.get_by_label("Tìm bút danh").fill(target)
+    admin.get_by_label("Tìm theo tên, email hoặc mã").fill(target)
     admin.get_by_role("button", name=f"Xem chi tiết {target}").click()
     dialog = admin.locator("#account-dialog")
     expect(dialog).to_be_visible()

@@ -29,11 +29,12 @@ def validate_pseudonym(pseudonym: str) -> str:
     value = pseudonym.strip()
     if not PATTERN.match(value):
         raise ValueError(
-            "bút danh chỉ gồm chữ cái, chữ số, dấu gạch ngang và gạch dưới, dài từ 2 đến 32 ký tự"
+            "mã tài khoản chỉ gồm chữ cái, chữ số, dấu gạch ngang và gạch dưới,"
+            " dài từ 2 đến 32 ký tự"
         )
     low = value.lower()
     if any(token in low for token in FORBIDDEN):
-        raise ValueError("bút danh không được chứa thông tin định danh thật")
+        raise ValueError("mã tài khoản không được chứa thông tin định danh thật")
     if re.fullmatch(r"\d{7,12}", value):
-        raise ValueError("bút danh không được là một dãy số giống mã số sinh viên")
+        raise ValueError("mã tài khoản không được là một dãy số giống mã số sinh viên")
     return value

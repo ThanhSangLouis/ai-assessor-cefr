@@ -23,8 +23,9 @@
     <p class="eyebrow">Tài khoản</p>
     <h1>{{ account.display_name }}</h1>
     <p class="lede">
-      {{ role_names.get(account.role.value, account.role.value) }}. Hệ thống chỉ biết bạn qua bút
-      danh này, không lưu họ tên, mã số sinh viên hay email.
+      {{ role_names.get(account.role.value, account.role.value) }}. Bạn đăng nhập bằng email, với mật
+      khẩu hoặc Google. Email và họ tên dùng để đăng nhập và để giảng viên lớp bạn biết bài nào của
+      ai; dữ liệu dùng cho nghiên cứu chỉ mang mã tài khoản, không mang tên hay email.
     </p>
   </div>
 </div>
@@ -149,7 +150,7 @@
                minlength="{{ min_length }}" aria-describedby="pw-rules">
         <ul class="pw-rules" id="pw-rules">
           <li data-rule="length">Từ {{ min_length }} ký tự trở lên; một câu ngắn dễ nhớ là đủ tốt</li>
-          <li data-rule="pseudonym">Không trùng với bút danh</li>
+          <li data-rule="pseudonym">Không trùng với mã tài khoản</li>
           <li data-rule="different">Khác mật khẩu hiện tại</li>
         </ul>
 
@@ -177,8 +178,9 @@
           <button type="button" class="secondary" id="google-unlink" hidden>{{ icon("x") }} Gỡ liên kết</button>
         </div>
         <p class="muted small-note">
-          Hệ thống chỉ giữ một mã băm một chiều của tài khoản Google để nhận ra nó lần sau; không lưu
-          email, tên hay ảnh. Google không nhận bản ghi âm hay kết quả nào của bạn.
+          Hệ thống giữ một mã băm một chiều của tài khoản Google để nhận ra nó lần sau, và lấy email đã
+          được Google xác minh cùng họ tên để điền vào tài khoản khi còn trống; không lưu ảnh. Google
+          không nhận bản ghi âm hay kết quả nào của bạn.
         </p>
         {% else %}
         <p class="muted">Máy chủ này chưa bật đăng nhập bằng Google. Quản trị viên bật bằng cấu hình
@@ -194,8 +196,8 @@
         </div>
         {% include "_recovery_slip.html" %}
         <p class="muted small-note">
-          Hệ thống không lưu email nên không gửi thư đặt lại mật khẩu. Quên mật khẩu thì dùng
-          bút danh và mã này ở trang "Quên mật khẩu?". Tạo mã mới thì mã cũ hết hiệu lực.
+          Hệ thống không gửi thư đặt lại mật khẩu. Quên mật khẩu thì dùng email của bạn và mã này
+          ở trang "Quên mật khẩu?". Tạo mã mới thì mã cũ hết hiệu lực.
         </p>
       </div>
 

@@ -331,7 +331,7 @@ function paintGoogle() {
 
 if (googleUnlink) {
   googleUnlink.addEventListener("click", async () => {
-    if (!window.confirm("Gỡ liên kết Google? Sau đó chỉ đăng nhập được bằng bút danh và mật khẩu.")) return;
+    if (!window.confirm("Gỡ liên kết Google? Sau đó chỉ đăng nhập được bằng email và mật khẩu.")) return;
     googleUnlink.disabled = true;
     const r = await fetch("/api/v1/me/google/unlink", { method: "POST" });
     googleUnlink.disabled = false;
@@ -372,7 +372,7 @@ if (recoveryNew) {
         window.toast(typeof d.detail === "string" ? d.detail : "Không tạo được mã.", "error");
         return;
       }
-      window.showRecoverySlip(me.pseudonym, d.recovery_code);
+      window.showRecoverySlip(me.email || me.pseudonym, d.recovery_code);
       window.toast("Đã tạo mã khôi phục mới. Hãy lưu lại: mã chỉ hiện lần này.", "ok");
       loadMe();
     } finally {

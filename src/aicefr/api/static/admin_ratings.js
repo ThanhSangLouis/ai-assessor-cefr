@@ -42,7 +42,7 @@
           .map(
             (r) =>
               `<label class="check-row"><input type="checkbox" value="${escapeHtml(r.account_id)}">` +
-              ` ${escapeHtml(r.pseudonym)} <span class="muted">· ${escapeHtml(ROLE[r.role] || r.role)}</span></label>`
+              ` ${escapeHtml(r.name || r.pseudonym)} <span class="muted">· ${escapeHtml(ROLE[r.role] || r.role)}</span></label>`
           )
           .join("")
       : '<p class="muted">Chưa có tài khoản giảng viên nào. Tạo ở tab Tài khoản.</p>';
@@ -87,7 +87,7 @@
     return b.raters
       .map((r) => {
         const pct = r.total ? Math.round((100 * r.done) / r.total) : 0;
-        return `<div class="rater-progress"><span>${escapeHtml(r.pseudonym)}</span>
+        return `<div class="rater-progress"><span>${escapeHtml(r.name || r.pseudonym)}</span>
           <span class="progress-bar small" aria-hidden="true"><span style="width:${pct}%"></span></span>
           <span class="muted">${r.done}/${r.total}${r.voided ? ` · ${r.voided} không còn mù` : ""}</span></div>`;
       })
@@ -97,7 +97,7 @@
   function batchRow(b) {
     const open = b.status === "open";
     const adjudicators = raters
-      .map((r) => `<option value="${escapeHtml(r.account_id)}">${escapeHtml(r.pseudonym)}</option>`)
+      .map((r) => `<option value="${escapeHtml(r.account_id)}">${escapeHtml(r.name || r.pseudonym)}</option>`)
       .join("");
     const id = escapeHtml(b.batch_id);
     return `<tr>

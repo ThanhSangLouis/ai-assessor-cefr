@@ -126,7 +126,7 @@ def test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout(m):
     "new, why",
     [
         ("ngan", "8 ký tự"),
-        ("Student-01", "bút danh"),
+        ("Student-01", "mã tài khoản"),
         (PASSWORD, "khác mật khẩu"),
         ("á" * 40, "72 byte"),
     ],

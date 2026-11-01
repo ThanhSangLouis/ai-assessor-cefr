@@ -20,7 +20,7 @@
     </header>
     <dl class="pay-facts receipt-parties">
       <dt>Bên bán</dt><dd>AI Assessor CEFR</dd>
-      <dt>Bên mua</dt><dd>{% if order.kind == "credits" %}{{ account.pseudonym }}{% else %}{{ organization }}{% endif %}</dd>
+      <dt>Bên mua</dt><dd>{% if order.kind == "credits" %}{{ account.display_name }}{% else %}{{ organization }}{% endif %}</dd>
     </dl>
     <div class="table-scroll">
       <table class="receipt-lines">

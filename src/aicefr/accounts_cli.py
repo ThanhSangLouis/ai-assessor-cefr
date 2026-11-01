@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         "--but-danh",
         dest="pseudonym",
         required=True,
-        help="mã bút danh, không dùng họ tên hay MSSV",
+        help="mã tài khoản, không dùng họ tên hay MSSV",
     )
     p_add.add_argument(
         "--vai-tro",
