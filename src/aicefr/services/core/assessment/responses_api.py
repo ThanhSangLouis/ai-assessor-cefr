@@ -1,6 +1,6 @@
-"""The student's side of the assessment service: submit, report, progress, practice, own data.
+"""The student's side of the assessment service: submit, report, progress, own data.
 
-FR-01..FR-05, FR-27, FR-35, FR-38, D023 (practice). Moved out of the single application
+FR-01..FR-05, FR-27, FR-35, FR-38, Moved out of the single application
 with D043; the rules are unchanged.
 """
 
@@ -10,7 +10,6 @@ import logging
 import os
 import tempfile
 import uuid
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -27,15 +26,10 @@ from aicefr.contracts import (
     ReasonCode,
     Response,
     ResponseStatus,
-    TaskPurpose,
 )
 from aicefr.infra.blobs import audio_response
 from aicefr.observability import count
 from aicefr.practice.achievements import BY_CODE
-from aicefr.practice.bank import CRITERION_NAMES
-from aicefr.practice.feedback import previous_measures, takeaway
-from aicefr.practice.missions import describe_measure
-from aicefr.practice.streak import summarize
 from aicefr.qc import audio_qc
 from aicefr.scoring.band_map import position, thresholds_of
 from aicefr.services.core.assessment import replay_api, scoring
@@ -46,7 +40,6 @@ from aicefr.services.core.assessment.context import (
     svc,
 )
 from aicefr.storage.auth_repository import Account
-from aicefr.storage.task_repository import Task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -122,10 +115,12 @@ async def submit_response(
         # allows would cost; settled on the real length once there is a result.
         # Off (the school deployment, BR-29/BR-30) this always allows.
         metering = getattr(s.peers, "metering", None)
-        action = task.purpose.value
         refusal = (
             metering.hold(
-                account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds
+                account_id=account.account_id,
+                action="assessment",
+                key=rid,
+                max_seconds=task.max_seconds,
             )
             if metering is not None
             else None
@@ -165,7 +160,6 @@ async def submit_response(
             task_id,
             account_id=account.account_id,
             audio_path=audio_ref,
-            purpose=task.purpose,
         )
         count("submissions_total")
         try:
@@ -323,8 +317,6 @@ FIELD_PURPOSES: dict[str, str] = {
     "comments": "Nhận xét sinh từ số đo, mỗi câu kèm bằng chứng.",
     "priorities": "Gợi ý luyện tập, xếp theo mức ảnh hưởng tới điểm.",
     "review_history": "Mỗi lần giảng viên sửa điểm: trước, sau, lý do, thời điểm.",
-    "practice": "Kết quả luyện tập: từng mục tiêu đo được gì, kèm chỗ trong bản ghi"
-    " làm căn cứ. Bài luyện tập không có điểm và không chuyển giảng viên.",
     "audio": "Tệp ghi âm KHÔNG nằm trong tệp này vì kích thước; tải riêng ở"
     " /api/v1/responses/{id}/audio.",
     "achievements": "Thành tựu bạn đã đạt và ngày đạt. Chỉ bạn thấy, không dựa vào điểm,"
@@ -475,134 +467,4 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
             "Điểm chưa được giảng viên xác nhận chỉ là ước lượng của máy."
             " Biểu đồ vẽ cả hai loại nhưng phân biệt rõ."
         ),
-    }
-
-
-# ================================================================= practice (D023)
-
-
-@dataclass(frozen=True)
-class TaskProgress:
-    """How far a learner has got with one practice task."""
-
-    attempts: int = 0
-    completed: bool = False
-    last_attempt_at: str | None = None
-    last_completed: bool | None = None
-
-
-def _practice_progress(attempts: list[dict]) -> dict[str, TaskProgress]:
-    """Per-task progress from the attempts (oldest first). Only processed attempts count."""
-    out: dict[str, TaskProgress] = {}
-    for a in attempts:
-        if a["status"] != ResponseStatus.COMPLETED.value:
-            continue
-        prev = out.get(a["task_id"], TaskProgress())
-        out[a["task_id"]] = TaskProgress(
-            attempts=prev.attempts + 1,
-            completed=prev.completed or a["completed"] is True,
-            last_attempt_at=a["created_at"],
-            last_completed=a["completed"],
-        )
-    return out
-
-
-def _task_card(t: Task, progress: dict[str, TaskProgress]) -> dict:
-    p = progress.get(t.task_id, TaskProgress())
-    return {
-        "task_id": t.task_id,
-        "title": t.title,
-        "criterion": t.criterion.value if t.criterion else None,
-        "criterion_name": CRITERION_NAMES.get(t.criterion, "") if t.criterion else "",
-        "band": t.band.value if t.band else None,
-        "status": "completed" if p.completed else ("tried" if p.attempts else "new"),
-        "attempts": p.attempts,
-    }
-
-
-def _practice_state(account_id: str) -> tuple[list[Task], list[dict], dict[str, TaskProgress]]:
-    bank = svc().tasks.list_active(TaskPurpose.PRACTICE)
-    attempts = svc().repo.practice_attempts(account_id)
-    return bank, attempts, _practice_progress(attempts)
-
-
-def _daily_view(attempts: list[dict]) -> dict:
-    d = summarize(
-        [a["created_at"] for a in attempts if a["status"] == ResponseStatus.COMPLETED.value],
-        datetime.now(UTC),
-    )
-    return {
-        "today": d.today,
-        "goal": d.goal,
-        "goal_met": d.goal_met,
-        "streak": d.streak,
-        "practiced_today": d.practiced_today,
-        "week": [{"date": day.isoformat(), "count": n} for day, n in d.week],
-    }
-
-
-@router.get("/api/v1/practice/attempts/{response_id}", tags=["student"])
-def practice_attempt(response_id: str, account: Account = Depends(require_login)) -> dict:
-    """One practice attempt's result, with the daily goal after it. D023.
-
-    Only the owner may see it: a practice attempt is the learner's draft, not a
-    submission for anyone to mark.
-    """
-    repo = svc().repo
-    owner = repo.owner_of(response_id)
-    info = repo.status_of(response_id)
-    if info is None or owner != account.account_id or info["purpose"] != "practice":
-        raise HTTPException(404, "không tìm thấy lần luyện này")
-    report = repo.get(response_id)
-    t = svc().tasks.get(info["task_id"])
-    if report is None or t is None:
-        raise HTTPException(404, "không tìm thấy lần luyện này")
-
-    _, attempts, progress = _practice_state(account.account_id)
-    result = report.practice
-    # The previous processed attempt at the SAME task, submitted before this one:
-    # found by position in the list (already in submission order), not by
-    # comparing created_at -- two attempts in one second share it.
-    position = next(
-        (i for i, a in enumerate(attempts) if a["response_id"] == response_id), len(attempts)
-    )
-    earlier = [
-        a
-        for a in attempts[:position]
-        if a["task_id"] == info["task_id"] and a["status"] == ResponseStatus.COMPLETED.value
-    ]
-    previous = repo.get(earlier[-1]["response_id"]) if earlier else None
-    before = previous_measures(result, previous.practice if previous else None) if result else []
-    return {
-        "response_id": response_id,
-        "status": info["status"],
-        "is_pending": ResponseStatus(info["status"]).is_pending,
-        "created_at": info["created_at"],
-        "reasons": [r.value for r in report.reasons],
-        "task": {
-            **_task_card(t, progress),
-            "prompt_text": t.prompt_text,
-            "reference_text": t.reference_text,
-        },
-        "result": (
-            {
-                "completed": result.completed,
-                "met_count": result.met_count,
-                "total": len(result.checks),
-                "rules_version": result.rules_version,
-                "takeaway": takeaway(result, t.missions),
-                "previous_response_id": earlier[-1]["response_id"] if earlier else None,
-                "checks": [
-                    {
-                        **c.model_dump(mode="json"),
-                        "measured_text": describe_measure(c),
-                        "previous": prev,
-                    }
-                    for c, prev in zip(result.checks, before, strict=True)
-                ],
-            }
-            if result
-            else None
-        ),
-        "daily": _daily_view(attempts),
     }

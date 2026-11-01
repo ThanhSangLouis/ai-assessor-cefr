@@ -1,4 +1,7 @@
-"""The practice task bank: 5 criteria x 6 bands = 30 tasks. D023, D059.
+"""The exercise bank the path's lessons are built from: 5 criteria x 6 bands. D023, D059.
+
+Since D083 these are no longer tasks of their own: `lessons/seed.py` turns each
+one into a lesson of the shipped path, and its missions are checked there.
 
 How a task is written, and why:
 
@@ -864,8 +867,3 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
     ),
 )
-
-
-def practice_task_id(criterion: Criterion, band: Band) -> str:
-    """Practice task id for one criterion at one band. The bank fills all 30 cells."""
-    return next(t.task_id for t in PRACTICE_TASKS if t.criterion is criterion and t.band is band)

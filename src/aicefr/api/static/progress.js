@@ -72,14 +72,8 @@ async function check() {
     messageEl.textContent = "Đang nhận dạng và chấm điểm.";
   } else {
     // Done. Move on to the report so the user does not have to click again.
-    // A practice attempt (D023) has no report: it opens its own result page.
     finished = true;
     markSteps(4, "done");
-    if (d.purpose === "practice") {
-      messageEl.textContent = "Đã xử lý xong, đang mở kết quả luyện tập…";
-      location.href = `/practice/results/${ID}`;
-      return;
-    }
     messageEl.textContent = "Đã xử lý xong, đang mở báo cáo…";
     window.toast("Đã chấm xong. Đang mở báo cáo…", "ok");
     location.href = `/report/${ID}`;
@@ -89,8 +83,7 @@ async function check() {
   if (Date.now() - startedAt > TIMEOUT_MS) {
     finished = true;
     markSteps(2, "failed");
-    // A practice attempt has no report; send it to its own result page.
-    const later = d.purpose === "practice" ? `/practice/results/${ID}` : `/report/${ID}`;
+    const later = `/report/${ID}`;
     messageEl.innerHTML =
       '<span class="error">Bài xử lý lâu bất thường.</span> ' +
       `Mở lại <a href="${later}">trang kết quả</a> sau ít phút, ` +

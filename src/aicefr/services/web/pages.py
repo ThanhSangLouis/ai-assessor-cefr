@@ -363,16 +363,6 @@ def page_lesson(
     )
 
 
-@router.get("/practice/results/{response_id}", response_class=HTMLResponse, tags=["web"])
-def page_practice_result(
-    request: Request, response_id: str, account: Account | None = Depends(optional_account)
-):
-    """Result of one practice attempt (D023). Declared before `/practice/{task_id}`."""
-    if (gate := _login_gate(request, account)) is not None:
-        return gate
-    return _page(request, "practice_result.html", account, "practice", response_id=response_id)
-
-
 @router.get("/practice/{task_id}", include_in_schema=False)
 def page_practice_task_gone(task_id: str) -> RedirectResponse:
     """Practice tasks (D023) are folded into the lesson path (D068); old links go there."""

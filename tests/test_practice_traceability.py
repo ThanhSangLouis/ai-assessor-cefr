@@ -19,7 +19,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 PLAN = ROOT / "docs" / "test" / "TEST_PLAN_D023.md"
 LAYERS = {
     "TC-PR-U": ROOT / "tests" / "test_practice_unit.py",
-    "TC-PR-I": ROOT / "tests" / "test_practice_integration.py",
     "TC-PR-E": ROOT / "tests" / "e2e" / "test_practice_e2e.py",
 }
 ROW = re.compile(r"^\| (TC-PR-[UIE])\d{2} \| `(test_\w+)` \| (AC-4\d\.\d|FR-4\d) \|", re.M)

@@ -149,22 +149,6 @@ class EvidenceKind(str, Enum):
     CONNECTOR = "connector"
 
 
-class TaskPurpose(str, Enum):
-    """Whether a task is for ASSESSMENT or for PRACTICE. D023.
-
-    The two purposes differ at exactly the point that decides the processing
-    path. An assessment response goes through the scoring model, gets a band and
-    may enter the teacher queue. A practice attempt is NEVER given a band: a
-    practice task is a short constrained exercise (use given words, read a
-    passage aloud) that lies outside the exam responses the model learned from,
-    and the model's error is larger than the real progress made in a few weeks.
-    Practice gets rule-based feedback only, with no teacher in the loop.
-    """
-
-    ASSESSMENT = "assessment"
-    PRACTICE = "practice"
-
-
 class MissionKind(str, Enum):
     """Seven kinds of practice mission, each one a fixed rule applied to the recording. D023.
 
@@ -875,8 +859,6 @@ class Response(BaseModel):
     # tu lau nhung khong duoc luu vao ket qua, nen bao cao khong noi duoc sinh
     # vien da tra loi ban de nao. Rong o ban ghi cu.
     prompt_version: str | None = None
-    # D023. Only on practice attempts; empty for assessment responses.
-    practice: PracticeResult | None = None
     # D060: the teachers' decisions on this response, oldest first. Part of the
     # response (`Response ◆ Review`): they live and go with it. Kept out of the
     # stored report -- the repository keeps them beside it and fills them in.

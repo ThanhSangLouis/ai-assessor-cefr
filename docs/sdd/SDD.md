@@ -987,13 +987,14 @@ File: `docs/sdd/diagrams/05_erd.mmd`
 %% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
 %% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
 %% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
-%% in A4: hinh 5c ve dinh danh, hinh 5d ve cham mu va thuc nghiem.
+%% in A4: hinh 5c ve dinh danh; viec duyet tach thanh review_session (D082).
 %% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
+    response ||--o| review_session : "việc duyệt · response_id (D082)"
     account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
-    classroom }o--o{ task : "giao · assignments.task_id"
+    account ||--o{ audit_log : "ghi · actor_id"
 
     account {
         string account_id PK "chi tiết ở hình 5c"
@@ -1004,14 +1005,11 @@ erDiagram
         string title
         string prompt_text
         string prompt_version
-        string part "phần thi, ví dụ P3"
         int min_seconds
         int max_seconds
         string topic_keywords "từ khóa chủ đề, rỗng là đề mở (D022)"
-        string purpose "assessment · practice (D023)"
-        string criterion "chỉ đề luyện tập"
-        string band "chỉ đề luyện tập"
-        string reference_text "đoạn đọc theo, chỉ đề luyện tập"
+        string band "A1 … C2, tên đề là Đề band (D076, D078)"
+        int active "đề còn giao"
     }
 
     response {
@@ -1023,21 +1021,21 @@ erDiagram
         string overall_band "A1 … C2 (D059)"
         int teacher_verified
         string report_json "toàn bộ báo cáo, nguồn sự thật"
-        string purpose "assessment · practice"
         array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
-        object review_lock "ai đang duyệt, tới lúc nào"
-        array review_visits "mở bài, kết thúc, hành động (D041)"
         array replay_labels "tự nghe lại (D056)"
-        array machine_seen "ai đã thấy điểm máy, qua đâu"
         object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
+    }
+
+    review_session {
+        string response_id UK "mỗi bài một phiên"
+        object lock "ai đang giữ bài để duyệt, tới lúc nào"
+        array visits "mở bài, kết thúc, hành động (D041)"
     }
 
     classroom {
         string class_id PK
-        string code UK "mã tham gia"
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
-        array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
 
     audit_log {
@@ -1050,7 +1048,7 @@ erDiagram
     }
 
     system {
-        string key PK "assessment.active_model, assessment.coach_tier (D073), billing.organization, coach_usage.ngày (D072), ..."
+        string key PK "theo phần: assessment.*, billing.*, coach_usage.*"
         string value
         string version "chỉ với cấu hình assessment.*"
     }
@@ -1092,6 +1090,9 @@ erDiagram
         int daily_goal_s "D029"
         array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
         object seen_markers "tên dấu → lúc xem (D028)"
+        object email_codes "mã gửi qua email, chỉ lưu băm (D079)"
+        int email_reminders "nhắc học qua email (D079)"
+        string reminder_sent_on "ngày đã gửi thư nhắc (D079)"
     }
 
     session {

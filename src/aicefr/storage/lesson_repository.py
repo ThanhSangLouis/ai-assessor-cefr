@@ -84,7 +84,7 @@ PATH_FIELDS = (
     "band_from",
     "band_to",
     "status",
-    "sample",
+    "built_in",
     "created_by",
     "created_at",
     "updated_at",
@@ -181,7 +181,8 @@ class LessonPath:
     band_from: Band | None = None
     band_to: Band | None = None
     status: PathStatus = PathStatus.DRAFT
-    sample: int = 0
+    # Shipped with the system (D085, `sample` before): the seed keeps it in shape.
+    built_in: int = 0
     created_by: str | None = None
     created_at: str = ""
     updated_at: str = ""
@@ -296,7 +297,7 @@ class LessonRepository(MongoStore):
                     SAMPLE_PATH["band_to"],
                     by="system",
                     path_id=SAMPLE_PATH_ID,
-                    sample=True,
+                    built_in=True,
                     status="published",
                 )
             except IntegrityError:
@@ -373,7 +374,7 @@ class LessonRepository(MongoStore):
         band_to: Band | None = None,
         by: str | None = None,
         path_id: str | None = None,
-        sample: bool = False,
+        built_in: bool = False,
         status: str = "draft",
     ) -> str:
         now = _now()
@@ -384,7 +385,7 @@ class LessonRepository(MongoStore):
             band_from=Band(band_from) if band_from else None,
             band_to=Band(band_to) if band_to else None,
             status=PathStatus(status),
-            sample=int(sample),
+            built_in=int(built_in),
             created_by=by,
             created_at=now,
             updated_at=now,
@@ -412,7 +413,7 @@ class LessonRepository(MongoStore):
         rows = (
             self.col("path")
             .find(query)
-            .sort([("sample", ASCENDING), ("created_at", ASCENDING), ("_id", ASCENDING)])
+            .sort([("built_in", ASCENDING), ("created_at", ASCENDING), ("_id", ASCENDING)])
         )
         return [LessonPath.from_doc(r).view() for r in rows]
 

@@ -401,7 +401,7 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
                 raise HTTPException(409, "một bài trong đề xuất không còn được xuất bản")
             lesson = found[0].model_copy(deep=True)
             lesson.lesson_id = new_id("l")
-            lesson.sample = False
+            lesson.built_in = False
             lessons.append(lesson)
         copies.append((u, lessons))
 

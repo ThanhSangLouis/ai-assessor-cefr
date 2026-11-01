@@ -29,7 +29,6 @@ PAGES = [
     "/admin",
     "/practice",
     "/practice/PR-FLU-A2",
-    "/practice/results/abc123",
 ]
 
 # SRS section 11.3 forbids any wording that implies the system issues a certificate or

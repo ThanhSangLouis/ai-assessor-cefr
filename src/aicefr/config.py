@@ -232,9 +232,6 @@ class Settings:
     price_extra_minute_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.7)
     )
-    price_practice_factor: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PRACTICE_FACTOR", 0.5)
-    )
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
     # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
     price_upgrade_runs: float = field(

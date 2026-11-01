@@ -44,7 +44,7 @@
 | --- | --- | --- | --- |
 | TC-ME-U01 | `test_a_recording_up_to_a_minute_is_one_run` | AC-85.1 | 1, 35, 60 giây đều là 1 lượt = 2.000 IDPoint (D057) |
 | TC-ME-U02 | `test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five` | AC-85.1 | 61 và 120 giây là 3.400; 300 giây và dài hơn là 7.600 |
-| TC-ME-U03 | `test_practice_pays_half` | FR-85 | Bài luyện tập 0,5 lượt = 1.000 IDPoint |
+| ~~TC-ME-U03~~ *(gỡ bởi D083)* | ~~`test_practice_pays_half`~~ | FR-85 | Bài luyện tập 0,5 lượt = 1.000 IDPoint |
 | TC-ME-U04 | `test_a_cycle_starts_on_the_sixteenth` | FR-85 | Chu kỳ đổi lúc 0 giờ ngày 16, qua năm đúng |
 | TC-ME-U05 | `test_counted_output_tokens_win_over_the_estimate_from_words` | FR-85 | Token do bộ nhận dạng đếm được dùng trước; không có thì ước lượng từ số từ và ghi là ước lượng (D057) |
 | TC-ME-U06 | `test_audio_tokens_are_whispers_windows_plus_the_language_check` | FR-85 | 1.500 token mỗi cửa sổ 30 giây, thêm 1 cửa sổ kiểm tra ngôn ngữ; ghi kèm bút toán để tính giá vốn |

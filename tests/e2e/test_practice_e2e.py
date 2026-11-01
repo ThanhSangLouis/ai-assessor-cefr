@@ -1,13 +1,11 @@
-"""Layer 3 -- E2E: a real user in a real browser, practice mode (D023).
+"""Layer 3 -- E2E: the server and browser fixtures every E2E module shares.
 
-Each test walks the learner's own path: log in through the form, click
-buttons, pick a file or record with the fake microphone, wait for the page to
-move on, read the exact text on screen. The server and browser fixtures are
-defined below.
+The practice cases of D023 that lived here went with the practice tasks
+(D083); the other E2E modules import these fixtures and helpers by name. A
+test walks the learner's own path: log in through the form, click buttons,
+pick a file or record with the fake microphone, read the exact text on screen.
 
 Run:  pytest -m e2e   (needs `pip install -e ".[e2e]"` and `playwright install chromium`)
-
-Test case ids (TC-PR-Exx) are listed in `docs/test/TEST_PLAN_D023.md`.
 
 Infrastructure (server and browser fixtures) lives in this module rather than in
 a `conftest.py`: the older tests import helpers with `from conftest import ...`,
@@ -30,7 +28,6 @@ from __future__ import annotations
 import io
 import itertools
 import os
-import re
 import socket
 import subprocess
 import sys
@@ -47,7 +44,6 @@ import soundfile as sf
 
 pytest.importorskip("playwright.sync_api")
 
-from playwright.sync_api import expect  # noqa: E402
 
 PASSWORD = "matkhau-kiem-thu"
 COH_TEXT = "I like pho because it is tasty and cheap but I do not like durian so I never eat it"
@@ -225,120 +221,3 @@ def wait_until(page, expression: str, timeout_s: float = 10.0) -> None:
             return
         page.wait_for_timeout(100)
     raise AssertionError(f"timed out waiting for: {expression}")
-
-
-@pytest.fixture
-def student(context, live_server):
-    """A new student, logged in, on the practice home."""
-    page = context.new_page()
-    login(page, live_server, live_server.account())
-    page.goto("/practice")
-    return page
-
-
-def submit_file(page, live_server, task_id: str, name: str = "full-35s.wav") -> None:
-    """A practice attempt sent the way an earlier task page sent it, then its result page.
-
-    The task pages are folded into the lesson path (D068); results of practice
-    attempts are still read on /practice/results/<id>.
-    """
-    r = page.request.post(
-        "/api/v1/responses",
-        multipart={
-            "audio": {
-                "name": name,
-                "mimeType": "audio/wav",
-                "buffer": (live_server.files / name).read_bytes(),
-            },
-            "task_id": task_id,
-        },
-    )
-    assert r.ok, r.text()
-    page.goto(f"/practice/results/{r.json()['response_id']}")
-
-
-# The practice home of D023 (suggestion, goal ring, 15-task path) was replaced
-# by the lesson path of D025; its cases live in tests/e2e/test_lessons_e2e.py.
-# The task pages went in D068: their cases (TC-PR-E02, E03, E09, E14) went with them.
-
-
-def test_uploading_a_file_leads_to_a_result_with_evidence(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2")
-    expect(student.locator(".practice-banner")).to_contain_text("Hoàn thành nhiệm vụ")
-    expect(student.locator(".practice-banner")).to_contain_text("2/2 mục tiêu")
-    expect(student.locator(".mission.met")).to_have_count(2)
-    expect(student.locator(".hit-seek").filter(has_text="because")).to_have_count(1)
-    expect(student.locator(".takeaway")).to_contain_text("hoàn thành mọi mục tiêu")
-
-
-def test_clicking_evidence_seeks_the_recording(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2")
-    chip = student.locator(".hit-seek").filter(has_text="because")
-    seconds = float(chip.get_attribute("data-seconds"))
-    wait_until(student, "document.getElementById('player').readyState >= 1")
-    chip.click()
-    at = student.evaluate("document.getElementById('player').currentTime")
-    assert at == pytest.approx(max(0.0, seconds - 0.3), abs=0.6)
-
-
-def test_continue_button_opens_the_lesson_path(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2")
-    student.get_by_role("link", name="Luyện tiếp theo lộ trình").click()
-    student.wait_for_url(lambda url: urlparse(url).path == "/practice")
-
-
-def test_too_short_file_is_rejected_with_reason_and_not_counted(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2", name="short-10s.wav")
-    expect(student.locator(".practice-banner")).to_contain_text("Bản ghi chưa dùng được")
-    expect(student.locator(".practice-banner")).to_contain_text("quá ngắn")
-    rid = urlparse(student.url).path.rsplit("/", 1)[-1]
-    daily = student.request.get(f"/api/v1/practice/attempts/{rid}").json()["daily"]
-    assert daily["today"] == 0
-
-
-def test_another_learner_cannot_see_your_result(student, live_server, browser):
-    submit_file(student, live_server, "PR-COH-A2")
-    url = student.url
-    other_ctx = browser.new_context(base_url=live_server.base_url)
-    try:
-        other = other_ctx.new_page()
-        login(other, live_server, live_server.account())
-        other.goto(url)
-        expect(other.locator("#practice-result")).to_contain_text("Không tìm thấy lần luyện này")
-        expect(other.locator(".mission")).to_have_count(0)
-    finally:
-        other_ctx.close()
-
-
-def test_my_responses_tags_practice_and_opens_its_result(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2")
-    result_url = student.url
-    student.goto("/my-responses")
-    row = student.locator(".response-item", has_text="Luyện tập · Mạch lạc A2")
-    expect(row).to_have_count(1)
-    expect(row).to_contain_text("Không chấm")
-    row.get_by_role("link").first.click()
-    student.wait_for_url(result_url)
-
-
-def test_teacher_sees_class_practice_without_per_student_rows(student, live_server, browser):
-    submit_file(student, live_server, "PR-COH-A2")
-    ctx = browser.new_context(base_url=live_server.base_url)
-    try:
-        teacher = ctx.new_page()
-        gv = live_server.account("teacher")
-        # D071: a teacher's statistics count their classes' students.
-        live_server.teach(gv, student.request.get("/api/v1/me").json()["pseudonym"])
-        login(teacher, live_server, gv, "/review/stats")
-        section = teacher.get_by_role("heading", name="Luyện tập của lớp")
-        expect(section).to_be_visible()
-        expect(teacher.locator("#stats-panel")).to_contain_text("lần luyện đã xử lý")
-        assert "E2E-ST" not in teacher.locator("#stats-panel").inner_text()
-    finally:
-        ctx.close()
-
-
-def test_states_are_readable_by_screen_readers(student, live_server):
-    submit_file(student, live_server, "PR-COH-A2")
-    hidden = student.locator(".mission .visually-hidden").first
-    expect(hidden).to_have_text(re.compile("Hoàn thành"))

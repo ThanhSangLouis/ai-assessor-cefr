@@ -1,4 +1,5 @@
-"""Layer 1 -- UNIT: pure logic of the practice mode (D023).
+"""Layer 1 -- UNIT: the exercise bank and the mission rules of D023, which the path's
+lessons are built from and checked with (D083: no practice task of its own any more).
 
 No database, no HTTP, no audio. Each test calls one pure function with
 hand-written data and checks the exact result. Test case ids (TC-PR-Uxx) and
@@ -34,9 +35,7 @@ from aicefr.practice.bank import (
     BAND_ORDER,
     PATH_ORDER,
     PRACTICE_TASKS,
-    practice_task_id,
 )
-from aicefr.practice.feedback import previous_measures, takeaway
 from aicefr.practice.missions import MAX_HITS, MissionChecker, describe_measure, normalize
 from aicefr.practice.streak import local_day, streak_length, summarize
 from aicefr.storage.task_repository import DEFAULT_TASKS
@@ -95,9 +94,6 @@ def test_bank_has_one_task_per_criterion_and_band():
     assert len(PRACTICE_TASKS) == 30
     assert cells == {(c, b) for c in PATH_ORDER for b in BAND_ORDER}
     assert len({t.task_id for t in PRACTICE_TASKS}) == 30
-    for c in PATH_ORDER:
-        for b in BAND_ORDER:
-            assert practice_task_id(c, b) == f"PR-{c.value[:3].upper()}-{b.value}"
 
 
 def test_every_task_has_missions_tips_and_a_duration_above_the_qc_floor():
@@ -397,61 +393,3 @@ def test_summary_counts_today_and_seven_days():
 def test_summary_before_practising_today():
     s = summarize(["2026-10-05T01:00:00+00:00"], datetime(2026, 10, 6, 5, tzinfo=UTC), goal=2)
     assert s.today == 0 and not s.goal_met and not s.practiced_today and s.streak == 1
-
-
-# ================================================================= advice (FR-43)
-
-
-def test_takeaway_comes_from_first_unmet_mission_and_suggests_missing_words():
-    mission = use(3, "and", "but", "because", "so")
-    result = MissionChecker().check(_Task(mission, speak()), transcript("I like it and so on"), [])
-    text = takeaway(result, (mission, speak()))
-    assert "but" in text and "because" in text and "Đếm được 2" in text
-
-
-@pytest.mark.parametrize(
-    ("kind", "measured", "hits", "expect"),
-    [
-        (MissionKind.SPEAK_SECONDS, 21.0, [], "còn thiếu 9,0 giây"),
-        (MissionKind.MAX_PAUSE, 3.4, [("Khoảng lặng", 21.0)], "bắt đầu ở 0:21"),
-        (MissionKind.UNIQUE_WORDS, 20.0, [], "20 từ khác nhau"),
-        (MissionKind.PAST_VERBS, 2.0, [], "2 động từ quá khứ"),
-        (MissionKind.CONDITIONALS, 1.0, [], "1 câu điều kiện"),
-        (MissionKind.READ_ALOUD, 0.5, [("market", None)], "Máy chưa nghe ra: market"),
-        (MissionKind.READ_ALOUD, 0.5, [], "Đọc chậm và rõ hơn"),
-    ],
-)
-def test_every_unmet_mission_kind_gets_specific_advice(kind, measured, hits, expect):
-    c = MissionCheck(
-        kind=kind,
-        label="x",
-        target=30 if kind is MissionKind.SPEAK_SECONDS else 3,
-        measured=measured,
-        met=False,
-        hits=[MissionHit(text=t, start_s=s) for t, s in hits],
-    )
-    assert expect in takeaway(PracticeResult(task_id="t", checks=[c]), ())
-
-
-def test_takeaway_when_all_met_and_when_unmeasured():
-    met = check(MissionKind.SPEAK_SECONDS, 2, True)
-    unknown = check(MissionKind.MAX_PAUSE, None, None)
-    assert "hoàn thành mọi mục tiêu" in takeaway(PracticeResult(task_id="t", checks=[met]), ())
-    assert "chưa đo được" in takeaway(PracticeResult(task_id="t", checks=[met, unknown]), ())
-
-
-def test_takeaway_does_not_suggest_words_from_a_changed_task():
-    c = MissionCheck(kind=MissionKind.USE_WORDS, label="x", target=3, measured=1, met=False)
-    text = takeaway(PracticeResult(task_id="t", checks=[c]), (speak(),))
-    assert "thử thêm" not in text and "Đếm được 1" in text
-
-
-def test_previous_measures_compare_only_same_kind():
-    a = check(MissionKind.SPEAK_SECONDS, 20, True)
-    b = check(MissionKind.MAX_PAUSE, 2, False)
-    now = PracticeResult(task_id="t", checks=[a, b])
-    before = PracticeResult(task_id="t", checks=[a.model_copy(update={"measured": 10}), a])
-    assert previous_measures(now, before) == [10, None]
-    assert previous_measures(now, None) == [None, None]
-    shorter = PracticeResult(task_id="t", checks=[a.model_copy(update={"measured": 15})])
-    assert previous_measures(now, shorter) == [15, None]

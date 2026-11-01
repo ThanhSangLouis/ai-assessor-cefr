@@ -201,7 +201,7 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     LessonRepository(tmp_path / "fresh.db")  # a restart must not seed it twice
 
     [path] = repo.paths(published_only=True)
-    assert path["path_id"] == SAMPLE_PATH_ID and path["sample"] == 1
+    assert path["path_id"] == SAMPLE_PATH_ID and path["built_in"] == 1
     assert "chờ giảng viên" not in path["description"]  # D078: approved content, no label
     units = repo.outline(SAMPLE_PATH_ID)
     # Six levels in order (D059), each through units on different topics.
@@ -214,11 +214,11 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     items = [item for u in units for item in u["lessons"]]
     assert len(items) == 46
     assert all(item["published_version"] == 1 for item in items)
-    assert all(item["lesson"].sample for item in items)
+    assert all(item["lesson"].built_in for item in items)
     assert all(item["lesson"].steps[-1].kind is StepKind.FREE for item in items)
 
     home = login_as(m, "SV-001").get("/api/v1/learn").json()
-    assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["sample"] is True
+    assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["built_in"] is True
     assert home["path"]["lessons_total"] == 46 and home["path"]["lessons_completed"] == 0
     assert home["next"]["lesson_id"] == "lesson-pr-flu-a1" and home["next"]["basis"] == "path_order"
 

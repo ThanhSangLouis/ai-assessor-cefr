@@ -35,7 +35,7 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | TC-UI-E03 | `test_recording_waits_for_listen_back_before_anything_is_sent` | UX-03 | Âm | Ghi bằng micro giả, dừng: hiện bước nghe lại; phím cách và chờ đợi không gửi gì; "Ghi lại" ghi tiếp |
 | TC-UI-E04 | `test_uploaded_file_is_heard_back_then_submitted_to_a_report` | UX-04 | Thuận | Chọn file: hiện tên và độ dài 0:35, nút "Chọn file khác"; nộp xong tới báo cáo có bước tiếp và liên kết từng phần |
 | TC-UI-E05 | `test_chosen_prompt_sits_above_the_record_button` | UX-05 | Thuận | Chọn đề thứ hai: đề hiện đầy đủ trên nút ghi âm, mã đề gửi đi đổi theo |
-| TC-UI-E06 | `test_my_responses_filters_assessments_from_practice` | UX-07 | Thuận | Một bài đánh giá, một bài luyện: lọc Luyện tập còn một dòng "Không chấm", lọc Đánh giá còn dòng kia |
+| TC-UI-E06 | `test_my_responses_lists_assessments_without_a_kind_filter` | UX-07 | Âm | Một bài đánh giá; đề luyện tập bị từ chối (422) và không còn bộ lọc Đánh giá/Luyện tập (D083) |
 | TC-UI-E08 | `test_teacher_opens_the_next_free_response_and_reads_names_not_codes` | UX-08 | Thuận | "Duyệt bài tiếp theo" mở một bài; thẻ máy chấm không còn mã dạng `A_B`; lý do soạn sẵn chèn vào ô lý do |
 | TC-UI-E09 | `test_admin_edits_a_threshold_and_the_submit_page_follows` | UX-10 | Thuận | Sửa ngưỡng ngắn nhất 20 → 15 giây: phiên bản mới, trang nộp bài của sinh viên ghi "15 đến" (từ D026, `/` đưa quản trị viên về trang quản trị); trả lại 20 sau ca |
 | TC-UI-E10 | `test_admin_activation_asks_first_and_only_compatible_models_offer_it` | UX-10 | Âm | Mô hình không tương thích hoặc hỏng không có nút kích hoạt; bấm kích hoạt rồi Huỷ thì mô hình đang chấm không đổi |

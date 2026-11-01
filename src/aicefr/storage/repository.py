@@ -27,7 +27,6 @@ from aicefr.contracts import (
     Review,
     ReviewLock,
     ReviewSession,
-    TaskPurpose,
 )
 from aicefr.infra.blobs import key_of
 from aicefr.storage.audit_repository import prepare as prepare_audit
@@ -46,8 +45,8 @@ from aicefr.storage.db import now_iso as _now
 # The collections of the assessment service and the indexes that stand for the
 # former primary keys and UNIQUE constraints.
 #
-# response.purpose is 'practice' for a practice attempt (D023): never in the
-# teacher queue, the research export, or the class scoring statistics.
+# Every response is an assessment since D083: the practice attempts of D023
+# and their `purpose` are gone (migration 14).
 # A response's document holds its parts (D060): `reviews` (each teacher
 # decision) and `replay_labels` (guided listening, D056). Reviewing it is a
 # `review_session` of its own (D082), at most one per response: `lock` (who may
@@ -198,7 +197,6 @@ class Repository(MongoStore):
         account_id: str | None = None,
         audio_path: str | None = None,
         must_exist: bool = False,
-        purpose: TaskPurpose | None = None,
     ) -> bool:
         """Ghi mot bao cao. Tra False khi tu choi ghi.
 
@@ -266,8 +264,6 @@ class Repository(MongoStore):
             ),
             "account_id": keep("account_id", account_id),
             "audio_path": keep("audio_path", audio_path),
-            "purpose": keep("purpose", purpose.value if purpose else None)
-            or TaskPurpose.ASSESSMENT.value,
         }
         if must_exist:
             # The worker's path updates, and only a response that still waits:
@@ -416,7 +412,6 @@ class Repository(MongoStore):
                 "overall_band",
                 "teacher_verified",
                 "created_at",
-                "purpose",
             ),
         )
 
@@ -590,15 +585,12 @@ class Repository(MongoStore):
         students and no teacher leaderboard, because a screen that ranks people
         gets used to rank people.
         """
-        # The numbers about the SCORING MACHINE count assessment responses only
-        # (D023): practice is never scored, and counting it would make "responses"
-        # and "scored responses" drift apart for no reason anyone could explain.
         responses = self.col("response")
         # D071: a teacher's statistics are their classes' students; None, everyone's.
         scope: dict = {} if owners is None else {"account_id": {"$in": sorted(owners)}}
         assessed = list(
             responses.find(
-                {"purpose": "assessment", **scope},
+                scope,
                 {"overall_band": 1, "task_id": 1, "status": 1, "account_id": 1},
             )
         )
@@ -675,78 +667,7 @@ class Repository(MongoStore):
                 # of zero would read as "teachers never agree with the model".
                 "rate": round(kept / len(decisions), 3) if decisions else None,
             },
-            "practice": self.practice_summary(owners),
         }
-
-    def practice_summary(self, owners: set[str] | None = None) -> dict:
-        """How far the class has got with practice, per criterion. D023, outline 1.7.
-
-        Totals only, no row per learner: this screen tells a teacher which criterion
-        the class is stumbling on so they can pick work for the whole class, not who
-        practises more than whom.
-        """
-        from aicefr.practice.bank import PRACTICE_TASKS
-
-        criterion_of = {t.task_id: t.criterion.value for t in PRACTICE_TASKS}
-        rows = list(
-            self.col("response").find(
-                {
-                    "purpose": "practice",
-                    "status": ResponseStatus.COMPLETED.value,
-                    **({} if owners is None else {"account_id": {"$in": sorted(owners)}}),
-                },
-                {"account_id": 1, "task_id": 1, "report_json": 1},
-            )
-        )
-        by_criterion: dict[str, dict[str, int]] = {}
-        done = 0
-        for r in rows:
-            cell = by_criterion.setdefault(
-                criterion_of.get(r["task_id"], "khac"), {"attempts": 0, "completed": 0}
-            )
-            cell["attempts"] += 1
-            if _practice_completed(r.get("report_json")):
-                cell["completed"] += 1
-                done += 1
-        return {
-            "attempts": len(rows),
-            "learners": len({r["account_id"] for r in rows if r.get("account_id")}),
-            "completed": done,
-            "by_criterion": by_criterion,
-        }
-
-    # ---------- practice (D023) ----------
-
-    def practice_attempts(self, account_id: str, task_id: str | None = None) -> list[dict]:
-        """One learner's practice attempts, oldest first, with the outcome of each.
-
-        Rejected attempts (REJECTED, FAILED) are included: the task page has to say
-        "your last attempt was rejected for too much silence" rather than act as if it
-        never happened. The streak and the learning path count processed attempts only.
-        """
-        query = {"account_id": account_id, "purpose": "practice"}
-        if task_id is not None:
-            query["task_id"] = task_id
-        # _id keeps submission order when two attempts share a second
-        # (created_at only has second precision).
-        rows = (
-            self.col("response").find(query).sort([("created_at", ASCENDING), ("_id", ASCENDING)])
-        )
-        out = []
-        for r in rows:
-            result = (json.loads(r.get("report_json") or "{}").get("practice")) or {}
-            out.append(
-                {
-                    "response_id": r["response_id"],
-                    "task_id": r["task_id"],
-                    "status": r["status"],
-                    "created_at": r["created_at"],
-                    "completed": result.get("completed"),
-                    "met_count": result.get("met_count"),
-                    "total": len(result.get("checks") or []) or None,
-                }
-            )
-        return out
 
     def assessments_by_account(self, since: str, until: str) -> dict[str, int]:
         """Assessments submitted in [since, until), per account (D033: the monthly figure).
@@ -756,7 +677,6 @@ class Repository(MongoStore):
         """
         rows = self.col("response").find(
             {
-                "purpose": "assessment",
                 "account_id": {"$ne": None},
                 "created_at": {"$gte": since, "$lt": until},
             },
@@ -768,7 +688,7 @@ class Repository(MongoStore):
         return out
 
     def latest_assessment(self, account_id: str) -> dict | None:
-        """The latest scored assessment: the basis for suggesting practice.
+        """The latest scored assessment: the basis for suggesting what to learn next.
 
         The band is the one stored on the response, i.e. the teacher's band if
         the response was reviewed. `weakest_criteria` is empty for responses
@@ -776,7 +696,7 @@ class Repository(MongoStore):
         then does not rely on a weakest criterion rather than guess one.
         """
         row = self.col("response").find_one(
-            {"account_id": account_id, "purpose": "assessment", "overall_band": {"$ne": None}},
+            {"account_id": account_id, "overall_band": {"$ne": None}},
             sort=[("created_at", DESCENDING), ("_id", DESCENDING)],
         )
         if row is None:
@@ -1032,7 +952,7 @@ class Repository(MongoStore):
         }
         out = []
         for r in rows:
-            item = fields(r, (*LIST_FIELDS, "purpose"))
+            item = fields(r, LIST_FIELDS)
             item["reviewed_at"] = latest.get(r["response_id"])  # type: ignore[index]
             out.append(item)
         return out  # type: ignore[return-value]
@@ -1046,7 +966,7 @@ class Repository(MongoStore):
         has not opened their list yet has not seen any of those decisions.
         """
         rows = self.col("response").find(
-            {"account_id": account_id, "purpose": "assessment", "reviews.0": {"$exists": True}},
+            {"account_id": account_id, "reviews.0": {"$exists": True}},
             {"reviews": 1},
         )
         return sum(
@@ -1057,7 +977,7 @@ class Repository(MongoStore):
         self, exclude: Collection[str] = (), owners: set[str] | None = None
     ) -> int:
         """Assessed responses waiting in the queue, less `exclude`; `owners` only (D071)."""
-        query: dict = {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"}
+        query: dict = {"status": ResponseStatus.REVIEW_REQUIRED.value}
         if owners is not None:
             query["account_id"] = {"$in": sorted(owners)}
         rows = self.col("response").find(query, {"response_id": 1})
@@ -1089,7 +1009,7 @@ class Repository(MongoStore):
         of the queue in a real term. `owners` keeps a teacher's queue to the
         students of their classes (D071); None is everyone's.
         """
-        query: dict = {"status": status.value, "purpose": "assessment"}
+        query: dict = {"status": status.value}
         if owners is not None:
             query["account_id"] = {"$in": sorted(owners)}
         rows = list(
@@ -1329,10 +1249,6 @@ def _upgrade(stored: dict | None) -> CoachUpgrade | None:
         return None
 
 
-def _practice_completed(report_json: str | None) -> bool:
-    return bool((json.loads(report_json or "{}").get("practice") or {}).get("completed"))
-
-
 def _profile_row(row: dict) -> dict:
     """One profile row: a verified result plus the criterion to practise first (D022).
 
@@ -1341,20 +1257,15 @@ def _profile_row(row: dict) -> dict:
     Responses saved before D022 carry no indicators, so both fields stay empty
     rather than guessed.
 
-    D023 ADDS `next_task_id`: the practice task for the weakest criterion at the
-    verified band, so another system reading the profile (topics 3, 5 and 8 of
-    ALDM-L) can open the right practice task. `next_task_hint` keeps its meaning.
+    The `next_task_id` of D023, a practice task, went with the practice tasks (D083).
     """
-    from aicefr.contracts import Band, Criterion
-    from aicefr.practice.bank import practice_task_id
+    from aicefr.contracts import Criterion
     from aicefr.report.comments import NEXT_TASK_HINTS
 
     report = json.loads(row.pop("report_json") or "{}")
     weak = [Criterion(c) for c in ((report.get("assessment") or {}).get("weakest_criteria") or [])]
     row["weakest_criteria"] = [c.value for c in weak]
     row["next_task_hint"] = NEXT_TASK_HINTS[weak[0]] if weak else None
-    band = row.get("overall_band")
-    row["next_task_id"] = practice_task_id(weak[0], Band(band)) if weak and band else None
     return row
 
 

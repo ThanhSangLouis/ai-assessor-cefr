@@ -822,7 +822,7 @@ def test_sample_path_runs_by_level_and_topic_with_one_lesson_per_practice_task()
     for unit in SAMPLE_UNITS:
         assert all(lesson.band is unit["band"] for lesson in by_unit[unit["unit_id"]])
     for lesson in lessons:
-        assert lesson.sample and lesson.steps[-1].kind is StepKind.FREE
+        assert lesson.built_in and lesson.steps[-1].kind is StepKind.FREE
         # Fixed step ids: re-seeding never orphans a stored attempt.
         assert [s.step_id for s in lesson.steps] == [
             f"{lesson.lesson_id}-s{i}" for i in range(1, len(lesson.steps) + 1)

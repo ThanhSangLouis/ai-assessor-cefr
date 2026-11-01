@@ -36,7 +36,6 @@ from pathlib import Path
 
 from pymongo import DESCENDING, ReturnDocument
 
-from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, UNITS_PER_RUN, TokenUsage
 from aicefr.storage.db import IntegrityError, MongoStore
 from aicefr.storage.db import now_iso as _now
@@ -44,10 +43,9 @@ from aicefr.storage.migrations import ensure_current
 
 
 class MeteredAction(str, Enum):
-    """What a ledger entry paid for: a recording of either purpose, (D072) an
-    upgraded answer, or (D075) a teacher's lesson draft. The first two carry the
-    values of `TaskPurpose`, so the entries written before D072 read back
-    unchanged."""
+    """What a ledger entry paid for: a recording, (D072) an upgraded answer, or
+    (D075) a teacher's lesson draft. PRACTICE is a recording of a practice task
+    (D023): none is made since D083, the entries made before keep it."""
 
     ASSESSMENT = "assessment"
     PRACTICE = "practice"
@@ -286,13 +284,13 @@ class MeteringRepository(MongoStore):
             )
         self._add_to_wallet(user_ref, wallet)
 
-    def entry(self, key: str, action: TaskPurpose | MeteredAction) -> dict | None:
+    def entry(self, key: str, action: MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
     def hold(
         self,
         user_ref: str,
-        action: TaskPurpose | MeteredAction,
+        action: MeteredAction,
         key: str,
         units: int,
         version: str = PRICE_VERSION,
@@ -341,7 +339,7 @@ class MeteringRepository(MongoStore):
     def settle(
         self,
         key: str,
-        action: TaskPurpose | MeteredAction,
+        action: MeteredAction,
         result: bool,
         charge: int | None = None,
         usage: TokenUsage | None = None,

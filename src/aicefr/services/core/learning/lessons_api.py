@@ -376,7 +376,7 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
                     "steps": st.total,
                     "passed": st.passed,
                     "status": "completed" if complete else st.status,
-                    "sample": lesson.sample,
+                    "built_in": lesson.built_in,
                     "kinds": [s.kind.value for s in lesson.steps],
                 }
             )
@@ -406,7 +406,7 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
     facts, have, _new = _award(account, all_rows)
     return {
         "paths": [
-            {"path_id": p["path_id"], "title": p["title"], "sample": bool(p["sample"])}
+            {"path_id": p["path_id"], "title": p["title"], "built_in": bool(p["built_in"])}
             for p in paths
         ],
         "path": {
@@ -415,7 +415,7 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
             "description": chosen["description"],
             "band_from": chosen["band_from"],
             "band_to": chosen["band_to"],
-            "sample": bool(chosen["sample"]),
+            "built_in": bool(chosen["built_in"]),
             "units": units,
             "lessons_total": len(ordered),
             "lessons_completed": done_total,
@@ -1175,7 +1175,7 @@ def _lesson_summary(item: dict) -> dict:
         "kinds": [s.kind.value for s in lesson.steps],
         "published_version": item["published_version"],
         "draft_changed": item["draft_changed"],
-        "sample": lesson.sample,
+        "built_in": lesson.built_in,
     }
 
 
@@ -1197,7 +1197,7 @@ def teach_paths(account: Account = STAFF_ONLY) -> list[dict]:
                     "lessons": [_lesson_summary(i) for i in u["lessons"]],
                 }
             )
-        out.append({**p, "sample": bool(p["sample"]), "units": units})
+        out.append({**p, "built_in": bool(p["built_in"]), "units": units})
     return out
 
 

@@ -18,7 +18,6 @@ PRICES = "/api/v1/admin/prices"
 NEW = {
     "first_minute_runs": 1.5,
     "extra_minute_runs": 1.0,
-    "practice_factor": 0.5,
     "upgrade_runs": 0.4,
     "idpoint_per_run": 1000,
     "free_runs": 5,
@@ -83,7 +82,7 @@ def test_a_charge_keeps_the_price_it_was_held_under(m):
 def test_impossible_prices_are_refused_and_only_admins_set_them(m):
     admin = login_as(m, "QT-01", "admin")
     teacher = login_as(m, "GV-01", "teacher")
-    assert admin.put(PRICES, json={**NEW, "practice_factor": 0}).status_code == 422
+    assert admin.put(PRICES, json={**NEW, "first_minute_runs": -1}).status_code == 422
     assert admin.put(PRICES, json={**NEW, "packs": []}).status_code == 422
     assert admin.put(PRICES, json={**NEW, "free_runs": -1}).status_code == 422
     assert teacher.get(PRICES).status_code == 403
