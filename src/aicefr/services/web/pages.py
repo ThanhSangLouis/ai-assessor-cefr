@@ -500,6 +500,16 @@ def page_rate_one(
     )
 
 
+@router.get("/teach/tasks", response_class=HTMLResponse, tags=["web"])
+def page_teach_tasks(request: Request, account: Account | None = Depends(optional_account)):
+    """The assessment prompts by band: add, reword, retire (D076)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    if account.role is Role.STUDENT:
+        return RedirectResponse(ROLE_HOME[account.role], status_code=303)
+    return _page(request, "teach_tasks.html", account, "tasks")
+
+
 @router.get("/teach", response_class=HTMLResponse, tags=["web"])
 def page_teach(request: Request, account: Account | None = Depends(optional_account)):
     """Teachers author paths, units and lessons (D025, M16)."""

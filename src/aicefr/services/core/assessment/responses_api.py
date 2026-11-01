@@ -302,6 +302,7 @@ def list_tasks(account: Account = Depends(require_login)) -> list[dict]:
             "prompt_text": t.prompt_text,
             "prompt_version": t.prompt_version,
             "part": t.part,
+            "band": t.band.value if t.band else None,
             "min_seconds": t.min_seconds,
             "max_seconds": t.max_seconds,
             "windowed": bool(ceiling is not None and t.max_seconds > ceiling),

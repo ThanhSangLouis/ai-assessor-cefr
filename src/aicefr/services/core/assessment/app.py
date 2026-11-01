@@ -25,6 +25,7 @@ from aicefr.services.core.assessment import (
     review_api,
     scoring,
     study_api,
+    tasks_api,
 )
 from aicefr.services.core.assessment.facade import AssessmentFacade
 from aicefr.storage.classroom_repository import ClassroomRepository
@@ -96,6 +97,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             classes_api.router,
             replay_api.router,
             coach_api.router,
+            tasks_api.router,
             internal_router("assessment", facade, settings.internal_token),
         ],
         facade=facade,

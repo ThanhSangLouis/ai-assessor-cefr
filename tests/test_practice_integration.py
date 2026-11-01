@@ -67,7 +67,8 @@ def test_task_repository_seeds_30_practice_tasks_and_lists_assessment_by_default
     tasks = TaskRepository(tmp_path / "t.db")
     practice = tasks.list_active(TaskPurpose.PRACTICE)
     assert len(practice) == 30 and all(t.is_practice for t in practice)
-    assert {t.task_id for t in tasks.list_active()} == {"P3", "P4", "P5"}
+    assessment = tasks.list_active()
+    assert len(assessment) == 36 and not any(t.is_practice for t in assessment)
     loaded = tasks.get("PR-COH-B2")
     assert loaded.criterion is Criterion.COHERENCE and loaded.band is Band.B2
     assert [m.kind for m in loaded.missions] == [

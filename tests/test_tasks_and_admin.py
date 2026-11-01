@@ -62,27 +62,29 @@ def submit(c, speaker="SV-001", task="P3", name="bai.wav", data=None):
 
 def test_task_table_seeds_the_built_in_prompts(tmp_path) -> None:
     ids = [t.task_id for t in TaskRepository(tmp_path / "t.db").list_active()]
-    assert ids == ["P3", "P4", "P5"]
+    # D076: the band bank, the first two prompts among them; the long talk retired.
+    assert {"P3", "P4", "A1-P3-1", "C2-P4-3"} <= set(ids) and "P5" not in ids
+    assert len(ids) == 36
 
 
 def test_seeding_twice_does_not_duplicate(tmp_path) -> None:
     """Re-seeding on every start would overwrite an administrator's edits."""
     TaskRepository(tmp_path / "t.db")
-    assert len(TaskRepository(tmp_path / "t.db").list_active()) == 3
+    assert len(TaskRepository(tmp_path / "t.db").list_active()) == 36
 
 
 def test_de_bai_them_sau_van_den_duoc_co_so_du_lieu_da_co_san(tmp_path) -> None:
     """Skipping the seed whenever the table is non-empty hides new prompts.
 
-    A database created before P5 existed would never learn about it, so the long
-    recording path would work only on fresh installs -- that is, everywhere
+    A database created before the band bank (D076) would never learn about its
+    prompts, so they would exist only on fresh installs -- that is, everywhere
     except the machines that have real data on them.
     """
     db = tmp_path / "t.db"
     TaskRepository(db)
-    TaskRepository(db).col("task").delete_one({"task_id": "P5"})
+    TaskRepository(db).col("task").delete_one({"task_id": "C1-P3-2"})
 
-    assert "P5" in [t.task_id for t in TaskRepository(db).list_active()]
+    assert "C1-P3-2" in [t.task_id for t in TaskRepository(db).list_active()]
 
 
 def test_seed_khong_ghi_de_len_de_bai_giang_vien_da_sua(tmp_path) -> None:
@@ -99,8 +101,8 @@ def test_seed_khong_ghi_de_len_de_bai_giang_vien_da_sua(tmp_path) -> None:
 
 def test_tasks_endpoint_lists_prompts(app) -> None:
     rows = login_as(app, "SV-001", "student").get("/api/v1/tasks").json()
-    assert {r["task_id"] for r in rows} == {"P3", "P4", "P5"}
-    assert all(r["prompt_text"] for r in rows)
+    assert len(rows) == 36 and {"P3", "P4"} <= {r["task_id"] for r in rows}
+    assert all(r["prompt_text"] and r["band"] for r in rows)
 
 
 def test_de_dai_duoc_danh_dau_la_cham_theo_cua_so(app) -> None:
@@ -110,8 +112,8 @@ def test_de_dai_duoc_danh_dau_la_cham_theo_cua_so(app) -> None:
     prompt, so there is one definition of "too long to score in one pass".
     """
     rows = {r["task_id"]: r for r in login_as(app, "SV-001", "student").get("/api/v1/tasks").json()}
-    assert rows["P5"]["windowed"] is True
-    assert rows["P3"]["windowed"] is False
+    # D076 retired the long talk P5: every prompt is now inside the model's range.
+    assert "P5" not in rows and not any(r["windowed"] for r in rows.values())
 
 
 def test_unknown_task_is_refused(app) -> None:

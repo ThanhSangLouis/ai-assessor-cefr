@@ -134,7 +134,7 @@ function taskCard(t, i) {
     <label class="task${i === 0 ? " chosen" : ""}">
       <input type="radio" name="task-choice" value="${escapeHtml(t.task_id)}"${i === 0 ? " checked" : ""}>
       <span class="chosen-mark" aria-hidden="true">✓ Đã chọn</span>
-      <h3>${escapeHtml(t.task_id)} — ${escapeHtml(t.title)}</h3>
+      <h3>${escapeHtml(t.title)} <span class="task-band">${escapeHtml(t.band || "")}</span></h3>
       <p class="task-prompt">${escapeHtml(t.prompt_text)}</p>
       <p class="task-meta">
         <span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span>
@@ -150,10 +150,9 @@ function chooseTask(task) {
   chosenTask = task;
   taskIdEl.value = task.task_id;
   promptEl.innerHTML =
-    `<p class="eyebrow">Đề ${escapeHtml(task.task_id)} · ${escapeHtml(task.title)}</p>` +
+    `<p class="eyebrow">${escapeHtml(task.band || "")} · ${escapeHtml(task.title)}</p>` +
     `<p class="prompt-text">${escapeHtml(task.prompt_text)}</p>` +
-    `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây · ` +
-    `phiên bản đề <code>${escapeHtml(task.prompt_version)}</code></p>` +
+    `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây</p>` +
     '<p class="muted small" id="price-note" hidden></p>';
   recorder.repaint();
   showPrice(task);
@@ -175,39 +174,96 @@ async function showPrice(task) {
   note.hidden = false;
 }
 
-fetch("/api/v1/tasks")
-  .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json()))
-  .then((tasks) => {
+// D076: the prompts of one band, three at a time, drawn at random; "Đổi đề
+// khác" draws three others. The band starts where the learner studies (their
+// band path), else where their latest assessment put them, else A2.
+const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const SHOWN = 3;
+let allTasks = [];
+let band = "A2";
+let shown = [];
+
+function draw(pinned) {
+  const pool = allTasks.filter((t) => t.band === band);
+  const rest = pool.filter((t) => !pinned || t.task_id !== pinned.task_id);
+  for (let i = rest.length - 1; i > 0; i--) {
+    const k = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[k]] = [rest[k], rest[i]];
+  }
+  shown = (pinned ? [pinned, ...rest] : rest).slice(0, SHOWN);
+  paintTasks();
+}
+
+function paintTasks() {
+  const chips = BANDS.filter((b) => allTasks.some((t) => t.band === b))
+    .map(
+      (b) => `<label class="band-chip${b === band ? " on" : ""}"><input type="radio" name="task-band" value="${b}"${b === band ? " checked" : ""}>${b}</label>`,
+    )
+    .join("");
+  const pool = allTasks.filter((t) => t.band === band).length;
+  taskListEl.innerHTML =
+    `<div class="task-band-bar"><div class="task-bands" role="radiogroup" aria-label="Band của đề">${chips}</div>` +
+    (pool > SHOWN ? '<button type="button" class="secondary small" id="task-shuffle">Đổi đề khác</button>' : "") +
+    "</div>" +
+    '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
+    shown.map(taskCard).join("") +
+    "</div>";
+  const inputs = taskListEl.querySelectorAll('input[name="task-choice"]');
+  const mark = (input) => {
+    taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
+    input.closest(".task").classList.add("chosen");
+  };
+  inputs.forEach((input, i) => {
+    input.addEventListener("change", () => {
+      mark(input);
+      chooseTask(shown[i]);
+    });
+  });
+  taskListEl.querySelectorAll('input[name="task-band"]').forEach((r) =>
+    r.addEventListener("change", () => {
+      band = r.value;
+      draw();
+    }),
+  );
+  const shuffle = document.getElementById("task-shuffle");
+  if (shuffle) shuffle.addEventListener("click", () => draw());
+  if (inputs.length) {
+    inputs[0].checked = true;
+    mark(inputs[0]);
+    chooseTask(shown[0]);
+  }
+}
+
+async function startBand() {
+  try {
+    const r = await fetch("/api/v1/learn/bands");
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.plan && d.plan.goal && d.plan.goal.band_from) || d.suggested_from;
+  } catch (e) {
+    return null;
+  }
+}
+
+Promise.all([
+  fetch("/api/v1/tasks").then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json())),
+  startBand(),
+])
+  .then(([tasks, from]) => {
     if (!tasks) return;
     window.clearBusy(taskListEl);
     if (!tasks.length) {
       taskListEl.innerHTML =
         '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
         "<h2>Chưa có đề bài nào</h2>" +
-        "<p>Giảng viên chưa mở đề cho lớp này. Hãy quay lại sau, hoặc hỏi giảng viên phụ trách.</p></div>";
+        "<p>Trung tâm chưa mở đề đánh giá. Hãy quay lại sau.</p></div>";
       return;
     }
-    taskListEl.innerHTML =
-      '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
-      tasks.map(taskCard).join("") +
-      "</div>";
-    const inputs = taskListEl.querySelectorAll('input[name="task-choice"]');
-    const mark = (input) => {
-      taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
-      input.closest(".task").classList.add("chosen");
-    };
-    inputs.forEach((input, i) => {
-      input.addEventListener("change", () => {
-        mark(input);
-        chooseTask(tasks[i]);
-      });
-    });
+    allTasks = tasks.map((t) => ({ ...t, band: t.band || "B1" }));
     // `?task=` opens this page on that task (a reminder or a link points there).
-    const wanted = new URLSearchParams(window.location.search).get("task");
-    const first = Math.max(0, tasks.findIndex((t) => t.task_id === wanted));
-    inputs[first].checked = true;
-    mark(inputs[first]);
-    chooseTask(tasks[first]);
+    const wanted = allTasks.find((t) => t.task_id === new URLSearchParams(window.location.search).get("task"));
+    band = (wanted && wanted.band) || (BANDS.includes(from) && allTasks.some((t) => t.band === from) ? from : null) || allTasks[0].band;
+    draw(wanted);
   })
   .catch(() => {
     window.clearBusy(taskListEl);
