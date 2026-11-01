@@ -26,6 +26,7 @@ from aicefr.contracts import (
     ResponseStatus,
     Review,
     ReviewLock,
+    ReviewSession,
     TaskPurpose,
 )
 from aicefr.infra.blobs import key_of
@@ -113,13 +114,13 @@ def _record_decision(
     owner = db["response"].find_one(
         {"response_id": response_id}, {"speaker_id": 1, "task_id": 1, "account_id": 1}
     )
-    session = db["review_session"].find_one({"response_id": response_id}, {"visits": 1})
+    session = _review_session(db, response_id)
     old_score, new_score, old_band, new_band = scores
     visit = next(
         (
             v
-            for v in (session or {}).get("visits") or []
-            if v["reviewer_id"] == reviewer_id and v.get("decided_at") is None
+            for v in (session.visits if session else [])
+            if v.reviewer_id == reviewer_id and v.decided_at is None
         ),
         None,
     )
@@ -132,13 +133,22 @@ def _record_decision(
         new_band=new_band,
         reason=reason,
         created_at=_now(),
-        opened_at=visit["opened_at"] if visit else None,
+        opened_at=visit.opened_at if visit else None,
     )
     db["response"].update_one(
         {"response_id": response_id}, {"$push": {"reviews": review.model_dump(mode="json")}}
     )
     _audit(db, reviewer_id, action, response_id, reason)
     return fields(owner, ("speaker_id", "task_id", "account_id"))  # type: ignore[return-value]
+
+
+def _review_session(db: Database, response_id: str) -> ReviewSession | None:
+    row = db["review_session"].find_one({"response_id": response_id}, {"_id": 0})
+    if row is None:
+        return None
+    if row.get("lock"):
+        row["lock"] = {"response_id": response_id, **row["lock"]}
+    return ReviewSession.model_validate(row)
 
 
 class Repository(MongoStore):
@@ -454,9 +464,8 @@ class Repository(MongoStore):
         return True, None
 
     def _lock(self, response_id: str) -> ReviewLock | None:
-        row = self.col("review_session").find_one({"response_id": response_id}, {"lock": 1})
-        held = (row or {}).get("lock")
-        return ReviewLock(response_id=response_id, **held) if held else None
+        session = _review_session(self.db, response_id)
+        return session.lock if session else None
 
     def unlock_response(self, response_id: str, reviewer_id: str) -> None:
         """Release the lock. Only the current holder can release it."""

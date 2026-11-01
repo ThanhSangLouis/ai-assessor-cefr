@@ -653,6 +653,27 @@ class ReviewLock(BaseModel):
         return self.locked_until <= now
 
 
+class ReviewVisit(BaseModel):
+    """One time a teacher opened a response to review it, and how it ended. D041."""
+
+    reviewer_id: str
+    opened_at: str
+    decided_at: str | None = None
+    action: str | None = None
+
+
+class ReviewSession(BaseModel):
+    """Reviewing one response, kept apart from it (D082): at most one per response.
+
+    `lock` is who may decide now (FR-30); `visits` every opening, so a decision
+    can say when its teacher began (the lock is cleared on decision).
+    """
+
+    response_id: str
+    lock: ReviewLock | None = None
+    visits: list[ReviewVisit] = Field(default_factory=list)
+
+
 class AuditEntry(BaseModel):
     """Mot dong nhat ky kiem toan. FR-31.
 
