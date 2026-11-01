@@ -1042,9 +1042,59 @@ class Repository(MongoStore):
                 )
         return out
 
-    def upgrades_since_all(self, since: str) -> int:
-        """How many upgrades everyone asked for since `since` (ISO time): the global cap (D072)."""
-        return self.col("response").count_documents({"coach_upgrade.created_at": {"$gte": since}})
+    # ---------- the language model's use per provider day (D072) ----------
+    #
+    # One document a day in `system`, `coach_usage.<YYYY-MM-DD>`, counted up as
+    # requests go out: the global cap reads it, the administrator's dashboard
+    # reads the last days of it. Counters, not a log: nothing about what was said.
+
+    COACH_DAY_FIELDS = (
+        "requests",
+        "upgrades",
+        "failed",
+        "refused_user",
+        "refused_global",
+        "input_tokens",
+        "output_tokens",
+        "cost_usd",
+    )
+
+    def record_coach(
+        self,
+        day: str,
+        *,
+        account_id: str | None = None,
+        error: str | None = None,
+        **counts: float,
+    ) -> None:
+        """Add `counts` (names from COACH_DAY_FIELDS) to the provider day `day`."""
+        unknown = set(counts) - set(self.COACH_DAY_FIELDS)
+        if unknown:
+            raise ValueError(f"unknown counters: {sorted(unknown)}")
+        inc = {k: v for k, v in counts.items() if v}
+        if error:
+            # A field name may not hold a dot or start with a dollar sign.
+            inc["errors." + error.replace(".", "·").lstrip("$")[:120]] = 1
+        update: dict = {"$set": {"day": day, "updated_at": _now()}}
+        if inc:
+            update["$inc"] = inc
+        if account_id and counts.get("requests"):
+            update["$addToSet"] = {"accounts": account_id}
+        self.col(SYSTEM).update_one({"key": "coach_usage." + day}, update, upsert=True)
+
+    def coach_days(self, days: list[str]) -> list[dict]:
+        """The counters of each of `days`, zeros for a day nothing happened; in order."""
+        keys = ["coach_usage." + d for d in days]
+        rows = {r["day"]: r for r in self.col(SYSTEM).find({"key": {"$in": keys}})}
+        out = []
+        for d in days:
+            row = rows.get(d, {})
+            item = {"day": d, **{k: row.get(k, 0) for k in self.COACH_DAY_FIELDS}}
+            item["cost_usd"] = round(float(item["cost_usd"]), 6)
+            item["accounts"] = len(row.get("accounts") or [])
+            item["errors"] = dict(row.get("errors") or {})
+            out.append(item)
+        return out
 
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""

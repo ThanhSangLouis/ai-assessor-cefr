@@ -859,9 +859,6 @@ class CoachUpgrade(BaseModel):
     model: str
     prompt_version: str
     created_at: str
-    # D072: the tokens the provider said it used; None where it did not say.
-    input_tokens: int | None = None
-    output_tokens: int | None = None
 
 
 class Response(BaseModel):

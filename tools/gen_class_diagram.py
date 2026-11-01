@@ -285,8 +285,6 @@ CLASSES = [
             "- model: str",
             "- promptVersion: str",
             "- createdAt: datetime",
-            "- inputTokens: int",
-            "- outputTokens: int",
         ],
     ),
     _e(

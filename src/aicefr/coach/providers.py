@@ -26,6 +26,7 @@ import urllib.request
 from dataclasses import dataclass
 
 from aicefr.coach.upgrade import SCHEMA, SYSTEM, UpgradeError
+from aicefr.coach.usage import Calls
 
 logger = logging.getLogger(__name__)
 
@@ -73,15 +74,19 @@ class Provider:
         """The model's raw answer to the upgrade request."""
         return self.complete_with_usage(user)[0]
 
-    def complete_with_usage(self, user: str) -> tuple[str, dict]:
+    def complete_with_usage(self, user: str, calls: Calls | None = None) -> tuple[str, dict]:
         """The raw answer and the tokens the provider says it used (D072).
 
         `{"input_tokens": n, "output_tokens": m}`, either None when the
         provider did not say: kept with the upgrade and its ledger entry.
+        `calls` counts every request sent, retries and failures included,
+        as the provider's quota counts them.
         """
+        calls = calls if calls is not None else Calls()
         if self.name == "anthropic":
-            return _anthropic(self.model, self.key, user)
-        return _openai_compatible(OPENAI_COMPATIBLE[self.name].base_url, self.model, self.key, user)
+            return _anthropic(self.model, self.key, user, calls)
+        base_url = OPENAI_COMPATIBLE[self.name].base_url
+        return _openai_compatible(base_url, self.model, self.key, user, calls)
 
 
 def provider_from(settings) -> Provider | None:
@@ -106,8 +111,9 @@ RETRY_STATUSES = frozenset({500, 502, 503, 504})
 RETRY_WAIT_S = 2.0
 
 
-def _post(request: urllib.request.Request) -> dict:
+def _post(request: urllib.request.Request, calls: Calls) -> dict:
     for attempt in (1, 2):
+        calls.requests += 1
         try:
             with urllib.request.urlopen(request, timeout=TIMEOUT_S) as r:  # noqa: S310 - fixed https hosts
                 return json.loads(r.read().decode("utf-8"))
@@ -124,7 +130,9 @@ def _usage(input_tokens, output_tokens) -> dict:
     return {"input_tokens": as_int(input_tokens), "output_tokens": as_int(output_tokens)}
 
 
-def _openai_compatible(base_url: str, model: str, key: str, user: str) -> tuple[str, dict]:
+def _openai_compatible(
+    base_url: str, model: str, key: str, user: str, calls: Calls
+) -> tuple[str, dict]:
     body = {
         "model": model,
         "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}],
@@ -137,7 +145,7 @@ def _openai_compatible(base_url: str, model: str, key: str, user: str) -> tuple[
         method="POST",
     )
     try:
-        data = _post(request)
+        data = _post(request, calls)
     except urllib.error.HTTPError as e:
         # 429 is the free tier's daily or per-minute cap: say so, not "error".
         if e.code == 429:
@@ -154,12 +162,14 @@ def _openai_compatible(base_url: str, model: str, key: str, user: str) -> tuple[
     return text, _usage(used.get("prompt_tokens"), used.get("completion_tokens"))
 
 
-def _anthropic(model: str, key: str, user: str) -> tuple[str, dict]:
+def _anthropic(model: str, key: str, user: str, calls: Calls) -> tuple[str, dict]:
     try:
         import anthropic
     except ImportError as e:  # the `coach` extra is not installed
         raise UpgradeError("máy chủ chưa cài gói anthropic (nhóm coach)") from e
-    client = anthropic.Anthropic(api_key=key, timeout=TIMEOUT_S, max_retries=1)
+    # The SDK's own retries are invisible here, so it makes none: one request, counted.
+    client = anthropic.Anthropic(api_key=key, timeout=TIMEOUT_S, max_retries=0)
+    calls.requests += 1
     try:
         response = client.messages.create(
             model=model,
