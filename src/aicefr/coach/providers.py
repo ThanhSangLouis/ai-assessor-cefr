@@ -89,8 +89,16 @@ class Provider:
         return _openai_compatible(base_url, self.model, self.key, user, calls)
 
 
-def provider_from(settings) -> Provider | None:
-    """The configured provider, or None when the feature is off or not set up."""
+# D073: the key of a project with billing on, used while an administrator has
+# switched the system to the paid tier. The provider and model stay the same.
+PAID_KEY_ENV = "AICEFR_COACH_PAID_API_KEY"
+
+
+def provider_from(settings, paid: bool = False) -> Provider | None:
+    """The configured provider, or None when the feature is off or not set up.
+
+    `paid`: with the paid tier's key; None while that key is not set.
+    """
     name = settings.coach_provider
     if name in ("", "off") or name not in NAMES:
         return None
@@ -99,6 +107,8 @@ def provider_from(settings) -> Provider | None:
     else:
         preset = OPENAI_COMPATIBLE[name]
         key, model = os.getenv(preset.key_env, ""), preset.model
+    if paid:
+        key = os.getenv(PAID_KEY_ENV, "")
     model = settings.coach_model or model
     if not key or not model:
         return None

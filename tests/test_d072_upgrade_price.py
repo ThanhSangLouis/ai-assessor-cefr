@@ -44,7 +44,7 @@ def fake(monkeypatch):
     from aicefr.services.core.assessment import coach_api
 
     model = Fake()
-    monkeypatch.setattr(coach_api, "provider_from", lambda settings: model)
+    monkeypatch.setattr(coach_api, "provider_from", lambda settings, paid=False: model)
     return model
 
 
@@ -168,7 +168,7 @@ def test_the_administrator_sees_today_against_the_cap(tmp_path, monkeypatch, fak
     other.post(f"/api/v1/responses/{rid2}/upgrade")
     assert other.get("/api/v1/admin/coach").status_code == 403
     d = login_as(m, "QT-D1", "admin").get("/api/v1/admin/coach").json()
-    assert (d["mode"], d["daily_requests"], d["per_student_daily"]) == ("requests", 2, 1)
+    assert (d["tier"], d["daily_requests"], d["per_student_daily"]) == ("free", 2, 1)
     t = d["today"]
     assert t["day"] == usage.provider_day() and len(d["days"]) == 14 and d["days"][-1] == t
     assert (t["requests"], t["upgrades"], t["failed"]) == (2, 1, 1)

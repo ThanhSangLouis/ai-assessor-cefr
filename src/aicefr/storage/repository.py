@@ -1050,6 +1050,9 @@ class Repository(MongoStore):
 
     COACH_DAY_FIELDS = (
         "requests",
+        "free_requests",
+        "paid_requests",
+        "paid_cost_usd",
         "upgrades",
         "failed",
         "refused_user",
@@ -1090,7 +1093,8 @@ class Repository(MongoStore):
         for d in days:
             row = rows.get(d, {})
             item = {"day": d, **{k: row.get(k, 0) for k in self.COACH_DAY_FIELDS}}
-            item["cost_usd"] = round(float(item["cost_usd"]), 6)
+            for money in ("cost_usd", "paid_cost_usd"):
+                item[money] = round(float(item[money]), 6)
             item["accounts"] = len(row.get("accounts") or [])
             item["errors"] = dict(row.get("errors") or {})
             out.append(item)
