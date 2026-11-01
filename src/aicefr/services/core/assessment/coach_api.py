@@ -21,22 +21,25 @@ D072: what it costs. A cap for everyone together keeps the system under the
 provider's free daily quota: every request sent, retries and failures
 included, in the provider's day (`coach/usage.py`); on a paid tier a daily
 budget in USD replaces it. `GET /api/v1/admin/coach` gives the administrator
-those counters for the last days. On the metered channel an upgrade costs
-`AICEFR_PRICE_UPGRADE_RUNS` runs: held before the model is asked, charged when
-the upgrade is made, released when the model fails. The provider's own token
+those counters for the last days; D073: `PUT /api/v1/admin/coach/tier` is the
+administrator's switch between the two, with the paid tier's own key. On the
+metered channel an upgrade costs `AICEFR_PRICE_UPGRADE_RUNS` runs: held
+before the model is asked, charged when the upgrade is made, released when the
+model fails. The provider's own token
 counts go to the ledger entry and the day's counters, not into the upgrade.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
 from aicefr.coach import phrasebook, usage
-from aicefr.coach.providers import OPENAI_COMPATIBLE, provider_from
+from aicefr.coach.providers import OPENAI_COMPATIBLE, PAID_KEY_ENV, provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
 from aicefr.contracts import ResponseStatus
 from aicefr.observability import count
@@ -84,7 +87,7 @@ def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
     upgrade = svc().repo.upgrade_of(response_id)
     can = (
         owner == account.account_id
-        and provider_from(svc().settings) is not None
+        and _provider(_tier()) is not None
         and bool(report.asr and report.asr.text.strip())
         and report.assessment is not None
         and report.assessment.overall_band is not None
@@ -115,7 +118,8 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     band = a.overall_band.value
     if band not in NEXT:
         raise HTTPException(409, "bài đã ở band cao nhất")
-    provider = provider_from(s.settings)
+    tier = _tier()
+    provider = _provider(tier)
     if provider is None:
         raise HTTPException(503, "máy chủ chưa bật tính năng bản nâng cấp")
     day = usage.provider_day()
@@ -125,7 +129,7 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         raise HTTPException(
             429, f"mỗi ngày tạo được tối đa {s.settings.coach_daily} bản nâng cấp, hãy thử lại sau"
         )
-    refusal = usage.global_refusal(s.settings, s.repo.coach_days([day])[0])
+    refusal = usage.global_refusal(s.settings, tier, s.repo.coach_days([day])[0])
     if refusal:
         s.repo.record_coach(day, refused_global=1)
         count("coach_upgrade_global_cap_total")
@@ -155,9 +159,8 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
             day,
             account_id=account.account_id,
             error=str(e),
-            requests=calls.requests,
             failed=1,
-            **_tokens(s.settings, used),
+            **_counts(s.settings, tier, calls, used),
         )
         if metering is not None:
             metering.settle_upgrade(key=key, result=False)
@@ -178,9 +181,8 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     s.repo.record_coach(
         day,
         account_id=account.account_id,
-        requests=calls.requests,
         upgrades=1,
-        **_tokens(s.settings, used),
+        **_counts(s.settings, tier, calls, used),
     )
     if metering is not None:
         metering.settle_upgrade(
@@ -194,10 +196,20 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     return kept
 
 
-def _tokens(settings, used: dict) -> dict:
-    """The day's token and cost counters for one answer of the provider."""
+def _tier() -> usage.Tier:
+    return usage.tier_of(svc().settings, svc().repo.get_config(usage.TIER_KEY))
+
+
+def _provider(tier: usage.Tier):
+    """The provider serving `tier`: the paid tier asks with the paid key (D073)."""
+    return provider_from(svc().settings, paid=tier.paid)
+
+
+def _counts(settings, tier: usage.Tier, calls: usage.Calls, used: dict) -> dict:
+    """The day's counters for one answer of the provider, on the tier that served it."""
     i, o = used.get("input_tokens") or 0, used.get("output_tokens") or 0
-    return {"input_tokens": i, "output_tokens": o, "cost_usd": usage.cost_usd(settings, i, o)}
+    cost = usage.cost_usd(settings, i, o)
+    return {"input_tokens": i, "output_tokens": o, **usage.day_counts(tier, calls.requests, cost)}
 
 
 # ================================================================= the dashboard (D072)
@@ -209,20 +221,33 @@ DASHBOARD_DAYS = 14
 def coach_dashboard() -> dict:
     """The language model's use: today against the cap, and the last 14 days."""
     st = svc().settings
-    provider = provider_from(st)
+    tier = _tier()
+    provider = _provider(tier)
+    free = provider_from(st)
     name = st.coach_provider
     preset = OPENAI_COMPATIBLE.get(name)
     days = svc().repo.coach_days(usage.last_days(DASHBOARD_DAYS))
+    model = st.coach_model or (preset.model if preset else "")
     return {
         "provider": name,
-        "model": provider.model
-        if provider
-        else (st.coach_model or (preset.model if preset else "")),
+        "model": provider.model if provider else model,
         "enabled": provider is not None,
-        "missing_key": preset.key_env if preset and provider is None and name != "off" else None,
-        "mode": "budget" if usage.budget_mode(st) else "requests",
+        "missing_key": (
+            (PAID_KEY_ENV if tier.paid else preset.key_env)
+            if preset and provider is None and name != "off"
+            else None
+        ),
+        "tier": tier.name,
+        "tier_changed_by": tier.changed_by,
+        "tier_changed_at": tier.changed_at,
+        "free_ready": free is not None,
+        "paid_ready": provider_from(st, paid=True) is not None,
+        "paid_key_env": PAID_KEY_ENV,
         "daily_requests": st.coach_global_daily,
-        "daily_budget_usd": st.coach_budget_usd,
+        "budget_usd": tier.budget_usd or st.coach_budget_usd,
+        "used_today": usage.used_today(tier, days[-1]),
+        "cap_today": usage.cap_of(st, tier),
+        "free_used_up": days[-1]["free_requests"] >= st.coach_global_daily,
         "per_student_daily": st.coach_daily,
         "price_input_usd": st.coach_price_input_usd,
         "price_output_usd": st.coach_price_output_usd,
@@ -230,6 +255,35 @@ def coach_dashboard() -> dict:
         "resets_at": usage.resets_at(),
         "days": days,
     }
+
+
+class TierIn(BaseModel):
+    tier: Literal["free", "paid"]
+    # A ceiling against a runaway day, not a forecast: well above any real use.
+    budget_usd: float | None = Field(default=None, gt=0, le=500)
+
+
+@router.put("/api/v1/admin/coach/tier", tags=["admin"])
+def set_coach_tier(body: TierIn, account: Account = ADMIN_ONLY) -> dict:
+    """Switch the language model between the free quota and a paid daily budget (D073).
+
+    The administrator's call, made on the dashboard: who and when are kept
+    with the setting and in the audit log.
+    """
+    s = svc()
+    paid = body.tier == "paid"
+    if paid and body.budget_usd is None:
+        raise HTTPException(422, "hãy đặt ngân sách mỗi ngày cho gói trả phí")
+    if paid and provider_from(s.settings, paid=True) is None:
+        raise HTTPException(
+            409, f"máy chủ chưa có khoá trả phí: thêm {PAID_KEY_ENV} vào .env rồi khởi động lại"
+        )
+    budget = body.budget_usd if paid else (_tier().budget_usd or 0.0)
+    value = usage.tier_value(paid, budget)
+    s.repo.set_config(usage.TIER_KEY, value, body.tier, account.pseudonym)
+    detail = f"tier={body.tier} budget_usd={budget}" if paid else "tier=free"
+    s.repo.write_audit(account.pseudonym, "coach.tier", None, detail)
+    return coach_dashboard()
 
 
 # ================================================================= phrase book (D070)

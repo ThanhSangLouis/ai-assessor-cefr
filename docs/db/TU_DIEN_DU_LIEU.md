@@ -70,7 +70,7 @@ Chỉ có dữ liệu trên bản triển khai bật `AICEFR_METERING`, tức k�
 
 | Collection | CN | Nội dung | Khoá và ràng buộc |
 | --- | --- | --- | --- |
-| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`), bộ đếm dùng mô hình ngôn ngữ mỗi ngày của nhà cung cấp (`coach_usage.<YYYY-MM-DD>`, D072: số yêu cầu gửi đi gồm cả lỗi và gọi lại, bản viết xong, lỗi theo lý do, số lần bị từ chối vì giới hạn chung hay mỗi người, token vào/ra, chi phí ước tính USD, danh sách `account_id` đã dùng; không chứa nội dung bài) | PK `key` |
+| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042, gói của mô hình ngôn ngữ `assessment.coach_tier` D073: miễn phí hay trả phí và ngân sách USD/ngày, kèm người đổi và thời điểm), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`), bộ đếm dùng mô hình ngôn ngữ mỗi ngày của nhà cung cấp (`coach_usage.<YYYY-MM-DD>`, D072: số yêu cầu gửi đi gồm cả lỗi và gọi lại, tách theo gói (D073: `free_requests`, `paid_requests`, `paid_cost_usd`), bản viết xong, lỗi theo lý do, số lần bị từ chối vì giới hạn chung hay mỗi người, token vào/ra, chi phí ước tính USD, danh sách `account_id` đã dùng; không chứa nội dung bài) | PK `key` |
 | `schema_migrations` | | Các phiên bản cấu trúc đã áp dụng và thời điểm (nội bộ, không trong `schema_core.json`) | Duy nhất `version` |
 
 ## 3. Đổi cấu trúc

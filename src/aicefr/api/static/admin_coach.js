@@ -1,7 +1,8 @@
 // The language model behind the upgraded answer, the administrator's side
 // (D072): today's requests against the provider's daily quota -- or the
 // budget, on a paid tier -- then tokens, cost, refusals and errors, and the
-// last 14 days. Days are the provider's (Google's ends at midnight Pacific),
+// last 14 days, and (D073) the switch between the free quota and a paid daily
+// budget. Days are the provider's (Google's ends at midnight Pacific),
 // because that is the day its quota counts.
 (function () {
   const escapeHtml = window.escapeHtml;
@@ -23,14 +24,14 @@
   // ---------------------------------------------------------------- today
   function gauge(d) {
     const t = d.today;
-    const budget = d.mode === "budget";
-    const used = budget ? t.cost_usd : t.requests;
-    const limit = budget ? d.daily_budget_usd : d.daily_requests;
+    const budget = d.tier === "paid";
+    const used = d.used_today;
+    const limit = d.cap_today;
     const share = limit > 0 ? used / limit : 0;
     const level = share >= 1 ? "full" : share >= 0.8 ? "high" : "";
     const fmt = budget ? usd : int;
     const left = Math.max(0, limit - used);
-    const what = budget ? "ngân sách hôm nay" : "yêu cầu gửi nhà cung cấp hôm nay";
+    const what = budget ? "ngân sách gói trả phí hôm nay" : "yêu cầu miễn phí gửi nhà cung cấp hôm nay";
     return `<div class="coach-gauge ${level}">
       <div class="coach-gauge-head">
         <p class="coach-gauge-num"><b>${fmt(used)}</b> <span>/ ${fmt(limit)}</span></p>
@@ -55,7 +56,7 @@
       ${tile(int(refused), `bị từ chối · ${int(t.refused_global)} do giới hạn chung, ${int(t.refused_user)} do giới hạn mỗi người`, t.refused_global > 0)}
       ${tile(int(t.accounts), "người dùng")}
       ${tile(int(t.input_tokens + t.output_tokens), `token · ${int(t.input_tokens)} vào, ${int(t.output_tokens)} ra${per ? ` · ~${int(per)} mỗi bản` : ""}`)}
-      ${tile(usd(t.cost_usd), d.mode === "budget" ? "chi phí" : "chi phí nếu trả phí")}
+      ${tile(usd(t.paid_cost_usd), t.paid_requests ? `đã tiêu ở gói trả phí · ${int(t.paid_requests)} yêu cầu` : "đã tiêu ở gói trả phí")}
     </div>`;
   }
 
@@ -66,7 +67,7 @@
   function chart(d) {
     const days = d.days;
     const W = 640, H = 200, L = 36, R = 8, T = 14, B = 24;
-    const cap = d.mode === "requests" ? d.daily_requests : 0;
+    const cap = d.tier === "free" ? d.daily_requests : 0;
     // Headroom above the cap line and the tallest bar, rounded so the ticks read cleanly.
     const peak = Math.max(cap, ...days.map((x) => x.requests), 1) * 1.08;
     const unit = peak > 200 ? 100 : peak > 40 ? 20 : 5;
@@ -119,13 +120,13 @@
       <div><dt>Bản viết xong</dt><dd>${int(ups)}</dd></div>
       <div><dt>Ngày cao nhất</dt><dd>${int(busiest)}</dd></div>
       <div><dt>Token</dt><dd>${int(tokens)}</dd></div>
-      <div><dt>Chi phí ${d.mode === "budget" ? "" : "nếu trả phí"}</dt><dd>${usd(cost)}</dd></div>
+      <div><dt>Chi phí nếu tính tiền mọi yêu cầu</dt><dd>${usd(cost)}</dd></div>
       <div><dt>Mỗi bản</dt><dd>${ups ? usd(cost / ups) : "—"}</dd></div>
     </dl>`;
-    if (capDays >= CAP_DAYS_SIGNAL && d.mode === "requests") {
-      h += `<div class="notice">${icon("alert")} Giới hạn chung đã từ chối người dùng trong <b>${capDays}/${days.length} ngày</b>.
-        Nên chuyển khoá sang gói trả phí rồi đặt <code>AICEFR_COACH_DAILY_BUDGET_USD</code>: giới hạn khi đó tính bằng tiền
-        (khoảng ${ups ? usd(cost / ups) : usd(0)} mỗi bản theo giá hiện đặt) thay vì số yêu cầu.</div>`;
+    if (capDays >= CAP_DAYS_SIGNAL && d.tier === "free") {
+      h += `<div class="notice">${icon("alert")} Giới hạn chung đã từ chối người dùng trong <b>${capDays}/${days.length} ngày</b>:
+        nhu cầu thường xuyên vượt gói miễn phí. Cân nhắc chuyển sang gói trả phí ở trên
+        (khoảng ${ups ? usd(cost / ups) : usd(0)} mỗi bản theo giá hiện đặt).</div>`;
     }
     if (top.length) {
       h += `<h3>Lỗi thường gặp</h3><ul class="coach-errors">${top
@@ -161,15 +162,103 @@
         ? `<p class="muted">Thiếu khoá <code>${escapeHtml(d.missing_key)}</code> trong <code>.env</code> của máy chủ; người học chưa thấy nút "Viết lại ở band cao hơn".</p>`
         : '<p class="muted">Đặt <code>AICEFR_COACH_PROVIDER</code> và khoá của nhà cung cấp trong <code>.env</code> để bật.</p>';
     const mode =
-      d.mode === "budget"
-        ? `Trả phí · ngân sách <b>${usd(d.daily_budget_usd)}</b>/ngày`
-        : `Miễn phí · tối đa <b>${int(d.daily_requests)}</b> yêu cầu/ngày`;
+      d.tier === "paid"
+        ? `Gói trả phí · ngân sách <b>${usd(d.budget_usd)}</b>/ngày`
+        : `Gói miễn phí · tối đa <b>${int(d.daily_requests)}</b> yêu cầu/ngày`;
     return `<div class="coach-head">
       <h2>${icon("sparkle")} ${escapeHtml(name)} ${d.model ? `<code>${escapeHtml(d.model)}</code>` : ""} ${state}</h2>
       <p class="muted">${mode} · mỗi người <b>${int(d.per_student_daily)}</b> bản/ngày ·
         giá ${usd(d.price_input_usd)} / ${usd(d.price_output_usd)} cho 1 triệu token vào / ra</p>
       ${why}
     </div>`;
+  }
+
+  // ---------------------------------------------------------------- tier (D073)
+  // The administrator's switch between the free quota and a paid daily budget.
+  // Nothing switches by itself: when the free quota runs out, this says so and
+  // offers the switch; the estimate of what the budget buys comes from the
+  // last 14 days' tokens at the configured prices.
+  function perUpgrade(d) {
+    const ups = sum(d.days, "upgrades");
+    return ups ? sum(d.days, "cost_usd") / ups : 0;
+  }
+
+  function tierBox(d) {
+    const paid = d.tier === "paid";
+    const each = perUpgrade(d);
+    const who = d.tier_changed_by
+      ? `<p class="muted small-note">Đổi lần cuối bởi <b>${escapeHtml(d.tier_changed_by)}</b> lúc ${escapeHtml(window.ui.localTime(d.tier_changed_at))}.</p>`
+      : "";
+    const alarm =
+      !paid && d.free_used_up
+        ? `<div class="notice notice-danger">${icon("alert")} Hôm nay đã dùng hết <b>${int(d.daily_requests)}</b> yêu cầu miễn phí: học viên đang bị từ chối
+            tới ${escapeHtml(vnTime(d.resets_at))}. Chuyển sang gói trả phí nếu muốn mở lại ngay.</div>`
+        : "";
+    const noKey = d.paid_ready
+      ? ""
+      : `<p class="muted small-note">Chưa có khoá trả phí: thêm <code>${escapeHtml(d.paid_key_env)}</code> (khoá của một project Google đã bật thanh toán) vào <code>.env</code> của máy chủ rồi khởi động lại.</p>`;
+    return `<div class="coach-tier" id="coach-tier">
+      <h3>Gói đang dùng</h3>
+      ${alarm}
+      <div class="coach-tier-row">
+        <fieldset class="segmented" aria-label="Gói">
+          <label><input type="radio" name="coach-tier" value="free"${paid ? "" : " checked"}> Miễn phí</label>
+          <label><input type="radio" name="coach-tier" value="paid"${paid ? " checked" : ""}${d.paid_ready ? "" : " disabled"}> Trả phí</label>
+        </fieldset>
+        <div class="field coach-budget"${paid ? "" : " hidden"}>
+          <label for="coach-budget">Ngân sách mỗi ngày (USD)</label>
+          <input id="coach-budget" type="number" min="0.5" max="500" step="0.5" inputmode="decimal"
+                 value="${escapeHtml(d.budget_usd > 0 ? d.budget_usd : 2)}">
+          <span class="muted small-note" id="coach-budget-hint" data-each="${each}"></span>
+        </div>
+        <button type="button" id="coach-tier-save">${icon("check")} Lưu</button>
+      </div>
+      ${noKey}${who}
+    </div>`;
+  }
+
+  function wireTier(d) {
+    const box = $("coach-tier");
+    const field = box.querySelector(".coach-budget");
+    const budget = $("coach-budget");
+    const hint = $("coach-budget-hint");
+    const chosen = () => box.querySelector('input[name="coach-tier"]:checked').value;
+    const each = Number(hint.dataset.each) || 0;
+    const showHint = () => {
+      const b = Number(budget.value) || 0;
+      hint.textContent = each > 0 ? `≈ ${int(b / each)} bản nâng cấp/ngày theo mức dùng 14 ngày qua` : "";
+    };
+    box.querySelectorAll('input[name="coach-tier"]').forEach((r) =>
+      r.addEventListener("change", () => {
+        field.hidden = chosen() !== "paid";
+      })
+    );
+    budget.addEventListener("input", showHint);
+    showHint();
+    $("coach-tier-save").addEventListener("click", async () => {
+      const tier = chosen();
+      const b = Number(budget.value);
+      if (tier === "paid" && !(b > 0)) {
+        window.toast("Hãy nhập ngân sách mỗi ngày lớn hơn 0.", "error");
+        return;
+      }
+      const ask =
+        tier === "paid"
+          ? `Chuyển sang gói trả phí với ngân sách tối đa ${usd(b)} mỗi ngày? Google sẽ tính tiền theo token vào thẻ của project trả phí.`
+          : "Quay về gói miễn phí? Giới hạn chung lại tính theo số yêu cầu miễn phí của ngày.";
+      if (tier === d.tier && tier === "free") return;
+      if (!window.confirm(ask)) return;
+      const body = tier === "paid" ? { tier, budget_usd: b } : { tier };
+      const r = await window.apiJson("/api/v1/admin/coach/tier", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (r) {
+        window.toast(tier === "paid" ? `Đã chuyển sang gói trả phí, ${usd(b)}/ngày.` : "Đã quay về gói miễn phí.", "ok");
+        load();
+      }
+    });
   }
 
   async function load() {
@@ -191,13 +280,14 @@
     const d = await r.json();
     window.clearBusy(el);
     el.innerHTML = `
-      <div class="card">${head(d)}${gauge(d)}${stats(d)}</div>
+      <div class="card">${head(d)}${gauge(d)}${stats(d)}${tierBox(d)}</div>
       <div class="card">
         <div class="card-head"><h2>${icon("chart")} ${d.days.length} ngày gần nhất</h2>
           <button type="button" class="secondary small" id="coach-refresh">${icon("refresh")} Làm mới</button></div>
         ${chart(d)}${period(d)}${table(d)}
       </div>`;
     $("coach-refresh").addEventListener("click", load);
+    wireTier(d);
   }
 
   window.adminCoach = { load };

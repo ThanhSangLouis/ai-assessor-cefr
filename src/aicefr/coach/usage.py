@@ -5,13 +5,16 @@ midnight Pacific time; a request that failed, or was a retry, counts like any
 other. So the global cap counts every request sent (`Calls`), in the
 provider's day (`provider_day`), not upgrades made in a rolling 24 hours.
 
-On a paid tier the cap is money instead: with `AICEFR_COACH_DAILY_BUDGET_USD`
-set, a day ends when what its tokens cost at the configured prices reaches the
-budget. The tokens are the provider's own counts, kept with every upgrade.
+On a paid tier the cap is money instead: a day ends when what its tokens cost
+at the configured prices reaches the budget. The tokens are the provider's own
+counts. Which tier is in force is the administrator's call on the dashboard
+(D073, `Tier`); `AICEFR_COACH_DAILY_BUDGET_USD` only sets where a deployment
+starts.
 """
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -56,19 +59,69 @@ def cost_usd(settings, input_tokens: int | None, output_tokens: int | None) -> f
     ) / 1_000_000
 
 
-def budget_mode(settings) -> bool:
-    """Whether the day is capped by money (paid tier) rather than requests (free tier)."""
-    return settings.coach_budget_usd > 0
+# D073: which tier serves the requests, chosen by an administrator on the
+# dashboard and kept as runtime configuration (who, when). Unset, the
+# deployment's own setting decides: a budget above 0 means paid.
+TIER_KEY = "coach_tier"
 
 
-def global_refusal(settings, day: dict) -> str | None:
+@dataclass(frozen=True)
+class Tier:
+    """Free (the provider's free quota, counted in requests) or paid (a budget in USD)."""
+
+    paid: bool
+    budget_usd: float
+    changed_by: str | None = None
+    changed_at: str | None = None
+
+    @property
+    def name(self) -> str:
+        return "paid" if self.paid else "free"
+
+
+def tier_of(settings, stored) -> Tier:
+    """The tier in force: the administrator's choice (`AppConfig`), else the deployment's."""
+    if stored is not None:
+        value = json.loads(stored.value)
+        return Tier(
+            paid=value.get("tier") == "paid",
+            budget_usd=float(value.get("budget_usd") or 0),
+            changed_by=stored.updated_by,
+            changed_at=stored.updated_at,
+        )
+    return Tier(paid=settings.coach_budget_usd > 0, budget_usd=settings.coach_budget_usd)
+
+
+def tier_value(paid: bool, budget_usd: float) -> str:
+    """The stored form of a tier, as `tier_of` reads it back."""
+    return json.dumps({"tier": "paid" if paid else "free", "budget_usd": budget_usd})
+
+
+def day_counts(tier: Tier, requests: int, cost: float) -> dict:
+    """The counters one answer adds, on the tier that served it.
+
+    The free quota counts the free tier's requests only, the budget the paid
+    tier's cost only, so switching tiers in the middle of a day mixes neither.
+    """
+    if tier.paid:
+        paid = {"paid_requests": requests, "paid_cost_usd": cost}
+        return {"requests": requests, "cost_usd": cost, **paid}
+    return {"requests": requests, "cost_usd": cost, "free_requests": requests}
+
+
+def used_today(tier: Tier, day: dict) -> float:
+    """How much of today's cap the tier in force has used: requests, or USD."""
+    return day.get("paid_cost_usd", 0) if tier.paid else day.get("free_requests", 0)
+
+
+def cap_of(settings, tier: Tier) -> float:
+    return tier.budget_usd if tier.paid else settings.coach_global_daily
+
+
+def global_refusal(settings, tier: Tier, day: dict) -> str | None:
     """Why no one may ask the model again today, or None."""
-    if budget_mode(settings):
-        if day.get("cost_usd", 0) >= settings.coach_budget_usd:
-            return (
-                "hôm nay hệ thống đã dùng hết ngân sách tạo bản nâng cấp, hãy thử lại vào ngày mai"
-            )
+    if used_today(tier, day) < cap_of(settings, tier):
         return None
-    if day.get("requests", 0) >= settings.coach_global_daily:
-        return "hôm nay hệ thống đã dùng hết lượt tạo bản nâng cấp, hãy thử lại vào ngày mai"
-    return None
+    if tier.paid:
+        return "hôm nay hệ thống đã dùng hết ngân sách tạo bản nâng cấp, hãy thử lại vào ngày mai"
+    return "hôm nay hệ thống đã dùng hết lượt tạo bản nâng cấp, hãy thử lại vào ngày mai"

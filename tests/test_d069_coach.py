@@ -158,7 +158,7 @@ def coach_on(monkeypatch):
 
     from aicefr.services.core.assessment import coach_api
 
-    monkeypatch.setattr(coach_api, "provider_from", lambda settings: Fake())
+    monkeypatch.setattr(coach_api, "provider_from", lambda settings, paid=False: Fake())
     return calls
 
 
