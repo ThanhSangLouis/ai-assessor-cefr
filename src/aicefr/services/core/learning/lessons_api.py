@@ -1149,7 +1149,8 @@ class MoveIn(BaseModel):
 
 class LessonIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
-    band: Band = Band.A2
+    # D078: the unit's band when left out; another band is refused.
+    band: Band | None = None
     criterion: Criterion | None = None
     summary: str = Field(default="", max_length=600)
     model_text: str = Field(default="", max_length=3000)
@@ -1250,6 +1251,17 @@ async def teach_import(request: Request, account: Account = STAFF_ONLY) -> dict:
     return {"path_id": pid}
 
 
+def _lesson_band(unit: dict, band: Band | None) -> Band:
+    """A lesson is at its unit's band (D078): a learner's band path picks lessons
+    by the unit they sit in, so a lesson of another band would be met out of place."""
+    own = Band(unit["band"]) if unit.get("band") else None
+    if band is not None and own is not None and band is not own:
+        raise HTTPException(422, f"bài học phải cùng band {own.value} với chặng")
+    if band is None and own is None:
+        raise HTTPException(422, "chặng chưa có band: đặt band cho chặng trước")
+    return band or own  # type: ignore[return-value]
+
+
 def _check_unit_band(path: dict, band: Band) -> None:
     """A unit sits inside its path's bands: a learner's band path is composed from
     the units of the bands they chose (D074), so a unit outside would never be met."""
@@ -1305,6 +1317,11 @@ def teach_move_unit(unit_id: str, body: MoveIn, account: Account = STAFF_ONLY) -
 @router.post("/api/v1/teach/units/{unit_id}/lessons", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_lesson(unit_id: str, body: LessonIn, account: Account = STAFF_ONLY) -> dict:
     """A new lesson: from a model text and key words, from key words alone, or one free step."""
+    try:
+        unit = svc().lessons.unit(unit_id)
+    except NotFound:
+        raise HTTPException(404, "không tìm thấy chặng") from None
+    body.band = _lesson_band(unit, body.band)
     if body.model_text.strip():
         lesson = build_lesson(
             body.title,
@@ -1381,9 +1398,10 @@ def teach_lesson(lesson_id: str, account: Account = STAFF_ONLY) -> dict:
 
 @router.put("/api/v1/teach/lessons/{lesson_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_save_lesson(lesson_id: str, body: Lesson, account: Account = STAFF_ONLY) -> dict:
-    current, _ = _draft_or_404(lesson_id)
+    current, meta = _draft_or_404(lesson_id)
     if body.lesson_id != lesson_id:
         raise HTTPException(422, "mã bài học không khớp")
+    _lesson_band(svc().lessons.unit(meta["unit_id"]), body.band)
     # Media keys can only come from an upload through this API, never from the form.
     known = {s.step_id: s for s in current.steps}
     for step in body.steps:

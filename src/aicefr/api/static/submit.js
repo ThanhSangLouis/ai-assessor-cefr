@@ -171,11 +171,12 @@ async function showPrice(task) {
 
 // D076: the prompts of one band, three at a time, drawn at random; "Đổi đề
 // khác" draws three others. The band starts where the learner studies (their
-// band path), else where their latest assessment put them, else A2.
+// band path), else where their latest assessment put them, else the first band
+// with prompts.
 const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 const SHOWN = 3;
 let allTasks = [];
-let band = "A2";
+let band = null;
 let shown = [];
 
 function draw(pinned) {
@@ -247,14 +248,14 @@ Promise.all([
   .then(([tasks, from]) => {
     if (!tasks) return;
     window.clearBusy(taskListEl);
-    if (!tasks.length) {
+    allTasks = tasks.filter((t) => t.band);
+    if (!allTasks.length) {
       taskListEl.innerHTML =
         '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
         "<h2>Chưa có đề bài nào</h2>" +
         "<p>Trung tâm chưa mở đề đánh giá. Hãy quay lại sau.</p></div>";
       return;
     }
-    allTasks = tasks.map((t) => ({ ...t, band: t.band || "B1" }));
     // `?task=` opens this page on that task (a reminder or a link points there).
     const wanted = allTasks.find((t) => t.task_id === new URLSearchParams(window.location.search).get("task"));
     band = (wanted && wanted.band) || (BANDS.includes(from) && allTasks.some((t) => t.band === from) ? from : null) || allTasks[0].band;

@@ -169,7 +169,7 @@ function openPath(id) {
   $("path-title").value = p ? p.title : "";
   $("path-description").value = p ? p.description || "" : "";
   $("path-band-from").value = (p && p.band_from) || "A1";
-  $("path-band-to").value = (p && p.band_to) || "B2";
+  $("path-band-to").value = (p && p.band_to) || "C2";
   $("path-dialog").showModal();
 }
 

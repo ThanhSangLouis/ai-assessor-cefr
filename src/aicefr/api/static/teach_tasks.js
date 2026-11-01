@@ -9,7 +9,7 @@
   const send = (url, method, body) =>
     window.apiJson(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   let tasks = [];
-  let band = "A1";
+  let band = null; // the tab kept from last time, else the first band with prompts
   let editing = null; // the prompt in the dialog, or null for a new one
 
   function remember() {
@@ -122,7 +122,8 @@
   async function load() {
     const d = await window.apiJson("/api/v1/teach/tasks");
     if (!d) return;
-    tasks = d.map((t) => ({ ...t, band: t.band || "B1" }));
+    tasks = d.filter((t) => t.band);
+    if (!BANDS.includes(band)) band = BANDS.find((b) => tasks.some((t) => t.band === b)) || BANDS[0];
     paint();
   }
 
@@ -130,7 +131,7 @@
     const kept = localStorage.getItem("teach-tasks-band");
     if (BANDS.includes(kept)) band = kept;
   } catch (e) {
-    /* no storage: start at A1 */
+    /* no storage: the first band with prompts */
   }
   load();
 })();

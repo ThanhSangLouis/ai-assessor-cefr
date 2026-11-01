@@ -119,3 +119,22 @@ def test_the_research_tools_and_the_old_practice_home_are_gone(m):
         gone = admin.get(page, follow_redirects=False)
         assert (gone.status_code, gone.headers["location"]) == (301, "/"), page
     assert "Chấm mù" not in admin.get("/admin").text
+
+
+@pytest.mark.integration
+def test_a_lesson_is_at_its_units_band(m):
+    teacher = login_as(m, "GV-01", "teacher")
+    pid = teacher.post("/api/v1/teach/paths", json={"title": "Lộ trình B1"}).json()["path_id"]
+    uid = teacher.post(
+        f"/api/v1/teach/paths/{pid}/units", json={"title": "Du lịch", "band": "B1"}
+    ).json()["unit_id"]
+    url = f"/api/v1/teach/units/{uid}/lessons"
+    made = teacher.post(url, json={"title": "Đặt phòng", "free_prompt": "Kể một chuyến đi."})
+    assert made.status_code == 200, made.text
+    lesson = teacher.get(f"/api/v1/teach/lessons/{made.json()['lesson_id']}").json()["lesson"]
+    assert lesson["band"] == "B1"  # the unit's, not a built-in default
+    other = teacher.post(url, json={"title": "Sai band", "band": "C1"})
+    assert other.status_code == 422 and "B1" in other.json()["detail"]
+    lesson["band"] = "A2"
+    saved = teacher.put(f"/api/v1/teach/lessons/{lesson['lesson_id']}", json=lesson)
+    assert saved.status_code == 422
