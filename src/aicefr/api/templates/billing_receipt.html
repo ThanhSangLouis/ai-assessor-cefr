@@ -2,12 +2,12 @@
 {% from "_icons.html" import icon %}
 {% block title %}Biên nhận {{ order.order_id }} · AI Assessor CEFR{% endblock %}
 {% block content %}
-{#- D033. A receipt for a paid order, to print or save as PDF. Not a VAT
+{#- D033, D075. A receipt for a paid run pack, to print or save as PDF. Not a VAT
     invoice: an invoice is issued by the seller's accounting, outside this
     system, and the page says so. -#}
 <div class="pay-page receipt">
   <div class="button-row receipt-tools">
-    <a class="button secondary" href="/admin#billing">← Gói dịch vụ</a>
+    <a class="button secondary" href="/credits">← Lượt của tôi</a>
     <button type="button" data-print>{{ icon("printer") }}<span>In hoặc lưu PDF</span></button>
   </div>
   <section class="card receipt-sheet" aria-labelledby="receipt-h">
@@ -20,44 +20,19 @@
     </header>
     <dl class="pay-facts receipt-parties">
       <dt>Bên bán</dt><dd>AI Assessor CEFR</dd>
-      <dt>Bên mua</dt><dd>{% if order.kind == "credits" %}{{ account.display_name }}{% else %}{{ organization }}{% endif %}</dd>
+      <dt>Bên mua</dt><dd>{{ account.display_name }}</dd>
     </dl>
     <div class="table-scroll">
       <table class="receipt-lines">
-        {% if order.kind == "credits" %}
-        <thead><tr><th>Nội dung</th><th class="num">Số lượt</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead>
+        <thead><tr><th>Nội dung</th><th class="num">Số lượt</th><th class="num">Thành tiền</th></tr></thead>
         <tbody>
           <tr>
-            <td>{{ order.plan_name }} chấm bài nói</td>
-            <td class="num">{{ order.seats }}</td>
-            <td class="num">{{ order.unit_price | vnd }}</td>
-            <td class="num">{{ order.list_vnd | vnd }}</td>
+            <td>{{ order.plan_name }} dùng AI chấm và viết lại bài nói</td>
+            <td class="num">{{ order.runs }}</td>
+            <td class="num">{{ order.amount_vnd | vnd }}</td>
           </tr>
-        {% else %}
-        <thead><tr><th>Nội dung</th><th class="num">Sinh viên</th><th class="num">Tháng</th><th class="num">Đơn giá</th><th class="num">Thành tiền</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Gói {{ order.plan_name }}, {{ order.starts_on | dmy }} – {{ order.ends_on | dmy }}</td>
-            <td class="num">{{ order.seats }}</td>
-            <td class="num">{{ order.months }}</td>
-            <td class="num">{{ order.unit_price | vnd }}</td>
-            <td class="num">{{ order.list_vnd | vnd }}</td>
-          </tr>
-        {% endif %}
-          {% if order.discount_vnd %}
-          <tr>
-            <td colspan="4">Giảm khi trả theo năm học</td>
-            <td class="num">−{{ order.discount_vnd | vnd }}</td>
-          </tr>
-          {% endif %}
-          {% if order.credit_vnd %}
-          <tr>
-            <td colspan="4">Trừ phần chưa dùng của gói trước</td>
-            <td class="num">−{{ order.credit_vnd | vnd }}</td>
-          </tr>
-          {% endif %}
         </tbody>
-        <tfoot><tr><th colspan="{{ 3 if order.kind == "credits" else 4 }}">Đã thanh toán</th><th class="num">{{ order.amount_vnd | vnd }}</th></tr></tfoot>
+        <tfoot><tr><th colspan="2">Đã thanh toán</th><th class="num">{{ order.amount_vnd | vnd }}</th></tr></tfoot>
       </table>
     </div>
     <dl class="pay-facts">

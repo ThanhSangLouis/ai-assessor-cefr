@@ -51,22 +51,6 @@ def test_a_student_has_one_results_entry_for_history_and_progress(m):
         assert f'href="{tab}" aria-current="page"' in subnav
 
 
-def test_assignments_appear_only_for_a_student_in_a_class(m):
-    student = login_as(m, "SV-N02")
-    nav = sidebar(student.get("/practice").text)
-    assert 'href="/my-assignments" data-nav-if="in_class" hidden' in nav
-    assert student.get("/api/v1/me/badges").json()["in_class"] is False
-
-    teacher = login_as(m, "GV-N02", "teacher")
-    made = teacher.post("/api/v1/classes", json={"name": "Lớp thử"}).json()
-    r = teacher.post(f"/api/v1/classes/{made['class_id']}/members", json={"pseudonyms": ["SV-N02"]})
-    assert r.status_code == 200, r.text
-    assert student.get("/api/v1/me/badges").json()["in_class"] is True
-    # On its own page the entry is shown and current, whatever the badge says.
-    nav = sidebar(student.get("/my-assignments").text)
-    assert 'href="/my-assignments" data-nav-if="in_class" aria-current="page"' in nav
-
-
 def test_blind_rating_appears_only_while_sheets_wait(m):
     teacher = login_as(m, "GV-N03", "teacher")
     nav = sidebar(teacher.get("/review").text)

@@ -5,8 +5,8 @@
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
   <p class="lede">
-    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, gói dịch vụ
-    và tình trạng vận hành.
+    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, mô hình
+    ngôn ngữ và tình trạng vận hành.
   </p>
 </div>
 
@@ -21,8 +21,6 @@
           aria-selected="false" aria-controls="panel-erase">Dữ liệu</button>
   <button id="tab-ratings" data-panel="panel-ratings" role="tab"
           aria-selected="false" aria-controls="panel-ratings">Chấm mù</button>
-  <button id="tab-billing" data-panel="panel-billing" role="tab"
-          aria-selected="false" aria-controls="panel-billing">Gói dịch vụ</button>
   <button id="tab-coach" data-panel="panel-coach" role="tab"
           aria-selected="false" aria-controls="panel-coach">AI viết lại</button>
   <button id="tab-ops" data-panel="panel-ops" role="tab"
@@ -247,19 +245,6 @@
   </dialog>
 </section>
 
-{#- D033. The institution's plan: the licence in force, its use, buying or
-    renewing through the payment gateway, a licence key from a contract. The
-    customer is the institution; students never see any of this. -#}
-<section id="panel-billing" role="tabpanel" aria-labelledby="tab-billing" tabindex="0" hidden>
-  <div id="billing-body" aria-busy="true" aria-live="polite">
-    <div class="card">
-      <div class="skeleton skeleton-title"></div>
-      <div class="skeleton skeleton-row"></div>
-      <div class="skeleton skeleton-row"></div>
-    </div>
-  </div>
-</section>
-
 {#- D072. The language model behind the upgraded answer: today's requests
     against the provider's daily quota (or the budget on a paid tier), tokens,
     cost, refusals and errors, and the last 14 days. -#}
@@ -293,7 +278,6 @@
 {% endblock %}
 {% block scripts %}
 <script src="{{ asset('admin_ratings.js') }}"></script>
-<script src="{{ asset('admin_billing.js') }}"></script>
 <script src="{{ asset('admin_coach.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

@@ -18,7 +18,9 @@
   const dm = (day) => day.slice(8, 10) + "/" + day.slice(5, 7);
   const vnTime = (iso) =>
     new Date(iso).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", hour12: false });
-  const retries = (d) => Math.max(0, d.requests - d.upgrades - d.failed);
+  // Answers written: learners' upgrades and (D075) teachers' lesson drafts.
+  const done = (d) => (Number(d.upgrades) || 0) + (Number(d.drafts) || 0);
+  const retries = (d) => Math.max(0, d.requests - done(d) - d.failed);
   const sum = (days, k) => days.reduce((a, d) => a + (Number(d[k]) || 0), 0);
 
   // ---------------------------------------------------------------- today
@@ -46,12 +48,12 @@
 
   function stats(d) {
     const t = d.today;
-    const per = t.upgrades ? Math.round((t.input_tokens + t.output_tokens) / t.upgrades) : 0;
+    const per = done(t) ? Math.round((t.input_tokens + t.output_tokens) / done(t)) : 0;
     const refused = t.refused_global + t.refused_user;
     const tile = (value, label, attention) =>
       `<div class="stat${attention ? " attention" : ""}"><b>${value}</b><span>${label}</span></div>`;
     return `<div class="stat-grid coach-stats">
-      ${tile(int(t.upgrades), "bản nâng cấp viết xong")}
+      ${tile(int(done(t)), `bản AI viết xong · ${int(t.upgrades)} nâng cấp, ${int(t.drafts || 0)} soạn bài`)}
       ${tile(int(t.failed), `lỗi · ${int(retries(t))} lần gọi lại`, t.failed > 0)}
       ${tile(int(refused), `bị từ chối · ${int(t.refused_global)} do giới hạn chung, ${int(t.refused_user)} do giới hạn mỗi người`, t.refused_global > 0)}
       ${tile(int(t.accounts), "người dùng")}
@@ -82,9 +84,9 @@
       .join("");
     days.forEach((x, i) => {
       const cx = L + step * i + (step - bw) / 2;
-      const ok = Math.min(x.upgrades, x.requests);
+      const ok = Math.min(done(x), x.requests);
       const rest = x.requests - ok;
-      const title = `${dm(x.day)}: ${int(x.requests)} yêu cầu, ${int(x.upgrades)} bản viết xong, ${int(x.failed)} lỗi, ${int(x.refused_global + x.refused_user)} bị từ chối`;
+      const title = `${dm(x.day)}: ${int(x.requests)} yêu cầu, ${int(done(x))} bản viết xong, ${int(x.failed)} lỗi, ${int(x.refused_global + x.refused_user)} bị từ chối`;
       svg += `<g><title>${escapeHtml(title)}</title>`;
       if (ok) svg += `<rect class="bar-ok" x="${cx.toFixed(1)}" y="${y(ok).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0) - y(ok)).toFixed(1)}" rx="2"></rect>`;
       if (rest) svg += `<rect class="bar-rest" x="${cx.toFixed(1)}" y="${y(x.requests).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(ok) - y(x.requests)).toFixed(1)}" rx="2"></rect>`;
@@ -107,7 +109,7 @@
 
   function period(d) {
     const days = d.days;
-    const ups = sum(days, "upgrades");
+    const ups = days.reduce((a, x) => a + done(x), 0);
     const tokens = sum(days, "input_tokens") + sum(days, "output_tokens");
     const cost = sum(days, "cost_usd");
     const capDays = days.filter((x) => x.refused_global > 0).length;
@@ -141,7 +143,7 @@
       .slice()
       .reverse()
       .map((x) => `<tr>
-        <th scope="row">${dm(x.day)}</th><td>${int(x.requests)}</td><td>${int(x.upgrades)}</td>
+        <th scope="row">${dm(x.day)}</th><td>${int(x.requests)}</td><td>${int(done(x))}</td>
         <td>${int(x.failed)}</td><td>${int(x.refused_global)} / ${int(x.refused_user)}</td>
         <td>${int(x.accounts)}</td><td>${int(x.input_tokens)}</td><td>${int(x.output_tokens)}</td><td>${usd(x.cost_usd)}</td></tr>`)
       .join("");
@@ -179,7 +181,7 @@
   // offers the switch; the estimate of what the budget buys comes from the
   // last 14 days' tokens at the configured prices.
   function perUpgrade(d) {
-    const ups = sum(d.days, "upgrades");
+    const ups = d.days.reduce((a, x) => a + done(x), 0);
     return ups ? sum(d.days, "cost_usd") / ups : 0;
   }
 

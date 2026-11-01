@@ -19,7 +19,6 @@ def teach(teacher: str, *students: str) -> None:
     A teacher reviews only the work of their classes' members; a test that has
     a teacher open a student's response arranges the class first.
     """
-    from aicefr.storage.classroom_repository import new_code
     from aicefr.storage.db import now_iso
 
     db = store()
@@ -34,10 +33,8 @@ def teach(teacher: str, *students: str) -> None:
         {
             "$setOnInsert": {
                 "name": f"Lớp của {teacher}",
-                "code": new_code(),
                 "created_at": now_iso(),
                 "archived": False,
-                "assignments": [],
             },
             "$addToSet": {
                 "teacher_ids": ids[teacher],

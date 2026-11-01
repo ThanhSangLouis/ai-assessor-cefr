@@ -97,13 +97,6 @@ class AssessmentFacade:
         }
 
     @exposed
-    def assignments_for(self, account_id: str) -> dict:
-        """A student's class assignments, to do and done (D054)."""
-        from aicefr.services.core.assessment.classes_api import assignments_for
-
-        return assignments_for(account_id)
-
-    @exposed
     def practice_daily(self, account_id: str) -> dict:
         """Today's practice against the daily goal, and the streak (D023), for reminders."""
         from aicefr.services.core.assessment.responses_api import _daily_view, _practice_state

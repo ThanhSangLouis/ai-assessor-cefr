@@ -138,17 +138,6 @@ def test_sign_up_chooses_no_pseudonym_and_no_role(m) -> None:
     assert m.app.state.auth_repo.get_by_pseudonym("NguyenVanA") is None
 
 
-def test_sign_up_respects_the_plan_seats(m, monkeypatch) -> None:
-    from aicefr.services.core.identity import auth_api
-
-    monkeypatch.setattr(
-        auth_api.svc().peers.billing, "seat_refusal", lambda n: "gói hiện tại đã đủ chỗ"
-    )
-    r = TestClient(m.app).post("/api/v1/auth/signup", json=form())
-    assert r.status_code == 409
-    assert r.json()["detail"] == "gói hiện tại đã đủ chỗ"
-
-
 def test_sign_up_can_be_turned_off(tmp_path, monkeypatch) -> None:
     m = make_app(monkeypatch, tmp_path, signup=False)
     c = TestClient(m.app, follow_redirects=False)

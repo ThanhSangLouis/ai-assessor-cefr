@@ -13,8 +13,6 @@ const TABS = [
   { button: "tab-erase", panel: "panel-erase", load: null },
   // D030. The blind rating tab lives in admin_ratings.js, loaded first.
   { button: "tab-ratings", panel: "panel-ratings", load: () => window.adminRatings.load() },
-  // D033. The plan and payment tab lives in admin_billing.js, loaded first.
-  { button: "tab-billing", panel: "panel-billing", load: () => window.adminBilling.load() },
   // D072. The language model's use lives in admin_coach.js, loaded first.
   { button: "tab-coach", panel: "panel-coach", load: () => window.adminCoach.load() },
   { button: "tab-ops", panel: "panel-ops", load: loadOps },

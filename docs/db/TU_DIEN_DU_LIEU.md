@@ -54,8 +54,7 @@ Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs
 
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
-| `order` | | Đơn mua, gia hạn, nâng cấp, hạ cấp (`kind`): số chỗ, số tháng, các khoản tiền, cổng, trạng thái. Đơn `kind = credits` là gói lượt của một sinh viên (D053): `seats` là số lượt, `created_by` là người mua, `credited_at` là lúc lượt vào ví | `events`: thông báo từ cổng thanh toán, gộp các lần trùng (D035) | PK `order_id` |
-| `license` | | Giấy phép: gói, số chỗ, thời hạn, nguồn (dùng thử, đơn, mã). Collection riêng vì giấy phép dùng thử hay từ mã không có đơn | | PK `license_id` |
+| `order` | | Đơn nạp lượt (D053, D075): `seats` là số lượt, `amount_vnd` số tiền, `created_by` người mua (học viên hay giảng viên), `credited_at` lúc lượt vào ví, cổng (`sandbox`, `stripe`), trạng thái và `events` (những gì cổng báo). Đơn mua gói của trường (D033) có trước D075 còn giữ các trường `plan`, `months` và các khoản tiền, không còn được đọc. Collection `license` của D033 không còn được tạo hay đọc (D075) | Đơn nạp lượt (D053, D075): `seats` là số lượt, `amount_vnd` số tiền, `created_by` người mua (học viên hay giảng viên), `credited_at` lúc lượt vào ví, cổng (`sandbox`, `stripe`), trạng thái và `events` (những gì cổng báo). Đơn mua gói của trường (D033) trước D075 còn giữ các trường `plan`, `months` và các khoản tiền, không còn được đọc | PK `order_id` |
 
 ### 2.5. Tính lượt (`metering`, D049)
 
@@ -64,13 +63,13 @@ Chỉ có dữ liệu trên bản triển khai bật `AICEFR_METERING`, tức k�
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
 | `wallet` | CN | Ví của một tài khoản: số lượt trả trước (1/1000 lượt), chu kỳ hiện tại (bắt đầu ngày 16) và số lượt miễn phí đã dùng trong chu kỳ đó | `grants`: mỗi lần cộng lượt, nguồn (`admin`, `order` cho gói lượt mua qua cổng (D053), sau này `netid`), số tham chiếu, ai cộng; một khoản nạp chỉ cộng một lần | Duy nhất `user_ref` |
-| `ledger` | CN | Sổ lượt: mỗi bài một bút toán, và mỗi bản nâng cấp do AI viết một bút toán (D072, khoá `upgrade-<mã bài>`), gồm hành động (`assessment`, `practice`, `upgrade`), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
+| `ledger` | CN | Sổ lượt: mỗi bài một bút toán, và mỗi bản nâng cấp do AI viết một bút toán (D072, khoá `upgrade-<mã bài>`), gồm hành động (`assessment`, `practice`, `upgrade`, `lesson_draft` từ D075: bản soạn bài của giảng viên, không gắn bài nào), số giữ chỗ, phần lấy từ lượt miễn phí và từ ví, số đã thu, trạng thái (`held` → `charged` hoặc `released`), chu kỳ, phiên bản bảng giá. Không chứa audio hay transcript | | Duy nhất `entry_id`; duy nhất (`key`, `action`): mỗi bài thu một lần |
 
 ### 2.6. Hệ thống
 
 | Collection | CN | Nội dung | Khoá và ràng buộc |
 | --- | --- | --- | --- |
-| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042, gói của mô hình ngôn ngữ `assessment.coach_tier` D073: miễn phí hay trả phí và ngân sách USD/ngày, kèm người đổi và thời điểm), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`), bộ đếm dùng mô hình ngôn ngữ mỗi ngày của nhà cung cấp (`coach_usage.<YYYY-MM-DD>`, D072: số yêu cầu gửi đi gồm cả lỗi và gọi lại, tách theo gói (D073: `free_requests`, `paid_requests`, `paid_cost_usd`), bản viết xong, lỗi theo lý do, số lần bị từ chối vì giới hạn chung hay mỗi người, token vào/ra, chi phí ước tính USD, danh sách `account_id` đã dùng; không chứa nội dung bài) | PK `key` |
+| `system` | | Mỗi database một collection: khoá ký của bản triển khai (`identity.secret.*`, D036), cấu hình đang dùng có phiên bản (`assessment.*`: ngưỡng QC, mô hình chấm, sai số đo D042, gói của mô hình ngôn ngữ `assessment.coach_tier` D073: miễn phí hay trả phí và ngân sách USD/ngày, kèm người đổi và thời điểm), cài đặt gói của trường (`billing.*`), dấu nâng cấp một lần của dữ liệu mẫu (`learning.*`), bộ đếm dùng mô hình ngôn ngữ mỗi ngày của nhà cung cấp (`coach_usage.<YYYY-MM-DD>`, D072: số yêu cầu gửi đi gồm cả lỗi và gọi lại, số bản soạn bài của giảng viên `drafts` (D075), tách theo gói (D073: `free_requests`, `paid_requests`, `paid_cost_usd`), bản viết xong, lỗi theo lý do, số lần bị từ chối vì giới hạn chung hay mỗi người, token vào/ra, chi phí ước tính USD, danh sách `account_id` đã dùng; không chứa nội dung bài) | PK `key` |
 | `schema_migrations` | | Các phiên bản cấu trúc đã áp dụng và thời điểm (nội bộ, không trong `schema_core.json`) | Duy nhất `version` |
 
 ## 3. Đổi cấu trúc

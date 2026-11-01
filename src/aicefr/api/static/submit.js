@@ -202,7 +202,7 @@ fetch("/api/v1/tasks")
         chooseTask(tasks[i]);
       });
     });
-    // D054: "Làm bài" on an assignment opens this page on the assigned task.
+    // `?task=` opens this page on that task (a reminder or a link points there).
     const wanted = new URLSearchParams(window.location.search).get("task");
     const first = Math.max(0, tasks.findIndex((t) => t.task_id === wanted));
     inputs[first].checked = true;

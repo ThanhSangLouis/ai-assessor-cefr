@@ -261,9 +261,8 @@ def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
     main = student.locator("main").bounding_box()
     assert main and main["x"] >= box["width"] - 1  # the page starts after the sidebar
     links = sidebar.locator(".site-nav a")
-    # D068: Kết quả holds history and progress; "Bài được giao" is in the
-    # markup but shown only to a student in a class.
-    expect(links).to_have_count(4)
+    # D068: Kết quả holds history and progress; D075: no "Bài được giao".
+    expect(links).to_have_count(3)
     expect(links.first.locator("svg use")).to_have_attribute(
         "href", re.compile(r"icons\.svg.*#i-path$")
     )

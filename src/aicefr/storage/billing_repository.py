@@ -1,20 +1,17 @@
-"""Storage of licences and orders (D033), one collection each (D060).
+"""Storage of orders (D033, D060): run packs bought through a payment gateway.
 
-Neither holds anything about a person: an order knows the account that placed
-it, the plan, the seats and the money, and keeps what each payment gateway
-said about it -- codes and transaction numbers -- as its `events`; the
-organisation's name is a setting in `system`. No card number, bank account or
-payer name ever reaches this file (BR-32).
-
-A gateway message has no life apart from the order it is about, so it is part
-of the order's document rather than a document of its own. A licence is not:
-a trial or a licence key has no order, so `license` is a collection, and a
-licence bought by an order points back at it.
+An order holds nothing about a person beyond the account that placed it: the
+runs, the money, and what each payment gateway said about it -- codes and
+transaction numbers -- as its `events`. No card number, bank account or payer
+name ever reaches this file (BR-32).
 
 Marking an order paid is one conditional update, guarded by the order's
-status, and only the writer whose update took installs the licence it bought:
-when the browser's return and the gateway's notification report the same
-payment at once, exactly one of them installs a licence.
+status: when the browser's return and the gateway's notification report the
+same payment at once, exactly one of them settles it.
+
+D075: one centre and no service plans. The `license` collection of D033 is
+neither read nor written any more; what a deployment already holds there is
+left as it was.
 """
 
 from __future__ import annotations
@@ -22,14 +19,11 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass, field
 from dataclasses import fields as dc_fields
-from datetime import date
 from pathlib import Path
 
-from pymongo import ASCENDING, DESCENDING, ReturnDocument
-from pymongo.database import Database
+from pymongo import DESCENDING, ReturnDocument
 
 from aicefr.billing.payments import SETTLEABLE, OrderStatus
-from aicefr.billing.plans import License, OrderKind, ServicePlan
 from aicefr.storage.db import (
     MongoStore,
     ensure_indexes,
@@ -40,14 +34,13 @@ from aicefr.storage.db import (
 )
 from aicefr.storage.db import now_iso as _now
 
-# license.source: trial | order | key. order: list_vnd is students x months x
-# unit price, discount_vnd a school year paid at once, gross_vnd list minus
-# discount (what the licence is worth); gateway none | sandbox | vnpay | stripe
-# | momo; live 1 for real money (D035); checkout_ref the gateway's id for the
-# checkout. An event's fingerprint is its detail without "applied" (D035):
-# repeats of an identical message are counted on the first.
+# order: seats is the runs of the pack, amount_vnd what was paid (the plan
+# fields of D033 orders stay on old documents); gateway none | sandbox |
+# stripe (vnpay | momo on orders from before D075); live 1 for real money
+# (D035); checkout_ref the gateway's id for the checkout. An event's
+# fingerprint is its detail without "applied" (D035): repeats of an identical
+# message are counted on the first.
 INDEXES = {
-    "license": [(("license_id",), True), (("installed_at",), False)],
     "order": [
         (("order_id",), True),
         (("created_at",), False),
@@ -59,29 +52,28 @@ INDEXES = {
 SETTING = "billing."  # this part's keys in `system`
 
 
+# Every order is a pack of runs (D053, D075). The kind is still written on the
+# document, so that the plan orders of D033 stored before stay out of reach.
+CREDITS = "credits"
+
+
 @dataclass
 class Order:
-    """One purchase: a licence for the school, or a pack of runs for a learner."""
+    """One purchase: a pack of runs for the account that ordered it (D053, D075).
+
+    The account is the buyer -- a learner, or a teacher for their lesson drafts
+    -- and the runs go to that account's wallet once the payment is settled.
+    """
 
     order_id: str
-    plan: ServicePlan | None
-    seats: int
-    months: int | None
-    unit_price: int | None
-    list_vnd: int | None
-    discount_vnd: int | None
-    gross_vnd: int | None
-    credit_vnd: int | None
+    runs: int
     amount_vnd: int
-    kind: OrderKind
-    starts_on: str | None
-    ends_on: str | None
     status: OrderStatus
     gateway: str
-    live: int | bool | None
+    live: bool
     created_by: str
     created_at: str
-    expires_at: str | None
+    expires_at: str | None = None
     checkout_ref: str | None = None
     reference: str | None = None
     result_code: str | None = None
@@ -93,23 +85,20 @@ class Order:
     def from_doc(cls, doc: dict) -> Order:
         known = {f.name for f in dc_fields(cls)}
         found = {k: v for k, v in doc.items() if k in known}
-        found["kind"] = OrderKind(doc["kind"])
+        # A pack ordered before D075 kept its runs in `seats`.
+        found["runs"] = int(doc.get("runs", doc.get("seats", 0)))
+        found["live"] = bool(doc.get("live"))
         found["status"] = OrderStatus(doc["status"])
-        found["plan"] = ServicePlan(doc["plan"]) if doc.get("plan") else None
         return cls(**found)
 
     def to_doc(self) -> dict:
-        return {
-            **asdict(self),
-            "plan": self.plan.value if self.plan else None,
-            "kind": self.kind.value,
-            "status": self.status.value,
-        }
+        return {**asdict(self), "status": self.status.value, "kind": CREDITS}
 
     def view(self) -> dict:
         """The order as the screens and the service read it, without its events."""
         doc = self.to_doc()
         doc.pop("events")
+        doc.pop("kind")
         return doc
 
 
@@ -122,66 +111,6 @@ class BillingRepository(MongoStore):
         self.db_path = str(db_path)
         ensure_indexes(self.db, INDEXES, "billing")
         ensure_system(self.db)
-
-    # ------------------------------------------------------------ licences
-
-    @staticmethod
-    def _license(row: dict) -> License:
-        return License(
-            license_id=row["license_id"],
-            organization=row["organization"],
-            plan=ServicePlan(row["plan"]),
-            seats=row["seats"],
-            valid_from=date.fromisoformat(row["valid_from"]),
-            valid_to=date.fromisoformat(row["valid_to"]),
-            source=row["source"],
-            order_id=row.get("order_id"),
-            value_vnd=row.get("value_vnd", 0),
-            installed_at=row["installed_at"],
-        )
-
-    def licenses(self) -> list[License]:
-        rows = self.col("license").find().sort([("installed_at", ASCENDING), ("_id", ASCENDING)])
-        return [self._license(r) for r in rows]
-
-    def has_license(self, license_id: str) -> bool:
-        return self.col("license").find_one({"license_id": license_id}) is not None
-
-    @staticmethod
-    def _insert_license(
-        db: Database, lic: License, key: str | None, by: str | None, at: str
-    ) -> None:
-        db["license"].insert_one(
-            {
-                "license_id": lic.license_id,
-                "organization": lic.organization,
-                "plan": lic.plan.value,
-                "seats": lic.seats,
-                "valid_from": lic.valid_from.isoformat(),
-                "valid_to": lic.valid_to.isoformat(),
-                "source": lic.source,
-                "order_id": lic.order_id,
-                "value_vnd": lic.value_vnd,
-                "license_key": key,
-                "installed_by": by,
-                "installed_at": at,
-            }
-        )
-
-    def add_license(self, lic: License, key: str | None = None, by: str | None = None) -> None:
-        self._insert_license(self.db, lic, key, by, lic.installed_at or _now())
-
-    def start_trial(self, lic: License) -> bool:
-        """Install the deployment's one trial; False when it was started before.
-
-        The marker goes in first and a unique index lets only one writer put it
-        there, so two first requests at once start one trial, not two.
-        """
-        _kept, mine = setting_once(self.db, SETTING + "trial_started", lic.license_id)
-        if not mine:
-            return False
-        self._insert_license(self.db, lic, None, None, lic.installed_at or _now())
-        return True
 
     # ------------------------------------------------------------ orders
 
@@ -200,29 +129,20 @@ class BillingRepository(MongoStore):
     def order(self, order_id: str) -> dict | None:
         return _view(self.col("order").find_one({"order_id": order_id}))
 
-    def orders(self, limit: int = 50) -> list[dict]:
+    def orders_by(self, account_id: str, limit: int = 20) -> list[dict]:
+        """One account's own run packs, newest first."""
         rows = (
             self.col("order")
-            .find()
+            .find({"created_by": account_id, "kind": CREDITS})
             .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
             .limit(limit)
         )
         return [Order.from_doc(r).view() for r in rows]
 
-    def orders_by(self, account_id: str, kind: str, limit: int = 20) -> list[dict]:
-        """One account's own orders of one kind, newest first: a learner's run packs."""
-        rows = (
-            self.col("order")
-            .find({"created_by": account_id, "kind": kind})
-            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-            .limit(limit)
-        )
-        return [Order.from_doc(r).view() for r in rows]
-
-    def uncredited(self, kind: str) -> list[dict]:
-        """Paid orders of `kind` whose runs have not reached the wallet yet (D053)."""
+    def uncredited(self) -> list[dict]:
+        """Paid run packs whose runs have not reached the wallet yet (D053)."""
         rows = self.col("order").find(
-            {"kind": kind, "status": OrderStatus.PAID.value, "credited_at": None}
+            {"kind": CREDITS, "status": OrderStatus.PAID.value, "credited_at": None}
         )
         return [Order.from_doc(r).view() for r in rows]
 
@@ -262,10 +182,8 @@ class BillingRepository(MongoStore):
         status: OrderStatus,
         reference: str,
         code: str,
-        license: License | None = None,
-        by: str | None = None,
     ) -> bool:
-        """Move an order from pending or expired to `status`, installing `license` with it.
+        """Move an order from pending or expired to `status`.
 
         Guarded by the status the order is in: returns False, and changes
         nothing, when another message settled the order first.
@@ -278,11 +196,7 @@ class BillingRepository(MongoStore):
                       "settled_at": at}},
             return_document=ReturnDocument.AFTER,
         )  # fmt: skip
-        if taken is None:
-            return False
-        if license is not None:
-            self._insert_license(self.db, license, None, by, at)
-        return True
+        return taken is not None
 
     # ------------------------------------------------------------ events and settings
 

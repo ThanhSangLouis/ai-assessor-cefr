@@ -1,7 +1,8 @@
 // Paths composed by the path model (D046), on the teacher's path list: a
-// proposal to review, trim and save as a draft path. Learners no longer
-// compose their own (D068): they follow the path their teachers publish. The model only picks and orders lessons teachers wrote; nothing
-// here shows a sentence it made up, because it makes none.
+// proposal to review, trim and save as a draft path. A learner's own path is
+// composed from the bands they choose (D074, band_plan.js). The model only
+// picks and orders lessons teachers wrote; nothing here shows a sentence it
+// made up, because it makes none.
 (function () {
   const escapeHtml = window.escapeHtml;
   const icon = (name, cls) => window.ui.icon(name, cls);

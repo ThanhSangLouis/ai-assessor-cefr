@@ -579,6 +579,21 @@ def _d071_class_teachers(db: Database, target: str) -> None:
     ensure_indexes(db, {"classroom": [(("teacher_ids",), False)]}, "migration-9")
 
 
+def _d075_classroom_code(db: Database, target: str) -> None:
+    """Classes set no assessments and nobody joins with a code (D075).
+
+    The unique index on `code`, the index on the `teacher_id` replaced by
+    `teacher_ids` in D071 and the index on the assignments go. Only indexes:
+    what a class document already holds stays as it is, unread.
+    """
+    if not _has(db, "classroom"):
+        return
+    present = {ix["name"] for ix in db["classroom"].list_indexes()}
+    for name in ("u_code", "i_teacher_id", "i_assignments.assignment_id"):
+        if name in present:
+            db["classroom"].drop_index(name)
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -594,6 +609,9 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(8, "terms: account.terms_accepted_at dropped, no terms step (D064)", _drop_terms),
     Migration(
         9, "classroom.teacher_ids: a class has one or more teachers (D071)", _d071_class_teachers
+    ),
+    Migration(
+        10, "classroom: no join code, assignment or teacher_id index (D075)", _d075_classroom_code
     ),
 )
 

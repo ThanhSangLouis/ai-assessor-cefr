@@ -25,10 +25,8 @@ from aicefr.api.deps import (
     STAFF_ONLY,
     STUDENT_ONLY,
     require_login,
-    require_plan,
 )
 from aicefr.audio.decoder import SNIFF_BYTES, sniff
-from aicefr.billing.plans import PlanFeature
 from aicefr.contracts import Band, Criterion
 from aicefr.lessons.checks import compare_rounds
 from aicefr.lessons.generate import build_lesson, build_word_lesson
@@ -124,13 +122,8 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _plan_allows(feature: PlanFeature) -> None:
-    require_plan(svc().peers.billing, feature)
-
-
 def _authoring(account: Account = STAFF_ONLY) -> Account:
-    """Writing lesson paths is a staff tool of the plan (D034); reading them never is."""
-    _plan_allows(PlanFeature.LESSON_AUTHORING)
+    """Writing lesson paths is for staff; since D075 no plan stands in the way."""
     return account
 
 
@@ -1565,7 +1558,6 @@ def teach_insights(
     request: Request, path_id: str | None = None, account: Account = STAFF_ONLY
 ) -> dict:
     """How the class moves through a path. Totals per lesson; no ranking of people. FR-49."""
-    _plan_allows(PlanFeature.CLASS_INSIGHTS)
     lessons_repo = svc().lessons
     chosen = _choose_path(path_id, published_only=False)
     if chosen is None:

@@ -98,23 +98,9 @@
   ],
   "classroom": [
     {
-      "name": "i_assignments.assignment_id",
-      "keys": [
-        "assignments.assignment_id"
-      ],
-      "unique": false
-    },
-    {
       "name": "i_members",
       "keys": [
         "members"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_teacher_id",
-      "keys": [
-        "teacher_id"
       ],
       "unique": false
     },
@@ -129,13 +115,6 @@
       "name": "u_class_id",
       "keys": [
         "class_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_code",
-      "keys": [
-        "code"
       ],
       "unique": true
     }
@@ -210,22 +189,6 @@
       "name": "u_lesson_id",
       "keys": [
         "lesson_id"
-      ],
-      "unique": true
-    }
-  ],
-  "license": [
-    {
-      "name": "i_installed_at",
-      "keys": [
-        "installed_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_license_id",
-      "keys": [
-        "license_id"
       ],
       "unique": true
     }

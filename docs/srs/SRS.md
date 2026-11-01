@@ -36,6 +36,7 @@
 | **1.12** | **21/10/2026** | **+1 FR (đề xuất).** FR-85 tính lượt trên bản triển khai thương mại cho kênh NetID: giữ chỗ khi nộp, chỉ thu khi có kết quả, 3 lượt miễn phí mỗi chu kỳ; bản của trường và nghiên cứu không đổi (BR-29, BR-30, FR-W7 giữ nguyên). Kho dữ liệu chuyển sang MongoDB (D048) | D048, D049 (PROPOSED) |
 | **1.13** | **24/10/2026** | **+5 FR (đề xuất).** FR-86 hiệu chuẩn band tuỳ chọn, FR-87 gói lượt mua qua cổng thanh toán, FR-88 lớp học và giao bài, FR-89 nhắc việc trong ứng dụng, FR-90 tự nghe lại có mốc đối chứng | D052–D056 (PROPOSED) |
 | **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
+| **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1163,6 +1164,8 @@ Giữ người học quay lại luyện mà không biến việc luyện thành 
 
 ## 3.9g. Gói dịch vụ của trường và thanh toán — D033, D034
 
+> **Đã gỡ bởi D075 (01/11/2026).** Hệ thống phục vụ một trung tâm; người học trả theo lượt (FR-85, FR-87), không còn gói, dùng thử, giới hạn số sinh viên hay mã giấy phép. Mọi công cụ của giảng viên mở. Các tiêu chí dưới đây giữ lại làm lịch sử, không còn được kiểm. Xem FR-91.
+
 Trường — khoa, trung tâm ngoại ngữ — là bên mua; sinh viên không trả tiền và không thấy lời mời mua nào (BR-29). Phân tích ba phương án và lý do chọn bán cho trường nằm ở `docs/plan/DE_XUAT_GOI_DICH_VU.md` (D033, còn ở trạng thái đề xuất); mục này đặc tả phần đã làm theo yêu cầu của chủ dự án (D034). Mọi thứ trong mục chỉ chạy khi bản triển khai bật thu phí (`AICEFR_BILLING`); tắt — mặc định — thì hệ thống chạy như trước, không giới hạn gì. Không có tiền thật nào được thu trong đồ án: cổng mặc định là cổng thanh toán thử; cổng VNPay có sẵn nhưng chỉ bật khi có mã website và chuỗi bí mật VNPay cấp cho một pháp nhân. Quy tắc nghiệp vụ: BR-03, BR-12, BR-26, BR-29..BR-33.
 
 ### FR-67 — Thang gói: Miễn phí, Dùng thử, Chuẩn, Nâng cao
@@ -1172,12 +1175,12 @@ Trường — khoa, trung tâm ngoại ngữ — là bên mua; sinh viên không
 
 | Acceptance Criteria |
 | --- |
-| **AC-67.1** — *Given* bản triển khai không bật thu phí, *When* quản trị viên tạo 200 tài khoản sinh viên, giảng viên tạo lộ trình và xem thống kê lớp, *Then* mọi việc thành công, tab Gói dịch vụ báo đang tắt kèm bảng so sánh, báo giá và đặt đơn nhận 409, không giấy phép nào được tạo (`test_with_billing_off_nothing_changes`). |
-| **AC-67.2** — *Given* bật thu phí lần đầu, *When* quản trị viên mở tab hai lần, *Then* có đúng một gói Dùng thử 30 ngày với mọi tính năng; bảng so sánh ghi Miễn phí tối đa 30 sinh viên không công cụ nào, Chuẩn hai công cụ, Nâng cao ba (`test_the_first_look_starts_one_trial_with_everything`). |
-| **AC-67.3** — *Given* ngày sau khi hết dùng thử, *When* giảng viên tạo lộ trình, xem thống kê lớp, mở hàng đợi, và sinh viên luyện, nộp bài, xem tiến độ, *Then* gói là Miễn phí; soạn lộ trình và thống kê nhận 403 nêu gói Chuẩn và Nâng cao; hàng đợi và mọi việc của sinh viên vẫn chạy; tạo thêm 5 sinh viên được (`test_after_the_trial_the_free_plan_closes_staff_tools_but_never_learning`). |
-| **AC-67.4** — *Given* gói Chuẩn đã mua, *When* tới ngày thứ 14 sau khi hết hạn rồi ngày thứ 15, *Then* lần đầu còn gói Chuẩn ở trạng thái ân hạn với đủ công cụ, lần sau là Miễn phí kèm gói vừa hết (`test_a_paid_plan_keeps_its_tools_through_grace_then_falls_back_to_free`). |
-| **AC-67.5** — *Given* lần lượt Dùng thử, Chuẩn, Nâng cao, *When* giảng viên tạo lộ trình, xem thống kê lớp và quản trị viên tạo đợt chấm mù, *Then* Dùng thử và Nâng cao mở cả ba, Chuẩn từ chối tạo đợt chấm mù với lời nêu gói Nâng cao, đợt đã có vẫn xem được (`test_each_plan_opens_its_staff_tools`). |
-| **AC-67.6** — *Given* bảng gói, *When* so các bậc, *Then* công cụ của gói chỉ là ba công cụ của giảng viên, Miễn phí không có công cụ nào, mỗi bậc chứa trọn bậc dưới, Dùng thử bằng Nâng cao (`test_each_step_up_adds_something_and_none_locks_learning`). |
+| ~~AC-67.1~~ *(gỡ bởi D075)* — *Given* bản triển khai không bật thu phí, *When* quản trị viên tạo 200 tài khoản sinh viên, giảng viên tạo lộ trình và xem thống kê lớp, *Then* mọi việc thành công, tab Gói dịch vụ báo đang tắt kèm bảng so sánh, báo giá và đặt đơn nhận 409, không giấy phép nào được tạo (`test_with_billing_off_nothing_changes`). |
+| ~~AC-67.2~~ *(gỡ bởi D075)* — *Given* bật thu phí lần đầu, *When* quản trị viên mở tab hai lần, *Then* có đúng một gói Dùng thử 30 ngày với mọi tính năng; bảng so sánh ghi Miễn phí tối đa 30 sinh viên không công cụ nào, Chuẩn hai công cụ, Nâng cao ba (`test_the_first_look_starts_one_trial_with_everything`). |
+| ~~AC-67.3~~ *(gỡ bởi D075)* — *Given* ngày sau khi hết dùng thử, *When* giảng viên tạo lộ trình, xem thống kê lớp, mở hàng đợi, và sinh viên luyện, nộp bài, xem tiến độ, *Then* gói là Miễn phí; soạn lộ trình và thống kê nhận 403 nêu gói Chuẩn và Nâng cao; hàng đợi và mọi việc của sinh viên vẫn chạy; tạo thêm 5 sinh viên được (`test_after_the_trial_the_free_plan_closes_staff_tools_but_never_learning`). |
+| ~~AC-67.4~~ *(gỡ bởi D075)* — *Given* gói Chuẩn đã mua, *When* tới ngày thứ 14 sau khi hết hạn rồi ngày thứ 15, *Then* lần đầu còn gói Chuẩn ở trạng thái ân hạn với đủ công cụ, lần sau là Miễn phí kèm gói vừa hết (`test_a_paid_plan_keeps_its_tools_through_grace_then_falls_back_to_free`). |
+| ~~AC-67.5~~ *(gỡ bởi D075)* — *Given* lần lượt Dùng thử, Chuẩn, Nâng cao, *When* giảng viên tạo lộ trình, xem thống kê lớp và quản trị viên tạo đợt chấm mù, *Then* Dùng thử và Nâng cao mở cả ba, Chuẩn từ chối tạo đợt chấm mù với lời nêu gói Nâng cao, đợt đã có vẫn xem được (`test_each_plan_opens_its_staff_tools`). |
+| ~~AC-67.6~~ *(gỡ bởi D075)* — *Given* bảng gói, *When* so các bậc, *Then* công cụ của gói chỉ là ba công cụ của giảng viên, Miễn phí không có công cụ nào, mỗi bậc chứa trọn bậc dưới, Dùng thử bằng Nâng cao (`test_each_step_up_adds_something_and_none_locks_learning`). |
 
 ### FR-68 — Số sinh viên và số bài đánh giá dự kiến
 
@@ -1186,8 +1189,8 @@ Trường — khoa, trung tâm ngoại ngữ — là bên mua; sinh viên không
 
 | Acceptance Criteria |
 | --- |
-| **AC-68.1** — *Given* gói cho 3 sinh viên, *When* tạo 4 tài khoản theo dãy, rồi 3, rồi 1, rồi 2 giảng viên, tắt một sinh viên, tạo 1, bật lại người đã tắt, đổi một giảng viên thành sinh viên, *Then* 409 không tạo ai, 200, 409, 200, 200, 200, 409, 409; một tài khoản có sẵn vượt số vẫn đăng nhập được (`test_the_plan_limits_new_student_accounts_only`). |
-| **AC-68.2** — *Given* mức dự kiến 24 bài, *When* có 20 bài của người không đồng thuận nghiên cứu và 4 bài của người đồng thuận, rồi thêm 4 bài, *Then* tab đếm 20 và 4 riêng, cảnh báo 80% rồi 100%, và cả hai sinh viên vẫn nộp được bài (`test_assessments_over_the_monthly_figure_only_warn`). |
+| ~~AC-68.1~~ *(gỡ bởi D075)* — *Given* gói cho 3 sinh viên, *When* tạo 4 tài khoản theo dãy, rồi 3, rồi 1, rồi 2 giảng viên, tắt một sinh viên, tạo 1, bật lại người đã tắt, đổi một giảng viên thành sinh viên, *Then* 409 không tạo ai, 200, 409, 200, 200, 200, 409, 409; một tài khoản có sẵn vượt số vẫn đăng nhập được (`test_the_plan_limits_new_student_accounts_only`). |
+| ~~AC-68.2~~ *(gỡ bởi D075)* — *Given* mức dự kiến 24 bài, *When* có 20 bài của người không đồng thuận nghiên cứu và 4 bài của người đồng thuận, rồi thêm 4 bài, *Then* tab đếm 20 và 4 riêng, cảnh báo 80% rồi 100%, và cả hai sinh viên vẫn nộp được bài (`test_assessments_over_the_monthly_figure_only_warn`). |
 
 ### FR-69 — Mua, nâng cấp và gia hạn qua cổng thanh toán
 
@@ -1196,17 +1199,17 @@ Trường — khoa, trung tâm ngoại ngữ — là bên mua; sinh viên không
 
 | Acceptance Criteria |
 | --- |
-| **AC-69.1** — *Given* gói Dùng thử, *When* mua Chuẩn 50 sinh viên 6 tháng qua cổng thử, rồi trình duyệt và cổng báo lại cùng kết quả, *Then* báo giá 3.000.000 đ loại mua mới; gói Chuẩn 50 sinh viên có hiệu lực với tên tổ chức; đơn đã thanh toán có mã giao dịch; lần báo lại nhận "Order already confirmed"; có đúng hai giấy phép; biên nhận ghi số tiền và câu không phải hoá đơn; sự kiện của đơn ghi mỗi thông điệp khác nhau một lần — thông báo của cổng được áp dụng, lần trả về không — và đếm mỗi lần lặp y hệt trên dòng của nó (từ bản 1.7) (`test_buying_through_the_sandbox_installs_the_plan_once`). |
-| **AC-69.2** — *Given* mua Chuẩn 100 sinh viên 12 tháng, *When* thanh toán, *Then* giá 12.000.000 đ, giảm 1.800.000 đ, trả 10.200.000 đ, và biên nhận có dòng giảm khi trả theo năm học (`test_a_school_year_is_discounted_and_shown_on_the_receipt`). |
-| **AC-69.3** — *Given* hai đơn, *When* một thanh toán không thành công và một bị huỷ, *Then* trang kết quả nói đúng từng trường hợp, gói vẫn là Dùng thử, không có biên nhận (`test_a_failed_or_cancelled_payment_changes_nothing`). |
-| **AC-69.4** — *Given* một đơn chờ, *When* gửi kết quả sai chữ ký, kết quả đúng chữ ký nhưng sai số tiền, kết quả cho đơn không có, *Then* trang kết quả không xác nhận, thông báo nhận mã 97, 04, 01, đơn vẫn chờ, gói không đổi (`test_a_forged_or_altered_result_is_refused`). |
-| **AC-69.5** — *Given* Chuẩn 50 sinh viên 6 tháng đã dùng 91 ngày, *When* báo giá Nâng cao 50 sinh viên rồi mua, rồi mua lại Nâng cao 50, *Then* nâng cấp từ hôm nay được trừ 1.500.000 đ; lần sau là gia hạn đặt trước; mua thêm khi đang có gói đặt trước nhận 422 (`test_an_upgrade_is_credited_and_a_renewal_waits`). |
-| **AC-69.6** — *Given* Chuẩn 100 sinh viên 12 tháng vừa mua, *When* mua Nâng cao 10 sinh viên 6 tháng, *Then* phần chưa dùng trả đủ, đơn 0 đ được kích hoạt không qua cổng (`test_an_upgrade_the_credit_covers_needs_no_payment`). |
-| **AC-69.7** — *Given* đơn chờ quá 15 phút, *When* xem tab rồi cổng báo đã thanh toán, *Then* đơn hiện hết hạn chờ, rồi được ghi nhận đã thanh toán và gói có hiệu lực (`test_pending_orders_expire_and_a_late_payment_still_counts`). |
-| **AC-69.8** — *Given* một đơn đang chờ, *When* đặt đơn mới, *Then* đơn cũ chuyển sang hết hạn chờ (`test_a_new_order_retires_the_one_still_waiting`). |
-| **AC-69.9** — *Given* cổng VNPay với mã website và chuỗi bí mật thử, *When* đặt đơn, VNPay báo thành công qua thông báo rồi trình duyệt quay lại, và một đơn khác bị huỷ trên trang VNPay, *Then* địa chỉ thanh toán là trang thử của VNPay với số tiền nhân 100 và địa chỉ trả về đầy đủ; thông báo nhận "Confirm Success"; trang kết quả báo thành công kèm dòng môi trường thử của VNPay — từ bản 1.7 địa chỉ thử của VNPay được coi là môi trường thử, vì không có tiền thật; đơn huỷ để nguyên gói (`test_vnpay_is_redirected_to_and_its_messages_are_checked`). |
-| **AC-69.10** — *Given* quản trị viên trên trình duyệt, *When* xem bảng so sánh, chọn gói Chuẩn, đặt 60 sinh viên, thanh toán thành công ở trang cổng thử, mở biên nhận và quay lại tab, *Then* bảng có ba gói và đúng dấu tích, báo giá "60 sinh viên × 6 tháng", số tiền 3.600.000 đ trên trang cổng và biên nhận, tab ghi gói Chuẩn đang dùng và đơn đã thanh toán (`test_an_administrator_buys_a_plan_and_gets_a_receipt`). |
-| **AC-69.11** — *Given* quản trị viên trên trình duyệt, *When* chọn Nâng cao rồi huỷ ở trang cổng, *Then* trang kết quả ghi đã huỷ, gói không đổi, đơn ghi đã huỷ (`test_a_cancelled_payment_leaves_the_plan_as_it_was`). |
+| ~~AC-69.1~~ *(gỡ bởi D075)* — *Given* gói Dùng thử, *When* mua Chuẩn 50 sinh viên 6 tháng qua cổng thử, rồi trình duyệt và cổng báo lại cùng kết quả, *Then* báo giá 3.000.000 đ loại mua mới; gói Chuẩn 50 sinh viên có hiệu lực với tên tổ chức; đơn đã thanh toán có mã giao dịch; lần báo lại nhận "Order already confirmed"; có đúng hai giấy phép; biên nhận ghi số tiền và câu không phải hoá đơn; sự kiện của đơn ghi mỗi thông điệp khác nhau một lần — thông báo của cổng được áp dụng, lần trả về không — và đếm mỗi lần lặp y hệt trên dòng của nó (từ bản 1.7) (`test_buying_through_the_sandbox_installs_the_plan_once`). |
+| ~~AC-69.2~~ *(gỡ bởi D075)* — *Given* mua Chuẩn 100 sinh viên 12 tháng, *When* thanh toán, *Then* giá 12.000.000 đ, giảm 1.800.000 đ, trả 10.200.000 đ, và biên nhận có dòng giảm khi trả theo năm học (`test_a_school_year_is_discounted_and_shown_on_the_receipt`). |
+| ~~AC-69.3~~ *(gỡ bởi D075)* — *Given* hai đơn, *When* một thanh toán không thành công và một bị huỷ, *Then* trang kết quả nói đúng từng trường hợp, gói vẫn là Dùng thử, không có biên nhận (`test_a_failed_or_cancelled_payment_changes_nothing`). |
+| ~~AC-69.4~~ *(gỡ bởi D075)* — *Given* một đơn chờ, *When* gửi kết quả sai chữ ký, kết quả đúng chữ ký nhưng sai số tiền, kết quả cho đơn không có, *Then* trang kết quả không xác nhận, thông báo nhận mã 97, 04, 01, đơn vẫn chờ, gói không đổi (`test_a_forged_or_altered_result_is_refused`). |
+| ~~AC-69.5~~ *(gỡ bởi D075)* — *Given* Chuẩn 50 sinh viên 6 tháng đã dùng 91 ngày, *When* báo giá Nâng cao 50 sinh viên rồi mua, rồi mua lại Nâng cao 50, *Then* nâng cấp từ hôm nay được trừ 1.500.000 đ; lần sau là gia hạn đặt trước; mua thêm khi đang có gói đặt trước nhận 422 (`test_an_upgrade_is_credited_and_a_renewal_waits`). |
+| ~~AC-69.6~~ *(gỡ bởi D075)* — *Given* Chuẩn 100 sinh viên 12 tháng vừa mua, *When* mua Nâng cao 10 sinh viên 6 tháng, *Then* phần chưa dùng trả đủ, đơn 0 đ được kích hoạt không qua cổng (`test_an_upgrade_the_credit_covers_needs_no_payment`). |
+| ~~AC-69.7~~ *(gỡ bởi D075)* — *Given* đơn chờ quá 15 phút, *When* xem tab rồi cổng báo đã thanh toán, *Then* đơn hiện hết hạn chờ, rồi được ghi nhận đã thanh toán và gói có hiệu lực (`test_pending_orders_expire_and_a_late_payment_still_counts`). |
+| ~~AC-69.8~~ *(gỡ bởi D075)* — *Given* một đơn đang chờ, *When* đặt đơn mới, *Then* đơn cũ chuyển sang hết hạn chờ (`test_a_new_order_retires_the_one_still_waiting`). |
+| ~~AC-69.9~~ *(gỡ bởi D075)* — *Given* cổng VNPay với mã website và chuỗi bí mật thử, *When* đặt đơn, VNPay báo thành công qua thông báo rồi trình duyệt quay lại, và một đơn khác bị huỷ trên trang VNPay, *Then* địa chỉ thanh toán là trang thử của VNPay với số tiền nhân 100 và địa chỉ trả về đầy đủ; thông báo nhận "Confirm Success"; trang kết quả báo thành công kèm dòng môi trường thử của VNPay — từ bản 1.7 địa chỉ thử của VNPay được coi là môi trường thử, vì không có tiền thật; đơn huỷ để nguyên gói (`test_vnpay_is_redirected_to_and_its_messages_are_checked`). |
+| ~~AC-69.10~~ *(gỡ bởi D075)* — *Given* quản trị viên trên trình duyệt, *When* xem bảng so sánh, chọn gói Chuẩn, đặt 60 sinh viên, thanh toán thành công ở trang cổng thử, mở biên nhận và quay lại tab, *Then* bảng có ba gói và đúng dấu tích, báo giá "60 sinh viên × 6 tháng", số tiền 3.600.000 đ trên trang cổng và biên nhận, tab ghi gói Chuẩn đang dùng và đơn đã thanh toán (`test_an_administrator_buys_a_plan_and_gets_a_receipt`). |
+| ~~AC-69.11~~ *(gỡ bởi D075)* — *Given* quản trị viên trên trình duyệt, *When* chọn Nâng cao rồi huỷ ở trang cổng, *Then* trang kết quả ghi đã huỷ, gói không đổi, đơn ghi đã huỷ (`test_a_cancelled_payment_leaves_the_plan_as_it_was`). |
 
 ### FR-70 — Mã giấy phép theo hợp đồng; quyền và nhật ký
 
@@ -1215,13 +1218,15 @@ Trường — khoa, trung tâm ngoại ngữ — là bên mua; sinh viên không
 
 | Acceptance Criteria |
 | --- |
-| **AC-70.1** — *Given* mã giấy phép Nâng cao 400 sinh viên ký đúng, *When* cài, cài lại, rồi cài một mã ký bằng khoá khác, *Then* gói Nâng cao 400 sinh viên có hiệu lực và tên tổ chức lấy từ mã; lần hai nhận 409; mã giả nhận 422 nêu chữ ký (`test_a_licence_key_is_installed_once`). |
-| **AC-70.2** — *Given* bản triển khai chưa đặt `AICEFR_LICENSE_SECRET`, *When* cài một mã, *Then* nhận 422 nêu biến đó và tab không hiện ô cài mã (`test_without_a_licence_secret_keys_are_refused`). |
-| **AC-70.3** — *Given* giảng viên, sinh viên và khách, *When* gọi API gói, đặt đơn, xem biên nhận, *Then* giảng viên đọc được gói nhưng nhận 403 ở tab và biên nhận, sinh viên 403, khách 401 hoặc được đưa về đăng nhập; các trang của sinh viên không có chữ "gói dịch vụ" hay "thanh toán" (`test_only_an_administrator_deals_with_plans`). |
-| **AC-70.4** — *Given* quản trị viên đổi tên tổ chức và mua một gói, *When* xem nhật ký, *Then* có dòng đổi tên và đặt đơn của quản trị viên, dòng đã thanh toán của cổng thử với mã đơn và số tiền (`test_plan_actions_are_audited`). |
-| **AC-70.5** — *Given* điện thoại 390 px và một sinh viên, *When* mở tab Gói dịch vụ và các trang của sinh viên, *Then* tab không cuộn ngang, sinh viên không thấy chữ "gói dịch vụ" hay "thanh toán" (`test_the_tab_fits_a_phone_and_students_see_no_plan`). |
+| ~~AC-70.1~~ *(gỡ bởi D075)* — *Given* mã giấy phép Nâng cao 400 sinh viên ký đúng, *When* cài, cài lại, rồi cài một mã ký bằng khoá khác, *Then* gói Nâng cao 400 sinh viên có hiệu lực và tên tổ chức lấy từ mã; lần hai nhận 409; mã giả nhận 422 nêu chữ ký (`test_a_licence_key_is_installed_once`). |
+| ~~AC-70.2~~ *(gỡ bởi D075)* — *Given* bản triển khai chưa đặt `AICEFR_LICENSE_SECRET`, *When* cài một mã, *Then* nhận 422 nêu biến đó và tab không hiện ô cài mã (`test_without_a_licence_secret_keys_are_refused`). |
+| ~~AC-70.3~~ *(gỡ bởi D075)* — *Given* giảng viên, sinh viên và khách, *When* gọi API gói, đặt đơn, xem biên nhận, *Then* giảng viên đọc được gói nhưng nhận 403 ở tab và biên nhận, sinh viên 403, khách 401 hoặc được đưa về đăng nhập; các trang của sinh viên không có chữ "gói dịch vụ" hay "thanh toán" (`test_only_an_administrator_deals_with_plans`). |
+| ~~AC-70.4~~ *(gỡ bởi D075)* — *Given* quản trị viên đổi tên tổ chức và mua một gói, *When* xem nhật ký, *Then* có dòng đổi tên và đặt đơn của quản trị viên, dòng đã thanh toán của cổng thử với mã đơn và số tiền (`test_plan_actions_are_audited`). |
+| ~~AC-70.5~~ *(gỡ bởi D075)* — *Given* điện thoại 390 px và một sinh viên, *When* mở tab Gói dịch vụ và các trang của sinh viên, *Then* tab không cuộn ngang, sinh viên không thấy chữ "gói dịch vụ" hay "thanh toán" (`test_the_tab_fits_a_phone_and_students_see_no_plan`). |
 
 ## 3.9h. Nhiều cổng thanh toán: Stripe và MoMo — D035
+
+> **D075 (01/11/2026):** chỉ còn Stripe (và cổng thử để chạy thử); VNPay và MoMo đã gỡ, FR-73 không còn được kiểm. Người mua là học viên hay giảng viên mua gói lượt, không còn quản trị viên mua gói của trường.
 
 Chủ dự án muốn thử luồng thanh toán với Stripe vì Stripe có môi trường thử đầy đủ, và để ngỏ thêm MoMo, VNPay "cho đa dạng". Mục này mở rộng FR-69: một bản triển khai bật được nhiều cổng cùng lúc và quản trị viên chọn cổng cho từng đơn. Mỗi cổng mặc định chạy ở môi trường thử của chính nó; không có tiền thật nào trong đồ án (BR-34). Stripe chưa có Việt Nam trong danh sách quốc gia mở được tài khoản bán hàng (stripe.com/global, truy cập 07/10/2026), nên Stripe ở đây để thử luồng; bán thật ở Việt Nam sẽ qua VNPay hay MoMo với một pháp nhân đã đăng ký. Không thư viện SDK nào được thêm: thư viện chuẩn đủ cho vài yêu cầu HTTP mỗi đơn. Quy tắc nghiệp vụ: BR-32..BR-35.
 
@@ -1232,12 +1237,12 @@ Chủ dự án muốn thử luồng thanh toán với Stripe vì Stripe có môi
 
 | Acceptance Criteria |
 | --- |
-| **AC-71.1** — *Given* cấu hình liệt kê Stripe, MoMo, VNPay và cổng thử nhưng chỉ có khoá bí mật của Stripe, *When* quản trị viên mở tab rồi đặt đơn không nêu cổng, nêu MoMo, nêu cổng thử, *Then* tab liệt kê Stripe rồi Cổng thử, Stripe có ghi chú thẻ thử; tab nói MoMo và VNPay chưa bật và Stripe thiếu khoá webhook, không lộ khoá nào; đơn không nêu cổng đi Stripe, MoMo nhận 422, cổng thử cho địa chỉ trang thử (`test_the_administrator_picks_the_gateway_and_sees_what_is_off`). |
+| **AC-71.1** — *Given* cấu hình liệt kê Stripe, MoMo, VNPay và cổng thử nhưng chỉ có khoá bí mật của Stripe, *When* quản trị viên mở tab rồi đặt đơn không nêu cổng, nêu MoMo, nêu cổng thử, *Then* tab liệt kê Stripe rồi Cổng thử, Stripe có ghi chú thẻ thử; tab nói MoMo và VNPay chưa bật và Stripe thiếu khoá webhook, không lộ khoá nào; đơn không nêu cổng đi Stripe, MoMo nhận 422, cổng thử cho địa chỉ trang thử (`test_the_buyer_picks_the_gateway_and_the_problems_are_logged`). |
 | **AC-71.2** — *Given* danh sách cổng trong cấu hình, *When* dựng các cổng, *Then* cổng đủ khoá bật theo đúng thứ tự; cổng thiếu khoá hay tên lạ được báo một câu nêu tên biến, tên lặp không báo hai lần; Stripe ở chế độ thử thiếu khoá webhook vẫn bật kèm cảnh báo (`test_the_registry_builds_what_the_settings_ask_for`). |
 | **AC-71.3** — *Given* khoá Stripe `sk_live_`, *When* chưa rồi đã bật `AICEFR_PAYMENTS_LIVE`, *Then* lần đầu Stripe không bật và tab nêu biến cần đặt; lần sau Stripe bật ở chế độ thật và cổng thử tự tắt, trang cổng thử trả 404 (`test_real_money_needs_to_be_switched_on`). |
 | **AC-71.4** — *Given* cấu hình thu tiền thật của Stripe và địa chỉ thật của MoMo, *When* chưa bật `AICEFR_PAYMENTS_LIVE`, *Then* không cổng thật nào chạy; bật rồi thì cổng thử bị bỏ khỏi danh sách; Stripe khoá thử đặt cạnh trang thật của VNPay cũng bị bỏ, kèm lời nêu lý do (`test_real_money_is_never_a_default`). |
 | **AC-71.5** — *Given* một đơn đặt qua Stripe, *When* cổng thử gửi kết quả có chữ ký đúng cho đơn đó, *Then* thông báo nhận mã 01, trang trả về không xác nhận, đơn vẫn chờ, sự kiện ghi bị từ chối; kết quả đúng của Stripe cũng bị từ chối khi khoá đã đổi sang chế độ tiền khác với lúc đặt đơn, và được ghi nhận khi trở lại đúng chế độ (`test_one_gateway_cannot_settle_another_gateways_order`). |
-| **AC-71.6** — *Given* quản trị viên trên trình duyệt với Stripe ở chế độ thử và cổng thử, *When* xem tab, chọn cổng thử và thanh toán thành công, *Then* thấy hai lựa chọn có nhãn thử, ghi chú thẻ 4242 và cảnh báo thiếu khoá webhook; nút ghi "qua Stripe" rồi "qua Cổng thử"; bảng đơn ghi "Cổng thử (thử)" (`test_the_administrator_sees_each_gateway_and_pays_through_the_one_picked`). |
+| **AC-71.6** — *Given* quản trị viên trên trình duyệt với Stripe ở chế độ thử và cổng thử, *When* xem tab, chọn cổng thử và thanh toán thành công, *Then* thấy hai lựa chọn có nhãn thử, ghi chú thẻ 4242 và cảnh báo thiếu khoá webhook; nút ghi "qua Stripe" rồi "qua Cổng thử"; bảng đơn ghi "Cổng thử (thử)" (`test_the_buyer_picks_the_gateway_and_pays_through_it`). |
 | **AC-71.7** — *Given* điện thoại 390 px, *When* mở tab Gói dịch vụ, *Then* ô chọn cổng hiện đủ và trang không cuộn ngang (`test_the_gateway_choice_fits_a_phone`). |
 
 ### FR-72 — Stripe Checkout ở chế độ thử
@@ -1252,7 +1257,7 @@ Chủ dự án muốn thử luồng thanh toán với Stripe vì Stripe có môi
 | **AC-72.3** — *Given* đơn Chuẩn 50 sinh viên đặt qua Stripe, *When* người trả trả xong và trình duyệt quay về, rồi webhook tới, rồi trình duyệt quay về lần nữa, *Then* trang báo thành công và môi trường thử của Stripe, phiên được đọc lại từ API, gói Chuẩn có hiệu lực với mã giao dịch của Stripe; webhook nhận `{"received": true}`; lần quay về sau báo thành công mà Stripe không bị hỏi thêm; ba sự kiện được lưu, chỉ lần trả về được áp dụng; biên nhận ghi Stripe ở môi trường thử (`test_paying_through_stripe_is_read_back_and_counted_once`). |
 | **AC-72.4** — *Given* phiên đã trả, chưa trả, đã hết hạn, hoặc tính bằng tiền khác, *When* đọc lại từ Stripe, *Then* lần lượt là đã thanh toán, chưa có kết quả, huỷ, và một số tiền không khớp đơn nào; chỉ giữ mã phiên, không email hay tên; mã phiên sai dạng hay là phiên thật trên khoá thử bị từ chối mà không hỏi Stripe (`test_stripe_return_is_read_back_from_stripe`). |
 | **AC-72.5** — *Given* một sự kiện webhook, *When* chữ ký đúng, đúng nhưng cũ hơn năm phút, sửa một byte, khoá khác, thiếu tiêu đề, nhiều chữ ký v1 khi đổi khoá, sự kiện thật trên khoá thử, *Then* chỉ trường hợp đúng và trường hợp nhiều chữ ký có một chữ ký đúng được tin; thời điểm có ký tự lạ hay dài bất thường và chữ ký không phải ASCII bị từ chối, không gây lỗi; các loại sự kiện ánh xạ đúng kết quả, sự kiện khác được nhận rồi bỏ (`test_stripe_events_count_only_when_signed_and_fresh`). |
-| **AC-72.6** — *Given* người trả đã trả rồi đóng trang, *When* webhook sai khoá, thân rỗng không chữ ký, gọi bằng GET, rồi webhook đúng tới, *Then* ba lần đầu nhận 400, tiêu đề có ký tự lạ nhận 400, thân quá 256 KiB nhận 413, sự kiện có chữ ký của một phiên khác mang mã đơn này nhận 200 nhưng đơn vẫn chờ, và gói không đổi; webhook đúng làm gói Chuẩn có hiệu lực; sự kiện không liên quan được nhận 200 (`test_the_stripe_webhook_alone_installs_the_plan`). |
+| **AC-72.6** — *Given* người trả đã trả rồi đóng trang, *When* webhook sai khoá, thân rỗng không chữ ký, gọi bằng GET, rồi webhook đúng tới, *Then* ba lần đầu nhận 400, tiêu đề có ký tự lạ nhận 400, thân quá 256 KiB nhận 413, sự kiện có chữ ký của một phiên khác mang mã đơn này nhận 200 nhưng đơn vẫn chờ, và gói không đổi; webhook đúng làm gói Chuẩn có hiệu lực; sự kiện không liên quan được nhận 200 (`test_the_stripe_webhook_alone_credits_the_runs`). |
 | **AC-72.7** — *Given* một đơn qua Stripe, *When* người trả rời trang Stripe khi chưa trả, rồi phiên hết hạn, *Then* trang nói đã rời trang thanh toán, đơn vẫn chờ; sự kiện hết hạn làm đơn thành huỷ và gói không đổi (`test_leaving_stripe_changes_nothing_until_the_session_expires`). |
 | **AC-72.8** — *Given* người trả đã trả, *When* trình duyệt quay về lúc không hỏi được Stripe, rồi tải lại, *Then* lần đầu trang nói chưa xác nhận được với Stripe và đơn vẫn chờ; lần sau báo thành công (`test_a_return_stripe_cannot_confirm_says_so`). |
 | **AC-72.9** — *Given* một đơn đang chờ, *When* trang trả về nhận mã phiên đúng dạng nhưng không phải phiên của đơn nào, hoặc sai dạng, *Then* trang không xác nhận, Stripe không được hỏi lần nào, đơn vẫn chờ (`test_stripe_is_asked_only_about_checkouts_this_system_opened`). |
@@ -1266,9 +1271,9 @@ Chủ dự án muốn thử luồng thanh toán với Stripe vì Stripe có môi
 
 | Acceptance Criteria |
 | --- |
-| **AC-73.1** — *Given* khoá thử của MoMo, *When* mở thanh toán, *Then* yêu cầu gửi tới địa chỉ thử với số tiền là số nguyên, `requestType=captureWallet`, địa chỉ trả về và IPN, chữ ký tính lại theo thứ tự trường của MoMo khớp, không có `accessKey` hay khoá bí mật trong thân; số tiền quá mức bị từ chối mà không hỏi MoMo; lời từ chối của MoMo thành câu tiếng Việt kèm mã (`test_momo_signs_the_create_request_as_documented`). |
-| **AC-73.2** — *Given* kết quả MoMo gửi lại, *When* mã 0, 1006, 1000, 1001, 4001, một mã lạ, đổi số tiền, mã đối tác khác, thiếu trường, khoá khác, chữ ký có ký tự lạ, thân không phải JSON hay lồng quá sâu, *Then* lần lượt là đã thanh toán, huỷ, chưa xong, không thành công, không thành công, chưa xong, và bảy trường hợp sau bị từ chối; trả về bằng chữ và IPN bằng số đều được; trả lời IPN là 204, 400 khi sai chữ ký, 500 khi lỗi (`test_momo_results_map_to_outcomes_and_forgeries_are_refused`). |
-| **AC-73.3** — *Given* đơn Chuẩn 50 sinh viên qua MoMo, *When* IPN có chữ ký tới, trình duyệt quay về, IPN lặp lại, rồi một IPN sửa số tiền, *Then* IPN nhận 204 không thân và gói Chuẩn có hiệu lực; trang trả về báo thành công và môi trường thử của MoMo; IPN lặp nhận 204 không đổi gì và được đếm trên dòng của IPN đầu; IPN sửa nhận 400 (`test_momo_is_paid_through_its_ipn_answered_204`). |
+| ~~AC-73.1~~ *(gỡ bởi D075)* — *Given* khoá thử của MoMo, *When* mở thanh toán, *Then* yêu cầu gửi tới địa chỉ thử với số tiền là số nguyên, `requestType=captureWallet`, địa chỉ trả về và IPN, chữ ký tính lại theo thứ tự trường của MoMo khớp, không có `accessKey` hay khoá bí mật trong thân; số tiền quá mức bị từ chối mà không hỏi MoMo; lời từ chối của MoMo thành câu tiếng Việt kèm mã (`test_momo_signs_the_create_request_as_documented`). |
+| ~~AC-73.2~~ *(gỡ bởi D075)* — *Given* kết quả MoMo gửi lại, *When* mã 0, 1006, 1000, 1001, 4001, một mã lạ, đổi số tiền, mã đối tác khác, thiếu trường, khoá khác, chữ ký có ký tự lạ, thân không phải JSON hay lồng quá sâu, *Then* lần lượt là đã thanh toán, huỷ, chưa xong, không thành công, không thành công, chưa xong, và bảy trường hợp sau bị từ chối; trả về bằng chữ và IPN bằng số đều được; trả lời IPN là 204, 400 khi sai chữ ký, 500 khi lỗi (`test_momo_results_map_to_outcomes_and_forgeries_are_refused`). |
+| ~~AC-73.3~~ *(gỡ bởi D075)* — *Given* đơn Chuẩn 50 sinh viên qua MoMo, *When* IPN có chữ ký tới, trình duyệt quay về, IPN lặp lại, rồi một IPN sửa số tiền, *Then* IPN nhận 204 không thân và gói Chuẩn có hiệu lực; trang trả về báo thành công và môi trường thử của MoMo; IPN lặp nhận 204 không đổi gì và được đếm trên dòng của IPN đầu; IPN sửa nhận 400 (`test_momo_is_paid_through_its_ipn_answered_204`). |
 
 ## 3.9i. Đăng nhập Google: luồng không giả được và cài khoá dễ — D036
 
@@ -1468,7 +1473,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-87 — Gói lượt mua qua cổng thanh toán (D053)
 
-**Mô tả:** Trên bản tính lượt có bật thanh toán, sinh viên mua gói lượt ở trang Lượt của tôi; khi cổng báo đã thanh toán, số lượt vào ví của chính người mua, đúng một lần.
+**Mô tả:** Trên bản tính lượt có bật thanh toán, học viên (và từ D075 cả giảng viên, để trả bản soạn bài bằng AI) mua gói lượt ở trang Lượt của tôi qua Stripe; khi cổng báo đã thanh toán, số lượt vào ví của chính người mua, đúng một lần.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
@@ -1477,20 +1482,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-87.2** — *Given* dịch vụ tính lượt không trả lời lúc thanh toán, *When* gọi lại sau, *Then* lượt được cộng (`test_a_pack_paid_while_metering_was_away_is_credited_later`). |
 | **AC-87.3** — *Given* bản không tính lượt, *When* đặt gói, *Then* 409 (`test_no_packs_where_runs_are_not_counted`). |
 
-### FR-88 — Lớp học và giao bài (D054)
+### FR-88 — Lớp học (D054, D071, D075)
 
-**Mô tả:** Giảng viên tạo lớp, thêm sinh viên, giao đề đánh giá kèm hạn nộp và xem ai nộp đúng hạn, muộn hay chưa nộp; sinh viên vào lớp bằng mã và xem bài được giao.
+**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên; giảng viên hoặc quản trị viên thêm học viên theo email. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá và mã tự vào lớp.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-88.1** — *Given* một đề đã giao, *When* thành viên nộp bài đề đó, *Then* bài được tính là đã nộp đúng hạn (`test_a_submission_of_the_task_counts_as_handed_in`). |
-| **AC-88.2** — *Given* bài làm trước lúc giao, *When* xem tiến độ, *Then* bài đó không được tính (`test_work_before_the_task_was_set_does_not_count`). |
+| **AC-88.1** — *Given* một lớp, *When* giảng viên thêm học viên theo email hoặc mã tài khoản, *Then* học viên có trong danh sách theo họ tên và lớp không còn phần bài đã giao (`test_a_teacher_adds_students_and_sees_them_by_name`). |
+| **AC-88.2** — *Given* một học viên, *When* gọi API vào lớp bằng mã hay xem bài được giao, *Then* 404: không còn hai chức năng này (`test_students_cannot_make_classes_and_nobody_joins_with_a_code`). |
 | **AC-88.3** — *Given* lớp của giảng viên khác, *When* mở, *Then* 404 (`test_another_teachers_class_is_not_found`). |
 
 ### FR-89 — Nhắc việc trong ứng dụng (D055)
 
-**Mô tả:** Trang Luyện tập hiện tối đa 3 lời nhắc, gấp trước: bài được giao sắp hạn hoặc quá hạn, chuỗi ngày, ôn tập đến hạn, mục tiêu hôm nay, hết lượt.
+**Mô tả:** Trang Luyện tập hiện tối đa 3 lời nhắc, gấp trước: chuỗi ngày, ôn tập đến hạn, mục tiêu hôm nay, hết lượt (D075 bỏ nhắc bài được giao).
 **Ưu tiên:** C
 
 | Acceptance Criteria |
@@ -1508,6 +1513,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-90.1** — *Given* một bài có cờ, *When* mở bài nghe lại, *Then* có đoạn đối chứng tránh mọi chỗ bị gắn cờ và không lộ nguồn (`test_a_control_moment_avoids_everything_flagged`, `test_the_learner_is_never_told_which_moment_is_which`). |
 | **AC-90.2** — *Given* bộ chọn không hơn ngẫu nhiên, *When* phân tích, *Then* chỉ số chính không đạt (`test_a_picker_no_better_than_chance_does_not_pass`). |
 | **AC-90.3** — *Given* người học rút quyền dùng cho nghiên cứu, *When* phân tích, *Then* nhãn của họ bị loại (`test_only_the_owner_listens_and_the_analysis_counts_the_labels`). |
+
+### FR-91 — Một trung tâm, trả theo lượt; giảng viên soạn bài bằng AI (D075)
+
+**Mô tả:** Hệ thống phục vụ một trung tâm giáo dục. Không có gói dịch vụ, dùng thử, giới hạn số học viên hay mã giấy phép; mọi công cụ của giảng viên (soạn lộ trình, thống kê, chấm mù) mở. Tiền chỉ đến từ gói lượt mua qua Stripe (FR-87). Giảng viên có thể nhờ mô hình ngôn ngữ viết nháp một bài học theo band, tiêu chí và chủ đề; mỗi lần trừ lượt trong ví của giảng viên với giá như bản nâng cấp của học viên, chung giới hạn ngày và bộ đếm của mô hình (D072, D073).
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-91.1** — *Given* bản có bật thanh toán, *When* giảng viên tạo lộ trình và xem thống kê, *Then* đều được, không có gói nào chặn (`test_every_staff_tool_is_open_without_a_plan`). |
+| **AC-91.2** — *Given* quản trị viên, *When* tạo 60 tài khoản học viên, *Then* thành công: không có giới hạn chỗ (`test_accounts_are_not_limited_by_seats`). |
+| **AC-91.3** — *Given* bản mới, *When* gọi API gói, báo giá, đặt gói, cài mã giấy phép, *Then* 404 hoặc 405 (`test_the_plan_routes_are_gone`). |
+| **AC-91.4** — *Given* giảng viên, *When* nhờ AI viết nháp bài A2 về một chủ đề, *Then* nhận tên, tóm tắt, đoạn văn mẫu, từ khóa có trong đoạn văn và đề nói tự do, không lưu gì; bộ đếm ngày ghi một bản soạn bài (`test_a_teacher_gets_a_draft_for_the_form`). |
+| **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* trừ 0,3 lượt trong ví của giảng viên kèm số token, lịch sử ghi "Soạn bài bằng AI" (`test_metered_the_teachers_runs_pay_for_the_draft`). |
+| **AC-91.6** — *Given* trang Lượt của tôi, *When* học viên mua gói 10 lượt qua cổng thử, *Then* trang kết quả báo 10 lượt và có biên nhận (`test_a_learner_buys_a_pack_and_gets_a_receipt`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
@@ -2361,8 +2380,8 @@ Cột "Module code" ghi **đường dẫn có thật trong repository** tại th
 | FR-68 Số sinh viên, bài đánh giá dự kiến | UC-23 | `test_the_plan_limits_new_student_accounts_only`, `test_assessments_over_the_monthly_figure_only_warn` | `src/aicefr/billing/service.py` (`check_new_students`, `usage`), `src/aicefr/api/accounts_api.py` (`_seats`) |
 | FR-69 Mua qua cổng thanh toán | UC-23 | `test_buying_through_the_sandbox_installs_the_plan_once`, `test_a_school_year_is_discounted_and_shown_on_the_receipt`, `test_a_failed_or_cancelled_payment_changes_nothing`, `test_a_forged_or_altered_result_is_refused`, `test_an_upgrade_is_credited_and_a_renewal_waits`, `test_an_upgrade_the_credit_covers_needs_no_payment`, `test_pending_orders_expire_and_a_late_payment_still_counts`, `test_a_new_order_retires_the_one_still_waiting`, `test_vnpay_is_redirected_to_and_its_messages_are_checked`, `test_an_administrator_buys_a_plan_and_gets_a_receipt`, `test_a_cancelled_payment_leaves_the_plan_as_it_was` | `src/aicefr/billing/gateways.py` (`SandboxGateway`, `VnpayGateway`), `src/aicefr/ports.py` (`PaymentGateway`), `src/aicefr/billing/service.py` (`quote`, `place_order`, `settle`), `src/aicefr/storage/billing_repository.py`, `src/aicefr/api/templates/billing_*.html` |
 | FR-70 Mã giấy phép, quyền, nhật ký | UC-23 | `test_a_licence_key_is_installed_once`, `test_without_a_licence_secret_keys_are_refused`, `test_only_an_administrator_deals_with_plans`, `test_plan_actions_are_audited`, `test_the_tab_fits_a_phone_and_students_see_no_plan` | `src/aicefr/billing/keys.py`, `src/aicefr/billing/service.py` (`install_key`), `src/aicefr/api/billing_api.py` |
-| FR-71 Chọn cổng cho từng đơn | UC-23 | `test_the_administrator_picks_the_gateway_and_sees_what_is_off`, `test_the_registry_builds_what_the_settings_ask_for`, `test_real_money_needs_to_be_switched_on`, `test_real_money_is_never_a_default`, `test_one_gateway_cannot_settle_another_gateways_order`, `test_the_administrator_sees_each_gateway_and_pays_through_the_one_picked`, `test_the_gateway_choice_fits_a_phone` | `src/aicefr/billing/registry.py`, `src/aicefr/billing/service.py` (`place_order`, `settle`), `src/aicefr/api/billing_api.py`, `src/aicefr/api/static/admin_billing.js` |
-| FR-72 Stripe Checkout | UC-23 | `test_stripe_opens_a_checkout_session_in_dong_for_the_order`, `test_stripe_refusals_read_as_sentences`, `test_stripe_return_is_read_back_from_stripe`, `test_stripe_events_count_only_when_signed_and_fresh`, `test_stripe_keys_decide_the_mode`, `test_paying_through_stripe_is_read_back_and_counted_once`, `test_the_stripe_webhook_alone_installs_the_plan`, `test_leaving_stripe_changes_nothing_until_the_session_expires`, `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`, `test_a_return_stripe_cannot_confirm_says_so`, `test_stripe_is_asked_only_about_checkouts_this_system_opened`, `test_coming_back_without_paying_says_nothing_was_charged` | `src/aicefr/billing/stripe_gateway.py`, `src/aicefr/billing/transport.py`, `src/aicefr/api/billing_api.py` (`billing_notify`, `billing_return`), `src/aicefr/api/templates/billing_result.html` |
+| FR-71 Chọn cổng cho từng đơn | UC-23 | `test_the_buyer_picks_the_gateway_and_the_problems_are_logged`, `test_the_registry_builds_what_the_settings_ask_for`, `test_real_money_needs_to_be_switched_on`, `test_real_money_is_never_a_default`, `test_one_gateway_cannot_settle_another_gateways_order`, `test_the_buyer_picks_the_gateway_and_pays_through_it`, `test_the_gateway_choice_fits_a_phone` | `src/aicefr/billing/registry.py`, `src/aicefr/billing/service.py` (`place_order`, `settle`), `src/aicefr/api/billing_api.py`, `src/aicefr/api/static/admin_billing.js` |
+| FR-72 Stripe Checkout | UC-23 | `test_stripe_opens_a_checkout_session_in_dong_for_the_order`, `test_stripe_refusals_read_as_sentences`, `test_stripe_return_is_read_back_from_stripe`, `test_stripe_events_count_only_when_signed_and_fresh`, `test_stripe_keys_decide_the_mode`, `test_paying_through_stripe_is_read_back_and_counted_once`, `test_the_stripe_webhook_alone_credits_the_runs`, `test_leaving_stripe_changes_nothing_until_the_session_expires`, `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`, `test_a_return_stripe_cannot_confirm_says_so`, `test_stripe_is_asked_only_about_checkouts_this_system_opened`, `test_coming_back_without_paying_says_nothing_was_charged` | `src/aicefr/billing/stripe_gateway.py`, `src/aicefr/billing/transport.py`, `src/aicefr/api/billing_api.py` (`billing_notify`, `billing_return`), `src/aicefr/api/templates/billing_result.html` |
 | FR-73 Ví MoMo | UC-23 | `test_momo_signs_the_create_request_as_documented`, `test_momo_results_map_to_outcomes_and_forgeries_are_refused`, `test_momo_is_paid_through_its_ipn_answered_204` | `src/aicefr/billing/momo_gateway.py` |
 | FR-74 Luồng Google có chữ ký, khung cấu hình | UC-17 | `test_the_flow_cookie_is_signed_and_any_change_breaks_it`, `test_the_pkce_challenge_is_s256_as_rfc_7636_shows`, `test_a_flow_cookie_this_server_did_not_sign_is_ignored`, `test_behind_tls_the_flow_cookie_is_a_host_cookie`, `test_the_signing_key_is_made_once_and_kept`, `test_the_administrator_sees_what_to_register_with_google`, `test_the_config_tab_shows_what_to_register_with_google`, `test_the_google_button_leaves_with_a_pkce_challenge` | `src/aicefr/auth/google.py` (`encode_flow`, `decode_flow`, `cookie_name`), `src/aicefr/api/google_api.py` (`_cookie`, `google_status`), `src/aicefr/storage/auth_repository.py` (`secret`, `count_identities`), `src/aicefr/api/static/admin.js` (`loadGoogleSetup`) |
 

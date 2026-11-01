@@ -380,19 +380,6 @@ class AccountCreate(BaseModel):
     pseudonym: str | None = Field(None, max_length=32)
 
 
-def _seats(n: int) -> None:
-    """Refuse `n` more enabled student accounts beyond the plan's seats (D033, BR-31).
-
-    Only new ones: an account that exists is never turned off for a plan.
-    """
-    plans = svc().peers.billing
-    if plans is None:
-        return
-    reason = plans.seat_refusal(n=n)
-    if reason:
-        raise HTTPException(409, reason)
-
-
 def _target(auth: AuthRepository, account_id: str):
     row = auth.get(account_id)
     if row is None:
@@ -415,8 +402,6 @@ def create_accounts(
     auth: AuthRepository = Depends(get_auth_repo),
 ) -> dict:
     """Create accounts with one-time passwords, shown in this response and nowhere else."""
-    if body.role is Role.STUDENT:
-        _seats(1 if body.pseudonym else body.count)
     try:
         if body.pseudonym:
             names = [body.pseudonym.strip()]
@@ -483,9 +468,7 @@ def disable_account(
 def enable_account(
     account_id: str, account: Account = ADMIN_ONLY, auth: AuthRepository = Depends(get_auth_repo)
 ) -> dict:
-    row = _target(auth, account_id)
-    if row["role"] == Role.STUDENT.value and row["disabled"]:
-        _seats(1)
+    _target(auth, account_id)  # 404 for an account that does not exist
     auth.set_disabled(account_id, False)
     svc().audit(account.pseudonym, "account.enable", account_id, None)
     return {"account_id": account_id, "disabled": False}
@@ -560,9 +543,7 @@ def change_role(
     by a slip of the mouse and leave nobody able to undo it."""
     if account_id == account.account_id:
         raise HTTPException(409, "không tự đổi vai trò của chính mình")
-    row = _target(auth, account_id)
-    if body.role is Role.STUDENT and row["role"] != Role.STUDENT.value and not row["disabled"]:
-        _seats(1)
+    _target(auth, account_id)  # 404 for an account that does not exist
     before = auth.set_role(account_id, body.role)
     svc().audit(
         account.pseudonym,
