@@ -158,13 +158,6 @@ def test_teacher_queue_never_holds_practice_even_if_marked_for_review(tmp_path):
     ]
 
 
-def test_research_rows_exclude_practice(tmp_path):
-    repo = Repository(tmp_path / "r.db")
-    repo.save(_queued("a1"), "SV-1", "P3", account_id="acc")
-    repo.save(_queued("p1"), "SV-1", "PR-COH-A2", account_id="acc", purpose=TaskPurpose.PRACTICE)
-    assert [r["response_id"] for r in repo.research_rows({"acc"})] == ["a1"]
-
-
 def test_practice_summary_counts_processed_attempts_per_criterion(tmp_path):
     db = tmp_path / "r.db"
     repo = Repository(db)
@@ -322,53 +315,12 @@ def submit(c: TestClient, task: str, seconds: float = 35.0, expect: int = 202) -
 
 def test_every_practice_endpoint_requires_login(m):
     anon = TestClient(m.app)
-    for url in (
-        "/api/v1/practice",
-        "/api/v1/practice/tasks/PR-FLU-A2",
-        "/api/v1/practice/attempts/x",
-    ):
-        assert anon.get(url).status_code == 401, url
-
-
-def test_new_learner_gets_an_a2_suggestion_and_the_full_path(m):
-    body = login_as(m, "SV-001").get("/api/v1/practice").json()
-    assert body["recommendation"]["task_id"] == "PR-FLU-A2"
-    assert body["recommendation"]["basis"] == "no_assessment"
-    assert body["assessment"] is None and body["review"] == []
-    assert [row["criterion"] for row in body["path"]] == [
-        "fluency",
-        "coherence",
-        "range",
-        "accuracy",
-        "phonology",
-    ]
-    assert all(
-        [t["band"] for t in row["tasks"]] == ["A1", "A2", "B1", "B2", "C1", "C2"]
-        for row in body["path"]
-    )
-    assert body["daily"]["today"] == 0 and body["daily"]["streak"] == 0
-    assert len(body["daily"]["week"]) == 7
-    assert body["totals"] == {"tasks": 30, "completed": 0, "attempts": 0}
+    assert anon.get("/api/v1/practice/attempts/x").status_code == 401
 
 
 def test_practice_tasks_never_appear_in_the_assessment_task_list(m):
     ids = [t["task_id"] for t in login_as(m, "SV-001").get("/api/v1/tasks").json()]
     assert ids and not any(i.startswith("PR-") for i in ids)
-
-
-def test_task_detail_returns_missions_tips_and_passage(m):
-    c = login_as(m, "SV-001")
-    t = c.get("/api/v1/practice/tasks/PR-PHO-A2").json()
-    assert t["criterion"] == "phonology" and t["band"] == "A2" and t["status"] == "new"
-    assert t["reference_text"] and t["tips"] and t["history"] == []
-    assert t["missions"][0]["kind"] == "read_aloud"
-    words = c.get("/api/v1/practice/tasks/PR-COH-A2").json()["missions"][0]["words"]
-    assert words == ["and", "but", "because", "so", "also"]
-
-
-@pytest.mark.parametrize("task_id", ["P3", "NO-SUCH-TASK"])
-def test_task_detail_rejects_assessment_and_unknown_tasks(m, task_id):
-    assert login_as(m, "SV-001").get(f"/api/v1/practice/tasks/{task_id}").status_code == 404
 
 
 def test_practice_submission_gets_a_result_without_band_and_skips_the_queue(m):
@@ -388,26 +340,12 @@ def test_practice_submission_gets_a_result_without_band_and_skips_the_queue(m):
     assert all(h["start_s"] is not None for h in words["hits"])
     assert words["measured_text"] and body["result"]["takeaway"]
     assert body["daily"]["today"] == 1 and body["daily"]["streak"] == 1
-    assert body["next"]["task_id"] != "PR-COH-A2"
 
     mine = student.get("/api/v1/me/responses").json()
     assert [(r["response_id"], r["purpose"]) for r in mine] == [(rid, "practice")]
 
     teacher = login_as(m, "GV-01", "teacher")
     assert rid not in {r["response_id"] for r in teacher.get("/api/v1/review/queue").json()}
-
-    hub = student.get("/api/v1/practice").json()
-    coherence = next(r for r in hub["path"] if r["criterion"] == "coherence")
-    assert coherence["tasks"][1]["status"] == "completed"  # [0] is A1
-    assert hub["totals"] == {"tasks": 30, "completed": 1, "attempts": 1}
-
-
-def test_completing_the_suggested_task_moves_the_suggestion_on(m):
-    student = login_as(m, "SV-001")
-    first = student.get("/api/v1/practice").json()["recommendation"]["task_id"]
-    submit(student, first)  # 35-second sine: continuous speech, no silence
-    after = student.get("/api/v1/practice").json()["recommendation"]
-    assert first == "PR-FLU-A2" and after["task_id"] == "PR-FLU-B1"
 
 
 def test_practice_is_accepted_straight_after_signing_in(m):
@@ -427,11 +365,6 @@ def test_qc_rejected_practice_counts_toward_neither_goal_nor_path(m):
     assert body["status"] == "REJECTED" and body["result"] is None
     assert "AUDIO_TOO_SHORT" in body["reasons"]
     assert body["daily"]["today"] == 0
-    hub = student.get("/api/v1/practice").json()
-    coherence = next(r for r in hub["path"] if r["criterion"] == "coherence")
-    assert coherence["tasks"][0]["status"] == "new" and hub["totals"]["attempts"] == 0
-    detail = student.get("/api/v1/practice/tasks/PR-COH-A2").json()
-    assert [h["status"] for h in detail["history"]] == ["REJECTED"]
 
 
 def test_second_attempt_compares_with_the_previous_one_on_the_same_task(m):
@@ -465,7 +398,7 @@ def test_deleting_your_practice_attempt_removes_it_from_the_path(m):
     rid = submit(student, "PR-COH-A2")
     assert student.delete(f"/api/v1/responses/{rid}").status_code == 200
     assert student.get(f"/api/v1/practice/attempts/{rid}").status_code == 404
-    assert student.get("/api/v1/practice").json()["totals"]["attempts"] == 0
+    assert student.get("/api/v1/me/responses").json() == []
 
 
 def test_class_stats_keep_practice_apart_from_scoring_numbers(m):
@@ -474,17 +407,9 @@ def test_class_stats_keep_practice_apart_from_scoring_numbers(m):
     submit(student, "PR-COH-A2")
     stats = login_as(m, "GV-01", "teacher").get("/api/v1/review/stats").json()
     assert stats["responses"] == 1
-    assert [t["task_id"] for t in stats["by_task"]] == ["P3"]
+    assert [(t["band"], t["n"]) for t in stats["by_prompt_band"]] == [("B1", 1)]
     assert stats["practice"]["attempts"] == 1 and stats["practice"]["learners"] == 1
     assert stats["practice"]["by_criterion"]["coherence"] == {"attempts": 1, "completed": 1}
-
-
-def test_admin_research_export_excludes_practice(m):
-    student = login_as(m, "SV-001")
-    assessment_id = submit(student, "P3")
-    submit(student, "PR-COH-A2")
-    body = login_as(m, "AD-01", "admin").get("/api/v1/admin/export/research.json").json()
-    assert [r["response_id"] for r in body["rows"]] == [assessment_id]
 
 
 def test_personal_export_includes_practice_and_explains_the_field(m):
@@ -501,17 +426,6 @@ def test_progress_and_profile_ignore_practice(m):
     submit(student, "PR-COH-A2")
     assert student.get("/api/v1/me/progress").json()["results"] == []
     assert student.get("/api/v1/me/profile.json").json()["results"] == []
-
-
-def test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment(m):
-    student = login_as(m, "SV-001")
-    rid = submit(student, "P3")
-    assert m.repo.save(_scored(rid, Band.B1, [Criterion.RANGE]), "", "")
-    body = student.get("/api/v1/practice").json()
-    assert body["recommendation"]["task_id"] == "PR-RAN-B1"
-    assert body["recommendation"]["basis"] == "weakest_criterion"
-    assert body["assessment"]["band"] == "B1"
-    assert body["assessment"]["weakest_criteria"] == ["range"]
 
 
 def test_practice_pages_mark_navigation_and_load_their_scripts(m):

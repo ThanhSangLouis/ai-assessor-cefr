@@ -18,7 +18,7 @@ Day la MO HINH MIEN (domain model), khong phai so do lop thiet ke. No:
     tren duong lien ket -- khong bao gio trong thuoc tinh (chu du an, ngay
     29/10/2026: "0..1 la quan he so luong giua 2 collection, khong phai
     min..max cua mot truong"). Tap hop viet `List<X>`. Trong dac ta, thuoc
-    tinh mang kieu thuc the van ghi boi so (`ratings: Rating [1..*]`) de
+    tinh mang kieu thuc the van ghi boi so (`lessons: Lesson [0..*]`) de
     `check_relations()` doi voi duong; khi ve, `attribute_text()` bo no ra
     khoi hop.
   * thuoc tinh co tap gia tri dong mang KIEU ENUM (`role: Role`), ca tren
@@ -112,8 +112,8 @@ def _n(cid, name, values):
 # moc thoi gian, phep do, nhan xet) la thuoc tinh cua thuc the so huu.
 #
 # QUAN HE QUA THUOC TINH (quy tac cua chu du an): moi duong noi co dung mot
-# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `ratings: Rating [1..*]` o
-# `RatingBatch` thi moi co kim cuong `RatingBatch` -> `Rating`. Hop thanh: lop
+# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `lessons: Lesson [0..*]` o
+# `Unit` thi moi co kim cuong `Unit` -> `Lesson`. Hop thanh: lop
 # toan the giu danh sach phan (luu chung mot document). Ket hop: lop giu tham
 # chieu (luu ma cua ben kia). Boi so cua thuoc tinh ve tren dau duong, khong ve
 # trong hop. `check_relations()` duoi day bat moi duong thieu thuoc tinh.
@@ -160,7 +160,6 @@ CLASSES = [
             "- taskId: str",
             "- title: str",
             "- purpose: TaskPurpose",
-            "- part: str",
             "- promptText: str",
             "- minSeconds: int",
             "- maxSeconds: int",
@@ -195,7 +194,6 @@ CLASSES = [
             "- upgrade: CoachUpgrade [0..1]",
             "- reviewLock: str",
             "- reviewVisits: List<str>",
-            "- machineSeen: Account [0..*]",
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
@@ -215,61 +213,6 @@ CLASSES = [
             "- reason: str",
             "- openedAt: datetime",
             "- decidedAt: datetime",
-        ],
-    ),
-    _e(
-        "Batch",
-        "RatingBatch",
-        [
-            "- batchId: str",
-            "- name: str",
-            "- seed: int",
-            "- closed: bool",
-            "- ratings: Rating [1..*]",
-            "- createdAt: datetime",
-        ],
-    ),
-    _e(
-        "Rating",
-        "Rating",
-        [
-            "- assignmentId: str",
-            "- response: Response [1]",
-            "- rater: Account [1]",
-            "- slot: int",
-            "- position: int",
-            "- openedAt: datetime",
-            "- scoreOverall: float",
-            "- band: Band",
-            "- criterionScores: List<float>",
-            "- unscorableReason: str",
-            "- reason: str",
-            "- submittedAt: datetime",
-        ],
-    ),
-    _e(
-        "Study",
-        "Study",
-        [
-            "- studyId: str",
-            "- name: str",
-            "- status: StudyStatus",
-            "- minDays: int",
-            "- participants: Participant [0..*]",
-            "- measuredUntil: datetime",
-        ],
-    ),
-    _e(
-        "Part",
-        "Participant",
-        [
-            "- code: str",
-            "- account: Account [1]",
-            "- arm: str",
-            "- enrolledAt: datetime",
-            "- withdrawnAt: datetime",
-            "- surveyAnswers: List<str>",
-            "- surveyedAt: datetime",
         ],
     ),
     # D069: the learner's answer rewritten one band higher, made once on request
@@ -493,7 +436,6 @@ ENUMS = [
         "ResponseStatus",
         ["QUEUED", "RUNNING", "COMPLETED", "REVIEW_REQUIRED", "REJECTED", "FAILED"],
     ),
-    _n("StudySt", "StudyStatus", ["RUNNING", "SURVEY", "CLOSED"]),
     _n("PathSt", "PathStatus", ["DRAFT", "PUBLISHED", "ARCHIVED"]),
     _n(
         "StepKind",
@@ -526,12 +468,6 @@ EDGES = [
     ("Resp", "Upgrade", "1 : 0..1", "comp"),
     ("Upgrade", "Phrase", "1 : 0..*", "comp"),
     ("Review", "Account", "0..* : 1", "assoc"),
-    ("Resp", "Account", "0..* : 0..*", "assoc"),
-    ("Batch", "Rating", "1 : 1..*", "comp"),
-    ("Rating", "Resp", "0..* : 1", "assoc"),
-    ("Rating", "Account", "0..* : 1", "assoc"),
-    ("Study", "Part", "1 : 0..*", "comp"),
-    ("Part", "Account", "0..* : 1", "assoc"),
     # D071: a class has its teachers and its members, both many-to-many; the
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
@@ -567,7 +503,6 @@ EDGES += [
         ("Resp", "Band"),
         ("Review", "Band"),
         ("Upgrade", "Band"),
-        ("Rating", "Band"),
         ("Path", "Band"),
         ("Unit", "Band"),
         ("Lesson", "Band"),
@@ -577,7 +512,6 @@ EDGES += [
         ("Task", "Purpose"),
         ("Resp", "Purpose"),
         ("Resp", "Status"),
-        ("Study", "StudySt"),
         ("Path", "PathSt"),
         ("Step", "StepKind"),
         ("Order", "OrderSt"),
@@ -587,12 +521,10 @@ EDGES += [
 ]
 
 # Khung theo phan nghiep vu (`tools/zone_layout.py`). Dinh danh o giua hang tren
-# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Nghien cuu, Lop
-# hoc, Thuong mai va Hoc tap deu noi vao bai noi hoac `Band`.
+# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Lop hoc, Thuong
+# mai va Hoc tap deu noi vao bai noi hoac `Band`.
 # (khoa, tieu de, hang, [(cot, [hop, ...])]); (hop, dy) dat hop cach dinh hang dy.
 ZONES = [
-    ("research", "Nghiên cứu: chấm mù, thực nghiệm", 0,
-     [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
      [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),

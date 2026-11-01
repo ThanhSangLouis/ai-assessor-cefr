@@ -69,7 +69,7 @@
 | TC-ME-I12 | `test_a_failed_scoring_releases_the_hold` | AC-85.6 | Báo lỗi từ máy chấm: FAILED và hoàn |
 | TC-ME-I13 | `test_a_submission_without_runs_left_is_refused_with_402` | AC-85.9 | 402, không lưu bài, không để lại tệp |
 | TC-ME-I14 | `test_only_an_administrator_grants_runs` | FR-85 | Giảng viên 403; một phiếu chỉ cộng một lần; bút danh lạ 404 |
-| TC-ME-I15 | `test_the_metered_deployment_runs_no_research_study` | AC-85.10 | Tạo thực nghiệm bị 409 |
+| TC-ME-I15 | `test_the_metered_deployment_runs_no_research_study` | AC-85.10 | Tạo thực nghiệm trả 404 (gỡ bởi D078) |
 | TC-ME-I16 | `test_granting_on_the_school_deployment_is_refused` | FR-85 | Bản của trường không cộng lượt |
 | TC-ME-I17 | `test_the_submission_screen_quotes_the_most_a_task_costs` | FR-85 | Trang Nộp bài báo giá tối đa: đề 90 giây là 1,7 lượt = 3.400 IDPoint (D057) |
 

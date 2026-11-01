@@ -21,11 +21,11 @@
   <div class="skeleton skeleton-line"></div>
 </div>
 
-{#- D041, D068: a measurement for the study, read by administrators only. -#}
+{#- D041, D068: how much the machine saves teachers, read by administrators only. -#}
 {% if account and account.role.value == "admin" %}
 <section class="card" id="teacher-time" aria-labelledby="teacher-time-title" aria-busy="true">
   <div class="card-head"><h2 id="teacher-time-title">Hiệu quả cho giảng viên</h2></div>
-  <p class="muted">Đo trên chính hệ thống: phút duyệt một bài khi có máy, so với phút chấm mù một bài không có máy; và phần máy tự xử lý được.</p>
+  <p class="muted">Đo trên chính hệ thống: phút duyệt một bài khi có máy, và phần máy tự xử lý được.</p>
   <div id="teacher-time-body"><div class="skeleton skeleton-block"></div></div>
 </section>
 {% endif %}

@@ -145,7 +145,7 @@ Tệp: `tests/test_lessons_unit.py`.
 | TC-LS-I25 | `test_teacher_override_updates_the_result_and_is_audited` | AC-49.1 | Thuận | Giáo viên đổi một từ thành nghe ra: sinh viên thấy nhận định mới, dấu đã xem lại; nhật ký có dòng |
 | TC-LS-I26 | `test_passed_steps_and_the_teacher_view_respect_overrides` | AC-49.1 | Biên | Kết luận do giáo viên sửa được tính vào bước đã đạt, cả hai chiều |
 | TC-LS-I27 | `test_teacher_word_correction_keeps_its_status_type` | FR-49 | Biên | Nhận định giáo viên sửa giữ đúng kiểu, không phát cảnh báo khi xuất (hồi quy D025-B10) |
-| TC-LS-I28 | `test_lesson_attempts_stay_out_of_queue_and_research_export` | AC-49.2 | Âm | Lượt luyện không vào hàng đợi duyệt, bản xuất nghiên cứu hay danh sách bài nộp |
+| TC-LS-I28 | `test_lesson_attempts_stay_out_of_queue_and_class_statistics` | AC-49.2 | Âm | Lượt luyện không vào hàng đợi duyệt, thống kê lớp hay danh sách bài nộp (D078 gỡ bản xuất nghiên cứu) |
 | TC-LS-I29 | `test_attempt_recordings_belong_to_their_learner` | FR-49 | Âm | Chỉ chủ lượt luyện và giảng viên nghe được; người khác nhận 404; chủ xoá được cả tệp |
 | TC-LS-I30 | `test_listening_to_a_lesson_recording_is_audited` | FR-49 | Thuận | Giảng viên nghe bản ghi luyện tập thì nhật ký có dòng (hồi quy D025-B14) |
 | TC-LS-I31 | `test_deleting_an_attempt_is_audited_without_its_content` | FR-45 | Thuận | Sinh viên xoá lượt luyện của mình: nhật ký ghi ai xoá, không ghi nội dung (hồi quy D025-B9) |

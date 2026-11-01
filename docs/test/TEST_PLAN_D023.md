@@ -51,14 +51,14 @@ Tiêu chí chấp nhận AC-40.1..AC-44.4 nằm ở `docs/srs/SRS.md`, mục 3.9
 | AC-41.2 | TC-PR-U11, TC-PR-U15, TC-PR-U26, TC-PR-U31 |
 | AC-41.3 | TC-PR-U23, TC-PR-U24 |
 | AC-41.4 | TC-PR-I12, TC-PR-I13, TC-PR-I14 |
-| AC-42.1 | TC-PR-U33, TC-PR-I21 |
-| AC-42.2 | TC-PR-U34, TC-PR-I38 |
+| ~~AC-42.1~~ (gỡ bởi D078) | — |
+| ~~AC-42.2~~ (gỡ bởi D078) | — |
 | AC-42.3 | TC-PR-I10 |
 | AC-43.1 | TC-PR-U53, TC-PR-I05, TC-PR-I30 |
 | AC-43.2 | TC-PR-U43, TC-PR-U44, TC-PR-U45 |
 | AC-43.3 | TC-PR-U46 |
 | AC-44.1 | TC-PR-I07, TC-PR-I25 |
-| AC-44.2 | TC-PR-I08, TC-PR-I35 |
+| ~~AC-44.2~~ (gỡ bởi D078) | — |
 | AC-44.3 | TC-PR-I31, TC-PR-E11 |
 | AC-44.4 | TC-PR-I03 |
 
@@ -104,15 +104,6 @@ Tổng 107 test case: 53 unit, 41 integration, 13 E2E. Theo loại: 45 ca thuậ
 | TC-PR-U30 | `test_practice_result_needs_at_least_one_mission` | FR-41 | Âm | Kết quả luyện phải có ít nhất một mục tiêu |
 | TC-PR-U31 | `test_unmeasured_mission_needs_a_reason_and_no_conclusion` | AC-41.2 | Âm | Chưa đo được thì phải có lý do và không có kết luận |
 | TC-PR-U32 | `test_measure_description_per_mission_kind` | FR-41 | Thuận | Câu mô tả số đo theo từng loại mục tiêu |
-| TC-PR-U33 | `test_without_assessment_start_at_fluency_a2` | AC-42.1 | Thuận | Chưa có bài đánh giá: gợi ý độ trôi chảy A2 |
-| TC-PR-U34 | `test_weakest_criterion_and_band_of_assessment_drive_suggestion` | AC-42.2 | Thuận | Tiêu chí yếu nhất và band của bài đánh giá quyết định gợi ý |
-| TC-PR-U35 | `test_after_current_band_go_up_then_down` | FR-42 | Biên | Xong band hiện tại thì lên band trên rồi mới xuống band dưới |
-| TC-PR-U36 | `test_after_weakest_criterion_continue_the_path` | FR-42 | Thuận | Xong tiêu chí yếu nhất thì tiếp lộ trình |
-| TC-PR-U37 | `test_band_without_indicators_follows_path_from_that_band` | FR-42 | Biên | Có band nhưng không có chỉ báo tiêu chí: đi lộ trình từ band đó |
-| TC-PR-U38 | `test_tried_but_not_completed_is_suggested_again` | FR-42 | Thuận | Đã thử chưa hoàn thành thì vẫn được gợi ý lại |
-| TC-PR-U39 | `test_everything_completed_reviews_the_oldest` | FR-42 | Biên | Xong cả lộ trình: gợi ý ôn đề lâu nhất |
-| TC-PR-U40 | `test_empty_bank_or_assessment_only_tasks_give_no_suggestion` | FR-42 | Âm | Ngân hàng rỗng hoặc chỉ có đề đánh giá: không gợi ý |
-| TC-PR-U41 | `test_review_list_is_latest_not_completed_oldest_first` | FR-43 | Thuận | Mục Ôn lại: lần gần nhất chưa hoàn thành, cũ nhất trước |
 | TC-PR-U42 | `test_streak_counts_consecutive_days_and_survives_until_today_ends` | FR-43 | Thuận | Chuỗi ngày đếm ngày liên tiếp, hôm nay chưa luyện vẫn giữ |
 | TC-PR-U43 | `test_one_rest_day_per_week_keeps_streak_but_does_not_count` | AC-43.2 | Biên | Một ngày nghỉ mỗi tuần giữ chuỗi; nghỉ hai ngày liền hoặc hai lần trong 7 ngày thì đứt |
 | TC-PR-U44 | `test_rest_days_exactly_seven_days_apart_are_allowed` | AC-43.2 | Biên | Hai ngày nghỉ cách đúng 7 ngày: được; cách 6 ngày: đứt |
@@ -138,7 +129,6 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I05 | `test_attempts_keep_submission_order_within_one_second_and_filter_by_task` | AC-43.1 | Biên | Thứ tự nộp giữ đúng kể cả cùng một giây; lọc theo đề (hồi quy D023-B2) |
 | TC-PR-I06 | `test_latest_assessment_ignores_practice_and_unscored_rows` | FR-42 | Âm | Bài đánh giá gần nhất bỏ qua bài luyện và bài chưa có band |
 | TC-PR-I07 | `test_teacher_queue_never_holds_practice_even_if_marked_for_review` | AC-44.1 | Âm | Hàng đợi giảng viên không nhận bài luyện kể cả khi bị đánh dấu chờ duyệt |
-| TC-PR-I08 | `test_research_rows_exclude_practice` | AC-44.2 | Âm | Tầng lưu trữ: bản xuất nghiên cứu không có bài luyện |
 | TC-PR-I09 | `test_practice_summary_counts_processed_attempts_per_criterion` | FR-44 | Thuận | Thống kê luyện tập chỉ đếm lần đã xử lý xong, theo tiêu chí |
 | TC-PR-I10 | `test_speaking_profile_carries_the_practice_task_for_the_weakest_criterion` | AC-42.3 | Thuận | Hồ sơ năng lực có next_task_id; không có chỉ báo thì để rỗng |
 | TC-PR-I11 | `test_practice_attempt_is_measured_not_scored_and_not_routed` | AC-41.1 | Thuận | Pipeline: bài luyện được đo mục tiêu, không chấm, không chuyển giảng viên |
@@ -151,12 +141,8 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I18 | `test_read_aloud_matching_the_reference_is_completed` | FR-41 | Thuận | Đọc to khớp đoạn mẫu thì hoàn thành |
 | TC-PR-I19 | `test_assessment_response_has_no_practice_result` | FR-44 | Âm | Hồi quy: bài đánh giá không mang kết quả luyện tập |
 | TC-PR-I20 | `test_every_practice_endpoint_requires_login` | FR-44 | Âm | Mọi endpoint luyện tập cần đăng nhập (401) |
-| TC-PR-I21 | `test_new_learner_gets_an_a2_suggestion_and_the_full_path` | AC-42.1 | Thuận | API: người mới được gợi ý A2 và thấy đủ lộ trình |
 | TC-PR-I22 | `test_practice_tasks_never_appear_in_the_assessment_task_list` | AC-40.2 | Âm | API: đề luyện không lọt vào danh sách đề đánh giá |
-| TC-PR-I23 | `test_task_detail_returns_missions_tips_and_passage` | FR-40 | Thuận | API chi tiết đề trả mục tiêu, mẹo, đoạn văn, danh sách từ |
-| TC-PR-I24 | `test_task_detail_rejects_assessment_and_unknown_tasks` | FR-40 | Âm | API chi tiết đề: đề đánh giá và đề không tồn tại trả 404 (2 ca) |
 | TC-PR-I25 | `test_practice_submission_gets_a_result_without_band_and_skips_the_queue` | AC-44.1 | Thuận | Nộp bài luyện: có kết quả, không band, không vào hàng đợi, lộ trình cập nhật |
-| TC-PR-I26 | `test_completing_the_suggested_task_moves_the_suggestion_on` | FR-42 | Thuận | Hoàn thành nhiệm vụ gợi ý thì gợi ý chuyển sang nhiệm vụ kế |
 | TC-PR-I27 | `test_practice_is_accepted_straight_after_signing_in` | FR-44 | Âm | Chưa đồng thuận thì không nộp được bài luyện (403) |
 | TC-PR-I28 | `test_submission_to_an_unknown_task_is_refused` | FR-40 | Âm | Nộp vào đề không tồn tại bị từ chối (422) |
 | TC-PR-I29 | `test_qc_rejected_practice_counts_toward_neither_goal_nor_path` | FR-43 | Âm | Bài bị QC từ chối không tính vào mục tiêu ngày và lộ trình |
@@ -165,10 +151,8 @@ Tệp: `tests/test_practice_unit.py`.
 | TC-PR-I32 | `test_assessment_response_cannot_be_opened_as_practice` | FR-44 | Âm | Bài đánh giá và mã không tồn tại không mở được bằng trang luyện |
 | TC-PR-I33 | `test_deleting_your_practice_attempt_removes_it_from_the_path` | FR-44 | Thuận | Tự xoá bài luyện thì biến mất khỏi lộ trình |
 | TC-PR-I34 | `test_class_stats_keep_practice_apart_from_scoring_numbers` | FR-44 | Thuận | Thống kê lớp tách bài luyện khỏi số liệu máy chấm |
-| TC-PR-I35 | `test_admin_research_export_excludes_practice` | AC-44.2 | Âm | Endpoint xuất nghiên cứu của quản trị không có bài luyện |
 | TC-PR-I36 | `test_personal_export_includes_practice_and_explains_the_field` | FR-44 | Thuận | Bản xuất dữ liệu cá nhân có bài luyện và giải thích trường practice |
 | TC-PR-I37 | `test_progress_and_profile_ignore_practice` | FR-44 | Âm | Trang tiến độ và hồ sơ năng lực không tính bài luyện |
-| TC-PR-I38 | `test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment` | AC-42.2 | Thuận | API: gợi ý theo tiêu chí yếu nhất của bài đánh giá gần nhất |
 | TC-PR-I39 | `test_practice_pages_mark_navigation_and_load_their_scripts` | FR-40 | Thuận | Trang luyện tập đánh dấu mục điều hướng, nạp đúng script; đường dẫn nhiệm vụ cũ chuyển về lộ trình (D068); khách không thấy mục |
 | TC-PR-I40 | `test_progress_page_sends_practice_to_the_practice_result` | FR-41 | Thuận | Trang chờ xử lý chuyển bài luyện tới trang kết quả luyện |
 | TC-PR-I41 | `test_practice_report_json_round_trips_into_a_response` | FR-41 | Thuận | JSON báo cáo của bài luyện nạp lại được thành Response |

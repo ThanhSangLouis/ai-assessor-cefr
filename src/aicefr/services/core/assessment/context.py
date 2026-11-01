@@ -1,9 +1,9 @@
 """What every router of the assessment service shares (D043).
 
 The stores of this service, the bus, the other services' facades, and the few
-rules several routers apply: the blind-rating guard of D030, the QC thresholds
-and the scoring model in force, the measurement error of D042. Wired once when
-the service is built (`configure`), read through `svc()`.
+rules several routers apply: the QC thresholds and the scoring model in force,
+the measurement error of D042. Wired once when the service is built
+(`configure`), read through `svc()`.
 """
 
 from __future__ import annotations
@@ -21,10 +21,8 @@ from aicefr.qc import audio_qc
 from aicefr.services import Peers
 from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.classroom_repository import ClassroomRepository
-from aicefr.storage.rating_repository import RatingRepository
 from aicefr.storage.replay_repository import ReplayRepository
 from aicefr.storage.repository import Repository
-from aicefr.storage.study_repository import StudyRepository
 from aicefr.storage.task_repository import TaskRepository
 
 CONFIG_VERSION = "v1"
@@ -57,8 +55,6 @@ class Services:
     settings: Settings
     repo: Repository
     tasks: TaskRepository
-    ratings: RatingRepository
-    studies: StudyRepository
     blobs: BlobStore
     bus: MessageBus
     peers: Peers
@@ -116,34 +112,6 @@ def students_in_view(account: Account) -> set[str] | None:
         return None
     rooms = svc().classrooms
     return rooms.students_of(account.account_id) if rooms is not None else set()
-
-
-# ================================================================= blind rating (D030)
-
-
-def blind(account: Account, response_id: str) -> None:
-    """Refuse a teacher the machine's view of a response they still have to rate blind (D030).
-
-    Seeing the machine's score first is exactly the anchoring the blind rating
-    exists to avoid; once the rating is submitted, the response opens again.
-    """
-    if account.is_staff and svc().ratings.has_open(account.account_id, response_id):
-        raise HTTPException(
-            403,
-            "bài này đang trong đợt chấm mù của bạn: chấm xong ở trang Chấm mù rồi mới xem"
-            " được kết quả của máy",
-        )
-
-
-def saw(account: Account, response_id: str, via: str) -> None:
-    """Note that a teacher or administrator now has the machine's result in view (D030).
-
-    They are no longer blind to this response: they are not drawn to rate it
-    in a later batch, and a sheet of theirs that is still owed -- in a batch
-    closed for now -- stops taking a rating. Students are never raters.
-    """
-    if account.is_staff:
-        svc().ratings.saw_machine(account.account_id, response_id, via)
 
 
 # ================================================================= what is in force

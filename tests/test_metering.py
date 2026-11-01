@@ -233,8 +233,8 @@ def test_only_an_administrator_grants_runs(metered):
 def test_the_metered_deployment_runs_no_research_study(metered):
     m = metered
     admin = login_as(m, "QT-01", "admin")
-    r = admin.post("/api/v1/admin/studies", json={"name": "Không được chạy"})
-    assert r.status_code == 409 and "tính lượt" in r.json()["detail"]
+    # D078: no deployment runs one any more.
+    assert admin.post("/api/v1/admin/studies", json={"name": "x"}).status_code == 404
 
 
 def test_granting_on_the_school_deployment_is_refused(tmp_path, monkeypatch):

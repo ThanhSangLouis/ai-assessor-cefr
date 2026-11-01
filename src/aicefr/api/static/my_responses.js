@@ -70,7 +70,7 @@ function badgeFor(r) {
 //     so it is never read as a final result.
 function resultText(r) {
   if (isPractice(r)) return '<span class="muted">Không chấm</span>';
-  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Không có điểm</span>';
+  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Chưa có kết quả</span>';
   if (r.overall_band == null && r.overall_0_6 == null) return "";
   let h = "";
   if (r.overall_band != null) h += `Band <b>${escapeHtml(r.overall_band)}</b>`;

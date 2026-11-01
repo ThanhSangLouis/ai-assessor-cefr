@@ -6,7 +6,7 @@ flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
         direction TB
         GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
+        CO["core<br/>tài khoản, bài nộp, duyệt,<br/>lớp học, bài học, lượt"]
         WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]

@@ -11,11 +11,6 @@
   </p>
 </div>
 
-<div class="notice notice-danger" id="fake-asr-warning" hidden>
-  <b>Chế độ thử nghiệm.</b> Hệ thống đang dùng bộ nhận dạng tiếng nói giả lập nên
-  điểm số <b>không có ý nghĩa</b>. Đặt biến môi trường <code>AICEFR_ASR=whisper</code> để chấm thật.
-</div>
-
 {#- Two columns on a wide screen: the task list on the left, the recorder on
     the right with the chosen prompt right above the button, so the student
     reads the question and answers it without scrolling. -#}
@@ -52,7 +47,7 @@
       {% include "_recorder.html" %}
     {% endwith %}
   </section>
-  <input type="hidden" id="task_id" name="task_id" value="P3">
+  <input type="hidden" id="task_id" name="task_id">
 </form>
 {% endblock %}
 {% block scripts %}

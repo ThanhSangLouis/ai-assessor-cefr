@@ -149,28 +149,6 @@ class EvidenceKind(str, Enum):
     CONNECTOR = "connector"
 
 
-class TaskPart(str, Enum):
-    """Which exam part a prompt belongs to, and it is NOT a cosmetic label.
-
-    `Task.part` was a free `str`. Writing the closed set out matters here
-    because the three values do not mean the same thing to the scorer:
-
-    - `P3` and `P4` are the parts the model was trained on. Each response in
-      the training corpus is exactly one file for one of them, which is what
-      makes the unit of inference line up with what a student submits.
-    - `P5` is the long prompt (120-300s) and sits DELIBERATELY outside that
-      range. It is scored by the windowing path in `scoring/windows.py`, gets
-      `ReasonCode.SCORE_AGGREGATED`, and always goes to a teacher.
-
-    So `part` is what decides which scoring path a response takes. A free
-    string hid that behind a value nobody could enumerate.
-    """
-
-    P3 = "P3"
-    P4 = "P4"
-    P5 = "P5"
-
-
 class TaskPurpose(str, Enum):
     """Whether a task is for ASSESSMENT or for PRACTICE. D023.
 

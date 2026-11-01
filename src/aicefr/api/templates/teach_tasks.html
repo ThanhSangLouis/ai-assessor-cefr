@@ -33,22 +33,11 @@
 <dialog class="sheet wide" id="task-dialog" aria-labelledby="task-dialog-h">
   <form id="task-form" class="stack" method="dialog" novalidate>
     <h2 id="task-dialog-h">Thêm đề</h2>
-    <div class="field-row three">
-      <div>
-        <label for="task-band">Band</label>
-        <select id="task-band" name="band">
-          {%- for b in ["A1", "A2", "B1", "B2", "C1", "C2"] %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
-        </select>
-      </div>
-      <div>
-        <label for="task-part">Dạng đề</label>
-        <select id="task-part" name="part">
-          <option value="P3">Nêu quan điểm</option>
-          <option value="P4">Mô tả một quy trình</option>
-        </select>
-      </div>
-    </div>
-    <label for="task-text">Đề bài <span class="muted">(tiếng Việt; học viên nói tiếng Anh 40–60 giây)</span></label>
+    <label for="task-band">Band</label>
+    <select id="task-band" name="band">
+      {%- for b in ["A1", "A2", "B1", "B2", "C1", "C2"] %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+    </select>
+    <label for="task-text">Đề bài <span class="muted">(tiếng Việt; học viên nói tiếng Anh 40–60 giây, nêu quan điểm hoặc kể một quá trình)</span></label>
     <textarea id="task-text" name="prompt_text" rows="3" maxlength="600" required
               placeholder="Ví dụ: Bạn thích sống ở thành phố hay nông thôn? Vì sao?"></textarea>
     <label for="task-keywords">Từ khóa tiếng Anh <span class="muted">(cách nhau bằng dấu phẩy)</span></label>

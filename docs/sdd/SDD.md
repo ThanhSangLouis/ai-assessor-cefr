@@ -254,7 +254,6 @@ flowchart LR
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
         UC20["UC-20 Giáo viên soạn lộ trình và theo dõi lượt luyện"]
-        UC21["UC-21 Giảng viên chấm mù bài nói trong đợt chấm"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
     end
@@ -264,7 +263,6 @@ flowchart LR
     GV --> UC17
     GV --> UC11
     GV --> UC20
-    GV --> UC21
     GV --> UC05
 
     %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Dat UC-06
@@ -303,7 +301,6 @@ flowchart LR
         UC09["UC-09 Quản trị viên kích hoạt phiên bản mô hình"]
         UC07["UC-07 Quản trị viên xử lý yêu cầu rút đồng thuận"]
         UC12["UC-12 Huấn luyện lại mô hình từ manifest đã khóa"]
-        UC22["UC-22 Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận"]
         UC23["UC-23 Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ"]
     end
 
@@ -313,7 +310,6 @@ flowchart LR
     QT --> UC09
     QT --> UC07
     QT --> UC12
-    QT --> UC22
     QT --> UC23
     SV --> UC07
     UC23 --- CTT
@@ -1103,77 +1099,9 @@ erDiagram
 
 **Ánh xạ sang mã nguồn.** Mỗi collection có một lớp miền cùng tên với thực thể trên sơ đồ lớp và một repository: `response` ở `src/aicefr/storage/repository.py` (`Response.reviews: list[Review]`), `task` ở `task_repository.py`, `classroom` ở `classroom_repository.py` (`Classroom`, `Assignment`), `account` và `session` ở `auth_repository.py`, `rating_batch` ở `rating_repository.py` (`RatingBatch`, `Rating`), `study` ở `study_repository.py` (`Study`, `Participant`). Danh sách đầy đủ 19 collection, phần nhúng và khoá ở `docs/db/TU_DIEN_DU_LIEU.md`; dữ liệu của bản trước D060 chuyển sang bằng migration 7 (`src/aicefr/storage/migrations.py`). Lược đồ nghiên cứu đầy đủ — `speaker`, `audio_file`, `qc_result`, `transcript`, `feature_set`, `assessment`, `criterion_score`, `evidence` — **chưa hiện thực**, tách hẳn sang hình 5b.
 
-#### 3.5b. Chấm mù hai người (D030)
+#### 3.5b. Chấm mù hai người (D030) — đã gỡ
 
-Chấm mù của khảo sát thực địa (mục 4.13) và thực nghiệm phản hồi (D040). Mỗi đợt chấm là một document `rating_batch` chứa các phiếu `Rating`; mỗi thực nghiệm là một document `study` chứa người tham gia. Không collection nào ở đây ghi vào `response`: luồng duyệt vận hành giữ nguyên, kể cả `teacher_verified`.
-
-File: `docs/sdd/diagrams/05d_erd_rating.mmd`
-
-```mermaid
-%% SDD - Diagram 5d: ERD - cham mu hai nguoi (D030) va thuc nghiem phan hoi (D040)
-%% Moi phieu cham la mot Rating nam trong dot cua no (D060): phieu va diem la
-%% mot. Xoa bai cua mot nguoi hoc (FR-35) rut cac phieu ve bai do khoi dot.
-%% Khong collection nao o day ghi vao response: luong duyet van hanh giu nguyen.
-%% Rating va Participant ve thanh khoi rieng de doc duoc, nhung la phan nhung
-%% (mang ratings, participants) trong document cua dot va cua thuc nghiem.
-erDiagram
-    rating_batch ||--|{ Rating : "nhúng trong ratings"
-    Rating }o--|| response : "response_id"
-    study ||--o{ Participant : "nhúng trong participants"
-    Participant }o--|| account : "account_id"
-
-    rating_batch {
-        string batch_id PK
-        string name
-        int seed "hạt giống chia phiếu"
-        bool closed
-    }
-
-    Rating {
-        string assignment_id
-        string response_id
-        string rater_id
-        int slot "1, 2 chấm chính; 3 trọng tài"
-        int position "thứ tự riêng của giám khảo"
-        string opened_at
-        float score_overall
-        string band
-        string unscorable_reason
-        string submitted_at "nộp một lần"
-    }
-
-    response {
-        string response_id PK "chi tiết ở hình 5"
-        array machine_seen "đã thấy điểm máy thì không còn mù"
-    }
-
-    study {
-        string study_id PK
-        string status "running · survey · closed"
-        int min_days
-        string measured_until
-    }
-
-    Participant {
-        string code "P001, cố định từ lúc vào"
-        string account_id
-        string arm "feedback · score_only"
-        string withdrawn_at
-        object survey_answers
-    }
-
-    account {
-        string account_id PK "chi tiết ở hình 5c"
-    }
-```
-
-![Hình 5d. Chấm mù hai người và thực nghiệm phản hồi](images/05d_erd_rating.png)
-
-*Hình 5d. Đợt chấm với các phiếu `Rating` nhúng (phiếu và điểm là một), ai đã xem kết quả của máy, và thực nghiệm với người tham gia nhúng. Nguồn: `diagrams/05d_erd_rating.mmd`*
-
-**Cách đọc.** Một đợt (`rating_batch`) gồm nhiều phiếu (`Rating`, nhúng trong `ratings`); mỗi phiếu là một cặp bài–giám khảo, mang `slot` 1 hoặc 2 cho hai giám khảo chính và 3 cho người phân xử, và `position` là chỗ của bài trong thứ tự **riêng** của giám khảo đó. Phiếu và điểm là một: phiếu chưa nộp có `submitted_at` rỗng, và lần nộp là một cập nhật có điều kiện "`submitted_at` còn rỗng", nên phiếu đã nộp là cuối cùng. Điểm từng tiêu chí, điểm tổng và band đều có thể rỗng: phiếu "không chấm được" để trống tất cả. `response.machine_seen` ghi ai đã mở kết quả của máy cho bài đó, lần đầu; cùng với người đã duyệt bài (`response.reviews`) nó quyết định ai không còn mù với một bài (mục 4.13, bất biến 4b).
-
-**Ánh xạ sang mã nguồn.** `RatingBatch` và `Rating` ở `src/aicefr/storage/rating_repository.py`; `Study` và `Participant` ở `study_repository.py`. Điều kiện chọn bài của `RatingRepository.eligible`: `purpose = 'assessment'`, `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, có bản ghi âm, chủ bài đã đồng ý điều khoản (D058). Điểm của máy dùng để so **không** có trường riêng: `_machine` đọc `old_score`, `old_band` của lần duyệt đầu trong `response.reviews` nếu bài đã được duyệt, nếu chưa thì đọc `overall_0_6`, `overall_band` — vì quyết định của giảng viên ghi đè hai trường đó. Cùng hàm dựng cờ `flagged` (bài đang `REVIEW_REQUIRED` hoặc đã có lần duyệt) mà báo cáo dùng cho câu hỏi về định tuyến (RQ4).
+D078 (01/11/2026) gỡ chấm mù kép (D030) và thực nghiệm phản hồi (D040): hệ thống phục vụ một trung tâm, nội dung đã được duyệt. Kho mới không tạo `rating_batch`, `study`; kho cũ giữ dữ liệu nhưng không đọc nữa, và xoá dữ liệu một người (FR-35) vẫn rút phiếu chấm và tư cách tham gia của họ. Sơ đồ 5d bỏ đi cùng hai collection.
 
 #### 3.5c. Lược đồ nghiên cứu dự kiến (chưa hiện thực)
 
@@ -1407,7 +1335,7 @@ flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
         direction TB
         GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
+        CO["core<br/>tài khoản, bài nộp, duyệt,<br/>lớp học, bài học, lượt"]
         WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
@@ -2348,7 +2276,7 @@ sequenceDiagram
 
 | Dịch vụ | Sở hữu | Schema | Gói mã |
 | --- | --- | --- | --- |
-| core | tài khoản, phiên, Google, đồng thuận; đề, bài nộp, duyệt, chấm mù, thực nghiệm phản hồi, cấu hình QC và mô hình; lộ trình, bài học, lượt luyện, ôn tập, thành tựu, phát âm; gói, đơn hàng, giấy phép, cổng thanh toán | `core` | `services/core` (bốn phần `identity`, `assessment`, `learning`, `billing`) |
+| core | tài khoản, phiên, Google; đề theo band, bài nộp, duyệt, lớp học, cấu hình QC và mô hình; lộ trình, bài học, lượt luyện, ôn tập, thành tựu, phát âm; ví lượt, đơn nạp lượt, cổng thanh toán Stripe | `core` | `services/core` (bốn phần `identity`, `assessment`, `learning`, `billing`) |
 | speech | QC, VAD, nhận dạng, đặc trưng, chấm điểm, đo bước bài học, thử âm thanh mẫu | không có | `services/speech` |
 | web | mọi trang Jinja2, tệp tĩnh, số đếm thanh bên | không có | `services/web` |
 
@@ -2981,18 +2909,13 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/04_activity.mmd` | Activity | Mermaid `flowchart TD` |
 | `docs/sdd/diagrams/05_erd.mmd` | ERD chấm điểm và vận hành | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/05c_erd_identity.mmd` | ERD định danh, đồng thuận và trạng thái theo tài khoản | Mermaid `erDiagram` (`direction LR`) |
-| `docs/sdd/diagrams/05d_erd_rating.mmd` | ERD chấm mù hai người (D030) | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/05b_erd_target.mmd` | ERD dự kiến | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/06_deployment.mmd` | Component/Deployment | Mermaid `flowchart TB` |
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/08_sequence_stripe.mmd` | Sequence: thanh toán qua Stripe Checkout (D035) | Mermaid `sequenceDiagram` |
 
-Thư mục hiện có mười hai tệp `.mmd`, và ngày 07/10/2026 cả mười hai đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
+Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 
-```bash
-mmdc -i docs/sdd/diagrams/05d_erd_rating.mmd -o docs/sdd/images/05d_erd_rating.png \
-     -c docs/sdd/mmdc-config.json -p docs/sdd/puppeteer-config.json -b white
-```
 
 `tests/test_diagrams.py` giữ năm luật cho các tệp `.mmd` và ảnh của chúng: bản dán trong tài liệu khớp từng byte với tệp nguồn; mọi tệp nguồn có ảnh và ảnh đó được nhúng; mọi ảnh được nhúng có thật; không ảnh nào trong `docs/sdd/images/` nằm ngoài tài liệu; và tỷ lệ rộng trên cao của mọi ảnh nhúng nằm trong khoảng 0,5–2,0 để in A4 còn đọc được.
 

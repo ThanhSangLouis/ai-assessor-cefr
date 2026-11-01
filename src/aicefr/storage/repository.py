@@ -654,19 +654,34 @@ class Repository(MongoStore):
         assessed = list(
             responses.find(
                 {"purpose": "assessment", **scope},
-                {"overall_band": 1, "task_id": 1, "overall_0_6": 1, "status": 1, "account_id": 1},
+                {"overall_band": 1, "task_id": 1, "status": 1, "account_id": 1},
             )
         )
         by_band: dict[str, int] = {}
-        tasks: dict[str, dict] = {}
+        # D078: by the band of the prompt answered -- did learners answering a
+        # band's prompts land at that band, under it or above it?
+        prompt_band = {
+            t["task_id"]: t.get("band") for t in self.db["task"].find({}, {"task_id": 1, "band": 1})
+        }
+        order = ["A1", "A2", "B1", "B2", "C1", "C2"]
+        bands: dict[str, dict] = {}
         for r in assessed:
-            if r.get("overall_band") is not None:
-                by_band[r["overall_band"]] = by_band.get(r["overall_band"], 0) + 1
-            cell = tasks.setdefault(r["task_id"], {"n": 0, "scores": [], "waiting": 0})
+            got = r.get("overall_band")
+            if got is not None:
+                by_band[got] = by_band.get(got, 0) + 1
+            asked = prompt_band.get(r["task_id"])
+            if asked not in order:
+                continue
+            cell = bands.setdefault(
+                asked,
+                {"n": 0, "learners": set(), "at": 0, "below": 0, "above": 0, "waiting": 0},
+            )
             cell["n"] += 1
-            if r.get("overall_0_6") is not None:
-                cell["scores"].append(r["overall_0_6"])
+            cell["learners"].add(r.get("account_id"))
             cell["waiting"] += int(r["status"] == "REVIEW_REQUIRED")
+            if got in order:
+                gap = order.index(got) - order.index(asked)
+                cell["at" if gap == 0 else "below" if gap < 0 else "above"] += 1
         speakers = len({r["account_id"] for r in assessed if r.get("account_id") is not None})
         waiting = sum(1 for r in assessed if r["status"] == "REVIEW_REQUIRED")
         verified = responses.count_documents({"teacher_verified": 1, **scope})
@@ -702,16 +717,10 @@ class Repository(MongoStore):
             "waiting_for_review": waiting,
             "teacher_verified": verified,
             "by_band": by_band,
-            "by_task": [
-                {
-                    "task_id": task_id,
-                    "n": cell["n"],
-                    "avg_score": round(sum(cell["scores"]) / len(cell["scores"]), 2)
-                    if cell["scores"]
-                    else None,
-                    "waiting": cell["waiting"],
-                }
-                for task_id, cell in sorted(tasks.items(), key=lambda kv: str(kv[0]))
+            "by_prompt_band": [
+                {**cell, "band": b, "learners": len(cell["learners"] - {None})}
+                for b in order
+                if (cell := bands.get(b))
             ],
             "agreement": {
                 "decisions": len(decisions),
@@ -879,6 +888,17 @@ class Repository(MongoStore):
         # The reviews, the lock, the visits and the replay labels are part of
         # the response document and go with it.
         db["response"].delete_many(within)
+
+    def forget_study_participant(self, account_id: str) -> None:
+        """Take one person out of the feedback studies an older store still holds.
+
+        The study is gone (D078) but its stored arms and survey answers name
+        people, so erasure (FR-35) still reaches them.
+        """
+        self.db["study"].update_many(
+            {"participants.account_id": account_id},
+            {"$pull": {"participants": {"account_id": account_id}}},
+        )
 
     def erase_speaker(self, speaker_id: str, actor_id: str) -> dict:
         """Delete one participant's recordings and reports. Irreversible.
@@ -1343,50 +1363,6 @@ class Repository(MongoStore):
         )
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
-
-    def research_rows(self, allowed_account_ids: set[str], limit: int = 5000) -> list[dict]:
-        """Rows for the research export, restricted to accounts that allow it.
-
-        The caller passes the allowed set rather than this method reading the
-        accounts itself. Two reasons: the scoring store and the accounts are
-        separate concerns, and a caller holding an explicit
-        set is auditable -- you can print it, count it, and show it to an ethics
-        reviewer. A join hidden inside the query cannot be shown to anybody.
-
-        Never returns the transcript. The export exists to analyse scores
-        against human ratings; shipping the words of a recording around is a
-        risk with no matching benefit.
-        """
-        if not allowed_account_ids:
-            return []
-        # Filtered in the query, then limited: limiting first and filtering
-        # after would silently drop the newer responses of allowed learners
-        # once there were more than `limit` in all.
-        rows = self.col("response").find(
-            {
-                "account_id": {"$in": sorted(allowed_account_ids)},
-                # D023: practice attempts are constrained exercises (given
-                # words, reading aloud), not free speech to compare with
-                # teacher ratings.
-                "purpose": "assessment",
-            }
-        )
-        names = (
-            "response_id",
-            "speaker_id",
-            "task_id",
-            "status",
-            "overall_0_6",
-            "overall_band",
-            "teacher_verified",
-            "model_version",
-            "config_version",
-            "created_at",
-            "account_id",
-        )
-        out = [fields(r, names) for r in rows]
-        out.sort(key=lambda r: r["created_at"])  # type: ignore[index]
-        return out[:limit]  # type: ignore[return-value]
 
     # ---------- runtime configuration (FR-08, FR-36) ----------
     #

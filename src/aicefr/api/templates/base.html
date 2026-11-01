@@ -73,8 +73,6 @@
       <a href="/teach"{% if here == "teach" %} aria-current="page"{% endif %}>{{ icon("layers") }}<span class="nav-label">Lộ trình luyện</span></a>
       <a href="/teach/tasks"{% if here == "tasks" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Đề đánh giá</span></a>
       <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê</span></a>
-      {#- D068: shown while blind sheets wait for this person; the badge script reveals it. -#}
-      <a href="/rate" data-nav-if="ratings"{% if here != "rate" %} hidden{% else %} aria-current="page"{% endif %}>{{ icon("eye-off") }}<span class="nav-label">Chấm mù</span>{{ badge("ratings") }}</a>
       {#- D075: a teacher pays the lesson drafts the language model writes from their own runs. -#}
       {% if metered() %}
       <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
@@ -241,9 +239,6 @@
 
     <!-- Thanh phụ cuối trang -->
     <div class="footer-sub">
-      <div class="footer-sub-left">
-        <p class="footer-copy">AI Assessor CEFR · Luyện nói tiếng Anh theo band A1–C2</p>
-      </div>
       <div class="footer-sub-right">
         <a href="/bands" class="footer-sublink">Chuẩn năng lực</a>
         <span class="footer-sub-sep" aria-hidden="true">•</span>

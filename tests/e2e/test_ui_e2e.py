@@ -89,16 +89,15 @@ def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, l
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
         login_home(teacher, live_server, live_server.account("teacher"), "/review")
-        # D030 added the blind double rating to the teacher's own work, D054 the classes.
+        # D054 added the classes, D076 the prompts by band; D078 took the blind rating away.
         assert nav_texts(teacher) == [
             "Hàng đợi duyệt",
             "Lớp học",
             "Lộ trình luyện",
+            "Đề đánh giá",
             "Thống kê",
-            "Chấm mù",
         ]
-        # D068: "Chấm mù" shows only while a blind sheet waits.
-        expect(teacher.locator(".site-nav a[href='/rate']")).to_be_hidden()
+        expect(teacher.locator(".site-nav a[href='/rate']")).to_have_count(0)
         teacher.get_by_role("link", name=re.compile("AI Assessor CEFR")).click()
         teacher.wait_for_url(lambda url: urlparse(url).path == "/review")
     finally:

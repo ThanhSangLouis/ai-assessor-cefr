@@ -124,8 +124,7 @@ function build(d) {
         ? "<b>Giảng viên đang sửa nhiều.</b> Dưới 70% đồng ý nghĩa là band của máy chưa đủ " +
           "ổn định để dùng như một kết quả; hãy tiếp tục coi nó là gợi ý và duyệt từng bài."
         : "<b>Đây là số đo về mô hình, không phải về giảng viên.</b> Tỷ lệ đồng ý cao không " +
-          "có nghĩa mô hình đúng — có thể giảng viên đang tin máy quá mức. Chỉ khảo sát " +
-          "chấm mù đôi (kế hoạch tuần 10–11) mới trả lời được câu đó.") +
+          "có nghĩa mô hình đúng — có thể giảng viên đang tin máy quá mức.") +
       "</div>";
   }
 
@@ -151,18 +150,21 @@ function build(d) {
   h +=
     '<p class="muted">Band <b>máy ước lượng</b>, chưa phải trình độ thật của lớp.</p>';
 
-  h += '<h2 style="margin-top:var(--sp-6)">Theo đề bài</h2>';
-  h += "<table><thead><tr><th>Đề</th><th>Số bài</th><th>Điểm trung bình</th>" +
-    "<th>Đang chờ duyệt</th></tr></thead><tbody>";
-  for (const t of d.by_task || []) {
+  // D078: by the band of the prompt answered, where the class landed.
+  h += '<h2 style="margin-top:var(--sp-6)">Theo band của đề</h2>';
+  h += "<table><thead><tr><th>Đề band</th><th>Số bài</th><th>Người nộp</th>" +
+    "<th>Đạt đúng band</th><th>Thấp hơn</th><th>Cao hơn</th><th>Chờ duyệt</th></tr></thead><tbody>";
+  for (const t of d.by_prompt_band || []) {
+    const share = (k) => (t.n ? ` <span class="muted">${Math.round((k / t.n) * 100)}%</span>` : "");
     h +=
-      `<tr><td><b>${window.escapeHtml(t.task_id)}</b></td><td>${t.n}</td>` +
-      `<td>${t.avg_score == null ? "—" : t.avg_score.toFixed(2)}</td>` +
-      `<td>${t.waiting}</td></tr>`;
+      `<tr><td><b>${window.escapeHtml(t.band)}</b></td><td>${t.n}</td><td>${t.learners}</td>` +
+      `<td><b>${t.at}</b>${share(t.at)}</td><td>${t.below}${share(t.below)}</td>` +
+      `<td>${t.above}${share(t.above)}</td><td>${t.waiting}</td></tr>`;
   }
   h += "</tbody></table>";
   h +=
-    '<p class="muted">Điểm trung bình giữa các đề không so sánh trực tiếp được.</p>';
+    '<p class="muted">Bài làm đề band nào thì so với chính band đó. Nhiều bài "thấp hơn" ' +
+    "nghĩa là đề đang khó so với lớp.</p>";
   return h + practiceSection(d.practice);
 }
 
@@ -203,8 +205,6 @@ function teacherTimeView(k) {
       : `<b>${s.median_minutes.toFixed(1).replace(".", ",")}</b> phút <span class="muted">· trung vị ${s.n} lần</span>`;
   let h = '<div class="stat-grid">';
   h += `<div class="stat"><span>Duyệt một bài, có máy</span>${mins(k.review_with_machine)}</div>`;
-  h += `<div class="stat"><span>Chấm mù một bài, không có máy</span>${mins(k.rating_without_machine)}</div>`;
-  h += `<div class="stat"><span>Thời gian tiết kiệm</span><b>${k.time_saved == null ? "—" : pct(k.time_saved)}</b></div>`;
   h += "</div><ul class=\"kpi-list\">";
   const a = k.settled_alone;
   h += `<li>Máy tự xử lý: <b>${pct(a.rate)}</b>${window.escapeHtml(ci(a.ci95))} · ${a.k}/${a.n} bài có kết quả</li>`;
@@ -212,9 +212,6 @@ function teacherTimeView(k) {
   h += `<li>Giảng viên giữ nguyên band máy đề xuất: <b>${pct(b.rate)}</b>${window.escapeHtml(ci(b.ci95))} · ${b.k}/${b.n} quyết định</li>`;
   if (k.review_with_machine.idle_left_out) {
     h += `<li class="muted">${k.review_with_machine.idle_left_out} lần mở bài quá ${k.idle_cap_minutes} phút không tính (người duyệt bỏ dở).</li>`;
-  }
-  if (k.rating_without_machine.idle_left_out) {
-    h += `<li class="muted">${k.rating_without_machine.idle_left_out} phiếu chấm mù mở quá ${k.idle_cap_minutes} phút không tính.</li>`;
   }
   h += "</ul>";
   return h;

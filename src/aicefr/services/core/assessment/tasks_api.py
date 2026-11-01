@@ -2,21 +2,19 @@
 
 The bank (`practice/assessment_bank.py`) starts every deployment with prompts
 for each band; teachers and administrators add their own here. Every prompt is
-of the two kinds the scoring model knows, P3 and P4, at 40-60 seconds -- the
-screen offers nothing else -- and carries English topic words for the
-off-topic check (D022). Rewording a prompt makes a new version: the reports
-already written keep the wording their learner saw.
+known by its band (D078), runs 40-60 seconds -- the length the scoring model
+knows -- and carries English topic words for the off-topic check (D022).
+Rewording a prompt makes a new version: the reports already written keep the
+wording their learner saw.
 """
 
 from __future__ import annotations
-
-from typing import Literal
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import STAFF_ONLY
-from aicefr.contracts import Band, TaskPart
+from aicefr.contracts import Band
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account
 
@@ -30,14 +28,12 @@ def _keywords(raw: str) -> str:
 
 class PromptIn(BaseModel):
     band: Band
-    part: Literal["P3", "P4"]
     prompt_text: str = Field(min_length=10, max_length=600)
     topic_keywords: str = Field(default="", max_length=600)
 
 
 class PromptPatch(BaseModel):
     band: Band | None = None
-    part: Literal["P3", "P4"] | None = None
     prompt_text: str | None = Field(default=None, min_length=10, max_length=600)
     topic_keywords: str | None = Field(default=None, max_length=600)
     active: bool | None = None
@@ -54,7 +50,6 @@ def add_prompt(body: PromptIn, account: Account = STAFF_ONLY) -> dict:
     s = svc()
     task_id = s.tasks.add_assessment(
         body.band,
-        TaskPart(body.part),
         " ".join(body.prompt_text.split()),
         _keywords(body.topic_keywords),
         account.account_id,

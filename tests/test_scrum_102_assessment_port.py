@@ -90,6 +90,7 @@ def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
         accepted = client.post(
             "/api/v1/responses",
             files={"audio": ("recording.wav", b"RIFF" + b"0" * 40, "audio/wav")},
+            data={"task_id": "P3"},
             headers=headers(student),
         )
         assert accepted.status_code == 202, accepted.text

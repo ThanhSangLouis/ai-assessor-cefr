@@ -33,9 +33,6 @@ const passedSteps = new Set();
 // (and see a teacher's correction) on coming back to the lesson.
 const lastAttempt = {};
 let lastAudio = null;
-// True while the server runs the simulated recogniser: every result is then a
-// fixed sentence, not the learner's voice, and must say so where it is read.
-let simulated = false;
 // Countdowns of the step on screen (show the sentence, planning time); stopped
 // when the learner moves to another step, or they would pull focus back later.
 let timers = [];
@@ -486,12 +483,6 @@ function showFeedback(payload) {
       ? `<button type="button" id="finish">${icon("trophy")}<span>Xem tổng kết</span></button>`
       : `<button type="button" id="next-step"><span>Bước tiếp</span>${icon("arrow-right")}</button>`;
   feedbackEl.innerHTML =
-    (simulated
-      ? '<p class="notice notice-danger"><b>Kết quả giả lập, không phải của bạn.</b> Máy chủ đang dùng ' +
-        "bộ nhận dạng giả lập: nó không nghe bản ghi mà luôn trả về cùng một câu, nên các từ " +
-        "«máy chưa nghe ra» dưới đây không nói gì về cách bạn đọc. Cần bật bộ nhận dạng thật để " +
-        "được đo.</p>"
-      : "") +
     verdict(result) +
     (result.tip ? `<p class="tip">${icon("sparkle")}<span><b>Gợi ý:</b> ${escapeHtml(result.tip)}</span></p>` : "") +
     ((result.changes || []).length
@@ -684,12 +675,10 @@ async function load() {
   }
 }
 
-// Health: the fake recogniser warning and whether live recording works.
+// Health: whether live recording works.
 fetch("/api/v1/health")
   .then((r) => (r.ok ? r.json() : null))
   .then((h) => {
-    simulated = !!(h && !h.asr_is_real);
-    if (simulated) document.getElementById("fake-asr-warning").hidden = false;
     recorder.enable(!!(h && h.recording_enabled));
   })
   .catch(() => recorder.enable(false));

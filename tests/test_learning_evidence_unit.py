@@ -1,7 +1,7 @@
 """Layer 1 for the learning-evidence features D039-D042: pure functions only.
 
-D039 names the Vietnamese-learner pattern behind a misheard word; D040 assigns
-arms and compares them; D041 turns review sessions into teacher minutes; D042
+D039 names the Vietnamese-learner pattern behind a misheard word; D041 turns
+review sessions into teacher minutes; D042
 decides whether a change is larger than the instrument's error. Each is a
 claim about learners or teachers, so each is tested where it must stay quiet
 as much as where it must speak.
@@ -26,14 +26,6 @@ from aicefr.research.reliable_change import (
     reliable_change,
     retest_pairs,
     sem_from_pairs,
-)
-from aicefr.research.study import (
-    ARMS,
-    analyse,
-    assign_arms,
-    bootstrap_difference,
-    hedges_g,
-    pre_post,
 )
 from aicefr.research.teacher_time import (
     IDLE_CAP_MINUTES,
@@ -126,57 +118,6 @@ def test_profile_respects_teacher_corrections_and_skips_unmeasured_steps():
 
 
 # ================================================================= D040
-
-
-def test_assignment_is_balanced_and_reproducible_from_the_seed():
-    ids = [f"acc-{i}" for i in range(11)]
-    arms = assign_arms(ids, seed=7)
-    assert arms == assign_arms(reversed(ids), seed=7)
-    counts = [sum(1 for a in arms.values() if a == arm) for arm in ARMS]
-    assert abs(counts[0] - counts[1]) <= 1
-    assert arms != assign_arms(ids, seed=8)
-
-
-def test_pre_post_needs_a_later_score_far_enough_from_the_first():
-    scores = [
-        ("2026-09-01T00:00:00+00:00", 2.0),  # before enrolment: ignored
-        ("2026-10-01T00:00:00+00:00", 3.0),
-        ("2026-10-05T00:00:00+00:00", 3.2),
-        ("2026-10-20T00:00:00+00:00", 3.8),
-    ]
-    assert pre_post(scores, "2026-09-30T00:00:00+00:00", 14) == (3.0, 3.8)
-    assert pre_post(scores[:3], "2026-09-30T00:00:00+00:00", 14) is None
-
-
-def test_effect_size_and_interval_point_the_same_way():
-    control, treated = [0.1, 0.2, 0.0, 0.3, 0.1], [0.6, 0.8, 0.5, 0.9, 0.7]
-    g = hedges_g(control, treated)
-    assert g is not None and g > 2
-    lo, hi = bootstrap_difference(control, treated, seed=1)
-    assert 0 < lo < hi
-    assert bootstrap_difference(control, treated, seed=1) == (lo, hi)
-    assert hedges_g([1.0], treated) is None
-
-
-def test_analysis_leaves_out_withdrawn_participants():
-    t0, t1 = "2026-10-01T00:00:00+00:00", "2026-10-20T00:00:00+00:00"
-    people = [
-        {"account_id": "a", "arm": "feedback", "enrolled_at": t0, "withdrawn_at": None},
-        {"account_id": "b", "arm": "feedback", "enrolled_at": t0, "withdrawn_at": t1},
-        {"account_id": "c", "arm": "score_only", "enrolled_at": t0, "withdrawn_at": None},
-    ]
-    scores = {k: [(t0, 3.0), (t1, 4.0)] for k in "abc"}
-    survey = {"a": dict.fromkeys(("knew_what_to_practise", "understood", "trusted",
-                                  "practised_more", "would_continue"), 4)}  # fmt: skip
-    out = analyse(people, scores, {"a": 3}, survey, min_days=14, seed=1)
-    assert out["arms"]["feedback"]["enrolled"] == 1
-    assert out["arms"]["feedback"]["mean_gain"] == 1.0
-    assert out["arms"]["feedback"]["survey"]["trusted"] == 4
-    assert out["arms"]["score_only"]["survey_responses"] == 0
-    # One participant per arm: a difference, but no interval and no effect size.
-    assert out["difference"]["value"] == 0.0
-    assert out["difference"]["ci95"] is None and out["difference"]["hedges_g"] is None
-
 
 # ================================================================= D041
 

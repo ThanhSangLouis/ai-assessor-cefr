@@ -13,8 +13,7 @@ And the phrase book built from those upgrades (D070, `coach/phrasebook.py`):
 `GET /api/v1/me/phrases` lists the cards and the few due today, `POST
 /api/v1/me/phrases/review` records one self-judged review.
 
-Only the owner, only a scored assessment with a transcript, never while the
-feedback study holds this learner's feedback back (D040), and a daily cap per
+Only the owner, only a scored assessment with a transcript, and a daily cap per
 student so a free tier stays inside its limits.
 
 D072: what it costs. A cap for everyone together keeps the system under the
@@ -45,9 +44,8 @@ from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_messa
 from aicefr.contracts import Band, Criterion, ResponseStatus
 from aicefr.observability import count
 from aicefr.report.next_band import next_band_plan
-from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import can_view, svc
-from aicefr.storage.auth_repository import Account, Role
+from aicefr.storage.auth_repository import Account
 
 router = APIRouter()
 
@@ -82,8 +80,7 @@ def _plan(report) -> dict | None:
 @router.get("/api/v1/responses/{response_id}/coach", tags=["student"])
 def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
     report, owner = _scored(response_id, account, owner_only=False)
-    withheld = account.role is Role.STUDENT and study_api.withholds(account.account_id)
-    if withheld or report.status not in SCORED:
+    if report.status not in SCORED:
         return {"next_band": None, "upgrade": None, "can_upgrade": False}
     upgrade = svc().repo.upgrade_of(response_id)
     can = (
@@ -106,8 +103,6 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     kept = s.repo.upgrade_of(response_id)
     if kept:
         return kept
-    if study_api.withholds(account.account_id):
-        raise HTTPException(403, "trong thực nghiệm phản hồi, bản nâng cấp tạm thời chưa mở")
     a = report.assessment
     if (
         report.status not in SCORED

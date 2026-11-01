@@ -97,12 +97,11 @@ prepSkip.addEventListener("click", finishPrep);
 prepCancel.addEventListener("click", () => stopPrep("Đã huỷ thời gian chuẩn bị."));
 
 // ---------------------------------------------------------------- health
-// Two separate warnings: a fake recogniser means the scores are meaningless; a
-// missing ffmpeg means recording in the browser is impossible.
+// A missing ffmpeg means recording in the browser is impossible. Which
+// recogniser runs is the administrator's to see (tab Vận hành), not the learner's (D078).
 fetch("/api/v1/health")
   .then((r) => r.json())
   .then((h) => {
-    if (!h.asr_is_real) document.getElementById("fake-asr-warning").hidden = false;
     const d = h.scorable_duration_s || {};
     if (d.accepted_high) scorableMaxS = Number(d.accepted_high);
     recorder.enable(!!h.recording_enabled);
@@ -129,17 +128,13 @@ function tooLongToScore(take) {
 // A real radio group: arrow keys move between prompts and a screen reader
 // announces which one is selected.
 function taskCard(t, i) {
-  const windowed = t.windowed ? '<span class="badge">Bài dài, luôn qua giảng viên</span>' : "";
   return `
     <label class="task${i === 0 ? " chosen" : ""}">
       <input type="radio" name="task-choice" value="${escapeHtml(t.task_id)}"${i === 0 ? " checked" : ""}>
       <span class="chosen-mark" aria-hidden="true">✓ Đã chọn</span>
-      <h3>${escapeHtml(t.title)} <span class="task-band">${escapeHtml(t.band || "")}</span></h3>
+      <span class="task-band">${escapeHtml(t.band || "")}</span>
       <p class="task-prompt">${escapeHtml(t.prompt_text)}</p>
-      <p class="task-meta">
-        <span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span>
-        ${windowed}
-      </p>
+      <p class="task-meta"><span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span></p>
     </label>`;
 }
 
@@ -150,7 +145,7 @@ function chooseTask(task) {
   chosenTask = task;
   taskIdEl.value = task.task_id;
   promptEl.innerHTML =
-    `<p class="eyebrow">${escapeHtml(task.band || "")} · ${escapeHtml(task.title)}</p>` +
+    `<p class="eyebrow">${escapeHtml(task.title)}</p>` +
     `<p class="prompt-text">${escapeHtml(task.prompt_text)}</p>` +
     `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây</p>` +
     '<p class="muted small" id="price-note" hidden></p>';

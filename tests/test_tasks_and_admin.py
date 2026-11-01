@@ -92,11 +92,11 @@ def test_seed_khong_ghi_de_len_de_bai_giang_vien_da_sua(tmp_path) -> None:
     db = tmp_path / "t.db"
     TaskRepository(db)
     TaskRepository(db).col("task").update_one(
-        {"task_id": "P3"}, {"$set": {"title": "Đề đã sửa tay"}}
+        {"task_id": "P3"}, {"$set": {"prompt_text": "Đề đã sửa tay"}}
     )
 
     again = {t.task_id: t for t in TaskRepository(db).list_active()}
-    assert again["P3"].title == "Đề đã sửa tay"
+    assert again["P3"].prompt_text == "Đề đã sửa tay"
 
 
 def test_tasks_endpoint_lists_prompts(app) -> None:
@@ -105,15 +105,12 @@ def test_tasks_endpoint_lists_prompts(app) -> None:
     assert all(r["prompt_text"] and r["band"] for r in rows)
 
 
-def test_de_dai_duoc_danh_dau_la_cham_theo_cua_so(app) -> None:
-    """A student must be told before speaking, not after.
-
-    The flag is derived from the model artifact rather than stored on the
-    prompt, so there is one definition of "too long to score in one pass".
-    """
+def test_moi_de_nam_trong_do_dai_mo_hinh_cham_duoc(app) -> None:
+    """D076 retired the long talk P5; D078 dropped the exam part and the
+    "windowed" flag with it: every prompt is 40-60 seconds, known by its band."""
     rows = {r["task_id"]: r for r in login_as(app, "SV-001", "student").get("/api/v1/tasks").json()}
-    # D076 retired the long talk P5: every prompt is now inside the model's range.
-    assert "P5" not in rows and not any(r["windowed"] for r in rows.values())
+    assert "P5" not in rows
+    assert all(r["max_seconds"] <= 60 and "windowed" not in r for r in rows.values())
 
 
 def test_unknown_task_is_refused(app) -> None:

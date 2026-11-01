@@ -6,7 +6,6 @@
   const icon = (name) => window.ui.icon(name);
   const $ = (id) => document.getElementById(id);
   const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-  const PART = { P3: "Quan điểm", P4: "Quy trình" };
   const send = (url, method, body) =>
     window.apiJson(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   let tasks = [];
@@ -56,11 +55,10 @@
       el.innerHTML = `<p class="muted bank-empty">Không có đề nào ${$("bank-search").value ? "khớp tìm kiếm" : "ở band " + band}.</p>`;
       return;
     }
-    el.innerHTML = `<table class="bank-table"><thead><tr><th scope="col">Dạng</th><th scope="col">Đề bài</th>
+    el.innerHTML = `<table class="bank-table"><thead><tr><th scope="col">Đề bài</th>
       <th scope="col">Từ khóa</th><th scope="col">Bản</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>${rows
       .map(
         (t) => `<tr class="${t.active ? "" : "off"}">
-          <td><span class="part-pill part-${escapeHtml(t.part)}">${escapeHtml(PART[t.part] || t.part)}</span></td>
           <td class="bank-text" title="${escapeHtml(t.prompt_text)}">${escapeHtml(t.prompt_text)}</td>
           <td class="num">${(t.topic_keywords || []).length}</td>
           <td class="num">${escapeHtml(t.prompt_version)}</td>
@@ -88,7 +86,6 @@
     f.reset();
     $("task-dialog-h").textContent = editing ? "Sửa đề" : "Thêm đề";
     f.band.value = editing ? editing.band : band;
-    f.part.value = editing ? editing.part : "P3";
     f.prompt_text.value = editing ? editing.prompt_text : "";
     f.topic_keywords.value = editing ? (editing.topic_keywords || []).join(", ") : "";
     $("task-dialog").showModal();
@@ -104,7 +101,6 @@
     }
     const body = {
       band: f.band.value,
-      part: f.part.value,
       prompt_text: f.prompt_text.value,
       topic_keywords: f.topic_keywords.value,
     };

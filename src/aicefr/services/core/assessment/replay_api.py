@@ -1,9 +1,7 @@
 """Guided listening in the app (D056): the moments, the learner's answers, the analysis.
 
 Only the learner who recorded a response listens to it this way, only once it
-has a result, and only where `AICEFR_GUIDED_REPLAY` is on. A learner whose
-feedback is held back by the feedback study (D040) is not offered it: the
-moments come from the evidence that study withholds. The moments are sent
+has a result, and only where `AICEFR_GUIDED_REPLAY` is on. The moments are sent
 without saying which are the machine's (`report/replay.py`).
 """
 
@@ -15,7 +13,6 @@ from pydantic import BaseModel, Field
 from aicefr.api.deps import ADMIN_ONLY, STUDENT_ONLY, require_login
 from aicefr.contracts import ResponseStatus
 from aicefr.report.replay import CHOICES, analyse, moments
-from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.replay_repository import ReplayRepository
@@ -41,8 +38,6 @@ def _own_moments(response_id: str, account: Account):
         raise HTTPException(404, "bản triển khai này chưa bật nghe lại có dẫn đường")
     if s.repo.owner_of(response_id) != account.account_id:
         raise HTTPException(404, "không có bài này")
-    if study_api.withholds(account.account_id):
-        raise HTTPException(409, "trong thời gian thực nghiệm, bài nghe lại chưa mở với bạn")
     report = s.repo.get(response_id)
     if report is None or report.status not in SCORED or report.practice is not None:
         raise HTTPException(409, "bài chưa có kết quả đánh giá")

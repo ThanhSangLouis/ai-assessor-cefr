@@ -162,7 +162,7 @@ function renderMachineScore(d, a) {
   if (a.overall_0_6 != null) {
     h += '<div class="score-panel">';
     h += `<div class="score-figure"><span class="score">${a.overall_0_6.toFixed(2)}</span>
-      <span class="score-scale">trên thang 1 – 6</span></div>`;
+      <span class="score-scale">trên thang 0 – 6</span></div>`;
     h += `<div class="score-meta"><span class="score-band">${escapeHtml(a.overall_band)}</span>
       <p class="score-caption">Một ước lượng tổng thể, chưa hiệu chuẩn. Mô hình không có
       điểm riêng cho từng tiêu chí.</p></div>`;

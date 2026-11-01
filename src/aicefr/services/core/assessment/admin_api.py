@@ -13,7 +13,6 @@ import logging
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
@@ -53,12 +52,8 @@ HEALTH_QUEUE = "speech.health"
 def list_responses(
     limit: int = Query(200, ge=1, le=500), account: Account = ADMIN_ONLY
 ) -> list[QueueItem]:
-    """Every response with the machine's band; an administrator may be a rater too (D030),
-    so what they still have to rate blind is left out, as in the review queue."""
-    s = svc()
-    hidden = s.ratings.blinded_responses(account.account_id)
-    rows = s.repo.list_all(limit + len(hidden))
-    return [QueueItem(**r) for r in rows if r["response_id"] not in hidden][:limit]
+    """Every response with the machine's band."""
+    return [QueueItem(**r) for r in svc().repo.list_all(limit)]
 
 
 @router.get("/api/v1/stats", tags=["admin"])
@@ -227,48 +222,6 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
     return {"qc_config_version": version, "thresholds": merged}
 
 
-# ================================================================= research export (FR-34)
-
-
-@router.get("/api/v1/admin/export/research.json", tags=["admin"])
-def export_research(account: Account = ADMIN_ONLY) -> JSONResponse:
-    """Export the analysis set: only speakers who accepted the terms of use (D058).
-
-    The export carries the size of the allowed set alongside the rows, so a
-    reviewer can check the filter did something, and no transcript.
-    """
-    s = svc()
-    allowed = set(s.peers.identity.research_allowed())
-    rows = s.repo.research_rows(allowed)
-    # Refused rather than thinned out: an export quietly missing rows is worse
-    # than one that has to wait for a few sheets (D030).
-    owed = s.ratings.blinded_responses(account.account_id) & {r["response_id"] for r in rows}
-    if owed:
-        raise HTTPException(
-            409,
-            f"bạn còn {len(owed)} phiếu chấm mù chưa nộp trên bài có trong bản xuất: nộp xong ở"
-            " trang Chấm mù rồi xuất",
-        )
-    s.repo.write_audit(
-        account.pseudonym,
-        "export.research",
-        None,
-        f"accounts_allowed={len(allowed)} rows={len(rows)}",
-    )
-    return JSONResponse(
-        {
-            "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "accounts": len(allowed),
-            "row_count": len(rows),
-            "note": (
-                "Gồm bài của mọi tài khoản đang dùng; tài khoản đã tắt bị bỏ ra (D064)."
-                " Không chứa bản chép lời."
-            ),
-            "rows": rows,
-        }
-    )
-
-
 # ================================================================= erasure (FR-35)
 
 
@@ -299,8 +252,7 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
     result["lesson_attempts"] = 0
     if who:
         # Lesson attempts (D025) live in the learning service; erase them there,
-        # recordings included. The study keeps no audio, but who was in which
-        # arm and the survey answers are about this person too (D040).
+        # recordings included.
         try:
             result["lesson_attempts"] = s.peers.learning.erase_account(account_id=who["account_id"])
         except RemoteError as e:
@@ -310,7 +262,7 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
                 "đã xoá bài đánh giá nhưng chưa xoá được bài học: dịch vụ bài học không trả lời."
                 " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
             ) from e
-        s.studies.erase_account(who["account_id"])
+        s.repo.forget_study_participant(who["account_id"])
         if s.classrooms is not None:
             s.classrooms.forget_account(who["account_id"])
         if s.replays is not None:

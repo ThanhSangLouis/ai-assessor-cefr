@@ -29,14 +29,14 @@ Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs
 | `session` | CN | Phiên đăng nhập: băm của mã phiên, hạn, thiết bị, cách đăng nhập | | PK `token_hash`; FK `account_id` |
 | `audit_log` | CN | Nhật ký kiểm toán: ai làm gì, với đối tượng nào, phần nào ghi (`service`). Mỗi database có một collection này cho phần dùng nó | | PK `id` tự tăng |
 
-### 2.2. Đánh giá, duyệt và nghiên cứu (`assessment`)
+### 2.2. Đánh giá và duyệt (`assessment`)
 
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
-| `task` | | Đề bài đánh giá và nhiệm vụ luyện tập: lời đề, thời lượng, từ khoá chủ đề, tiêu chí, band, nhiệm vụ. D076: đề đánh giá có band A1–C2 (ngân hàng 36 đề, giảng viên thêm được, `created_by`); đề bị tắt có `active = 0`, P5 có `retired = D076` | | PK `task_id` |
+| `task` | | Đề bài đánh giá và nhiệm vụ luyện tập: lời đề, thời lượng, từ khoá chủ đề, tiêu chí, band, nhiệm vụ. D076: đề đánh giá có band A1–C2 (ngân hàng 36 đề, giảng viên thêm được, `created_by`); đề bị tắt có `active = 0`, P5 có `retired = D076`. D078: đề chỉ gọi theo band, tên đề là "Đề <band>"; trường `part` cũ còn trong kho nhưng không còn đọc | | PK `task_id` |
 | `response` | CN | Một bài nộp: trạng thái chấm, điểm tổng 0–6, band, phiên bản mô hình và cấu hình, toàn bộ báo cáo (`report_json`), khoá bản ghi âm, mục đích (đánh giá hay luyện tập), bản nâng cấp lên band kế tiếp nếu người học đã yêu cầu (`coach_upgrade`: văn bản, các chỗ đổi, nhà cung cấp, thời điểm; D069), mỗi cụm từ trong đó kèm trạng thái ôn của Sổ cụm từ (`box`, `due`, `reviews`, `reviewed_at`; D070) | `reviews`: mỗi lần giảng viên giữ hay đổi điểm, band, kèm lý do và lúc mở bài. `review_lock`: ai đang duyệt, tới lúc nào. `review_visits`: mỗi lần mở bài để duyệt và kết thúc thế nào (D041). `replay_labels`: câu trả lời khi tự nghe lại (D056), không có audio hay bản chép. `machine_seen`: ai đã thấy điểm máy của bài, qua đường nào | PK `response_id` |
-| `rating_batch` | | Đợt chấm mù hai người (D030): tên, hạt giống chia phiếu, đã đóng chưa (`closed`) | `ratings`: mỗi phiếu là một `Rating` (bài nào, giám khảo nào, ô thứ mấy, thứ tự, lúc mở) cùng điểm đã chấm hoặc lý do không chấm được | PK `batch_id` |
-| `study` | | Thực nghiệm phản hồi (D040): trạng thái (`running`, `survey`, `closed`), mốc kết thúc giai đoạn đo | `participants`: nhóm, mã người tham gia, ngày rời, câu trả lời khảo sát | PK `study_id` |
+| `rating_batch` | | **Không còn dùng (D078); kho cũ giữ, kho mới không tạo.** Đợt chấm mù hai người (D030): tên, hạt giống chia phiếu, đã đóng chưa (`closed`) | `ratings`: mỗi phiếu là một `Rating` (bài nào, giám khảo nào, ô thứ mấy, thứ tự, lúc mở) cùng điểm đã chấm hoặc lý do không chấm được | PK `batch_id` |
+| `study` | | **Không còn dùng (D078); kho cũ giữ, kho mới không tạo, xoá một người vẫn rút họ ra.** Thực nghiệm phản hồi (D040): trạng thái (`running`, `survey`, `closed`), mốc kết thúc giai đoạn đo | `participants`: nhóm, mã người tham gia, ngày rời, câu trả lời khảo sát | PK `study_id` |
 | `classroom` | | Lớp học (D054): tên, mã tham gia 6 ký tự, đã lưu trữ chưa | `teacher_ids`: mã tài khoản các giảng viên phụ trách, do quản trị viên phân công (D071, migration 9 thay `teacher_id`); giảng viên chỉ xem và chấm bài của thành viên lớp mình. `members`: mã tài khoản theo thứ tự vào lớp. `assignments`: đề giao cho lớp, hạn nộp (ngày theo giờ Việt Nam và mốc UTC cuối ngày), ghi chú; bài nộp là chính `response` của đề đó làm sau lúc giao | Duy nhất `class_id`; duy nhất `code` |
 
 ### 2.3. Lộ trình và bài học (`learning`)

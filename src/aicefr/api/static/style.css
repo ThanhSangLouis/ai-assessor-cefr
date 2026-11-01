@@ -1040,19 +1040,13 @@ main {
 .footer-sub {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 20px;
   padding-top: 22px;
   border-top: 1px solid var(--border);
   font-size: 0.8rem;
   color: var(--fg-muted);
   flex-wrap: wrap;
-}
-.footer-copy {
-  margin: 0;
-}
-:root[data-theme="light"] .footer-copy {
-  color: #64748b;
 }
 .footer-sub-right {
   display: flex;
@@ -1789,6 +1783,13 @@ table.kv th { width: 40%; white-space: normal; }
   font-variant-numeric: tabular-nums;
 }
 .score-scale { display: block; margin-top: var(--sp-1); color: var(--fg-muted); font-size: var(--t-sm); }
+/* D078: where the result stands inside its band. */
+.trend-chart .band-edge { stroke-dasharray: 4 4; }
+.band-place { margin: var(--sp-1) 0 0; font-weight: 650; }
+.band-track { position: relative; max-width: 22rem; height: 8px; margin-top: var(--sp-2); border-radius: var(--r-pill); background: var(--bg-elevated); border: 1px solid var(--border); }
+.band-track-fill { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: var(--brand); opacity: 0.35; }
+.band-track-mark { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; background: var(--brand); border: 2px solid var(--bg-elevated); transform: translate(-50%, -50%); }
+.band-track-ends { max-width: 22rem; display: flex; justify-content: space-between; margin-top: var(--sp-1); font-size: var(--t-xs, 0.75rem); font-weight: 700; color: var(--fg-muted); }
 .score-meta { flex: 1 1 240px; min-width: 0; }
 .score-band {
   display: inline-block;
@@ -4424,11 +4425,6 @@ button.evidence:hover {
   color: #38bdf8;
   border: 1px solid rgba(56, 189, 248, 0.3);
 }
-.lp-bento-pill.secure {
-  background: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border-color: rgba(16, 185, 129, 0.3);
-}
 .lp-bento-card h3 {
   font-size: 1.15rem;
   font-weight: 750;
@@ -4519,31 +4515,6 @@ button.evidence:hover {
 }
 .lp-mini-wave i:nth-child(2n) { animation-duration: 0.6s; }
 
-.lp-bento-two-col {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--sp-5);
-  align-items: center;
-}
-.lp-bento-chips-secure {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.lp-bento-chips-secure span {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--r-pill);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  font-size: var(--t-xs);
-  font-weight: 650;
-  color: #f1f5f9;
-}
-.lp-bento-chips-secure .icon { width: 14px; height: 14px; color: #34d399; }
-
 :root[data-theme="light"] .lp-bento-visual {
   background: #f8fafc;
   border-color: #e2e8f0;
@@ -4558,12 +4529,6 @@ button.evidence:hover {
   background: #f1f5f9;
   color: #334155;
   border: 1px solid #e2e8f0;
-}
-:root[data-theme="light"] .lp-bento-chips-secure span {
-  background: #f8fafc;
-  color: #1e293b;
-  border-color: #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 :root[data-theme="light"] .lp-bento-badge-seal {
   background: #ecfdf5;
@@ -4723,7 +4688,6 @@ button.evidence:hover {
   .lp-rungs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lp-bento-grid { grid-template-columns: minmax(0, 1fr); }
   .lp-bento-card.featured, .lp-bento-card.wide { grid-column: span 1; }
-  .lp-bento-two-col { grid-template-columns: minmax(0, 1fr); }
   .lp-feature-grid { grid-template-columns: minmax(0, 1fr); }
   .lp-teach { gap: var(--sp-5); }
   .lp-cta { grid-template-columns: minmax(0, 1fr); justify-items: start; padding: var(--sp-6) var(--sp-5); }
@@ -6824,78 +6788,6 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
 .toolbar-controls .button,
 .toolbar-controls button { margin-top: 0; }
 
-/* --- D030: blind double rating ---------------------------------------------------- */
-
-/* A rater's sheets as numbered tiles: grey not opened, outlined in progress,
-   filled when submitted. The number is the rater's own order, nothing more. */
-.rate-batch .progress-bar { margin: var(--sp-3) 0; }
-.sheet-grid {
-  list-style: none;
-  margin: var(--sp-4) 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--sp-2);
-}
-.sheet-chip {
-  min-width: 40px;
-  height: 36px;
-  padding: 0 var(--sp-2);
-  display: inline-grid;
-  place-items: center;
-  border-radius: var(--r-md);
-  border: 1px solid var(--border);
-  background: var(--bg-sunken);
-  color: var(--fg-muted);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  text-decoration: none;
-}
-.sheet-chip.opened { border-color: var(--brand); color: var(--brand); background: var(--bg-elevated); }
-.sheet-chip.done { background: var(--ok-soft); border-color: transparent; color: var(--ok); }
-.sheet-chip:hover { border-color: var(--border-strong); }
-
-/* The sheet: five criteria as a column of label + number, then overall and band. */
-fieldset.criteria-scores,
-fieldset.band-choice,
-fieldset.unscorable-reasons { border: 0; padding: 0; margin: var(--sp-4) 0 0; }
-fieldset.criteria-scores legend,
-fieldset.band-choice legend,
-fieldset.unscorable-reasons legend { font-size: var(--t-sm); font-weight: 650; padding: 0; margin-bottom: var(--sp-2); }
-.score-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
-  align-items: center;
-  gap: var(--sp-3);
-  padding: var(--sp-1) 0;
-}
-.score-row label { margin: 0; font-weight: 600; font-size: var(--t-md); }
-.score-row input { text-align: center; font-variant-numeric: tabular-nums; }
-.overall-row { margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--border); }
-.overall-row label { font-weight: 700; }
-.band-choice .chips { display: flex; gap: var(--sp-2); }
-#sheet-audio { width: 100%; margin-top: var(--sp-2); }
-
-/* Administrator: raters to pick, progress per rater, the report's tables. */
-.rater-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: var(--sp-1) var(--sp-4); }
-.rater-progress {
-  display: grid;
-  grid-template-columns: 7em minmax(60px, 1fr) auto;
-  align-items: center;
-  gap: var(--sp-2);
-  margin-top: var(--sp-1);
-  font-size: var(--t-sm);
-}
-.progress-bar.small { height: 6px; }
-.adjudicate-form { display: flex; flex-wrap: wrap; gap: var(--sp-1); margin-top: var(--sp-2); }
-.adjudicate-form select { width: auto; padding: var(--sp-1) var(--sp-2); }
-.adjudicate-form button { margin: 0; }
-#report-dialog h3 { margin: var(--sp-5) 0 var(--sp-2); font-size: var(--t-lg); }
-table.confusion { width: auto; margin: var(--sp-3) 0; }
-table.confusion th, table.confusion td { text-align: center; min-width: 52px; }
-.rater-progress .progress-bar { margin: 0; }
-.sheet-chip.seen { border-style: dashed; color: var(--fg-muted); text-decoration: line-through; }
-
 /* --- D032: achievements, the record, the week -------------------------------------- */
 
 /* Today: the record under the streak, the rest days on the dots (dashed: no
@@ -7612,14 +7504,6 @@ button:not(:disabled):hover,
 .badge.warn { background: var(--warn-bg, var(--bg-sunken)); color: var(--warn); }
 .kpi-list { margin: var(--sp-4) 0 0; padding-left: var(--sp-5); display: grid; gap: var(--sp-2); }
 
-/* D040: the feedback study -- the learner's survey and the two arms side by side. */
-.survey fieldset { border: 0; padding: 0; margin: 0 0 var(--sp-3); }
-.survey legend { font-weight: 600; margin-bottom: var(--sp-1); }
-.survey-scale { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
-.survey-scale label { display: inline-flex; align-items: center; gap: var(--sp-1); }
-.kpi-arms { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: var(--sp-4); }
-.kpi-arm h3 { margin: 0; }
-
 /* ===================================================== 9. composed paths (D046) */
 .plan-card { margin-top: var(--sp-5); display: grid; gap: var(--sp-4); }
 .plan-head h2 { margin: 0 0 var(--sp-1); }
@@ -7841,7 +7725,7 @@ button:not(:disabled):hover,
 .task-band-chip.on { background: var(--brand); border-color: var(--brand); color: var(--brand-fg); }
 .task-band-chip:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
 .task-band-bar button { margin-top: 0; }
-.task h3 .task-band { display: inline-block; margin-left: var(--sp-1); padding: 0 8px; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand); font-size: var(--t-xs, 0.75rem); vertical-align: middle; }
+.task .task-band { justify-self: start; display: inline-block; padding: 0 8px; border-radius: var(--r-pill); background: var(--brand-soft); color: var(--brand); font-size: var(--t-xs, 0.75rem); vertical-align: middle; }
 .task-bank { padding-top: var(--sp-2); }
 .bank-tabs { margin: 0 0 var(--sp-3); }
 .tab-count { display: inline-grid; place-items: center; min-width: 1.6rem; margin-left: 4px; padding: 0 6px; border-radius: var(--r-pill); background: var(--bg-sunken); color: var(--fg-muted); font-size: var(--t-xs, 0.75rem); font-variant-numeric: tabular-nums; }
@@ -7856,6 +7740,4 @@ button:not(:disabled):hover,
 .bank-table tr.off td { opacity: 0.55; }
 .bank-actions { white-space: nowrap; text-align: right; }
 .bank-actions button { margin: 0 0 0 var(--sp-1); }
-.part-pill { display: inline-block; padding: 2px 10px; border-radius: var(--r-pill); font-size: var(--t-xs, 0.75rem); font-weight: 700; white-space: nowrap; background: var(--brand-soft); color: var(--brand); }
-.part-pill.part-P4 { background: var(--accent-soft); color: var(--accent); }
 .bank-empty { padding: var(--sp-4) 0; text-align: center; }

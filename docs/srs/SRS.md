@@ -37,6 +37,7 @@
 | **1.13** | **24/10/2026** | **+5 FR (đề xuất).** FR-86 hiệu chuẩn band tuỳ chọn, FR-87 gói lượt mua qua cổng thanh toán, FR-88 lớp học và giao bài, FR-89 nhắc việc trong ứng dụng, FR-90 tự nghe lại có mốc đối chứng | D052–D056 (PROPOSED) |
 | **1.14** | **24/10/2026** | FR-85 theo bảng giá team chốt: bán theo bài và phút (2.000 IDPoint bài đầu, 1.400 mỗi phút thêm), đo kèm token Whisper để tính giá vốn (D057); AC-85.1 và AC-85.5 viết lại | D057 (PROPOSED) |
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
+| **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề | D078 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -246,7 +247,7 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | BR-03 | **Chỉ sinh viên tự đăng ký (D063, D065).** Giảng viên và quản trị viên do quản trị viên cấp, kèm một vai trò; sinh viên tự đăng ký bằng Google hoặc bằng mật khẩu ở `/signup`, nhận bút danh ngẫu nhiên và (với mật khẩu) một mã khôi phục dùng một lần; tắt bằng `AICEFR_GOOGLE_SIGNUP=0`, `AICEFR_SELF_SIGNUP=0` | FR-32, FR-52, FR-59 | 1.0 | `accounts_api.py`; `tests/test_profile.py` (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`) |
 | BR-04 | Chưa đồng ý điều khoản sử dụng thì hệ thống **không nhận** bài nói hay lượt luyện nào | FR-01 | 1.0, đổi ở D058 | `TERMS_NOT_ACCEPTED` ở `POST /api/v1/responses` và API lượt luyện; `tests/test_terms.py` |
 | BR-05 | Chỉ dữ liệu của người **đã đồng ý điều khoản sử dụng** mới vào bản xuất nghiên cứu, đợt chấm mù, báo cáo đồng thuận và bản xuất phiếu chấm; xoá dữ liệu là rút khỏi tất cả | FR-34, FR-35, FR-61, FR-64 | 1.0, mở rộng 1.3 (D030), đổi ở D058 | `AuthRepository.accounts_with_terms`; `tests/test_terms.py` (`test_research_use_covers_the_accounts_that_accepted`) |
-| BR-06 | Bài luyện **không** qua mô hình chấm, không có band, không vào hàng đợi duyệt, thống kê chấm hay bản xuất nghiên cứu | FR-44, FR-49 | 1.3 (D023, D025) | cột `purpose`; `tests/test_lessons_integration.py` (`test_lesson_attempts_stay_out_of_queue_and_research_export`) |
+| BR-06 | Bài luyện **không** qua mô hình chấm, không có band, không vào hàng đợi duyệt hay thống kê chấm | FR-44, FR-49 | 1.3 (D023, D025) | cột `purpose`; `tests/test_lessons_integration.py` (`test_lesson_attempts_stay_out_of_queue_and_class_statistics`) |
 | BR-07 | `teacher_verified` chỉ bật khi một giảng viên lưu quyết định **có lý do** | FR-30, FR-31 | 1.0 | `Repository.apply_review`; `tests/test_auth.py` |
 | BR-08 | Năm lần đăng nhập sai liên tiếp thì khoá 15 phút; nhập sai mật khẩu hiện tại khi đổi mật khẩu cũng tính là một lần sai | NFR-07, FR-51 | 1.0, mở rộng 1.3 (D028) | `AuthRepository._record_failure`; `tests/test_accounts.py` (`test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`) |
 | BR-09 | Một phiên đăng nhập sống tối đa 8 giờ; đăng xuất, đổi mật khẩu hay bị tắt tài khoản là thu hồi phiên ngay | NFR-07, FR-32, FR-51, FR-52 | 1.0, mở rộng 1.3 | `auth/sessions.py` (`LIFETIME_HOURS`), `AuthRepository.revoke_sessions` |
@@ -838,13 +839,15 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 
 ### FR-42 — Gợi ý nhiệm vụ tiếp theo bằng luật minh bạch
 
+> **D078 (01/11/2026).** Trang luyện theo nhiệm vụ đã gộp vào lộ trình bài học (D068); luật gợi ý nhiệm vụ và API trang luyện cũ được gỡ, việc tiếp theo đi theo lộ trình band (D074). AC-42.1, AC-42.2 thành lịch sử.
+
 **Mô tả:** Hệ thống gợi ý một nhiệm vụ luyện tiếp, kèm câu giải thích vì sao. Tiêu chí ưu tiên là tiêu chí yếu nhất của bài đánh giá gần nhất (khi bài đó có chỉ báo theo tiêu chí); mức bắt đầu là band của bài đó (band giảng viên đã sửa nếu có), chưa có bài nào thì từ A2. Trong một tiêu chí, nhiệm vụ chưa hoàn thành ở band thấp nhất từ mức bắt đầu trở lên được chọn trước, rồi tới band thấp hơn, rồi tiêu chí kế tiếp; xong cả lộ trình thì gợi ý ôn lại nhiệm vụ lâu nhất chưa luyện. Hồ sơ `speaking_profile.json` thêm `next_task_id` (mã nhiệm vụ của tiêu chí yếu nhất ở band đã xác nhận); `next_task_hint` giữ nguyên nghĩa.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-42.1** — *Given* sinh viên chưa có bài đánh giá nào, *When* mở trang luyện tập, *Then* gợi ý là nhiệm vụ độ trôi chảy A2 với căn cứ `no_assessment` (`test_new_learner_gets_an_a2_suggestion_and_the_full_path`). |
-| **AC-42.2** — *Given* bài đánh giá gần nhất band B1, tiêu chí yếu nhất là Range, *When* mở trang luyện tập, *Then* gợi ý là `PR-RAN-B1` với căn cứ `weakest_criterion` (`test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment`). |
+| ~~AC-42.1~~ *(gỡ bởi D078)* — *Given* sinh viên chưa có bài đánh giá nào, *When* mở trang luyện tập, *Then* gợi ý là nhiệm vụ độ trôi chảy A2 với căn cứ `no_assessment` (`test_new_learner_gets_an_a2_suggestion_and_the_full_path`). |
+| ~~AC-42.2~~ *(gỡ bởi D078)* — *Given* bài đánh giá gần nhất band B1, tiêu chí yếu nhất là Range, *When* mở trang luyện tập, *Then* gợi ý là `PR-RAN-B1` với căn cứ `weakest_criterion` (`test_suggestion_follows_the_weakest_criterion_of_the_latest_assessment`). |
 | **AC-42.3** — *Given* một kết quả giảng viên đã xác nhận có tiêu chí yếu nhất Fluency, band B1, *When* xuất hồ sơ, *Then* dòng đó có `next_task_id = "PR-FLU-B1"` (`test_speaking_profile_carries_the_practice_task_for_the_weakest_criterion`). |
 
 ### FR-43 — Phản hồi sau mỗi lần luyện và thói quen luyện tập
@@ -866,7 +869,7 @@ Hiện thực vòng phản hồi ở mục 2.5 của đề cương: sau một b�
 | Acceptance Criteria |
 | --- |
 | **AC-44.1** — *Given* một bài luyện đã xử lý, *When* giảng viên mở hàng đợi duyệt, *Then* bài đó không có trong hàng đợi (`test_practice_submission_gets_a_result_without_band_and_skips_the_queue`). |
-| **AC-44.2** — *Given* một sinh viên có một bài đánh giá và một bài luyện, *When* quản trị viên xuất dữ liệu nghiên cứu, *Then* chỉ có bài đánh giá (`test_admin_research_export_excludes_practice`). |
+| ~~AC-44.2~~ *(gỡ bởi D078)* — *Given* một sinh viên có một bài đánh giá và một bài luyện, *When* quản trị viên xuất dữ liệu nghiên cứu, *Then* chỉ có bài đánh giá (`test_admin_research_export_excludes_practice`). |
 | **AC-44.3** — *Given* sinh viên khác hoặc giảng viên, *When* mở kết quả luyện của người khác, *Then* nhận 404 (`test_only_the_owner_can_open_a_practice_result`). |
 | AC-44.4 (đã bỏ) — Theo D048: kho MongoDB được dựng mới, không có dữ liệu nào tạo trước D023 để nâng cấp. |
 
@@ -931,7 +934,7 @@ Thay lộ trình 15 nhiệm vụ của M9 bằng các bài học có thứ tự.
 | Acceptance Criteria |
 | --- |
 | **AC-49.1** — *Given* giáo viên sửa một từ từ "máy chưa nghe ra" thành "nghe ra", *When* sinh viên mở lại kết quả, *Then* thấy nhận định mới kèm dấu giáo viên đã xem, và nhật ký có dòng tương ứng (`test_teacher_override_updates_the_result_and_is_audited`). |
-| **AC-49.2** — *Given* sinh viên có lượt luyện theo bài học, *When* giảng viên mở hàng đợi và quản trị viên xuất dữ liệu nghiên cứu, *Then* không có lượt luyện nào (`test_lesson_attempts_stay_out_of_queue_and_research_export`). |
+| **AC-49.2** — *Given* sinh viên có lượt luyện theo bài học, *When* giảng viên mở hàng đợi và thống kê lớp (D078 gỡ bản xuất nghiên cứu), *Then* không có lượt luyện nào (`test_lesson_attempts_stay_out_of_queue_and_class_statistics`). |
 
 ### FR-50 — Tiến độ hằng ngày và bài học nên học tiếp
 
@@ -1078,14 +1081,16 @@ Hiện thực hạng mục 2.1 của `docs/plan/HUONG_PHAT_TRIEN_TIEP.md` và m�
 
 ### FR-61 — Đợt chấm mù
 
+> **Đã gỡ bởi D078 (01/11/2026).** Chấm mù kép là công cụ nghiên cứu; hệ thống phục vụ một trung tâm đã duyệt nội dung nên không còn đợt chấm, phiếu chấm, phân xử hay báo cáo đồng thuận (FR-61..FR-64). Các tiêu chí giữ lại làm lịch sử, không còn được kiểm. Dữ liệu cũ trong kho không bị xoá; xoá dữ liệu một người (FR-35) vẫn rút phiếu chấm về bài của họ.
+
 **Mô tả:** Quản trị viên tạo đợt chấm: đặt tên, chọn từ hai giám khảo trở lên (giảng viên hoặc quản trị viên), giới hạn số bài nếu muốn. Bài đủ điều kiện là bài đánh giá có bản ghi, đã chấm xong hoặc đang chờ duyệt, của người học **đang** đồng thuận cho nghiên cứu; mặc định chỉ lấy bài chưa vào đợt nào. Mỗi bài có đúng hai giám khảo (với hơn hai giám khảo, bài đi vòng qua các cặp để tải đều), thứ tự bài xáo riêng cho từng giám khảo; mẫu bài và thứ tự sinh từ một hạt giống ghi cùng đợt. Không ai được giao một bài mà họ đã xem kết quả của máy (BR-27); bài không còn đủ hai giám khảo như thế thì để ngoài đợt và được đếm. Đợt đóng và mở lại được.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-61.1** — *Given* ba bài đủ điều kiện và một bài của người không đồng thuận nghiên cứu, *When* tạo đợt với hai giám khảo và hạt giống 42, *Then* đợt có ba bài, sáu phiếu, mỗi giám khảo có vị trí 1..3 riêng, bài của người không đồng thuận không có mặt, và không còn bài "chưa vào đợt" nào (`test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order`). |
-| **AC-61.2** — *Given* chỉ một giám khảo, một giám khảo là sinh viên, hoặc không có bài nào đủ điều kiện, *When* tạo đợt, *Then* nhận 422 và không tạo gì (`test_a_batch_needs_two_raters_and_something_to_rate`). |
-| **AC-61.3** — *Given* GV-01 đã mở báo cáo bài thứ nhất và GV-02 đã mở lịch sử bài thứ hai, *When* tạo đợt chỉ với hai người đó, *Then* nhận 422; với thêm GV-03 thì cả hai bài vào đợt nhưng không bài nào về tay người đã xem nó; thêm một bài chưa ai xem rồi tạo lại với GV-01 và GV-02 thì đợt có một bài và báo hai bài để ngoài (`test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response`). |
+| ~~AC-61.1~~ *(gỡ bởi D078)* — *Given* ba bài đủ điều kiện và một bài của người không đồng thuận nghiên cứu, *When* tạo đợt với hai giám khảo và hạt giống 42, *Then* đợt có ba bài, sáu phiếu, mỗi giám khảo có vị trí 1..3 riêng, bài của người không đồng thuận không có mặt, và không còn bài "chưa vào đợt" nào (`test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order`). |
+| ~~AC-61.2~~ *(gỡ bởi D078)* — *Given* chỉ một giám khảo, một giám khảo là sinh viên, hoặc không có bài nào đủ điều kiện, *When* tạo đợt, *Then* nhận 422 và không tạo gì (`test_a_batch_needs_two_raters_and_something_to_rate`). |
+| ~~AC-61.3~~ *(gỡ bởi D078)* — *Given* GV-01 đã mở báo cáo bài thứ nhất và GV-02 đã mở lịch sử bài thứ hai, *When* tạo đợt chỉ với hai người đó, *Then* nhận 422; với thêm GV-03 thì cả hai bài vào đợt nhưng không bài nào về tay người đã xem nó; thêm một bài chưa ai xem rồi tạo lại với GV-01 và GV-02 thì đợt có một bài và báo hai bài để ngoài (`test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response`). |
 
 ### FR-62 — Phiếu chấm mù
 
@@ -1094,16 +1099,16 @@ Hiện thực hạng mục 2.1 của `docs/plan/HUONG_PHAT_TRIEN_TIEP.md` và m�
 
 | Acceptance Criteria |
 | --- |
-| **AC-62.1** — *Given* bài máy chấm 4,37 · B2, *When* giám khảo mở phiếu, *Then* phiếu chỉ có các khoá đã định và không chứa mã bài, bút danh, 4.37, B2, `assessment`, `evidence`, `comments`; bản ghi tải về mang tên `bai-1.wav` và được ghi nhật ký `blind_rating` (`test_the_rating_sheet_carries_no_pseudonym_response_id_or_machine_score`). |
-| **AC-62.2** — *Given* phiếu của giám khảo A, *When* giám khảo C mở, tải bản ghi hay nộp, *Then* nhận 404; sinh viên nhận 403 (`test_a_rater_cannot_open_another_raters_sheet`). |
-| **AC-62.3** — *Given* giám khảo còn phải chấm mù một bài, *When* họ mở báo cáo, lịch sử hay khoá duyệt bài đó, *Then* nhận 403 và hàng đợi của họ không có bài đó; chấm xong thì mở được (`test_the_machine_result_stays_closed_to_a_rater_until_they_have_rated`). |
-| **AC-62.4** — *Given* phiếu thiếu tiêu chí, điểm 6,5, điểm 3,25, band C1, lý do trống, "không chấm được" mà vẫn ghi điểm hoặc thiếu lý do, *When* nộp, *Then* nhận 422; phiếu đúng thì lưu, nộp lần hai nhận 409 (`test_a_rating_follows_the_rating_sheet_rules`). |
-| **AC-62.5** — *Given* bản ghi không nghe được, *When* giám khảo chọn "không chấm được" với lý do "không nghe rõ", *Then* phiếu lưu là không chấm được, không có điểm (`test_an_unscorable_recording_is_rated_as_such`). |
-| **AC-62.6** — *Given* hai phiếu chưa làm, *When* giám khảo nộp một phiếu rồi quản trị viên đóng đợt, *Then* con số trên thanh điều khiển đi từ 2 xuống 1 rồi 0, phiếu còn lại nhận 409; mở lại đợt thì nộp được (`test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more`). |
-| **AC-62.7** — *Given* đợt đang mở và giám khảo nhận 403 khi mở báo cáo bài của mình, *When* quản trị viên đóng đợt, giám khảo mở báo cáo, rồi đợt được mở lại, *Then* phiếu hiện "không còn mù", nộp nhận 409, không còn tính vào con số phiếu chưa làm, bài trở lại hàng đợi của họ, đợt đếm một phiếu không còn mù; giám khảo kia vẫn chấm mù bình thường (`test_a_sheet_goes_void_once_its_rater_has_seen_the_machine_result`). |
-| **AC-62.8** — *Given* quản trị viên là một trong hai giám khảo của đợt, *When* họ mở danh sách bài, báo cáo một bài, bản xuất nghiên cứu, báo cáo và CSV của đợt, *Then* danh sách không có bài của đợt, báo cáo bài nhận 403, ba thứ kia nhận 409; nộp xong thì mọi thứ mở lại (`test_an_administrator_who_rates_stays_blind_on_the_administration_screens`). |
-| **AC-62.9** — *Given* hai bài chờ duyệt, *When* GV-01 được giao chấm mù cả hai, *Then* con số chờ duyệt trên thanh điều khiển của GV-01 về 0, của GV-03 vẫn là 2; GV-01 chấm xong thì lại là 2 (`test_the_waiting_count_leaves_out_what_the_teacher_rates_blind`). |
-| **AC-62.10** — *Given* phiếu của GV-01 không còn mù, *When* quản trị viên giao lại cho GV-02 (đang chấm bài đó), GV-04 (đã xem kết quả của máy) rồi GV-03, *Then* hai lần đầu không tạo phiếu và báo lý do bỏ qua, lần ba tạo một phiếu cho GV-03 ở đúng chỗ chấm của GV-01, phiếu cũ biến mất, đợt hết phiếu không còn mù và chấm đủ được hai phiếu; thao tác được ghi nhật ký (`test_a_void_sheet_can_be_handed_to_another_rater`). |
+| ~~AC-62.1~~ *(gỡ bởi D078)* — *Given* bài máy chấm 4,37 · B2, *When* giám khảo mở phiếu, *Then* phiếu chỉ có các khoá đã định và không chứa mã bài, bút danh, 4.37, B2, `assessment`, `evidence`, `comments`; bản ghi tải về mang tên `bai-1.wav` và được ghi nhật ký `blind_rating` (`test_the_rating_sheet_carries_no_pseudonym_response_id_or_machine_score`). |
+| ~~AC-62.2~~ *(gỡ bởi D078)* — *Given* phiếu của giám khảo A, *When* giám khảo C mở, tải bản ghi hay nộp, *Then* nhận 404; sinh viên nhận 403 (`test_a_rater_cannot_open_another_raters_sheet`). |
+| ~~AC-62.3~~ *(gỡ bởi D078)* — *Given* giám khảo còn phải chấm mù một bài, *When* họ mở báo cáo, lịch sử hay khoá duyệt bài đó, *Then* nhận 403 và hàng đợi của họ không có bài đó; chấm xong thì mở được (`test_the_machine_result_stays_closed_to_a_rater_until_they_have_rated`). |
+| ~~AC-62.4~~ *(gỡ bởi D078)* — *Given* phiếu thiếu tiêu chí, điểm 6,5, điểm 3,25, band C1, lý do trống, "không chấm được" mà vẫn ghi điểm hoặc thiếu lý do, *When* nộp, *Then* nhận 422; phiếu đúng thì lưu, nộp lần hai nhận 409 (`test_a_rating_follows_the_rating_sheet_rules`). |
+| ~~AC-62.5~~ *(gỡ bởi D078)* — *Given* bản ghi không nghe được, *When* giám khảo chọn "không chấm được" với lý do "không nghe rõ", *Then* phiếu lưu là không chấm được, không có điểm (`test_an_unscorable_recording_is_rated_as_such`). |
+| ~~AC-62.6~~ *(gỡ bởi D078)* — *Given* hai phiếu chưa làm, *When* giám khảo nộp một phiếu rồi quản trị viên đóng đợt, *Then* con số trên thanh điều khiển đi từ 2 xuống 1 rồi 0, phiếu còn lại nhận 409; mở lại đợt thì nộp được (`test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more`). |
+| ~~AC-62.7~~ *(gỡ bởi D078)* — *Given* đợt đang mở và giám khảo nhận 403 khi mở báo cáo bài của mình, *When* quản trị viên đóng đợt, giám khảo mở báo cáo, rồi đợt được mở lại, *Then* phiếu hiện "không còn mù", nộp nhận 409, không còn tính vào con số phiếu chưa làm, bài trở lại hàng đợi của họ, đợt đếm một phiếu không còn mù; giám khảo kia vẫn chấm mù bình thường (`test_a_sheet_goes_void_once_its_rater_has_seen_the_machine_result`). |
+| ~~AC-62.8~~ *(gỡ bởi D078)* — *Given* quản trị viên là một trong hai giám khảo của đợt, *When* họ mở danh sách bài, báo cáo một bài, bản xuất nghiên cứu, báo cáo và CSV của đợt, *Then* danh sách không có bài của đợt, báo cáo bài nhận 403, ba thứ kia nhận 409; nộp xong thì mọi thứ mở lại (`test_an_administrator_who_rates_stays_blind_on_the_administration_screens`). |
+| ~~AC-62.9~~ *(gỡ bởi D078)* — *Given* hai bài chờ duyệt, *When* GV-01 được giao chấm mù cả hai, *Then* con số chờ duyệt trên thanh điều khiển của GV-01 về 0, của GV-03 vẫn là 2; GV-01 chấm xong thì lại là 2 (`test_the_waiting_count_leaves_out_what_the_teacher_rates_blind`). |
+| ~~AC-62.10~~ *(gỡ bởi D078)* — *Given* phiếu của GV-01 không còn mù, *When* quản trị viên giao lại cho GV-02 (đang chấm bài đó), GV-04 (đã xem kết quả của máy) rồi GV-03, *Then* hai lần đầu không tạo phiếu và báo lý do bỏ qua, lần ba tạo một phiếu cho GV-03 ở đúng chỗ chấm của GV-01, phiếu cũ biến mất, đợt hết phiếu không còn mù và chấm đủ được hai phiếu; thao tác được ghi nhật ký (`test_a_void_sheet_can_be_handed_to_another_rater`). |
 
 ### FR-63 — Phân xử
 
@@ -1112,8 +1117,8 @@ Hiện thực hạng mục 2.1 của `docs/plan/HUONG_PHAT_TRIEN_TIEP.md` và m�
 
 | Acceptance Criteria |
 | --- |
-| **AC-63.1** — *Given* hai giám khảo chấm 2,5 · A2 và 3,5 · B1 cho hai bài, *When* giao phân xử cho chính một trong hai người, *Then* không tạo phiếu nào và báo bỏ qua hai bài; giao cho người thứ ba thì người đó có hai phiếu phân xử, phiếu không chứa điểm của hai người trước, và đợt không còn bài cần phân xử (`test_a_disagreement_goes_to_a_third_rater_who_did_not_rate_it`). |
-| **AC-63.2** — *Given* hai giám khảo lệch nhau trên một bài và GV-03 đã mở báo cáo bài đó, *When* giao phân xử cho GV-03, *Then* không tạo phiếu nào và báo một bài bỏ qua vì đã xem kết quả của máy (`test_an_adjudicator_who_opened_the_machine_result_is_passed_over`). |
+| ~~AC-63.1~~ *(gỡ bởi D078)* — *Given* hai giám khảo chấm 2,5 · A2 và 3,5 · B1 cho hai bài, *When* giao phân xử cho chính một trong hai người, *Then* không tạo phiếu nào và báo bỏ qua hai bài; giao cho người thứ ba thì người đó có hai phiếu phân xử, phiếu không chứa điểm của hai người trước, và đợt không còn bài cần phân xử (`test_a_disagreement_goes_to_a_third_rater_who_did_not_rate_it`). |
+| ~~AC-63.2~~ *(gỡ bởi D078)* — *Given* hai giám khảo lệch nhau trên một bài và GV-03 đã mở báo cáo bài đó, *When* giao phân xử cho GV-03, *Then* không tạo phiếu nào và báo một bài bỏ qua vì đã xem kết quả của máy (`test_an_adjudicator_who_opened_the_machine_result_is_passed_over`). |
 
 ### FR-64 — Báo cáo đồng thuận và bản xuất phiếu chấm
 
@@ -1122,11 +1127,11 @@ Hiện thực hạng mục 2.1 của `docs/plan/HUONG_PHAT_TRIEN_TIEP.md` và m�
 
 | Acceptance Criteria |
 | --- |
-| **AC-64.1** — *Given* ba bài máy chấm 3,0 · B1, một bài đã được giảng viên sửa thành 5,5, hai giám khảo chấm 3,0 và 3,5, *When* xem báo cáo, *Then* khối người–người đứng trước khối máy–người, chênh lệch hai giám khảo 0,5, RMSE của máy 0,25 (so với 3,0 của máy, không phải 5,5 của giảng viên), có thời gian chấm của sáu phiếu (`test_the_report_puts_humans_first_and_compares_the_machine_before_any_review`). |
-| **AC-64.3** — *Given* đợt hai bài đã chấm đủ, *When* tải CSV, *Then* có bốn dòng mang bút danh giám khảo, điểm từng tiêu chí và điểm máy; thao tác được ghi nhật ký (`test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score`). |
-| **AC-64.4** — *Given* phiếu chấm về bài của SV-001, *When* quản trị viên xoá dữ liệu SV-001, *Then* không còn phiếu nào về bài đó, phiếu về bài khác còn nguyên (`test_erasing_a_participant_erases_what_raters_said_about_them`). |
-| **AC-64.5** — *Given* một đợt đã chấm, *When* chạy `tools/agreement_report.py`, *Then* báo cáo JSON trùng với báo cáo trên màn hình, Markdown đặt mục người–người trước mục máy–người và không chứa mã bài (`test_the_command_line_report_gives_the_numbers_of_the_screen`). |
-| **AC-64.6** — *Given* tài khoản giảng viên, *When* gọi API quản lý đợt, báo cáo hay bản xuất, *Then* nhận 403; đợt không tồn tại nhận 404 (`test_only_an_administrator_runs_batches`). |
+| ~~AC-64.1~~ *(gỡ bởi D078)* — *Given* ba bài máy chấm 3,0 · B1, một bài đã được giảng viên sửa thành 5,5, hai giám khảo chấm 3,0 và 3,5, *When* xem báo cáo, *Then* khối người–người đứng trước khối máy–người, chênh lệch hai giám khảo 0,5, RMSE của máy 0,25 (so với 3,0 của máy, không phải 5,5 của giảng viên), có thời gian chấm của sáu phiếu (`test_the_report_puts_humans_first_and_compares_the_machine_before_any_review`). |
+| ~~AC-64.3~~ *(gỡ bởi D078)* — *Given* đợt hai bài đã chấm đủ, *When* tải CSV, *Then* có bốn dòng mang bút danh giám khảo, điểm từng tiêu chí và điểm máy; thao tác được ghi nhật ký (`test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score`). |
+| ~~AC-64.4~~ *(gỡ bởi D078)* — *Given* phiếu chấm về bài của SV-001, *When* quản trị viên xoá dữ liệu SV-001, *Then* không còn phiếu nào về bài đó, phiếu về bài khác còn nguyên (`test_erasing_a_participant_erases_what_raters_said_about_them`). |
+| ~~AC-64.5~~ *(gỡ bởi D078)* — *Given* một đợt đã chấm, *When* chạy `tools/agreement_report.py`, *Then* báo cáo JSON trùng với báo cáo trên màn hình, Markdown đặt mục người–người trước mục máy–người và không chứa mã bài (`test_the_command_line_report_gives_the_numbers_of_the_screen`). |
+| ~~AC-64.6~~ *(gỡ bởi D078)* — *Given* tài khoản giảng viên, *When* gọi API quản lý đợt, báo cáo hay bản xuất, *Then* nhận 403; đợt không tồn tại nhận 404 (`test_only_an_administrator_runs_batches`). |
 
 ## 3.9f. Thành tựu và nhịp luyện của chính mình — D032
 
@@ -1326,19 +1331,21 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-77 — Thực nghiệm phản hồi: chia nhóm và giữ phản hồi lại
 
+> **Đã gỡ bởi D078 (01/11/2026).** Thực nghiệm phản hồi đã ngừng từ D068 và nay gỡ hẳn (FR-77, FR-78): mọi người học nhận đủ phản hồi. Các tiêu chí giữ lại làm lịch sử, không còn được kiểm. Xoá dữ liệu một người (FR-35) vẫn rút họ khỏi các thực nghiệm cũ còn trong kho.
+
 **Mô tả:** Quản trị viên mở một thực nghiệm (`/admin/study`); mỗi lúc chỉ một thực nghiệm chưa đóng. Mọi sinh viên còn hoạt động và đang cho phép dùng dữ liệu nghiên cứu được chia ngẫu nhiên, cân bằng, vào nhóm "Phản hồi đầy đủ" và nhóm "Chỉ điểm" theo một hạt giống lưu lại; cần ít nhất 4 người. Khi thực nghiệm đang chạy, báo cáo bài đánh giá của người học nhóm "Chỉ điểm" chỉ còn điểm, mức và khoảng, có cờ `feedback_withheld`, trang báo cáo nói vì sao và chỉ cách rời. Phản hồi giữ lại suốt giai đoạn đang chạy và giai đoạn khảo sát, ở mọi đường trả nó ra: báo cáo, bản xuất cá nhân, hồ sơ năng lực, tiêu chí yếu nhất làm căn cứ gợi ý luyện tập và gợi ý bài học. Rời thực nghiệm, rút đồng ý nghiên cứu, bị xoá dữ liệu (FR-35) hay thực nghiệm đóng đều trả lại phản hồi đầy đủ (BR-37). Mở thực nghiệm và chuyển giai đoạn có nhật ký.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-77.1** — *Given* 11 tài khoản, *When* chia nhóm hai lần với cùng hạt giống theo hai thứ tự khác nhau, *Then* kết quả như nhau, hai nhóm lệch nhau tối đa 1 người, hạt giống khác cho kết quả khác (`test_assignment_is_balanced_and_reproducible_from_the_seed`). |
-| **AC-77.2** — *Given* 5 sinh viên đồng ý, 1 sinh viên không đồng ý, 1 giảng viên, *When* quản trị viên mở thực nghiệm, *Then* đúng 5 sinh viên được chia 2–3, mở thực nghiệm thứ hai bị 409, nhật ký ghi hạt giống (`test_study_enrols_active_students_half_in_each_arm`). |
-| **AC-77.3** — *Given* chỉ 1 sinh viên đồng ý, *When* mở thực nghiệm, *Then* 422 và lý do nói cần ít nhất bao nhiêu người (`test_study_needs_enough_students`). |
-| **AC-77.4** — *Given* hai bài có đủ nhận xét, bằng chứng, ưu tiên của hai sinh viên ở hai nhóm, *When* mỗi người mở báo cáo của mình và giảng viên mở bài của nhóm "Chỉ điểm", *Then* người nhóm "Chỉ điểm" thấy điểm 3,4 và B1, `feedback_withheld`, mọi danh sách phản hồi rỗng; người nhóm kia và giảng viên thấy đủ (`test_score_only_arm_gets_the_score_and_nothing_more`). |
-| **AC-77.5** — *Given* người nhóm "Chỉ điểm", *When* họ rời thực nghiệm, rồi quản trị viên đóng thực nghiệm, *Then* báo cáo hiện đủ ngay, trạng thái ghi đã rời, và sau khi đóng không ai còn trong thực nghiệm (`test_leaving_the_study_or_closing_it_brings_feedback_back`). |
-| **AC-77.7** — *Given* một người trong thực nghiệm, *When* quản trị viên xoá dữ liệu của họ, *Then* họ không còn trong danh sách tham gia (`test_erasure_takes_the_learner_out_of_every_study`). |
-| **AC-77.8** — *Given* 4 sinh viên đồng ý, *When* quản trị viên bắt đầu trên trang, người nhóm "Chỉ điểm" mở báo cáo, rồi bấm "Rời thực nghiệm" ở trang Tiến độ, *Then* trang báo cáo nói về nhóm "Chỉ điểm" và không có nhận xét; sau khi rời, nhận xét hiện lại (`test_a_score_only_learner_sees_why_and_can_leave`). |
-| **AC-77.9** — *Given* người nhóm "Chỉ điểm" có một bài đủ nhận xét, *When* quản trị viên chuyển thực nghiệm sang giai đoạn khảo sát, người đó mở báo cáo và tải bản xuất cá nhân, rồi quản trị viên đóng thực nghiệm, *Then* trong giai đoạn khảo sát báo cáo và bản xuất vẫn chỉ có điểm, không nhận xét, không ưu tiên; sau khi đóng, nhận xét hiện lại (`test_feedback_stays_held_back_through_the_survey_and_in_the_export`). |
+| ~~AC-77.1~~ *(gỡ bởi D078)* — *Given* 11 tài khoản, *When* chia nhóm hai lần với cùng hạt giống theo hai thứ tự khác nhau, *Then* kết quả như nhau, hai nhóm lệch nhau tối đa 1 người, hạt giống khác cho kết quả khác (`test_assignment_is_balanced_and_reproducible_from_the_seed`). |
+| ~~AC-77.2~~ *(gỡ bởi D078)* — *Given* 5 sinh viên đồng ý, 1 sinh viên không đồng ý, 1 giảng viên, *When* quản trị viên mở thực nghiệm, *Then* đúng 5 sinh viên được chia 2–3, mở thực nghiệm thứ hai bị 409, nhật ký ghi hạt giống (`test_study_enrols_active_students_half_in_each_arm`). |
+| ~~AC-77.3~~ *(gỡ bởi D078)* — *Given* chỉ 1 sinh viên đồng ý, *When* mở thực nghiệm, *Then* 422 và lý do nói cần ít nhất bao nhiêu người (`test_study_needs_enough_students`). |
+| ~~AC-77.4~~ *(gỡ bởi D078)* — *Given* hai bài có đủ nhận xét, bằng chứng, ưu tiên của hai sinh viên ở hai nhóm, *When* mỗi người mở báo cáo của mình và giảng viên mở bài của nhóm "Chỉ điểm", *Then* người nhóm "Chỉ điểm" thấy điểm 3,4 và B1, `feedback_withheld`, mọi danh sách phản hồi rỗng; người nhóm kia và giảng viên thấy đủ (`test_score_only_arm_gets_the_score_and_nothing_more`). |
+| ~~AC-77.5~~ *(gỡ bởi D078)* — *Given* người nhóm "Chỉ điểm", *When* họ rời thực nghiệm, rồi quản trị viên đóng thực nghiệm, *Then* báo cáo hiện đủ ngay, trạng thái ghi đã rời, và sau khi đóng không ai còn trong thực nghiệm (`test_leaving_the_study_or_closing_it_brings_feedback_back`). |
+| ~~AC-77.7~~ *(gỡ bởi D078)* — *Given* một người trong thực nghiệm, *When* quản trị viên xoá dữ liệu của họ, *Then* họ không còn trong danh sách tham gia (`test_erasure_takes_the_learner_out_of_every_study`). |
+| ~~AC-77.8~~ *(gỡ bởi D078)* — *Given* 4 sinh viên đồng ý, *When* quản trị viên bắt đầu trên trang, người nhóm "Chỉ điểm" mở báo cáo, rồi bấm "Rời thực nghiệm" ở trang Tiến độ, *Then* trang báo cáo nói về nhóm "Chỉ điểm" và không có nhận xét; sau khi rời, nhận xét hiện lại (`test_a_score_only_learner_sees_why_and_can_leave`). |
+| ~~AC-77.9~~ *(gỡ bởi D078)* — *Given* người nhóm "Chỉ điểm" có một bài đủ nhận xét, *When* quản trị viên chuyển thực nghiệm sang giai đoạn khảo sát, người đó mở báo cáo và tải bản xuất cá nhân, rồi quản trị viên đóng thực nghiệm, *Then* trong giai đoạn khảo sát báo cáo và bản xuất vẫn chỉ có điểm, không nhận xét, không ưu tiên; sau khi đóng, nhận xét hiện lại (`test_feedback_stays_held_back_through_the_survey_and_in_the_export`). |
 
 ### FR-78 — Khảo sát, phân tích và xuất dữ liệu của thực nghiệm
 
@@ -1347,11 +1354,11 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 | Acceptance Criteria |
 | --- |
-| **AC-78.1** — *Given* điểm trước khi vào thực nghiệm và sau đó, *When* lấy cặp đầu–cuối với `min_days` = 14, *Then* bỏ điểm trước khi vào, lấy bài cuối cách bài đầu đủ 14 ngày; không có bài như vậy thì không có cặp (`test_pre_post_needs_a_later_score_far_enough_from_the_first`). |
-| **AC-78.2** — *Given* hai nhóm khác biệt rõ, *When* tính, *Then* Hedges g > 2, khoảng bootstrap nằm trọn trên 0 và lặp lại đúng với cùng hạt giống; nhóm 1 người thì không có g (`test_effect_size_and_interval_point_the_same_way`). |
-| **AC-78.3** — *Given* một người đã rời, *When* phân tích, *Then* họ không vào số tham gia hay mức tăng; mỗi nhóm một người thì có chênh lệch nhưng không có khoảng và g (`test_analysis_leaves_out_withdrawn_participants`). |
-| **AC-78.4** — *Given* thực nghiệm đang chạy, *When* gửi khảo sát, chuyển sang khảo sát hai lần, gửi câu trả lời 6 điểm hay thiếu câu, rồi gửi đúng, *Then* lần lượt 409, 409 cho lần chuyển thứ hai, 422, 422, rồi lưu, và kết quả có 1 người trả lời với điểm đúng (`test_survey_opens_only_in_the_survey_phase_and_checks_answers`). |
-| **AC-78.5** — *Given* 4 người tham gia, *When* tải CSV, *Then* có cột `participant,arm,withdrawn`, mã P001, không bút danh hay mã tài khoản nào; sinh viên nhận 403 ở danh sách thực nghiệm (`test_study_export_carries_codes_not_people`). |
+| ~~AC-78.1~~ *(gỡ bởi D078)* — *Given* điểm trước khi vào thực nghiệm và sau đó, *When* lấy cặp đầu–cuối với `min_days` = 14, *Then* bỏ điểm trước khi vào, lấy bài cuối cách bài đầu đủ 14 ngày; không có bài như vậy thì không có cặp (`test_pre_post_needs_a_later_score_far_enough_from_the_first`). |
+| ~~AC-78.2~~ *(gỡ bởi D078)* — *Given* hai nhóm khác biệt rõ, *When* tính, *Then* Hedges g > 2, khoảng bootstrap nằm trọn trên 0 và lặp lại đúng với cùng hạt giống; nhóm 1 người thì không có g (`test_effect_size_and_interval_point_the_same_way`). |
+| ~~AC-78.3~~ *(gỡ bởi D078)* — *Given* một người đã rời, *When* phân tích, *Then* họ không vào số tham gia hay mức tăng; mỗi nhóm một người thì có chênh lệch nhưng không có khoảng và g (`test_analysis_leaves_out_withdrawn_participants`). |
+| ~~AC-78.4~~ *(gỡ bởi D078)* — *Given* thực nghiệm đang chạy, *When* gửi khảo sát, chuyển sang khảo sát hai lần, gửi câu trả lời 6 điểm hay thiếu câu, rồi gửi đúng, *Then* lần lượt 409, 409 cho lần chuyển thứ hai, 422, 422, rồi lưu, và kết quả có 1 người trả lời với điểm đúng (`test_survey_opens_only_in_the_survey_phase_and_checks_answers`). |
+| ~~AC-78.5~~ *(gỡ bởi D078)* — *Given* 4 người tham gia, *When* tải CSV, *Then* có cột `participant,arm,withdrawn`, mã P001, không bút danh hay mã tài khoản nào; sinh viên nhận 403 ở danh sách thực nghiệm (`test_study_export_carries_codes_not_people`). |
 
 ### FR-79 — Thời gian giảng viên tiết kiệm được và phần máy tự xử lý
 
@@ -1458,7 +1465,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-85.7** — *Given* 12 bài nộp cùng lúc, 3 lượt miễn phí và 2 lượt trong ví, *When* giữ chỗ, *Then* đúng 5 bài qua, số dư không âm (`test_concurrent_holds_never_overdraw`). |
 | **AC-85.8** — *Given* bản của trường (`AICEFR_METERING` tắt), *When* nộp nhiều bài, *Then* không giữ, không thu, không từ chối (`test_with_metering_off_nothing_is_held_or_refused`). |
 | **AC-85.9** — *Given* hết lượt, *When* nộp bài, *Then* HTTP 402 kèm lời giải thích, không lưu bài hay tệp ghi âm nào (`test_a_submission_without_runs_left_is_refused_with_402`). |
-| **AC-85.10** — *Given* bản tính lượt, *When* quản trị viên tạo thực nghiệm nghiên cứu, *Then* bị từ chối (`test_the_metered_deployment_runs_no_research_study`). |
+| **AC-85.10** — *Given* bản tính lượt, *When* quản trị viên tạo thực nghiệm nghiên cứu, *Then* không có gì để tạo: thực nghiệm đã gỡ ở mọi bản triển khai (D078), địa chỉ trả 404 (`test_the_metered_deployment_runs_no_research_study`). |
 
 ### FR-86 — Hiệu chuẩn band tuỳ chọn (D052)
 
@@ -1568,8 +1575,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-18 | Sinh viên luyện tập theo nhiệm vụ gợi ý | Sinh viên | — | FR-40..FR-44 (D023) | S |
 | UC-19 | Sinh viên học theo lộ trình bài học | Sinh viên | — | FR-45, FR-46, FR-48, FR-50 (D025), FR-65, FR-66 (D032) | S |
 | UC-20 | Giáo viên soạn lộ trình và theo dõi lượt luyện | Giảng viên | — | FR-45, FR-47, FR-49 (D025) | S |
-| UC-21 | Giảng viên chấm mù bài nói trong đợt chấm | Giảng viên | — | FR-62, FR-63 (D030) | S |
-| UC-22 | Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận | Quản trị viên | — | FR-61, FR-63, FR-64 (D030) | S |
+| ~~UC-21~~ *(gỡ bởi D078)* | Giảng viên chấm mù bài nói trong đợt chấm | Giảng viên | — | FR-62, FR-63 (D030) | S |
+| ~~UC-22~~ *(gỡ bởi D078)* | Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận | Quản trị viên | — | FR-61, FR-63, FR-64 (D030) | S |
 | UC-23 | Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ | Quản trị viên | Cổng thanh toán | FR-67..FR-70 (D034), FR-71..FR-73 (D035) | S |
 
 > **Vì sao không dòng nào còn ghi "Hệ thống" ở cột actor.** Bốn dòng trước đây
@@ -2358,7 +2365,7 @@ Cột "Module code" ghi **đường dẫn có thật trong repository** tại th
 | FR-46 Chín dạng bước, bộ đo bằng luật | UC-19 | `test_read_aloud_marks_each_reference_word_heard_missed_or_unsure`, `test_keyword_counts_any_form_of_the_word`, `test_gap_classifies_each_blank`, `test_words_outside_speech_are_not_counted`, `test_free_step_compares_rounds`, `test_practice_clip_qc_accepts_short_recordings_assessment_does_not` | `src/aicefr/lessons/checks.py`, `src/aicefr/lessons/align.py`, `src/aicefr/lessons/text.py`, `src/aicefr/lessons/runner.py` |
 | FR-47 Giáo viên soạn bài | UC-20 | `test_generator_builds_the_four_stage_ladder_from_one_text`, `test_linter_warns_about_asr_traps`, `test_students_cannot_edit_paths`, `test_model_audio_that_does_not_match_its_text_is_flagged`, `test_path_export_import_roundtrip` | `src/aicefr/lessons/generate.py`, `src/aicefr/lessons/lint.py`, `src/aicefr/api/lessons_api.py`, `src/aicefr/api/static/teach_*.js` |
 | FR-48 Ôn tập giãn cách | UC-19 | `test_missed_words_are_scheduled_for_tomorrow`, `test_review_boxes_follow_leitner_intervals` | `src/aicefr/lessons/review.py`, `src/aicefr/api/lessons_api.py` (`_schedule_reviews`, `_review_steps`) |
-| FR-49 Theo dõi và sửa nhận định | UC-20 | `test_teacher_override_updates_the_result_and_is_audited`, `test_lesson_attempts_stay_out_of_queue_and_research_export` | `src/aicefr/api/lessons_api.py` (`teach_insights`, `teach_override`), `src/aicefr/storage/lesson_repository.py` (`apply_override`) |
+| FR-49 Theo dõi và sửa nhận định | UC-20 | `test_teacher_override_updates_the_result_and_is_audited`, `test_lesson_attempts_stay_out_of_queue_and_class_statistics` | `src/aicefr/api/lessons_api.py` (`teach_insights`, `teach_override`), `src/aicefr/storage/lesson_repository.py` (`apply_override`) |
 | FR-50 Tiến độ ngày, bài nên học | UC-19 | `test_daily_goal_counts_seconds_spoken`, `test_next_lesson_follows_the_weakest_criterion` | `src/aicefr/lessons/progress.py` (`today_summary`, `next_lesson`) |
 | FR-51 Đổi mật khẩu, quản lý phiên | UC-17 | `test_password_change_needs_the_current_password_and_ends_other_sessions`, `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`, `test_the_password_policy_says_what_is_wrong`, `test_signing_out_other_devices_keeps_this_one`, `test_the_account_page_needs_a_login_and_shows_the_pseudonym` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`change_password`, `revoke_sessions`), `src/aicefr/auth/passwords.py` (`check_new_password`) |
 | FR-52 Quản lý tài khoản trên web | UC-10 | `test_a_series_continues_the_numbering_with_one_time_passwords`, `test_a_temporary_password_opens_nothing_but_the_password_change`, `test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password`, `test_a_disabled_account_is_signed_out_and_cannot_sign_in`, `test_creating_accounts_is_all_or_nothing_and_checks_names`, `test_only_an_administrator_manages_accounts`, `test_an_administrator_lifts_a_lockout` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`create_with_temporary_passwords`, `set_temporary_password`, `set_disabled`), `src/aicefr/api/deps.py` (`PASSWORD_CHANGE_PATHS`), `src/aicefr/api/static/admin.js` |

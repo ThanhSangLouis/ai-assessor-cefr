@@ -145,13 +145,6 @@ function buildReport(d) {
   // everything else.
   if (rejected) return section("report-summary", "result-h", head + rejectionBlock(d)) + detailCard(d, a, true);
 
-  // D040: in the score-only arm of the feedback study the server sends the
-  // score and nothing else; say why the rest is missing instead of drawing
-  // empty sections.
-  if (d.feedback_withheld) {
-    return section("report-summary", "result-h", head + scoreBlock(d, a) + withheldBlock()) + detailCard(d, a, false);
-  }
-
   // D068: four parts. What the learner came for -- the result, what to work
   // on, the recording -- stays open; everything about how the machine got
   // there is one fold at the foot.
@@ -161,14 +154,6 @@ function buildReport(d) {
     commentsCard(a) +
     evidenceCard(d, a) +
     detailCard(d, a, false)
-  );
-}
-
-function withheldBlock() {
-  return (
-    '<div class="notice" id="feedback-withheld"><b>Bạn đang ở nhóm “Chỉ điểm” của thực nghiệm phản hồi.</b> ' +
-    "Trong thời gian thực nghiệm, báo cáo chỉ hiện điểm và mức. Bạn có thể rời thực nghiệm bất cứ lúc nào " +
-    'ở trang <a href="/my-progress#study">Tiến độ của tôi</a> để xem lại đầy đủ nhận xét.</div>'
   );
 }
 
@@ -402,7 +387,27 @@ function bandPodium(a) {
   );
 }
 
-// ONE overall score. There is no second, third or fifth number to show.
+// D078: beside the score and the band, where the result stands inside the
+// band and how far the next one is.
+const PLACE = { low: "Đầu band", mid: "Giữa band", high: "Cuối band" };
+
+function bandPlace(p) {
+  if (!p) return "";
+  const where = PLACE[p.part] || "";
+  return p.part === "high" && p.next ? `${where}, sắp lên ${escapeHtml(p.next)}` : where;
+}
+
+function bandTrack(p) {
+  if (!p) return "";
+  const at = Math.round(p.share * 100);
+  return (
+    `<div class="band-track" role="img" aria-label="${escapeHtml(bandPlace(p))}">` +
+    `<span class="band-track-fill" style="width:${at}%"></span><span class="band-track-mark" style="left:${at}%"></span></div>` +
+    `<div class="band-track-ends"><span>${escapeHtml(p.band)}</span><span>${p.next ? escapeHtml(p.next) : ""}</span></div>`
+  );
+}
+
+// ONE overall result. There is no second, third or fifth number to show.
 function scoreBlock(d, a) {
   if (a.overall_0_6 == null) {
     return (
@@ -416,11 +421,14 @@ function scoreBlock(d, a) {
   let h = '<div class="score-panel">';
   h += `<div class="score-figure">
       <span class="score">${a.overall_0_6.toFixed(2)}</span>
-      <span class="score-scale">trên thang 1 – 6</span>
+      <span class="score-scale">trên thang 0 – 6</span>
     </div>`;
   h += bandPodium(a);
   h += '<div class="score-meta">';
   h += `<span class="score-band">${escapeHtml(a.overall_band)}</span>`;
+  if (a.band_position) {
+    h += `<p class="band-place">${bandPlace(a.band_position)}</p>${bandTrack(a.band_position)}`;
+  }
   // FR-21: the "estimate" label goes with every report, it must never be missing.
   h += `<p class="score-caption">
       Đây là <b>một ước lượng tổng thể</b> cho cả bài nói, do mô hình đưa ra từ các phép đo
@@ -440,7 +448,7 @@ function scoreBlock(d, a) {
     h +=
       '<p class="muted" style="margin-top:var(--sp-3)">Mô hình <b>chưa được hiệu chuẩn</b> ' +
       "(<code>" + escapeHtml(cal || "chưa có") + "</code>), nên sai số quanh con số này chưa " +
-      "được định lượng. Hãy đọc điểm như một chỉ dấu về mức độ, không phải một phép đo chính xác.</p>";
+      "được định lượng. Hãy đọc kết quả như một chỉ dấu về mức độ, không phải một phép đo chính xác.</p>";
   }
 
   if (!a.teacher_verified) {

@@ -56,8 +56,6 @@ package "Lưu trữ MongoDB (D048)" as Store {
   class Repository <<repository>>
   class AuthRepository <<repository>>
   class TaskRepository <<repository>>
-  class RatingRepository <<repository>>
-  class StudyRepository <<repository>>
   class ClassroomRepository <<repository>>
   class ReplayRepository <<repository>>
   class BillingRepository <<repository>>
@@ -87,8 +85,6 @@ RateLimiter           <|.. InMemoryRateLimiter
 MongoStore            <|-- Repository
 MongoStore            <|-- AuthRepository
 MongoStore            <|-- TaskRepository
-MongoStore            <|-- RatingRepository
-MongoStore            <|-- StudyRepository
 MongoStore            <|-- ClassroomRepository
 MongoStore            <|-- ReplayRepository
 MongoStore            <|-- BillingRepository

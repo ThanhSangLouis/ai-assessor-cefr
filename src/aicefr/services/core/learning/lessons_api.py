@@ -558,7 +558,7 @@ def _compare_with_first_round(account: Account, lesson_id: str, step_id: str, re
 # pauses, what repeating under time pressure trains (Thai & Boers 2016).
 
 RETELL_STEP = "retell"
-RETELL_MAX_S = 90  # a P5 talk is retold as its first ninety seconds
+RETELL_MAX_S = 90  # a long recording is retold as its first ninety seconds
 RETELL_FLOOR_S = 20
 
 

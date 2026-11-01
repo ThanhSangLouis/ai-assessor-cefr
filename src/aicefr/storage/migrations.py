@@ -37,21 +37,20 @@ class Migration:
 
 
 def _baseline(db: Database, target: str) -> None:
-    """Every collection and index up to D044, as the repositories create them."""
+    """Every collection and index up to D044, as the repositories create them.
+
+    D078: the blind rating and the feedback study are gone, so a new store no
+    longer gets their collections; an older store keeps what it holds."""
     from aicefr.storage.audit_repository import AuditLog
     from aicefr.storage.auth_repository import AuthRepository
     from aicefr.storage.billing_repository import BillingRepository
     from aicefr.storage.lesson_repository import LessonRepository
-    from aicefr.storage.rating_repository import RatingRepository
     from aicefr.storage.repository import Repository
-    from aicefr.storage.study_repository import StudyRepository
     from aicefr.storage.task_repository import TaskRepository
 
     Repository(target)
     AuthRepository(target)
     TaskRepository(target)
-    RatingRepository(target)
-    StudyRepository(target)
     BillingRepository(target)
     LessonRepository(target, seed=False)
     AuditLog(target, "identity")
