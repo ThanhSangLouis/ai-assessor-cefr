@@ -182,7 +182,11 @@ def test_new_learner_sees_the_path_and_the_first_lesson_next(student):
     expect(student.locator(".lesson-node.next .node-flag")).to_have_text("Bắt đầu")
     expect(student.locator(".today-card .goal-ring")).to_contain_text("0/180 giây")
     expect(student.locator(".review-count")).to_contain_text("0")
-    assert "band" not in student.locator("#path-page").inner_text().lower()
+    # D074 (replacing D025's "no band on this page"): the learner chooses the
+    # bands to study; with no assessment yet the suggestion is A1 to A2.
+    expect(student.locator("#band-plan h2")).to_contain_text("Học theo band")
+    expect(student.locator("#band-from")).to_have_value("A1")
+    expect(student.locator("#band-to")).to_have_value("A2")
 
 
 def test_read_aloud_step_marks_words_and_moves_on(student, live_server):

@@ -48,7 +48,7 @@ Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs
 | `attempt` | CN | Một lượt nói ở một bước: kết quả đo, đạt hay chưa, thời gian nói, khoá bản ghi âm, sửa của giảng viên | | PK `attempt_id` |
 | `review_item` | CN | Hàng ôn tập ngắt quãng: từ hoặc bài nói cần ôn, hộp Leitner, ngày đến hạn | | PK `item_id`; duy nhất theo người, loại, bài, bước, từ |
 | `achievement` | CN | Thành tựu đã đạt và đã xem chưa (D032) | | PK (`account_id`, `code`) |
-| `learning_plan` | CN | Lộ trình do model gợi ý (D046): mục tiêu, kết quả, phiên bản model; với giảng viên còn ghi lộ trình nháp đã lưu (`path_id`) | | PK `plan_id`; chỉ mục (`account_id`, `active`) |
+| `learning_plan` | CN | Lộ trình do model gợi ý (D046): mục tiêu, kết quả, phiên bản model; với giảng viên còn ghi lộ trình nháp đã lưu (`path_id`). D074: mục tiêu ghi band bắt đầu và band mục tiêu người học chọn (`band_from`, `band_to`); lộ trình giảng viên giao (phiên bản `teacher-assigned`) ghi thêm người giao (`assigned_by`), lộ trình gốc (`path_id`, `path_title`) | | PK `plan_id`; chỉ mục (`account_id`, `active`) |
 
 ### 2.4. Gói dịch vụ (`billing`)
 

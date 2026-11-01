@@ -1,5 +1,6 @@
 // "Classes" (D054, D071): the classes, one class's teachers, members and
-// assignments, and who handed in what -- by the students' names. An
+// assignments, and who handed in what -- by the students' names; D074: the
+// bands each student studies, grouped by target, and a path for each group. An
 // administrator sees every class and assigns its teachers.
 const escapeHtml = window.escapeHtml;
 const root = document.getElementById("classes-root");
@@ -18,6 +19,78 @@ const post = (url, body) =>
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+// ---------------------------------------------------------------- bands (D074)
+// Each learner chooses the bands they study; the class shows them grouped by
+// the band they aim for, and a teacher composes a path for a group or assigns
+// a published one to it. Assigning replaces each learner's own path.
+function bandText(b) {
+  if (!b) return '<span class="muted">chưa chọn</span>';
+  const range = b.band_from === b.band_to ? escapeHtml(b.band_from) : `${escapeHtml(b.band_from)} → ${escapeHtml(b.band_to)}`;
+  return b.assigned_by ? `${range} <span class="muted small">· giảng viên giao</span>` : range;
+}
+
+function groupsOf(c) {
+  const groups = {};
+  c.members.forEach((m) => {
+    if (!m.bands || !m.bands.band_to) return;
+    const g = (groups[m.bands.band_to] = groups[m.bands.band_to] || { target: m.bands.band_to, from: m.bands.band_from, people: [] });
+    if (BAND_ORDER.indexOf(m.bands.band_from) < BAND_ORDER.indexOf(g.from)) g.from = m.bands.band_from;
+    g.people.push(m);
+  });
+  return BAND_ORDER.filter((b) => groups[b]).map((b) => groups[b]);
+}
+
+function bandGroups(c) {
+  const groups = groupsOf(c);
+  const none = c.members.filter((m) => !m.bands).length;
+  if (!c.members.length) return "";
+  const rows = groups
+    .map(
+      (g) => `<div class="band-group" data-target="${escapeHtml(g.target)}">
+        <span class="band-badge">${escapeHtml(g.target)}</span>
+        <div class="who"><b>${g.people.length} sinh viên</b> nhắm tới ${escapeHtml(g.target)}, đang từ ${escapeHtml(g.from)}
+          <div class="muted small">${g.people.map((p) => escapeHtml(p.name)).join(", ")}</div></div>
+        <a class="button secondary small" href="/teach?compose=1&band_from=${encodeURIComponent(g.from)}&band_to=${encodeURIComponent(g.target)}">Soạn lộ trình cho nhóm</a>
+        <label class="visually-hidden" for="assign-${escapeHtml(g.target)}">Lộ trình giao cho nhóm ${escapeHtml(g.target)}</label>
+        <select id="assign-${escapeHtml(g.target)}" data-paths><option value="">Chọn lộ trình đã xuất bản…</option></select>
+        <button class="button small" data-assign="${escapeHtml(g.target)}">Giao cho nhóm</button>
+      </div>`,
+    )
+    .join("");
+  return `<section class="card" aria-labelledby="bands-h">
+    <div class="card-head"><h2 id="bands-h">Nhóm theo band mục tiêu</h2></div>
+    <p class="muted">Sinh viên tự chọn band trên trang Lộ trình. Giao lộ trình cho một nhóm sẽ thay lộ trình riêng của từng người trong nhóm.</p>
+    ${groups.length ? `<div class="band-groups">${rows}</div>` : '<p class="muted">Chưa sinh viên nào chọn band.</p>'}
+    ${none ? `<p class="muted small">${none} sinh viên chưa chọn band.</p>` : ""}
+  </section>`;
+}
+
+async function wireGroups(c) {
+  const selects = root.querySelectorAll("select[data-paths]");
+  if (!selects.length) return;
+  const paths = await window.apiJson("/api/v1/teach/paths");
+  const published = (paths || []).filter((p) => p.status === "published");
+  const opts = published.map((p) => `<option value="${escapeHtml(p.path_id)}">${escapeHtml(p.title)} (${escapeHtml(p.band_from)}–${escapeHtml(p.band_to)})</option>`).join("");
+  selects.forEach((s) => s.insertAdjacentHTML("beforeend", opts));
+  const groups = groupsOf(c);
+  root.querySelectorAll("button[data-assign]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const g = groups.find((x) => x.target === b.dataset.assign);
+      const pathId = document.getElementById(`assign-${b.dataset.assign}`).value;
+      if (!pathId) {
+        window.toast("Hãy chọn một lộ trình đã xuất bản.", "error");
+        return;
+      }
+      if (!window.confirm(`Giao lộ trình này cho ${g.people.length} sinh viên nhóm ${g.target}? Lộ trình riêng của họ sẽ được thay.`)) return;
+      const d = await post(`/api/v1/teach/paths/${encodeURIComponent(pathId)}/assign`, { account_ids: g.people.map((p) => p.account_id) });
+      if (d) {
+        window.toast(`Đã giao “${d.path_title}” cho ${d.assigned} sinh viên.`, "ok");
+        detailView();
+      }
+    }),
+  );
+}
 
 async function listView() {
   const classes = await window.apiJson("/api/v1/classes");
@@ -127,13 +200,15 @@ async function detailView() {
           : ""
       }
     </section>
+    ${bandGroups(c)}
     <section class="card" aria-labelledby="members-h">
       <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
       ${
         c.members.length
-          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Họ và tên</th><th>Email</th><th></th></tr></thead><tbody>${c.members
+          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Họ và tên</th><th>Email</th><th>Học theo band</th><th></th></tr></thead><tbody>${c.members
               .map(
                 (m) => `<tr><td>${escapeHtml(m.name)}</td><td>${m.email ? escapeHtml(m.email) : '<span class="muted">chưa có</span>'}</td>
+                  <td>${bandText(m.bands)}</td>
                   <td><button class="button secondary small" data-remove="${escapeHtml(m.account_id)}">Xoá khỏi lớp</button></td></tr>`,
               )
               .join("")}</tbody></table></div>`
@@ -144,6 +219,7 @@ async function detailView() {
         <button class="button secondary" type="submit">Thêm</button>
       </form>
     </section>`;
+  wireGroups(c);
   root.querySelectorAll("button[data-remove]").forEach((b) =>
     b.addEventListener("click", async () => {
       const r = await window.apiJson(
