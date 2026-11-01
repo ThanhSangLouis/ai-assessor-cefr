@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <title>{% block title %}AI Assessor CEFR{% endblock %}</title>
+  <title>{% block title %}SpeakUp{% endblock %}</title>
   {#- D031: the two Roboto subsets every Vietnamese page needs, asked for before
       the stylesheet would discover them. The URLs are the ones in the
       @font-face rules, without a version query, or each file is fetched twice. -#}
@@ -44,10 +44,10 @@
 
 {% if account %}
 <aside class="app-sidebar" aria-label="Thanh điều khiển">
-  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="AI Assessor CEFR, về trang chính">
+  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="SpeakUp, về trang chính">
     {{ logo() }}
     <span class="brand-text">
-      <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+      <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
       <span class="brand-sub">Luyện nói A1–C2</span>
     </span>
   </a>
@@ -112,11 +112,11 @@
 {% else %}
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+    <a class="brand" href="/" aria-label="SpeakUp, về trang chính">
       {{ logo() }}
       <span class="brand-text">
         <span class="brand-title-row">
-          <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+          <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
           <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
         </span>
         <span class="brand-sub">Đánh giá phát âm &amp; độ trôi chảy</span>
@@ -168,11 +168,11 @@
     <div class="footer-grid">
       <!-- Cột 1: Thương hiệu, giới thiệu & Trạng thái hệ thống -->
       <div class="footer-col footer-col-brand">
-        <a class="brand footer-brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+        <a class="brand footer-brand" href="/" aria-label="SpeakUp, về trang chính">
           {{ logo() }}
           <span class="brand-text">
             <span class="brand-title-row">
-              <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+              <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
               <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
             </span>
             <span class="brand-sub">Luyện nói &amp; Đánh giá năng lực</span>

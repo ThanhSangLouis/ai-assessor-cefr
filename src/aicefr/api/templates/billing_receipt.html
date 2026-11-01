@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Biên nhận {{ order.order_id }} · AI Assessor CEFR{% endblock %}
+{% block title %}Biên nhận {{ order.order_id }} · SpeakUp{% endblock %}
 {% block content %}
 {#- D033, D075. A receipt for a paid run pack, to print or save as PDF. Not a VAT
     invoice: an invoice is issued by the seller's accounting, outside this
@@ -19,7 +19,7 @@
       <p class="receipt-paid">{{ icon("check-circle") }} Đã thanh toán<br><small>{{ order.settled_at | vn_time }}</small></p>
     </header>
     <dl class="pay-facts receipt-parties">
-      <dt>Bên bán</dt><dd>AI Assessor CEFR</dd>
+      <dt>Bên bán</dt><dd>SpeakUp</dd>
       <dt>Bên mua</dt><dd>{{ account.display_name }}</dd>
     </dl>
     <div class="table-scroll">

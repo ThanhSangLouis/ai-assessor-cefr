@@ -684,7 +684,12 @@ def migrate(target: str | Path) -> list[int]:
     for m in MIGRATIONS:
         if m.version in done:
             continue
-        m.apply(db, str(target))
+        try:
+            m.apply(db, str(target))
+        except IntegrityError:
+            # Another process starting at the same time inserted the same row
+            # first; every step is idempotent, so running it again finishes it.
+            m.apply(db, str(target))
         try:
             ledger.insert_one({"version": m.version, "name": m.name, "applied_at": now_iso()})
         except IntegrityError:

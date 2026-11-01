@@ -109,7 +109,7 @@ Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com
    ```bash
    AICEFR_EMAIL_PROVIDER=resend
    AICEFR_RESEND_API_KEY=re_...
-   AICEFR_EMAIL_FROM="AI Assessor CEFR <no-reply@mail.ten-mien.app>"
+   AICEFR_EMAIL_FROM="SpeakUp <no-reply@mail.ten-mien.app>"
    AICEFR_PUBLIC_URL=https://ten-mien.app
    AICEFR_REMINDER_HOUR=19
    ```

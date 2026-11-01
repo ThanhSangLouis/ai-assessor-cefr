@@ -266,7 +266,7 @@ async function postJson(url, body) {
 function slipHtml(x) {
   const origin = `${location.origin}/login`;
   return `<article class="slip">
-    <p class="slip-brand">AI Assessor CEFR · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
+    <p class="slip-brand">SpeakUp · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
     <div class="slip-codes">
       <div><span class="slip-label">Mã đăng nhập</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
       <div><span class="slip-label">Mật khẩu tạm</span><span class="slip-code">${escapeHtml(x.temporary_password)}</span></div>

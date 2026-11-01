@@ -175,7 +175,7 @@ class Settings:
         default_factory=lambda: os.getenv("AICEFR_EMAIL_PROVIDER", "off").strip().lower()
     )
     resend_api_key: str = field(default_factory=lambda: os.getenv("AICEFR_RESEND_API_KEY", ""))
-    # e.g. "AI Assessor CEFR <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
+    # e.g. "SpeakUp <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
     email_from: str = field(default_factory=lambda: os.getenv("AICEFR_EMAIL_FROM", ""))
     # When the daily study reminder goes out, Vietnam time (hour 0-23); -1 is off.
     reminder_hour: int = field(

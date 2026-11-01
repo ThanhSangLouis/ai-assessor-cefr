@@ -1,4 +1,4 @@
-/* Design system for the AI Assessor CEFR interface.
+/* Design system for the SpeakUp interface (D080).
    =================================================
 
    Nothing is pulled from an external CDN. The university lab machines may have
@@ -496,13 +496,13 @@ audio { width: 100%; }
   color: var(--fg);
   line-height: 1.2;
 }
-.brand-name .brand-cefr {
+.brand-name .brand-accent {
   background: linear-gradient(135deg, #38bdf8, #818cf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   font-weight: 850;
 }
-:root[data-theme="light"] .brand-name .brand-cefr {
+:root[data-theme="light"] .brand-name .brand-accent {
   background: linear-gradient(135deg, #1d4ed8, #7c3aed);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

@@ -116,7 +116,7 @@ def _unlock(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Quản lý tài khoản hệ thống AI Assessor CEFR")
+    ap = argparse.ArgumentParser(description="Quản lý tài khoản hệ thống SpeakUp")
     # The core service's store (D044): AICEFR_CORE_DB, else AICEFR_DB, as
     # the service reads it. A hard-coded "aicefr.db" once wrote accounts into a
     # database the application never read.

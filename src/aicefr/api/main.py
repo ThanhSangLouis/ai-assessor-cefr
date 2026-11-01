@@ -65,7 +65,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="AI Assessor CEFR",
+    title="SpeakUp",
     description=(
         "AI-assisted assessment of English speaking against CEFR A1-C2.\n\n"
         "A study aid, not a certification service: the system produces an "

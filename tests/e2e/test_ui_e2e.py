@@ -98,7 +98,7 @@ def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, l
             "Thống kê",
         ]
         expect(teacher.locator(".site-nav a[href='/rate']")).to_have_count(0)
-        teacher.get_by_role("link", name=re.compile("AI Assessor CEFR")).click()
+        teacher.get_by_role("link", name=re.compile("SpeakUp")).click()
         teacher.wait_for_url(lambda url: urlparse(url).path == "/review")
     finally:
         teacher.context.close()

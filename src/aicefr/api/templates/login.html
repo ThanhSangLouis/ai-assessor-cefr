@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, cube %}
 {% from "_art.html" import terraces %}
-{% block title %}Đăng nhập · AI Assessor CEFR{% endblock %}
+{% block title %}Đăng nhập · SpeakUp{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
 <div class="auth-split">
   {#- D037: the product page's terraces, coming in from behind the form. -#}
   <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
   <section class="auth-intro" aria-labelledby="auth-intro-h">
-    <p class="eyebrow">AI Assessor CEFR</p>
+    <p class="eyebrow">SpeakUp</p>
     <h2 id="auth-intro-h">Luyện nói có lộ trình, tiến bộ có bằng chứng</h2>
     {#- D031, D059: the product's six CEFR bands, A1 to C2. -#}
     <div class="cube-stage auth-cubes" aria-hidden="true"><div class="cube-row">{{ cube("A1", "tone-1", 52) }}{{ cube("A2", "tone-1", 72) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "tone-2", 120) }}{{ cube("C1", "is-solid", 144) }}{{ cube("C2", "is-solid", 168) }}</div></div>

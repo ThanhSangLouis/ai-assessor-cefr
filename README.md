@@ -1,5 +1,7 @@
 # AI Assessor CEFR
 
+Tên hiển thị trong ứng dụng: **SpeakUp** (D080).
+
 Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo khung CEFR (A1–C2, D059) cho sinh viên đại học Việt Nam, phục vụ học tập và hỗ trợ giảng viên duyệt bài.
 
 > **Lưu ý:** Đây là công cụ hỗ trợ học tập, không phải công cụ cấp chứng chỉ tự động. Giảng viên là người quyết định cuối cùng.

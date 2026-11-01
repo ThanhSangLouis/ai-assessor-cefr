@@ -14,7 +14,7 @@ from html import escape
 
 from aicefr.notify.email import Email
 
-BRAND = "AI Assessor CEFR"
+BRAND = "SpeakUp"
 PURPOSE = {
     "reset": ("Mã đặt lại mật khẩu", "đặt lại mật khẩu"),
     "verify": ("Mã xác minh email", "xác minh email của tài khoản"),

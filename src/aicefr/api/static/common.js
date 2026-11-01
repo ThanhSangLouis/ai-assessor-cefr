@@ -529,7 +529,7 @@ window.showRecoverySlip = function (pseudonym, code) {
   document.getElementById("slip-pseudonym").textContent = pseudonym;
   document.getElementById("slip-code").textContent = code;
   const text =
-    `AI Assessor CEFR\nĐăng nhập: ${pseudonym}\nMã khôi phục: ${code}\n` +
+    `SpeakUp\nĐăng nhập: ${pseudonym}\nMã khôi phục: ${code}\n` +
     `Dùng ở ${location.origin}/forgot khi quên mật khẩu. Mã chỉ dùng được một lần.\n`;
   document.getElementById("slip-copy").onclick = async () => {
     try {

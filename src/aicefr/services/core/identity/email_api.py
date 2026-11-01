@@ -201,7 +201,7 @@ def unsubscribe(t: str = Query(default="", max_length=200)) -> HTMLResponse:
     return HTMLResponse(
         '<!doctype html><html lang="vi"><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        "<title>Nhắc học qua email · AI Assessor CEFR</title>"
+        "<title>Nhắc học qua email · SpeakUp</title>"
         '<body style="font-family:Helvetica,Arial,sans-serif;max-width:520px;margin:48px auto;'
         f'padding:0 16px;line-height:1.5"><p>{escape(text)}</p>'
         '<p><a href="/account">Mở trang Tài khoản</a></p></body></html>'

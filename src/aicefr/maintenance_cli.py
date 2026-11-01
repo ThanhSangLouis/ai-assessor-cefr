@@ -102,7 +102,7 @@ def _restore(args: argparse.Namespace) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Bảo trì hệ thống AI Assessor CEFR")
+    ap = argparse.ArgumentParser(description="Bảo trì hệ thống SpeakUp")
     ap.add_argument(
         "--db",
         default=None,

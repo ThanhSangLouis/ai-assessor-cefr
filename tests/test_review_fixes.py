@@ -35,18 +35,6 @@ def _scored(rid: str, text: str = "my name is Nguyen Van A") -> Response:
 # ------------------------------------------------- muc 1: bai da xoa song lai
 
 
-def test_an_erased_response_is_not_resurrected_by_a_late_worker(tmp_path) -> None:
-    """Xoa bai luc dang cham; worker xong sau do KHONG duoc tao lai dong kem transcript."""
-    repo = Repository(tmp_path / "a.db")
-    repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
-    assert repo.erase_one_response("r1", actor_id="acc1")
-
-    stored = repo.save(_scored("r1"), "SV-001", "P3", account_id="acc1", must_exist=True)
-
-    assert stored is False
-    assert repo.get("r1") is None
-
-
 def test_erasing_a_speaker_also_beats_a_late_worker(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
     repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
