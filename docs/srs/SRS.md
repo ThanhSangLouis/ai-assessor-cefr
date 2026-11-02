@@ -39,6 +39,7 @@
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
 | **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt; D079: FR-92..FR-94 (mã qua email khi quên mật khẩu, xác minh email, nhắc học qua email), UC-35 | D078, D079 (APPROVED) |
 | **1.17** | **01/11/2026** | **D079..D085.** Email: mã quên mật khẩu, xác minh email, nhắc học (FR-92..FR-94). D080 tên hiển thị SpeakUp. D081 gỡ mã khôi phục: quên mật khẩu bằng mã qua email, email tắt thì nhờ quản trị viên. D082 việc duyệt tách thành `ReviewSession`. D083 gỡ bài luyện theo nhiệm vụ: gạch AC-40.2, 40.4, 41.1, 41.4, 42.3, 43.1, 44.1, 44.3, FR-42, FR-44; ngân hàng bài và luật đo mục tiêu ở lại cho bài học. D084 đơn nạp lượt tách `Order` và `Payment`. D085 `LessonPath.builtIn` thay `sample`. |
+| **1.18** | **02/11/2026** | **D086.** +1 FR: FR-95 thông báo trực tiếp qua Server-Sent Events: học viên biết bài đã chấm xong và đã được duyệt, hàng chờ duyệt tự cập nhật. FR-92 bỏ câu còn nhắc mã khôi phục (đã gỡ ở D081). | D086 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1544,7 +1545,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-92 — Đặt lại mật khẩu bằng mã gửi qua email (D079)
 
-**Mô tả:** Người quên mật khẩu nhập email; nếu email có tài khoản, hệ thống gửi một mã 6 số dùng được 10 phút, tối đa 5 lần thử, mỗi phút gửi được một mã. Câu trả lời giống nhau dù email có tài khoản hay không. Đặt mật khẩu mới bằng mã thì đăng nhập, kết thúc mọi phiên khác và đánh dấu email đã xác minh. Mã khôi phục (D065) vẫn là đường dự phòng; khi hệ thống chưa bật gửi email, chỉ còn đường đó.
+**Mô tả:** Người quên mật khẩu nhập email; nếu email có tài khoản, hệ thống gửi một mã 6 số dùng được 10 phút, tối đa 5 lần thử, mỗi phút gửi được một mã. Câu trả lời giống nhau dù email có tài khoản hay không. Đặt mật khẩu mới bằng mã thì đăng nhập, kết thúc mọi phiên khác và đánh dấu email đã xác minh. Khi hệ thống chưa bật gửi email, người quên mật khẩu nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (D081).
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1570,6 +1571,19 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | Acceptance Criteria |
 | --- |
 | **AC-94.1** — *Given* học viên đã xác minh email, đang có chuỗi 3 ngày và chưa luyện hôm nay, *When* tới giờ nhắc, *Then* nhận đúng một thư; trước giờ, khi đã luyện, khi không có lý do hoặc lần chạy thứ hai trong ngày thì không có thư; liên kết trong thư tắt được nhắc và liên kết giả bị từ chối (`test_the_daily_reminder_goes_once_to_who_needs_it_and_stops_on_request`). |
+
+### FR-95 — Thông báo trực tiếp (D086)
+
+**Mô tả:** Người đã đăng nhập nhận thông báo ngay khi việc mình đang chờ xảy ra, không phải tải lại trang: học viên biết bài nói đã chấm xong (hoặc cần giảng viên xác nhận, hoặc không xử lý được) và biết khi giảng viên đã duyệt; giảng viên và quản trị viên thấy hàng chờ duyệt tự cập nhật khi có bài mới, có người giữ hay nhả bài, hay bài đã được quyết định. Thông báo chỉ mang mã bài và trạng thái; nội dung vẫn đọc qua API với quyền xem như cũ (D071). Mất kết nối thì mọi trang vẫn chạy như trước.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-95.1** — *Given* học viên vừa nộp bài, *When* bài chấm xong, *Then* chỉ học viên đó nhận một sự kiện mang mã bài và trạng thái; bài cần giảng viên xác nhận thì hàng chờ của người duyệt cũng được báo (`test_a_scored_response_tells_its_owner_by_id_only`). |
+| **AC-95.2** — *Given* giảng viên mở một bài trong hàng chờ, *When* giữ khoá rồi đóng hoặc quyết định bài, *Then* giảng viên các lớp có học viên đó và quản trị viên được báo hàng chờ đổi, học viên được báo bài đã duyệt (`test_locking_and_deciding_tell_the_reviewers_and_the_student`). |
+| **AC-95.3** — *Given* một tab đã đăng nhập, *When* mở luồng sự kiện, *Then* nhận sự kiện của chính tài khoản mình và không của ai khác, luồng tự đóng sau thời hạn đặt sẵn; chưa đăng nhập thì bị từ chối (`test_a_signed_in_tab_receives_its_own_events_on_the_stream`). |
+| **AC-95.4** — *Given* gateway, *When* trình duyệt mở luồng sự kiện, *Then* yêu cầu được xác thực như mọi API và đi thẳng tới `core` không qua bộ đệm (`test_the_gateway_streams_the_events_to_core_unbuffered`). |
+| **AC-95.5** — *Given* kênh sự kiện hỏng, *When* một việc cần báo vừa xong, *Then* việc đó vẫn thành công, không báo lỗi cho người làm (`test_publishing_never_raises_and_an_event_for_nobody_is_not_sent`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

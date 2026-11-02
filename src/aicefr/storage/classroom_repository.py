@@ -130,6 +130,11 @@ class ClassroomRepository(MongoStore):
         rows = self.col("classroom").find({"teacher_ids": teacher_id}, {"members": 1})
         return {m for r in rows for m in r.get("members", [])}
 
+    def teachers_of(self, student_id: str) -> set[str]:
+        """Every teacher of every class the student is a member of (D086)."""
+        rows = self.col("classroom").find({"members": student_id}, {"teacher_ids": 1})
+        return {t for r in rows for t in r.get("teacher_ids", [])}
+
     # ------------------------------------------------------------ members
 
     def add_member(self, class_id: str, account_id: str) -> bool:

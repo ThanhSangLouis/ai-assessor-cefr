@@ -245,6 +245,11 @@ class Settings:
     # "inline" runs events, work and calls in this process; a redis:// URL
     # sends them through Redis: BullMQ for work, Streams for events (D050).
     bus_url: str = field(default_factory=lambda: os.getenv("AICEFR_BUS", "inline"))
+    # D086: a live stream (SSE) ends after this many seconds and the browser
+    # reconnects through the gateway, so a session ended meanwhile is noticed;
+    # a comment every heartbeat keeps proxies from closing it while idle.
+    live_max_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_MAX_SECONDS", 900.0))
+    live_heartbeat_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_HEARTBEAT", 20.0))
     # The key internal calls and the gateway's account header carry. Must be
     # the same long random string on every service of a deployment.
     internal_token: str = field(default_factory=lambda: os.getenv("AICEFR_INTERNAL_TOKEN", ""))

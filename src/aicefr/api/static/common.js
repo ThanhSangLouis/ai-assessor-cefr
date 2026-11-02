@@ -88,6 +88,14 @@ window.toast = function (message, kind = "info", options = {}) {
   const body = document.createElement("div");
   body.className = "toast-body";
   body.textContent = message;
+  // A way on from the message, e.g. "Xem kết quả" after a live event (D086).
+  if (options.link) {
+    const a = document.createElement("a");
+    a.className = "toast-link";
+    a.href = options.link.href;
+    a.textContent = options.link.label;
+    body.append(" ", a);
+  }
   el.appendChild(body);
 
   const close = document.createElement("button");
@@ -469,7 +477,8 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
     });
   };
   window.ui.setBadge = setBadge;
-  if (document.querySelector(".nav-badge[data-badge]")) {
+  const refreshBadges = () => {
+    if (!document.querySelector(".nav-badge[data-badge]")) return;
     fetch("/api/v1/me/badges")
       .then((r) => (r.ok ? r.json() : null))
       .then((counts) => {
@@ -480,6 +489,66 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
       })
       // A badge is a convenience; a failed count must not disturb the page.
       .catch(() => {});
+  };
+  window.ui.refreshBadges = refreshBadges;
+  refreshBadges();
+}
+
+// ---------------------------------------------------------------- live events
+// D086: one stream per signed-in tab tells the page when something it waits
+// for has happened. Each event is re-sent on `document` as "live:<kind>" so a
+// page can take it first (the progress page of that very response calls
+// preventDefault); what is left becomes a toast here. Nothing depends on the
+// stream: without it, pages keep asking the server as they did before.
+// `window.ui.live.connected` tells a page it may ask less often.
+{
+  window.ui.live = { connected: false };
+  const LIVE_TOASTS = {
+    "response.finished": (d) => {
+      const link = { href: `/report/${encodeURIComponent(d.response_id)}`, label: "Xem kết quả" };
+      if (d.status === "FAILED" || d.status === "REJECTED") {
+        return ["Bài nói của bạn không xử lý được.", "warn", link];
+      }
+      if (d.status === "REVIEW_REQUIRED") {
+        return ["Bài nói đã có điểm tạm, đang chờ giảng viên xác nhận.", "info", link];
+      }
+      return ["Bài nói của bạn đã chấm xong.", "ok", link];
+    },
+    "review.done": (d) => [
+      "Giảng viên đã duyệt bài nói của bạn.",
+      "ok",
+      { href: `/report/${encodeURIComponent(d.response_id)}`, label: "Xem nhận xét" },
+    ],
+  };
+  const KINDS = ["response.finished", "review.done", "queue.changed"];
+  if (document.body.classList.contains("has-sidebar") && "EventSource" in window) {
+    // The browser reconnects by itself when the stream ends (every few minutes,
+    // on purpose) or the network drops; a refused stream (401, 429) stays shut.
+    const source = new EventSource("/api/v1/me/events");
+    source.addEventListener("ready", () => {
+      window.ui.live.connected = true;
+    });
+    source.addEventListener("error", () => {
+      window.ui.live.connected = false;
+    });
+    KINDS.forEach((kind) => {
+      source.addEventListener(kind, (e) => {
+        let data = {};
+        try {
+          data = JSON.parse(e.data) || {};
+        } catch (err) {
+          return;
+        }
+        const heard = new CustomEvent(`live:${kind}`, { detail: data, cancelable: true });
+        document.dispatchEvent(heard);
+        window.ui.refreshBadges();
+        const says = LIVE_TOASTS[kind];
+        if (says && !heard.defaultPrevented) {
+          const [message, tone, link] = says(data);
+          window.toast(message, tone, { link });
+        }
+      });
+    });
   }
 }
 

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from aicefr.api.deps import STAFF_ONLY
 from aicefr.api.schemas import QueueItem, ReviewClose, ReviewDecision
 from aicefr.contracts import ResponseStatus, Review
+from aicefr.services.core.assessment import live_api
 from aicefr.services.core.assessment.context import (
     in_view,
     students_in_view,
@@ -57,6 +58,7 @@ def lock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
     if not granted:
         raise HTTPException(409, f"bài đang được {holder} xem")
     repo.open_review_session(response_id, account.account_id)  # D041: when review began
+    live_api.queue_changed(repo.owner_of(response_id))  # D086: "đang được duyệt"
     return {"status": "ok"}
 
 
@@ -67,6 +69,7 @@ def unlock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
     # D041: leaving without a decision ends the session; coming back starts a
     # new one, so a decision is timed from when the teacher came back to it.
     repo.close_review_session(response_id, account.account_id, "released")
+    live_api.queue_changed(repo.owner_of(response_id))
     return {"status": "ok"}
 
 
@@ -103,6 +106,7 @@ def submit_review(
         raise HTTPException(404, "không tìm thấy bài")
     repo.close_review_session(response_id, account.account_id, "decision")
     repo.unlock_response(response_id, account.account_id)
+    live_api.review_done(response_id)
     return JSONResponse(out.model_dump(mode="json"))
 
 
@@ -124,6 +128,7 @@ def close_review(
         raise HTTPException(404, "không tìm thấy bài")
     repo.close_review_session(response_id, account.account_id, "closed")
     repo.unlock_response(response_id, account.account_id)
+    live_api.review_done(response_id)
     return JSONResponse(out.model_dump(mode="json"))
 
 
