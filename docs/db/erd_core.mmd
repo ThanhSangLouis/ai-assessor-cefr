@@ -1,10 +1,11 @@
-%% ERD - các collection sau D060, D075, D078, D081..D085 (lược đồ phiên bản 16): một aggregate root
+%% ERD - các collection sau D060, D075, D078, D081..D085, D088 (lược đồ phiên bản 17): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
 %% account_id, không có khoá ngoại do kho ép. Chỉ ghi khoá và vài trường chính.
 erDiagram
     account ||--o{ session : "đăng nhập"
+    account ||--o{ push_subscription : "nhận thông báo (D088)"
     account ||--o{ response : "nộp"
     account ||--o{ classroom : "dạy, học"
     account ||..o{ attempt : "luyện"
@@ -38,6 +39,10 @@ erDiagram
         string token_hash PK
         string account_id
         string expires_at
+    }
+    push_subscription {
+        string endpoint PK
+        string account_id
     }
     task {
         string task_id PK

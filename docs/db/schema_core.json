@@ -258,6 +258,22 @@
       "unique": true
     }
   ],
+  "push_subscription": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_endpoint",
+      "keys": [
+        "endpoint"
+      ],
+      "unique": true
+    }
+  ],
   "response": [
     {
       "name": "i_account_id_created_at",

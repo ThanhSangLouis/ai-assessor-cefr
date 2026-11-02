@@ -40,7 +40,11 @@ SLIP_CODE = re.compile(r"^[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}-[a-hj-km-np-
 
 def fresh_context(browser, live_server):
     """A second person at another computer: separate cookies."""
-    ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
+    ctx = browser.new_context(
+        base_url=live_server.base_url,
+        locale="vi-VN",
+        service_workers="block",  # D088
+    )
     ctx.grant_permissions(["microphone"], origin=live_server.base_url)
     ctx.set_default_timeout(15_000)
     return ctx

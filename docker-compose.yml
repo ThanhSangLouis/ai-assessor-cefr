@@ -48,6 +48,11 @@ x-env: &env
   AICEFR_RESEND_API_KEY: ${AICEFR_RESEND_API_KEY:-}
   AICEFR_EMAIL_FROM: ${AICEFR_EMAIL_FROM:-}
   AICEFR_REMINDER_HOUR: ${AICEFR_REMINDER_HOUR:-19}
+  # D088: Web Push to the learner's devices; off until the key pair is set
+  # (python -m aicefr.maintenance_cli vapid).
+  AICEFR_VAPID_PUBLIC_KEY: ${AICEFR_VAPID_PUBLIC_KEY:-}
+  AICEFR_VAPID_PRIVATE_KEY: ${AICEFR_VAPID_PRIVATE_KEY:-}
+  AICEFR_VAPID_SUBJECT: ${AICEFR_VAPID_SUBJECT:-mailto:no-reply@speakup.fit}
   AICEFR_OPENROUTER_API_KEY: ${AICEFR_OPENROUTER_API_KEY:-}
   AICEFR_ANTHROPIC_API_KEY: ${AICEFR_ANTHROPIC_API_KEY:-}
   # D049/D057: the metered channel (runs and IDPoint, NetID). Off unless set;

@@ -256,6 +256,8 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
             s.classrooms.forget_account(who["account_id"])
         if s.replays is not None:
             s.replays.forget_account(who["account_id"])
+        if s.push is not None:  # D088: the browsers that took their notifications
+            s.push.store.forget_account(who["account_id"])
     result["cutoff_note"] = (
         "Đã xóa bản ghi và báo cáo. Dữ liệu đã dùng để huấn luyện các mô hình phát hành "
         "trước thời điểm này KHÔNG bị gỡ khỏi mô hình đó; việc gỡ chỉ áp dụng cho các "

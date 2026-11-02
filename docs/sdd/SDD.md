@@ -1069,9 +1069,11 @@ File: `docs/sdd/diagrams/05c_erd_identity.mmd`
 ```mermaid
 %% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
 %% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
-%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han.
+%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han; trinh
+%% duyet nhan thong bao day (D088) cung rieng, mot tai khoan nhieu trinh duyet.
 erDiagram
     account ||--o{ session : "đăng nhập · account_id"
+    account ||--o{ push_subscription : "nhận thông báo · account_id"
 
     account {
         string account_id PK
@@ -1101,6 +1103,14 @@ erDiagram
         string expires_at
         string device
         string method "password · google"
+    }
+
+    push_subscription {
+        string endpoint PK "địa chỉ của dịch vụ push của trình duyệt (D088)"
+        string account_id
+        string p256dh "khoá công khai của trình duyệt"
+        string auth "bí mật xác thực của trình duyệt"
+        string created_at
     }
 ```
 
@@ -1989,6 +1999,7 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 - *Con số việc đang chờ (FR-53).* `GET /api/v1/me/badges` trả cho sinh viên số bài có quyết định của giảng viên sau mốc `seen_marker(account_id, 'results')` (`count_reviewed_since`, chỉ bài đánh giá) và số mục ôn đến hạn hôm nay (`lessons_api.reviews_due`); cho giảng viên và quản trị viên, số bài đánh giá đang chờ duyệt (`count_waiting_review`) và số phiếu chấm mù chưa nộp trong đợt đang mở (`ratings_open`, nối tới `RatingRepository.open_count` ở D030). Mở "Bài của tôi" gọi `POST /api/v1/me/badges/results/seen`, ghi đè mốc bằng `INSERT … ON CONFLICT … DO UPDATE`. Đây chỉ là con số trên thanh điều khiển; không gửi thư, không gửi gì ra ngoài. Test: `test_a_teacher_decision_is_new_until_the_student_opens_their_list`, `test_a_teacher_sees_how_many_responses_wait_for_review`.
 - *Thông báo trực tiếp (FR-95, D086).* Mỗi tab đã đăng nhập mở một `EventSource` tới `GET /api/v1/me/events` ở `core` (`services/core/assessment/live_api.py`). `platform/live.py` giữ các luồng của tiến trình (`LiveHub`, mỗi luồng một hàng đợi 64 khung, mỗi tài khoản tối đa 8 luồng) và kênh chuyển sự kiện tới mọi tiến trình: Redis pub/sub (`aicefr:live`) cạnh bus Redis, trong tiến trình khi bus là `inline`. `scoring.on_scoring` và `sweep_overdue` báo `response.finished` cho chủ bài; khoá, nhả khoá, quyết định và đóng bài trong `review_api` báo `queue.changed` cho giảng viên các lớp có học viên đó (`ClassroomRepository.teachers_of`) và vai trò quản trị viên; quyết định và đóng bài báo thêm `review.done` cho chủ bài. Sự kiện không mang điểm hay tên: trang nhận sự kiện gọi lại API thường nên quyền xem D071 giữ nguyên. Luồng tự đóng sau `AICEFR_LIVE_MAX_SECONDS` (900 giây) để phiên đã kết thúc không còn nhận gì, gửi chú thích `: ping` mỗi `AICEFR_LIVE_HEARTBEAT` (20 giây), và đóng ngay khi tiến trình nhận SIGTERM. Gateway có riêng `location = /api/v1/me/events` tắt đệm, chờ đọc 1 giờ. Mọi việc ở đây là cố gắng hết sức (`Live.notify` không bao giờ ném lỗi); không có luồng thì trang chờ chấm vẫn hỏi trạng thái 2 giây một lần, hàng chờ vẫn có nút Tải lại. Test: `tests/test_d086_live_unit.py`, `tests/test_d086_live_events.py` (TEST_PLAN_D086).
+- *Cài như ứng dụng và thông báo đẩy (FR-96, D088).* Dịch vụ web phục vụ `/manifest.webmanifest` và `/sw.js` từ gốc trang (`Service-Worker-Allowed: /`, không lưu đệm); mọi trang gắn manifest. Service worker (`static/sw.js`) chỉ làm ba việc: trả trang báo mất kết nối khi mở trang lúc mất mạng (không lưu đệm trang hay API), biến thông báo đẩy thành thông báo của hệ điều hành, và mở đúng báo cáo khi bấm vào (chỉ đường dẫn cùng trang). `push_api.py` lưu đăng ký của trình duyệt vào `push_subscription` (`PushRepository`), chỉ nhận `endpoint` trên dịch vụ push của trình duyệt (`PUSH_HOSTS`, HTTPS cổng 443) và khoá đúng dạng (điểm P-256 65 byte, bí mật 16 byte). `live_api.response_finished` và `review_done` gọi `push_api.tell_device`, chỉ gửi khi tài khoản không mở luồng D086 nào trong tiến trình. `notify/push.py` (`PushSender`) ký VAPID và mã hoá aes128gcm bằng `pywebpush` trên hai luồng riêng, TTL 24 giờ; trả lời 404/410 thì xoá đăng ký. Trang Tài khoản (chỉ học viên) có công tắc; đăng xuất gỡ đăng ký của trình duyệt. Test: `tests/test_d088_push_unit.py`, `tests/test_d088_push.py` (TEST_PLAN_D088).
 - *Trang band (FR-54).* `GET /bands`, mở cho cả khách, dựng từ `src/aicefr/report/bands.py`: mỗi mặt nói mang một trong ba nhãn `Provenance` — máy đo gián tiếp, máy không đo, không đánh giá (Tương tác) — và hai ngưỡng band đọc từ `band_thresholds` của mô hình đang kích hoạt, đúng con số mà `to_band` dùng. Mô tả band là bản diễn đạt lại, chờ giảng viên Ngoại ngữ duyệt. Test: `test_the_band_page_labels_what_the_machine_does_not_measure`.
 - *Chuẩn bị 30 giây (FR-55).* `PREP_SECONDS = 30` trong `main.py` đi vào thuộc tính `data-prep-seconds` của biểu mẫu nộp bài; đồng hồ chạy trong `static/submit.js`, hết giờ thì gọi `startNow()` của `static/recorder.js` để bắt đầu ghi âm; bấm ghi âm, "Nói ngay" hay "Huỷ" lúc nào cũng được. Máy chủ không đổi gì ngoài con số đó. Test: `test_the_submit_page_offers_thirty_seconds_of_preparation`.
 
@@ -2554,6 +2565,10 @@ Bảng gồm **28 endpoint** thiết kế, vượt yêu cầu tối thiểu 10; 
 | GET | `/api/v1/me/badges` | Con số việc đang chờ theo vai trò | 401 | D028; con số phiếu chấm mù từ D030 |
 | POST | `/api/v1/me/badges/{marker}/seen` | Đặt mốc "đã xem"; `marker` chỉ nhận `results` | 422 | D028 |
 | GET | `/api/v1/me/events` | Luồng sự kiện trực tiếp (`text/event-stream`): `response.finished`, `review.done`, `queue.changed`, chỉ mang mã bài và trạng thái | 401, 429 | D086 |
+| GET | `/api/v1/me/push` | Máy chủ có bật thông báo đẩy không, và khoá công khai VAPID để trình duyệt đăng ký | 401 | D088 |
+| PUT | `/api/v1/me/push` | Lưu đăng ký của trình duyệt (`endpoint`, `keys.p256dh`, `keys.auth`); chỉ nhận dịch vụ push của trình duyệt | 401, 422, 503 | D088 |
+| DELETE | `/api/v1/me/push` | Xoá đăng ký của trình duyệt này (`endpoint`) | 401 | D088 |
+| GET | `/manifest.webmanifest`, `/sw.js` | Manifest ứng dụng và service worker, phục vụ từ gốc trang | — | D088 |
 
 Hai đường dẫn cũ đổi hành vi. `POST /api/v1/auth/login` nay trả thêm `must_change_password`, trả `home = /account?first=1` cho tài khoản dùng mật khẩu tạm, ghi `auth.login` hoặc `auth.login_failed` cho bút danh có thật, và ghi tên thiết bị thô vào phiên mới. Trang `/login` có nút Google khi tính năng được bật.
 
