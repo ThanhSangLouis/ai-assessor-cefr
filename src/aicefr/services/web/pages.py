@@ -176,6 +176,7 @@ def _signed_out_page(request: Request, account: Account | None, template: str):
             "min_length": passwords.MIN_LENGTH,
             "google_enabled": settings.google_enabled,
             "google_signup": settings.google_signup,
+            "google_missing_hint": not settings.is_production,
             # D079: a forgotten password by a code sent to the email, when email is on.
             "email_on": sender_from(settings) is not None,
         },

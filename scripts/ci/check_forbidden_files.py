@@ -30,9 +30,11 @@ ALLOWED = [
     ".env.example",
     ".env.production.example",
     # Synthetic (text-to-speech) clips for the landing demo, no learner voice.
+    "demo_a1.mp3",
     "demo_a2.mp3",
     "demo_b1.mp3",
     "demo_b2.mp3",
+    "demo_c1.mp3",
 ]
 
 

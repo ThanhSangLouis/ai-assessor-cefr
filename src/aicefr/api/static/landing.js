@@ -609,3 +609,118 @@
     renderLevel("b1");
   }
 })();
+
+// ---------------------------------------------------------------- Header Nav Active Tracking & Scrollspy
+(() => {
+  "use strict";
+
+  const nav = document.querySelector(".site-header .site-nav");
+  if (!nav) return;
+
+  const links = Array.from(nav.querySelectorAll("a"));
+  if (!links.length) return;
+
+  const linkIntro = links.find((a) => {
+    const h = a.getAttribute("href") || "";
+    return h === "/" || h === "" || a.textContent.includes("Giới thiệu");
+  });
+  const linkHow = links.find((a) => (a.getAttribute("href") || "").includes("how-it-works"));
+  const linkTeachers = links.find((a) => (a.getAttribute("href") || "").includes("for-teachers"));
+
+  const setActiveNav = (name) => {
+    for (const a of links) {
+      if ((a.getAttribute("href") || "") === "/bands") continue;
+      a.removeAttribute("aria-current");
+    }
+    if (name === "intro" && linkIntro) {
+      linkIntro.setAttribute("aria-current", "page");
+    } else if (name === "how-it-works" && linkHow) {
+      linkHow.setAttribute("aria-current", "page");
+    } else if (name === "for-teachers" && linkTeachers) {
+      linkTeachers.setAttribute("aria-current", "page");
+    }
+  };
+
+  let isClickScrolling = false;
+  let clickTimeout = null;
+
+  const scrollToTarget = (targetEl, name) => {
+    isClickScrolling = true;
+    clearTimeout(clickTimeout);
+    setActiveNav(name);
+
+    if (name === "intro") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (targetEl) {
+      const headerOffset = 76;
+      const targetY = targetEl.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: "smooth" });
+    }
+
+    clickTimeout = setTimeout(() => {
+      isClickScrolling = false;
+    }, 850);
+  };
+
+  if (linkIntro) {
+    linkIntro.addEventListener("click", (e) => {
+      if (window.location.pathname === "/" || window.location.pathname === "") {
+        e.preventDefault();
+        history.pushState(null, "", window.location.pathname);
+        scrollToTarget(null, "intro");
+      }
+    });
+  }
+
+  if (linkHow) {
+    linkHow.addEventListener("click", (e) => {
+      if (window.location.pathname === "/" || window.location.pathname === "") {
+        e.preventDefault();
+        const target = document.getElementById("how-it-works");
+        history.pushState(null, "", "#how-it-works");
+        scrollToTarget(target, "how-it-works");
+      }
+    });
+  }
+
+  if (linkTeachers) {
+    linkTeachers.addEventListener("click", (e) => {
+      if (window.location.pathname === "/" || window.location.pathname === "") {
+        e.preventDefault();
+        const target = document.getElementById("for-teachers");
+        history.pushState(null, "", "#for-teachers");
+        scrollToTarget(target, "for-teachers");
+      }
+    });
+  }
+
+  // Scrollspy tracking
+  const onScroll = () => {
+    if (isClickScrolling) return;
+
+    const howSection = document.getElementById("how-it-works");
+    const teacherSection = document.getElementById("for-teachers");
+
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const triggerOffset = 180;
+
+    if (teacherSection && scrollY + triggerOffset >= teacherSection.offsetTop) {
+      setActiveNav("for-teachers");
+    } else if (howSection && scrollY + triggerOffset >= howSection.offsetTop) {
+      setActiveNav("how-it-works");
+    } else {
+      setActiveNav("intro");
+    }
+  };
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  // Initial check based on current hash
+  if (window.location.hash === "#for-teachers") {
+    setActiveNav("for-teachers");
+  } else if (window.location.hash === "#how-it-works") {
+    setActiveNav("how-it-works");
+  } else {
+    setActiveNav("intro");
+  }
+})();

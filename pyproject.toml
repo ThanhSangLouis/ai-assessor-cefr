@@ -87,6 +87,7 @@ aicefr = [
   "api/static/*.svg",
   # The ground's art (D037), drawn by tools/make_art.py.
   "api/static/art/*.svg",
+  "api/static/art/*.png",
   # Roboto, served by the app itself (D031), and its licence.
   "api/static/fonts/*.woff2",
   "api/static/fonts/*.txt",
