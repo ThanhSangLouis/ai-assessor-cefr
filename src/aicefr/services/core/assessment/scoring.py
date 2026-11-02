@@ -24,7 +24,7 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
-from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus, TaskPurpose
+from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus
 from aicefr.services.core.assessment.context import active_model_name, active_qc, svc
 from aicefr.storage.task_repository import Task, task_message
 
@@ -49,9 +49,9 @@ def dispatch(request: ProcessingRequest, audio_key: str, task: Task, account_id:
             "speaker_id": request.speaker_id,
             "task_id": request.task_id,
             "account_id": account_id,
-            # D050: with Redis, an assessment is scored before a practice
-            # attempt waiting in the same queue (BullMQ: lower runs first).
-            "priority": 5 if task.is_practice else 1,
+            # D050: BullMQ runs a lower priority first; every recording is an
+            # assessment since D083, so they share one.
+            "priority": 1,
             # D051: for the time the job waits in the queue.
             "enqueued_at": time.time(),
         },
@@ -62,9 +62,9 @@ def settle_charge(rid: str) -> None:
     """Tell the metering service how a response ended (D049): a result is charged
     for what the recording lasted, anything else releases the hold.
 
-    A result is a score or an estimate waiting for a teacher, or a practice
-    attempt's outcome. Never raises: a charge that could not be settled is
-    released by the metering sweep, and the person's result must not wait on it.
+    A result is a score or an estimate waiting for a teacher. Never raises: a
+    charge that could not be settled is released by the metering sweep, and the
+    person's result must not wait on it.
     """
     s = svc()
     metering = getattr(s.peers, "metering", None)
@@ -72,20 +72,18 @@ def settle_charge(rid: str) -> None:
         return
     try:
         report = s.repo.get(rid)
-        status = s.repo.status_of(rid)
-        if report is None or status is None:
+        if report is None:
             return
-        result = report.status in (ResponseStatus.COMPLETED, ResponseStatus.REVIEW_REQUIRED) and (
-            report.assessment is not None or report.practice is not None
+        result = (
+            report.status in (ResponseStatus.COMPLETED, ResponseStatus.REVIEW_REQUIRED)
+            and report.assessment is not None
         )
         seconds = report.qc.duration_ms / 1000 if report.qc else None
-        # The ledger keeps the purpose (D060); a response older than purposes was an assessment.
-        action = status.get("purpose") or TaskPurpose.ASSESSMENT.value
         # D057: the tokens the recogniser used, counted by it where it can.
         asr = report.asr
         metering.settle(
             key=rid,
-            action=action,
+            action="assessment",
             result=result,
             seconds=seconds,
             output_tokens=asr.output_tokens if asr else None,

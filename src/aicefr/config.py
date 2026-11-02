@@ -37,7 +37,7 @@ def _temperature(name: str) -> float | None:
 
 
 def _names(name: str, default: str) -> tuple[str, ...]:
-    """A comma-separated list, lower-cased, blanks dropped: "Stripe, vnpay" -> (stripe, vnpay)."""
+    """A comma-separated list, lower-cased, blanks dropped: "Stripe, x" -> (stripe, x)."""
     # Set but empty (a blank line in .env) means the same as not set.
     raw = (os.getenv(name) or "").strip() or default
     return tuple(n.strip().lower() for n in raw.split(",") if n.strip())
@@ -134,30 +134,66 @@ class Settings:
     # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
     # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
     google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
+    # D065: a student opens an account with a password from /signup; a
+    # forgotten one is replaced with a code sent by email from /forgot (D079).
+    # Off: accounts come from an administrator (or Google, above) only.
+    self_signup: bool = field(default_factory=lambda: _flag("AICEFR_SELF_SIGNUP", True))
+    # D069: who writes the learner's answer one band higher -- off, groq,
+    # gemini, openrouter or anthropic (aicefr.coach.providers) -- an optional
+    # model name over the provider's default, and how many new upgrades one
+    # student may ask for a day, which keeps a free tier within its limits.
+    coach_provider: str = field(
+        default_factory=lambda: os.getenv("AICEFR_COACH_PROVIDER", "off").strip().lower()
+    )
+    coach_model: str = field(default_factory=lambda: os.getenv("AICEFR_COACH_MODEL", "").strip())
+    coach_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_DAILY", 5))
+    # D072: requests to the provider for everyone together in the provider's
+    # day (aicefr.coach.usage), failures and retries included, under its free
+    # daily quota (Gemini 3.5 Flash-Lite: 500).
+    coach_global_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_GLOBAL_DAILY", 475))
+    # On a paid tier: a daily budget in USD replaces the request cap when set,
+    # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
+    # prices by default; output includes thinking tokens).
+    coach_budget_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_DAILY_BUDGET_USD", 0.0)
+    )
+    coach_price_input_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_PRICE_INPUT_USD", 0.30)
+    )
+    coach_price_output_usd: float = field(
+        default_factory=lambda: _float("AICEFR_COACH_PRICE_OUTPUT_USD", 2.50)
+    )
     # The address people reach this instance at, e.g. https://cefr.example.edu.vn.
     # Builds the Google redirect URI behind a proxy; unset, the request's own
     # address is used, which is right for localhost.
     public_url: str | None = field(default_factory=lambda: os.getenv("AICEFR_PUBLIC_URL") or None)
 
-    # --- service plans and payment (D033) ---
-    # Off by default: a deployment that runs the thesis' data collection must
-    # never meet a limit (BR-30), and an existing deployment keeps behaving as
-    # before until it opts in.
+    # --- email (D079) ---
+    # `resend` sends through Resend from a verified domain; `outbox` keeps the
+    # messages in memory (tests, a machine without a key); `off` sends nothing.
+    email_provider: str = field(
+        default_factory=lambda: os.getenv("AICEFR_EMAIL_PROVIDER", "off").strip().lower()
+    )
+    resend_api_key: str = field(default_factory=lambda: os.getenv("AICEFR_RESEND_API_KEY", ""))
+    # e.g. "SpeakUp <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
+    email_from: str = field(default_factory=lambda: os.getenv("AICEFR_EMAIL_FROM", ""))
+    # When the daily study reminder goes out, Vietnam time (hour 0-23); -1 is off.
+    reminder_hour: int = field(
+        default_factory=lambda: int(os.getenv("AICEFR_REMINDER_HOUR", "19") or 19)
+    )
+
+    # --- payments (D035, D075) ---
+    # The payment gateways that sell run packs. Off by default: nothing is
+    # sold until a deployment opts in. No service plans any more (D075).
     billing_enabled: bool = field(default_factory=lambda: _flag("AICEFR_BILLING"))
-    # The gateways offered, in the order the administrator sees them (D035):
-    # "sandbox", a payment page inside the app where no money moves; "vnpay",
-    # "stripe", "momo", each with the keys below. Every gateway defaults to its
-    # own test environment; see aicefr.billing.registry for the rules.
+    # The gateways offered, in the order the buyer sees them (D035, D075):
+    # "stripe" with the keys below, and "sandbox", a payment page inside the
+    # app where no money moves. See aicefr.billing.registry for the rules.
     payment_gateways: tuple[str, ...] = field(
         default_factory=lambda: _names("AICEFR_PAYMENT_GATEWAYS", "sandbox")
     )
     # A gateway that moves real money runs only with this on.
     payments_live: bool = field(default_factory=lambda: _flag("AICEFR_PAYMENTS_LIVE"))
-    vnpay_tmn_code: str = field(default_factory=lambda: os.getenv("AICEFR_VNPAY_TMN_CODE", ""))
-    vnpay_hash_secret: str = field(
-        default_factory=lambda: os.getenv("AICEFR_VNPAY_HASH_SECRET", "")
-    )
-    vnpay_url: str | None = field(default_factory=lambda: os.getenv("AICEFR_VNPAY_URL") or None)
     # Stripe: the secret key (sk_test_... for test mode) and the signing secret
     # of the webhook endpoint (whsec_...), from Stripe's dashboard or
     # `stripe listen`.
@@ -167,30 +203,6 @@ class Settings:
     stripe_webhook_secret: str = field(
         default_factory=lambda: os.getenv("AICEFR_STRIPE_WEBHOOK_SECRET", "").strip()
     )
-    # MoMo: what MoMo's business portal issues; the endpoint defaults to MoMo's
-    # test environment.
-    momo_partner_code: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_PARTNER_CODE", "").strip()
-    )
-    momo_access_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_ACCESS_KEY", "").strip()
-    )
-    momo_secret_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_SECRET_KEY", "").strip()
-    )
-    momo_endpoint: str | None = field(
-        default_factory=lambda: os.getenv("AICEFR_MOMO_ENDPOINT") or None
-    )
-    # Signs licence keys for contracts paid outside the system. Unset: keys
-    # cannot be installed.
-    license_secret: str = field(default_factory=lambda: os.getenv("AICEFR_LICENSE_SECRET", ""))
-    # Demonstration prices, dong per student per month: not a price list, which
-    # needs the measured costs of the proposal (DE_XUAT_GOI_DICH_VU.md, mục 3).
-    price_standard: int = field(default_factory=lambda: _int("AICEFR_PRICE_STANDARD", 10_000))
-    price_advanced: int = field(default_factory=lambda: _int("AICEFR_PRICE_ADVANCED", 15_000))
-    # The trial: every feature, for this many students and days, once.
-    trial_seats: int = field(default_factory=lambda: _int("AICEFR_TRIAL_SEATS", 50))
-    trial_days: int = field(default_factory=lambda: _int("AICEFR_TRIAL_DAYS", 30))
 
     # --- services (D043, D044) ---
     # Where the core service keeps its documents: a mongodb:// URL naming its
@@ -220,10 +232,11 @@ class Settings:
     price_extra_minute_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.7)
     )
-    price_practice_factor: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PRACTICE_FACTOR", 0.5)
-    )
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
+    # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
+    price_upgrade_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
+    )
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.
     credit_packs: tuple[tuple[int, int], ...] = field(

@@ -1,9 +1,9 @@
 """What every router of the assessment service shares (D043).
 
 The stores of this service, the bus, the other services' facades, and the few
-rules several routers apply: the blind-rating guard of D030, the QC thresholds
-and the scoring model in force, the measurement error of D042. Wired once when
-the service is built (`configure`), read through `svc()`.
+rules several routers apply: the QC thresholds and the scoring model in force,
+Wired once when the service is built
+(`configure`), read through `svc()`.
 """
 
 from __future__ import annotations
@@ -14,19 +14,15 @@ from pathlib import Path
 
 from fastapi import HTTPException
 
-from aicefr.api.deps import require_plan
-from aicefr.billing.plans import PlanFeature
 from aicefr.config import Settings
 from aicefr.platform.bus import MessageBus
 from aicefr.ports import BlobStore
 from aicefr.qc import audio_qc
 from aicefr.services import Peers
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.classroom_repository import ClassroomRepository
-from aicefr.storage.rating_repository import RatingRepository
 from aicefr.storage.replay_repository import ReplayRepository
 from aicefr.storage.repository import Repository
-from aicefr.storage.study_repository import StudyRepository
 from aicefr.storage.task_repository import TaskRepository
 
 CONFIG_VERSION = "v1"
@@ -36,7 +32,6 @@ PREP_SECONDS = 30
 
 ACTIVE_MODEL_KEY = "active_model"
 QC_CONFIG_KEY = "qc_thresholds"
-MEASUREMENT_ERROR_KEY = "measurement_error"
 
 # Only these may be changed at runtime, and each carries the range it must stay
 # inside. A threshold set to an impossible value does not fail loudly -- it
@@ -59,8 +54,6 @@ class Services:
     settings: Settings
     repo: Repository
     tasks: TaskRepository
-    ratings: RatingRepository
-    studies: StudyRepository
     blobs: BlobStore
     bus: MessageBus
     peers: Peers
@@ -86,37 +79,38 @@ def svc() -> Services:
     return _services
 
 
-def plan_allows(feature: PlanFeature) -> None:
-    """403 when the plan in force does not include `feature` (D034)."""
-    require_plan(svc().peers.billing, feature)
+# ================================================================= who sees whose work (D071)
 
 
-# ================================================================= blind rating (D030)
+def can_view(account: Account, owner_id: str | None) -> bool:
+    """Whether this account may read a response owned by `owner_id`.
 
-
-def blind(account: Account, response_id: str) -> None:
-    """Refuse a teacher the machine's view of a response they still have to rate blind (D030).
-
-    Seeing the machine's score first is exactly the anchoring the blind rating
-    exists to avoid; once the rating is submitted, the response opens again.
+    D071: an administrator reads every response; a teacher reads the work of
+    the members of the classes they teach, and nothing else -- a student in no
+    class is the administrator's to review; a student reads their own.
     """
-    if account.is_staff and svc().ratings.has_open(account.account_id, response_id):
-        raise HTTPException(
-            403,
-            "bài này đang trong đợt chấm mù của bạn: chấm xong ở trang Chấm mù rồi mới xem"
-            " được kết quả của máy",
-        )
+    if account.role is Role.ADMIN:
+        return True
+    if not owner_id:
+        return False
+    if account.role is Role.TEACHER:
+        rooms = svc().classrooms
+        return rooms is not None and rooms.teaches(account.account_id, owner_id)
+    return owner_id == account.account_id
 
 
-def saw(account: Account, response_id: str, via: str) -> None:
-    """Note that a teacher or administrator now has the machine's result in view (D030).
+def in_view(account: Account, response_id: str) -> None:
+    """404 unless `can_view`: someone else's response is not confirmed to exist."""
+    if not can_view(account, svc().repo.owner_of(response_id)):
+        raise HTTPException(404, "không tìm thấy bài này")
 
-    They are no longer blind to this response: they are not drawn to rate it
-    in a later batch, and a sheet of theirs that is still owed -- in a batch
-    closed for now -- stops taking a rating. Students are never raters.
-    """
-    if account.is_staff:
-        svc().ratings.saw_machine(account.account_id, response_id, via)
+
+def students_in_view(account: Account) -> set[str] | None:
+    """The owners whose work a staff account reviews; None for every owner (admin)."""
+    if account.role is Role.ADMIN:
+        return None
+    rooms = svc().classrooms
+    return rooms.students_of(account.account_id) if rooms is not None else set()
 
 
 # ================================================================= what is in force
@@ -140,12 +134,6 @@ def active_model_name() -> str:
 
     row = svc().repo.get_config(ACTIVE_MODEL_KEY)
     return row.value if row else DEFAULT_MODEL
-
-
-def measurement_error() -> dict | None:
-    """The SEM in force, with where it came from; None until an administrator sets one (D042)."""
-    row = svc().repo.get_config(MEASUREMENT_ERROR_KEY)
-    return json.loads(row.value) if row else None
 
 
 def scorable_duration(model: dict) -> dict:

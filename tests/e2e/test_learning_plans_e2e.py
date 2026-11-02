@@ -24,28 +24,11 @@ from test_lessons_e2e import (  # noqa: E402, F401  (fixtures are used by name)
 pytestmark = pytest.mark.e2e
 
 
-def test_a_learner_composes_a_path_and_sets_it_aside(student):
-    plan = student.locator("#my-plan")
-    expect(plan).to_be_visible()
-    expect(plan).to_contain_text("Bạn chưa có lộ trình riêng")
-    plan.get_by_label("Muốn luyện gì?").fill("du lịch, tập trung trôi chảy")
-    plan.get_by_label("Âm cuối", exact=True).check()
-    plan.get_by_role("button", name="Ghép lộ trình").click()
-
-    expect(plan.locator(".plan-item")).to_have_count(6)
-    expect(plan).to_contain_text("0/6 bài đã xong")
-    expect(plan.locator(".plan-reasons").first).not_to_be_empty()
-    expect(plan).to_contain_text("Chủ đề Du lịch")
-    # The practice page never says "band" (D025): a level is a lesson's, not a grade.
-    assert "band" not in plan.inner_text().lower()
-    first = plan.locator(".plan-item a").first
-    href = first.get_attribute("href")
-    assert href and href.startswith("/practice/lessons/")
-
-    student.reload()
-    expect(student.locator("#my-plan .plan-item")).to_have_count(6)
-    student.get_by_role("button", name="Bỏ lộ trình này").click()
-    expect(student.locator("#my-plan")).to_contain_text("Bạn chưa có lộ trình riêng")
+def test_a_learner_follows_the_published_path_without_composing_one(student):
+    """D068: learners follow the path teachers publish; composing is the teacher's (below)."""
+    expect(student.locator(".path-trail")).to_be_visible()
+    expect(student.locator("#my-plan")).to_have_count(0)
+    expect(student.get_by_role("button", name="Ghép lộ trình")).to_have_count(0)
 
 
 def test_a_teacher_keeps_part_of_a_proposal_as_a_draft_path(browser, live_server):

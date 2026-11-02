@@ -1,8 +1,7 @@
-"""The student's side of the assessment service: submit, report, progress, practice, own data.
+"""The student's side of the assessment service: submit, report, progress, own data.
 
-FR-01..FR-05, FR-27, FR-34, FR-35, FR-38, D023 (practice), D040 (the feedback
-study's gate on the report), D042 (reliable change). Moved out of the single
-application with D043; the rules are unchanged.
+FR-01..FR-05, FR-27, FR-35, FR-38, Moved out of the single application
+with D043; the rules are unchanged.
 """
 
 from __future__ import annotations
@@ -16,43 +15,31 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile
 from fastapi import Response as HttpResponse
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse
 
-from aicefr.api.deps import can_view_response, require_login
+from aicefr.api.deps import require_login
 from aicefr.api.schemas import QueueItem, SubmitResponse
 from aicefr.audio.decoder import SNIFF_BYTES, sniff
 from aicefr.contracts import (
-    Band,
-    Criterion,
     ProcessingRequest,
     ReasonCode,
     Response,
     ResponseStatus,
-    TaskPurpose,
 )
 from aicefr.infra.blobs import audio_response
 from aicefr.observability import count
 from aicefr.practice.achievements import BY_CODE
-from aicefr.practice.bank import BAND_ORDER, CRITERION_NAMES, PATH_ORDER
-from aicefr.practice.feedback import previous_measures, takeaway
-from aicefr.practice.missions import describe_measure
-from aicefr.practice.recommend import TaskProgress, needs_review, recommend
-from aicefr.practice.streak import summarize
 from aicefr.qc import audio_qc
-from aicefr.research.reliable_change import reliable_change
-from aicefr.services.core.assessment import replay_api, scoring, study_api
+from aicefr.scoring.band_map import position, thresholds_of
+from aicefr.services.core.assessment import replay_api, scoring
 from aicefr.services.core.assessment.context import (
     CONFIG_VERSION,
     active_model_name,
-    blind,
-    measurement_error,
-    saw,
-    scorable_duration,
+    can_view,
     svc,
 )
 from aicefr.storage.auth_repository import Account
-from aicefr.storage.repository import InvalidStateError
-from aicefr.storage.task_repository import Task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -65,7 +52,7 @@ router = APIRouter()
 async def submit_response(
     audio: UploadFile,
     response: HttpResponse,
-    task_id: str = Form("P3"),
+    task_id: str = Form(...),
     account: Account = Depends(require_login),
 ) -> SubmitResponse:
     """Accept one audio file, queue it for scoring and return the response id right away.
@@ -115,82 +102,91 @@ async def submit_response(
             415, "không nhận ra định dạng audio. Hãy nộp file wav, flac, mp3, m4a hoặc webm"
         )
 
-    # The stored name comes from the sniffed type, so the uploaded filename never
-    # influences the path written to disk. It is also the recording's key in the
-    # blob store the speech service reads from.
-    audio_key = f"{rid}.{kind}"
+    # The rest -- the blob store, the database, the bus, the metering call --
+    # blocks. Run on the event loop, it held every other request of this
+    # service while one upload was being stored and queued (D066).
+    def accept() -> SubmitResponse:
+        # The stored name comes from the sniffed type, so the uploaded filename never
+        # influences the path written to disk. It is also the recording's key in the
+        # blob store the speech service reads from.
+        audio_key = f"{rid}.{kind}"
 
-    # D049: on the metered channel, hold what the longest recording the task
-    # allows would cost; settled on the real length once there is a result.
-    # Off (the school deployment, BR-29/BR-30) this always allows.
-    metering = getattr(s.peers, "metering", None)
-    action = task.purpose.value
-    refusal = (
-        metering.hold(
-            account_id=account.account_id, action=action, key=rid, max_seconds=task.max_seconds
+        # D049: on the metered channel, hold what the longest recording the task
+        # allows would cost; settled on the real length once there is a result.
+        # Off (the school deployment, BR-29/BR-30) this always allows.
+        metering = getattr(s.peers, "metering", None)
+        refusal = (
+            metering.hold(
+                account_id=account.account_id,
+                action="assessment",
+                key=rid,
+                max_seconds=task.max_seconds,
+            )
+            if metering is not None
+            else None
         )
-        if metering is not None
-        else None
-    )
-    if refusal:
-        tmp_path.unlink(missing_ok=True)
-        raise HTTPException(402, refusal)
-    try:
-        s.blobs.put(audio_key, tmp_path.read_bytes())
-    finally:
-        tmp_path.unlink(missing_ok=True)
-    # What the response keeps: the file's path on disk, the bare key in object
-    # storage (D051). `key_of` reads the key back out of either.
-    local = s.blobs.local_path(audio_key)
-    audio_ref = str(local) if local is not None else audio_key
+        if refusal:
+            tmp_path.unlink(missing_ok=True)
+            raise HTTPException(402, refusal)
+        try:
+            s.blobs.put(audio_key, tmp_path.read_bytes())
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        # What the response keeps: the file's path on disk, the bare key in object
+        # storage (D051). `key_of` reads the key back out of either.
+        local = s.blobs.local_path(audio_key)
+        audio_ref = str(local) if local is not None else audio_key
 
-    req = ProcessingRequest(
-        response_id=rid,
-        speaker_id=speaker_id,
-        task_id=task_id,
-        audio_path=audio_ref,
-        prompt_version=task.prompt_version,
-        config_version=CONFIG_VERSION,
-    )
-
-    # Persist immediately in the QUEUED state and reply, instead of waiting for
-    # the pipeline to finish: AC-05.1 wants the 202 back in under 300 ms, while
-    # NFR-01 allows the pipeline up to 60 seconds.
-    s.repo.save(
-        Response(
+        req = ProcessingRequest(
             response_id=rid,
-            status=ResponseStatus.QUEUED,
+            speaker_id=speaker_id,
+            task_id=task_id,
+            audio_path=audio_ref,
+            prompt_version=task.prompt_version,
             config_version=CONFIG_VERSION,
-            prompt_version=req.prompt_version,
-        ),
-        speaker_id,
-        task_id,
-        account_id=account.account_id,
-        audio_path=audio_ref,
-        purpose=task.purpose,
-    )
-    count("submissions_total")
-    try:
-        scoring.dispatch(req, audio_key, task, account.account_id)
-    except Exception as e:
-        # The response is saved and nothing will score it: close it now rather
-        # than leave the student watching a QUEUED page until the next restart.
-        logger.exception("could not hand %s to the speech service", rid)
-        s.repo.set_status(
-            rid,
-            ResponseStatus.FAILED,
-            [ReasonCode.PROCESSING_INTERRUPTED],
-            only_from=(ResponseStatus.QUEUED,),
         )
-        scoring.settle_charge(rid)
-        raise HTTPException(503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút") from e
 
-    response.status_code = 202
-    return SubmitResponse(
-        response_id=rid,
-        status=ResponseStatus.QUEUED.value,
-        message="Đã nhận bài, đang xử lý.",
-    )
+        # Persist immediately in the QUEUED state and reply, instead of waiting for
+        # the pipeline to finish: AC-05.1 wants the 202 back in under 300 ms, while
+        # NFR-01 allows the pipeline up to 60 seconds.
+        s.repo.save(
+            Response(
+                response_id=rid,
+                status=ResponseStatus.QUEUED,
+                config_version=CONFIG_VERSION,
+                prompt_version=req.prompt_version,
+            ),
+            speaker_id,
+            task_id,
+            account_id=account.account_id,
+            audio_path=audio_ref,
+        )
+        count("submissions_total")
+        try:
+            scoring.dispatch(req, audio_key, task, account.account_id)
+        except Exception as e:
+            # The response is saved and nothing will score it: close it now rather
+            # than leave the student watching a QUEUED page until the next restart.
+            logger.exception("could not hand %s to the speech service", rid)
+            s.repo.set_status(
+                rid,
+                ResponseStatus.FAILED,
+                [ReasonCode.PROCESSING_INTERRUPTED],
+                only_from=(ResponseStatus.QUEUED,),
+            )
+            scoring.settle_charge(rid)
+            raise HTTPException(
+                503, "chưa gửi được bài tới máy chấm, hãy nộp lại sau ít phút"
+            ) from e
+
+        response.status_code = 202
+        return SubmitResponse(
+            response_id=rid,
+            status=ResponseStatus.QUEUED.value,
+            message="Đã nhận bài, đang xử lý.",
+        )
+
+    return await run_in_threadpool(accept)
 
 
 @router.get("/api/v1/responses/{response_id}", tags=["student"])
@@ -204,37 +200,20 @@ def get_report(response_id: str, account: Account = Depends(require_login)) -> J
     repo = svc().repo
     report = repo.get(response_id)
     owner = repo.owner_of(response_id)
-    if report is None or not can_view_response(account, owner):
+    if report is None or not can_view(account, owner):
         raise HTTPException(404, "không tìm thấy bài này")
-    blind(account, response_id)
-    saw(account, response_id, "report")
-    # D040: a learner in the score-only arm gets the score and nothing more.
-    return JSONResponse(study_api.gate_report(account, owner, report.model_dump(mode="json")))
+    out = report.model_dump(mode="json")
+    a = out.get("assessment")
+    if a and a.get("overall_0_6") is not None:
+        a["band_position"] = position(a["overall_0_6"], a.get("overall_band"), _band_thresholds())
+    return JSONResponse(out)
 
 
-@router.delete("/api/v1/responses/{response_id}", tags=["student"])
-def delete_my_response(response_id: str, account: Account = Depends(require_login)) -> dict:
-    """A student deletes one of their own recordings. FR-35.
+def _band_thresholds() -> dict[str, float]:
+    """The band boundaries of the model in force (D059)."""
+    from aicefr.scoring.scorer import load_model
 
-    Ownership is checked before anything else, and a response belonging to
-    someone else answers **404, not 403**: 403 would confirm that the id exists.
-    The everyday case -- one bad recording somebody wants gone -- must not wait
-    on a request to staff.
-    """
-    repo = svc().repo
-    if repo.owner_of(response_id) != account.account_id:
-        raise HTTPException(404, "không tìm thấy bài này")
-    try:
-        deleted = repo.erase_one_response(response_id, account.account_id)
-    except InvalidStateError as e:
-        # 409, not 403: the request is well formed and the caller is entitled to
-        # it; the response is simply in a state that no longer accepts deletion.
-        raise HTTPException(409, str(e)) from e
-    if not deleted:
-        raise HTTPException(404, "không tìm thấy bài này")
-    if svc().replays is not None:
-        svc().replays.forget_response(response_id)
-    return {"deleted": response_id}
+    return thresholds_of(load_model(active_model_name()).get("band_thresholds"))
 
 
 @router.get("/api/v1/responses/{response_id}/audio", tags=["student"])
@@ -246,7 +225,7 @@ def get_audio(response_id: str, account: Account = Depends(require_login)) -> Fi
     person, so every access is audited.
     """
     repo = svc().repo
-    if not can_view_response(account, repo.owner_of(response_id)):
+    if not can_view(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
     repo.write_audit(account.account_id, "AUDIO_ACCESS", response_id, None)
     # The returned filename uses the response id, not the original name:
@@ -259,7 +238,7 @@ def response_status(response_id: str, account: Account = Depends(require_login))
     """A lightweight status for the progress page to poll. FR-05."""
     repo = svc().repo
     status_info = repo.status_of(response_id)
-    if status_info is None or not can_view_response(account, repo.owner_of(response_id)):
+    if status_info is None or not can_view(account, repo.owner_of(response_id)):
         raise HTTPException(404, "không tìm thấy bài này")
     status_info["is_pending"] = ResponseStatus(status_info["status"]).is_pending
     return status_info
@@ -276,25 +255,16 @@ def my_responses(
 
 @router.get("/api/v1/tasks", tags=["student"])
 def list_tasks(account: Account = Depends(require_login)) -> list[dict]:
-    """Speaking prompts a student can answer. FR-01.
-
-    `windowed` says whether answering this prompt at full length will be scored
-    by cutting the recording into windows. It is derived from the model artifact,
-    so changing the model moves the prompt cards with it.
-    """
-    from aicefr.scoring.scorer import load_model
-
-    ceiling = scorable_duration(load_model(active_model_name())).get("accepted_high")
+    """Speaking prompts a student can answer, each with its band. FR-01, D076."""
     return [
         {
             "task_id": t.task_id,
             "title": t.title,
             "prompt_text": t.prompt_text,
             "prompt_version": t.prompt_version,
-            "part": t.part,
+            "band": t.band.value if t.band else None,
             "min_seconds": t.min_seconds,
             "max_seconds": t.max_seconds,
-            "windowed": bool(ceiling is not None and t.max_seconds > ceiling),
         }
         for t in svc().tasks.list_active()
     ]
@@ -310,12 +280,7 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
     Only teacher-verified rows. If none exist the array is empty and the note
     says so: never guess a band to fill the file.
     """
-    # D040: while the learner's feedback is held back, so is the advice in it.
-    rows = study_api.without_advice(
-        account.account_id,
-        svc().repo.speaking_profile(account.account_id),
-        ("weakest_criteria", "next_task_hint", "next_task_id"),
-    )
+    rows = svc().repo.speaking_profile(account.account_id)
     return JSONResponse(
         {
             "pseudonym": account.pseudonym,
@@ -352,8 +317,6 @@ FIELD_PURPOSES: dict[str, str] = {
     "comments": "Nhận xét sinh từ số đo, mỗi câu kèm bằng chứng.",
     "priorities": "Gợi ý luyện tập, xếp theo mức ảnh hưởng tới điểm.",
     "review_history": "Mỗi lần giảng viên sửa điểm: trước, sau, lý do, thời điểm.",
-    "practice": "Kết quả luyện tập: từng mục tiêu đo được gì, kèm chỗ trong bản ghi"
-    " làm căn cứ. Bài luyện tập không có điểm và không chuyển giảng viên.",
     "audio": "Tệp ghi âm KHÔNG nằm trong tệp này vì kích thước; tải riêng ở"
     " /api/v1/responses/{id}/audio.",
     "achievements": "Thành tựu bạn đã đạt và ngày đạt. Chỉ bạn thấy, không dựa vào điểm,"
@@ -379,9 +342,7 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
         report = s.repo.get(row["response_id"])
         if report is None:
             continue
-        # D040: the export carries what the report screen shows, no more -- a
-        # learner whose feedback is held back gets the score here too.
-        item = study_api.gate_report(account, account.account_id, report.model_dump(mode="json"))
+        item = report.model_dump(mode="json")
         item["created_at"] = row["created_at"]
         item["task_id"] = row["task_id"]
         item["review_history"] = [
@@ -447,6 +408,8 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
     differ by measurement noise as much as by learning (`ridge_resp_v2` has an
     RMSE of 0.53 on its own validation data).
     """
+    from aicefr.report.habits import NAMES as HABIT_NAMES
+    from aicefr.report.habits import habit_series
     from aicefr.scoring.scorer import load_model
 
     # The instrument's own error, read from the artifact rather than typed in
@@ -485,224 +448,23 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
             f" Hiện có {len(scores)} bài."
         )
 
-    error = measurement_error()
-    change = reliable_change(scores, error["sem"] if error else None)
-    change["sem_source"] = error["source"] if error else None
-    change["sem_pairs"] = error.get("pairs") if error else None
-
+    limits = _band_thresholds()
+    for r in rows:
+        r["band_position"] = (
+            position(r["overall_0_6"], r.get("overall_band"), limits)
+            if r["overall_0_6"] is not None
+            else None
+        )
     return {
         "pseudonym": account.pseudonym,
+        "band_thresholds": limits,
         "results": rows,
         "verified_count": sum(1 for r in rows if r["teacher_verified"]),
         "trend": trend,
-        "reliable_change": change,
+        # D070: the habits the next-band targets name, over the same assessments.
+        "habits": habit_series(svc().repo.feature_series(account.account_id, HABIT_NAMES)),
         "note": (
             "Điểm chưa được giảng viên xác nhận chỉ là ước lượng của máy."
             " Biểu đồ vẽ cả hai loại nhưng phân biệt rõ."
         ),
-    }
-
-
-# ================================================================= practice (D023)
-
-
-def _practice_progress(attempts: list[dict]) -> dict[str, TaskProgress]:
-    """Per-task progress from the attempts (oldest first). Only processed attempts count."""
-    out: dict[str, TaskProgress] = {}
-    for a in attempts:
-        if a["status"] != ResponseStatus.COMPLETED.value:
-            continue
-        prev = out.get(a["task_id"], TaskProgress())
-        out[a["task_id"]] = TaskProgress(
-            attempts=prev.attempts + 1,
-            completed=prev.completed or a["completed"] is True,
-            last_attempt_at=a["created_at"],
-            last_completed=a["completed"],
-        )
-    return out
-
-
-def _task_card(t: Task, progress: dict[str, TaskProgress]) -> dict:
-    p = progress.get(t.task_id, TaskProgress())
-    return {
-        "task_id": t.task_id,
-        "title": t.title,
-        "criterion": t.criterion.value if t.criterion else None,
-        "criterion_name": CRITERION_NAMES.get(t.criterion, "") if t.criterion else "",
-        "band": t.band.value if t.band else None,
-        "status": "completed" if p.completed else ("tried" if p.attempts else "new"),
-        "attempts": p.attempts,
-    }
-
-
-def _practice_state(account_id: str) -> tuple[list[Task], list[dict], dict[str, TaskProgress]]:
-    bank = svc().tasks.list_active(TaskPurpose.PRACTICE)
-    attempts = svc().repo.practice_attempts(account_id)
-    return bank, attempts, _practice_progress(attempts)
-
-
-def _next_view(
-    account_id: str, bank: list[Task], progress: dict[str, TaskProgress]
-) -> tuple[dict | None, dict | None]:
-    """The next suggestion and the assessment it is based on."""
-    basis = study_api.latest_assessment(account_id)
-    rec = recommend(
-        bank,
-        progress,
-        [Criterion(c) for c in basis["weakest_criteria"]] if basis else [],
-        Band(basis["band"]) if basis else None,
-    )
-    by_id = {t.task_id: t for t in bank}
-    view = (
-        {**_task_card(by_id[rec.task_id], progress), "basis": rec.basis.value, "reason": rec.reason}
-        if rec
-        else None
-    )
-    return view, basis
-
-
-def _daily_view(attempts: list[dict]) -> dict:
-    d = summarize(
-        [a["created_at"] for a in attempts if a["status"] == ResponseStatus.COMPLETED.value],
-        datetime.now(UTC),
-    )
-    return {
-        "today": d.today,
-        "goal": d.goal,
-        "goal_met": d.goal_met,
-        "streak": d.streak,
-        "practiced_today": d.practiced_today,
-        "week": [{"date": day.isoformat(), "count": n} for day, n in d.week],
-    }
-
-
-@router.get("/api/v1/practice", tags=["student"])
-def practice_home(account: Account = Depends(require_login)) -> dict:
-    """Practice home: suggestion with its reason, daily goal, streak, learning path. D023.
-
-    No score and no leaderboard. The suggestion is a fixed rule that can be read
-    in full in `practice/recommend.py`; `reason` is the sentence explaining why
-    that rule picked this task.
-    """
-    bank, attempts, progress = _practice_state(account.account_id)
-    rec, basis = _next_view(account.account_id, bank, progress)
-    by_id = {t.task_id: t for t in bank}
-    path = [
-        {
-            "criterion": c.value,
-            "name": CRITERION_NAMES[c],
-            "tasks": [
-                _task_card(t, progress)
-                for b in BAND_ORDER
-                for t in bank
-                if t.criterion is c and t.band is b
-            ],
-        }
-        for c in PATH_ORDER
-    ]
-    return {
-        "recommendation": rec,
-        "assessment": basis,
-        "daily": _daily_view(attempts),
-        "path": path,
-        "review": [
-            _task_card(by_id[tid], progress) for tid in needs_review(progress) if tid in by_id
-        ],
-        "totals": {
-            "tasks": len(bank),
-            "completed": sum(1 for t in bank if progress.get(t.task_id, TaskProgress()).completed),
-            "attempts": sum(p.attempts for p in progress.values()),
-        },
-    }
-
-
-@router.get("/api/v1/practice/tasks/{task_id}", tags=["student"])
-def practice_task(task_id: str, account: Account = Depends(require_login)) -> dict:
-    """One practice task: prompt, missions, tips, reference passage, past attempts. D023."""
-    t = svc().tasks.get(task_id)
-    if t is None or not t.is_practice:
-        raise HTTPException(404, "không tìm thấy nhiệm vụ luyện tập này")
-    attempts = svc().repo.practice_attempts(account.account_id, task_id)
-    return {
-        **_task_card(t, _practice_progress(attempts)),
-        "prompt_text": t.prompt_text,
-        "prompt_version": t.prompt_version,
-        "missions": [
-            {"kind": m.kind.value, "label": m.label, "target": m.target, "words": list(m.words)}
-            for m in t.missions
-        ],
-        "tips": list(t.tips),
-        "reference_text": t.reference_text,
-        "min_seconds": t.min_seconds,
-        "max_seconds": t.max_seconds,
-        "history": list(reversed(attempts))[:10],
-    }
-
-
-@router.get("/api/v1/practice/attempts/{response_id}", tags=["student"])
-def practice_attempt(response_id: str, account: Account = Depends(require_login)) -> dict:
-    """One practice attempt's result, with the next suggestion and the daily goal after it. D023.
-
-    Only the owner may see it: a practice attempt is the learner's draft, not a
-    submission for anyone to mark.
-    """
-    repo = svc().repo
-    owner = repo.owner_of(response_id)
-    info = repo.status_of(response_id)
-    if info is None or owner != account.account_id or info["purpose"] != "practice":
-        raise HTTPException(404, "không tìm thấy lần luyện này")
-    report = repo.get(response_id)
-    t = svc().tasks.get(info["task_id"])
-    if report is None or t is None:
-        raise HTTPException(404, "không tìm thấy lần luyện này")
-
-    bank, attempts, progress = _practice_state(account.account_id)
-    rec, _ = _next_view(account.account_id, bank, progress)
-    result = report.practice
-    # The previous processed attempt at the SAME task, submitted before this one:
-    # found by position in the list (already in submission order), not by
-    # comparing created_at -- two attempts in one second share it.
-    position = next(
-        (i for i, a in enumerate(attempts) if a["response_id"] == response_id), len(attempts)
-    )
-    earlier = [
-        a
-        for a in attempts[:position]
-        if a["task_id"] == info["task_id"] and a["status"] == ResponseStatus.COMPLETED.value
-    ]
-    previous = repo.get(earlier[-1]["response_id"]) if earlier else None
-    before = previous_measures(result, previous.practice if previous else None) if result else []
-    return {
-        "response_id": response_id,
-        "status": info["status"],
-        "is_pending": ResponseStatus(info["status"]).is_pending,
-        "created_at": info["created_at"],
-        "reasons": [r.value for r in report.reasons],
-        "task": {
-            **_task_card(t, progress),
-            "prompt_text": t.prompt_text,
-            "reference_text": t.reference_text,
-        },
-        "result": (
-            {
-                "completed": result.completed,
-                "met_count": result.met_count,
-                "total": len(result.checks),
-                "rules_version": result.rules_version,
-                "takeaway": takeaway(result, t.missions),
-                "previous_response_id": earlier[-1]["response_id"] if earlier else None,
-                "checks": [
-                    {
-                        **c.model_dump(mode="json"),
-                        "measured_text": describe_measure(c),
-                        "previous": prev,
-                    }
-                    for c, prev in zip(result.checks, before, strict=True)
-                ],
-            }
-            if result
-            else None
-        ),
-        "next": rec,
-        "daily": _daily_view(attempts),
     }

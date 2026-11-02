@@ -17,14 +17,19 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN python -m venv /opt/venv \
  && /opt/venv/bin/pip install --upgrade pip \
- && /opt/venv/bin/pip install ".[services]"
+ && /opt/venv/bin/pip install ".[services,coach]"
 
 FROM builder AS builder-speech
 # faster-whisper (MIT) for the real recogniser; the energy detector is used when
 # Silero (torch, about 2 GB) is not installed. Build with --build-arg VAD=1 to add it.
 ARG VAD=0
+# EC2 runs on CPU. Install the CPU wheel before the vad extra so enabling
+# Silero does not pull CUDA libraries into the speech image.
 RUN /opt/venv/bin/pip install ".[services,asr]" \
- && if [ "$VAD" = "1" ]; then /opt/venv/bin/pip install ".[vad]"; fi
+ && if [ "$VAD" = "1" ]; then \
+      /opt/venv/bin/pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu \
+      && /opt/venv/bin/pip install ".[vad]"; \
+    fi
 
 # ---------------------------------------------------------------------------
 

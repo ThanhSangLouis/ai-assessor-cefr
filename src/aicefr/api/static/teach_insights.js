@@ -225,7 +225,6 @@ $("words-form").addEventListener("submit", async (e) => {
   const unit = units.find((u) => u.unit_id === $("words-unit").value);
   const body = {
     title: $("words-title").value.trim(),
-    band: (unit && unit.band) || "A2",
     keywords: [...picked],
     free_prompt: $("words-prompt").value.trim(),
     summary: "Ôn những từ cả lớp hay bỏ: tự đặt câu với từng nhóm từ, rồi nói tự do.",

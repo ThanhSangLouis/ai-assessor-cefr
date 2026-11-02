@@ -46,9 +46,7 @@ package "Tệp, thanh toán, giới hạn" as Edge {
   class S3BlobStore <<adapter>>
   interface PaymentGateway <<interface>>
   class SandboxGateway <<adapter>>
-  class VnpayGateway <<adapter>>
   class StripeGateway <<adapter>>
-  class MomoGateway <<adapter>>
   interface RateLimiter <<interface>>
   class InMemoryRateLimiter <<adapter>>
 }
@@ -58,8 +56,6 @@ package "Lưu trữ MongoDB (D048)" as Store {
   class Repository <<repository>>
   class AuthRepository <<repository>>
   class TaskRepository <<repository>>
-  class RatingRepository <<repository>>
-  class StudyRepository <<repository>>
   class ClassroomRepository <<repository>>
   class ReplayRepository <<repository>>
   class BillingRepository <<repository>>
@@ -84,15 +80,11 @@ JobQueue              <|.. InlineJobQueue
 BlobStore             <|.. LocalBlobStore
 BlobStore             <|.. S3BlobStore
 PaymentGateway        <|.. SandboxGateway
-PaymentGateway        <|.. VnpayGateway
 PaymentGateway        <|.. StripeGateway
-PaymentGateway        <|.. MomoGateway
 RateLimiter           <|.. InMemoryRateLimiter
 MongoStore            <|-- Repository
 MongoStore            <|-- AuthRepository
 MongoStore            <|-- TaskRepository
-MongoStore            <|-- RatingRepository
-MongoStore            <|-- StudyRepository
 MongoStore            <|-- ClassroomRepository
 MongoStore            <|-- ReplayRepository
 MongoStore            <|-- BillingRepository
@@ -110,9 +102,9 @@ note right of S3BlobStore
   hai máy core/speech đọc chung một bucket.
 end note
 note right of SandboxGateway
-  Mọi cổng mặc định ở chế độ thử;
-  hệ thống chỉ tin kết quả đúng chữ ký,
-  đúng cổng, đúng số tiền.
+  D075: Stripe là cổng thật duy nhất,
+  cổng thử để chạy thử; chỉ tin kết quả
+  đúng chữ ký, đúng cổng, đúng số tiền.
 end note
 note right of InlineBus
   Chạy cùng tiến trình: cho kiểm thử

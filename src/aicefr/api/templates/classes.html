@@ -1,16 +1,18 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Lớp học · AI Assessor CEFR{% endblock %}
+{% block title %}Lớp học · SpeakUp{% endblock %}
 {% block content %}
-{#- D054. A teacher's classes: the list and a new class, or one class with its
-    members, its join code and the assessments it has been set. -#}
+{#- D054, D071. Classes: the list and a new class, or one class with its
+    teachers, its members, its join code and the assessments it has been set.
+    An administrator sees every class and assigns its teachers. -#}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("users") }}</span><span id="page-title">Lớp học</span></h1>
   <p class="lede" id="page-lede">
-    Tạo lớp, đưa mã lớp cho sinh viên tự tham gia, rồi giao đề đánh giá kèm hạn nộp.
-    Bài nộp là chính bài đánh giá của sinh viên trên đề đó, làm sau khi đề được giao.
+    Mỗi lớp có một hoặc nhiều giảng viên do quản trị viên phân công. Giảng viên chấm bài của
+    sinh viên trong lớp mình, thêm sinh viên bằng email hoặc đưa mã lớp để sinh viên tự tham gia,
+    và giao đề đánh giá kèm hạn nộp.
   </p>
 </div>
-<div id="classes-root" data-class-id="{{ class_id }}" aria-live="polite"></div>
+<div id="classes-root" data-class-id="{{ class_id }}" data-role="{{ account.role.value if account else '' }}" aria-live="polite"></div>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('classes.js') }}"></script>{% endblock %}

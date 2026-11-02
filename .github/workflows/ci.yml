@@ -153,7 +153,16 @@ jobs:
       - name: Anh dich vu
         run: docker build --target service -t aicefr-service:ci .
       - name: Anh speech
-        run: docker build --target speech -t aicefr-speech:ci .
+        run: docker build --target speech --build-arg VAD=1 -t aicefr-speech:ci .
+      - name: Anh speech nap duoc Silero khi khong co mang
+        run: |
+          docker run --rm --network none --entrypoint python aicefr-speech:ci -c '
+          from aicefr.asr.vad import default_vad
+          from aicefr.asr.whisper_adapter import WhisperEngine
+          detector = default_vad()
+          assert detector.name == "silero", "speech image fell back to EnergyVad"
+          assert WhisperEngine(backend="ct2").model == "small"
+          print("Silero loaded offline")'
       # The `models` volume mounts over HF_HOME. Docker seeds a new volume from
       # the image, so a cache dir the image lacks comes up owned by root and
       # Whisper cannot download into it: every response then FAILED on EC2.

@@ -1,21 +1,13 @@
-// Paths composed by the path model (D046), on two pages.
-//
-// The learner's practice page: a path of published lessons for what they ask,
-// kept until they ask again or set it aside, with each lesson's reasons and
-// state. The teacher's path list: a proposal to review, trim and save as a
-// draft path. The model only picks and orders lessons teachers wrote; nothing
-// here shows a sentence it made up, because it makes none.
+// Paths composed by the path model (D046), on the teacher's path list: a
+// proposal to review, trim and save as a draft path. A learner's own path is
+// composed from the bands they choose (D074, band_plan.js). The model only
+// picks and orders lessons teachers wrote; nothing here shows a sentence it
+// made up, because it makes none.
 (function () {
   const escapeHtml = window.escapeHtml;
   const icon = (name, cls) => window.ui.icon(name, cls);
   const criterionName = window.ui.practiceName;
   const TOPICS = window.ui.TOPICS;
-  const STATUS = {
-    completed: ["Đã hoàn thành", "state-on"],
-    started: ["Đang học", "state-warn"],
-    new: ["Chưa học", "state-off"],
-    unavailable: ["Không còn mở", "state-off"],
-  };
 
   async function call(method, url, body) {
     const r = await fetch(url, {
@@ -86,91 +78,6 @@
       : "Thứ tự theo trình độ rồi độ khó";
     const fit = m.agreement == null ? "" : ` (khớp ${Math.round(m.agreement * 100)}% thứ tự đang có)`;
     return `<p class="muted plan-model">${icon("info")}${escapeHtml(how + fit)}.</p>`;
-  }
-
-  // ------------------------------------------------------------ learner
-  const mine = document.getElementById("my-plan");
-  if (mine) {
-    const body = document.getElementById("my-plan-body");
-    const form = document.getElementById("my-plan-form");
-    const wrap = document.getElementById("my-plan-form-wrap");
-    const label = document.getElementById("my-plan-form-label");
-
-    const learnerItem = (item) => {
-      const [name, cls] = STATUS[item.status] || STATUS.new;
-      const open = item.status === "unavailable";
-      const title = open
-        ? escapeHtml(item.title)
-        : `<a href="/practice/lessons/${encodeURIComponent(item.lesson_id)}">${escapeHtml(item.title)}</a>`;
-      return (
-        `<li class="plan-item status-${escapeHtml(item.status)}">` +
-        `<div class="plan-item-head"><b>${title}</b> <span class="badge ${cls}">${escapeHtml(name)}</span></div>` +
-        `<p class="muted plan-meta">${meta(item)}</p>` +
-        reasons(item) +
-        "</li>"
-      );
-    };
-
-    const show = (plan) => {
-      if (!plan) {
-        body.innerHTML =
-          '<p class="muted">Bạn chưa có lộ trình riêng. Nhập điều muốn luyện ở dưới, hoặc để trống để hệ thống' +
-          " dựa vào bài đánh giá gần nhất.</p>";
-        label.textContent = "Ghép lộ trình";
-        wrap.open = true;
-        return;
-      }
-      const g = plan.goal || {};
-      const asked = g.wish ? `Mục tiêu: “${escapeHtml(g.wish)}”` : "Theo bài đánh giá gần nhất và các ô đã chọn";
-      body.innerHTML =
-        `<div class="plan-summary"><p><b>${Number(plan.lessons_completed)}/${Number(plan.lessons_total)}</b> bài đã xong · ` +
-        `${asked} · ghép ngày ${escapeHtml(window.ui.dmy(plan.created_at))}</p>` +
-        `<button type="button" class="small secondary" id="my-plan-close">${icon("archive")}Bỏ lộ trình này</button></div>` +
-        warnings(plan.warnings) +
-        plan.units
-          .map(
-            (u) =>
-              `<h3 class="plan-unit">${escapeHtml(u.title)}</h3>` +
-              `<ol class="plan-list">${u.lessons.map(learnerItem).join("")}</ol>`
-          )
-          .join("") +
-        orderNote(plan.order_model);
-      label.textContent = "Ghép lộ trình khác";
-      wrap.open = false;
-      document.getElementById("my-plan-close").addEventListener("click", async () => {
-        try {
-          await call("DELETE", "/api/v1/learn/plan");
-          show(null);
-          window.toast("Đã bỏ lộ trình riêng.", "info");
-        } catch (e) {
-          if (e.message !== "expired") window.toast(sentence(e.message), "error");
-        }
-      });
-    };
-
-    form.addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const button = form.querySelector('button[type="submit"]');
-      button.disabled = true;
-      try {
-        show(await call("POST", "/api/v1/learn/plan", readGoal(form)));
-        window.toast("Đã ghép lộ trình riêng.", "ok");
-        mine.scrollIntoView({ behavior: "smooth", block: "start" });
-      } catch (e) {
-        if (e.message !== "expired") window.toast(sentence(e.message), "error");
-      } finally {
-        button.disabled = false;
-      }
-    });
-
-    fetch("/api/v1/learn/plan")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (!d) return; // staff open this page too; the plan is a learner's
-        mine.hidden = false;
-        show(d.plan);
-      })
-      .catch(() => {});
   }
 
   // ------------------------------------------------------------ teacher
@@ -254,5 +161,17 @@
         if (e.message !== "expired") window.toast(sentence(e.message), "error");
       }
     });
+
+    // D074: "Soạn lộ trình cho nhóm" on a class opens this with the group's bands.
+    const asked = new URLSearchParams(location.search);
+    if (asked.get("compose") === "1") {
+      const pick = (id, value) => {
+        const el = document.getElementById(id);
+        if (el && value && [...el.options].some((o) => o.value === value)) el.value = value;
+      };
+      pick("tc-band-from", asked.get("band_from"));
+      pick("tc-band-to", asked.get("band_to"));
+      opener.click();
+    }
   }
 })();

@@ -1,4 +1,4 @@
-// Administration screen: seven tabs behind one page. FR-08, FR-32 (accounts,
+// Administration screen: eight tabs behind one page. FR-08, FR-32 (accounts,
 // D028), FR-34, FR-35, FR-36, NFR-11.
 //
 // Tabs switch without reloading, and each tab fetches its data the first time
@@ -9,17 +9,26 @@
 const TABS = [
   { button: "tab-accounts", panel: "panel-accounts", load: loadAccounts },
   { button: "tab-models", panel: "panel-models", load: loadModels },
-  { button: "tab-config", panel: "panel-config", load: loadConfig },
+  // D078. The prices of the runs live in admin_prices.js, loaded first.
+  {
+    button: "tab-config",
+    panel: "panel-config",
+    load: () => {
+      loadConfig();
+      window.adminPrices.load();
+    },
+  },
   { button: "tab-erase", panel: "panel-erase", load: null },
-  // D030. The blind rating tab lives in admin_ratings.js, loaded first.
-  { button: "tab-ratings", panel: "panel-ratings", load: () => window.adminRatings.load() },
-  // D033. The plan and payment tab lives in admin_billing.js, loaded first.
-  { button: "tab-billing", panel: "panel-billing", load: () => window.adminBilling.load() },
+  // D072. The language model's use lives in admin_coach.js, loaded first.
+  { button: "tab-coach", panel: "panel-coach", load: () => window.adminCoach.load() },
   { button: "tab-ops", panel: "panel-ops", load: loadOps },
 ];
 
 const loaded = new Set();
 const escapeHtml = window.escapeHtml;
+// How a person is named to the administrator: the full name, else the email,
+// else the account code of an account that has neither yet (D071).
+const nameOf = (a) => a.full_name || a.email || a.pseudonym;
 
 // Every admin endpoint is behind require_role(ADMIN). A 401 means the session
 // expired; a 403 means the account is logged in but is a student or a teacher.
@@ -172,7 +181,7 @@ function iconButton(action, a, icon, label, extra = "") {
 }
 
 function accountActions(a) {
-  const who = a.pseudonym;
+  const who = nameOf(a);
   if (a.account_id === myAccountId) {
     return '<span class="muted small-note">Tài khoản của bạn</span>';
   }
@@ -188,7 +197,9 @@ function renderAccounts() {
   const q = accSearch.value.trim().toLowerCase();
   const role = accFilter.value;
   const rows = accounts.filter(
-    (a) => (!role || a.role === role) && (!q || a.pseudonym.toLowerCase().includes(q))
+    (a) =>
+      (!role || a.role === role) &&
+      (!q || [a.pseudonym, a.email, a.full_name].some((v) => (v || "").toLowerCase().includes(q)))
   );
   const counts = Object.keys(ROLE_NAMES)
     .map((r) => `${ROLE_NAMES[r]} ${accounts.filter((a) => a.role === r).length}`)
@@ -199,7 +210,7 @@ function renderAccounts() {
   }
   let h = `<p class="muted">${escapeHtml(counts)}</p>
     <table class="accounts-table">
-      <thead><tr><th>Bút danh</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+      <thead><tr><th>Người dùng</th><th>Đăng nhập gần nhất</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>`;
   rows.forEach((a) => {
     const last = a.last_login_at ? window.ui.localTime(a.last_login_at) : "Chưa đăng nhập";
@@ -207,8 +218,8 @@ function renderAccounts() {
     h += `<tr class="${a.disabled ? "row-muted" : ""}">
       <td><span class="account-cell">${avatarHtml(a)}<span>
         <button type="button" class="link-button account-open" data-account-open="${escapeHtml(a.account_id)}"
-          aria-label="${escapeHtml("Xem chi tiết " + a.pseudonym)}">${escapeHtml(a.pseudonym)}</button>
-        <span class="cell-sub">${escapeHtml(ROLE_NAMES[a.role] || a.role)}</span></span></span></td>
+          aria-label="${escapeHtml("Xem chi tiết " + (a.full_name || a.pseudonym))}">${escapeHtml(a.full_name || a.pseudonym)}</button>
+        <span class="cell-sub">${escapeHtml(a.email || "chưa có email")} · ${escapeHtml(ROLE_NAMES[a.role] || a.role)} · <code>${escapeHtml(a.pseudonym)}</code></span></span></span></td>
       <td>${escapeHtml(last)}<span class="cell-sub">${escapeHtml(sessions)}</span></td>
       <td>${accountState(a)}</td>
       <td class="action-cell">${accountActions(a)}</td>
@@ -255,14 +266,14 @@ async function postJson(url, body) {
 function slipHtml(x) {
   const origin = `${location.origin}/login`;
   return `<article class="slip">
-    <p class="slip-brand">AI Assessor CEFR · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
+    <p class="slip-brand">SpeakUp · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
     <div class="slip-codes">
-      <div><span class="slip-label">Bút danh</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
+      <div><span class="slip-label">Mã đăng nhập</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
       <div><span class="slip-label">Mật khẩu tạm</span><span class="slip-code">${escapeHtml(x.temporary_password)}</span></div>
     </div>
     <p class="slip-note">Đăng nhập tại <b>${escapeHtml(origin)}</b>. Lần đầu, hệ thống yêu cầu đặt
       mật khẩu của riêng bạn; từ đó mật khẩu tạm hết hiệu lực.</p>
-    <p class="slip-name">Họ tên (ghi tay, không nhập vào hệ thống): ...........................</p>
+    <p class="slip-name">Sau đó thêm email và họ tên ở trang Tài khoản để đăng nhập bằng email.</p>
   </article>`;
 }
 
@@ -322,7 +333,7 @@ accForm.addEventListener("submit", async (e) => {
   if (accMode.value === "one") {
     body.pseudonym = accPseudonym.value.trim();
     if (!body.pseudonym) {
-      window.toast("Hãy nhập bút danh.", "error");
+      window.toast("Hãy nhập mã tài khoản.", "error");
       accPseudonym.focus();
       return;
     }
@@ -346,39 +357,39 @@ accForm.addEventListener("submit", async (e) => {
 
 const ACCOUNT_ACTIONS = {
   revoke: {
-    ask: (a) => "Đăng xuất " + a.pseudonym + " khỏi mọi thiết bị? Mật khẩu giữ nguyên.",
+    ask: (a) => "Đăng xuất " + nameOf(a) + " khỏi mọi thiết bị? Mật khẩu giữ nguyên.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/revoke-sessions`,
-    done: (a, d) => window.toast("Đã đăng xuất " + a.pseudonym + " khỏi " + d.revoked + " phiên.", "ok"),
+    done: (a, d) => window.toast("Đã đăng xuất " + nameOf(a) + " khỏi " + d.revoked + " phiên.", "ok"),
   },
   unlinkGoogle: {
-    ask: (a) => "Gỡ liên kết Google của " + a.pseudonym + "? Họ vẫn đăng nhập được bằng mật khẩu.",
+    ask: (a) => "Gỡ liên kết Google của " + nameOf(a) + "? Họ vẫn đăng nhập được bằng mật khẩu.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/unlink-google`,
-    done: (a) => window.toast("Đã gỡ liên kết Google của " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã gỡ liên kết Google của " + nameOf(a) + ".", "ok"),
   },
   reset: {
     // Plain strings for confirm() and toast(), which never parse HTML; joined
     // rather than templated so the escaping check sees no unescaped markup.
-    ask: (a) => "Cấp mật khẩu tạm mới cho " + a.pseudonym + "? Mọi phiên đăng nhập của tài khoản này sẽ kết thúc.",
+    ask: (a) => "Cấp mật khẩu tạm mới cho " + nameOf(a) + "? Mọi phiên đăng nhập của tài khoản này sẽ kết thúc.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/reset-password`,
     done: (a, d) => {
       addSlips([d], a.role);
-      window.toast("Đã cấp mật khẩu tạm mới cho " + a.pseudonym + ".", "ok");
+      window.toast("Đã cấp mật khẩu tạm mới cho " + nameOf(a) + ".", "ok");
     },
   },
   disable: {
-    ask: (a) => "Tắt tài khoản " + a.pseudonym + "? Người dùng bị đăng xuất ngay; dữ liệu vẫn giữ nguyên.",
+    ask: (a) => "Tắt tài khoản " + nameOf(a) + "? Người dùng bị đăng xuất ngay; dữ liệu vẫn giữ nguyên.",
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/disable`,
-    done: (a) => window.toast("Đã tắt " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã tắt " + nameOf(a) + ".", "ok"),
   },
   enable: {
     ask: null,
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/enable`,
-    done: (a) => window.toast("Đã bật lại " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã bật lại " + nameOf(a) + ".", "ok"),
   },
   unlock: {
     ask: null,
     url: (a) => `/api/v1/admin/accounts/${encodeURIComponent(a.account_id)}/unlock`,
-    done: (a) => window.toast("Đã gỡ khoá " + a.pseudonym + ".", "ok"),
+    done: (a) => window.toast("Đã gỡ khoá " + nameOf(a) + ".", "ok"),
   },
 };
 
@@ -428,6 +439,14 @@ const ACTIVITY_NAMES = {
   "account.role_change": "Đổi vai trò",
   "account.google_link": "Liên kết Google",
   "account.google_unlink": "Gỡ liên kết Google",
+  "account.signup": "Tự đăng ký",
+  "account.google_signup": "Đăng ký bằng Google",
+  // The recovery code (D065) is gone since D081; its past entries stay in the log.
+  "account.recovery_code": "Tạo mã khôi phục",
+  "account.recover": "Đặt lại mật khẩu bằng mã khôi phục",
+  "account.contact": "Đổi họ tên hoặc email",
+  "account.google_adopt": "Nối đăng nhập Google theo email",
+  "auth.recover_failed": "Thử mã khôi phục sai",
   "account.profile": "Sửa hồ sơ",
 };
 
@@ -451,6 +470,11 @@ function detailHtml(d) {
       <div class="inline-form role-form">
         <div class="field"><label for="role-select">Vai trò</label><select id="role-select">${roleOptions}</select></div>
         <div class="button-row"><button type="button" class="secondary" id="role-save">Đổi vai trò</button></div>
+      </div>
+      <div class="inline-form role-form">
+        <div class="field"><label for="contact-name">Họ và tên</label><input id="contact-name" maxlength="80" value="${escapeHtml(d.full_name || "")}"></div>
+        <div class="field"><label for="contact-email">Email đăng nhập</label><input id="contact-email" type="email" maxlength="254" value="${escapeHtml(d.email || "")}"></div>
+        <div class="button-row"><button type="button" class="secondary" id="contact-save">Lưu họ tên và email</button></div>
       </div>`;
   const sessions = d.sessions.length
     ? `<table><thead><tr><th>Thiết bị</th><th>Cách đăng nhập</th><th>Bắt đầu</th><th>Hết hạn</th></tr></thead><tbody>${d.sessions
@@ -473,11 +497,12 @@ function detailHtml(d) {
     : '<p class="muted">Chưa có hoạt động nào.</p>';
   return `<div class="sheet-head">
       <div class="profile-head">${avatarHtml(d)}
-        <div><h2 id="account-dialog-h">${escapeHtml(d.pseudonym)}</h2>
-        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)}</p></div></div>
+        <div><h2 id="account-dialog-h">${escapeHtml(d.full_name || d.pseudonym)}</h2>
+        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)} · mã <code>${escapeHtml(d.pseudonym)}</code></p></div></div>
       <button type="button" class="secondary icon-only" id="account-dialog-close" aria-label="Đóng">${window.ui.icon("x")}</button>
     </div>
     <dl class="facts">
+      ${fact("Email", d.email ? d.email + (d.email_verified ? " (Google đã xác minh)" : "") : "Chưa có")}
       ${fact("Tạo lúc", when(d.created_at))}
       ${fact("Đăng nhập gần nhất", when(d.last_login_at))}
       ${fact("Đổi mật khẩu gần nhất", when(d.password_changed_at))}
@@ -525,15 +550,39 @@ accountDialogBody.addEventListener("click", async (e) => {
     runAccountAction(button);
     return;
   }
+  if (e.target.closest("#contact-save")) {
+    const id = accountDialogBody.querySelector("[data-account]").dataset.account;
+    const body = {};
+    const name = document.getElementById("contact-name").value.trim();
+    const email = document.getElementById("contact-email").value.trim();
+    if (name) body.full_name = name;
+    if (email) body.email = email;
+    if (!Object.keys(body).length) return;
+    const r = await fetch(`/api/v1/admin/accounts/${encodeURIComponent(id)}/contact`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (window.redirectToLoginIfExpired(r)) return;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) {
+      window.toast(typeof d.detail === "string" ? d.detail : "Chưa lưu được.", "error");
+      return;
+    }
+    window.toast("Đã lưu họ tên và email.", "ok");
+    await loadAccounts();
+    openAccount(id);
+    return;
+  }
   if (e.target.closest("#role-save")) {
     const id = accountDialogBody.querySelector("[data-account]").dataset.account;
     const a = accounts.find((x) => x.account_id === id);
     const role = document.getElementById("role-select").value;
     if (!a || role === a.role) return;
-    if (!window.confirm("Đổi vai trò của " + a.pseudonym + " thành " + ROLE_NAMES[role] + "?")) return;
+    if (!window.confirm("Đổi vai trò của " + nameOf(a) + " thành " + ROLE_NAMES[role] + "?")) return;
     const d = await postJson(`/api/v1/admin/accounts/${encodeURIComponent(id)}/role`, { role });
     if (!d) return;
-    window.toast("Đã đổi vai trò của " + a.pseudonym + ".", "ok");
+    window.toast("Đã đổi vai trò của " + nameOf(a) + ".", "ok");
     await loadAccounts();
     openAccount(id);
   }
@@ -543,11 +592,11 @@ accountDialogBody.addEventListener("click", async (e) => {
 // hash, nothing that opens an account.
 document.getElementById("acc-csv").addEventListener("click", () => {
   const cell = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const head = ["but_danh", "vai_tro", "tao_luc", "dang_nhap_gan_nhat", "da_tat", "cho_doi_mat_khau", "co_google"];
+  const head = ["ma_tai_khoan", "email", "ho_ten", "vai_tro", "tao_luc", "dang_nhap_gan_nhat", "da_tat", "cho_doi_mat_khau", "co_google"];
   const lines = [head.join(",")];
   accounts.forEach((a) =>
     lines.push(
-      [a.pseudonym, a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
+      [a.pseudonym, a.email || "", a.full_name || "", a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
         .map(cell)
         .join(",")
     )
@@ -706,7 +755,7 @@ const CONFIG_LABELS = {
   changed_by: "Người sửa gần nhất",
   changed_at: "Lúc sửa gần nhất",
   config_version: "Phiên bản cấu hình",
-  candidate_thresholds: "Là ngưỡng candidate, chưa kiểm định",
+  candidate_thresholds: "Ngưỡng mặc định ban đầu",
   max_bytes: "Kích thước tệp tối đa (byte)",
   target_sr: "Tần số lấy mẫu chuẩn hoá (Hz)",
   reject_below: "Dưới mức này thì từ chối bài",
@@ -787,52 +836,6 @@ async function loadConfig() {
   const form = document.getElementById("config-form");
   if (form) form.addEventListener("submit", saveConfig);
   loadGoogleSetup();
-  loadMeasurementError();
-}
-
-// D042. The SEM behind "reliable progress": in force, and what today's
-// test-retest pairs would give. A typed value must name its source.
-let measurementWired = false;
-async function loadMeasurementError() {
-  const box = document.getElementById("measurement-error");
-  const m = await getJson("/api/v1/admin/measurement-error", null);
-  if (!box || !m) return;
-  const cur = m.current;
-  const now = cur
-    ? `<b>${window.escapeHtml(String(cur.sem))}</b> điểm · ${cur.source === "retest" ? `từ ${cur.pairs} cặp bài thử lại` : `nhập tay: ${window.escapeHtml(cur.note || "")}`} · đặt lúc ${window.escapeHtml(window.ui.localTime(cur.set_at))}`
-    : "Chưa đặt. Trang Tiến độ của sinh viên chỉ báo chênh lệch, không kết luận tiến bộ.";
-  const cand = m.candidate.sem != null
-    ? `Dữ liệu hiện có ${m.candidate.pairs} cặp bài thử lại (cùng người, cùng đề, cách nhau ≤ ${m.window_hours} giờ) cho sai số đo <b>${m.candidate.sem.toFixed(3)}</b>.`
-    : `Mới có ${m.candidate.pairs} cặp bài thử lại, cần ít nhất ${m.min_pairs} cặp để tính.`;
-  box.innerHTML =
-    '<h2 id="measurement-error-h">Sai số đo cho "tiến bộ đáng tin"</h2>' +
-    `<p>Đang dùng: ${now}</p><p class="muted">${cand}</p>` +
-    '<div class="button-row">' +
-    `<button type="button" id="me-use-retest"${m.candidate.sem == null ? " disabled" : ""}>Dùng sai số từ bài thử lại</button></div>` +
-    '<form id="me-manual" class="form-row"><label>Nhập tay <input name="sem" type="number" step="0.001" min="0.001" max="3" required></label>' +
-    '<label>Nguồn của con số <input name="note" maxlength="300" required placeholder="Ví dụ: đo thử lại 30 sinh viên, 05/11/2026"></label>' +
-    '<button type="submit" class="secondary">Lưu</button></form>' +
-    '<div id="me-message" aria-live="polite"></div>';
-  box.hidden = false;
-  if (measurementWired) return;
-  measurementWired = true;
-  box.addEventListener("click", async (e) => {
-    if (e.target.id !== "me-use-retest") return;
-    const d = await window.apiJson("/api/v1/admin/measurement-error", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ use: "retest" }),
-    });
-    if (d) { window.toast("Đã đặt sai số đo từ bài thử lại.", "ok"); loadMeasurementError(); }
-  });
-  box.addEventListener("submit", async (e) => {
-    if (e.target.id !== "me-manual") return;
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const d = await window.apiJson("/api/v1/admin/measurement-error", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ use: "manual", sem: Number(f.get("sem")), note: String(f.get("note")) }),
-    });
-    if (d) { window.toast("Đã lưu sai số đo.", "ok"); loadMeasurementError(); }
-  });
 }
 
 // D036. Sign-in with Google: on or off, the redirect address to register with
@@ -954,7 +957,7 @@ document.getElementById("preview-button").addEventListener("click", async () => 
   const speakerId = speakerInput.value.trim();
   resetErasePanel();
   if (!speakerId) {
-    previewBody.innerHTML = '<p class="error">Hãy nhập mã bút danh.</p>';
+    previewBody.innerHTML = '<p class="error">Hãy nhập mã tài khoản.</p>';
     return;
   }
   const data = await getJson(
@@ -975,7 +978,7 @@ document.getElementById("preview-button").addEventListener("click", async () => 
     </table>`;
   h += ids.length
     ? `<p>Mã các bài sẽ bị xoá:</p><p><code>${ids.map(escapeHtml).join("</code> <code>")}</code></p>`
-    : '<p class="muted">Không có bài nào thuộc mã bút danh này.</p>';
+    : '<p class="muted">Không có bài nào thuộc mã tài khoản này.</p>';
   h += `<div class="notice notice-danger">Bấm xác nhận là xoá ngay và
     <b>không hoàn tác được</b>.</div>`;
   previewBody.innerHTML = h;

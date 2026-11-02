@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, cube %}
-{% block title %}Thang band · AI Assessor CEFR{% endblock %}
+{% block title %}Thang band · SpeakUp{% endblock %}
 {% block content %}
 {#- D028. What each band describes, and -- for every aspect -- whether the
     machine measures any of it. Content: report/bands.py; thresholds: the
@@ -8,10 +8,7 @@
 <div class="page-head">
   <p class="eyebrow">Đọc kết quả</p>
   <h1><span class="head-icon">{{ icon("target") }}</span>Band A1 đến C2 nghĩa là gì</h1>
-  <p class="lede">
-    Mỗi band mô tả một kiểu nói. Trang này cho biết từng band nghĩa là gì, và với mỗi mặt của
-    kỹ năng nói, máy thật sự đo được phần nào, phần nào chỉ giảng viên nghe ra được.
-  </p>
+  <p class="lede">Mỗi band nghĩa là gì, và máy đo được phần nào của kỹ năng nói.</p>
 </div>
 
 <section class="card band-scale" aria-labelledby="scale-h">
@@ -34,12 +31,9 @@
     {%- endfor %}
   </ol>
   <p class="muted">
-    Ngưỡng A1/A2, B2/C1 và C1/C2 kéo theo quy ước nửa điểm của hai ngưỡng giữa và chưa được
-    hiệu chuẩn: dữ liệu huấn luyện có ít bài ở hai đầu thang, nên máy kém chắc chắn nhất ở đó.
-  </p>
-  <p class="muted">
-    Bài có điểm sát ranh giới hai band luôn được chuyển giảng viên nghe lại. Máy <b>không chấm
-    riêng năm tiêu chí</b>: các mục bên dưới chỉ cho biết phép đo của máy chạm tới đâu.
+    Ngưỡng A1/A2, B2/C1 và C1/C2 chưa được hiệu chuẩn. Bài sát ranh giới hai band luôn được chuyển
+    giảng viên nghe lại. Máy <b>không chấm riêng năm tiêu chí</b>: các mục dưới chỉ cho biết phép
+    đo của máy chạm tới đâu.
   </p>
 </section>
 
@@ -87,10 +81,6 @@
     <li>
       <b>Giọng không bị trừ điểm.</b> Hệ thống không chấm giọng; khi máy "nghe không rõ" một từ,
       điều đó nói về micro, tiếng ồn hay bộ nhận dạng nhiều không kém gì về cách bạn phát âm.
-    </li>
-    <li>
-      <b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi giảng viên
-      duyệt. Hệ thống không cấp chứng chỉ.
     </li>
   </ul>
   <p class="muted small-note">

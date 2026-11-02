@@ -15,11 +15,16 @@ const firstTime = !!homeEl.dataset.first;
 let me = null;
 
 // ---------------------------------------------------------------- tabs
-const TABS = ["profile", "security", "activity", "data"]
+const TABS = ["profile", "security", "data"]
   .map((key) => ({ key, button: document.getElementById(`tab-${key}`), panel: document.getElementById(`panel-${key}`) }))
   .filter((t) => t.button && t.panel);
 const loaded = new Set();
-const LOADERS = { security: loadSessions, activity: loadActivity };
+const LOADERS = {
+  security: () => {
+    loadSessions();
+    loadActivity();
+  },
+};
 
 function showTab(tab) {
   TABS.forEach((t) => {
@@ -28,7 +33,9 @@ function showTab(tab) {
     t.button.setAttribute("aria-selected", chosen ? "true" : "false");
     t.panel.hidden = !chosen;
   });
-  if (LOADERS[tab.key] && !loaded.has(tab.key)) {
+  // Security is read fresh each time it opens: it shows what just happened
+  // (a session ended, a sign-in), and "#activity" lands on it (D068).
+  if (LOADERS[tab.key] && (!loaded.has(tab.key) || tab.key === "security")) {
     loaded.add(tab.key);
     LOADERS[tab.key]();
   }
@@ -49,7 +56,10 @@ TABS.forEach((t, i) => {
   });
 });
 
-const tabFromHash = () => TABS.find((t) => `#${t.key}` === location.hash) || TABS[0];
+// "#activity" is the old address of the history, now part of security (D068).
+const tabFromHash = () =>
+  TABS.find((t) => `#${t.key}` === (location.hash === "#activity" ? "#security" : location.hash)) ||
+  TABS[0];
 if (TABS.length) {
   window.addEventListener("hashchange", () => showTab(tabFromHash()));
   showTab(tabFromHash());
@@ -74,11 +84,74 @@ function loadMe() {
       setFact("last_login_at", when(data.last_login_at));
       setFact("password_changed_at", when(data.password_changed_at));
       document.getElementById("first-time").hidden = !data.must_change_password;
+      paintContact();
       paintGoogle();
       checkRules();
       return data;
     })
     .catch(() => null);
+}
+
+// ---------------------------------------------------------------- contact (D071)
+// The sign-in email and the full name. Changing an email the account already
+// signs in with asks for the password; adding a first one does not.
+const contactForm = document.getElementById("contact-form");
+const contactName = document.getElementById("contact-name");
+const contactEmail = document.getElementById("contact-email");
+const contactPassword = document.getElementById("contact-password");
+const contactPasswordRow = document.getElementById("contact-password-row");
+const contactMessage = document.getElementById("contact-message");
+
+function paintContact() {
+  if (!contactForm || !me) return;
+  contactName.value = me.full_name || "";
+  contactEmail.value = me.email || "";
+  const state = document.getElementById("contact-email-state");
+  state.textContent = !me.email
+    ? "Tài khoản chưa có email. Thêm email để đăng nhập bằng email hoặc Google."
+    : me.email_verified
+      ? "Google đã xác minh email này."
+      : "Email chưa được Google xác minh. Đăng nhập bằng Google với email này để xác minh.";
+  contactPasswordRow.hidden = true;
+  contactPassword.value = "";
+}
+
+if (contactForm) {
+  contactEmail.addEventListener("input", () => {
+    const moving = !!(me && me.email) && contactEmail.value.trim().toLowerCase() !== me.email;
+    contactPasswordRow.hidden = !moving;
+  });
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    contactMessage.innerHTML = "";
+    const body = { full_name: contactName.value.trim(), email: contactEmail.value.trim() };
+    if (!contactPasswordRow.hidden) body.current_password = contactPassword.value;
+    const save = document.getElementById("contact-save");
+    save.disabled = true;
+    try {
+      const r = await fetch("/api/v1/me/contact", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const text = typeof d.detail === "string" ? d.detail : "Chưa lưu được.";
+        contactMessage.innerHTML = `<p class="error">${window.escapeHtml(text)}</p>`;
+        return;
+      }
+      Object.assign(me, d);
+      paintContact();
+      window.toast("Đã lưu họ tên và email.", "ok");
+      const banner = document.getElementById("contact-missing");
+      if (banner && me.email) banner.hidden = true;
+    } catch (err) {
+      contactMessage.innerHTML = '<p class="error">Mất kết nối, hãy thử lại.</p>';
+    } finally {
+      save.disabled = false;
+    }
+  });
 }
 
 // ---------------------------------------------------------------- profile
@@ -136,14 +209,6 @@ if (avatarSave) {
     window.toast("Đã lưu ảnh đại diện.", "ok");
   });
 }
-
-// A daily goal is saved as soon as it is picked: one choice, nothing to confirm.
-document.querySelectorAll('input[name="daily-goal"]').forEach((input) =>
-  input.addEventListener("change", async () => {
-    const d = await patchProfile({ daily_goal_s: Number(input.value) });
-    if (d) window.toast(`Mục tiêu mới: ${Math.round(d.daily_goal_s / 60)} phút nói mỗi ngày.`, "ok");
-  })
-);
 
 // Display preferences live in this browser only (window.ui.prefs, common.js).
 const themeSelect = document.getElementById("pref-theme");
@@ -265,7 +330,7 @@ function paintGoogle() {
 
 if (googleUnlink) {
   googleUnlink.addEventListener("click", async () => {
-    if (!window.confirm("Gỡ liên kết Google? Sau đó chỉ đăng nhập được bằng bút danh và mật khẩu.")) return;
+    if (!window.confirm("Gỡ liên kết Google? Sau đó chỉ đăng nhập được bằng email và mật khẩu.")) return;
     googleUnlink.disabled = true;
     const r = await fetch("/api/v1/me/google/unlink", { method: "POST" });
     googleUnlink.disabled = false;
@@ -282,7 +347,8 @@ if (googleUnlink) {
 
 // ---------------------------------------------------------------- sessions
 const sessionList = document.getElementById("session-list");
-const METHOD_NAMES = { password: "mật khẩu", google: "Google" };
+// "recovery": sessions opened with a recovery code before D081 removed it.
+const METHOD_NAMES = { password: "mật khẩu", google: "Google", recovery: "mã khôi phục" };
 
 function sessionItem(s) {
   const device = s.device || "Thiết bị không rõ";
@@ -381,11 +447,20 @@ const ACTIVITY = {
   "account.google_link": ["plus", "Liên kết Google"],
   "account.google_unlink": ["x", "Gỡ liên kết Google"],
   "account.profile": ["sparkle", "Sửa hồ sơ"],
+  "account.signup": ["user-plus", "Tự đăng ký tài khoản"],
+  "account.google_signup": ["user-plus", "Đăng ký bằng Google"],
+  // The recovery code (D065) is gone since D081; its past entries stay in the log.
+  "account.recovery_code": ["key", "Tạo mã khôi phục mới"],
+  "account.recover": ["unlock", "Đặt lại mật khẩu bằng mã khôi phục"],
+  "account.contact": ["user", "Đổi họ tên hoặc email"],
+  "account.google_adopt": ["key", "Nối đăng nhập Google theo email"],
+  "auth.recover_failed": ["alert", "Thử mã khôi phục không thành công"],
 };
 const DETAIL = {
   "method=password": "bằng mật khẩu",
   "method=google": "bằng Google",
   wrong_password: "sai mật khẩu",
+  wrong_code: "sai mã khôi phục", // entries from before D081
   locked: "tài khoản đang tạm khoá",
 };
 
@@ -447,3 +522,56 @@ if (exportAll) {
 }
 
 loadMe();
+
+// ---------------------------------------------------------------- email (D079)
+// Verify the address with a code; a verified one may get the daily reminder.
+(function () {
+  const card = document.getElementById("email-card");
+  if (!card) return;
+  const state = document.getElementById("email-state");
+  const form = document.getElementById("verify-form");
+  const message = document.getElementById("email-message");
+  const toggle = document.getElementById("reminders");
+  const post = (url, body) =>
+    window.apiJson(url, {
+      method: url.endsWith("reminders") ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {}),
+    });
+
+  function paint(d) {
+    if (!d || !d.email) return;
+    card.hidden = false;
+    const email = `<b>${window.escapeHtml(d.email)}</b>`;
+    state.innerHTML = d.verified
+      ? `${email} đã xác minh.`
+      : `${email} chưa xác minh.` + (d.sending ? " Bấm Gửi mã rồi nhập mã trong email." : " Hệ thống chưa bật gửi email.");
+    form.hidden = d.verified || !d.sending;
+    document.getElementById("reminder-row").hidden = !(d.verified && d.sending);
+    toggle.checked = d.reminders;
+  }
+
+  const load = () => window.apiJson("/api/v1/me/email").then(paint);
+
+  document.getElementById("verify-send").addEventListener("click", async () => {
+    const d = await post("/api/v1/me/email/verify/send");
+    if (!d) return;
+    message.innerHTML =
+      d.status === "wait"
+        ? '<p class="muted">Mã vừa được gửi; chờ một phút rồi gửi lại.</p>'
+        : '<p class="muted">Đã gửi mã tới email. Mã dùng được 10 phút.</p>';
+  });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const d = await post("/api/v1/me/email/verify", { code: document.getElementById("verify-code").value.trim() });
+    if (!d) return;
+    message.innerHTML = "";
+    window.toast("Đã xác minh email.", "ok");
+    load();
+  });
+  toggle.addEventListener("change", async () => {
+    const d = await post("/api/v1/me/email/reminders", { on: toggle.checked });
+    if (d) window.toast(d.reminders ? "Đã bật nhắc học qua email." : "Đã tắt nhắc học qua email.", "ok");
+  });
+  load();
+})();

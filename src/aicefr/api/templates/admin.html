@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Quản trị · AI Assessor CEFR{% endblock %}
+{% block title %}Quản trị · SpeakUp{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
   <p class="lede">
-    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, gói dịch vụ
-    và tình trạng vận hành.
+    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, mô hình
+    ngôn ngữ và tình trạng vận hành.
   </p>
 </div>
 
@@ -19,25 +19,27 @@
           aria-selected="false" aria-controls="panel-config">Cấu hình</button>
   <button id="tab-erase" data-panel="panel-erase" role="tab"
           aria-selected="false" aria-controls="panel-erase">Dữ liệu</button>
-  <button id="tab-ratings" data-panel="panel-ratings" role="tab"
-          aria-selected="false" aria-controls="panel-ratings">Chấm mù</button>
-  <button id="tab-billing" data-panel="panel-billing" role="tab"
-          aria-selected="false" aria-controls="panel-billing">Gói dịch vụ</button>
+  <button id="tab-coach" data-panel="panel-coach" role="tab"
+          aria-selected="false" aria-controls="panel-coach">AI viết lại</button>
   <button id="tab-ops" data-panel="panel-ops" role="tab"
           aria-selected="false" aria-controls="panel-ops">Vận hành</button>
 </div>
 
-{#- D028. Accounts are created and looked after here instead of through the
-    command line on the server. Pseudonyms only (FR-33); a one-time password is
-    shown once, on a slip meant to be printed, and must be replaced at the first
-    login. -#}
+{#- D028, D071. Accounts handed out ready-made are created and looked after
+    here instead of through the command line on the server: a code and a
+    one-time password, shown once on a slip meant to be printed and replaced at
+    the first login; the person then adds an email and a full name and signs
+    in with the email. -#}
 <section id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" tabindex="0">
   <div class="card" aria-labelledby="acc-create-h">
     <h2 id="acc-create-h">{{ icon("user-plus") }} Tạo tài khoản</h2>
     <p class="muted">
-      Hệ thống chỉ dùng bút danh. Tạo cả lớp theo dãy số (SV-001, SV-002, …) hoặc một bút danh
-      cụ thể. Mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một lần</b> ngay dưới đây; người
-      dùng phải đặt mật khẩu riêng ở lần đăng nhập đầu.
+      Dùng cho tài khoản bạn cấp sẵn (giảng viên, cả lớp chưa có email). Tạo theo dãy mã
+      (SV-001, SV-002, …) hoặc một mã cụ thể; mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một
+      lần</b> ngay dưới đây. Lần đầu đăng nhập bằng mã và mật khẩu tạm, người dùng đặt mật khẩu
+      riêng rồi thêm email và họ tên ở trang Tài khoản (bạn cũng điền giúp được trong chi tiết tài
+      khoản); từ đó họ đăng nhập bằng email. Người tự đăng ký hoặc đăng nhập bằng Google không cần
+      tạo ở đây.
     </p>
     <form id="acc-form" class="inline-form" novalidate>
       <div class="field">
@@ -52,7 +54,7 @@
         <label for="acc-mode">Cách tạo</label>
         <select id="acc-mode">
           <option value="series">Theo dãy số</option>
-          <option value="one">Một bút danh</option>
+          <option value="one">Một mã</option>
         </select>
       </div>
       <div class="field" data-mode="series">
@@ -64,7 +66,7 @@
         <input id="acc-prefix" type="text" maxlength="6" placeholder="SV" autocomplete="off">
       </div>
       <div class="field" data-mode="one" hidden>
-        <label for="acc-pseudonym">Bút danh</label>
+        <label for="acc-pseudonym">Mã tài khoản</label>
         <input id="acc-pseudonym" type="text" maxlength="32" placeholder="Ví dụ: GV-NN-01" autocomplete="off">
       </div>
       <div class="button-row">
@@ -85,7 +87,7 @@
     </div>
     <div class="notice notice-danger slips-warning">
       Mật khẩu tạm <b>chỉ hiện một lần</b>: máy chủ không lưu bản rõ. In hoặc tải về trước khi ẩn.
-      Dòng "Họ tên" ghi tay trên bản giấy và cất ngoài hệ thống; trong hệ thống không có tên thật nào.
+      Mã trên phiếu dùng để đăng nhập cho tới khi tài khoản có email.
     </div>
     <div class="slip-grid" id="slip-grid"></div>
   </div>
@@ -95,8 +97,8 @@
       <h2>{{ icon("users") }} Danh sách tài khoản</h2>
       <div class="toolbar-controls">
         <button type="button" class="secondary small" id="acc-csv">{{ icon("download") }} Tải danh sách (CSV)</button>
-        <label class="visually-hidden" for="acc-search">Tìm bút danh</label>
-        <input id="acc-search" type="search" placeholder="Tìm bút danh" autocomplete="off">
+        <label class="visually-hidden" for="acc-search">Tìm theo tên, email hoặc mã</label>
+        <input id="acc-search" type="search" placeholder="Tìm theo tên, email hoặc mã" autocomplete="off">
         <label class="visually-hidden" for="acc-filter">Lọc theo vai trò</label>
         <select id="acc-filter">
           <option value="">Mọi vai trò</option>
@@ -138,36 +140,19 @@
     <b>tạo một phiên bản ngưỡng mới</b> (<code>qc_config_version</code>), ghi vào nhật
     ký kiểm toán, và mọi báo cáo chấm sau đó ghi lại phiên bản đã dùng.
   </div>
-  <div class="notice notice-danger">
-    Đây là bộ ngưỡng <b>candidate, chưa qua kiểm định</b>. Các giá trị dưới đây
-    được chọn theo đề xuất trong SRS, chưa có nghiên cứu xác nhận là tối ưu.
-  </div>
   <div class="card" id="config-body" aria-busy="true" aria-live="polite">
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-row"></div>
     <div class="skeleton skeleton-row"></div>
     <div class="skeleton skeleton-row"></div>
   </div>
+  {#- D078. The prices of the runs and the run packs, set here, versioned. -#}
+  <section class="card" id="prices" aria-labelledby="prices-h" hidden></section>
   {#- D036. Whether sign-in with Google is on, and what to register with Google. -#}
   <section class="card" id="google-setup" aria-labelledby="google-setup-h" hidden></section>
-  {#- D042. The measurement error behind "reliable progress" on the learner's page. -#}
-  <section class="card" id="measurement-error" aria-labelledby="measurement-error-h" hidden></section>
 </section>
 
 <section id="panel-erase" role="tabpanel" aria-labelledby="tab-erase" tabindex="0" hidden>
-  <div class="card">
-    <h2>Xuất tập dữ liệu nghiên cứu</h2>
-    <p>
-      Chỉ gồm người học đang cho phép dùng dữ liệu cho nghiên cứu, kèm số người trong tập
-      được phép để đối chiếu bộ lọc. Không có bản chép lời: câu hỏi nghiên cứu là máy có
-      đồng ý với giảng viên không, chỉ cần các con số.
-    </p>
-    <div class="button-row">
-      <a class="button secondary" href="/api/v1/admin/export/research.json" download="research-export.json">Tải tập dữ liệu nghiên cứu (JSON)</a>
-      <a class="button secondary" href="/admin/study">Thực nghiệm phản hồi</a>
-    </div>
-  </div>
-
   <div class="notice notice-danger">
     Thao tác xoá dữ liệu cá nhân <b>không hoàn tác được</b>. Bản ghi âm, kết quả
     chấm và các lần duyệt của người học sẽ bị xoá vĩnh viễn khỏi cơ sở dữ liệu
@@ -175,14 +160,15 @@
   </div>
   <div class="card">
     <h2>Xoá dữ liệu của một người học</h2>
-    <label for="speaker-id">Mã bút danh của người học</label>
+    <label for="speaker-id">Mã tài khoản của người học</label>
+    <p class="field-hint">Mã ghi trong chi tiết tài khoản; nút "Xoá dữ liệu…" ở đó điền sẵn ô này.</p>
     <input id="speaker-id" type="text" placeholder="Ví dụ: SV-001" autocomplete="off">
     <div class="button-row">
       <button id="preview-button" type="button" class="secondary">Xem trước</button>
     </div>
     <div id="preview-body" aria-live="polite"></div>
     <div id="confirm-body" hidden>
-      <label for="speaker-id-again">Nhập lại mã bút danh để xác nhận</label>
+      <label for="speaker-id-again">Nhập lại mã tài khoản để xác nhận</label>
       <input id="speaker-id-again" type="text" placeholder="Nhập lại đúng mã ở trên"
              autocomplete="off" aria-describedby="erase-hint">
       <div class="button-row">
@@ -194,58 +180,11 @@
   </div>
 </section>
 
-{#- D030. Blind double rating for the field study: batches, adjudication,
-    the agreement report (humans first) and the ratings as CSV. -#}
-<section id="panel-ratings" role="tabpanel" aria-labelledby="tab-ratings" tabindex="0" hidden>
-  <div class="notice">
-    Hai giám khảo chấm mỗi bài <b>độc lập và mù</b>: không thấy bút danh, điểm của máy hay điểm của
-    nhau; thứ tự bài xáo riêng cho từng người. Chỉ bài của người học <b>đang đồng thuận cho nghiên
-    cứu</b> được đưa vào đợt, báo cáo và bản xuất. Bài lệch từ 1 điểm hoặc lệch band thì chuyển
-    người thứ ba phân xử (kế hoạch khảo sát, mục 6).
-  </div>
-  <div class="card" aria-labelledby="batch-new-h">
-    <h2 id="batch-new-h">{{ icon("plus") }} Tạo đợt chấm mù</h2>
-    <p class="muted" id="batch-eligible" aria-live="polite">Đang kiểm tra số bài đủ điều kiện…</p>
-    <form id="batch-form" class="stack" novalidate>
-      <label for="batch-name">Tên đợt</label>
-      <input id="batch-name" maxlength="120" autocomplete="off" placeholder="Ví dụ: Đợt 1 — tuần 8">
-      <fieldset class="picker">
-        <legend>Giám khảo (ít nhất hai)</legend>
-        <div class="rater-list" id="batch-raters"></div>
-      </fieldset>
-      <div class="inline-form">
-        <div class="field">
-          <label for="batch-limit">Số bài (để trống là tất cả)</label>
-          <input id="batch-limit" type="number" min="1" inputmode="numeric">
-        </div>
-        <div class="field">
-          <label for="batch-seed">Hạt giống ngẫu nhiên (tuỳ chọn)</label>
-          <input id="batch-seed" type="number" min="0" inputmode="numeric" placeholder="tự chọn">
-        </div>
-      </div>
-      <label class="check-row"><input type="checkbox" id="batch-only-new" checked> Chỉ bài chưa vào đợt nào</label>
-      <div class="button-row">
-        <button type="submit" id="batch-create">{{ icon("plus") }} Tạo đợt</button>
-      </div>
-    </form>
-  </div>
-  <div class="card">
-    <h2>{{ icon("clipboard") }} Các đợt chấm</h2>
-    <div id="batches-body" aria-busy="true" aria-live="polite">
-      <div class="skeleton skeleton-row"></div>
-      <div class="skeleton skeleton-row"></div>
-    </div>
-  </div>
-  <dialog class="sheet wide" id="report-dialog" aria-labelledby="report-h">
-    <div id="report-body"></div>
-  </dialog>
-</section>
-
-{#- D033. The institution's plan: the licence in force, its use, buying or
-    renewing through the payment gateway, a licence key from a contract. The
-    customer is the institution; students never see any of this. -#}
-<section id="panel-billing" role="tabpanel" aria-labelledby="tab-billing" tabindex="0" hidden>
-  <div id="billing-body" aria-busy="true" aria-live="polite">
+{#- D072. The language model behind the upgraded answer: today's requests
+    against the provider's daily quota (or the budget on a paid tier), tokens,
+    cost, refusals and errors, and the last 14 days. -#}
+<section id="panel-coach" role="tabpanel" aria-labelledby="tab-coach" tabindex="0" hidden>
+  <div id="coach-body" aria-busy="true" aria-live="polite">
     <div class="card">
       <div class="skeleton skeleton-title"></div>
       <div class="skeleton skeleton-row"></div>
@@ -273,7 +212,7 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="{{ asset('admin_ratings.js') }}"></script>
-<script src="{{ asset('admin_billing.js') }}"></script>
+<script src="{{ asset('admin_coach.js') }}"></script>
+<script src="{{ asset('admin_prices.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

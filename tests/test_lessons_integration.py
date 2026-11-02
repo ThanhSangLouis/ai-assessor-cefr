@@ -28,6 +28,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 from aicefr.asr.fake import FakeAsrEngine
@@ -127,8 +128,14 @@ def freeze(monkeypatch, moment: datetime) -> None:
     monkeypatch.setattr("aicefr.services.core.learning.lessons_api._now", lambda: moment)
 
 
-def login_as(m, pseudonym: str, role: str = "student", raise_errors: bool = True) -> TestClient:
+def login_as(
+    m, pseudonym: str, role: str = "student", raise_errors: bool = True, school: bool = True
+) -> TestClient:
+    """`school`: every test teacher teaches every test student (D071), unless the
+    test is about classes themselves."""
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    if school:
+        one_school(pseudonym, role)
     client = TestClient(m.app, raise_server_exceptions=raise_errors)
     r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
     assert r.status_code == 200, r.text
@@ -194,8 +201,8 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     LessonRepository(tmp_path / "fresh.db")  # a restart must not seed it twice
 
     [path] = repo.paths(published_only=True)
-    assert path["path_id"] == SAMPLE_PATH_ID and path["sample"] == 1
-    assert "chờ giảng viên" in path["description"]  # labelled as content awaiting review
+    assert path["path_id"] == SAMPLE_PATH_ID and path["built_in"] == 1
+    assert "chờ giảng viên" not in path["description"]  # D078: approved content, no label
     units = repo.outline(SAMPLE_PATH_ID)
     # Six levels in order (D059), each through units on different topics.
     assert [u["band"] for u in units] == (
@@ -207,11 +214,11 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     items = [item for u in units for item in u["lessons"]]
     assert len(items) == 46
     assert all(item["published_version"] == 1 for item in items)
-    assert all(item["lesson"].sample for item in items)
+    assert all(item["lesson"].built_in for item in items)
     assert all(item["lesson"].steps[-1].kind is StepKind.FREE for item in items)
 
     home = login_as(m, "SV-001").get("/api/v1/learn").json()
-    assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["sample"] is True
+    assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["built_in"] is True
     assert home["path"]["lessons_total"] == 46 and home["path"]["lessons_completed"] == 0
     assert home["next"]["lesson_id"] == "lesson-pr-flu-a1" and home["next"]["basis"] == "path_order"
 
@@ -942,7 +949,7 @@ def test_teacher_word_correction_keeps_its_status_type(tmp_path):
         result.model_dump(mode="json")
 
 
-def test_lesson_attempts_stay_out_of_queue_and_research_export(m):
+def test_lesson_attempts_stay_out_of_queue_and_class_statistics(m):
     student = login_as(m, "SV-001")
     lesson_attempts = {
         record(student, SAMPLE, KEYWORDS)["attempt_id"],
@@ -950,12 +957,13 @@ def test_lesson_attempts_stay_out_of_queue_and_research_export(m):
     }
     assessment_id = submit_assessment(student)
 
-    queue = login_as(m, "GV-01", "teacher").get("/api/v1/review/queue").json()
-    export = login_as(m, "AD-01", "admin").get("/api/v1/admin/export/research.json").json()
+    teacher = login_as(m, "GV-01", "teacher")
+    queue = teacher.get("/api/v1/review/queue").json()
+    stats = teacher.get("/api/v1/review/stats").json()
 
     assert not lesson_attempts & {r["response_id"] for r in queue}
     assert {r["task_id"] for r in queue} <= {"P3"}
-    assert [r["response_id"] for r in export["rows"]] == [assessment_id]
+    assert stats["responses"] == 1  # the assessment only (D078: no research export)
     assert [r["response_id"] for r in student.get("/api/v1/me/responses").json()] == [assessment_id]
 
 
@@ -978,17 +986,12 @@ def test_attempt_recordings_belong_to_their_learner(m):
     assert teacher.get(url).status_code == 200  # a teacher may listen back (FR-49)
     assert other.get(url).status_code == 404  # 404, not 403: the id is not confirmed
 
+    # D078: nobody deletes an attempt from the learner's side; an administrator
+    # erases a learner's data (FR-35), the recording with it.
     delete = f"/api/v1/learn/attempts/{attempt['attempt_id']}"
-    assert other.delete(delete).status_code == 404
-    assert teacher.delete(delete).status_code == 404
+    for who in (student, other, teacher):
+        assert who.delete(delete).status_code in (404, 405)
     assert m.blobs.exists(key)
-    assert student.delete(delete).json() == {"status": "ok"}
-
-    assert m.lessons.count_attempts(account_id(m, "SV-001")) == 0
-    assert not m.blobs.exists(key)  # the recording, not only the row
-    assert student.get(url).status_code == 404
-    lesson = student.get(f"/api/v1/learn/lessons/{SAMPLE}").json()
-    assert lesson["latest"] == {} and lesson["progress"]["passed"] == 0
 
 
 def test_listening_to_a_lesson_recording_is_audited(m):
@@ -1002,16 +1005,13 @@ def test_listening_to_a_lesson_recording_is_audited(m):
     assert [e["actor_id"] for e in heard] == [account_id(m, "GV-01")]
 
 
-def test_deleting_an_attempt_is_audited_without_its_content(m):
+def test_a_learner_cannot_delete_an_attempt(m):
+    """D078: only an administrator erases a learner's data (FR-35)."""
     student = login_as(m, "SV-001")
     attempt_id = record(student, SAMPLE, KEYWORDS)["attempt_id"]
 
-    assert student.delete(f"/api/v1/learn/attempts/{attempt_id}").status_code == 200
-
-    entries = audit_entries(m, attempt_id)
-    assert len(entries) == 1
-    assert entries[0]["actor_id"] in {"SV-001", account_id(m, "SV-001")}
-    assert "morning" not in (entries[0]["detail"] or "")  # no transcript in the log
+    assert student.delete(f"/api/v1/learn/attempts/{attempt_id}").status_code in (404, 405)
+    assert m.lessons.attempt(attempt_id)["attempt_id"] == attempt_id
 
 
 def test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media(tmp_path):

@@ -31,7 +31,13 @@ from aicefr.auth import google
 from aicefr.auth.sessions import device_label
 from aicefr.config import get_settings
 from aicefr.services.core.identity import accounts_api
-from aicefr.storage.auth_repository import Account, AuthRepository, IdentityTaken, Role
+from aicefr.storage.auth_repository import (
+    Account,
+    AuthRepository,
+    EmailTaken,
+    IdentityTaken,
+    Role,
+)
 
 router = APIRouter()
 
@@ -158,23 +164,40 @@ def google_callback(
             auth.link_identity(account.account_id, google.PROVIDER, identity.subject_hash)
         except IdentityTaken:
             return _back("/account", "taken")
+        auth.fill_contact(account.account_id, identity.email, identity.name)
         audit(account.pseudonym, "account.google_link", account.account_id, None)
         return _back("/account", "linked")
 
     device = device_label(request.headers.get("user-agent"))
     opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
     signed_up = False
+    if opened is not None:
+        auth.fill_contact(opened[1]["account_id"], identity.email, identity.name)
     if opened is None:
         linked = auth.account_by_identity(google.PROVIDER, identity.subject_hash)
         if linked is not None:
             return _back("/login", "disabled")
+        # D071: the email is the account. A password account with the address
+        # Google just verified is this person's: join the two.
+        same = auth.get_by_email(identity.email) if identity.email else None
+        if same is not None:
+            reset = auth.adopt_by_email(same["account_id"], google.PROVIDER, identity.subject_hash)
+            audit(same["pseudonym"], "account.google_adopt", same["account_id"],
+                  "reset" if reset else None)  # fmt: skip
+            opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
+    if opened is None:
         if not get_settings().google_signup:
             return _back("/login", "not_linked")
         # D063: first time this Google account is seen, it becomes a student.
         try:
-            aid = auth.create_with_identity(google.PROVIDER, identity.subject_hash)
+            aid = auth.create_with_identity(
+                google.PROVIDER, identity.subject_hash, identity.email, identity.name
+            )
         except IdentityTaken:
             aid = None  # a second callback of the same person won the race
+        except EmailTaken:
+            # The address belongs to an account that is switched off.
+            return _back("/login", "disabled")
         opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
         if opened is None:
             return _back("/login", "not_linked")

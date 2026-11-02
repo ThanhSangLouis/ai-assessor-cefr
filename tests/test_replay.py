@@ -18,7 +18,7 @@ from aicefr.contracts import (
     Transcript,
     Word,
 )
-from aicefr.report.replay import CHOICES, CONTROL, MACHINE, WINDOW_S, analyse, moments
+from aicefr.report.replay import CHOICES, CONTROL, MACHINE, WINDOW_S, moments
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -83,34 +83,6 @@ def test_the_learner_is_never_told_which_moment_is_which():
 
 
 @pytest.mark.unit
-def test_the_gap_and_its_interval_resample_learners():
-    labels = []
-    for k in range(20):
-        labels += [
-            {"account_id": f"a{k}", "source": MACHINE, "choice": "hard"},
-            {"account_id": f"a{k}", "source": MACHINE, "choice": "hesitant"},
-            {"account_id": f"a{k}", "source": CONTROL, "choice": "smooth"},
-            {"account_id": f"a{k}", "source": CONTROL, "choice": "unsure"},
-        ]
-    out = analyse(labels)
-    assert out["gap"] == 1.0 and out["headline_met"] is True
-    assert out["control"] == {"confirmed": 0, "answered": 1 * 20}
-
-
-@pytest.mark.unit
-def test_a_picker_no_better_than_chance_does_not_pass():
-    labels = []
-    for k in range(20):
-        for source in (MACHINE, CONTROL):
-            labels += [
-                {"account_id": f"a{k}", "source": source, "choice": "hard"},
-                {"account_id": f"a{k}", "source": source, "choice": "smooth"},
-            ]
-    out = analyse(labels)
-    assert out["gap"] == 0.0 and out["headline_met"] is False
-
-
-@pytest.mark.unit
 def test_no_wording_calls_a_moment_a_pronunciation_error():
     """HUONG_PHAT_TRIEN_TIEP 3.4: an unclear word is what the machine heard, not an error."""
     banned = re.compile(r"lỗi phát âm|phát âm sai|sai phát âm|mispronunc", re.IGNORECASE)
@@ -169,17 +141,16 @@ def test_a_learner_answers_and_reads_it_back(m):
 
 
 @pytest.mark.integration
-def test_only_the_owner_listens_and_the_analysis_counts_the_labels(m):
+def test_only_the_owner_listens(m):
     from test_lessons_integration import login_as, submit_assessment
 
     owner, other = login_as(m, "SV-001"), login_as(m, "SV-002")
-    admin = login_as(m, "QT-01", "admin")
     rid = submit_assessment(owner)
     _with_moments(m, rid)
     assert other.get(f"/api/v1/responses/{rid}/replay").status_code == 404
     first = owner.get(f"/api/v1/responses/{rid}/replay").json()["moments"][0]["moment_id"]
     owner.post(f"/api/v1/responses/{rid}/replay/{first}", json={"choice": "hard"})
-    assert admin.get("/api/v1/admin/replay/report").json()["labels"] == 1
+    assert len(owner.get("/api/v1/me/replay-labels").json()) == 1
 
 
 @pytest.mark.integration

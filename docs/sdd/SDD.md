@@ -179,59 +179,54 @@ File: `docs/sdd/diagrams/01a_usecase_sinhvien.mmd`
 %% Day la so do THIET KE: no mo ta he thong PHAI LAM GI, khong phai da lam
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
+%% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
+%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua Stripe.
 flowchart LR
     SV(("Sinh viên"))
+    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC13["UC-13 Sinh viên ký phiếu đồng thuận"]
-        UC01["UC-01 Nộp bài nói và nhận kết quả"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
+        UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
+        UC19["UC-19 Sinh viên học theo lộ trình band"]
+        UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
         UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
         UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
         UC04["UC-04 Xem báo cáo có bằng chứng"]
-        UC15["UC-15 Sinh viên xem tiến độ theo thời gian"]
+        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
+        UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
+        UC26["UC-26 Sinh viên ôn sổ cụm từ"]
+        UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
-        UC14["UC-14 Sinh viên rút đồng thuận và tự xóa bài"]
-        UC18["UC-18 Sinh viên luyện tập theo nhiệm vụ gợi ý"]
-        UC19["UC-19 Sinh viên học theo lộ trình bài học"]
     end
 
     SV --> UC17
-    SV --> UC13
+    SV --> UC35
+    SV --> UC24
+    SV --> UC19
     SV --> UC01
     SV --> UC04
     SV --> UC15
+    SV --> UC26
+    SV --> UC27
     SV --> UC16
-    SV --> UC14
-    SV --> UC18
-    SV --> UC19
+    UC27 --- CTT
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML.
-    %% Can no vi mot nghich ly cua trinh ve: quan he `extend` di tu use case mo
-    %% rong VE use case co so, nen Mermaid xep use case mo rong len rank TRUOC,
-    %% tuc sang ben trai, chen vao dung cot cua tac nhan. Lien ket vo hinh nay
-    %% dat UC-02 SAU UC-01, nen UC-01 dung chung cot voi cac use case khac ma
-    %% tac nhan khoi tao, con UC-02 nam ben phai va mui ten `extend` tro nguoc
-    %% ve trai vao UC-01 -- dung chuan UML va van co nhan.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
+    %% case mo rong SAU use case co so de mui ten `extend` tro nguoc ve trai.
     UC01 ~~~ UC02
+    UC04 ~~~ UC25
 
-    %% Chieu mui ten theo chuan UML, va hai chieu nay NGUOC nhau:
-    %%   include: tu use case GOC --> use case duoc gop (luon xay ra)
-    %%   extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
+    %% include: tu use case GOC --> use case duoc gop (luon xay ra)
+    %% extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
     %% UC-03 khong co tac nhan: no la use case noi bo, chay vi UC-01 include no.
-    %% Use case MO RONG khong noi truc tiep voi tac nhan: tac nhan khoi tao use
-    %% case CO SO, con phan mo rong duoc chen vao co dieu kien. Ban truoc ve
-    %% `SV --> UC02`, tuc sinh vien khoi tao duoc "nop lai bai" tu con so khong
-    %% -- chua tung nop thi lay dau ra bai ma nop lai.
-    %% `UC-13 ky dong thuan` la TIEN DIEU KIEN cua `UC-01`, khong phai include
-    %% hay extend -- tien dieu kien khong ve thanh quan he tren so do use case.
-    %% Ban truoc ve `UC14 -. extend .-> UC13`: sai ban chat. `extend` nghia la
-    %% hanh vi duoc CHEN VAO GIUA LUONG cua use case co so tai mot diem mo rong,
-    %% nhung `withdraw_consent` la mot tuyen doc lap co kich hoat rieng, khong
-    %% nam trong luong cua `sign_consent`.
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sinh vien mo bao cao
+    %% (UC-04) roi moi nho AI viet lai (UC-25); nop bai (UC-01) roi moi nop lai.
     UC01 -. include .-> UC03
     UC02 -. extend .-> UC01
+    UC25 -. extend .-> UC04
 ```
 
 ![Hình 1a. Use case Sinh viên](images/01a_usecase_sinhvien.png)
@@ -246,36 +241,42 @@ File: `docs/sdd/diagrams/01b_usecase_giangvien.mmd`
 %% So do use case 1b: tac nhan Giang vien danh gia
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): giang vien duyet va cham lai bai, soan lo trinh theo band
+%% (co the nho AI soan nhap), giu ngan hang de theo band, xep lop va giao lo
+%% trinh band, xem thong ke lop theo band.
 flowchart LR
     GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
-        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
-        UC20["UC-20 Giáo viên soạn lộ trình và theo dõi lượt luyện"]
-        UC21["UC-21 Giảng viên chấm mù bài nói trong đợt chấm"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
+        UC20["UC-20 Giảng viên soạn lộ trình theo band và theo dõi lượt luyện"]
+        UC28["UC-28 Giảng viên nhờ AI soạn nháp bài học"]
+        UC29["UC-29 Giảng viên quản lý ngân hàng đề theo band"]
+        UC30["UC-30 Giảng viên quản lý lớp và giao lộ trình band"]
+        UC31["UC-31 Giảng viên xem thống kê lớp theo band"]
+        UC11["UC-11 Xuất hồ sơ năng lực nói đã kiểm duyệt"]
     end
 
-    %% UC-05 o cuoi cot: mui ten `extend` tu UC-06 vong ve UC-05 di qua khoang
-    %% trong ben duoi, khong sat hop nao khac.
     GV --> UC17
-    GV --> UC11
-    GV --> UC20
-    GV --> UC21
     GV --> UC05
+    GV --> UC20
+    GV --> UC29
+    GV --> UC30
+    GV --> UC31
+    GV --> UC11
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Dat UC-06
-    %% sau UC-05 de mui ten `extend` tro nguoc ve trai. Xem giai thich day du o 01a.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML. Xem 01a.
     UC05 ~~~ UC06
+    UC20 ~~~ UC28
 
-    %% Use case MO RONG khong noi truc tiep voi tac nhan. Giang vien khoi tao
-    %% UC-05 (mo hang doi ra duyet); UC-06 sua ket qua duoc chen vao giua luong
-    %% do khi ho khong dong y voi may. Khong the sua ket qua khi chua mo bai ra.
-    %% extend: tu use case MO RONG --> use case goc
+    %% Use case MO RONG khong noi truc tiep voi tac nhan: sua ket qua (UC-06)
+    %% chen vao luong duyet (UC-05); nho AI soan nhap (UC-28) chen vao form
+    %% "Bai hoc moi" cua UC-20.
     UC06 -. extend .-> UC05
+    UC28 -. extend .-> UC20
 ```
 
 ![Hình 1b. Use case Giảng viên](images/01b_usecase_giangvien.png)
@@ -290,33 +291,40 @@ File: `docs/sdd/diagrams/01c_usecase_quantri.mmd`
 %% So do use case 1c: tac nhan Quan tri vien
 %% Ma va ten use case lay NGUYEN VAN tu bang SRS muc 4.1 -- khong tu dat so.
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
+%% Ban 1.16 (D078): mot trung tam, hoc vien tra theo luot -- quan tri vien dat
+%% gia luot va goi luot, theo doi AI viet lai; khong con goi dich vu (D075).
 flowchart LR
     QT(("Quản trị viên"))
-    SV(("Sinh viên"))
-    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
+        UC07["UC-07 Quản trị viên xoá dữ liệu của một người học"]
         UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
         UC09["UC-09 Quản trị viên kích hoạt phiên bản mô hình"]
-        UC07["UC-07 Quản trị viên xử lý yêu cầu rút đồng thuận"]
         UC12["UC-12 Huấn luyện lại mô hình từ manifest đã khóa"]
-        UC22["UC-22 Quản trị viên tổ chức đợt chấm mù và xem độ đồng thuận"]
-        UC23["UC-23 Quản trị viên mua, nâng cấp hoặc gia hạn gói dịch vụ"]
+        UC32["UC-32 Quản trị viên đặt giá lượt và gói lượt"]
+        UC34["UC-34 Quản trị viên cộng lượt cho một tài khoản"]
+        UC33["UC-33 Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp"]
     end
 
     QT --> UC17
     QT --> UC10
     QT --> UC08
     QT --> UC09
-    QT --> UC07
     QT --> UC12
-    QT --> UC22
-    QT --> UC23
-    SV --> UC07
-    UC23 --- CTT
+    QT --> UC32
+    QT --> UC34
+    QT --> UC33
+    QT --> UC07
+
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia chin
+    %% use case thanh hai cot (tai khoan va mo hinh; luot va AI) cho hinh vua A4.
+    UC17 ~~~ UC12
+    UC10 ~~~ UC32
+    UC07 ~~~ UC34
+    UC08 ~~~ UC33
 ```
 
 ![Hình 1c. Use case Quản trị viên](images/01c_usecase_quantri.png)
@@ -363,7 +371,7 @@ nào*, đúng tầng thiết kế của chúng.
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
 | Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
-| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 19 bộ chuyển đổi, 13 kho kế thừa `MongoStore` |
+| Cổng và bộ chuyển đổi | `docs/sdd/diagrams/02c_cong_va_bo_chuyen_doi.puml` | PlantUML | 9 cổng (8 cổng của `ports.py` trừ `ResponseStore`, cộng `MessageBus`), 17 bộ chuyển đổi (D075 bỏ VNPay và MoMo), 13 kho kế thừa `MongoStore` |
 
 **Vì sao sơ đồ lớp dùng draw.io chứ không phải PlantUML.** PlantUML tự đặt vị
 trí các hộp; người đọc không sắp xếp lại được. Sơ đồ lớp là hình phải chỉnh tay
@@ -979,13 +987,14 @@ File: `docs/sdd/diagrams/05_erd.mmd`
 %% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
 %% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
 %% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
-%% in A4: hinh 5c ve dinh danh, hinh 5d ve cham mu va thuc nghiem.
+%% in A4: hinh 5c ve dinh danh; viec duyet tach thanh review_session (D082).
 %% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    account ||--o{ classroom : "dạy · teacher_id, học · members"
-    classroom }o--o{ task : "giao · assignments.task_id"
+    response ||--o| review_session : "việc duyệt · response_id (D082)"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
+    account ||--o{ audit_log : "ghi · actor_id"
 
     account {
         string account_id PK "chi tiết ở hình 5c"
@@ -996,14 +1005,11 @@ erDiagram
         string title
         string prompt_text
         string prompt_version
-        string part "phần thi, ví dụ P3"
         int min_seconds
         int max_seconds
         string topic_keywords "từ khóa chủ đề, rỗng là đề mở (D022)"
-        string purpose "assessment · practice (D023)"
-        string criterion "chỉ đề luyện tập"
-        string band "chỉ đề luyện tập"
-        string reference_text "đoạn đọc theo, chỉ đề luyện tập"
+        string band "A1 … C2, tên đề là Đề band (D076, D078)"
+        int active "đề còn giao"
     }
 
     response {
@@ -1015,20 +1021,21 @@ erDiagram
         string overall_band "A1 … C2 (D059)"
         int teacher_verified
         string report_json "toàn bộ báo cáo, nguồn sự thật"
-        string purpose "assessment · practice"
         array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
-        object review_lock "ai đang duyệt, tới lúc nào"
-        array review_visits "mở bài, kết thúc, hành động (D041)"
         array replay_labels "tự nghe lại (D056)"
-        array machine_seen "ai đã thấy điểm máy, qua đâu"
+        object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
+    }
+
+    review_session {
+        string response_id UK "mỗi bài một phiên"
+        object lock "ai đang giữ bài để duyệt, tới lúc nào"
+        array visits "mở bài, kết thúc, hành động (D041)"
     }
 
     classroom {
         string class_id PK
-        string code UK "mã tham gia"
-        string teacher_id
+        array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
-        array assignments "Assignment: đề, hạn nộp, ghi chú"
     }
 
     audit_log {
@@ -1041,7 +1048,7 @@ erDiagram
     }
 
     system {
-        string key PK "assessment.active_model, billing.organization, ..."
+        string key PK "theo phần: assessment.*, billing.*, coach_usage.*"
         string value
         string version "chỉ với cấu hình assessment.*"
     }
@@ -1068,7 +1075,10 @@ erDiagram
 
     account {
         string account_id PK
-        string pseudonym UK
+        string pseudonym UK "mã tài khoản (SV-001…), dữ liệu nghiên cứu chỉ mang mã này"
+        string email UK "D071: đăng nhập, viết thường; trống ở tài khoản cũ"
+        int email_verified "D071: Google đã xác minh"
+        string full_name "D071: giảng viên lớp thấy"
         string password_hash "scrypt"
         string role "student · teacher · admin"
         int failed_attempts
@@ -1078,8 +1088,11 @@ erDiagram
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
-        array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
+        array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
         object seen_markers "tên dấu → lúc xem (D028)"
+        object email_codes "mã gửi qua email, chỉ lưu băm (D079)"
+        int email_reminders "nhắc học qua email (D079)"
+        string reminder_sent_on "ngày đã gửi thư nhắc (D079)"
     }
 
     session {
@@ -1099,77 +1112,9 @@ erDiagram
 
 **Ánh xạ sang mã nguồn.** Mỗi collection có một lớp miền cùng tên với thực thể trên sơ đồ lớp và một repository: `response` ở `src/aicefr/storage/repository.py` (`Response.reviews: list[Review]`), `task` ở `task_repository.py`, `classroom` ở `classroom_repository.py` (`Classroom`, `Assignment`), `account` và `session` ở `auth_repository.py`, `rating_batch` ở `rating_repository.py` (`RatingBatch`, `Rating`), `study` ở `study_repository.py` (`Study`, `Participant`). Danh sách đầy đủ 19 collection, phần nhúng và khoá ở `docs/db/TU_DIEN_DU_LIEU.md`; dữ liệu của bản trước D060 chuyển sang bằng migration 7 (`src/aicefr/storage/migrations.py`). Lược đồ nghiên cứu đầy đủ — `speaker`, `audio_file`, `qc_result`, `transcript`, `feature_set`, `assessment`, `criterion_score`, `evidence` — **chưa hiện thực**, tách hẳn sang hình 5b.
 
-#### 3.5b. Chấm mù hai người (D030)
+#### 3.5b. Chấm mù hai người (D030) — đã gỡ
 
-Chấm mù của khảo sát thực địa (mục 4.13) và thực nghiệm phản hồi (D040). Mỗi đợt chấm là một document `rating_batch` chứa các phiếu `Rating`; mỗi thực nghiệm là một document `study` chứa người tham gia. Không collection nào ở đây ghi vào `response`: luồng duyệt vận hành giữ nguyên, kể cả `teacher_verified`.
-
-File: `docs/sdd/diagrams/05d_erd_rating.mmd`
-
-```mermaid
-%% SDD - Diagram 5d: ERD - cham mu hai nguoi (D030) va thuc nghiem phan hoi (D040)
-%% Moi phieu cham la mot Rating nam trong dot cua no (D060): phieu va diem la
-%% mot. Xoa bai cua mot nguoi hoc (FR-35) rut cac phieu ve bai do khoi dot.
-%% Khong collection nao o day ghi vao response: luong duyet van hanh giu nguyen.
-%% Rating va Participant ve thanh khoi rieng de doc duoc, nhung la phan nhung
-%% (mang ratings, participants) trong document cua dot va cua thuc nghiem.
-erDiagram
-    rating_batch ||--|{ Rating : "nhúng trong ratings"
-    Rating }o--|| response : "response_id"
-    study ||--o{ Participant : "nhúng trong participants"
-    Participant }o--|| account : "account_id"
-
-    rating_batch {
-        string batch_id PK
-        string name
-        int seed "hạt giống chia phiếu"
-        bool closed
-    }
-
-    Rating {
-        string assignment_id
-        string response_id
-        string rater_id
-        int slot "1, 2 chấm chính; 3 trọng tài"
-        int position "thứ tự riêng của giám khảo"
-        string opened_at
-        float score_overall
-        string band
-        string unscorable_reason
-        string submitted_at "nộp một lần"
-    }
-
-    response {
-        string response_id PK "chi tiết ở hình 5"
-        array machine_seen "đã thấy điểm máy thì không còn mù"
-    }
-
-    study {
-        string study_id PK
-        string status "running · survey · closed"
-        int min_days
-        string measured_until
-    }
-
-    Participant {
-        string code "P001, cố định từ lúc vào"
-        string account_id
-        string arm "feedback · score_only"
-        string withdrawn_at
-        object survey_answers
-    }
-
-    account {
-        string account_id PK "chi tiết ở hình 5c"
-    }
-```
-
-![Hình 5d. Chấm mù hai người và thực nghiệm phản hồi](images/05d_erd_rating.png)
-
-*Hình 5d. Đợt chấm với các phiếu `Rating` nhúng (phiếu và điểm là một), ai đã xem kết quả của máy, và thực nghiệm với người tham gia nhúng. Nguồn: `diagrams/05d_erd_rating.mmd`*
-
-**Cách đọc.** Một đợt (`rating_batch`) gồm nhiều phiếu (`Rating`, nhúng trong `ratings`); mỗi phiếu là một cặp bài–giám khảo, mang `slot` 1 hoặc 2 cho hai giám khảo chính và 3 cho người phân xử, và `position` là chỗ của bài trong thứ tự **riêng** của giám khảo đó. Phiếu và điểm là một: phiếu chưa nộp có `submitted_at` rỗng, và lần nộp là một cập nhật có điều kiện "`submitted_at` còn rỗng", nên phiếu đã nộp là cuối cùng. Điểm từng tiêu chí, điểm tổng và band đều có thể rỗng: phiếu "không chấm được" để trống tất cả. `response.machine_seen` ghi ai đã mở kết quả của máy cho bài đó, lần đầu; cùng với người đã duyệt bài (`response.reviews`) nó quyết định ai không còn mù với một bài (mục 4.13, bất biến 4b).
-
-**Ánh xạ sang mã nguồn.** `RatingBatch` và `Rating` ở `src/aicefr/storage/rating_repository.py`; `Study` và `Participant` ở `study_repository.py`. Điều kiện chọn bài của `RatingRepository.eligible`: `purpose = 'assessment'`, `status` là `COMPLETED` hoặc `REVIEW_REQUIRED`, có bản ghi âm, chủ bài đã đồng ý điều khoản (D058). Điểm của máy dùng để so **không** có trường riêng: `_machine` đọc `old_score`, `old_band` của lần duyệt đầu trong `response.reviews` nếu bài đã được duyệt, nếu chưa thì đọc `overall_0_6`, `overall_band` — vì quyết định của giảng viên ghi đè hai trường đó. Cùng hàm dựng cờ `flagged` (bài đang `REVIEW_REQUIRED` hoặc đã có lần duyệt) mà báo cáo dùng cho câu hỏi về định tuyến (RQ4).
+D078 (01/11/2026) gỡ chấm mù kép (D030) và thực nghiệm phản hồi (D040): hệ thống phục vụ một trung tâm, nội dung đã được duyệt. Kho mới không tạo `rating_batch`, `study`; migration 11 xoá hai collection này cùng trường `response.machine_seen` ở kho cũ (chủ dự án duyệt). Sơ đồ 5d bỏ đi cùng hai collection.
 
 #### 3.5c. Lược đồ nghiên cứu dự kiến (chưa hiện thực)
 
@@ -1403,9 +1348,9 @@ flowchart TB
     subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
         direction TB
         GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đồng thuận, bài nộp, duyệt,<br/>chấm mù, thực nghiệm, bài học, gói"]
-        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
-        SP["speech<br/>QC, Whisper, đặc trưng, chấm điểm<br/>ảnh riêng có ffmpeg, không giữ khoá"]
+        CO["core<br/>tài khoản, đề, bài nộp, duyệt,<br/>lớp, lộ trình band, lượt"]
+        WE["web<br/>trang, tệp tĩnh, số đếm"]
+        SP["speech<br/>QC, Whisper, chấm điểm<br/>có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
         MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
         V1[("Volume uploads<br/>bản ghi âm")]
@@ -2054,7 +1999,7 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 **Bất biến 1 — Google chỉ tạo tài khoản sinh viên (D063 thay bản cũ "không bao giờ tạo").** Khi bật `AICEFR_GOOGLE_SIGNUP`, tài khoản Google chưa liên kết tạo một sinh viên bút danh ngẫu nhiên (`create_with_identity`); không bao giờ tạo giảng viên hay quản trị viên. Khi tắt, quy tắc cũ dưới đây áp dụng. Không đường nào trong hai module chèn dòng vào `account`. Ở chế độ `login`, `AuthRepository.login_with_identity` chỉ mở phiên cho tài khoản đã có dòng trong `account_identity`; tài khoản Google chưa liên kết nhận mã `not_linked`. Vai trò lấy từ dòng `account`, không bao giờ từ Google. Test: `test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`.
 
-**Bất biến 2 — không lưu email, tên hay ảnh.** Thứ duy nhất được lưu là `subject_hash`, SHA-256 của chuỗi `google|<sub>`, trong đó `sub` là định danh ổn định mà Google cấp cho tài khoản: đủ để nhận lại đúng tài khoản Google đó, vô dụng để liên lạc với ai. Trường `email` có được giải mã vào `GoogleIdentity.email`, nhưng `google_api` không dùng và không ghi nó vào CSDL hay nhật ký; `email_verified` chỉ được đọc khi có giới hạn tên miền. Test: `test_a_good_token_gives_a_hash_of_the_subject_and_nothing_else_kept`, `test_linking_then_signing_in_with_google`.
+**Bất biến 2 — không lưu email, tên hay ảnh.** *(Thay bởi D071 ngày 31/10/2026: email Google đã xác minh là email đăng nhập của tài khoản, tên Google điền vào họ tên còn trống; ảnh vẫn không lấy. Đoạn dưới giữ làm lịch sử.)* Thứ duy nhất được lưu là `subject_hash`, SHA-256 của chuỗi `google|<sub>`, trong đó `sub` là định danh ổn định mà Google cấp cho tài khoản: đủ để nhận lại đúng tài khoản Google đó, vô dụng để liên lạc với ai. Trường `email` có được giải mã vào `GoogleIdentity.email`, nhưng `google_api` không dùng và không ghi nó vào CSDL hay nhật ký; `email_verified` chỉ được đọc khi có giới hạn tên miền. Test: `test_a_good_token_gives_a_hash_of_the_subject_and_the_verified_email`, `test_linking_then_signing_in_with_google`.
 
 **Bất biến 3 — một tài khoản Google ứng với một bút danh.** Khoá chính (`provider`, `subject_hash`) cộng `UNIQUE (account_id, provider)`: một danh tính Google chỉ thuộc một tài khoản, một tài khoản có nhiều nhất một liên kết Google. `link_identity` báo `IdentityTaken` (mã `taken`) khi danh tính đã thuộc tài khoản khác — nếu không, một người có thể nói với tư cách hai người tham gia. Liên kết lại từ chính tài khoản đó thì thay liên kết cũ. Test: `test_one_google_account_links_to_one_pseudonym`.
 
@@ -2344,7 +2289,7 @@ sequenceDiagram
 
 | Dịch vụ | Sở hữu | Schema | Gói mã |
 | --- | --- | --- | --- |
-| core | tài khoản, phiên, Google, đồng thuận; đề, bài nộp, duyệt, chấm mù, thực nghiệm phản hồi, cấu hình QC và mô hình; lộ trình, bài học, lượt luyện, ôn tập, thành tựu, phát âm; gói, đơn hàng, giấy phép, cổng thanh toán | `core` | `services/core` (bốn phần `identity`, `assessment`, `learning`, `billing`) |
+| core | tài khoản, phiên, Google; đề theo band, bài nộp, duyệt, lớp học, cấu hình QC và mô hình; lộ trình, bài học, lượt luyện, ôn tập, thành tựu, phát âm; ví lượt, đơn nạp lượt, cổng thanh toán Stripe | `core` | `services/core` (bốn phần `identity`, `assessment`, `learning`, `billing`) |
 | speech | QC, VAD, nhận dạng, đặc trưng, chấm điểm, đo bước bài học, thử âm thanh mẫu | không có | `services/speech` |
 | web | mọi trang Jinja2, tệp tĩnh, số đếm thanh bên | không có | `services/web` |
 
@@ -2977,18 +2922,13 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/04_activity.mmd` | Activity | Mermaid `flowchart TD` |
 | `docs/sdd/diagrams/05_erd.mmd` | ERD chấm điểm và vận hành | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/05c_erd_identity.mmd` | ERD định danh, đồng thuận và trạng thái theo tài khoản | Mermaid `erDiagram` (`direction LR`) |
-| `docs/sdd/diagrams/05d_erd_rating.mmd` | ERD chấm mù hai người (D030) | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/05b_erd_target.mmd` | ERD dự kiến | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/06_deployment.mmd` | Component/Deployment | Mermaid `flowchart TB` |
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/08_sequence_stripe.mmd` | Sequence: thanh toán qua Stripe Checkout (D035) | Mermaid `sequenceDiagram` |
 
-Thư mục hiện có mười hai tệp `.mmd`, và ngày 07/10/2026 cả mười hai đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
+Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 
-```bash
-mmdc -i docs/sdd/diagrams/05d_erd_rating.mmd -o docs/sdd/images/05d_erd_rating.png \
-     -c docs/sdd/mmdc-config.json -p docs/sdd/puppeteer-config.json -b white
-```
 
 `tests/test_diagrams.py` giữ năm luật cho các tệp `.mmd` và ảnh của chúng: bản dán trong tài liệu khớp từng byte với tệp nguồn; mọi tệp nguồn có ảnh và ảnh đó được nhúng; mọi ảnh được nhúng có thật; không ảnh nào trong `docs/sdd/images/` nằm ngoài tài liệu; và tỷ lệ rộng trên cao của mọi ảnh nhúng nằm trong khoảng 0,5–2,0 để in A4 còn đọc được.
 

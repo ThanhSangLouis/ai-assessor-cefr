@@ -15,7 +15,6 @@ from fastapi import Depends, HTTPException, Request
 from fastapi import Response as HttpResponse
 
 from aicefr.auth.sessions import COOKIE_NAME, LIFETIME_HOURS
-from aicefr.billing.plans import PlanFeature
 from aicefr.config import get_settings
 from aicefr.storage.auth_repository import Account, AuthRepository, Role
 
@@ -77,28 +76,6 @@ def require_role(*role: Role) -> Callable[..., Account]:
 STUDENT_ONLY = Depends(require_role(Role.STUDENT))
 STAFF_ONLY = Depends(require_role(Role.TEACHER, Role.ADMIN))
 ADMIN_ONLY = Depends(require_role(Role.ADMIN))
-
-
-def require_plan(plans, feature: PlanFeature) -> None:
-    """403 with the reason and the plans that include it, when the plan in force
-    does not (D034). `plans` is the billing service's facade; None means no
-    plans, and nothing is locked."""
-    if plans is None:
-        return
-    reason = plans.plan_refusal(feature=feature.value)
-    if reason:
-        raise HTTPException(403, reason)
-
-
-def can_view_response(account: Account, owner_account_id: str | None) -> bool:
-    """Owners may read their own response; teachers and admins may read every one.
-
-    Legacy responses with no owner yet (empty account_id) are readable by
-    teachers and admins only.
-    """
-    if account.is_staff:
-        return True
-    return owner_account_id is not None and owner_account_id == account.account_id
 
 
 def set_session_cookie(response: HttpResponse, token: str) -> None:

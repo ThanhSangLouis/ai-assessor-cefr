@@ -78,7 +78,7 @@ def standalone(
         bus.close()
 
     app = FastAPI(
-        title=f"AI Assessor CEFR — {name}",
+        title=f"SpeakUp — {name}",
         version=settings.version,
         lifespan=lifespan,
         docs_url=None if settings.is_production else "/docs",

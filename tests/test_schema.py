@@ -41,16 +41,14 @@ def test_every_identifier_a_table_had_as_key_is_unique():
     """What the SQL primary keys guaranteed, unique indexes still guarantee."""
     shape = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     # D060: one collection per aggregate root; a part embedded in its root
-    # (a review, a rating sheet, a lesson version) needs no key of its own.
+    # (a review, a lesson version) needs no key of its own.
     keys = {
         "response": ["response_id"],
+        "review_session": ["response_id"],  # D082: one per response
         "account": ["account_id"],
         "session": ["token_hash"],
         "task": ["task_id"],
         "order": ["order_id"],
-        "license": ["license_id"],
-        "rating_batch": ["batch_id"],
-        "study": ["study_id"],
         "classroom": ["class_id"],
         "path": ["path_id"],
         "lesson": ["lesson_id"],

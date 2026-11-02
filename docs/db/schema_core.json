@@ -15,6 +15,13 @@
       "unique": true
     },
     {
+      "name": "u_email",
+      "keys": [
+        "email"
+      ],
+      "unique": true
+    },
+    {
       "name": "u_identities.provider_identities.subject_hash",
       "keys": [
         "identities.provider",
@@ -91,13 +98,6 @@
   ],
   "classroom": [
     {
-      "name": "i_assignments.assignment_id",
-      "keys": [
-        "assignments.assignment_id"
-      ],
-      "unique": false
-    },
-    {
       "name": "i_members",
       "keys": [
         "members"
@@ -105,9 +105,9 @@
       "unique": false
     },
     {
-      "name": "i_teacher_id",
+      "name": "i_teacher_ids",
       "keys": [
-        "teacher_id"
+        "teacher_ids"
       ],
       "unique": false
     },
@@ -115,13 +115,6 @@
       "name": "u_class_id",
       "keys": [
         "class_id"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_code",
-      "keys": [
-        "code"
       ],
       "unique": true
     }
@@ -200,22 +193,6 @@
       "unique": true
     }
   ],
-  "license": [
-    {
-      "name": "i_installed_at",
-      "keys": [
-        "installed_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_license_id",
-      "keys": [
-        "license_id"
-      ],
-      "unique": true
-    }
-  ],
   "order": [
     {
       "name": "i_created_at",
@@ -229,14 +206,6 @@
       "keys": [
         "created_by",
         "kind"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_gateway_checkout_ref",
-      "keys": [
-        "gateway",
-        "checkout_ref"
       ],
       "unique": false
     },
@@ -272,32 +241,19 @@
       "unique": true
     }
   ],
-  "rating_batch": [
+  "payment": [
     {
-      "name": "i_ratings.assignment_id",
+      "name": "i_gateway_checkout_ref",
       "keys": [
-        "ratings.assignment_id"
+        "gateway",
+        "checkout_ref"
       ],
       "unique": false
     },
     {
-      "name": "i_ratings.rater_id",
+      "name": "u_order_id",
       "keys": [
-        "ratings.rater_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_ratings.response_id",
-      "keys": [
-        "ratings.response_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_batch_id",
-      "keys": [
-        "batch_id"
+        "order_id"
       ],
       "unique": true
     }
@@ -376,6 +332,15 @@
       "unique": true
     }
   ],
+  "review_session": [
+    {
+      "name": "u_response_id",
+      "keys": [
+        "response_id"
+      ],
+      "unique": true
+    }
+  ],
   "session": [
     {
       "name": "i_account_id",
@@ -392,30 +357,6 @@
       "unique": true
     }
   ],
-  "study": [
-    {
-      "name": "i_participants.account_id",
-      "keys": [
-        "participants.account_id"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_status_created_at",
-      "keys": [
-        "status",
-        "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_study_id",
-      "keys": [
-        "study_id"
-      ],
-      "unique": true
-    }
-  ],
   "system": [
     {
       "name": "u_key",
@@ -427,9 +368,8 @@
   ],
   "task": [
     {
-      "name": "i_purpose_active",
+      "name": "i_active",
       "keys": [
-        "purpose",
         "active"
       ],
       "unique": false

@@ -1,7 +1,9 @@
 """Sign-in, the merged audit log, and the gateway's session check (D043).
 
 FR-32 (sign-in), FR-36 (audit). There is no terms-of-use step any more (D064):
-a signed-in learner records straight away.
+a signed-in learner records straight away. D065: a student may open an account
+with a password (/signup); a forgotten one is replaced with a code sent by
+email (D079, `email_api`). The recovery code of D065 is gone (D081).
 """
 
 from __future__ import annotations
@@ -12,14 +14,22 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi import Response as HttpResponse
 
 from aicefr.api.deps import ADMIN_ONLY, ROLE_HOME, require_login, set_session_cookie
-from aicefr.api.schemas import LoginRequest
+from aicefr.api.schemas import LoginRequest, SignupRequest
 from aicefr.auth.sessions import COOKIE_NAME, device_label
+from aicefr.config import get_settings
 from aicefr.contracts import AuditEntry
 from aicefr.platform.callers import ACCOUNT_HEADER, GATEWAY_HEADER, encode_account
 from aicefr.platform.rpc import RemoteError, same_key
 from aicefr.services import Peers
+from aicefr.services.core.identity import email_api
 from aicefr.storage.audit_repository import AuditLog, merge
-from aicefr.storage.auth_repository import Account, AccountLocked, AuthRepository, Role
+from aicefr.storage.auth_repository import (
+    Account,
+    AccountLocked,
+    AuthRepository,
+    EmailTaken,
+    Role,
+)
 
 router = APIRouter()
 
@@ -63,10 +73,10 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
     # D029: an account's own history shows its sign-ins and failed attempts.
     # Only for pseudonyms that exist: a typed string that matches no account
     # is attacker input, and the audit log is not a place to keep it.
-    known = s.auth.get_by_pseudonym(info.pseudonym)
+    known = s.auth.by_sign_in_name(info.identifier)
     try:
         token = s.auth.login(
-            info.pseudonym, info.password, device_label(request.headers.get("user-agent"))
+            info.identifier, info.password, device_label(request.headers.get("user-agent"))
         )
     except AccountLocked as e:
         if known is not None:
@@ -80,7 +90,7 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
             s.audit_log.write(
                 known["pseudonym"], "auth.login_failed", known["account_id"], "wrong_password"
             )
-        raise HTTPException(401, "bút danh hoặc mật khẩu không đúng")
+        raise HTTPException(401, "email hoặc mật khẩu không đúng")
     s.audit_log.write(known["pseudonym"], "auth.login", known["account_id"], "method=password")
 
     set_session_cookie(response, token)
@@ -92,6 +102,54 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
         "status": "ok",
         "home": "/account?first=1" if must_change else home,
         "must_change_password": must_change,
+    }
+
+
+# A response that signs somebody in must not be kept by a browser or a proxy.
+NO_STORE = {"Cache-Control": "no-store"}
+
+
+@router.post("/api/v1/auth/signup", tags=["auth"])
+def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dict:
+    """Open a student account with an email, a full name and a password; sign it in.
+
+    D065, D071. The email is how the person signs in from now on; the
+    pseudonym is the system's choice and stays inside. A forgotten password is
+    replaced with a code sent to the email (D079). Only students sign
+    themselves up; a teacher or an administrator is given their role by
+    somebody with authority (FR-32).
+    """
+    if not get_settings().self_signup:
+        raise HTTPException(404, "máy chủ này không cho tự đăng ký")
+    s = svc()
+    try:
+        aid, pseudonym, token = s.auth.signup(
+            info.email,
+            info.full_name,
+            info.password,
+            device_label(request.headers.get("user-agent")),
+        )
+    except EmailTaken as e:
+        raise HTTPException(
+            409, "email này đã có tài khoản: hãy đăng nhập, hoặc dùng Quên mật khẩu"
+        ) from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    s.audit_log.write(pseudonym, "account.signup", aid, "method=password")
+    set_session_cookie(response, token)
+    response.headers.update(NO_STORE)
+    row = s.auth.get(aid)
+    # D079: a code to verify the address goes out at once; a failure to send
+    # never undoes the account, the account page sends another.
+    try:
+        verification = email_api.send_code(row, "verify")
+    except HTTPException:
+        verification = "error"
+    return {
+        "pseudonym": pseudonym,
+        "email": row["email"],
+        "home": ROLE_HOME[Role.STUDENT],
+        "email_verification": verification,
     }
 
 
@@ -109,6 +167,8 @@ def me(account: Account = Depends(require_login)) -> dict:
         "account_id": account.account_id,
         "pseudonym": account.pseudonym,
         "role": account.role.value,
+        "email": account.email,
+        "full_name": account.full_name,
     }
 
 

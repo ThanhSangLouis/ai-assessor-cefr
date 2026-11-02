@@ -3,7 +3,7 @@ API does not ripple into the domain logic."""
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator
 
 from aicefr.auth.pseudonyms import validate_pseudonym  # noqa: F401 - re-export
 from aicefr.contracts import Band
@@ -36,10 +36,25 @@ class ReviewDecision(BaseModel):
         return v
 
 
+# D071: people sign in with their email. `pseudonym` is still read, for an
+# account made before D071 that has no email yet.
+SIGN_IN_NAME = AliasChoices("email", "pseudonym", "identifier")
+
+
 class LoginRequest(BaseModel):
     """Login payload. The password is never written to the log."""
 
-    pseudonym: str = Field(min_length=1, max_length=64)
+    identifier: str = Field(min_length=1, max_length=254, validation_alias=SIGN_IN_NAME)
+    password: str = Field(min_length=1, max_length=256)
+
+
+class SignupRequest(BaseModel):
+    """Self sign-up (D065, D071): the email to sign in with, the full name a
+    teacher reads, a password. The pseudonym is drawn by the system and stays
+    inside, for research exports and the audit log."""
+
+    email: str = Field(min_length=3, max_length=254)
+    full_name: str = Field(min_length=1, max_length=80)
     password: str = Field(min_length=1, max_length=256)
 
 
@@ -69,6 +84,8 @@ class QueueItem(BaseModel):
     purpose: str = "assessment"
     # D028. Time of the latest teacher decision, on the owner's own list only.
     reviewed_at: str | None = None
+    # D071. The student's full name, on a teacher's queue.
+    student_name: str | None = None
 
 
 class ReviewClose(BaseModel):

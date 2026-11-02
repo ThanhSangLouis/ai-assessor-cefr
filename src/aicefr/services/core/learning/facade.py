@@ -71,8 +71,35 @@ class LearningFacade:
         ]
 
     @exposed
+    def band_choices(self, account_ids: list[str]) -> dict[str, dict]:
+        """The bands each learner studies, from their plan in force (D074).
+
+        `{account_id: {band_from, band_to, assigned_by, path_title}}`; a learner
+        without a plan is left out.
+        """
+        if self.plans is None:
+            return {}
+        out = {}
+        for account_id, p in self.plans.active_of(account_ids).items():
+            goal = p["goal"] or {}
+            if not (goal.get("band_from") or goal.get("band_to")):
+                continue
+            out[account_id] = {
+                "band_from": goal.get("band_from"),
+                "band_to": goal.get("band_to"),
+                "assigned_by": goal.get("assigned_by"),
+                "path_title": goal.get("path_title"),
+            }
+        return out
+
+    @exposed
     def reviews_due(self, account_id: str) -> int:
         return lessons_api.reviews_due(account_id)
+
+    @exposed
+    def daily(self, account_id: str, goal_seconds: int) -> dict:
+        """Today's speaking on the lesson path and the streak, for reminders (D055, D079)."""
+        return lessons_api.daily(account_id, goal_seconds)
 
     @exposed
     def count_attempts(self, account_id: str) -> int:

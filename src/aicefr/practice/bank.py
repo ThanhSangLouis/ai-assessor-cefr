@@ -1,10 +1,13 @@
-"""The practice task bank: 5 criteria x 6 bands = 30 tasks. D023, D059.
+"""The exercise bank the path's lessons are built from: 5 criteria x 6 bands. D023, D059.
+
+Since D083 these are no longer tasks of their own: `lessons/seed.py` turns each
+one into a lesson of the shipped path, and its missions are checked there.
 
 How a task is written, and why:
 
 * **Each task practises ONE criterion at ONE band.** Like a short lesson in a
   language-learning app: done in about a minute, and the learner knows at once
-  what they managed. Assessment tasks (P3/P4/P5) measure the whole response;
+  what they managed. Assessment tasks measure the whole response;
   a practice task aims at a single skill.
 * **Every mission is something the learner can check for themselves.** "Use
   at least 3 linking words", not "be more coherent": listening back to the
@@ -35,7 +38,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from aicefr.contracts import Band, Criterion, Mission, MissionKind, TaskPart
+from aicefr.contracts import Band, Criterion, Mission, MissionKind
 
 # Order of the learning path, which is also the order of suggestions before any
 # assessment exists. Fluency comes first: it is measured by VAD on the waveform
@@ -73,9 +76,6 @@ class PracticeSeed:
     tips: tuple[str, ...]
     min_seconds: int
     max_seconds: int
-    # Closest speaking format (P3 opinion, P4 description/narration). Practice
-    # is never scored, so `part` here selects no scoring path.
-    part: TaskPart
     reference_text: str | None = None
     prompt_version: str = "v1"
 
@@ -134,7 +134,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=45,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-FLU-A2",
@@ -152,7 +151,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=60,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-FLU-B1",
@@ -170,7 +168,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=45,
         max_seconds=75,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-FLU-B2",
@@ -188,7 +185,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=60,
         max_seconds=90,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-FLU-C1",
@@ -209,7 +205,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=75,
         max_seconds=120,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-FLU-C2",
@@ -230,7 +225,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=90,
         max_seconds=150,
-        part=TaskPart.P3,
     ),
     # ------------------------------------------------------------ coherence
     PracticeSeed(
@@ -249,7 +243,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=45,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-COH-A2",
@@ -267,7 +260,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=60,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-COH-B1",
@@ -289,7 +281,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=40,
         max_seconds=75,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-COH-B2",
@@ -315,7 +306,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=50,
         max_seconds=90,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-COH-C1",
@@ -357,7 +347,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=70,
         max_seconds=120,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-COH-C2",
@@ -389,7 +378,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=90,
         max_seconds=150,
-        part=TaskPart.P3,
     ),
     # ------------------------------------------------------------ range
     PracticeSeed(
@@ -423,7 +411,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=45,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-RAN-A2",
@@ -461,7 +448,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=60,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-RAN-B1",
@@ -496,7 +482,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=40,
         max_seconds=75,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-RAN-B2",
@@ -533,7 +518,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=50,
         max_seconds=90,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-RAN-C1",
@@ -571,7 +555,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=70,
         max_seconds=120,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-RAN-C2",
@@ -610,7 +593,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=90,
         max_seconds=150,
-        part=TaskPart.P3,
     ),
     # ------------------------------------------------------------ accuracy
     PracticeSeed(
@@ -629,7 +611,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=45,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-ACC-A2",
@@ -651,7 +632,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=60,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-ACC-B1",
@@ -676,7 +656,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=40,
         max_seconds=75,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-ACC-B2",
@@ -702,7 +681,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=50,
         max_seconds=90,
-        part=TaskPart.P4,
     ),
     PracticeSeed(
         task_id="PR-ACC-C1",
@@ -727,7 +705,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=70,
         max_seconds=120,
-        part=TaskPart.P3,
     ),
     PracticeSeed(
         task_id="PR-ACC-C2",
@@ -752,7 +729,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=90,
         max_seconds=150,
-        part=TaskPart.P4,
     ),
     # ------------------------------------------------------------ phonology
     PracticeSeed(
@@ -768,7 +744,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=60,
-        part=TaskPart.P4,
         reference_text=(
             "This is my room. It is small but nice. "
             "There is a bed, a desk and a big window. "
@@ -789,7 +764,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=75,
-        part=TaskPart.P4,
         reference_text=(
             "My name is Lan, and I am a first-year student. I live with my family in a "
             "small house near the market. Every morning, I take the bus to school. I like "
@@ -811,7 +785,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=75,
-        part=TaskPart.P4,
         reference_text=(
             "Hello everyone, and welcome to the English speaking club. This month, we are "
             "going to meet every Thursday evening in the library on the second floor. Each "
@@ -834,7 +807,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=30,
         max_seconds=90,
-        part=TaskPart.P4,
         reference_text=(
             "Many young people now spend several hours a day on their phones, and "
             "researchers are increasingly concerned about the effect on sleep. Bright "
@@ -860,7 +832,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=40,
         max_seconds=100,
-        part=TaskPart.P4,
         reference_text=(
             "Good evening, everyone. The question before us tonight is not whether "
             "technology will change the way we learn, but how we intend to shape that change. "
@@ -886,7 +857,6 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
         min_seconds=40,
         max_seconds=120,
-        part=TaskPart.P4,
         reference_text=(
             "It is often acknowledged, though rarely examined, that the strengths we admire "
             "in others are frequently the very qualities we struggle to cultivate in ourselves. "
@@ -897,8 +867,3 @@ PRACTICE_TASKS: tuple[PracticeSeed, ...] = (
         ),
     ),
 )
-
-
-def practice_task_id(criterion: Criterion, band: Band) -> str:
-    """Practice task id for one criterion at one band. The bank fills all 30 cells."""
-    return next(t.task_id for t in PRACTICE_TASKS if t.criterion is criterion and t.band is band)

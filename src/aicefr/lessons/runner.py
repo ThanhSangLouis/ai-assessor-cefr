@@ -104,8 +104,8 @@ class LessonRunner:
             # Never a prompt with the expected text: it pulls the transcript
             # toward the text instead of what the learner said.
             asr = self.asr_engine.transcribe(trimmed, sr)
-        except AsrError:
-            logger.warning("recogniser failed on a lesson step")
+        except AsrError as e:
+            logger.warning("recogniser failed on a lesson step: %s", e)
             return self._unmeasured(
                 step, [ReasonCode.ASR_FAILED], "Máy nhận dạng gặp lỗi. Thử ghi lại sau ít giây."
             )

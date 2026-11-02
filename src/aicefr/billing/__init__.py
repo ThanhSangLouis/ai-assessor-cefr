@@ -1,12 +1,10 @@
-"""Service plans, licences and payment for an institution's deployment (D033).
+"""Payment for run packs through payment gateways (D035, D053, D075).
 
-The customer is the institution -- a faculty, a language centre -- never the
-student: accounts are handed out by an administrator (BR-03), the system knows
-pseudonyms only (BR-02), and a learner must never find a lesson, a report or
-their own data behind a paywall (BR-29). What a plan limits is the
-institution's capacity: how many student accounts it runs, which quality
-assurance tools its staff can start, how many assessments it expects a month.
+One centre runs the deployment; a learner or a teacher buys runs for the
+metered channel (D049) and pays through a gateway. The service plans,
+licences and licence keys of D033 and D034 were removed in D075.
 
-Pure rules live in `plans` and `keys`; the gateways in `gateways`; the one
+Stripe lives in `stripe_gateway`, the sandbox in `gateways` (VNPay and MoMo
+were removed in D075); the one
 place that reads the database and decides is `service.BillingService`.
 """

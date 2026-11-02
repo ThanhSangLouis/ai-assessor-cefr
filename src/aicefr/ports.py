@@ -206,13 +206,13 @@ class PaymentGateway(Protocol):
     moves; `VnpayGateway` and `MomoGateway`, the Vietnamese gateways, which
     sign their results into an address; `StripeGateway`, whose page is opened
     through its API and whose events come signed to a webhook. A deployment may
-    offer several at once and the administrator picks one per order. Another
-    gateway is one more adapter: the order, the licence it buys and the checks
-    on the result do not change.
+    offer several at once and the buyer picks one per order. Another gateway
+    is one more adapter: the order, the runs it buys and the checks on the
+    result do not change.
     """
 
     name: str  # in addresses and on each order: "stripe"
-    title: str  # what the administrator reads: "Stripe"
+    title: str  # what the buyer reads: "Stripe"
     methods: str  # how the payer pays there, in a few words
     live: bool  # True when real money moves
     note: str  # how to pay in the gateway's test environment; "" when live

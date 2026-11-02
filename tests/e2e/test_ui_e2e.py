@@ -37,7 +37,7 @@ pytestmark = pytest.mark.e2e
 def login_home(page, server, pseudonym: str, home: str) -> None:
     """Log in WITHOUT `?next=`, and wait for the role's own start page."""
     page.goto("/login")
-    page.get_by_label("Mã bút danh").fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(pseudonym)
     page.get_by_label("Mật khẩu").fill(server.password)
     page.get_by_role("button", name="Đăng nhập").click()
     page.wait_for_url(lambda url: urlparse(url).path == home)
@@ -81,27 +81,24 @@ def submit_assessment(page, live_server) -> str:
 def test_each_role_sees_only_its_own_navigation_and_lands_on_its_home(context, live_server):
     student = context.new_page()
     login_home(student, live_server, live_server.account(), "/practice")
-    # D054 added the class assignments; "Lượt của tôi" shows only where runs are counted.
-    assert nav_texts(student) == [
-        "Luyện tập",
-        "Nộp bài",
-        "Bài được giao",
-        "Bài của tôi",
-        "Tiến độ",
-    ]
+    # D068: one "Kết quả" entry; D075: no "Bài được giao" any more; "Lượt của
+    # tôi" shows only where runs are counted.
+    assert nav_texts(student) == ["Luyện tập", "Nộp bài", "Kết quả"]
+    expect(student.locator(".site-nav a[href='/my-assignments']")).to_have_count(0)
 
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
         login_home(teacher, live_server, live_server.account("teacher"), "/review")
-        # D030 added the blind double rating to the teacher's own work, D054 the classes.
+        # D054 added the classes, D076 the prompts by band; D078 took the blind rating away.
         assert nav_texts(teacher) == [
             "Hàng đợi duyệt",
             "Lớp học",
             "Lộ trình luyện",
-            "Thống kê lớp",
-            "Chấm mù",
+            "Đề đánh giá",
+            "Thống kê",
         ]
-        teacher.get_by_role("link", name=re.compile("AI Assessor CEFR")).click()
+        expect(teacher.locator(".site-nav a[href='/rate']")).to_have_count(0)
+        teacher.get_by_role("link", name=re.compile("SpeakUp")).click()
         teacher.wait_for_url(lambda url: urlparse(url).path == "/review")
     finally:
         teacher.context.close()
@@ -165,8 +162,10 @@ def test_uploaded_file_is_heard_back_then_submitted_to_a_report(context, live_se
     # The next step sits in the result card: a practice link for a student.
     practise = page.locator("#report-summary .next-step a").first
     expect(practise).to_have_attribute("href", re.compile(r"^/practice"))
-    expect(page.locator(".section-nav a", has_text="Bằng chứng và bản ghi")).to_be_visible()
-    expect(page.locator(".site-nav a[aria-current='page']")).to_have_text(re.compile("Bài của tôi"))
+    # D068: four parts; the machine's workings are one fold at the foot.
+    expect(page.locator("#report-evidence audio")).to_be_attached()
+    expect(page.locator("details#report-detail summary")).to_contain_text("Chi tiết")
+    expect(page.locator(".site-nav a[aria-current='page']")).to_have_text(re.compile("Kết quả"))
 
 
 def test_chosen_prompt_sits_above_the_record_button(context, live_server):
@@ -183,30 +182,36 @@ def test_chosen_prompt_sits_above_the_record_button(context, live_server):
 # ---------------------------------------------------------------- student lists
 
 
-def test_my_responses_filters_assessments_from_practice(context, live_server):
+def test_my_responses_lists_assessments_without_a_kind_filter(context, live_server):
     page = student_page(context, live_server, "/")
     submit_assessment(page, live_server)
-    page.goto("/practice/PR-COH-A2")
-    page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
-    page.get_by_role("button", name="Nộp bài luyện").click()
-    page.wait_for_url(re.compile(r"/practice/results/[0-9a-f]+$"))
+    # D083: a practice task is refused; there is one kind of response left.
+    r = page.request.post(
+        "/api/v1/responses",
+        multipart={
+            "audio": {
+                "name": "full-35s.wav",
+                "mimeType": "audio/wav",
+                "buffer": (live_server.files / "full-35s.wav").read_bytes(),
+            },
+            "task_id": "PR-COH-A2",
+        },
+    )
+    assert r.status == 422
 
     page.goto("/my-responses")
-    items = page.locator(".response-item")
-    expect(items).to_have_count(2)
-    page.get_by_role("button", name=re.compile(r"^Luyện tập \(1\)")).click()
-    expect(items).to_have_count(1)
-    expect(items.first).to_contain_text("Không chấm")
-    page.get_by_role("button", name=re.compile(r"^Đánh giá \(1\)")).click()
-    expect(items).to_have_count(1)
-    expect(items.first).not_to_contain_text("Luyện tập ·")
+    expect(page.locator(".response-item")).to_have_count(1)
+    expect(page.locator("#list-filter")).to_have_count(0)
 
 
 def test_teacher_opens_the_next_free_response_and_reads_names_not_codes(context, live_server):
-    submit_assessment(student_page(context, live_server, "/"), live_server)
+    learner = student_page(context, live_server, "/")
+    submit_assessment(learner, live_server)
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
-        login(teacher, live_server, live_server.account("teacher"), "/review")
+        gv = live_server.account("teacher")
+        live_server.teach(gv, learner.request.get("/api/v1/me").json()["pseudonym"])
+        login(teacher, live_server, gv, "/review")
         next_button = teacher.get_by_role("link", name="Duyệt bài tiếp theo")
         expect(next_button).not_to_have_attribute("aria-disabled", "true")
         next_button.click()
@@ -276,7 +281,7 @@ def test_admin_activation_asks_first_and_only_compatible_models_offer_it(context
 # ---------------------------------------------------------------- phone
 
 
-@pytest.mark.parametrize("path", ["/", "/my-responses", "/practice/PR-COH-A2"])
+@pytest.mark.parametrize("path", ["/", "/my-responses", "/my-progress"])
 def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     context, live_server, path
 ):

@@ -68,7 +68,7 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-PF-U01 | `test_a_good_token_gives_a_hash_of_the_subject_and_nothing_else_kept` | AC-59.3 | Token đúng cho ra mã băm 64 ký tự của `sub`, không chứa `sub` |
+| TC-PF-U01 | `test_a_good_token_gives_a_hash_of_the_subject_and_the_verified_email` | AC-59.3 | Token đúng cho ra mã băm 64 ký tự của `sub`, không chứa `sub`; email đã xác minh và tên (D071) |
 | TC-PF-U02 | `test_each_wrong_claim_is_refused` | AC-59.5 | Chín cách sai: issuer, audience, bên được uỷ quyền, hết hạn, cấp ở tương lai, nonce khác hoặc thiếu, thiếu `sub`, thiếu hạn |
 | TC-PF-U03 | `test_both_spellings_of_the_google_issuer_are_accepted` | FR-59 | Hai cách viết issuer Google đều nhận |
 | TC-PF-U04 | `test_a_token_for_several_audiences_needs_us_as_authorised_party` | FR-59 | Token nhiều audience phải ghi ta là `azp` |
@@ -79,6 +79,7 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PF-U09 | `test_only_same_site_paths_are_kept_as_where_to_go_next` | FR-59 | Không chuyển hướng ra trang ngoài sau khi đăng nhập |
 | TC-PF-U10 | `test_a_failed_exchange_says_so_without_leaking_the_reason` | FR-59 | Lỗi mạng hay phản hồi thiếu token thành mã lỗi "exchange" |
 | TC-PF-U11 | `test_a_session_gets_a_coarse_device_name_not_a_fingerprint` | AC-57.1 | Tên thiết bị thô cho bảy chuỗi user-agent |
+| TC-PF-U12 | `test_an_address_google_has_not_verified_is_not_used` | AC-59.3 | (D071) Email Google chưa xác minh không được dùng để nhận tài khoản |
 
 ### Tầng 2 — Integration (`tests/test_profile.py`)
 
@@ -87,7 +88,7 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PF-I01 | `test_a_profile_takes_only_listed_avatars_and_goals` | AC-56.1 | Lưu ba giá trị hợp lệ; ba loại giá trị lạ bị 422; nhật ký ghi trường đã sửa |
 | TC-PF-I02 | `test_the_daily_goal_sets_the_target_on_the_path_page` | AC-56.2 | Mục tiêu 10 phút thành 600 giây ở `/api/v1/learn` |
 | TC-PF-I03 | `test_the_sidebar_draws_the_chosen_avatar` | AC-56.3 | Trang vẽ đúng lớp màu và biểu tượng đã chọn |
-| TC-PF-I04 | `test_the_account_page_has_four_parts_for_a_student_and_three_for_staff` | AC-56.4 | Sinh viên bốn mục, giảng viên ba mục |
+| TC-PF-I04 | `test_the_account_page_has_three_parts_for_a_student_and_two_for_staff` | AC-56.4 | Sinh viên ba mục, giảng viên hai mục; lịch sử nằm trong Bảo mật, mục tiêu ngày ở trang Luyện tập (D068) |
 | TC-PF-I05 | `test_a_person_sees_their_sessions_and_ends_one` | AC-57.1 | Hai phiên đúng tên thiết bị; đăng xuất phiên khác, rồi chính phiên này |
 | TC-PF-I06 | `test_sessions_of_one_account_cannot_be_ended_by_another` | AC-57.2 | Mã phiên của người khác trả 404 |
 | TC-PF-I07 | `test_the_history_shows_sign_ins_failed_attempts_and_changes` | AC-58.1 | Ba sự kiện đúng thứ tự, lý do đăng nhập sai |

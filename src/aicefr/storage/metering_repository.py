@@ -1,6 +1,6 @@
 """The ledger of the metered channel (D049): holds, charges, releases, balances.
 
-Two collections (D060), as the class diagram has them:
+Three collections (D060, D078), as the class diagram has them:
 
 * `wallet` -- one document per account (`Wallet`): what it has paid for in
   advance (on the NetID channel, what NetID reports as prepaid IDPoint), the
@@ -11,7 +11,12 @@ Two collections (D060), as the class diagram has them:
   recording came in, what was charged when it had a result, or that it was
   released. Unique on (key, action), so a retried submission or a duplicated
   event never charges twice. Entries grow with every recording, so they are
-  documents of their own, pointing at the wallet by its owner.
+  documents of their own, pointing at the wallet by its owner;
+* `price_list` -- one document, the prices an administrator set on the
+  dashboard (D078): what a recording, a practice attempt and an upgraded
+  answer cost, the free runs each month and the run packs on sale, with every
+  earlier version and who set it. Absent until the first change: the settings
+  (`AICEFR_PRICE_*`) stand until then.
 
 No multi-document transactions (D048): every step that must not race is one
 conditional update of one document. A top-up records itself and raises the
@@ -31,11 +36,21 @@ from pathlib import Path
 
 from pymongo import DESCENDING, ReturnDocument
 
-from aicefr.contracts import TaskPurpose
-from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, TokenUsage
+from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, UNITS_PER_RUN, TokenUsage
 from aicefr.storage.db import IntegrityError, MongoStore
 from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import ensure_current
+
+
+class MeteredAction(str, Enum):
+    """What a ledger entry paid for: a recording, (D072) an upgraded answer, or
+    (D075) a teacher's lesson draft. PRACTICE is a recording of a practice task
+    (D023): none is made since D083, the entries made before keep it."""
+
+    ASSESSMENT = "assessment"
+    PRACTICE = "practice"
+    UPGRADE = "upgrade"
+    LESSON_DRAFT = "lesson_draft"
 
 
 class LedgerState(str, Enum):
@@ -52,8 +67,8 @@ class LedgerEntry:
 
     entry_id: str
     user_ref: str  # the wallet's owner
-    action: TaskPurpose
-    key: str  # the response
+    action: MeteredAction
+    key: str  # the response; "upgrade-<response id>" for an upgraded answer
     held: int
     from_free: int
     from_wallet: int
@@ -71,7 +86,7 @@ class LedgerEntry:
     def from_doc(cls, doc: dict) -> LedgerEntry:
         known = cls.__dataclass_fields__
         found = {k: v for k, v in doc.items() if k in known}
-        found["action"] = TaskPurpose(doc["action"])
+        found["action"] = MeteredAction(doc["action"])
         found["state"] = LedgerState(doc["state"])
         return cls(**found)
 
@@ -134,8 +149,43 @@ def cycle(now: datetime | None = None) -> str:
 class MeteringRepository(MongoStore):
     def __init__(self, db_path: str | Path, free_units: int = FREE_UNITS_PER_CYCLE) -> None:
         self.db_path = str(db_path)
-        self.free_units = free_units
+        self._free_units = free_units
         ensure_current(self.db_path)
+
+    # ------------------------------------------------------------ prices (D078)
+
+    def price_list(self) -> dict | None:
+        """The prices an administrator set, or None while the settings stand."""
+        return self.col("price_list").find_one({"_id": "current"}, {"_id": 0, "history": 0})
+
+    def price_history(self, limit: int = 10) -> list[dict]:
+        row = self.col("price_list").find_one({"_id": "current"}, {"history": 1})
+        return list(reversed((row or {}).get("history", [])))[:limit]
+
+    def set_price_list(self, values: dict, by: str) -> dict:
+        """A new version of the prices; the one before goes into the history."""
+        before = self.price_list()
+        number = int((before or {}).get("number", 0)) + 1
+        doc = {
+            **values,
+            "number": number,
+            "version": f"price-admin-{number}",
+            "changed_by": by,
+            "changed_at": _now(),
+        }
+        update: dict = {"$set": doc}
+        if before:
+            update["$push"] = {"history": before}
+        self.col("price_list").update_one({"_id": "current"}, update, upsert=True)
+        return doc
+
+    @property
+    def free_units(self) -> int:
+        """Free runs each month, in thousandths: the administrator's, else the setting."""
+        doc = self.price_list()
+        if doc and doc.get("free_runs") is not None:
+            return int(round(float(doc["free_runs"]) * UNITS_PER_RUN))
+        return self._free_units
 
     def _wallet(self, user_ref: str) -> Wallet:
         row = self.col("wallet").find_one({"user_ref": user_ref})
@@ -234,13 +284,13 @@ class MeteringRepository(MongoStore):
             )
         self._add_to_wallet(user_ref, wallet)
 
-    def entry(self, key: str, action: TaskPurpose) -> dict | None:
+    def entry(self, key: str, action: MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
     def hold(
         self,
         user_ref: str,
-        action: TaskPurpose,
+        action: MeteredAction,
         key: str,
         units: int,
         version: str = PRICE_VERSION,
@@ -267,7 +317,7 @@ class MeteringRepository(MongoStore):
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
             user_ref=user_ref,
-            action=action,
+            action=MeteredAction(action.value),
             key=key,
             held=units,
             from_free=free,
@@ -289,7 +339,7 @@ class MeteringRepository(MongoStore):
     def settle(
         self,
         key: str,
-        action: TaskPurpose,
+        action: MeteredAction,
         result: bool,
         charge: int | None = None,
         usage: TokenUsage | None = None,
@@ -336,7 +386,7 @@ class MeteringRepository(MongoStore):
         )
         released = []
         for row in list(stale):
-            done = self.settle(row["key"], TaskPurpose(row["action"]), result=False)
+            done = self.settle(row["key"], MeteredAction(row["action"]), result=False)
             if done and done["state"] == LedgerState.RELEASED.value:
                 released.append(row["key"])
         return released

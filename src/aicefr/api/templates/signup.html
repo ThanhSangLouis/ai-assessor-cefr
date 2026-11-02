@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_art.html" import terraces %}
+{% block title %}Đăng ký · SpeakUp{% endblock %}
+{% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
+{% block content %}
+<div class="auth-split">
+  <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
+  <section class="auth-intro" aria-labelledby="auth-intro-h">
+    <p class="eyebrow">SpeakUp</p>
+    <h2 id="auth-intro-h">Một tài khoản theo email của bạn</h2>
+    <ul class="auth-points">
+      <li>Đăng nhập bằng email và mật khẩu, hoặc bằng Google với cùng email.</li>
+      <li>Giảng viên lớp bạn thấy họ tên của bạn khi chấm bài.</li>
+      <li>Quên mật khẩu thì nhận mã đặt lại qua email.</li>
+    </ul>
+  </section>
+
+  <section class="card auth-card" aria-labelledby="signup-h">
+    <h1 id="signup-h">Đăng ký tài khoản sinh viên</h1>
+    <form id="f" novalidate>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" required autocapitalize="none"
+             spellcheck="false" maxlength="254">
+      <label for="full-name">Họ và tên</label>
+      <input id="full-name" autocomplete="name" required maxlength="80" aria-describedby="name-hint">
+      <p class="field-hint" id="name-hint">Tên giảng viên lớp bạn sẽ thấy. Sửa được ở trang Tài khoản.</p>
+      <label for="password">Mật khẩu</label>
+      <input id="password" type="password" autocomplete="new-password" required
+             minlength="{{ min_length }}" aria-describedby="pw-hint">
+      <p class="field-hint" id="pw-hint">Từ {{ min_length }} ký tự trở lên. Câu dài dễ nhớ tốt hơn chữ hoa và ký hiệu.</p>
+      <label for="again">Nhập lại mật khẩu</label>
+      <input id="again" type="password" autocomplete="new-password" required>
+      <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
+      <div class="button-row">
+        <button id="b" type="submit">Tạo tài khoản</button>
+      </div>
+      <div id="tb" role="alert"></div>
+    </form>
+
+    <div id="done" hidden>
+      <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập.</p>
+      <p class="notice" id="verify-note" hidden>Đã gửi mã xác minh tới email của bạn. Nhập mã ở trang Tài khoản để nhận nhắc học và đặt lại mật khẩu qua email.</p>
+      <div class="button-row">
+        <a class="button" id="go" href="/practice">Bắt đầu luyện nói</a>
+      </div>
+    </div>
+
+    <p class="muted auth-foot">
+      Đã có tài khoản? <a href="/login">Đăng nhập</a>.
+      {% if google_enabled and google_signup %}Hoặc đăng ký bằng Google ở trang đăng nhập.{% endif %}
+      Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
+    </p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('signup.js') }}"></script>{% endblock %}

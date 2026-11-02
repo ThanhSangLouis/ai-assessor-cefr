@@ -17,6 +17,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi import Response as HttpResponse
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -24,10 +25,8 @@ from aicefr.api.deps import (
     STAFF_ONLY,
     STUDENT_ONLY,
     require_login,
-    require_plan,
 )
 from aicefr.audio.decoder import SNIFF_BYTES, sniff
-from aicefr.billing.plans import PlanFeature
 from aicefr.contracts import Band, Criterion
 from aicefr.lessons.checks import compare_rounds
 from aicefr.lessons.generate import build_lesson, build_word_lesson
@@ -70,7 +69,7 @@ from aicefr.pronunciation.vietnamese import profile as pronunciation_profile
 from aicefr.services import Peers
 from aicefr.services.speech.worker import PROBE_QUEUE, STEP_QUEUE, STEP_TIMEOUT_S
 from aicefr.storage.audit_repository import AuditLog
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 from aicefr.storage.lesson_repository import LessonRepository, NotFound
 
 router = APIRouter()
@@ -123,13 +122,8 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _plan_allows(feature: PlanFeature) -> None:
-    require_plan(svc().peers.billing, feature)
-
-
 def _authoring(account: Account = STAFF_ONLY) -> Account:
-    """Writing lesson paths is a staff tool of the plan (D034); reading them never is."""
-    _plan_allows(PlanFeature.LESSON_AUTHORING)
+    """Writing lesson paths is for staff; since D075 no plan stands in the way."""
     return account
 
 
@@ -255,6 +249,23 @@ def _choose_path(path_id: str | None, published_only: bool) -> dict | None:
     return paths[0] if paths else None
 
 
+def daily(account_id: str, goal_seconds: int) -> dict:
+    """Today's speaking on the lesson path against the goal, and the streak (D055, D079).
+
+    What a reminder -- on the home screen or by email -- is about: the lessons
+    the learner studies now, not the practice tasks of D023.
+    """
+    rows = svc().lessons.attempts(account_id=account_id)
+    today = today_summary(_infos(rows), _now(), goal_seconds=goal_seconds)
+    return {
+        "streak": today.streak,
+        "practiced_today": today.seconds > 0,
+        "seconds": today.seconds,
+        "goal_seconds": today.goal_seconds,
+        "goal_met": today.goal_met,
+    }
+
+
 def _infos(rows: list[dict]) -> list[AttemptInfo]:
     return [
         AttemptInfo(
@@ -298,6 +309,38 @@ def _lesson_view(lesson: Lesson) -> dict:
 # ================================================================= learners
 
 
+def _next_in_plan(account: Account) -> dict | None:
+    """The first lesson not yet done of the learner's band plan (D074), if they have one.
+
+    A learner who chose their bands, or was assigned a path, studies that path:
+    what comes next follows it, not the sample path the page also shows.
+    """
+    if account.role is not Role.STUDENT:
+        return None
+    from aicefr.services.core.learning import plans_api  # imports this module
+
+    try:
+        stored = plans_api.plans().active(account.account_id)
+    except RuntimeError:  # pragma: no cover - plans not configured in this process
+        return None
+    if stored is None:
+        return None
+    plan = plans_api._view(stored, account)
+    goal = plan.get("goal") or {}
+    for u in plan["units"]:
+        for item in u["lessons"]:
+            if item["status"] not in ("completed", "unavailable"):
+                lo, hi = goal.get("band_from"), goal.get("band_to")
+                where = f"{lo} → {hi}" if lo != hi else lo
+                return {
+                    "lesson_id": item["lesson_id"],
+                    "title": item["title"],
+                    "basis": "band_plan",
+                    "reason": f"Bài tiếp theo trong lộ trình {where} của bạn.",
+                }
+    return None
+
+
 @router.get("/api/v1/learn", tags=["student"])
 def learn_home(path_id: str | None = None, account: Account = Depends(require_login)) -> dict:
     """The learner's path: units and lessons with progress, today, reviews, what next."""
@@ -333,7 +376,7 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
                     "steps": st.total,
                     "passed": st.passed,
                     "status": "completed" if complete else st.status,
-                    "sample": lesson.sample,
+                    "built_in": lesson.built_in,
                     "kinds": [s.kind.value for s in lesson.steps],
                 }
             )
@@ -356,13 +399,14 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
     )
     nxt = next_lesson(ordered, states, weakest, band)
     title = {ls.lesson_id: ls.title for ls, _ in ordered}
+    planned = _next_in_plan(account)
     all_rows = lessons_repo.attempts(account_id=account.account_id)
     # The learner's own daily goal (D029), chosen on the account page.
     today = today_summary(_infos(all_rows), _now(), goal_seconds=account.daily_goal_s)
     facts, have, _new = _award(account, all_rows)
     return {
         "paths": [
-            {"path_id": p["path_id"], "title": p["title"], "sample": bool(p["sample"])}
+            {"path_id": p["path_id"], "title": p["title"], "built_in": bool(p["built_in"])}
             for p in paths
         ],
         "path": {
@@ -371,12 +415,13 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
             "description": chosen["description"],
             "band_from": chosen["band_from"],
             "band_to": chosen["band_to"],
-            "sample": bool(chosen["sample"]),
+            "built_in": bool(chosen["built_in"]),
             "units": units,
             "lessons_total": len(ordered),
             "lessons_completed": done_total,
         },
-        "next": (
+        "next": planned
+        or (
             {
                 "lesson_id": nxt.lesson_id,
                 "title": title.get(nxt.lesson_id, ""),
@@ -523,6 +568,98 @@ def _compare_with_first_round(account: Account, lesson_id: str, step_id: str, re
         result.changes = compare_rounds(firsts[-1]["result"], result)
 
 
+# ---------------------------------------------------------------- retell (D069)
+# The same task again, right after its report, three times under a shrinking
+# time limit (4/3/2, Nation 1989; task repetition: Bygate 2018). Each round is
+# measured like a lesson's free step and compared with the first: pace and
+# pauses, what repeating under time pressure trains (Thai & Boers 2016).
+
+RETELL_STEP = "retell"
+RETELL_MAX_S = 90  # a long recording is retold as its first ninety seconds
+RETELL_FLOOR_S = 20
+
+
+def _retell_lesson(response_id: str) -> str:
+    return f"retell-{response_id}"
+
+
+def _retell_step(source: dict) -> Step:
+    base = max(RETELL_FLOOR_S, min(int(source["max_seconds"]), RETELL_MAX_S))
+    rounds = [base, max(RETELL_FLOOR_S, round(base * 0.75)), max(RETELL_FLOOR_S, round(base * 0.5))]
+    return Step(
+        step_id=RETELL_STEP,
+        kind=StepKind.FREE,
+        title="Nói lại đề này",
+        instruction=source["prompt"],
+        max_seconds=base,
+        rounds=rounds,
+    )
+
+
+def _retell_source(account: Account, response_id: str) -> dict:
+    source = svc().peers.assessment.retell_source(
+        account_id=account.account_id, response_id=response_id
+    )
+    if source is None:
+        raise HTTPException(404, "không tìm thấy bài này")
+    return source
+
+
+@router.get("/api/v1/learn/retell/{response_id}", tags=["student"])
+def retell(response_id: str, account: Account = STUDENT_ONLY) -> dict:
+    """The task, its three rounds, and what this learner already recorded of them."""
+    source = _retell_source(account, response_id)
+    step = _retell_step(source)
+    rows = svc().lessons.attempts(
+        account_id=account.account_id, lesson_id=_retell_lesson(response_id)
+    )
+    return {
+        **source,
+        "rounds": step.round_limits(),
+        "done": [
+            {
+                "attempt_id": r["attempt_id"],
+                "round": r["round"] or 1,
+                "result": r["result"].model_dump(mode="json"),
+                "audio_url": _audio_url(r["attempt_id"]),
+            }
+            for r in rows
+            if r["step_id"] == RETELL_STEP
+        ],
+    }
+
+
+@router.post("/api/v1/learn/retell/{response_id}/rounds", tags=["student"])
+async def retell_round(
+    response_id: str,
+    audio: UploadFile,
+    round: int = Form(1),  # noqa: A002 - the form field is called round
+    account: Account = STUDENT_ONLY,
+) -> dict:
+    source = _retell_source(account, response_id)
+    step = _retell_step(source)
+    round_index = min(max(round, 1), len(step.round_limits()))
+    data, kind = await _read_audio(audio)
+
+    # The speech service answers in seconds; not on the event loop (D066).
+    def measure_and_store() -> dict:
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(step, data, kind, round_index, None, keep=audio_key)
+        lesson_id = _retell_lesson(response_id)
+        _compare_with_first_round(account, lesson_id, RETELL_STEP, result)
+        svc().lessons.add_attempt(
+            account.account_id, lesson_id, 0, result, audio_key=audio_key, attempt_id=attempt_id
+        )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+        }
+
+    return await run_in_threadpool(measure_and_store)
+
+
 @router.post("/api/v1/learn/lessons/{lesson_id}/steps/{step_id}/attempts", tags=["student"])
 async def learn_attempt(
     lesson_id: str,
@@ -542,35 +679,48 @@ async def learn_attempt(
     round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
 
     data, kind = await _read_audio(audio)
-    before = lesson_state(
-        lesson, _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id))
-    )
-    attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
-    audio_key = f"lesson-audio-{attempt_id}.{kind}"
-    result = _measure(step, data, kind, round_index, step.answers, keep=audio_key)
-    _compare_with_first_round(account, lesson_id, step_id, result)
 
-    lessons_repo.add_attempt(
-        account.account_id, lesson_id, version, result, audio_key=audio_key, attempt_id=attempt_id
-    )
-    _schedule_reviews(account, lesson, step, result)
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        before = lesson_state(
+            lesson,
+            _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)),
+        )
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(step, data, kind, round_index, step.answers, keep=audio_key)
+        _compare_with_first_round(account, lesson_id, step_id, result)
 
-    after = lesson_state(
-        lesson, _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id))
-    )
-    return {
-        "attempt_id": attempt_id,
-        "result": result.model_dump(mode="json"),
-        "audio_url": _audio_url(attempt_id),
-        "progress": {
-            "passed": after.passed,
-            "total": after.total,
-            "free_done": after.free_done,
-            "completed": is_complete(lesson, after),
-        },
-        "completed_now": is_complete(lesson, after) and not is_complete(lesson, before),
-        "achievements": _just_reached(account),
-    }
+        lessons_repo.add_attempt(
+            account.account_id,
+            lesson_id,
+            version,
+            result,
+            audio_key=audio_key,
+            attempt_id=attempt_id,
+        )
+        _schedule_reviews(account, lesson, step, result)
+
+        after = lesson_state(
+            lesson,
+            _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)),
+        )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+            "progress": {
+                "passed": after.passed,
+                "total": after.total,
+                "free_done": after.free_done,
+                "completed": is_complete(lesson, after),
+            },
+            "completed_now": is_complete(lesson, after) and not is_complete(lesson, before),
+            "achievements": _just_reached(account),
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 def _rand() -> str:
@@ -586,7 +736,7 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
     except NotFound:
         raise HTTPException(404, "không tìm thấy bản ghi") from None
     # 404 rather than 403 for someone else's attempt: a 403 would confirm it exists.
-    if row["account_id"] != account.account_id and not account.is_staff:
+    if not _may_see(account, row["account_id"]):
         raise HTTPException(404, "không tìm thấy bản ghi")
     key = row.get("audio_key")
     if not key:
@@ -604,27 +754,6 @@ def attempt_audio(attempt_id: str, account: Account = Depends(require_login)) ->
         media_type=AUDIO_TYPES.get(ext, "application/octet-stream"),
         headers={"Cache-Control": "private, no-store"},
     )
-
-
-@router.delete("/api/v1/learn/attempts/{attempt_id}", tags=["student"])
-def delete_attempt(attempt_id: str, account: Account = Depends(require_login)) -> dict:
-    """A learner removes one of their own recordings (FR-35, learner side)."""
-    lessons_repo = svc().lessons
-    try:
-        row = lessons_repo.attempt(attempt_id)
-    except NotFound:
-        raise HTTPException(404, "không tìm thấy bản ghi") from None
-    if row["account_id"] != account.account_id:
-        raise HTTPException(404, "không tìm thấy bản ghi")
-    key = lessons_repo.delete_attempt(attempt_id)
-    if key:
-        try:
-            svc().blobs.delete(key)
-        except (FileNotFoundError, OSError):
-            pass
-    # Who asked and what went, never what it contained (AC-35.5).
-    svc().audit_log.write(account.account_id, "ERASE_OWN_LESSON_ATTEMPT", attempt_id, None)
-    return {"status": "ok"}
 
 
 @router.get("/api/v1/learn/media/{key}", tags=["student"])
@@ -732,59 +861,65 @@ async def learn_review_attempt(
         raise HTTPException(404, "mục ôn này không còn đến hạn")
     step = Step.model_validate({k: v for k, v in entry["step"].items() if k in Step.model_fields})
     data, kind = await _read_audio(audio)
-    attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
-    audio_key = f"lesson-audio-{attempt_id}.{kind}"
-    result = _measure(
-        step, data, kind, 1 if step.kind is StepKind.FREE else None, None, keep=audio_key
-    )
 
-    lessons_repo = svc().lessons
-    items = [lessons_repo.review(i) for i in entry["items"]]
-    if entry["source"] == "talk":
-        item = items[0]
-        found = lessons_repo.published(item["lesson_id"])
-        lesson_id, version = item["lesson_id"], found[1] if found else 0
-        step_id = item["step_id"]
-    else:
-        lesson_id, version, step_id = "review", 0, "review-words"
-    result = result.model_copy(update={"step_id": step_id})
-    lessons_repo.add_attempt(
-        account.account_id,
-        lesson_id,
-        version,
-        result,
-        audio_key=audio_key,
-        review_item_id=",".join(entry["items"]),
-        attempt_id=attempt_id,
-    )
-    today = _today()
-    outcome = []
-    found_words = [h.text for h in result.found]
-    for item in items:
-        if not result.measured:
-            continue
-        if item["kind"] == "word":
-            ok = any(same_word(item["word"].lower(), w.lower()) for w in found_words)
-        else:
-            ok = result.passed
-        nxt = after_review(item["box"], ok, today)
-        lessons_repo.reschedule(item["item_id"], nxt.box, nxt.due)
-        outcome.append(
-            {
-                "item_id": item["item_id"],
-                "word": item["word"],
-                "passed": ok,
-                "done": nxt.done,
-                "due": nxt.due.isoformat() if nxt.due else None,
-            }
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
+        audio_key = f"lesson-audio-{attempt_id}.{kind}"
+        result = _measure(
+            step, data, kind, 1 if step.kind is StepKind.FREE else None, None, keep=audio_key
         )
-    return {
-        "attempt_id": attempt_id,
-        "result": result.model_dump(mode="json"),
-        "audio_url": _audio_url(attempt_id),
-        "items": outcome,
-        "achievements": _just_reached(account),
-    }
+
+        lessons_repo = svc().lessons
+        items = [lessons_repo.review(i) for i in entry["items"]]
+        if entry["source"] == "talk":
+            item = items[0]
+            found = lessons_repo.published(item["lesson_id"])
+            lesson_id, version = item["lesson_id"], found[1] if found else 0
+            step_id = item["step_id"]
+        else:
+            lesson_id, version, step_id = "review", 0, "review-words"
+        result = result.model_copy(update={"step_id": step_id})
+        lessons_repo.add_attempt(
+            account.account_id,
+            lesson_id,
+            version,
+            result,
+            audio_key=audio_key,
+            review_item_id=",".join(entry["items"]),
+            attempt_id=attempt_id,
+        )
+        today = _today()
+        outcome = []
+        found_words = [h.text for h in result.found]
+        for item in items:
+            if not result.measured:
+                continue
+            if item["kind"] == "word":
+                ok = any(same_word(item["word"].lower(), w.lower()) for w in found_words)
+            else:
+                ok = result.passed
+            nxt = after_review(item["box"], ok, today)
+            lessons_repo.reschedule(item["item_id"], nxt.box, nxt.due)
+            outcome.append(
+                {
+                    "item_id": item["item_id"],
+                    "word": item["word"],
+                    "passed": ok,
+                    "done": nxt.done,
+                    "due": nxt.due.isoformat() if nxt.due else None,
+                }
+            )
+        return {
+            "attempt_id": attempt_id,
+            "result": result.model_dump(mode="json"),
+            "audio_url": _audio_url(attempt_id),
+            "items": outcome,
+            "achievements": _just_reached(account),
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 # ---------------------------------------------------------------- achievements (D032)
@@ -957,7 +1092,7 @@ def class_pronunciation(account: Account = STAFF_ONLY) -> dict:
     A class figure only: examples keep the word and what was heard, never the
     attempt, the date or anything else that leads back to one learner.
     """
-    rows = svc().lessons.attempts(limit=PRONUNCIATION_WINDOW * 10)
+    rows = _in_view(account, svc().lessons.attempts(limit=PRONUNCIATION_WINDOW * 10))
     out = pronunciation_profile(rows)
     for item in out["patterns"]:
         item["examples"] = [{"word": e["word"], "said": e["said"]} for e in item["examples"]]
@@ -999,7 +1134,7 @@ class PathPatch(BaseModel):
 class UnitIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
     function: str = Field(default="", max_length=300)
-    band: Band | None = None
+    band: Band
     criterion: Criterion | None = None
     topic: Topic | None = None
 
@@ -1010,7 +1145,8 @@ class MoveIn(BaseModel):
 
 class LessonIn(BaseModel):
     title: str = Field(min_length=1, max_length=160)
-    band: Band = Band.A2
+    # D078: the unit's band when left out; another band is refused.
+    band: Band | None = None
     criterion: Criterion | None = None
     summary: str = Field(default="", max_length=600)
     model_text: str = Field(default="", max_length=3000)
@@ -1039,7 +1175,7 @@ def _lesson_summary(item: dict) -> dict:
         "kinds": [s.kind.value for s in lesson.steps],
         "published_version": item["published_version"],
         "draft_changed": item["draft_changed"],
-        "sample": lesson.sample,
+        "built_in": lesson.built_in,
     }
 
 
@@ -1061,7 +1197,7 @@ def teach_paths(account: Account = STAFF_ONLY) -> list[dict]:
                     "lessons": [_lesson_summary(i) for i in u["lessons"]],
                 }
             )
-        out.append({**p, "sample": bool(p["sample"]), "units": units})
+        out.append({**p, "built_in": bool(p["built_in"]), "units": units})
     return out
 
 
@@ -1111,9 +1247,33 @@ async def teach_import(request: Request, account: Account = STAFF_ONLY) -> dict:
     return {"path_id": pid}
 
 
+def _lesson_band(unit: dict, band: Band | None) -> Band:
+    """A lesson is at its unit's band (D078): a learner's band path picks lessons
+    by the unit they sit in, so a lesson of another band would be met out of place."""
+    own = Band(unit["band"]) if unit.get("band") else None
+    if band is not None and own is not None and band is not own:
+        raise HTTPException(422, f"bài học phải cùng band {own.value} với chặng")
+    if band is None and own is None:
+        raise HTTPException(422, "chặng chưa có band: đặt band cho chặng trước")
+    return band or own  # type: ignore[return-value]
+
+
+def _check_unit_band(path: dict, band: Band) -> None:
+    """A unit sits inside its path's bands: a learner's band path is composed from
+    the units of the bands they chose (D074), so a unit outside would never be met."""
+    order = list(Band)
+    lo, hi = path.get("band_from"), path.get("band_to")
+    if (lo and order.index(band) < order.index(Band(lo))) or (
+        hi and order.index(band) > order.index(Band(hi))
+    ):
+        span = f"{lo or 'A1'}–{hi or 'C2'}"
+        raise HTTPException(422, f"band {band.value} nằm ngoài khoảng {span} của lộ trình")
+
+
 @router.post("/api/v1/teach/paths/{path_id}/units", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(path_id), body.band)
         uid = svc().lessons.add_unit(
             path_id, body.title, body.function, body.band, body.criterion, topic=body.topic
         )
@@ -1125,6 +1285,7 @@ def teach_new_unit(path_id: str, body: UnitIn, account: Account = STAFF_ONLY) ->
 @router.patch("/api/v1/teach/units/{unit_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_patch_unit(unit_id: str, body: UnitIn, account: Account = STAFF_ONLY) -> dict:
     try:
+        _check_unit_band(svc().lessons.path(svc().lessons.unit(unit_id)["path_id"]), body.band)
         svc().lessons.update_unit(unit_id, **body.model_dump())
     except NotFound:
         raise HTTPException(404, "không tìm thấy chặng") from None
@@ -1152,6 +1313,11 @@ def teach_move_unit(unit_id: str, body: MoveIn, account: Account = STAFF_ONLY) -
 @router.post("/api/v1/teach/units/{unit_id}/lessons", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_lesson(unit_id: str, body: LessonIn, account: Account = STAFF_ONLY) -> dict:
     """A new lesson: from a model text and key words, from key words alone, or one free step."""
+    try:
+        unit = svc().lessons.unit(unit_id)
+    except NotFound:
+        raise HTTPException(404, "không tìm thấy chặng") from None
+    body.band = _lesson_band(unit, body.band)
     if body.model_text.strip():
         lesson = build_lesson(
             body.title,
@@ -1228,9 +1394,10 @@ def teach_lesson(lesson_id: str, account: Account = STAFF_ONLY) -> dict:
 
 @router.put("/api/v1/teach/lessons/{lesson_id}", tags=["teacher"], dependencies=[AUTHORING])
 def teach_save_lesson(lesson_id: str, body: Lesson, account: Account = STAFF_ONLY) -> dict:
-    current, _ = _draft_or_404(lesson_id)
+    current, meta = _draft_or_404(lesson_id)
     if body.lesson_id != lesson_id:
         raise HTTPException(422, "mã bài học không khớp")
+    _lesson_band(svc().lessons.unit(meta["unit_id"]), body.band)
     # Media keys can only come from an upload through this API, never from the form.
     known = {s.step_id: s for s in current.steps}
     for step in body.steps:
@@ -1394,15 +1561,21 @@ async def teach_preview_attempt(
     if step is None:
         raise HTTPException(404, "không tìm thấy bước này")
     data, kind = await _read_audio(audio)
-    limits = step.round_limits()
-    round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
-    result = _measure(step, data, kind, round_index, step.answers)
-    return {
-        "attempt_id": None,
-        "result": result.model_dump(mode="json"),
-        "audio_url": None,
-        "preview": True,
-    }
+
+    # The speech service answers in seconds; waiting for it on the event loop
+    # stalled every other request of this service meanwhile (D066).
+    def measure_and_store() -> dict:
+        limits = step.round_limits()
+        round_index = min(max(round or 1, 1), len(limits)) if step.kind is StepKind.FREE else None
+        result = _measure(step, data, kind, round_index, step.answers)
+        return {
+            "attempt_id": None,
+            "result": result.model_dump(mode="json"),
+            "audio_url": None,
+            "preview": True,
+        }
+
+    return await run_in_threadpool(measure_and_store)
 
 
 # ---------------------------------------------------------------- insights
@@ -1413,7 +1586,6 @@ def teach_insights(
     request: Request, path_id: str | None = None, account: Account = STAFF_ONLY
 ) -> dict:
     """How the class moves through a path. Totals per lesson; no ranking of people. FR-49."""
-    _plan_allows(PlanFeature.CLASS_INSIGHTS)
     lessons_repo = svc().lessons
     chosen = _choose_path(path_id, published_only=False)
     if chosen is None:
@@ -1421,7 +1593,7 @@ def teach_insights(
     outline = lessons_repo.outline(chosen["path_id"], published_only=True)
     order = [(item["lesson"], u) for u in outline for item in u["lessons"]]
     ids = [ls.lesson_id for ls, _ in order]
-    rows = lessons_repo.attempts(lesson_ids=ids)
+    rows = _in_view(account, lessons_repo.attempts(lesson_ids=ids))
     by_lesson: dict[str, list[dict]] = {}
     for r in rows:
         by_lesson.setdefault(r["lesson_id"], []).append(r)
@@ -1471,7 +1643,7 @@ def teach_insights(
                 entry["count"] += 1
                 entry["lessons"].add(lesson.title)
 
-    names = svc().peers.identity.pseudonyms(account_ids=[r["account_id"] for r in rows[-60:]])
+    names = svc().peers.identity.display_names(account_ids=[r["account_id"] for r in rows[-60:]])
     titles = {ls.lesson_id: ls for ls, _ in order}
     recent = []
     for r in reversed(rows[-60:]):
@@ -1502,6 +1674,23 @@ def teach_insights(
     }
 
 
+def _in_view(account: Account, rows: list[dict]) -> list[dict]:
+    """A teacher's figures count their classes' students only (D071); an admin's, everyone."""
+    if account.role is Role.ADMIN:
+        return rows
+    mine = set(svc().peers.assessment.students_of(teacher_id=account.account_id))
+    return [r for r in rows if r.get("account_id") in mine]
+
+
+def _may_see(account: Account, owner_id: str) -> bool:
+    """D071: the owner, an administrator, or a teacher of one of the owner's classes."""
+    if owner_id == account.account_id or account.role is Role.ADMIN:
+        return True
+    return account.role is Role.TEACHER and bool(
+        svc().peers.assessment.teaches(teacher_id=account.account_id, student_id=owner_id)
+    )
+
+
 @router.get("/api/v1/teach/attempts/{attempt_id}", tags=["teacher"])
 def teach_attempt(attempt_id: str, request: Request, account: Account = STAFF_ONLY) -> dict:
     lessons_repo = svc().lessons
@@ -1509,10 +1698,12 @@ def teach_attempt(attempt_id: str, request: Request, account: Account = STAFF_ON
         row = lessons_repo.attempt(attempt_id)
     except NotFound:
         raise HTTPException(404, "không tìm thấy lượt luyện") from None
+    if not _may_see(account, row["account_id"]):
+        raise HTTPException(404, "không tìm thấy lượt luyện")
     found = lessons_repo.published(row["lesson_id"], row["lesson_version"])
     lesson = found[0] if found else None
     step = lesson.step(row["step_id"]) if lesson else None
-    names = svc().peers.identity.pseudonyms(account_ids=[row["account_id"]])
+    names = svc().peers.identity.display_names(account_ids=[row["account_id"]])
     name = names.get(row["account_id"], "?")
     return {
         **_attempt_view(row),
@@ -1534,6 +1725,8 @@ def teach_override(attempt_id: str, body: OverrideIn, account: Account = STAFF_O
         row = lessons_repo.attempt(attempt_id)
     except NotFound:
         raise HTTPException(404, "không tìm thấy lượt luyện") from None
+    if not _may_see(account, row["account_id"]):
+        raise HTTPException(404, "không tìm thấy lượt luyện")
     valid = {m.index for m in row["result"].words}
     words = {i: s.value for i, s in body.words.items() if i in valid}
     override = {"words": words, "note": body.note}

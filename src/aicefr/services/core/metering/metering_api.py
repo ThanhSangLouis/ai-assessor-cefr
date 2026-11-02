@@ -9,7 +9,6 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
-from aicefr.contracts import TaskPurpose
 from aicefr.metering.pricing import (
     MAX_SECONDS,
     UNITS_PER_RUN,
@@ -18,6 +17,7 @@ from aicefr.metering.pricing import (
     as_runs,
     hold_for,
 )
+from aicefr.services.core.metering.price_book import PriceBook
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.metering_repository import MeteringRepository, cycle
@@ -31,7 +31,11 @@ class Services:
     audit: AuditLog
     peers: Any
     enabled: bool
-    prices: PriceList
+    book: PriceBook
+
+    @property
+    def prices(self) -> PriceList:
+        return self.book.current()
 
 
 _services: Services | None = None
@@ -80,7 +84,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
         "wallet_runs": as_runs(balance["wallet"]),
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
         # What a one-minute recording costs, for people to read (D057).
-        "one_minute": {a.value: as_runs(hold_for(s.prices, a, 60.0)) for a in TaskPurpose},
+        "one_minute": {"assessment": as_runs(hold_for(s.prices, 60.0))},
         "history": [_entry(e, s.prices) for e in s.store.history(account.account_id, limit=20)],
     }
 
@@ -88,14 +92,13 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
 @router.get("/api/v1/me/credits/quote", tags=["student"])
 def quote(
     seconds: float = Query(gt=0, le=MAX_SECONDS),
-    action: TaskPurpose = TaskPurpose.ASSESSMENT,
     account: Account = Depends(require_login),
 ) -> dict:
     """The most a recording of up to `seconds` costs: what the submission screen shows (D057)."""
     s = svc()
     if not s.enabled:
         return {"metering": False}
-    units = hold_for(s.prices, action, seconds)
+    units = hold_for(s.prices, seconds)
     return {
         "metering": True,
         "runs": as_runs(units),
@@ -127,3 +130,39 @@ def grant_credits(body: GrantIn, account: Account = ADMIN_ONLY) -> dict:
     if credited:
         s.audit.write(account.account_id, "metering.grant", who["account_id"], f"runs={body.runs}")
     return {"credited": credited, "wallet_runs": as_runs(s.store.wallet(who["account_id"]))}
+
+
+# ================================================================= prices (D078)
+
+
+class PackIn(BaseModel):
+    runs: int = Field(ge=1, le=10_000)
+    price_vnd: int = Field(ge=1, le=100_000_000)
+
+
+class PricesIn(BaseModel):
+    first_minute_runs: float = Field(ge=0, le=100)
+    extra_minute_runs: float = Field(ge=0, le=100)
+    upgrade_runs: float = Field(ge=0, le=100)
+    idpoint_per_run: int = Field(ge=0, le=10_000_000)
+    free_runs: float = Field(ge=0, le=1000)
+    packs: list[PackIn] = Field(min_length=1, max_length=10)
+
+
+@router.get("/api/v1/admin/prices", tags=["admin"])
+def prices(account: Account = ADMIN_ONLY) -> dict:
+    """The prices in force, where they come from, and the earlier versions."""
+    s = svc()
+    return {"metering": s.enabled, **s.book.view()}
+
+
+@router.put("/api/v1/admin/prices", tags=["admin"])
+def set_prices(body: PricesIn, account: Account = ADMIN_ONLY) -> dict:
+    """A new version of the prices; charges already made keep theirs."""
+    s = svc()
+    try:
+        saved = s.book.set(body.model_dump(), account.account_id)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    s.audit.write(account.account_id, "metering.prices", None, saved["version"])
+    return {"metering": s.enabled, **s.book.view()}

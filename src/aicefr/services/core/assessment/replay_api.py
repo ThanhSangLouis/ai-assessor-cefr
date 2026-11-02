@@ -1,9 +1,7 @@
 """Guided listening in the app (D056): the moments, the learner's answers, the analysis.
 
 Only the learner who recorded a response listens to it this way, only once it
-has a result, and only where `AICEFR_GUIDED_REPLAY` is on. A learner whose
-feedback is held back by the feedback study (D040) is not offered it: the
-moments come from the evidence that study withholds. The moments are sent
+has a result, and only where `AICEFR_GUIDED_REPLAY` is on. The moments are sent
 without saying which are the machine's (`report/replay.py`).
 """
 
@@ -12,10 +10,9 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from aicefr.api.deps import ADMIN_ONLY, STUDENT_ONLY, require_login
+from aicefr.api.deps import STUDENT_ONLY, require_login
 from aicefr.contracts import ResponseStatus
-from aicefr.report.replay import CHOICES, analyse, moments
-from aicefr.services.core.assessment import study_api
+from aicefr.report.replay import CHOICES, moments
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.replay_repository import ReplayRepository
@@ -41,10 +38,8 @@ def _own_moments(response_id: str, account: Account):
         raise HTTPException(404, "bản triển khai này chưa bật nghe lại có dẫn đường")
     if s.repo.owner_of(response_id) != account.account_id:
         raise HTTPException(404, "không có bài này")
-    if study_api.withholds(account.account_id):
-        raise HTTPException(409, "trong thời gian thực nghiệm, bài nghe lại chưa mở với bạn")
     report = s.repo.get(response_id)
-    if report is None or report.status not in SCORED or report.practice is not None:
+    if report is None or report.status not in SCORED:
         raise HTTPException(409, "bài chưa có kết quả đánh giá")
     return moments(report)
 
@@ -110,10 +105,3 @@ def my_labels(account_id: str) -> list[dict]:
 def my_replay_labels(account: Account = Depends(require_login)) -> list[dict]:
     """What I said about my own recordings, to read back on my progress page."""
     return my_labels(account.account_id)
-
-
-@router.get("/api/v1/admin/replay/report", tags=["admin"])
-def replay_report(account: Account = ADMIN_ONLY) -> dict:
-    """Machine moments against random ones, over learners who allowed research use."""
-    allowed = set(svc().peers.identity.research_allowed())
-    return analyse([x for x in labels().all() if x["account_id"] in allowed])

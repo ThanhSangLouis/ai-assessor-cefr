@@ -97,12 +97,11 @@ prepSkip.addEventListener("click", finishPrep);
 prepCancel.addEventListener("click", () => stopPrep("Đã huỷ thời gian chuẩn bị."));
 
 // ---------------------------------------------------------------- health
-// Two separate warnings: a fake recogniser means the scores are meaningless; a
-// missing ffmpeg means recording in the browser is impossible.
+// A missing ffmpeg means recording in the browser is impossible. Which
+// recogniser runs is the administrator's to see (tab Vận hành), not the learner's (D078).
 fetch("/api/v1/health")
   .then((r) => r.json())
   .then((h) => {
-    if (!h.asr_is_real) document.getElementById("fake-asr-warning").hidden = false;
     const d = h.scorable_duration_s || {};
     if (d.accepted_high) scorableMaxS = Number(d.accepted_high);
     recorder.enable(!!h.recording_enabled);
@@ -129,17 +128,13 @@ function tooLongToScore(take) {
 // A real radio group: arrow keys move between prompts and a screen reader
 // announces which one is selected.
 function taskCard(t, i) {
-  const windowed = t.windowed ? '<span class="badge">Bài dài, luôn qua giảng viên</span>' : "";
   return `
     <label class="task${i === 0 ? " chosen" : ""}">
       <input type="radio" name="task-choice" value="${escapeHtml(t.task_id)}"${i === 0 ? " checked" : ""}>
       <span class="chosen-mark" aria-hidden="true">✓ Đã chọn</span>
-      <h3>${escapeHtml(t.task_id)} — ${escapeHtml(t.title)}</h3>
+      <span class="task-band">${escapeHtml(t.band || "")}</span>
       <p class="task-prompt">${escapeHtml(t.prompt_text)}</p>
-      <p class="task-meta">
-        <span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span>
-        ${windowed}
-      </p>
+      <p class="task-meta"><span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span></p>
     </label>`;
 }
 
@@ -150,10 +145,9 @@ function chooseTask(task) {
   chosenTask = task;
   taskIdEl.value = task.task_id;
   promptEl.innerHTML =
-    `<p class="eyebrow">Đề ${escapeHtml(task.task_id)} · ${escapeHtml(task.title)}</p>` +
+    `<p class="eyebrow">${escapeHtml(task.title)}</p>` +
     `<p class="prompt-text">${escapeHtml(task.prompt_text)}</p>` +
-    `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây · ` +
-    `phiên bản đề <code>${escapeHtml(task.prompt_version)}</code></p>` +
+    `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây</p>` +
     '<p class="muted small" id="price-note" hidden></p>';
   recorder.repaint();
   showPrice(task);
@@ -175,39 +169,97 @@ async function showPrice(task) {
   note.hidden = false;
 }
 
-fetch("/api/v1/tasks")
-  .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json()))
-  .then((tasks) => {
+// D076: the prompts of one band, three at a time, drawn at random; "Đổi đề
+// khác" draws three others. The band starts where the learner studies (their
+// band path), else where their latest assessment put them, else the first band
+// with prompts.
+const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+const SHOWN = 3;
+let allTasks = [];
+let band = null;
+let shown = [];
+
+function draw(pinned) {
+  const pool = allTasks.filter((t) => t.band === band);
+  const rest = pool.filter((t) => !pinned || t.task_id !== pinned.task_id);
+  for (let i = rest.length - 1; i > 0; i--) {
+    const k = Math.floor(Math.random() * (i + 1));
+    [rest[i], rest[k]] = [rest[k], rest[i]];
+  }
+  shown = (pinned ? [pinned, ...rest] : rest).slice(0, SHOWN);
+  paintTasks();
+}
+
+function paintTasks() {
+  const chips = BANDS.filter((b) => allTasks.some((t) => t.band === b))
+    .map(
+      (b) => `<label class="task-band-chip${b === band ? " on" : ""}"><input type="radio" name="task-band" value="${b}"${b === band ? " checked" : ""}>${b}</label>`,
+    )
+    .join("");
+  const pool = allTasks.filter((t) => t.band === band).length;
+  taskListEl.innerHTML =
+    `<div class="task-band-bar"><div class="task-bands" role="radiogroup" aria-label="Band của đề">${chips}</div>` +
+    (pool > SHOWN ? '<button type="button" class="secondary small" id="task-shuffle">Đổi đề khác</button>' : "") +
+    "</div>" +
+    '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
+    shown.map(taskCard).join("") +
+    "</div>";
+  const inputs = taskListEl.querySelectorAll('input[name="task-choice"]');
+  const mark = (input) => {
+    taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
+    input.closest(".task").classList.add("chosen");
+  };
+  inputs.forEach((input, i) => {
+    input.addEventListener("change", () => {
+      mark(input);
+      chooseTask(shown[i]);
+    });
+  });
+  taskListEl.querySelectorAll('input[name="task-band"]').forEach((r) =>
+    r.addEventListener("change", () => {
+      band = r.value;
+      draw();
+    }),
+  );
+  const shuffle = document.getElementById("task-shuffle");
+  if (shuffle) shuffle.addEventListener("click", () => draw());
+  if (inputs.length) {
+    inputs[0].checked = true;
+    mark(inputs[0]);
+    chooseTask(shown[0]);
+  }
+}
+
+async function startBand() {
+  try {
+    const r = await fetch("/api/v1/learn/bands");
+    if (!r.ok) return null;
+    const d = await r.json();
+    return (d.plan && d.plan.goal && d.plan.goal.band_from) || d.suggested_from;
+  } catch (e) {
+    return null;
+  }
+}
+
+Promise.all([
+  fetch("/api/v1/tasks").then((r) => (window.redirectToLoginIfExpired(r) ? null : r.json())),
+  startBand(),
+])
+  .then(([tasks, from]) => {
     if (!tasks) return;
     window.clearBusy(taskListEl);
-    if (!tasks.length) {
+    allTasks = tasks.filter((t) => t.band);
+    if (!allTasks.length) {
       taskListEl.innerHTML =
         '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
         "<h2>Chưa có đề bài nào</h2>" +
-        "<p>Giảng viên chưa mở đề cho lớp này. Hãy quay lại sau, hoặc hỏi giảng viên phụ trách.</p></div>";
+        "<p>Trung tâm chưa mở đề đánh giá. Hãy quay lại sau.</p></div>";
       return;
     }
-    taskListEl.innerHTML =
-      '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
-      tasks.map(taskCard).join("") +
-      "</div>";
-    const inputs = taskListEl.querySelectorAll('input[name="task-choice"]');
-    const mark = (input) => {
-      taskListEl.querySelectorAll(".task").forEach((el) => el.classList.remove("chosen"));
-      input.closest(".task").classList.add("chosen");
-    };
-    inputs.forEach((input, i) => {
-      input.addEventListener("change", () => {
-        mark(input);
-        chooseTask(tasks[i]);
-      });
-    });
-    // D054: "Làm bài" on an assignment opens this page on the assigned task.
-    const wanted = new URLSearchParams(window.location.search).get("task");
-    const first = Math.max(0, tasks.findIndex((t) => t.task_id === wanted));
-    inputs[first].checked = true;
-    mark(inputs[first]);
-    chooseTask(tasks[first]);
+    // `?task=` opens this page on that task (a reminder or a link points there).
+    const wanted = allTasks.find((t) => t.task_id === new URLSearchParams(window.location.search).get("task"));
+    band = (wanted && wanted.band) || (BANDS.includes(from) && allTasks.some((t) => t.band === from) ? from : null) || allTasks[0].band;
+    draw(wanted);
   })
   .catch(() => {
     window.clearBusy(taskListEl);

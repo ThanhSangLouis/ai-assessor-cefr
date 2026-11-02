@@ -67,11 +67,11 @@ function renderRows(visible) {
     '<table class="queue-table"><thead><tr><th>Bài nộp</th><th>Máy chấm</th>' +
     "<th>Lý do gắn cờ</th><th>Xử lý</th></tr></thead><tbody>";
   visible.forEach((r) => {
-    const title = titles[r.task_id] ? ` · ${escapeHtml(titles[r.task_id])}` : "";
+    const title = escapeHtml(titles[r.task_id] || "Đề");
     h +=
       `<tr${r.locked_by ? ' class="is-locked"' : ""}>` +
-      `<td><b>${escapeHtml(r.speaker_id)}</b>` +
-      `<span class="cell-sub">Đề <code>${escapeHtml(r.task_id)}</code>${title}</span>` +
+      `<td><b>${r.student_name ? escapeHtml(r.student_name) : escapeHtml(r.speaker_id)}</b>` +
+      `<span class="cell-sub">${title}</span>` +
       `<span class="cell-sub">${escapeHtml(window.ui.localTime(r.created_at))} · ` +
       `<a href="/report/${encodeURIComponent(r.response_id)}">báo cáo ${escapeHtml(r.response_id)}</a></span></td>` +
       `<td>${resultCell(r)}</td>` +
@@ -170,7 +170,7 @@ async function loadReasons() {
   }
 }
 
-// Titles make a row readable at a glance; a failed call keeps the task ids.
+// The prompt's band ("Đề B1") makes a row readable at a glance (D078).
 function loadTitles() {
   return fetch("/api/v1/tasks")
     .then((r) => (r.ok ? r.json() : []))

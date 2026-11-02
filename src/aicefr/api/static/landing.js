@@ -1,5 +1,5 @@
-// The product page's 3D (D031): the hero scene turns toward the pointer and
-// cards marked data-tilt lean toward it, with a glare where it points.
+// The product page's 3D (D031): cards marked data-tilt lean toward the pointer,
+// with a glare where it points. (D078 removed the hero scene.)
 //
 // Decoration only. With reduced motion asked for, or on a touch screen where
 // there is no pointer to follow, this does nothing and the page keeps its

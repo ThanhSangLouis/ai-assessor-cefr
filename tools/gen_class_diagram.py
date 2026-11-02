@@ -18,7 +18,7 @@ Day la MO HINH MIEN (domain model), khong phai so do lop thiet ke. No:
     tren duong lien ket -- khong bao gio trong thuoc tinh (chu du an, ngay
     29/10/2026: "0..1 la quan he so luong giua 2 collection, khong phai
     min..max cua mot truong"). Tap hop viet `List<X>`. Trong dac ta, thuoc
-    tinh mang kieu thuc the van ghi boi so (`ratings: Rating [1..*]`) de
+    tinh mang kieu thuc the van ghi boi so (`lessons: Lesson [0..*]`) de
     `check_relations()` doi voi duong; khi ve, `attribute_text()` bo no ra
     khoi hop.
   * thuoc tinh co tap gia tri dong mang KIEU ENUM (`role: Role`), ca tren
@@ -112,8 +112,8 @@ def _n(cid, name, values):
 # moc thoi gian, phep do, nhan xet) la thuoc tinh cua thuc the so huu.
 #
 # QUAN HE QUA THUOC TINH (quy tac cua chu du an): moi duong noi co dung mot
-# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `ratings: Rating [1..*]` o
-# `RatingBatch` thi moi co kim cuong `RatingBatch` -> `Rating`. Hop thanh: lop
+# thuoc tinh o lop GIU quan he, mang kieu lop kia -- `lessons: Lesson [0..*]` o
+# `Unit` thi moi co kim cuong `Unit` -> `Lesson`. Hop thanh: lop
 # toan the giu danh sach phan (luu chung mot document). Ket hop: lop giu tham
 # chieu (luu ma cua ben kia). Boi so cua thuoc tinh ve tren dau duong, khong ve
 # trong hop. `check_relations()` duoi day bat moi duong thieu thuoc tinh.
@@ -128,11 +128,18 @@ CLASSES = [
         "Account",
         [
             "- accountId: str",
+            "- email: str",
+            "- emailVerified: bool",
+            "- fullName: str",
             "- pseudonym: str",
             "- role: Role",
+            "- mustChangePassword: bool",
             "- dailyGoalS: int",
             "- identities: List<str>",
             "- seenMarkers: List<str>",
+            "- emailCodes: List<str>",
+            "- emailReminders: bool",
+            "- reminderSentOn: date",
             "+ isStaff(): bool",
         ],
     ),
@@ -140,12 +147,13 @@ CLASSES = [
         "Audit",
         "AuditEntry",
         [
-            "- entryId: int",
+            "- id: int",
+            "- service: str",
             "- actor: Account [0..1]",
             "- action: str",
             "- targetId: str",
-            "- service: str",
-            "- at: datetime",
+            "- detail: str",
+            "- createdAt: datetime",
         ],
     ),
     _e(
@@ -154,16 +162,11 @@ CLASSES = [
         [
             "- taskId: str",
             "- title: str",
-            "- purpose: TaskPurpose",
-            "- part: str",
             "- promptText: str",
             "- minSeconds: int",
             "- maxSeconds: int",
             "- topicKeywords: List<str>",
-            "- criterion: Criterion",
             "- band: Band",
-            "- referenceText: str",
-            "- missions: List<str>",
             "- promptVersion: str",
         ],
     ),
@@ -174,7 +177,6 @@ CLASSES = [
             "- responseId: str",
             "- speaker: Account [1]",
             "- task: Task [1]",
-            "- purpose: TaskPurpose",
             "- status: ResponseStatus",
             "- reasonCodes: List<str>",
             "- durationMs: int",
@@ -187,9 +189,7 @@ CLASSES = [
             "- feedback: List<str>",
             "- replayLabels: List<str>",
             "- reviews: Review [0..*]",
-            "- reviewLock: str",
-            "- reviewVisits: List<str>",
-            "- machineSeen: Account [0..*]",
+            "- upgrade: CoachUpgrade [0..1]",
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
@@ -211,59 +211,45 @@ CLASSES = [
             "- decidedAt: datetime",
         ],
     ),
+    # D082: reviewing a response, apart from it: who holds it now and every visit.
     _e(
-        "Batch",
-        "RatingBatch",
+        "RevSess",
+        "ReviewSession",
         [
-            "- batchId: str",
-            "- name: str",
-            "- seed: int",
-            "- closed: bool",
-            "- ratings: Rating [1..*]",
+            "- response: Response [1]",
+            "- lockedBy: Account [0..1]",
+            "- lockedUntil: datetime",
+            "- visits: List<str>",
+        ],
+    ),
+    # D069: the learner's answer rewritten one band higher, made once on request
+    # and kept with the response; D070: its phrases are the phrase book's cards.
+    _e(
+        "Upgrade",
+        "CoachUpgrade",
+        [
+            "- fromBand: Band",
+            "- toBand: Band",
+            "- upgraded: str",
+            "- changes: List<str>",
+            "- phrases: PhraseCard [0..*]",
+            "- provider: str",
+            "- model: str",
+            "- promptVersion: str",
             "- createdAt: datetime",
         ],
     ),
     _e(
-        "Rating",
-        "Rating",
+        "Phrase",
+        "PhraseCard",
         [
-            "- assignmentId: str",
-            "- response: Response [1]",
-            "- rater: Account [1]",
-            "- slot: int",
-            "- position: int",
-            "- openedAt: datetime",
-            "- scoreOverall: float",
-            "- band: Band",
-            "- criterionScores: List<float>",
-            "- unscorableReason: str",
-            "- reason: str",
-            "- submittedAt: datetime",
-        ],
-    ),
-    _e(
-        "Study",
-        "Study",
-        [
-            "- studyId: str",
-            "- name: str",
-            "- status: StudyStatus",
-            "- minDays: int",
-            "- participants: Participant [0..*]",
-            "- measuredUntil: datetime",
-        ],
-    ),
-    _e(
-        "Part",
-        "Participant",
-        [
-            "- code: str",
-            "- account: Account [1]",
-            "- arm: str",
-            "- enrolledAt: datetime",
-            "- withdrawnAt: datetime",
-            "- surveyAnswers: List<str>",
-            "- surveyedAt: datetime",
+            "- phrase: str",
+            "- meaningVi: str",
+            "- box: int",
+            "- due: datetime",
+            "- reviews: int",
+            "- reviewedAt: datetime",
+            "+ isDue(at: datetime): bool",
         ],
     ),
     _e(
@@ -272,22 +258,9 @@ CLASSES = [
         [
             "- classId: str",
             "- name: str",
-            "- code: str",
-            "- teacher: Account [1]",
+            "- teachers: Account [0..*]",
             "- members: Account [0..*]",
-            "- assignments: Assignment [0..*]",
             "- archived: bool",
-        ],
-    ),
-    _e(
-        "Asg",
-        "Assignment",
-        [
-            "- assignmentId: str",
-            "- task: Task [1]",
-            "- note: str",
-            "- dueOn: date",
-            "+ isLate(at: datetime): bool",
         ],
     ),
     _e(
@@ -301,7 +274,7 @@ CLASSES = [
             "- bandTo: Band",
             "- status: PathStatus",
             "- units: Unit [0..*]",
-            "- sample: bool",
+            "- builtIn: bool",
         ],
     ),
     _e(
@@ -401,35 +374,34 @@ CLASSES = [
             "- modelVersion: str",
         ],
     ),
+    # D075: one centre, no plans -- every order is a pack of runs for its buyer.
     _e(
         "Order",
         "Order",
         [
             "- orderId: str",
-            "- placedBy: Account [1]",
-            "- kind: OrderKind",
-            "- plan: ServicePlan",
-            "- seats: int",
-            "- valueVnd: int",
-            "- gateway: str",
+            "- runs: int",
+            "- amountVnd: int",
             "- status: OrderStatus",
-            "- events: List<str>",
+            "- createdBy: Account [1]",
+            "- createdAt: datetime",
+            "- expiresAt: datetime",
             "- creditedAt: datetime",
         ],
     ),
+    # D084: how the gateway took the money for an order, apart from what was bought.
     _e(
-        "License",
-        "License",
+        "Payment",
+        "Payment",
         [
-            "- licenseId: str",
-            "- organization: str",
-            "- plan: ServicePlan",
-            "- seats: int",
-            "- validFrom: date",
-            "- validTo: date",
-            "- source: str",
-            "- order: Order [0..1]",
-            "+ isActive(today: date): bool",
+            "- order: Order [1]",
+            "- gateway: str",
+            "- live: bool",
+            "- checkoutRef: str",
+            "- reference: str",
+            "- resultCode: str",
+            "- settledAt: datetime",
+            "- events: List<str>",
         ],
     ),
     _e(
@@ -444,14 +416,32 @@ CLASSES = [
             "+ available(): int",
         ],
     ),
+    # D078: the prices an administrator sets on the dashboard, one version at a
+    # time; a ledger entry keeps the version it was held under (`priceVersion`).
+    _e(
+        "Price",
+        "PriceList",
+        [
+            "- version: str",
+            "- firstMinuteRuns: float",
+            "- extraMinuteRuns: float",
+            "- upgradeRuns: float",
+            "- idpointPerRun: int",
+            "- freeRuns: float",
+            "- packs: List<str>",
+            "- changedBy: Account [1]",
+            "- changedAt: datetime",
+            "- history: List<str>",
+        ],
+    ),
     _e(
         "Ledger",
         "LedgerEntry",
         [
             "- entryId: str",
             "- wallet: Wallet [1]",
-            "- response: Response [1]",
-            "- action: TaskPurpose",
+            "- response: Response [0..1]",
+            "- action: MeteredAction",
             "- held: int",
             "- fromFree: int",
             "- fromWallet: int",
@@ -467,19 +457,17 @@ CLASSES = [
 # buoc bai hoc (quyet dinh cach cham buoc), loai don va goi dich vu. Tap gia tri
 # chi la chi tiet (ma ly do, nhiem vu, chu de, cong thanh toan, nguon license, do
 # chat) ghi `str`; hai trang thai thi ghi `bool`; enum trung nghia thi dung lai
-# (`LedgerEntry.action: TaskPurpose`, `LearningPlan.audience: Role`).
-# Ten khac code: `ResponseStatus` (code: Status), `ServicePlan` (code: Plan).
+# (`LearningPlan.audience: Role`).
+# Ten khac code: `ResponseStatus` (code: Status).
 ENUMS = [
     _n("Role", "Role", ["STUDENT", "TEACHER", "ADMIN"]),
     _n("Band", "Band", ["A1", "A2", "B1", "B2", "C1", "C2"]),
     _n("Criterion", "Criterion", ["RANGE", "ACCURACY", "FLUENCY", "COHERENCE", "PHONOLOGY"]),
-    _n("Purpose", "TaskPurpose", ["ASSESSMENT", "PRACTICE"]),
     _n(
         "Status",
         "ResponseStatus",
         ["QUEUED", "RUNNING", "COMPLETED", "REVIEW_REQUIRED", "REJECTED", "FAILED"],
     ),
-    _n("StudySt", "StudyStatus", ["RUNNING", "SURVEY", "CLOSED"]),
     _n("PathSt", "PathStatus", ["DRAFT", "PUBLISHED", "ARCHIVED"]),
     _n(
         "StepKind",
@@ -496,10 +484,10 @@ ENUMS = [
             "FREE",
         ],
     ),
-    _n("OrderKind", "OrderKind", ["NEW", "RENEWAL", "UPGRADE", "DOWNGRADE", "CREDITS"]),
     _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
-    _n("SvcPlan", "ServicePlan", ["FREE", "TRIAL", "STANDARD", "ADVANCED"]),
     _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
+    # D072: what a ledger entry paid for -- a recording, or an upgraded answer.
+    _n("MeterAct", "MeteredAction", ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT"]),
 ]
 
 # (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
@@ -509,17 +497,15 @@ EDGES = [
     ("Resp", "Account", "0..* : 1", "assoc"),
     ("Resp", "Task", "0..* : 1", "assoc"),
     ("Resp", "Review", "1 : 0..*", "comp"),
+    ("Resp", "Upgrade", "1 : 0..1", "comp"),
+    ("Upgrade", "Phrase", "1 : 0..*", "comp"),
     ("Review", "Account", "0..* : 1", "assoc"),
-    ("Resp", "Account", "0..* : 0..*", "assoc"),
-    ("Batch", "Rating", "1 : 1..*", "comp"),
-    ("Rating", "Resp", "0..* : 1", "assoc"),
-    ("Rating", "Account", "0..* : 1", "assoc"),
-    ("Study", "Part", "1 : 0..*", "comp"),
-    ("Part", "Account", "0..* : 1", "assoc"),
-    ("Class", "Account", "0..* : 1", "assoc"),
-    ("Class", "Account", "0..* : 0..*", "nn"),
-    ("Class", "Asg", "1 : 0..*", "comp"),
-    ("Asg", "Task", "0..* : 1", "assoc"),
+    ("RevSess", "Resp", "0..1 : 1", "assoc"),
+    ("RevSess", "Account", "0..* : lockedBy 0..1", "assoc"),
+    # D071: a class has its teachers and its members, both many-to-many; the
+    # role name at the far end tells the two lines apart.
+    ("Class", "Account", "0..* : teachers 0..*", "nn"),
+    ("Class", "Account", "0..* : members 0..*", "nn"),
     ("Path", "Account", "0..* : 0..1", "assoc"),
     ("Path", "Unit", "1 : 0..*", "comp"),
     ("Unit", "Lesson", "1 : 0..*", "comp"),
@@ -533,10 +519,13 @@ EDGES = [
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
     ("Plan", "Path", "0..1 : 0..1", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
-    ("License", "Order", "0..1 : 0..1", "assoc"),
+    ("Payment", "Order", "0..1 : 1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
+    ("Price", "Account", "0..* : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
-    ("Ledger", "Resp", "0..1 : 1", "assoc"),
+    # A recording and, since D072, its upgraded answer: two entries at most; a
+    # teacher's lesson draft (D075) pays for no response.
+    ("Ledger", "Resp", "0..2 : 0..1", "assoc"),
 ]
 
 # Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
@@ -549,42 +538,34 @@ EDGES += [
         ("Task", "Band"),
         ("Resp", "Band"),
         ("Review", "Band"),
-        ("Rating", "Band"),
+        ("Upgrade", "Band"),
         ("Path", "Band"),
         ("Unit", "Band"),
         ("Lesson", "Band"),
-        ("Task", "Criterion"),
         ("Lesson", "Criterion"),
         ("Unit", "Criterion"),
-        ("Task", "Purpose"),
-        ("Resp", "Purpose"),
-        ("Ledger", "Purpose"),
         ("Resp", "Status"),
-        ("Study", "StudySt"),
         ("Path", "PathSt"),
         ("Step", "StepKind"),
-        ("Order", "OrderKind"),
-        ("Order", "SvcPlan"),
         ("Order", "OrderSt"),
-        ("License", "SvcPlan"),
         ("Ledger", "LedgerSt"),
+        ("Ledger", "MeterAct"),
     ]
 ]
 
 # Khung theo phan nghiep vu (`tools/zone_layout.py`). Dinh danh o giua hang tren
-# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Nghien cuu, Lop
-# hoc, Thuong mai va Hoc tap deu noi vao bai noi hoac `Band`.
+# vi `Account` noi toi moi khung; Danh gia o giua hang duoi vi Lop hoc, Thuong
+# mai va Hoc tap deu noi vao bai noi hoac `Band`.
 # (khoa, tieu de, hang, [(cot, [hop, ...])]); (hop, dy) dat hop cach dinh hang dy.
 ZONES = [
-    ("research", "Nghiên cứu: chấm mù, thực nghiệm", 0,
-     [(0, ["Study", "StudySt"]), (1, ["Part", "Batch", "Rating"])]),
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
-    ("commerce", "Thương mại: gói dịch vụ, tính lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt"]), (5, ["Order", "License"]),
-      (6, ["OrderKind", "OrderSt", "SvcPlan"])]),
-    ("classroom", "Lớp học", 1, [(0, ["Class", "Asg"])]),
+    ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
+     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order", "Payment"]),
+      (6, ["OrderSt", "Price"])]),
+    ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
-     [(1, ["Task"]), (2, ["Resp", "Review"]), (3, ["Purpose", "Status", "Band", "Criterion"])]),
+     [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
+      (3, ["Status", "Band", "Criterion", "RevSess"])]),
     ("learning", "Học tập", 1,
      [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["PathSt", ("StepKind", "Step")])]),
@@ -668,13 +649,17 @@ def check_relations() -> None:
             if not hits:
                 problems.append(f"{name[src]} uses {name[dst]} but no attribute has that type")
             continue
-        far = label.split(" : ")[1]
+        # The far end may carry the role name before its multiplicity
+        # ("teachers 0..*"); then it must be the attribute that holds the line.
+        far_parts = label.split(" : ")[1].split()
+        far, role = far_parts[-1], (far_parts[0] if len(far_parts) > 1 else None)
         hits = [
             m.group(1)
             for ln in lines
             if (m := typed.match(ln))
             and m.group(2) == name[dst]
             and (m.group(3) or "1") == far
+            and (role is None or m.group(1) == role)
             and (src, m.group(1)) not in claimed
         ]
         if not hits:

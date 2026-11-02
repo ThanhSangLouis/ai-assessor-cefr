@@ -54,7 +54,7 @@ Phần nhìn được kiểm bằng ảnh chụp từ máy chủ tạm, ở cả
 | W-NFR-3 — chuyển động là trang trí | TC-ART-I04, TC-ART-I06, TC-ART-E02, TC-ART-E03 |
 | W-NFR-4 — ảnh nền không cản việc đọc | TC-ART-I07, TC-ART-E06, TC-ART-E07, TC-ART-E08 |
 | Đợt 16 — mọi trang | TC-ART-I03, TC-ART-I08, TC-ART-E01 |
-| Đợt 16 — trang giới thiệu và trang đăng nhập | TC-ART-I04, TC-ART-E02, TC-ART-E04, TC-ART-E05 |
+| Đợt 16 — trang giới thiệu và trang đăng nhập | TC-ART-I04, TC-ART-E02, TC-ART-E05 |
 | Đợt 16 — trạng thái rỗng | TC-ART-E07, TC-ART-E08 |
 | Đợt 16 — cách làm (script xác định) | TC-ART-U01, TC-ART-U02, TC-ART-U03, TC-ART-U04, TC-ART-I01 |
 | Kế hoạch khớp mã | TC-ART-U05 |
@@ -91,7 +91,6 @@ Phần nhìn được kiểm bằng ảnh chụp từ máy chủ tạm, ở cả
 | TC-ART-E01 | `test_the_ground_is_drawn_in_both_themes` | Ở cả giao diện sáng và tối: hai tệp hình tải về với mã 200; đường đồng mức nằm góc trên bên phải, dãy đồi góc dưới bên phải, đủ lớn; mỗi giao diện một màu |
 | TC-ART-E02 | `test_the_ridges_draw_themselves_in_when_motion_is_welcome` | Bốn tầng trồi lên, bốn sống đồi tự vẽ, mặt trời mọc, tầng gần "thở" mãi. Vẽ xong thì đường vẫn còn nguyên |
 | TC-ART-E03 | `test_with_reduced_motion_the_scene_is_simply_there` | Khi chọn giảm chuyển động: không hoạt ảnh `art-*` nào, đường không đứt nét, con trỏ không làm cảnh dịch đi |
-| TC-ART-E04 | `test_the_terraces_drift_against_the_scene` | Đưa con trỏ sang phải thì cảnh 3D xoay theo và đồi trượt sang trái |
 | TC-ART-E05 | `test_any_width_gets_the_whole_far_hill_and_a_round_sun` | Ở 390, 1280, 1920 và 2560 px: không tầng nào bị cắt ở mép trên; mặt trời tròn và nằm trong khung; trang đăng nhập không có mặt trời |
 | TC-ART-E06 | `test_on_a_phone_the_art_takes_no_tap_and_no_room` | Ở 390 px, trang giới thiệu, trang đăng nhập và trang band không cuộn ngang. Không điểm nào trên lưới 23 px (đầu và chân trang) rơi vào hình. Nút đăng nhập nhận được cú chạm |
 | TC-ART-E07 | `test_printing_leaves_the_art_out` | Khi in, phần nền, cảnh đồi và dải đồi của trạng thái rỗng đều biến mất; trên màn hình thì dải đồi vẫn hiện |

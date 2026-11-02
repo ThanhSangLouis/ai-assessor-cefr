@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Tài khoản · AI Assessor CEFR{% endblock %}
+{% block title %}Tài khoản · SpeakUp{% endblock %}
 {% block content %}
 {#- D028, D029. The signed-in person's own account in four parts: profile
     (avatar, daily goal, display), security (password, Google, sessions),
@@ -21,10 +21,10 @@
   <span class="avatar-lg avatar-{{ account.avatar_color or 'none' }}" id="avatar-preview" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
   <div>
     <p class="eyebrow">Tài khoản</p>
-    <h1>{{ account.pseudonym }}</h1>
+    <h1>{{ account.display_name }}</h1>
     <p class="lede">
-      {{ role_names.get(account.role.value, account.role.value) }}. Hệ thống chỉ biết bạn qua bút
-      danh này, không lưu họ tên, mã số sinh viên hay email.
+      {{ role_names.get(account.role.value, account.role.value) }}. Bạn đăng nhập bằng email, với mật
+      khẩu hoặc Google. Email và họ tên chỉ dùng để đăng nhập và để giảng viên biết bài nào của ai.
     </p>
   </div>
 </div>
@@ -43,8 +43,6 @@
           aria-selected="true" aria-controls="panel-profile">{{ icon("user") }} Hồ sơ</button>
   <button id="tab-security" data-panel="panel-security" role="tab"
           aria-selected="false" aria-controls="panel-security">{{ icon("lock") }} Bảo mật</button>
-  <button id="tab-activity" data-panel="panel-activity" role="tab"
-          aria-selected="false" aria-controls="panel-activity">{{ icon("clock") }} Hoạt động</button>
   {% if is_student %}
   <button id="tab-data" data-panel="panel-data" role="tab"
           aria-selected="false" aria-controls="panel-data">{{ icon("file-check") }} Dữ liệu</button>
@@ -53,6 +51,43 @@
 
 <section id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="0">
   <div class="account-grid">
+    {#- D071: the email signs the person in; the full name is what a teacher reads. -#}
+    <div class="card" id="contact" aria-labelledby="contact-h">
+      <h2 id="contact-h">{{ icon("user") }} Họ tên và email</h2>
+      <form id="contact-form" class="stack" novalidate>
+        <label for="contact-name">Họ và tên</label>
+        <input id="contact-name" autocomplete="name" maxlength="80" required>
+        <label for="contact-email">Email đăng nhập</label>
+        <input id="contact-email" type="email" autocomplete="email" maxlength="254" required
+               autocapitalize="none" spellcheck="false" aria-describedby="contact-email-state">
+        <p class="field-hint" id="contact-email-state"></p>
+        <div id="contact-password-row" hidden>
+          <label for="contact-password">Mật khẩu hiện tại (để đổi email)</label>
+          <input id="contact-password" type="password" autocomplete="current-password">
+        </div>
+        <div class="button-row">
+          <button type="submit" id="contact-save">{{ icon("check") }} Lưu</button>
+        </div>
+        <div id="contact-message" aria-live="polite"></div>
+      </form>
+    </div>
+    {#- D079: verify the email with a code, and the daily study reminder. -#}
+    <div class="card" id="email-card" aria-labelledby="email-card-h" hidden>
+      <h2 id="email-card-h">{{ icon("message") }} Email và nhắc học</h2>
+      <p id="email-state"></p>
+      <form id="verify-form" class="inline-form" novalidate hidden>
+        <div class="field">
+          <label for="verify-code">Mã 6 số trong email</label>
+          <input id="verify-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+        </div>
+        <button type="submit">Xác minh</button>
+        <button type="button" class="secondary" id="verify-send">Gửi mã</button>
+      </form>
+      <label class="check-row" id="reminder-row" hidden>
+        <input type="checkbox" id="reminders"> Nhắc tôi qua email lúc tối nếu hôm đó chưa luyện
+      </label>
+      <div id="email-message" aria-live="polite"></div>
+    </div>
     <div class="card" aria-labelledby="avatar-h">
       <h2 id="avatar-h">{{ icon("sparkle") }} Ảnh đại diện</h2>
       <p class="muted small-note">Một biểu tượng và một màu, hiện ở thanh điều khiển. Không có ảnh chụp, để không
@@ -87,22 +122,6 @@
     </div>
 
     <div class="stack-cards">
-      {% if is_student %}
-      <div class="card" aria-labelledby="goal-h">
-        <h2 id="goal-h">{{ icon("target") }} Mục tiêu nói mỗi ngày</h2>
-        <p class="muted small-note">Tính bằng số giây bạn thật sự nói trong các bài luyện, như vòng "Hôm nay" ở trang
-          Luyện tập.</p>
-        <div class="chips goal-chips" role="radiogroup" aria-label="Mục tiêu mỗi ngày" id="goal-chips">
-          {% for seconds in daily_goals %}
-          <label class="chip-radio">
-            <input type="radio" name="daily-goal" value="{{ seconds }}"{% if account.daily_goal_s == seconds %} checked{% endif %}>
-            <span>{{ seconds // 60 }} phút</span>
-          </label>
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-
       <div class="card" aria-labelledby="display-h">
         <h2 id="display-h">{{ icon("eye") }} Hiển thị trên máy này</h2>
         <label for="pref-theme">Giao diện</label>
@@ -122,7 +141,7 @@
       <div class="card" aria-labelledby="me-h">
         <h2 id="me-h">{{ icon("user") }} Thông tin đăng nhập</h2>
         <dl class="facts" id="me-facts" aria-busy="true">
-          <div><dt>Bút danh</dt><dd>{{ account.pseudonym }}</dd></div>
+          <div><dt>Mã tài khoản</dt><dd>{{ account.pseudonym }}</dd></div>
           <div><dt>Vai trò</dt><dd>{{ role_names.get(account.role.value, account.role.value) }}</dd></div>
           <div><dt>Tạo lúc</dt><dd data-fact="created_at">—</dd></div>
           <div><dt>Đăng nhập gần nhất</dt><dd data-fact="last_login_at">—</dd></div>
@@ -147,7 +166,7 @@
                minlength="{{ min_length }}" aria-describedby="pw-rules">
         <ul class="pw-rules" id="pw-rules">
           <li data-rule="length">Từ {{ min_length }} ký tự trở lên; một câu ngắn dễ nhớ là đủ tốt</li>
-          <li data-rule="pseudonym">Không trùng với bút danh</li>
+          <li data-rule="pseudonym">Không trùng với mã tài khoản</li>
           <li data-rule="different">Khác mật khẩu hiện tại</li>
         </ul>
 
@@ -175,12 +194,12 @@
           <button type="button" class="secondary" id="google-unlink" hidden>{{ icon("x") }} Gỡ liên kết</button>
         </div>
         <p class="muted small-note">
-          Hệ thống chỉ giữ một mã băm một chiều của tài khoản Google để nhận ra nó lần sau; không lưu
-          email, tên hay ảnh. Google không nhận bản ghi âm hay kết quả nào của bạn.
+          Hệ thống giữ một mã băm một chiều của tài khoản Google để nhận ra nó lần sau, và lấy email đã
+          được Google xác minh cùng họ tên để điền vào tài khoản khi còn trống; không lưu ảnh. Google
+          không nhận bản ghi âm hay kết quả nào của bạn.
         </p>
         {% else %}
-        <p class="muted">Máy chủ này chưa bật đăng nhập bằng Google. Quản trị viên bật bằng cấu hình
-          <code>AICEFR_GOOGLE_CLIENT_ID</code> và <code>AICEFR_GOOGLE_CLIENT_SECRET</code>.</p>
+        <p class="muted">Đăng nhập bằng Google chưa mở. Bạn vẫn đăng nhập bằng email và mật khẩu.</p>
         {% endif %}
       </div>
 
@@ -192,19 +211,19 @@
         </div>
         <p class="muted small-note">Thấy một phiên lạ thì đăng xuất nó rồi đổi mật khẩu.</p>
       </div>
+
+      {#- D068: what happened on the account sits with the sessions, where a
+          stranger's sign-in is acted on, instead of a tab of its own. -#}
+      <div class="card" aria-labelledby="activity-h">
+        <h2 id="activity-h">{{ icon("clock") }} Hoạt động gần đây</h2>
+        <ol class="activity-list" id="activity-list" aria-busy="true"></ol>
+      </div>
     </div>
     {% endif %}
   </div>
 </section>
 
 {% if not first_time %}
-<section id="panel-activity" role="tabpanel" aria-labelledby="tab-activity" tabindex="0" hidden>
-  <div class="card" aria-labelledby="activity-h">
-    <h2 id="activity-h">{{ icon("clock") }} Hoạt động gần đây</h2>
-    <p class="muted small-note">Đăng nhập, lần đăng nhập sai và mọi thay đổi trên tài khoản, mới nhất ở trên.</p>
-    <ol class="activity-list" id="activity-list" aria-busy="true"></ol>
-  </div>
-</section>
 
 {% if is_student %}
 <section id="panel-data" role="tabpanel" aria-labelledby="tab-data" tabindex="0" hidden>
@@ -216,8 +235,7 @@
       <div class="button-row">
         <button type="button" id="export-all">{{ icon("download") }} Tải toàn bộ dữ liệu (JSON)</button>
       </div>
-      <p class="muted small-note">Muốn xoá: xoá từng bài ở "Bài của tôi"; cần xoá ngay toàn bộ thì báo quản trị
-        viên.</p>
+      <p class="muted small-note">Muốn xoá dữ liệu của mình thì báo quản trị viên trung tâm.</p>
     </div>
   </div>
 </section>

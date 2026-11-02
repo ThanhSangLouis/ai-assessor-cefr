@@ -11,6 +11,7 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | Đánh giá tới 1 phút | 1 | 2.000 |
 | Mỗi phút bắt đầu thêm, tối đa 5 phút | +0,7 | +1.400 (5 phút: 7.600) |
 | Luyện tập | 50% của bài đánh giá cùng thời lượng | 1.000 cho bài tới 1 phút |
+| Bản nâng cấp do AI viết (D072) | 0,3 | 600 |
 | Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 |
 | Gói bán trực tiếp | 10 / 30 / 100 lượt | 19.000 / 49.000 / 149.000 đồng |
 
@@ -23,7 +24,16 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_PRICE_EXTRA_MINUTE_RUNS` | Lượt cho mỗi phút bắt đầu thêm | 0,7 |
 | `AICEFR_PRICE_PRACTICE_FACTOR` | Phần bài luyện tập phải trả | 0,5 |
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
+| `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); 0 là miễn phí | 0,3 |
+| `AICEFR_COACH_GLOBAL_DAILY` | Số yêu cầu gửi nhà cung cấp của cả hệ thống trong một ngày của nhà cung cấp (Google: hết lúc 0 giờ giờ Thái Bình Dương), tính cả lỗi và lần gọi lại, dưới hạn mức miễn phí 500 | 475 |
+| `AICEFR_COACH_DAILY_BUDGET_USD` | Gói khởi đầu: lớn hơn 0 là bắt đầu ở gói trả phí với ngân sách USD/ngày này; sau đó quản trị viên đổi trên dashboard (D073) | 0 |
+| `AICEFR_COACH_PAID_API_KEY` | Khoá của project Google đã bật thanh toán, dùng khi quản trị viên chuyển sang gói trả phí (D073); trống thì nút Trả phí bị khoá | trống |
+| `AICEFR_COACH_PRICE_INPUT_USD`, `AICEFR_COACH_PRICE_OUTPUT_USD` | Giá 1 triệu token vào/ra để tính chi phí (giá niêm yết Gemini 3.5 Flash-Lite; token ra gồm cả token suy nghĩ) | 0,30 / 2,50 |
 | `AICEFR_CREDIT_PACKS` | Gói bán trực tiếp, `lượt:giá_đồng` | `10:19000,30:49000,100:149000` |
+
+**Bản nâng cấp do AI viết (D072).** Giá tính theo bản, không theo token: giữ 0,3 lượt trước khi gọi mô hình, trừ khi AI viết xong, trả lại nếu mô hình lỗi; bản đã viết xem lại không tốn thêm. Số token vào/ra mà nhà cung cấp báo được ghi kèm bút toán (cột `input_tokens`, `output_tokens`, hành động `upgrade`) để tính giá vốn: một bản khoảng 2.000–3.000 token vào và 500–800 token ra. Ngoài giới hạn mỗi người (`AICEFR_COACH_DAILY`, 5/ngày) còn giới hạn chung để không vượt hạn mức miễn phí của Gemini 3.5 Flash-Lite (500 yêu cầu/ngày). Giới hạn chung đếm **đúng như Google đếm**: mọi yêu cầu gửi đi, kể cả yêu cầu lỗi và lần gọi lại khi máy chủ của Google bận, theo ngày của Google (hết lúc 0 giờ giờ Thái Bình Dương, tức 14 hoặc 15 giờ ở Việt Nam), nên đặt được 475. Khi người dùng thường xuyên chạm giới hạn (trang Quản trị → AI viết lại báo khi có từ 3/14 ngày bị chạm), quản trị viên chuyển sang gói trả phí ngay trên trang đó (D073): chọn **Trả phí**, đặt ngân sách USD mỗi ngày, xác nhận. Hệ thống khi đó gọi bằng khoá trả phí `AICEFR_COACH_PAID_API_KEY` (khoá của một project Google đã bật thanh toán) và giới hạn chung là ngân sách tiền mỗi ngày, tính từ số token nhân giá mỗi triệu token. Không có gì tự chuyển; quay về **Miễn phí** cũng bằng một nút. Gói miễn phí chỉ đếm yêu cầu của gói miễn phí, ngân sách chỉ đếm tiền của gói trả phí, nên chuyển giữa ngày không lẫn số. `AICEFR_COACH_DAILY_BUDGET_USD` chỉ còn là gói khởi đầu của bản triển khai. Tắt tính lượt thì chỉ còn hai giới hạn này.
+
+**Bật trên máy chủ.** Mặc định kênh tính lượt TẮT (bản của trường không tính gì). Trước 31/10/2026, `docker-compose.yml` không chuyển các biến trên vào container, nên đặt trong `.env` cũng không có tác dụng; nay đã chuyển cho core và web. Muốn bật: trong `/srv/aicefr/.env` đặt `AICEFR_METERING=1` (bán gói lượt thì cần thêm `AICEFR_BILLING=1` và một cổng thanh toán), rồi chạy lại `docker compose ... up -d core web`. Khi bật sẽ có menu "Lượt của tôi" (`/credits`), trang Nộp bài báo trước số lượt và IDPoint, và bài chỉ bị trừ lượt khi đã có kết quả.
 
 Còn phải hỏi NetID: tỷ giá IDPoint thật, phần trăm NetID giữ lại, có cho giữ chỗ rồi hoàn phần thừa không. Các mục dưới là research và các phương án đã cân nhắc trước khi chốt.
 

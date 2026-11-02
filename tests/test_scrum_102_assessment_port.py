@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
-
 import pytest
 from assessment_fixture import asgi, build_assessment_service, headers
 from conftest import feature_set
@@ -16,7 +14,6 @@ from aicefr.contracts import (
     QcStatus,
     Response,
     ResponseStatus,
-    TaskPurpose,
     Transcript,
     Word,
 )
@@ -25,7 +22,6 @@ from aicefr.report.comments import CommentBuilder
 from aicefr.report.evidence import EvidenceBuilder
 from aicefr.services.core.assessment import context
 from aicefr.storage.auth_repository import Account, Role
-from aicefr.storage.repository import Repository
 
 
 @pytest.fixture
@@ -42,31 +38,10 @@ def test_assessment_api_registers_the_migrated_response_review_admin_and_class_r
     assert "/api/v1/responses" in paths
     assert "/api/v1/review/queue" in paths
     assert "/api/v1/admin/models" in paths
-    assert "/api/v1/classes/{class_id}/assignments" in paths
-    assert "/api/v1/me/assignments" in paths
-
-
-def test_class_assignment_query_omits_practice_and_handles_no_members(tmp_path):
-    repo = Repository(tmp_path / "assessment.db")
-    repo.save(
-        Response(response_id="assessment-1", status=ResponseStatus.COMPLETED, config_version="v1"),
-        "SV-001",
-        "P3",
-        account_id="student-1",
-    )
-    repo.save(
-        Response(response_id="practice-1", status=ResponseStatus.COMPLETED, config_version="v1"),
-        "SV-001",
-        "P3",
-        account_id="student-1",
-        purpose=TaskPurpose.PRACTICE,
-    )
-
-    rows = repo.assessments_since(["student-1", "student-2"], "P3", "2000-01-01")
-
-    assert [row["response_id"] for row in rows] == ["assessment-1"]
-    assert rows[0]["account_id"] == "student-1"
-    assert repo.assessments_since([], "P3", "2000-01-01") == []
+    assert "/api/v1/classes/{class_id}/members" in paths
+    # D075: classes set no assessments and nobody joins with a code.
+    assert "/api/v1/classes/{class_id}/assignments" not in paths
+    assert "/api/v1/me/classes/join" not in paths
 
 
 def test_band_descriptors_distinguish_unmeasured_and_out_of_scope_aspects():
@@ -76,11 +51,10 @@ def test_band_descriptors_distinguish_unmeasured_and_out_of_scope_aspects():
     assert "interaction" not in aspects  # D062: a monologue cannot show it
 
 
-def test_student_can_join_a_class_and_see_its_open_assignment(assessment_service):
+def test_a_teacher_adds_a_student_to_a_class_by_code_name(assessment_service):
     parts, settings = assessment_service
     app = asgi(parts, settings)
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
-    student = Account("student-1", "SV-001", Role.STUDENT)
 
     with TestClient(app) as client:
         made = client.post(
@@ -89,27 +63,8 @@ def test_student_can_join_a_class_and_see_its_open_assignment(assessment_service
             headers=headers(teacher),
         )
         assert made.status_code == 200, made.text
-        class_info = made.json()
-
-        joined = client.post(
-            "/api/v1/me/classes/join",
-            json={"code": class_info["code"].lower()},
-            headers=headers(student),
-        )
-        assert joined.status_code == 200, joined.text
-
-        due_on = (date.today() + timedelta(days=1)).isoformat()
-        assigned = client.post(
-            f"/api/v1/classes/{class_info['class_id']}/assignments",
-            json={"task_id": "P3", "due_on": due_on},
-            headers=headers(teacher),
-        )
-        assert assigned.status_code == 200, assigned.text
-
-        mine = client.get("/api/v1/me/assignments", headers=headers(student))
-        assert mine.status_code == 200, mine.text
-        assert mine.json()["todo"][0]["state"] == "open"
-        assert mine.json()["todo"][0]["task_id"] == "P3"
+        listed = client.get("/api/v1/classes", headers=headers(teacher))
+        assert listed.status_code == 200 and listed.json()[0]["members"] == 0
 
 
 def test_teacher_review_queue_and_admin_stats_are_wired(assessment_service):
@@ -135,6 +90,7 @@ def test_submission_persists_a_queued_response_in_mongodb(assessment_service):
         accepted = client.post(
             "/api/v1/responses",
             files={"audio": ("recording.wav", b"RIFF" + b"0" * 40, "audio/wav")},
+            data={"task_id": "P3"},
             headers=headers(student),
         )
         assert accepted.status_code == 202, accepted.text
@@ -210,7 +166,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     assert assessment_json["priorities"][0]["feature_name"] == "ttr"
 
 
-def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessment_service):
+def test_review_queue_includes_pending_response_and_its_reviewer_can_lock_it(assessment_service):
     parts, settings = assessment_service
     report = Response(
         response_id="needs-review",
@@ -225,12 +181,15 @@ def test_review_queue_includes_pending_response_and_teacher_can_lock_it(assessme
     )
     context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
+    admin = Account("admin-1", "QT-01", Role.ADMIN)
 
     with TestClient(asgi(parts, settings)) as client:
-        queue = client.get("/api/v1/review/queue", headers=headers(teacher))
+        # D071: the student is in no class, so no teacher sees the response.
+        assert client.get("/api/v1/review/queue", headers=headers(teacher)).json() == []
+        queue = client.get("/api/v1/review/queue", headers=headers(admin))
         assert queue.status_code == 200, queue.text
         assert [item["response_id"] for item in queue.json()] == ["needs-review"]
-        locked = client.post("/api/v1/review/needs-review/lock", headers=headers(teacher))
+        locked = client.post("/api/v1/review/needs-review/lock", headers=headers(admin))
         assert locked.status_code == 200, locked.text
 
 

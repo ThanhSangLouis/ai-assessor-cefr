@@ -34,7 +34,12 @@ dependencies = [
 # object storage through the minio client (Apache-2.0). Not needed on one
 # machine, where the bus is in-process and recordings are files.
 services = ["bullmq>=3.4,<4", "redis>=6.2,<9", "minio>=7.2,<8"]
-asr = ["mlx-whisper>=0.4; sys_platform == 'darwin'", "faster-whisper>=1.0; sys_platform != 'darwin'"]
+# Same split as WhisperEngine: mlx only on Apple silicon; an Intel Mac, Linux
+# and Windows run faster-whisper.
+asr = [
+  "mlx-whisper>=0.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "faster-whisper>=1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
+]
 vad = ["silero-vad>=5.1", "torch>=2.2"]
 dev = [
   "pytest>=8.0",
@@ -46,6 +51,9 @@ dev = [
   # D048: an in-memory MongoDB for the tests and quick local runs, ISC licence.
   "mongomock>=4.3,<5",
 ]
+# D069: the upgraded answer through Claude (aicefr.coach.providers); the
+# other providers need nothing beyond the standard library.
+coach = ["anthropic>=1.0,<2"]
 # E2E layer (D023): runs on developer machines only; CI does not install it,
 # so those tests skip themselves there.
 # Install: pip install -e ".[dev,e2e]" && playwright install chromium
@@ -116,7 +124,7 @@ extend-immutable-calls = [
 "tests/e2e/test_lessons_e2e.py" = ["F811"]
 "tests/e2e/test_accounts_e2e.py" = ["F811"]
 "tests/e2e/test_profile_e2e.py" = ["F811"]
-"tests/e2e/test_ratings_e2e.py" = ["F811"]
+"tests/e2e/test_signup_e2e.py" = ["F811"]
 "tests/e2e/test_ui_depth_e2e.py" = ["F811"]
 "tests/e2e/test_achievements_e2e.py" = ["F811"]
 "tests/e2e/test_billing_e2e.py" = ["F811"]
@@ -128,7 +136,12 @@ extend-immutable-calls = [
 # The achievement tests reuse the lesson tests' app fixture `m` the same way.
 "tests/test_achievements.py" = ["F811"]
 "tests/test_learning_evidence.py" = ["F811"]
+"tests/test_d069_coach.py" = ["F811"]
+"tests/test_d070_practice_more.py" = ["F811"]
+"tests/test_d071_accounts_and_classes.py" = ["F811"]
 "tests/test_learning_plans.py" = ["F811"]
+"tests/test_d074_band_path.py" = ["F811"]
+"tests/test_d078_band_only.py" = ["F811"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

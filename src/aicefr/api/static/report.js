@@ -99,6 +99,7 @@ fetch(`/api/v1/responses/${ID}`)
     reportEl.innerHTML = buildReport(d);
     wirePlayer();
     wireKaraoke(d);
+    loadCoach();
     // D056: guided listening adds its card once the player is on the page.
     document.dispatchEvent(new CustomEvent("report:ready"));
   })
@@ -144,28 +145,15 @@ function buildReport(d) {
   // everything else.
   if (rejected) return section("report-summary", "result-h", head + rejectionBlock(d)) + detailCard(d, a, true);
 
-  // D040: in the score-only arm of the feedback study the server sends the
-  // score and nothing else; say why the rest is missing instead of drawing
-  // empty sections.
-  if (d.feedback_withheld) {
-    return section("report-summary", "result-h", head + scoreBlock(d, a) + withheldBlock()) + detailCard(d, a, false);
-  }
-
+  // D068: four parts. What the learner came for -- the result, what to work
+  // on, the recording -- stays open; everything about how the machine got
+  // there is one fold at the foot.
   return (
-    section("report-summary", "result-h", head + scoreBlock(d, a) + windowBlock(a) + nextStepBlock(a)) +
-    sectionNav(a) +
+    section("report-summary", "result-h", head + scoreBlock(d, a) + nextStepBlock(a, d)) +
+    '<section class="card anchor-target" id="report-coach" aria-labelledby="coach-h" hidden></section>' +
     commentsCard(a) +
     evidenceCard(d, a) +
-    section("report-aspects", "aspects-h", aspectBlock(a) + indicatorBlock(a)) +
     detailCard(d, a, false)
-  );
-}
-
-function withheldBlock() {
-  return (
-    '<div class="notice" id="feedback-withheld"><b>Bạn đang ở nhóm “Chỉ điểm” của thực nghiệm phản hồi.</b> ' +
-    "Trong thời gian thực nghiệm, báo cáo chỉ hiện điểm và mức. Bạn có thể rời thực nghiệm bất cứ lúc nào " +
-    'ở trang <a href="/my-progress#study">Tiến độ của tôi</a> để xem lại đầy đủ nhận xét.</div>'
   );
 }
 
@@ -173,26 +161,10 @@ function section(id, labelledBy, inner) {
   return `<section class="card anchor-target" id="${id}" aria-labelledby="${labelledBy}">${inner}</section>`;
 }
 
-// Jump links for a long report. Only to sections that exist on this one.
-function sectionNav(a) {
-  const links = [];
-  if ((a.comments || []).length || (a.priorities || []).length) {
-    links.push(["report-comments", "Nhận xét"]);
-  }
-  links.push(["report-evidence", "Bằng chứng và bản ghi"]);
-  links.push(["report-aspects", "Các khía cạnh"]);
-  links.push(["report-detail", "Chất lượng và nguồn gốc"]);
-  return (
-    '<nav class="section-nav" aria-label="Các phần của báo cáo">' +
-    links.map(([id, text]) => `<a href="#${id}">${text}</a>`).join("") +
-    "</nav>"
-  );
-}
-
 // The next step sits in the result card itself. "Khía cạnh nên luyện trước"
 // used to be a line of plain text under a fourteen-row table; it is now a
 // button that opens the practice task for that aspect at this band.
-function nextStepBlock(a) {
+function nextStepBlock(a, d) {
   const weak = a.weakest_criteria || [];
   let h = "";
   if (weak.length) {
@@ -203,13 +175,17 @@ function nextStepBlock(a) {
       "không phải điểm riêng của từng khía cạnh.</span></p>";
   }
   if (!isStudent) return h ? `<div class="next-step">${h}</div>` : "";
-  const task = weak.length ? window.ui.practiceTaskFor(weak[0], a.overall_band || "A2") : null;
-  const practise = task
-    ? `<a class="button" href="/practice/${encodeURIComponent(task)}">` +
-      `Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} ngay</a>`
+  // The lesson path picks its next lesson from this same weakest aspect (D068).
+  const practise = weak.length
+    ? `<a class="button" href="/practice">Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} theo lộ trình</a>`
     : '<a class="button" href="/practice">Mở trang luyện tập</a>';
+  // D069: the same task again, three times, shorter each time.
+  const scored = d && (d.status === "COMPLETED" || d.status === "REVIEW_REQUIRED");
+  const retell = scored
+    ? `<a class="button secondary" href="/retell/${encodeURIComponent(ID)}">Nói lại đề này</a>`
+    : "";
   return (
-    `<div class="next-step">${h}<div class="button-row">${practise}` +
+    `<div class="next-step">${h}<div class="button-row">${practise}${retell}` +
     '<a class="button secondary" href="/">Nộp bài mới</a>' +
     '<a class="button secondary" href="/my-progress">Xem tiến độ</a></div></div>'
   );
@@ -235,9 +211,18 @@ function evidenceCard(d, a) {
     '<div class="sticky-player"><h2 id="evidence-h">Nghe lại và xem bằng chứng</h2>' +
       '<audio id="phat" controls preload="metadata" ' +
       `src="/api/v1/responses/${encodeURIComponent(ID)}/audio"></audio></div>` +
-      evidenceBlock(a) +
-      transcriptBlock(d)
+      transcriptBlock(d) +
+      foldedEvidence(a)
   );
+}
+
+// The evidence cards seek the player above, so they stay in this card, folded:
+// the transcript already marks the same moments.
+function foldedEvidence(a) {
+  // The fold's summary is the heading; drop the block's own.
+  const body = evidenceBlock(a).replace(/^<h3[^>]*>[^<]*<\/h3>/, "");
+  const n = (a.evidence || []).length;
+  return `<details class="fold" id="report-evidence-list"><summary>Bằng chứng trên bản ghi${n ? ` (${n})` : ""}</summary>${body}</details>`;
 }
 
 // FR-27: the provenance fields appear at the foot of every report. Folded,
@@ -247,7 +232,8 @@ function evidenceCard(d, a) {
 function detailCard(d, a, open) {
   return (
     `<details class="card anchor-target detail-card" id="report-detail"${open ? " open" : ""}>` +
-    "<summary>Chất lượng bản ghi và nguồn gốc kết quả</summary>" +
+    "<summary>Chi tiết: các khía cạnh được đo, chất lượng bản ghi, nguồn gốc kết quả</summary>" +
+    (open ? "" : `<div id="report-aspects">${aspectBlock(a)}${indicatorBlock(a)}</div>` + windowBlock(a)) +
     qualityBlock(d) +
     provenanceBlock(d, a) +
     "</details>"
@@ -401,7 +387,27 @@ function bandPodium(a) {
   );
 }
 
-// ONE overall score. There is no second, third or fifth number to show.
+// D078: beside the score and the band, where the result stands inside the
+// band and how far the next one is.
+const PLACE = { low: "Đầu band", mid: "Giữa band", high: "Cuối band" };
+
+function bandPlace(p) {
+  if (!p) return "";
+  const where = PLACE[p.part] || "";
+  return p.part === "high" && p.next ? `${where}, sắp lên ${escapeHtml(p.next)}` : where;
+}
+
+function bandTrack(p) {
+  if (!p) return "";
+  const at = Math.round(p.share * 100);
+  return (
+    `<div class="band-track" role="img" aria-label="${escapeHtml(bandPlace(p))}">` +
+    `<span class="band-track-fill" style="width:${at}%"></span><span class="band-track-mark" style="left:${at}%"></span></div>` +
+    `<div class="band-track-ends"><span>${escapeHtml(p.band)}</span><span>${p.next ? escapeHtml(p.next) : ""}</span></div>`
+  );
+}
+
+// ONE overall result. There is no second, third or fifth number to show.
 function scoreBlock(d, a) {
   if (a.overall_0_6 == null) {
     return (
@@ -415,11 +421,14 @@ function scoreBlock(d, a) {
   let h = '<div class="score-panel">';
   h += `<div class="score-figure">
       <span class="score">${a.overall_0_6.toFixed(2)}</span>
-      <span class="score-scale">trên thang 1 – 6</span>
+      <span class="score-scale">trên thang 0 – 6</span>
     </div>`;
   h += bandPodium(a);
   h += '<div class="score-meta">';
   h += `<span class="score-band">${escapeHtml(a.overall_band)}</span>`;
+  if (a.band_position) {
+    h += `<p class="band-place">${bandPlace(a.band_position)}</p>${bandTrack(a.band_position)}`;
+  }
   // FR-21: the "estimate" label goes with every report, it must never be missing.
   h += `<p class="score-caption">
       Đây là <b>một ước lượng tổng thể</b> cho cả bài nói, do mô hình đưa ra từ các phép đo
@@ -439,7 +448,7 @@ function scoreBlock(d, a) {
     h +=
       '<p class="muted" style="margin-top:var(--sp-3)">Mô hình <b>chưa được hiệu chuẩn</b> ' +
       "(<code>" + escapeHtml(cal || "chưa có") + "</code>), nên sai số quanh con số này chưa " +
-      "được định lượng. Hãy đọc điểm như một chỉ dấu về mức độ, không phải một phép đo chính xác.</p>";
+      "được định lượng. Hãy đọc kết quả như một chỉ dấu về mức độ, không phải một phép đo chính xác.</p>";
   }
 
   if (!a.teacher_verified) {
@@ -841,4 +850,105 @@ if (printButton) {
     });
     openedForPrint = [];
   });
+}
+
+// ---------------------------------------------------------------- next band (D069)
+// Targets in numbers read off the scoring model, and the learner's own answer
+// rewritten one band higher by a language model, made on request and kept.
+const COACH_DIR = { up: "tăng", down: "giảm" };
+
+function coachTargets(nb) {
+  const rows = nb.targets
+    .map((t) => {
+      const to = t.direction === "up" ? "lên" : "xuống";
+      return (
+        `<li><b>${escapeHtml(t.label)}</b>: ${COACH_DIR[t.direction]} từ ${escapeHtml(String(t.now))} ` +
+        `${to} ${escapeHtml(String(t.target))} ${escapeHtml(t.unit)}</li>`
+      );
+    })
+    .join("");
+  return (
+    `<p>Bài này ở <b>${escapeHtml(nb.from_band)}</b>, còn cách ngưỡng <b>${escapeHtml(nb.to_band)}</b> ` +
+    `khoảng ${escapeHtml(String(nb.gap).replace(".", ","))} điểm. Lần nói tới, nhắm vào:</p>` +
+    `<ul class="coach-targets">${rows}</ul>` +
+    `<p class="muted small-note">${
+      nb.enough ? "Đạt cả ba thì ước lượng của máy đủ để qua ngưỡng." : "Chưa đủ trong một lần: đây là hướng đi cho vài bài tới."
+    } Tính từ chính các phép đo của mô hình trên bài này; giảng viên quyết định band.</p>`
+  );
+}
+
+function coachUpgrade(u) {
+  const changes = (u.changes || [])
+    .map(
+      (c) =>
+        `<li><span class="was" lang="en">${escapeHtml(c.from)}</span> → <span class="now" lang="en">${escapeHtml(c.to)}</span>` +
+        (c.why_vi ? `<br><span class="muted">${escapeHtml(c.why_vi)}</span>` : "") +
+        "</li>"
+    )
+    .join("");
+  const phrases = (u.phrases || [])
+    .map((p) => `<li><b lang="en">${escapeHtml(p.phrase)}</b>: ${escapeHtml(p.meaning_vi)} ${window.speakButton ? window.speakButton(p.phrase) : ""}</li>`)
+    .join("");
+  return (
+    `<h3 class="block-title">Bài của bạn ở mức ${escapeHtml(u.to_band)} <span class="muted">(gợi ý của AI, có thể sai)</span></h3>` +
+    // Which model wrote it, so a reader can weigh it and a teacher can report it.
+    `<p class="muted small-note coach-model">Viết bởi <code>${escapeHtml(u.model || "?")}</code>` +
+    ` (${escapeHtml(u.provider || "?")}) lúc ${escapeHtml(window.ui.localTime(u.created_at))}.</p>` +
+    // D070: listen to it and say it after the voice, sentence by sentence.
+    '<div class="shadow-host"></div>' +
+    (changes ? `<h4>Các chỗ đổi</h4><ul class="coach-changes">${changes}</ul>` : "") +
+    (phrases
+      ? `<h4>Cụm từ nên dùng</h4><ul class="coach-phrases">${phrases}</ul>` +
+        '<p class="muted small-note">Các cụm này đã vào <a href="/phrases">Sổ cụm từ</a> để ôn mỗi ngày.</p>'
+      : "") +
+    `<div class="button-row"><a class="button" href="/retell/${encodeURIComponent(ID)}">Đọc rồi nói lại đề này</a></div>`
+  );
+}
+
+function paintCoach(card, c) {
+  let h = '<h2 id="coach-h">Để lên band tiếp theo</h2>';
+  if (c.next_band) h += coachTargets(c.next_band);
+  if (c.upgrade) h += coachUpgrade(c.upgrade);
+  else if (c.can_upgrade)
+    h +=
+      '<div class="button-row"><button type="button" id="coach-upgrade">Xem bài của tôi ở band cao hơn</button></div>' +
+      // D072: the price is said before the button is pressed, on the metered channel.
+      (c.price && c.price.runs
+        ? `<p class="small-note"><b>Tốn ${escapeHtml(String(c.price.runs).replace(".", ","))} lượt` +
+          ` (${escapeHtml(Number(c.price.idpoint).toLocaleString("vi-VN"))} IDPoint)</b>, chỉ trừ khi AI viết xong.</p>`
+        : "") +
+      '<p class="muted small-note">AI viết lại chính câu trả lời của bạn ở band kế tiếp, giữ ý của bạn. Chỉ bản chép lời được gửi đi, không gửi ghi âm.</p>';
+  card.innerHTML = h;
+  card.hidden = !(c.next_band || c.upgrade || c.can_upgrade);
+  if (c.upgrade && window.setUpShadowing) window.setUpShadowing(card.querySelector(".shadow-host"), c.upgrade.upgraded);
+  const button = document.getElementById("coach-upgrade");
+  if (!button) return;
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    button.textContent = "Đang viết lại…";
+    try {
+      const r = await fetch(`/api/v1/responses/${encodeURIComponent(ID)}/upgrade`, { method: "POST" });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        window.toast(typeof d.detail === "string" ? d.detail : "Chưa viết lại được.", "error");
+        button.disabled = false;
+        button.textContent = "Xem bài của tôi ở band cao hơn";
+        return;
+      }
+      paintCoach(card, { ...c, upgrade: d, can_upgrade: false });
+    } catch (err) {
+      window.toast("Mất kết nối, hãy thử lại.", "error");
+      button.disabled = false;
+    }
+  });
+}
+
+function loadCoach() {
+  const card = document.getElementById("report-coach");
+  if (!card) return;
+  fetch(`/api/v1/responses/${encodeURIComponent(ID)}/coach`)
+    .then((r) => (r.ok ? r.json() : null))
+    .then((c) => c && paintCoach(card, c))
+    .catch(() => {});
 }

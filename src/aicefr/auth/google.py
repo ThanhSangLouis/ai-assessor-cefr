@@ -2,14 +2,12 @@
 
 What this module does NOT do is as important as what it does:
 
-* **It never creates an account.** Accounts are handed out by an administrator
-  with a role (FR-32). A person links their Google account to the pseudonym
-  they already have, from the account page; afterwards Google can sign them in
-  to that pseudonym. An unlinked Google account gets a polite refusal.
-* **It keeps no email, name or photo.** Google says who the person is with a
-  stable subject identifier (`sub`); only a one-way hash of it is stored
-  (`subject_hash`), which is enough to recognise the same Google account again
-  and useless for contacting anyone (FR-33).
+* **The email is the account (D071).** Google says who the person is with a
+  stable subject identifier (`sub`), kept only as a one-way hash
+  (`subject_hash`), and with an email it has verified. That email is the same
+  sign-in email a password account has, so signing in with Google opens the
+  account with that address, or makes one (D063). The name Google gives fills
+  an empty full name; the photo is never asked for.
 * **It adds no dependency.** The ID token comes straight from Google's token
   endpoint over TLS in exchange for a code and the client secret; OpenID
   Connect Core 1.0 §3.1.3.7 allows TLS server validation to stand in for the
@@ -57,7 +55,7 @@ AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
 ISSUERS = frozenset({"https://accounts.google.com", "accounts.google.com"})
 PROVIDER = "google"
-SCOPE = "openid email"
+SCOPE = "openid email profile"
 COOKIE_NAME = "aicefr_oauth"
 # Behind TLS: Secure, Path=/ and no Domain, so a subdomain cannot set it.
 SECURE_COOKIE_NAME = "__Host-aicefr_oauth"
@@ -85,12 +83,12 @@ MESSAGES = {
     "domain": "Tài khoản Google này không thuộc tên miền mà trường cho phép.",
     "unverified": "Email của tài khoản Google này chưa được xác minh.",
     "not_linked": (
-        "Tài khoản Google này chưa liên kết với bút danh nào. Đăng nhập bằng bút danh và "
+        "Tài khoản Google này chưa liên kết với tài khoản nào. Đăng nhập bằng email và "
         "mật khẩu, rồi liên kết Google ở trang Tài khoản."
     ),
     "disabled": "Tài khoản này đã bị tắt. Hãy liên hệ quản trị viên.",
-    "taken": "Tài khoản Google này đã liên kết với một bút danh khác.",
-    "signin": "Cần đăng nhập bằng bút danh trước khi liên kết Google.",
+    "taken": "Tài khoản Google này đã liên kết với một tài khoản khác.",
+    "signin": "Cần đăng nhập trước khi liên kết Google.",
     "insecure": (
         "Máy chủ chạy qua https nhưng chưa bật AICEFR_HTTPS_ONLY, nên chưa đăng nhập bằng "
         "Google được. Quản trị viên xem khung Đăng nhập bằng Google ở tab Cấu hình."
@@ -122,8 +120,9 @@ class Flow:
 @dataclass(frozen=True)
 class GoogleIdentity:
     subject_hash: str
-    # Shown once on the page that confirms a link, never stored.
+    # D071: only an address Google marked verified; None otherwise.
     email: str | None
+    name: str | None = None
 
 
 def new_flow(mode: str, next_path: str, account_id: str | None = None) -> Flow:
@@ -293,10 +292,12 @@ def verify_id_token(
     sub = claims.get("sub")
     if not isinstance(sub, str) or not sub:
         raise GoogleError("token", "subject")
-    email = claims.get("email") if isinstance(claims.get("email"), str) else None
+    verified = claims.get("email_verified") is True
+    email = claims.get("email") if isinstance(claims.get("email"), str) and verified else None
+    name = claims.get("name") if isinstance(claims.get("name"), str) else None
     if config.allowed_domain:
         if claims.get("hd") != config.allowed_domain:
             raise GoogleError("domain")
-        if claims.get("email_verified") is not True:
+        if not verified:
             raise GoogleError("unverified")
-    return GoogleIdentity(subject_hash=subject_hash(sub), email=email)
+    return GoogleIdentity(subject_hash=subject_hash(sub), email=email, name=name)

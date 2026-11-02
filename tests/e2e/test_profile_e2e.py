@@ -49,9 +49,12 @@ def test_a_learner_picks_an_avatar_and_a_daily_goal_and_the_path_follows(context
     expect(small).to_have_class(re.compile(r"avatar-education"))
     expect(small.locator("use")).to_have_attribute("href", re.compile(r"#i-leaf$"))
 
-    page.locator(".chip-radio").filter(has_text="5 phút").click()
-    expect(page.locator(".toast").last).to_contain_text("5 phút")
+    # D068: the goal is picked on the practice page's Today card.
     page.goto("/practice")
+    page.locator("#goal-select").select_option("300")
+    expect(page.locator(".toast").last).to_contain_text("5 phút")
+    expect(page.locator(".today-card")).to_contain_text("/300")
+    page.reload()
     expect(page.locator(".today-card")).to_contain_text("/300")
 
 
@@ -80,7 +83,7 @@ def test_an_administrator_opens_an_account_and_changes_its_role(context, live_se
     target = live_server.account()
     admin = context.new_page()
     login(admin, live_server, live_server.account("admin"), "/admin")
-    admin.get_by_label("Tìm bút danh").fill(target)
+    admin.get_by_label("Tìm theo tên, email hoặc mã").fill(target)
     admin.get_by_role("button", name=f"Xem chi tiết {target}").click()
     dialog = admin.locator("#account-dialog")
     expect(dialog).to_be_visible()

@@ -27,13 +27,11 @@ router = APIRouter()
 def my_badges(account: Account = Depends(require_login)) -> dict:
     peers = pages.svc().peers
     if account.role == Role.STUDENT:
-        todo = peers.assessment.assignments_for(account_id=account.account_id)["todo"]
         return {
             **peers.assessment.student_badges(account_id=account.account_id),
             "reviews_due": peers.learning.reviews_due(account_id=account.account_id),
-            "assignments": len(todo),
         }
-    return peers.assessment.staff_badges(account_id=account.account_id)
+    return peers.assessment.staff_badges(account_id=account.account_id, role=account.role.value)
 
 
 @router.post("/api/v1/me/badges/{marker}/seen", tags=["auth"])
@@ -52,9 +50,8 @@ def my_nudges(account: Account = Depends(require_login)) -> dict:
     who = account.account_id
     found = nudges(
         datetime.now(UTC),
-        daily=peers.assessment.practice_daily(account_id=who),
+        daily=peers.learning.daily(account_id=who, goal_seconds=account.daily_goal_s),
         reviews_due=peers.learning.reviews_due(account_id=who),
-        assignments=peers.assessment.assignments_for(account_id=who)["todo"],
         runs_left=peers.metering.runs_left(account_id=who),
     )
     return {"nudges": [n.as_dict() for n in found]}

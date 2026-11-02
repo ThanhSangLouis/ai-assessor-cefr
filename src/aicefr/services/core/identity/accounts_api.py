@@ -3,8 +3,9 @@
 A person looks after their own password, sessions, profile and linked Google
 account; an administrator looks after everybody's account from the web, not
 from a terminal on the server.
-Accounts are still never self-registered (FR-32): the role decides what a
-person may change, so somebody with authority hands it out.
+Only a student may register themself (D063 with Google, D065 with a password):
+the role decides what a person may change, so a teacher or an administrator is
+given that role by somebody with authority (FR-32).
 
 Two rules shape the administrator's side:
 
@@ -48,6 +49,7 @@ from aicefr.storage.auth_repository import (
     Account,
     AccountLocked,
     AuthRepository,
+    EmailTaken,
     Role,
     WrongPassword,
 )
@@ -104,6 +106,14 @@ ACTIVITY_ACTIONS = (
     "account.google_link",
     "account.google_unlink",
     "account.profile",
+    "account.signup",
+    "account.google_signup",
+    # The recovery code (D065) is gone since D081; its past entries stay in the log.
+    "account.recovery_code",
+    "account.recover",
+    "auth.recover_failed",
+    "account.contact",
+    "account.google_adopt",
 )
 
 
@@ -123,6 +133,10 @@ def my_account(
     return {
         "pseudonym": row["pseudonym"],
         "role": row["role"],
+        # D071: how the person signs in, and the name a teacher reads.
+        "email": row["email"],
+        "email_verified": row["email_verified"],
+        "full_name": row["full_name"],
         "created_at": row["created_at"],
         "last_login_at": row["last_login_at"],
         "password_changed_at": row["password_changed_at"],
@@ -182,6 +196,60 @@ def change_my_profile(
         "avatar_color": row["avatar_color"],
         "daily_goal_s": row["daily_goal_s"],
     }
+
+
+class ContactChange(BaseModel):
+    """D071: the sign-in email and the full name; either may be left out."""
+
+    email: str | None = Field(None, max_length=254)
+    full_name: str | None = Field(None, max_length=80)
+    # Needed to change an email the account already signs in with.
+    current_password: str | None = Field(None, max_length=200)
+
+
+def _contact_view(row: dict) -> dict:
+    return {
+        "email": row["email"],
+        "email_verified": bool(row["email_verified"]),
+        "full_name": row["full_name"],
+    }
+
+
+@router.patch("/api/v1/me/contact", tags=["auth"])
+def change_my_contact(
+    body: ContactChange,
+    account: Account = Depends(require_login),
+    auth: AuthRepository = Depends(get_auth_repo),
+) -> dict:
+    """Set the sign-in email and the full name (D071).
+
+    Adding a first email needs nothing more: the person is signed in. Changing
+    one the account already signs in with needs the password, as changing the
+    password does -- otherwise a borrowed session could move the account to
+    another address and lock its owner out. A wrong password counts as a failed
+    login (NFR-07).
+    """
+    row = auth.get(account.account_id)
+    changing = (
+        body.email is not None and row["email"] and body.email.strip().lower() != row["email"]
+    )
+    if changing:
+        if not body.current_password or not passwords.verify_password(
+            body.current_password, row["password_hash"]
+        ):
+            if body.current_password:
+                auth.record_failure(account.account_id)
+            raise HTTPException(403, "nhập đúng mật khẩu hiện tại để đổi email")
+    try:
+        row = auth.set_contact(account.account_id, email=body.email, full_name=body.full_name)
+    except EmailTaken as e:
+        raise HTTPException(409, "email này đã có tài khoản khác") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    changed = sorted(k for k in ("email", "full_name") if getattr(body, k) is not None)
+    if changed:
+        svc().audit(account.pseudonym, "account.contact", account.account_id, " ".join(changed))
+    return _contact_view(row)
 
 
 @router.get("/api/v1/me/sessions", tags=["auth"])
@@ -293,19 +361,6 @@ class AccountCreate(BaseModel):
     pseudonym: str | None = Field(None, max_length=32)
 
 
-def _seats(n: int) -> None:
-    """Refuse `n` more enabled student accounts beyond the plan's seats (D033, BR-31).
-
-    Only new ones: an account that exists is never turned off for a plan.
-    """
-    plans = svc().peers.billing
-    if plans is None:
-        return
-    reason = plans.seat_refusal(n=n)
-    if reason:
-        raise HTTPException(409, reason)
-
-
 def _target(auth: AuthRepository, account_id: str):
     row = auth.get(account_id)
     if row is None:
@@ -328,8 +383,6 @@ def create_accounts(
     auth: AuthRepository = Depends(get_auth_repo),
 ) -> dict:
     """Create accounts with one-time passwords, shown in this response and nowhere else."""
-    if body.role is Role.STUDENT:
-        _seats(1 if body.pseudonym else body.count)
     try:
         if body.pseudonym:
             names = [body.pseudonym.strip()]
@@ -396,9 +449,7 @@ def disable_account(
 def enable_account(
     account_id: str, account: Account = ADMIN_ONLY, auth: AuthRepository = Depends(get_auth_repo)
 ) -> dict:
-    row = _target(auth, account_id)
-    if row["role"] == Role.STUDENT.value and row["disabled"]:
-        _seats(1)
+    _target(auth, account_id)  # 404 for an account that does not exist
     auth.set_disabled(account_id, False)
     svc().audit(account.pseudonym, "account.enable", account_id, None)
     return {"account_id": account_id, "disabled": False}
@@ -443,6 +494,25 @@ def account_detail(
     }
 
 
+@router.patch("/api/v1/admin/accounts/{account_id}/contact", tags=["admin"])
+def change_account_contact(
+    account_id: str,
+    body: ContactChange,
+    account: Account = ADMIN_ONLY,
+    auth: AuthRepository = Depends(get_auth_repo),
+) -> dict:
+    """An administrator sets a person's email and full name (D071), e.g. for staff accounts."""
+    _target(auth, account_id)
+    try:
+        row = auth.set_contact(account_id, email=body.email, full_name=body.full_name)
+    except EmailTaken as e:
+        raise HTTPException(409, "email này đã có tài khoản khác") from e
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    svc().audit(account.pseudonym, "account.contact", account_id, "admin")
+    return _contact_view(row)
+
+
 @router.post("/api/v1/admin/accounts/{account_id}/role", tags=["admin"])
 def change_role(
     account_id: str,
@@ -454,9 +524,7 @@ def change_role(
     by a slip of the mouse and leave nobody able to undo it."""
     if account_id == account.account_id:
         raise HTTPException(409, "không tự đổi vai trò của chính mình")
-    row = _target(auth, account_id)
-    if body.role is Role.STUDENT and row["role"] != Role.STUDENT.value and not row["disabled"]:
-        _seats(1)
+    _target(auth, account_id)  # 404 for an account that does not exist
     before = auth.set_role(account_id, body.role)
     svc().audit(
         account.pseudonym,

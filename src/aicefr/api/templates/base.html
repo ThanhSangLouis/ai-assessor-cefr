@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
-  <title>{% block title %}AI Assessor CEFR{% endblock %}</title>
+  <title>{% block title %}SpeakUp{% endblock %}</title>
   {#- D031: the two Roboto subsets every Vietnamese page needs, asked for before
       the stylesheet would discover them. The URLs are the ones in the
       @font-face rules, without a version query, or each file is fetched twice. -#}
@@ -44,10 +44,10 @@
 
 {% if account %}
 <aside class="app-sidebar" aria-label="Thanh điều khiển">
-  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="AI Assessor CEFR, về trang chính">
+  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="SpeakUp, về trang chính">
     {{ logo() }}
     <span class="brand-text">
-      <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+      <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
       <span class="brand-sub">Luyện nói A1–C2</span>
     </span>
   </a>
@@ -62,9 +62,8 @@
     {% if role == "student" %}
       <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("path") }}<span class="nav-label">Luyện tập</span>{{ badge("reviews_due") }}</a>
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
-      <a href="/my-assignments"{% if here == "assignments" %} aria-current="page"{% endif %}>{{ icon("target") }}<span class="nav-label">Bài được giao</span>{{ badge("assignments") }}</a>
-      <a href="/my-responses"{% if here == "mine" %} aria-current="page"{% endif %}>{{ icon("folder") }}<span class="nav-label">Bài của tôi</span>{{ badge("results") }}</a>
-      <a href="/my-progress"{% if here == "progress" %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Tiến độ</span></a>
+      {#- D068: one entry for the history and the progress, two tabs inside. -#}
+      <a href="/my-progress"{% if here in ("mine", "progress") %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Kết quả</span>{{ badge("results") }}</a>
       {% if metered() %}
       <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
       {% endif %}
@@ -72,8 +71,12 @@
       <a href="/review"{% if here == "queue" %} aria-current="page"{% endif %}>{{ icon("inbox") }}<span class="nav-label">Hàng đợi duyệt</span>{{ badge("queue") }}</a>
       <a href="/teach/classes"{% if here == "classes" %} aria-current="page"{% endif %}>{{ icon("users") }}<span class="nav-label">Lớp học</span></a>
       <a href="/teach"{% if here == "teach" %} aria-current="page"{% endif %}>{{ icon("layers") }}<span class="nav-label">Lộ trình luyện</span></a>
-      <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê lớp</span></a>
-      <a href="/rate"{% if here == "rate" %} aria-current="page"{% endif %}>{{ icon("eye-off") }}<span class="nav-label">Chấm mù</span>{{ badge("ratings") }}</a>
+      <a href="/teach/tasks"{% if here == "tasks" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Đề đánh giá</span></a>
+      <a href="/review/stats"{% if here == "stats" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span class="nav-label">Thống kê</span></a>
+      {#- D075: a teacher pays the lesson drafts the language model writes from their own runs. -#}
+      {% if metered() %}
+      <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
+      {% endif %}
       {% if role == "admin" %}
         <a href="/admin"{% if here == "admin" %} aria-current="page"{% endif %}>{{ icon("shield") }}<span class="nav-label">Quản trị</span></a>
       {% endif %}
@@ -84,16 +87,16 @@
     {#- The account folds into one menu at the foot of the sidebar: who is signed
         in, theme, sign out. -#}
     <details class="account-menu">
-      <summary class="account-button" aria-label="Tài khoản {{ account.pseudonym }}, {{ role_names.get(role, role) }}">
+      <summary class="account-button" aria-label="Tài khoản {{ account.display_name }}, {{ role_names.get(role, role) }}">
         <span class="avatar avatar-{{ account.avatar_color or 'none' }}" aria-hidden="true">{{ icon(account.avatar_icon or "user") }}</span>
         <span class="who">
-          <span class="who-name">{{ account.pseudonym }}</span>
+          <span class="who-name">{{ account.display_name }}</span>
           <span class="who-role">{{ role_names.get(role, role) }}</span>
         </span>
         {{ icon("chevron-down", "icon chevron") }}
       </summary>
       <div class="account-panel">
-        <p class="account-head">Đang đăng nhập là <b>{{ account.pseudonym }}</b><br>{{ role_names.get(role, role) }}</p>
+        <p class="account-head">Đang đăng nhập là <b>{{ account.display_name }}</b>{% if account.email %}<br><span class="muted small">{{ account.email }}</span>{% endif %}<br>{{ role_names.get(role, role) }}</p>
         <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
         {% if role == "admin" and api_docs %}
           <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
@@ -109,11 +112,11 @@
 {% else %}
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+    <a class="brand" href="/" aria-label="SpeakUp, về trang chính">
       {{ logo() }}
       <span class="brand-text">
         <span class="brand-title-row">
-          <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
+          <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
           <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
         </span>
         <span class="brand-sub">Đánh giá phát âm &amp; độ trôi chảy</span>
@@ -122,7 +125,6 @@
 
     <nav class="site-nav" aria-label="Điều hướng chính">
       <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>{{ icon("home") }}<span>Giới thiệu</span></a>
-      <a href="/#interactive-demo">{{ icon("sparkle") }}<span>Demo AI</span></a>
       <a href="/#how-it-works">{{ icon("path") }}<span>Cách hoạt động</span></a>
       <a href="/#for-teachers">{{ icon("users") }}<span>Cho giảng viên</span></a>
       <a href="/bands"{% if here == "bands" %} aria-current="page"{% endif %}>{{ icon("chart") }}<span>Chuẩn CEFR</span></a>
@@ -143,196 +145,110 @@
 {% endif %}
 
 <main id="main" tabindex="-1">
+{#- D071: an account made before sign-in by email is asked, everywhere, to add one. -#}
+{% if account and not account.email %}
+<div class="notice notice-info contact-missing" id="contact-missing" role="status">
+  Tài khoản của bạn chưa có email. <a href="/account#contact">Thêm email và họ tên</a> để đăng nhập
+  bằng email hoặc Google{% if account.role.value == "student" %}, và để giảng viên lớp bạn biết bài nào của bạn{% endif %}.
+</div>
+{% endif %}
 {% block content %}{% endblock %}
 </main>
 
-<footer class="site-footer" role="contentinfo">
+<footer class="site-footer">
+  {#- D068 + FE (31/10/2026): the full footer for visitors; one line inside the
+      app, where every screen is work. Both say the two required phrases
+      word for word (SRS 11.3, tests/test_web.py). -#}
+  {% if account %}
+  <div class="footer-inner">
+    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
+      <a href="/bands">Band A1–C2 là gì?</a></p>
+  {% else %}
   <div class="footer-wrap footer-inner">
-    <!-- Hàng 1: Lưới liên kết & Thông tin học thuật toàn diện (5 Cột) -->
     <div class="footer-grid">
-      <!-- Cột 1: Định danh Viện / Trường & Dự án Nghiên cứu -->
+      <!-- Cột 1: Thương hiệu, giới thiệu & Trạng thái hệ thống -->
       <div class="footer-col footer-col-brand">
-        <a class="brand footer-brand" href="/" aria-label="AI Assessor CEFR, về trang chính">
+        <a class="brand footer-brand" href="/" aria-label="SpeakUp, về trang chính">
           {{ logo() }}
           <span class="brand-text">
             <span class="brand-title-row">
-              <span class="brand-name">AI Assessor <span class="brand-cefr">CEFR</span></span>
-              <span class="brand-badge">A1–C2</span>
+              <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
+              <span class="brand-badge"><span class="badge-dot"></span>A1–C2</span>
             </span>
-            <span class="brand-sub">Hệ thống Khảo thí &amp; Đánh giá Nói Tiếng Anh</span>
+            <span class="brand-sub">Luyện nói &amp; Đánh giá năng lực</span>
           </span>
         </a>
-
         <p class="footer-desc">
-          Đề tài Nghiên cứu Khoa học &amp; Ứng dụng Công nghệ Khảo thí Tự động — Khoa Công nghệ Thông tin, Trường Đại học Sư phạm Kỹ thuật TP.HCM (HCMUTE).
+          Luyện nói tiếng Anh theo lộ trình và ước lượng trình độ theo khung CEFR từ A1 đến C2, kèm bằng chứng trên chính bản ghi, dành cho sinh viên đại học.
         </p>
+      </div>
 
-        <div class="footer-org-meta">
-          <div class="footer-meta-item">
-            <span class="footer-meta-label">Đơn vị chủ quản:</span>
-            <span class="footer-meta-val">Khoa CNTT · HCMUTE</span>
+      <!-- Cột 2: Luyện tập & Tính năng -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Luyện tập &amp; Tính năng</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/signup">{{ icon("user") }}<span>Đăng ký luyện nói</span></a></li>
+          <li><a href="/bands">{{ icon("chart") }}<span>Thang điểm CEFR (A1–C2)</span></a></li>
+          <li><a href="/#how-it-works">{{ icon("path") }}<span>Quy trình đánh giá</span></a></li>
+        </ul>
+      </div>
+
+      <!-- Cột 3: Giảng viên & Học thuật -->
+      <div class="footer-col">
+        <h4 class="footer-col-title">Học thuật &amp; Đào tạo</h4>
+        <ul class="footer-nav-list">
+          <li><a href="/#for-teachers">{{ icon("users") }}<span>Cổng quản lý giảng viên</span></a></li>
+          <li><a href="/#principles">{{ icon("shield") }}<span>Nguyên tắc chấm &amp; AI rubric</span></a></li>
+          <li><a href="/#faq">{{ icon("info") }}<span>Câu hỏi thường gặp (FAQ)</span></a></li>
+          <li><a href="/login">{{ icon("key") }}<span>Đăng nhập</span></a></li>
+        </ul>
+      </div>
+
+      <!-- Cột 4: Cam kết học thuật & Minh bạch -->
+      <div class="footer-col footer-col-card">
+        <div class="footer-academic-card">
+          <div class="academic-card-head">
+            {{ icon("shield", "academic-icon") }}
+            <h4 class="academic-card-title">Cam kết học thuật &amp; Minh bạch</h4>
           </div>
-          <div class="footer-meta-item">
-            <span class="footer-meta-label">Địa chỉ nghiên cứu:</span>
-            <span class="footer-meta-val">01 Võ Văn Ngân, P. Linh Chiểu, TP. Thủ Đức, TP.HCM</span>
+          <div class="academic-card-body">
+            <p>
+              <b>Không cấp chứng chỉ.</b> Mọi điểm và band trên hệ thống là kết quả ước lượng
+              của mô hình, dùng để luyện tập và tham khảo.
+            </p>
+            <p>
+              <b>Giảng viên quyết định cuối cùng.</b> Kết quả chỉ được coi là xác nhận sau khi
+              có giảng viên duyệt.
+            </p>
+            <p class="academic-privacy-note">
+              {{ icon("lock") }}
+              <span>Dữ liệu bản ghi là dữ liệu cá nhân và chỉ người nộp cùng giảng viên phụ trách xem được.</span>
+            </p>
+          </div>
+          <div class="academic-card-foot">
+            <a href="/bands" class="academic-learn-more">
+              <span>Band A1 đến C2 nghĩa là gì, và máy đo được những gì</span>
+              {{ icon("arrow-right") }}
+            </a>
           </div>
         </div>
-
-        <div class="footer-tags-row">
-          <span class="footer-pill-tag">Khung CEFR 2020</span>
-          <span class="footer-pill-tag">Mô hình Whisper ASR</span>
-          <span class="footer-pill-tag">Human-in-the-Loop</span>
-        </div>
-      </div>
-
-      <!-- Cột 2: Khung năng lực CEFR (6 Bậc chuẩn Châu Âu) -->
-      <div class="footer-col">
-        <h3 class="footer-col-title">Khung năng lực CEFR</h3>
-        <ul class="footer-nav-list">
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">A1</span>
-              <span class="cefr-badge-text">Khởi đầu <i>(Breakthrough)</i></span>
-            </a>
-          </li>
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">A2</span>
-              <span class="cefr-badge-text">Căn bản <i>(Waystage)</i></span>
-            </a>
-          </li>
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">B1</span>
-              <span class="cefr-badge-text">Độc lập <i>(Threshold)</i></span>
-            </a>
-          </li>
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">B2</span>
-              <span class="cefr-badge-text">Nâng cao <i>(Vantage)</i></span>
-            </a>
-          </li>
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">C1</span>
-              <span class="cefr-badge-text">Thành thạo <i>(Effective)</i></span>
-            </a>
-          </li>
-          <li>
-            <a href="/bands" class="footer-cefr-link">
-              <span class="cefr-badge-code">C2</span>
-              <span class="cefr-badge-text">Bậc thầy <i>(Mastery)</i></span>
-            </a>
-          </li>
-          <li class="footer-list-highlight">
-            <a href="/bands">Bảng quy đổi &amp; Ngưỡng điểm →</a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Cột 3: 5 Tiêu chí khảo thí nói -->
-      <div class="footer-col">
-        <h3 class="footer-col-title">5 Tiêu chí khảo thí</h3>
-        <ul class="footer-nav-list">
-          <li><a href="/bands#aspect-phonology">Phát âm &amp; Ngữ âm (Phonology)</a></li>
-          <li><a href="/bands#aspect-fluency">Độ trôi chảy &amp; Tốc độ (Fluency)</a></li>
-          <li><a href="/bands#aspect-range">Độ rộng vốn từ (Lexical Range)</a></li>
-          <li><a href="/bands#aspect-accuracy">Độ chuẩn ngữ pháp (Accuracy)</a></li>
-          <li><a href="/bands#aspect-coherence">Mạch lạc &amp; Từ nối (Coherence)</a></li>
-          <li class="footer-list-highlight">
-            <a href="/#how-it-works">Quy trình phân tích 4 bước →</a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Cột 4: Phân hệ & Luyện tập -->
-      <div class="footer-col">
-        <h3 class="footer-col-title">Cổng hệ thống</h3>
-        <ul class="footer-nav-list">
-          <li><a href="/login">Cổng Luyện nói Sinh viên</a></li>
-          <li><a href="/#interactive-demo">Trải nghiệm bài thi thử AI</a></li>
-          <li><a href="/#for-teachers">Cổng Thẩm định Giảng viên</a></li>
-          <li><a href="/login">Đăng nhập Bút danh bảo mật</a></li>
-          <li><a href="/login">Đăng nhập Google SSO</a></li>
-          <li class="footer-list-highlight">
-            <a href="/#faq">Câu hỏi thường gặp (FAQ) →</a>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Cột 5: Quy chuẩn & Học thuật -->
-      <div class="footer-col">
-        <h3 class="footer-col-title">Quy chuẩn &amp; Học thuật</h3>
-        <ul class="footer-nav-list">
-          <li><a href="/#principles">Nguyên tắc chấm &amp; AI Rubric</a></li>
-          <li><a href="/#principles">Quyền riêng tư âm thanh (D064)</a></li>
-          <li><a href="/#principles">Cơ chế Giảng viên duyệt điểm</a></li>
-          <li><a href="/#principles">Cam kết không thay chứng chỉ</a></li>
-          <li><a href="/#principles">Quyền tải về / xóa tệp âm thanh</a></li>
-          <li class="footer-list-highlight">
-            <a href="/bands">Chi tiết giới hạn đo lường →</a>
-          </li>
-        </ul>
       </div>
     </div>
 
-    <!-- Hàng 2: Thanh cam kết học thuật & Minh bạch dữ liệu (Academic Governance Strip) -->
-    <div class="footer-trust-strip">
-      <div class="trust-strip-card">
-        <div class="trust-card-head">
-          {{ icon("scale", "trust-icon") }}
-          <h4 class="trust-card-title">Không cấp chứng chỉ</h4>
-        </div>
-        <p class="trust-card-text">
-          Mọi điểm và band trên hệ thống là kết quả ước lượng của mô hình AI, dùng để luyện tập và tham khảo học thuật; không thay thế các văn bằng quốc tế.
-        </p>
-      </div>
-
-      <div class="trust-strip-card">
-        <div class="trust-card-head">
-          {{ icon("user", "trust-icon") }}
-          <h4 class="trust-card-title">Giảng viên quyết định cuối cùng</h4>
-        </div>
-        <p class="trust-card-text">
-          Nguyên tắc Human-in-the-Loop: Kết quả chỉ được coi là xác nhận sau khi có giảng viên chuyên môn thẩm định và phê duyệt trên hệ thống.
-        </p>
-      </div>
-
-      <div class="trust-strip-card">
-        <div class="trust-card-head">
-          {{ icon("lock", "trust-icon") }}
-          <h4 class="trust-card-title">Bảo vệ quyền riêng tư âm thanh</h4>
-        </div>
-        <p class="trust-card-text">
-          Tuân thủ chuẩn bảo mật D064. Tệp ghi âm là dữ liệu cá nhân, chỉ hiển thị với người nộp và giảng viên phụ trách. Sinh viên có quyền xóa bản ghi bất kỳ lúc nào.
-        </p>
-      </div>
-    </div>
-
-    <!-- Hàng 3: Thanh bản quyền & Liên kết chính sách cuối trang -->
+    <!-- Thanh phụ cuối trang -->
     <div class="footer-sub">
-      <div class="footer-sub-left">
-        <p class="footer-copy">
-          © 2026 AI Assessor CEFR. Đề tài Nghiên cứu Khoa học Trường Đại học Sư phạm Kỹ thuật TP.HCM (HCMUTE).
-        </p>
-        <p class="footer-subcopy">
-          Khoa Công nghệ Thông tin · Phát triển phục vụ đào tạo và nghiên cứu học thuật ngôn ngữ.
-        </p>
-      </div>
       <div class="footer-sub-right">
-        <a href="/bands" class="footer-sublink">Chuẩn CEFR</a>
+        <a href="/bands" class="footer-sublink">Chuẩn năng lực</a>
         <span class="footer-sub-sep" aria-hidden="true">•</span>
         <a href="/#principles" class="footer-sublink">Chính sách học thuật</a>
         <span class="footer-sub-sep" aria-hidden="true">•</span>
-        <a href="/#faq" class="footer-sublink">Hỗ trợ</a>
-        <span class="footer-sub-sep" aria-hidden="true">•</span>
         <a href="#main" class="footer-sublink back-to-top" aria-label="Cuộn về đầu trang">
           {{ icon("arrow-up") }}
-          <span>Đầu trang</span>
+          <span>Về đầu trang</span>
         </a>
       </div>
     </div>
+  {% endif %}
   </div>
 </footer>
 

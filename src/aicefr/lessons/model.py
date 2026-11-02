@@ -12,7 +12,7 @@ import re
 import uuid
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
 from aicefr.contracts import Band, Criterion, Mission, MissionHit, ReasonCode
 
@@ -234,16 +234,15 @@ class Lesson(BaseModel):
     lesson_id: str = Field(default_factory=lambda: new_id("l"))
     title: str = Field(min_length=1, max_length=160)
     summary: str = Field(default="", max_length=600)
-    band: Band = Band.A2
+    band: Band
     criterion: Criterion | None = None
     model_text: str = Field(default="", max_length=3000)
     keywords: list[str] = Field(default_factory=list, max_length=12)
     steps: list[Step] = Field(default_factory=list, max_length=12)
     # Share of steps that must pass, besides the free step being done.
     pass_ratio: float = Field(default=0.8, ge=0.3, le=1.0)
-    # Shipped sample content, waiting for a teacher of the Faculty of Foreign
-    # Languages to review it.
-    sample: bool = False
+    # Shipped with the system (D085). Versions saved before call it `sample`.
+    built_in: bool = Field(default=False, validation_alias=AliasChoices("built_in", "sample"))
 
     @field_validator("keywords")
     @classmethod

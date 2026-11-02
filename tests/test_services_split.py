@@ -289,7 +289,6 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
 
     # web: the sidebar asks assessment and learning; reminders ask metering too (D055).
     assert set(student.get("/api/v1/me/badges").json()) == {
-        "assignments",
         "results",
         "results_seen_at",
         "reviews_due",

@@ -7,7 +7,6 @@
 const escapeHtml = window.escapeHtml;
 const listEl = document.getElementById("list");
 const listCountEl = document.getElementById("list-count");
-const filterEl = document.getElementById("list-filter");
 const exportBtn = document.getElementById("export");
 const exportNoteEl = document.getElementById("export-note");
 
@@ -17,26 +16,8 @@ const PENDING_STATUSES = ["QUEUED", "RUNNING"];
 // AC-09.2: for these statuses no score and no band may be shown, in any form.
 const NO_SCORE_STATUSES = ["REJECTED", "FAILED"];
 
-// D023. A practice attempt has no band and no teacher review. Its title is built
-// from the task id (PR-FLU-A2 -> "Luyện tập · Độ trôi chảy A2") because
-// /api/v1/tasks returns assessment tasks only.
-const PRACTICE_SKILL = {
-  FLU: "Độ trôi chảy",
-  COH: "Mạch lạc",
-  RAN: "Vốn từ",
-  ACC: "Ngữ pháp",
-  PHO: "Phát âm dễ nghe",
-};
-const isPractice = (r) => r.purpose === "practice";
-
-function practiceTitle(taskId) {
-  const [, skill, band] = String(taskId).split("-");
-  return `Luyện tập · ${PRACTICE_SKILL[skill] || taskId} ${band || ""}`.trim();
-}
-
 let allRows = [];
 let titles = {};
-let kind = "all";
 // When the student last opened this list (D028). A teacher decision after it
 // is marked "new" on its row; opening the list then moves the mark forward.
 let seenAt = null;
@@ -58,9 +39,6 @@ function loadTaskTitles() {
 }
 
 function badgeFor(r) {
-  if (isPractice(r) && r.status === "COMPLETED") {
-    return '<span class="badge COMPLETED">Đã luyện xong</span>';
-  }
   return window.ui.statusBadge(r.status);
 }
 
@@ -69,8 +47,7 @@ function badgeFor(r) {
 //   - FR-21: a band the teacher has not verified carries the "estimate" label,
 //     so it is never read as a final result.
 function resultText(r) {
-  if (isPractice(r)) return '<span class="muted">Không chấm</span>';
-  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Không có điểm</span>';
+  if (NO_SCORE_STATUSES.includes(r.status)) return '<span class="muted">Chưa có kết quả</span>';
   if (r.overall_band == null && r.overall_0_6 == null) return "";
   let h = "";
   if (r.overall_band != null) h += `Band <b>${escapeHtml(r.overall_band)}</b>`;
@@ -84,30 +61,14 @@ function resultText(r) {
 function hrefFor(r) {
   const id = encodeURIComponent(r.response_id);
   if (PENDING_STATUSES.includes(r.status)) return `/progress/${id}`;
-  return isPractice(r) ? `/practice/results/${id}` : `/report/${id}`;
-}
-
-// FR-35, the learner's side. A response a teacher has verified cannot be deleted
-// by its owner, and the row says so on the spot instead of offering a button
-// that only leads to a 409.
-function deleteControl(r) {
-  const id = escapeHtml(r.response_id);
-  if (r.teacher_verified) {
-    return '<span class="muted small-note" title="Bài đã được giảng viên xác nhận">Không xoá được</span>';
-  }
-  // One visible word, but a full accessible name: "Xoá" alone is clear to
-  // someone who sees the whole row and vague to someone hearing one button.
-  return (
-    `<button type="button" class="link-button danger" data-delete="${id}"` +
-    ` aria-label="Xoá bài ${id} và bản ghi âm của nó">Xoá</button>`
-  );
+  return `/report/${id}`;
 }
 
 function item(r) {
-  const title = isPractice(r) ? practiceTitle(r.task_id) : titles[r.task_id] || r.task_id;
+  const title = titles[r.task_id] || r.task_id;
   const result = resultText(r);
   return `
-    <li class="response-item${isPractice(r) ? " is-practice" : ""}">
+    <li class="response-item">
       <div class="response-main">
         <a class="response-title" href="${hrefFor(r)}">${escapeHtml(title)}</a>
         <p class="response-meta">
@@ -118,7 +79,6 @@ function item(r) {
         </p>
         <p class="response-id muted">Mã bài <code>${escapeHtml(r.response_id)}</code></p>
       </div>
-      <div class="response-side">${deleteControl(r)}</div>
     </li>`;
 }
 
@@ -129,64 +89,17 @@ function emptyState() {
     "<p>Ghi âm khoảng một phút trả lời một đề bài, hệ thống sẽ trả về một ước lượng " +
     "tổng thể kèm bằng chứng cụ thể để bạn biết nên luyện tiếp phần nào.</p>" +
     '<div class="button-row"><a class="button" href="/">Nộp bài đầu tiên</a>' +
-    '<a class="button secondary" href="/practice">Luyện tập trước</a></div></div>'
+    '<a class="button secondary" href="/practice">Học theo lộ trình trước</a></div></div>'
   );
 }
 
 function render() {
-  const rows = allRows.filter(
-    (r) => kind === "all" || (kind === "practice") === isPractice(r)
-  );
-  const practiced = allRows.filter(isPractice).length;
-  const counts = { all: allRows.length, assessment: allRows.length - practiced, practice: practiced };
-  filterEl.querySelectorAll("button").forEach((b) => {
-    const k = b.getAttribute("data-kind");
-    b.setAttribute("aria-pressed", String(k === kind));
-    b.textContent = `${{ all: "Tất cả", assessment: "Đánh giá", practice: "Luyện tập" }[k]} (${counts[k]})`;
-  });
-  filterEl.hidden = !allRows.length || !practiced || practiced === allRows.length;
   listCountEl.textContent = allRows.length ? `${allRows.length} bài` : "";
   if (!allRows.length) {
     listEl.innerHTML = emptyState();
     return;
   }
-  listEl.innerHTML = rows.length
-    ? `<ul class="response-list">${rows.map(item).join("")}</ul>`
-    : '<p class="muted">Không có bài nào thuộc loại này.</p>';
-  wireDeletes();
-}
-
-filterEl.addEventListener("click", (e) => {
-  const b = e.target.closest("button[data-kind]");
-  if (!b) return;
-  kind = b.getAttribute("data-kind");
-  render();
-});
-
-// Deleting cannot be undone, so it asks once more. `confirm` rather than a
-// home-made dialog: the browser's own handles focus, Escape and screen readers,
-// and getting any of those wrong is worse than its plain look.
-function wireDeletes() {
-  listEl.querySelectorAll("[data-delete]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const id = btn.dataset.delete;
-      if (!window.confirm(`Xoá vĩnh viễn bài ${id}? Cả bản ghi âm cũng bị xoá.`)) return;
-
-      btn.disabled = true;
-      const r = await fetch(`/api/v1/responses/${encodeURIComponent(id)}`, {
-        method: "DELETE",
-      });
-      if (window.redirectToLoginIfExpired(r)) return;
-      if (!r.ok) {
-        btn.disabled = false;
-        const d = await r.json().catch(() => ({}));
-        window.toast(d.detail || "Không xoá được bài này.", "error");
-        return;
-      }
-      window.toast(`Đã xoá bài ${id} và bản ghi âm của nó.`, "ok");
-      load();
-    });
-  });
+  listEl.innerHTML = `<ul class="response-list">${allRows.map(item).join("")}</ul>`;
 }
 
 // Read the mark first, show the list against it, then move it to now: the

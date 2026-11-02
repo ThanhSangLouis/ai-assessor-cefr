@@ -6,7 +6,10 @@ erDiagram
 
     account {
         string account_id PK
-        string pseudonym UK
+        string pseudonym UK "mã tài khoản (SV-001…), dữ liệu nghiên cứu chỉ mang mã này"
+        string email UK "D071: đăng nhập, viết thường; trống ở tài khoản cũ"
+        int email_verified "D071: Google đã xác minh"
+        string full_name "D071: giảng viên lớp thấy"
         string password_hash "scrypt"
         string role "student · teacher · admin"
         int failed_attempts
@@ -16,8 +19,11 @@ erDiagram
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
-        array identities "provider, băm subject, liên kết lúc; không giữ email (D029)"
+        array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
         object seen_markers "tên dấu → lúc xem (D028)"
+        object email_codes "mã gửi qua email, chỉ lưu băm (D079)"
+        int email_reminders "nhắc học qua email (D079)"
+        string reminder_sent_on "ngày đã gửi thư nhắc (D079)"
     }
 
     session {

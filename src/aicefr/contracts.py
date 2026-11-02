@@ -149,44 +149,6 @@ class EvidenceKind(str, Enum):
     CONNECTOR = "connector"
 
 
-class TaskPart(str, Enum):
-    """Which exam part a prompt belongs to, and it is NOT a cosmetic label.
-
-    `Task.part` was a free `str`. Writing the closed set out matters here
-    because the three values do not mean the same thing to the scorer:
-
-    - `P3` and `P4` are the parts the model was trained on. Each response in
-      the training corpus is exactly one file for one of them, which is what
-      makes the unit of inference line up with what a student submits.
-    - `P5` is the long prompt (120-300s) and sits DELIBERATELY outside that
-      range. It is scored by the windowing path in `scoring/windows.py`, gets
-      `ReasonCode.SCORE_AGGREGATED`, and always goes to a teacher.
-
-    So `part` is what decides which scoring path a response takes. A free
-    string hid that behind a value nobody could enumerate.
-    """
-
-    P3 = "P3"
-    P4 = "P4"
-    P5 = "P5"
-
-
-class TaskPurpose(str, Enum):
-    """Whether a task is for ASSESSMENT or for PRACTICE. D023.
-
-    The two purposes differ at exactly the point that decides the processing
-    path. An assessment response goes through the scoring model, gets a band and
-    may enter the teacher queue. A practice attempt is NEVER given a band: a
-    practice task is a short constrained exercise (use given words, read a
-    passage aloud) that lies outside the exam responses the model learned from,
-    and the model's error is larger than the real progress made in a few weeks.
-    Practice gets rule-based feedback only, with no teacher in the loop.
-    """
-
-    ASSESSMENT = "assessment"
-    PRACTICE = "practice"
-
-
 class MissionKind(str, Enum):
     """Seven kinds of practice mission, each one a fixed rule applied to the recording. D023.
 
@@ -675,6 +637,27 @@ class ReviewLock(BaseModel):
         return self.locked_until <= now
 
 
+class ReviewVisit(BaseModel):
+    """One time a teacher opened a response to review it, and how it ended. D041."""
+
+    reviewer_id: str
+    opened_at: str
+    decided_at: str | None = None
+    action: str | None = None
+
+
+class ReviewSession(BaseModel):
+    """Reviewing one response, kept apart from it (D082): at most one per response.
+
+    `lock` is who may decide now (FR-30); `visits` every opening, so a decision
+    can say when its teacher began (the lock is cleared on decision).
+    """
+
+    response_id: str
+    lock: ReviewLock | None = None
+    visits: list[ReviewVisit] = Field(default_factory=list)
+
+
 class AuditEntry(BaseModel):
     """Mot dong nhat ky kiem toan. FR-31.
 
@@ -823,6 +806,44 @@ class PracticeResult(BaseModel):
         return sum(1 for c in self.checks if c.met)
 
 
+class PhraseCard(BaseModel):
+    """One phrase of an upgraded answer and where it is in its reviews (D070).
+
+    A card of the phrase book: `box` is its Leitner box, `due` when it comes
+    back. Part of the upgrade it came from (`CoachUpgrade ◆ PhraseCard`).
+    """
+
+    phrase: str
+    meaning_vi: str = ""
+    box: int = 0
+    due: str | None = None
+    reviews: int = 0
+    reviewed_at: str | None = None
+
+    def is_due(self, at: str) -> bool:
+        """A card never reviewed is due at once."""
+        return (self.due or "") <= at
+
+
+class CoachUpgrade(BaseModel):
+    """The learner's answer rewritten one band higher (D069), made once and kept.
+
+    Part of the response (`Response ◆ CoachUpgrade`): it is made from the
+    response's transcript and goes with it. `provider` and `model` say which
+    language model wrote it.
+    """
+
+    from_band: Band
+    to_band: Band
+    upgraded: str
+    changes: list[dict] = Field(default_factory=list)
+    phrases: list[PhraseCard] = Field(default_factory=list)
+    provider: str
+    model: str
+    prompt_version: str
+    created_at: str
+
+
 class Response(BaseModel):
     """The pipeline's single output."""
 
@@ -838,12 +859,13 @@ class Response(BaseModel):
     # tu lau nhung khong duoc luu vao ket qua, nen bao cao khong noi duoc sinh
     # vien da tra loi ban de nao. Rong o ban ghi cu.
     prompt_version: str | None = None
-    # D023. Only on practice attempts; empty for assessment responses.
-    practice: PracticeResult | None = None
     # D060: the teachers' decisions on this response, oldest first. Part of the
     # response (`Response ◆ Review`): they live and go with it. Kept out of the
     # stored report -- the repository keeps them beside it and fills them in.
     reviews: list[Review] = Field(default_factory=list)
+    # D069: the upgraded answer, when its owner asked for one. Kept beside the
+    # stored report like the reviews, and filled in by the repository.
+    upgrade: CoachUpgrade | None = None
 
     @property
     def was_scored(self) -> bool:

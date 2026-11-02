@@ -96,7 +96,7 @@
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-LP-E01 | `test_a_learner_composes_a_path_and_sets_it_aside` | AC-81.8 | Trang Luyện tập: ghép, tải lại vẫn còn, bỏ |
+| TC-LP-E01 | `test_a_learner_follows_the_published_path_without_composing_one` | AC-81.8 | Trang Luyện tập không còn ô tự ghép lộ trình; sinh viên theo lộ trình giảng viên xuất bản (D068) |
 | TC-LP-E02 | `test_a_teacher_keeps_part_of_a_proposal_as_a_draft_path` | AC-82.7 | Trang Soạn bài: xem đề xuất, bỏ một bài, lưu nháp |
 
 ### Lược đồ — Integration (`tests/test_schema.py`)
@@ -126,6 +126,8 @@
 | TC-DP-U08 | `test_the_caddyfile_limits_bodies_like_the_gateway_and_never_overrides_app_headers` | FR-84 | Giới hạn kích thước như gateway; không ghi đè tiêu đề bảo mật của ứng dụng |
 | TC-DP-U09 | `test_the_server_scripts_exist_and_stop_at_the_first_error` | FR-84 | Kịch bản máy chủ có `set -euo pipefail` |
 | TC-DP-U10 | `test_the_deploy_never_ships_an_env_file` | AC-84.4 | `deploy.sh` không chép `.env` |
+| TC-DP-U11 | `test_speech_builds_with_silero_without_overriding_the_whisper_model` | FR-84 | Build speech với VAD=1, không ghi đè model Whisper đang dùng |
+| TC-DP-U12 | `test_the_metered_channel_reaches_core_and_web` | FR-84 | (D049, D057) Biến tính lượt (`AICEFR_METERING`, giá, IDPoint, gói lượt) tới được container core và web; có trong `.env.example` |
 
 ## 5. Kết quả chạy
 

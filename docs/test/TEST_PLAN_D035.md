@@ -1,5 +1,7 @@
 # Kế hoạch và kết quả kiểm thử D035 — Nhiều cổng thanh toán: Stripe và MoMo
 
+> **D075 (01/11/2026):** chỉ còn Stripe và cổng thử; VNPay, MoMo và các test của chúng (TC-CT-U06, U07, I08; AC-73.x) đã gỡ. Người mua là học viên hay giảng viên mua gói lượt, không còn quản trị viên mua gói của trường: TC-CT-I02, I09, E01 đổi tên theo đó.
+
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Tính năng | D035: nhiều cổng thanh toán cùng lúc, quản trị viên chọn cổng cho từng đơn; Stripe Checkout ở chế độ thử (mở phiên bằng API, đọc lại phiên, webhook có chữ ký); ví MoMo ở môi trường thử (yêu cầu, kết quả và IPN có chữ ký); tiền thật phải bật riêng (FR-71..FR-73, BR-34, BR-35, UC-23) |
@@ -60,9 +62,6 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | AC-72.9 | TC-CT-I06 |
 | AC-72.10 | TC-CT-U05 |
 | AC-72.11 | TC-CT-E02 |
-| AC-73.1 | TC-CT-U06 |
-| AC-73.2 | TC-CT-U07 |
-| AC-73.3 | TC-CT-I08 |
 
 ## 6. Danh mục test case
 
@@ -75,8 +74,6 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-CT-U03 | `test_stripe_return_is_read_back_from_stripe` | AC-72.4 | Đã trả, chưa trả, hết hạn, tiền khác; chỉ giữ mã phiên; mã sai dạng, đường dẫn chèn, phiên thật trên khoá thử bị từ chối mà không hỏi Stripe; mất kết nối thành `GatewayError` |
 | TC-CT-U04 | `test_stripe_events_count_only_when_signed_and_fresh` | AC-72.5 | Chữ ký đúng; 299 và 301 giây; sửa một byte; khoá khác; thiếu tiêu đề; nhiều `v1` khi đổi khoá; sự kiện thật trên khoá thử; thời điểm có ký tự lạ hay dài bất thường, chữ ký không phải ASCII; ánh xạ bốn loại sự kiện; sự kiện khác; thiếu khoá webhook; mã trả lời 200, 400, 500 |
 | TC-CT-U05 | `test_stripe_keys_decide_the_mode` | AC-72.10 | `sk_test_`, `rk_test_` là thử kèm ghi chú thẻ; `sk_live_` có khoá webhook là thật; ba cách cấu hình sai bị từ chối |
-| TC-CT-U06 | `test_momo_signs_the_create_request_as_documented` | AC-73.1 | Địa chỉ thử, JSON, chữ ký tính lại theo thứ tự trường của MoMo; thân không chứa khoá; số tiền quá mức bị chặn trước khi gọi; lời từ chối mã 13 |
-| TC-CT-U07 | `test_momo_results_map_to_outcomes_and_forgeries_are_refused` | AC-73.2 | Mã 0, 1006, 1000, 1001, 4001 và một mã lạ (chưa xong); trả về bằng chữ và IPN bằng số; năm cách giả mạo, chữ ký có ký tự lạ; thân không phải JSON hay lồng quá sâu; mã trả lời 204, 400, 500 |
 | TC-CT-U08 | `test_the_registry_builds_what_the_settings_ask_for` | AC-71.2 | Danh sách trống trong `.env` là cổng thử, danh sách viết lộn xộn được chuẩn hoá; bốn cổng đủ khoá bật đúng thứ tự; thiếu khoá và tên lạ thành một câu mỗi cổng; tên lặp không báo hai lần; Stripe thiếu khoá webhook vẫn bật kèm cảnh báo |
 | TC-CT-U09 | `test_real_money_is_never_a_default` | AC-71.4 | Khoá live của Stripe và địa chỉ thật của MoMo không bật khi chưa đặt `AICEFR_PAYMENTS_LIVE`; đặt rồi thì cổng thử bị bỏ; Stripe khoá thử cạnh trang thật của VNPay bị bỏ |
 
@@ -85,21 +82,20 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
 | TC-CT-I01 | `test_paying_through_stripe_is_read_back_and_counted_once` | AC-72.3 | Trọn vòng Stripe; đơn ghi cổng, chế độ thử, mã phiên; trang trả về đọc lại phiên; webhook rồi trả về lần hai không đổi gì, và lần hai không hỏi Stripe; ba sự kiện, một lần áp dụng; biên nhận |
-| TC-CT-I02 | `test_the_stripe_webhook_alone_installs_the_plan` | AC-72.6 | Khoá khác, không chữ ký, GET, tiêu đề có ký tự lạ đều 400; thân quá 256 KiB 413; phiên khác mang mã đơn này 200 mà đơn vẫn chờ; webhook đúng một mình cài gói; sự kiện khác 200 |
+| TC-CT-I02 | `test_the_stripe_webhook_alone_credits_the_runs` | AC-72.6 | Khoá khác, không chữ ký, GET, tiêu đề có ký tự lạ đều 400; thân quá 256 KiB 413; phiên khác mang mã đơn này 200 mà đơn vẫn chờ; webhook đúng một mình cài gói; sự kiện khác 200 |
 | TC-CT-I03 | `test_leaving_stripe_changes_nothing_until_the_session_expires` | AC-72.7 | Rời trang Stripe: đơn vẫn chờ; sự kiện hết hạn làm đơn thành huỷ |
 | TC-CT-I04 | `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason` | AC-72.2 | Stripe từ chối, rồi mất kết nối: 502 có lời, đơn không thành công với mã của Stripe, không còn đơn chờ |
 | TC-CT-I05 | `test_a_return_stripe_cannot_confirm_says_so` | AC-72.8 | Không hỏi được Stripe: "Chưa xác nhận được với Stripe", đơn vẫn chờ; hỏi lại được thì thành công |
 | TC-CT-I06 | `test_stripe_is_asked_only_about_checkouts_this_system_opened` | AC-72.9 | Ba mã phiên không phải của đơn nào: không xác nhận, Stripe không được hỏi lần nào |
 | TC-CT-I07 | `test_one_gateway_cannot_settle_another_gateways_order` | AC-71.5 | Kết quả có chữ ký của cổng thử cho đơn Stripe: mã 01, đơn vẫn chờ, sự kiện bị từ chối; trang cổng thử không mở cho đơn Stripe; kết quả của Stripe khi khoá đã đổi chế độ tiền bị từ chối, trở lại đúng chế độ thì được ghi nhận |
-| TC-CT-I08 | `test_momo_is_paid_through_its_ipn_answered_204` | AC-73.3 | Yêu cầu tới MoMo có địa chỉ trả về và IPN đúng; IPN 204 cài gói; trang trả về; IPN lặp 204 và được đếm trên dòng của IPN đầu; IPN sửa số tiền 400 |
-| TC-CT-I09 | `test_the_administrator_picks_the_gateway_and_sees_what_is_off` | AC-71.1 | Danh sách cổng, ghi chú thẻ thử, câu nói cổng chưa bật; khoá không lộ; MoMo 422; cổng mặc định; cổng thử |
+| TC-CT-I09 | `test_the_buyer_picks_the_gateway_and_the_problems_are_logged` | AC-71.1 | Danh sách cổng, ghi chú thẻ thử, câu nói cổng chưa bật; khoá không lộ; MoMo 422; cổng mặc định; cổng thử |
 | TC-CT-I10 | `test_real_money_needs_to_be_switched_on` | AC-71.3 | Khoá `sk_live_`: chưa bật thì không có Stripe; bật thì Stripe thật và cổng thử tắt, trang cổng thử 404 |
 
 ### Tầng 3 — E2E (`tests/e2e/test_gateways_e2e.py`)
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-CT-E01 | `test_the_administrator_sees_each_gateway_and_pays_through_the_one_picked` | AC-71.6 | Biểu ngữ môi trường thử và cảnh báo thiếu khoá webhook; hai thẻ cổng, Stripe chọn sẵn; nút "qua Stripe" rồi "qua Cổng thử"; trả xong, bảng đơn ghi "Cổng thử (thử)" |
+| TC-CT-E01 | `test_the_buyer_picks_the_gateway_and_pays_through_it` | AC-71.6 | Biểu ngữ môi trường thử và cảnh báo thiếu khoá webhook; hai thẻ cổng, Stripe chọn sẵn; nút "qua Stripe" rồi "qua Cổng thử"; trả xong, bảng đơn ghi "Cổng thử (thử)" |
 | TC-CT-E02 | `test_coming_back_without_paying_says_nothing_was_charged` | AC-72.11 | Trang rời trang thanh toán của Stripe |
 | TC-CT-E03 | `test_the_gateway_choice_fits_a_phone` | AC-71.7 | 390 px, không cuộn ngang |
 

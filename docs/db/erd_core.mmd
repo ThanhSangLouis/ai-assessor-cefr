@@ -1,4 +1,4 @@
-%% ERD - các collection sau D060 (lược đồ phiên bản 8): một aggregate root
+%% ERD - các collection sau D060, D075, D078, D081..D085 (lược đồ phiên bản 16): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
@@ -15,9 +15,7 @@ erDiagram
     account ||--o{ order : "mua"
 
     task ||--o{ response : "đề của"
-    rating_batch }o--o{ response : "phiếu chấm mù"
-    study }o--o{ account : "người tham gia"
-    classroom }o--o{ task : "bài giao"
+    response ||--o| review_session : "việc duyệt (D082)"
 
     path ||--o{ lesson : "chặng gồm bài"
     lesson ||--o{ attempt : "lượt nói"
@@ -25,7 +23,7 @@ erDiagram
     learning_plan }o--o{ lesson : "gợi ý"
     learning_plan |o--o| path : "lưu thành"
 
-    order |o--o| license : "mua"
+    order ||--|| payment : "thanh toán (D084)"
     wallet ||--o{ ledger : "bút toán"
     ledger ||..|| response : "tính lượt cho"
 
@@ -43,8 +41,8 @@ erDiagram
     }
     task {
         string task_id PK
-        string purpose
         string band
+        int active
     }
     response {
         string response_id PK
@@ -54,31 +52,22 @@ erDiagram
         float overall_0_6
         string overall_band
         array reviews "Review"
-        object review_lock
-        array review_visits
         array replay_labels
-        array machine_seen
     }
-    rating_batch {
-        string batch_id PK
-        bool closed
-        array ratings "Rating: phiếu và điểm"
-    }
-    study {
-        string study_id PK
-        string status
-        array participants "Participant kèm khảo sát"
+    review_session {
+        string response_id UK
+        object lock
+        array visits
     }
     classroom {
         string class_id PK
-        string code UK
-        string teacher_id
+        array teacher_ids
         array members
-        array assignments "Assignment"
     }
     path {
         string path_id PK
         string status
+        int built_in "D085"
         array units "Unit"
     }
     lesson {
@@ -113,12 +102,13 @@ erDiagram
         string order_id PK
         string kind
         string status
-        array events
+        int runs
     }
-    license {
-        string license_id PK
-        string plan
-        string order_id
+    payment {
+        string order_id UK
+        string gateway
+        string checkout_ref
+        array events
     }
     wallet {
         string user_ref PK

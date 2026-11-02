@@ -130,13 +130,21 @@ def student(context, live_server):
     return page
 
 
-def teacher_page(browser, live_server):
-    """A teacher in a context of their own, so two roles can act side by side."""
+def teacher_page(browser, live_server, *students):
+    """A teacher in a context of their own, so two roles can act side by side.
+
+    D071: a teacher sees the work of their classes' students only; the pages
+    of `students` are put in a class this teacher teaches.
+    """
     ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
     ctx.set_default_timeout(20_000)
     page = ctx.new_page()
     page.on("dialog", lambda d: d.accept())
-    login(page, live_server, live_server.account("teacher"), "/teach")
+    teacher = live_server.account("teacher")
+    if students:
+        names = [s.request.get("/api/v1/me").json()["pseudonym"] for s in students]
+        live_server.teach(teacher, *names)
+    login(page, live_server, teacher, "/teach")
     return page
 
 
@@ -174,7 +182,11 @@ def test_new_learner_sees_the_path_and_the_first_lesson_next(student):
     expect(student.locator(".lesson-node.next .node-flag")).to_have_text("Bắt đầu")
     expect(student.locator(".today-card .goal-ring")).to_contain_text("0/180 giây")
     expect(student.locator(".review-count")).to_contain_text("0")
-    assert "band" not in student.locator("#path-page").inner_text().lower()
+    # D074 (replacing D025's "no band on this page"): the learner chooses the
+    # bands to study; with no assessment yet the suggestion is A1 to A2.
+    expect(student.locator("#band-plan h2")).to_contain_text("Học theo band")
+    expect(student.locator("#band-from")).to_have_value("A1")
+    expect(student.locator("#band-to")).to_have_value("A2")
 
 
 def test_read_aloud_step_marks_words_and_moves_on(student, live_server):
@@ -182,9 +194,8 @@ def test_read_aloud_step_marks_words_and_moves_on(student, live_server):
     expect(student.locator("#step-h")).to_have_text("Đọc to có từ gợi ý")
     expect(student.locator(".read-text .hint-word")).to_have_count(6)
     answer(student, live_server)
-    # The server runs the simulated recogniser: the result must say so where it
-    # is read, not only in the banner at the top of the page.
-    expect(student.locator("#step-feedback .notice-danger")).to_contain_text("Kết quả giả lập")
+    # D078: no "simulated" notice for learners, whichever recogniser runs.
+    expect(student.locator("#step-feedback .notice-danger")).to_have_count(0)
     expect(student.locator(".verdict")).to_have_text("Đạt bước này.")
     expect(student.locator("#step-feedback .w.heard")).not_to_have_count(0)
     expect(student.locator("#step-feedback .w.missed")).to_have_count(0)
@@ -249,7 +260,8 @@ def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
     main = student.locator("main").bounding_box()
     assert main and main["x"] >= box["width"] - 1  # the page starts after the sidebar
     links = sidebar.locator(".site-nav a")
-    expect(links).to_have_count(5)  # D054 added "Bài được giao"
+    # D068: Kết quả holds history and progress; D075: no "Bài được giao".
+    expect(links).to_have_count(3)
     expect(links.first.locator("svg use")).to_have_attribute(
         "href", re.compile(r"icons\.svg.*#i-path$")
     )
@@ -361,7 +373,7 @@ def test_students_see_the_published_version_until_the_teacher_publishes_again(
 def test_teacher_corrects_a_word_and_the_learner_sees_the_review(browser, student, live_server):
     student.goto(f"/practice/lessons/{LESSON}")
     answer(student, live_server)
-    teacher = teacher_page(browser, live_server)
+    teacher = teacher_page(browser, live_server, student)
     try:
         teacher.goto("/teach/insights?path=path-sample")
         teacher.locator("[data-attempt]").first.click()

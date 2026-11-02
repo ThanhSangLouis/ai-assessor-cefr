@@ -19,7 +19,7 @@
 | `main` có **branch protection**: bắt buộc 5 job CI xanh, chặn force push và xoá nhánh | Không đẩy thẳng lên `main`. PR đỏ CI thì không merge được (trừ admin) |
 | `.env` của production **chỉ nằm trên máy chủ** (`/srv/aicefr/.env`) | Không có trong repo, không có trong GitHub. Đổi biến môi trường production là việc của người có SSH (mục 6.3) |
 | Artifact mô hình chấm **không nằm trong Git**; trên máy chủ ở `/srv/aicefr-models` | Deploy không chép chúng. Đổi artifact phải chép tay (mục 6.4) |
-| Whisper (`faster-whisper-large-v3`) chạy bằng **CPU** trong container `speech` | Không có GPU hay dịch vụ model riêng. Một bài 30–60 giây chấm mất vài chục giây |
+| Whisper **small** (`faster-whisper`, int8) chạy bằng **CPU** trong container `speech`, nạp sẵn khi khởi động (D066) | Đúng model mô hình chấm đã học. Không có GPU hay dịch vụ model riêng. Một bài 40–60 giây chấm mất khoảng 10–15 giây trên EC2 2 vCPU (large-v3 trước đây: khoảng 70 giây) |
 | Tài khoản AWS là **tài khoản cá nhân của Sang**, gói Free (credit có hạn) | Teammate và AI của teammate không có quyền AWS hay SSH. Cần gì trên máy chủ thì nhờ Sang |
 | Máy chủ có thể đang **tắt** để tiết kiệm credit | Trang không mở được, hoặc `Deploy EC2` đỏ vì SSH timeout: trước tiên hỏi Sang máy có đang bật không |
 
@@ -152,6 +152,11 @@ container tự chạy lại. Máy tắt mà có merge thì `Deploy EC2` đỏ: b
 | Mọi bài chấm `FAILED`, log `speech` có `Permission denied: '/home/aicefr/.cache/huggingface'` | Thư mục cache Whisper thuộc `root` | Đã sửa trong `Dockerfile` (#82); job CI "Thu muc cache model…" chặn lỗi quay lại. Đừng xoá dòng `mkdir`/`chown` đó |
 | "chưa liên lạc được máy chấm" sau đúng khoảng 5 giây | Client Redis có giới hạn đọc 5 giây (mặc định của redis-py 8) | Đã sửa: `RedisBus` đặt `socket_timeout=None` (#82). Mọi client Redis mới cũng phải đặt như vậy |
 | "chưa liên lạc được máy chấm" sau khoảng 120 giây | `speech` quá tải hoặc đang tải model lần đầu | Thử lại sau vài phút; xem log `speech` |
+| `vad_n_seg_per_min` rất cao và nằm ngoài khoảng mô hình đã học | Có thể image thiếu Silero hoặc Silero nạp lỗi, khiến code dùng Energy VAD | Sang kiểm tra bằng `docker compose exec speech python -c "from aicefr.asr.vad import default_vad; print(default_vad().name)"`. Phải là `silero`; Compose truyền build arg `VAD=1`, cần build lại image qua deploy. Không nới ngưỡng để ép có điểm |
+
+Sau khi sửa cấu hình, kiểm tra bằng một bài nộp mới: báo cáo đã lưu không tự được tính lại.
+Ngay cả khi cặp ASR/VAD đã khớp, bài thiếu bằng chứng hoặc ngoài phân phối vẫn có thể cần giảng viên duyệt.
+Whisper mặc định là `small`, đúng model đã dùng lúc huấn luyện (D066), nên không còn cảnh báo `ASR_VERSION_MISMATCH`. Đừng đặt `AICEFR_WHISPER_MODEL=large-v3` trên production: chậm khoảng 5 lần và làm lệch điểm.
 
 ## 8. Việc AI agent không được làm
 

@@ -85,9 +85,6 @@ Chủ dự án chọn gộp `identity`, `assessment`, `learning`, `billing` thà
 | `test_a_second_worker_result_does_not_replace_the_first` | Việc chấm giao lại lần hai không ghi đè kết quả đầu (`save(must_exist=True)`) |
 | `test_words_spelt_like_an_ending_are_not_endings` | D039: need, hundred, was, this... không tính là đuôi -ed, -s |
 | `test_letters_that_are_not_said_are_not_final_consonants` | D039: how, for, high, oh không có âm cuối; much, fish, with có |
-| `test_only_reviews_that_ended_in_a_decision_are_timed` | D041: chỉ phiên kết thúc bằng quyết định được tính giờ |
-| `test_idle_rating_sheets_are_left_out_like_idle_reviews` | D041: phiếu chấm mù mở quá 30 phút bị bỏ như phiên duyệt |
-| `test_retest_pairs_never_span_two_scoring_models` | D042: cặp thử lại không ghép hai mô hình chấm |
 | `test_feedback_stays_held_back_through_the_survey_and_in_the_export` (TC-LE-I16, AC-77.9) | D040: giai đoạn khảo sát vẫn giữ phản hồi, cả trong bản xuất cá nhân; đóng thì trả lại |
 
 **Kết quả chạy**

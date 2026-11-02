@@ -14,6 +14,7 @@ import re
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 from aicefr.auth import passwords
@@ -38,6 +39,7 @@ def m(tmp_path, monkeypatch):
 
 def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
     m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    one_school(pseudonym, role)
     return sign_in(m, pseudonym, PASSWORD)
 
 
@@ -124,7 +126,7 @@ def test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout(m):
     "new, why",
     [
         ("ngan", "8 ký tự"),
-        ("Student-01", "bút danh"),
+        ("Student-01", "mã tài khoản"),
         (PASSWORD, "khác mật khẩu"),
         ("á" * 40, "72 byte"),
     ],

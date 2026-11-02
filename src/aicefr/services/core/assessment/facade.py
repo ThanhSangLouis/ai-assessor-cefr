@@ -11,21 +11,67 @@ from __future__ import annotations
 from aicefr.platform.rpc import exposed
 from aicefr.qc import audio_qc
 from aicefr.scoring.band_map import thresholds_of
-from aicefr.services.core.assessment import study_api
 from aicefr.services.core.assessment.context import PREP_SECONDS, active_model_name, active_qc
-from aicefr.storage.rating_repository import RatingRepository
 from aicefr.storage.repository import Repository
 
 
 class AssessmentFacade:
-    def __init__(self, repo: Repository, ratings: RatingRepository) -> None:
+    def __init__(self, repo: Repository) -> None:
         self.repo = repo
-        self.ratings = ratings
+
+    @exposed
+    def teaches(self, teacher_id: str, student_id: str) -> bool:
+        """Whether the student is in a class the teacher teaches (D071)."""
+        from aicefr.services.core.assessment.context import svc
+
+        rooms = svc().classrooms
+        return rooms is not None and rooms.teaches(teacher_id, student_id)
+
+    @exposed
+    def students_of(self, teacher_id: str) -> list[str]:
+        """Every member of every class the teacher teaches (D071)."""
+        from aicefr.services.core.assessment.context import svc
+
+        rooms = svc().classrooms
+        return sorted(rooms.students_of(teacher_id)) if rooms is not None else []
 
     @exposed
     def latest_assessment(self, account_id: str) -> dict | None:
-        """The latest scored assessment: the basis for suggesting practice (D040-gated)."""
-        return study_api.latest_assessment(account_id)
+        """The latest scored assessment: the basis for suggesting the bands to study."""
+        return self.repo.latest_assessment(account_id)
+
+    @exposed
+    def retell_source(self, account_id: str, response_id: str) -> dict | None:
+        """The task of one of this learner's own scored assessments, to say it again (D069).
+
+        None for someone else's response or one without a result: the caller
+        answers 404 either way. The upgraded answer comes along when one was made.
+        """
+        from aicefr.contracts import ResponseStatus
+        from aicefr.services.core.assessment.context import svc
+
+        if self.repo.owner_of(response_id) != account_id:
+            return None
+        status = self.repo.status_of(response_id) or {}
+        if status.get("status") not in (
+            ResponseStatus.COMPLETED.value,
+            ResponseStatus.REVIEW_REQUIRED.value,
+        ):
+            return None
+        task = svc().tasks.get(status.get("task_id") or "")
+        if task is None:
+            return None
+        upgrade = self.repo.upgrade_of(response_id)
+        return {
+            "response_id": response_id,
+            "task_id": task.task_id,
+            "title": task.title,
+            "prompt": task.prompt_text,
+            "min_seconds": task.min_seconds,
+            "max_seconds": task.max_seconds,
+            "band": status.get("overall_band"),
+            "upgraded": upgrade["upgraded"] if upgrade else None,
+        }
 
     @exposed
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
@@ -48,29 +94,18 @@ class AssessmentFacade:
         }
 
     @exposed
-    def assignments_for(self, account_id: str) -> dict:
-        """A student's class assignments, to do and done (D054)."""
-        from aicefr.services.core.assessment.classes_api import assignments_for
+    def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
+        """Responses waiting for review.
 
-        return assignments_for(account_id)
+        D071: a teacher counts the work of their classes' students; an administrator, all.
+        """
+        from aicefr.services.core.assessment.context import svc
 
-    @exposed
-    def practice_daily(self, account_id: str) -> dict:
-        """Today's practice against the daily goal, and the streak (D023), for reminders."""
-        from aicefr.services.core.assessment.responses_api import _daily_view, _practice_state
-
-        _bank, attempts, _progress = _practice_state(account_id)
-        return _daily_view(attempts)
-
-    @exposed
-    def staff_badges(self, account_id: str) -> dict:
-        """Responses waiting for review, less those this person rates blind; their open sheets."""
-        return {
-            "queue": self.repo.count_waiting_review(
-                exclude=self.ratings.blinded_responses(account_id)
-            ),
-            "ratings": self.ratings.open_count(account_id),
-        }
+        owners = None
+        if role != "admin":
+            rooms = svc().classrooms
+            owners = rooms.students_of(account_id) if rooms is not None else set()
+        return {"queue": self.repo.count_waiting_review(owners=owners)}
 
     @exposed
     def page_limits(self) -> dict:

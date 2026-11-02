@@ -68,7 +68,7 @@ def check_new_password(new: str, pseudonym: str, current: str | None = None) -> 
     if len(new.encode("utf-8")) > MAX_BYTES:
         raise ValueError(f"mật khẩu dài quá {MAX_BYTES} byte")
     if new.strip().lower() == pseudonym.strip().lower():
-        raise ValueError("mật khẩu không được trùng với bút danh")
+        raise ValueError("mật khẩu không được trùng với mã tài khoản")
     if current is not None and new == current:
         raise ValueError("mật khẩu mới phải khác mật khẩu đang dùng")
 

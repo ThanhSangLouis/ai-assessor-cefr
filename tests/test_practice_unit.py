@@ -1,4 +1,5 @@
-"""Layer 1 -- UNIT: pure logic of the practice mode (D023).
+"""Layer 1 -- UNIT: the exercise bank and the mission rules of D023, which the path's
+lessons are built from and checked with (D083: no practice task of its own any more).
 
 No database, no HTTP, no audio. Each test calls one pure function with
 hand-written data and checks the exact result. Test case ids (TC-PR-Uxx) and
@@ -21,15 +22,12 @@ import pytest
 from pydantic import ValidationError
 
 from aicefr.contracts import (
-    Band,
-    Criterion,
     Mission,
     MissionCheck,
     MissionHit,
     MissionKind,
     PracticeResult,
     ReasonCode,
-    TaskPurpose,
     Transcript,
     Word,
 )
@@ -37,18 +35,10 @@ from aicefr.practice.bank import (
     BAND_ORDER,
     PATH_ORDER,
     PRACTICE_TASKS,
-    practice_task_id,
 )
-from aicefr.practice.feedback import previous_measures, takeaway
 from aicefr.practice.missions import MAX_HITS, MissionChecker, describe_measure, normalize
-from aicefr.practice.recommend import (
-    RecommendationBasis,
-    TaskProgress,
-    needs_review,
-    recommend,
-)
 from aicefr.practice.streak import local_day, streak_length, summarize
-from aicefr.storage.task_repository import DEFAULT_TASKS, Task
+from aicefr.storage.task_repository import DEFAULT_TASKS
 
 pytestmark = pytest.mark.unit
 
@@ -104,9 +94,6 @@ def test_bank_has_one_task_per_criterion_and_band():
     assert len(PRACTICE_TASKS) == 30
     assert cells == {(c, b) for c in PATH_ORDER for b in BAND_ORDER}
     assert len({t.task_id for t in PRACTICE_TASKS}) == 30
-    for c in PATH_ORDER:
-        for b in BAND_ORDER:
-            assert practice_task_id(c, b) == f"PR-{c.value[:3].upper()}-{b.value}"
 
 
 def test_every_task_has_missions_tips_and_a_duration_above_the_qc_floor():
@@ -346,111 +333,6 @@ def test_measure_description_per_mission_kind():
     assert describe_measure(check(MissionKind.MAX_PAUSE, None, None)) == "Chưa đo được"
 
 
-# ================================================================= next task (FR-42)
-
-
-def _bank() -> list[Task]:
-    return [
-        Task(
-            task_id=t.task_id,
-            title=t.title,
-            prompt_text=t.prompt_text,
-            prompt_version=t.prompt_version,
-            part=t.part,
-            min_seconds=t.min_seconds,
-            max_seconds=t.max_seconds,
-            purpose=TaskPurpose.PRACTICE,
-            criterion=t.criterion,
-            band=t.band,
-            missions=t.missions,
-        )
-        for t in PRACTICE_TASKS
-    ]
-
-
-def done(*ids: str, at: str = "2026-10-01T01:00:00+00:00") -> dict[str, TaskProgress]:
-    return {
-        i: TaskProgress(attempts=1, completed=True, last_attempt_at=at, last_completed=True)
-        for i in ids
-    }
-
-
-def test_without_assessment_start_at_fluency_a2():
-    rec = recommend(_bank(), {}, [], None)
-    assert rec.task_id == "PR-FLU-A2"
-    assert rec.basis is RecommendationBasis.NO_ASSESSMENT
-    assert "Nộp bài" in rec.reason
-
-
-def test_weakest_criterion_and_band_of_assessment_drive_suggestion():
-    rec = recommend(_bank(), {}, [Criterion.COHERENCE], Band.B1)
-    assert rec.task_id == "PR-COH-B1"
-    assert rec.basis is RecommendationBasis.WEAKEST_CRITERION
-    assert "mạch lạc" in rec.reason
-
-
-def test_after_current_band_go_up_then_down():
-    bank = _bank()
-    weak = [Criterion.COHERENCE]
-    upper = ("PR-COH-B1", "PR-COH-B2", "PR-COH-C1", "PR-COH-C2")
-    assert recommend(bank, done("PR-COH-B1"), weak, Band.B1).task_id == "PR-COH-B2"
-    assert recommend(bank, done(*upper[:2]), weak, Band.B1).task_id == "PR-COH-C1"
-    assert recommend(bank, done(*upper), weak, Band.B1).task_id == "PR-COH-A2"
-    assert recommend(bank, done(*upper, "PR-COH-A2"), weak, Band.B1).task_id == "PR-COH-A1"
-
-
-def test_after_weakest_criterion_continue_the_path():
-    rec = recommend(
-        _bank(), done(*(f"PR-COH-{b.value}" for b in Band)), [Criterion.COHERENCE], Band.B1
-    )
-    assert rec.task_id == "PR-FLU-B1"
-    assert rec.basis is RecommendationBasis.CONTINUE_PATH
-
-
-def test_band_without_indicators_follows_path_from_that_band():
-    rec = recommend(_bank(), {}, [], Band.B2)
-    assert rec.task_id == "PR-FLU-B2"
-    assert rec.basis is RecommendationBasis.CONTINUE_PATH
-
-
-def test_tried_but_not_completed_is_suggested_again():
-    tried = {"PR-FLU-A2": TaskProgress(attempts=3, completed=False, last_completed=False)}
-    assert recommend(_bank(), tried, [], None).task_id == "PR-FLU-A2"
-
-
-def test_everything_completed_reviews_the_oldest():
-    bank = _bank()
-    progress = done(*[t.task_id for t in bank], at="2026-10-02T01:00:00+00:00")
-    progress["PR-RAN-B2"] = TaskProgress(1, True, "2026-09-20T01:00:00+00:00", True)
-    rec = recommend(bank, progress, [], Band.B2)
-    assert rec.task_id == "PR-RAN-B2"
-    assert rec.basis is RecommendationBasis.REVIEW
-
-
-def test_empty_bank_or_assessment_only_tasks_give_no_suggestion():
-    assert recommend([], {}, [], None) is None
-    assessment = Task(
-        task_id="P3",
-        title="t",
-        prompt_text="p",
-        prompt_version="v1",
-        part=PRACTICE_TASKS[0].part,
-        min_seconds=40,
-        max_seconds=60,
-    )
-    assert recommend([assessment], {}, [Criterion.RANGE], Band.B1) is None
-
-
-def test_review_list_is_latest_not_completed_oldest_first():
-    progress = {
-        "A": TaskProgress(2, True, "2026-10-03", False),
-        "B": TaskProgress(1, False, "2026-10-01", False),
-        "C": TaskProgress(1, True, "2026-09-30", True),
-        "D": TaskProgress(0, False, None, None),
-    }
-    assert needs_review(progress) == ["B", "A"]
-
-
 # ================================================================= streak (FR-43)
 
 
@@ -511,61 +393,3 @@ def test_summary_counts_today_and_seven_days():
 def test_summary_before_practising_today():
     s = summarize(["2026-10-05T01:00:00+00:00"], datetime(2026, 10, 6, 5, tzinfo=UTC), goal=2)
     assert s.today == 0 and not s.goal_met and not s.practiced_today and s.streak == 1
-
-
-# ================================================================= advice (FR-43)
-
-
-def test_takeaway_comes_from_first_unmet_mission_and_suggests_missing_words():
-    mission = use(3, "and", "but", "because", "so")
-    result = MissionChecker().check(_Task(mission, speak()), transcript("I like it and so on"), [])
-    text = takeaway(result, (mission, speak()))
-    assert "but" in text and "because" in text and "Đếm được 2" in text
-
-
-@pytest.mark.parametrize(
-    ("kind", "measured", "hits", "expect"),
-    [
-        (MissionKind.SPEAK_SECONDS, 21.0, [], "còn thiếu 9,0 giây"),
-        (MissionKind.MAX_PAUSE, 3.4, [("Khoảng lặng", 21.0)], "bắt đầu ở 0:21"),
-        (MissionKind.UNIQUE_WORDS, 20.0, [], "20 từ khác nhau"),
-        (MissionKind.PAST_VERBS, 2.0, [], "2 động từ quá khứ"),
-        (MissionKind.CONDITIONALS, 1.0, [], "1 câu điều kiện"),
-        (MissionKind.READ_ALOUD, 0.5, [("market", None)], "Máy chưa nghe ra: market"),
-        (MissionKind.READ_ALOUD, 0.5, [], "Đọc chậm và rõ hơn"),
-    ],
-)
-def test_every_unmet_mission_kind_gets_specific_advice(kind, measured, hits, expect):
-    c = MissionCheck(
-        kind=kind,
-        label="x",
-        target=30 if kind is MissionKind.SPEAK_SECONDS else 3,
-        measured=measured,
-        met=False,
-        hits=[MissionHit(text=t, start_s=s) for t, s in hits],
-    )
-    assert expect in takeaway(PracticeResult(task_id="t", checks=[c]), ())
-
-
-def test_takeaway_when_all_met_and_when_unmeasured():
-    met = check(MissionKind.SPEAK_SECONDS, 2, True)
-    unknown = check(MissionKind.MAX_PAUSE, None, None)
-    assert "hoàn thành mọi mục tiêu" in takeaway(PracticeResult(task_id="t", checks=[met]), ())
-    assert "chưa đo được" in takeaway(PracticeResult(task_id="t", checks=[met, unknown]), ())
-
-
-def test_takeaway_does_not_suggest_words_from_a_changed_task():
-    c = MissionCheck(kind=MissionKind.USE_WORDS, label="x", target=3, measured=1, met=False)
-    text = takeaway(PracticeResult(task_id="t", checks=[c]), (speak(),))
-    assert "thử thêm" not in text and "Đếm được 1" in text
-
-
-def test_previous_measures_compare_only_same_kind():
-    a = check(MissionKind.SPEAK_SECONDS, 20, True)
-    b = check(MissionKind.MAX_PAUSE, 2, False)
-    now = PracticeResult(task_id="t", checks=[a, b])
-    before = PracticeResult(task_id="t", checks=[a.model_copy(update={"measured": 10}), a])
-    assert previous_measures(now, before) == [10, None]
-    assert previous_measures(now, None) == [None, None]
-    shorter = PracticeResult(task_id="t", checks=[a.model_copy(update={"measured": 15})])
-    assert previous_measures(now, shorter) == [15, None]

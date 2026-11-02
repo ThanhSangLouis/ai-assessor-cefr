@@ -129,6 +129,15 @@ class PlanRepository(MongoStore):
         )
         return self._row(row) if row else None
 
+    def active_of(self, account_ids: list[str]) -> dict[str, dict]:
+        """The plan in force of each of these learners who has one (D074: a class's bands)."""
+        rows = self.col("learning_plan").find(
+            {"account_id": {"$in": list(account_ids)}, "audience": "student", "active": 1},
+            sort=[("created_at", ASCENDING), ("_id", ASCENDING)],
+        )
+        # Oldest first, so the newest active plan of an account wins.
+        return {r["account_id"]: self._row(r) for r in rows}
+
     def close(self, account_id: str) -> int:
         """The learner sets their plan aside; it is kept, inactive."""
         done = self.col("learning_plan").update_many(

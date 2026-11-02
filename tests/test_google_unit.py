@@ -39,11 +39,19 @@ def token(**claims) -> str:
     return f"eyJhbGciOiJSUzI1NiJ9.{raw}.sig"
 
 
-def test_a_good_token_gives_a_hash_of_the_subject_and_nothing_else_kept():
-    who = google.verify_id_token(CONFIG, token(email="a@b.vn"), NONCE)
+def test_a_good_token_gives_a_hash_of_the_subject_and_the_verified_email():
+    who = google.verify_id_token(
+        CONFIG, token(email="a@b.vn", email_verified=True, name="Trần Thị B"), NONCE
+    )
     assert who.subject_hash == google.subject_hash("123")
     assert len(who.subject_hash) == 64 and "123" not in who.subject_hash
-    assert who.email == "a@b.vn"
+    assert (who.email, who.name) == ("a@b.vn", "Trần Thị B")
+
+
+def test_an_address_google_has_not_verified_is_not_used():
+    """D071: the email is the account, so only one Google vouched for may name it."""
+    who = google.verify_id_token(CONFIG, token(email="a@b.vn"), NONCE)
+    assert who.email is None
 
 
 @pytest.mark.parametrize(

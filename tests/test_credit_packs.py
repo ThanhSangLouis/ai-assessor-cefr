@@ -103,13 +103,6 @@ def test_a_learner_reads_their_own_receipt_but_not_anothers(m):
     assert other.get(f"/billing/orders/{order_id}/receipt").status_code == 403
 
 
-def test_learner_packs_stay_off_the_administrators_order_list(m):
-    pay(login_as(m, "SV-001"), 10)
-    admin = login_as(m, "QT-01", "admin")
-    orders = admin.get("/api/v1/admin/billing").json()["orders"]
-    assert all(o["kind"] != "credits" for o in orders)
-
-
 def test_no_packs_where_runs_are_not_counted(tmp_path, monkeypatch):
     m = boot(tmp_path, monkeypatch, AICEFR_BILLING="on")
     student = login_as(m, "SV-001")

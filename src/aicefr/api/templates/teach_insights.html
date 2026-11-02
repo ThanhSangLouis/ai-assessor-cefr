@@ -1,7 +1,9 @@
 {% extends "base.html" %}
+{% from "_subnav.html" import subnav %}
 {% from "_icons.html" import icon %}
-{% block title %}Thống kê luyện tập · AI Assessor CEFR{% endblock %}
+{% block title %}Thống kê luyện tập · SpeakUp{% endblock %}
 {% block content %}
+{{ subnav('Thống kê', [['/review/stats', 'Cả lớp', 'stats'], ['/teach/insights', 'Theo lộ trình', 'insights']], 'insights') }}
 {#- How the class moves through a path (D025, M18). Totals per lesson, never a
     ranking of people. A teacher can listen to an attempt and correct what the
     machine said about it: never blocking, never a score, always audited. -#}

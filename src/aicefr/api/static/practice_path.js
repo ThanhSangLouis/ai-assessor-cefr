@@ -68,7 +68,6 @@ function head() {
   headEl.innerHTML =
     '<div class="path-title">' +
     `<h1>${escapeHtml(p.title)}</h1>` +
-    (p.sample ? `<span class="badge sample-badge" title="Nội dung do nhóm phát triển soạn, chờ giảng viên duyệt">Nội dung mẫu</span>` : "") +
     "</div>" +
     '<div class="path-head-row">' +
     `<div class="overall" title="${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành">` +
@@ -347,9 +346,43 @@ function todayCard(t) {
     `<p class="week-sum">7 ngày qua: <b>${spoken(t.week_seconds)}</b>` +
     (before > 0 ? ` <span>· 7 ngày trước đó: ${spoken(before)}</span>` : "") +
     "</p>" +
+    goalPicker(goal) +
     "</section>"
   );
 }
+
+// D068: the daily goal is set on the card that measures it, saved when picked.
+const GOALS = (page.dataset.goals || "").split(",").filter(Boolean).map(Number);
+
+function goalPicker(goal) {
+  if (!GOALS.length) return "";
+  const options = GOALS.map(
+    (s) => `<option value="${s}"${s === goal ? " selected" : ""}>${s / 60} phút mỗi ngày</option>`
+  ).join("");
+  return (
+    '<label class="goal-pick" for="goal-select">Mục tiêu ' +
+    `<select id="goal-select">${options}</select></label>`
+  );
+}
+
+sideEl.addEventListener("change", async (e) => {
+  if (e.target.id !== "goal-select") return;
+  const r = await fetch("/api/v1/me/profile", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ daily_goal_s: Number(e.target.value) }),
+  });
+  if (window.redirectToLoginIfExpired(r)) return;
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    window.toast("Không lưu được mục tiêu.", "error");
+    return;
+  }
+  data.today.goal_seconds = d.daily_goal_s;
+  data.today.goal_met = data.today.seconds >= d.daily_goal_s;
+  render();
+  window.toast(`Mục tiêu mới: ${Math.round(d.daily_goal_s / 60)} phút nói mỗi ngày.`, "ok");
+});
 
 // Achievements (D032): how many, which are new, the last few, the nearest.
 // Effort only and private; the full list is on the progress page.
@@ -406,6 +439,31 @@ function reviewCard(due) {
   );
 }
 
+// D070: the phrase book, shown once it has a card. Loaded beside the path and
+// painted when it arrives; a failure leaves the card out, nothing else.
+let phrases = null;
+fetch("/api/v1/me/phrases")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    phrases = d;
+    if (data && data.path) render();
+  })
+  .catch(() => {});
+
+function phraseCard(p) {
+  if (!p || !p.total) return "";
+  const n = Math.min(Number(p.due_count) || 0, p.per_day);
+  return (
+    '<section class="card side-card phrase-side" aria-labelledby="phrase-side-h">' +
+    `<h2 id="phrase-side-h">${icon("book-open")}Sổ cụm từ</h2>` +
+    `<p class="review-count">${n} <small>cụm hôm nay</small></p>` +
+    (n
+      ? `<a class="button" href="/phrases">${icon("play")}Ôn cụm từ</a>`
+      : `<p class="muted">Đã thuộc ${p.learned}/${p.total} cụm. <a href="/phrases">Xem sổ</a></p>`) +
+    "</section>"
+  );
+}
+
 // ---------------------------------------------------------------- render
 function render() {
   window.clearBusy(page);
@@ -421,7 +479,11 @@ function render() {
   }
   head();
   sideEl.innerHTML =
-    nextCard() + todayCard(data.today) + reviewCard(data.reviews_due) + achievementsCard(data.achievements);
+    nextCard() +
+    todayCard(data.today) +
+    reviewCard(data.reviews_due) +
+    phraseCard(phrases) +
+    achievementsCard(data.achievements);
   trail();
   fitSide();
 }

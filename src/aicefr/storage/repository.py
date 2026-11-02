@@ -20,12 +20,13 @@ from pymongo.database import Database
 
 from aicefr.contracts import (
     AppConfig,
+    CoachUpgrade,
     ReasonCode,
     Response,
     ResponseStatus,
     Review,
     ReviewLock,
-    TaskPurpose,
+    ReviewSession,
 )
 from aicefr.infra.blobs import key_of
 from aicefr.storage.audit_repository import prepare as prepare_audit
@@ -44,12 +45,13 @@ from aicefr.storage.db import now_iso as _now
 # The collections of the assessment service and the indexes that stand for the
 # former primary keys and UNIQUE constraints.
 #
-# response.purpose is 'practice' for a practice attempt (D023): never in the
-# teacher queue, the research export, or the class scoring statistics.
+# Every response is an assessment since D083: the practice attempts of D023
+# and their `purpose` are gone (migration 14).
 # A response's document holds its parts (D060): `reviews` (each teacher
-# decision), `review_lock` (who may decide right now), `review_visits` (when a
-# teacher opened it and when they left, D041 -- the lock is cleared on decision,
-# so its start is kept here) and `replay_labels` (guided listening, D056).
+# decision) and `replay_labels` (guided listening, D056). Reviewing it is a
+# `review_session` of its own (D082), at most one per response: `lock` (who may
+# decide right now) and `visits` (when a teacher opened it and when they left,
+# D041 -- the lock is cleared on decision, so its start is kept there).
 # The settings an administrator changes at run time live in `system` under
 # `assessment.` (D060). When a person last looked at something that can change
 # behind their back (D028) is on their account, asked of the identity part.
@@ -63,6 +65,7 @@ INDEXES = {
         (("reviews.created_at",), False),
         (("replay_labels.account_id",), False),
     ],
+    "review_session": [(("response_id",), True)],
 }
 
 LIST_FIELDS = (
@@ -108,15 +111,15 @@ def _record_decision(
     """
     _claim_decision(db, response_id, status)
     owner = db["response"].find_one(
-        {"response_id": response_id},
-        {"speaker_id": 1, "task_id": 1, "account_id": 1, "review_visits": 1},
+        {"response_id": response_id}, {"speaker_id": 1, "task_id": 1, "account_id": 1}
     )
+    session = _review_session(db, response_id)
     old_score, new_score, old_band, new_band = scores
     visit = next(
         (
             v
-            for v in (owner or {}).get("review_visits") or []
-            if v["reviewer_id"] == reviewer_id and v.get("decided_at") is None
+            for v in (session.visits if session else [])
+            if v.reviewer_id == reviewer_id and v.decided_at is None
         ),
         None,
     )
@@ -129,13 +132,22 @@ def _record_decision(
         new_band=new_band,
         reason=reason,
         created_at=_now(),
-        opened_at=visit["opened_at"] if visit else None,
+        opened_at=visit.opened_at if visit else None,
     )
     db["response"].update_one(
         {"response_id": response_id}, {"$push": {"reviews": review.model_dump(mode="json")}}
     )
     _audit(db, reviewer_id, action, response_id, reason)
     return fields(owner, ("speaker_id", "task_id", "account_id"))  # type: ignore[return-value]
+
+
+def _review_session(db: Database, response_id: str) -> ReviewSession | None:
+    row = db["review_session"].find_one({"response_id": response_id}, {"_id": 0})
+    if row is None:
+        return None
+    if row.get("lock"):
+        row["lock"] = {"response_id": response_id, **row["lock"]}
+    return ReviewSession.model_validate(row)
 
 
 class Repository(MongoStore):
@@ -185,7 +197,6 @@ class Repository(MongoStore):
         account_id: str | None = None,
         audio_path: str | None = None,
         must_exist: bool = False,
-        purpose: TaskPurpose | None = None,
     ) -> bool:
         """Ghi mot bao cao. Tra False khi tu choi ghi.
 
@@ -249,12 +260,10 @@ class Repository(MongoStore):
             "config_version": report.config_version,
             # The reviews are kept beside the report, not inside it (`get`).
             "report_json": json.dumps(
-                report.model_dump(mode="json", exclude={"reviews"}), ensure_ascii=False
+                report.model_dump(mode="json", exclude={"reviews", "upgrade"}), ensure_ascii=False
             ),
             "account_id": keep("account_id", account_id),
             "audio_path": keep("audio_path", audio_path),
-            "purpose": keep("purpose", purpose.value if purpose else None)
-            or TaskPurpose.ASSESSMENT.value,
         }
         if must_exist:
             # The worker's path updates, and only a response that still waits:
@@ -403,7 +412,6 @@ class Repository(MongoStore):
                 "overall_band",
                 "teacher_verified",
                 "created_at",
-                "purpose",
             ),
         )
 
@@ -423,37 +431,42 @@ class Repository(MongoStore):
         """
         until = (datetime.now(UTC) + timedelta(minutes=minutes)).isoformat(timespec="seconds")
         claim = {"reviewer_id": reviewer_id, "reviewer_name": reviewer_name, "locked_until": until}
-        # One conditional write on the response, so the check and the claim
-        # cannot be interleaved. Reading the lock and then writing it left a
-        # window in which two teachers both read "nobody holds this" and both
-        # wrote their own claim. Here the update takes the response only when
-        # nobody holds it, the lock has run out, or it is one's own.
-        self.col("response").update_one(
-            {
-                "response_id": response_id,
-                "$or": [
-                    {"review_lock": None},
-                    {"review_lock.locked_until": {"$lte": _now()}},
-                    {"review_lock.reviewer_id": reviewer_id},
-                ],
-            },
-            {"$set": {"review_lock": claim}},
-        )
+        # One conditional write, so the check and the claim cannot be
+        # interleaved. Reading the lock and then writing it left a window in
+        # which two teachers both read "nobody holds this" and both wrote their
+        # own claim. Here the update takes the session only when nobody holds
+        # it, the lock has run out, or it is one's own; with no session yet it
+        # makes one, and the unique index on `response_id` lets only one of two
+        # racing teachers make it.
+        try:
+            self.col("review_session").update_one(
+                {
+                    "response_id": response_id,
+                    "$or": [
+                        {"lock": None},
+                        {"lock.locked_until": {"$lte": _now()}},
+                        {"lock.reviewer_id": reviewer_id},
+                    ],
+                },
+                {"$set": {"lock": claim}, "$setOnInsert": {"visits": []}},
+                upsert=True,
+            )
+        except IntegrityError:
+            pass  # somebody else holds the session; read below who
         lock = self._lock(response_id)
         if lock is not None and not lock.is_held_by(reviewer_id):
             return False, lock.reviewer_name
         return True, None
 
     def _lock(self, response_id: str) -> ReviewLock | None:
-        row = self.col("response").find_one({"response_id": response_id}, {"review_lock": 1})
-        held = (row or {}).get("review_lock")
-        return ReviewLock(response_id=response_id, **held) if held else None
+        session = _review_session(self.db, response_id)
+        return session.lock if session else None
 
     def unlock_response(self, response_id: str, reviewer_id: str) -> None:
         """Release the lock. Only the current holder can release it."""
-        self.col("response").update_one(
-            {"response_id": response_id, "review_lock.reviewer_id": reviewer_id},
-            {"$set": {"review_lock": None}},
+        self.col("review_session").update_one(
+            {"response_id": response_id, "lock.reviewer_id": reviewer_id},
+            {"$set": {"lock": None}},
         )
 
     def locked_by(self, response_id: str) -> str | None:
@@ -493,17 +506,20 @@ class Repository(MongoStore):
         return [_profile_row(fields(r, names)) for r in rows]  # type: ignore[arg-type]
 
     def open_review_session(self, response_id: str, reviewer_id: str) -> None:
-        """Note that a teacher opened a response for review; once per open visit."""
-        self.col("response").update_one(
+        """Note that a teacher opened a response for review; once per open visit.
+
+        Called after `lock_response`, which made the session.
+        """
+        self.col("review_session").update_one(
             {
                 "response_id": response_id,
-                "review_visits": {
+                "visits": {
                     "$not": {"$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}}
                 },
             },
             {
                 "$push": {
-                    "review_visits": {
+                    "visits": {
                         "reviewer_id": reviewer_id,
                         "opened_at": _now(),
                         "decided_at": None,
@@ -517,90 +533,15 @@ class Repository(MongoStore):
         now = _now()
         # One open visit per reviewer at a time; the loop closes a stray second.
         for _ in range(4):
-            done = self.col("response").update_one(
+            done = self.col("review_session").update_one(
                 {
                     "response_id": response_id,
-                    "review_visits": {
-                        "$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}
-                    },
+                    "visits": {"$elemMatch": {"reviewer_id": reviewer_id, "decided_at": None}},
                 },
-                {
-                    "$set": {
-                        "review_visits.$.decided_at": now,
-                        "review_visits.$.action": action,
-                    }
-                },
+                {"$set": {"visits.$.decided_at": now, "visits.$.action": action}},
             )
             if not done.modified_count:
                 return
-
-    def review_sessions(self, limit: int = 5000) -> list[dict]:
-        rows = self.col("response").find(
-            {"review_visits.decided_at": {"$ne": None}}, {"review_visits": 1}
-        )
-        visits = [
-            {"opened_at": v["opened_at"], "decided_at": v["decided_at"], "action": v["action"]}
-            for r in rows
-            for v in r.get("review_visits") or []
-            if v.get("decided_at") is not None
-        ]
-        visits.sort(key=lambda v: v["decided_at"], reverse=True)
-        return visits[:limit]
-
-    def settled_counts(self) -> tuple[int, int]:
-        """(scored assessments the machine settled alone, scored assessments that reached a result).
-
-        Alone: COMPLETED with no teacher confirmation. Reached a result:
-        COMPLETED or REVIEW_REQUIRED, with a machine score.
-        """
-        rows = self.col("response").find(
-            {
-                "purpose": "assessment",
-                "overall_0_6": {"$ne": None},
-                "status": {"$in": ["COMPLETED", "REVIEW_REQUIRED"]},
-            },
-            {"status": 1, "teacher_verified": 1},
-        )
-        alone = total = 0
-        for r in rows:
-            total += 1
-            alone += int(r["status"] == "COMPLETED" and not r.get("teacher_verified"))
-        return alone, total
-
-    def scored_assessments(
-        self,
-        accounts: Collection[str] | None = None,
-        machine_only: bool = False,
-        limit: int = 20000,
-    ) -> list[dict]:
-        """Scored assessments, oldest first; the latest `limit` when there are more.
-
-        The test-retest pairs of D042 and the outcomes of the feedback study
-        (D040) come from here. `accounts` narrows to those learners;
-        `machine_only` keeps the machine's own scores, leaving out the responses
-        a teacher's decision overwrote -- a test-retest pair compares the
-        instrument with itself.
-        """
-        query: dict = {
-            "overall_0_6": {"$ne": None},
-            "purpose": "assessment",
-            "account_id": {"$ne": None},
-        }
-        if accounts is not None:
-            ids = list(accounts)
-            if not ids:
-                return []
-            query["account_id"] = {"$in": ids}
-        if machine_only:
-            query["teacher_verified"] = 0
-        rows = (
-            self.col("response")
-            .find(query)
-            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
-            .limit(limit)
-        )
-        names = ("account_id", "task_id", "overall_0_6", "model_version", "created_at")
-        return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
 
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         """One learner's results over time, machine estimate and verified alike.
@@ -632,7 +573,7 @@ class Repository(MongoStore):
         # The latest `limit`, in time order: "the last three results" must be.
         return [fields(r, names) for r in reversed(list(rows))]  # type: ignore[misc]
 
-    def cohort_stats(self, limit: int = 5000) -> dict:
+    def cohort_stats(self, limit: int = 5000, owners: set[str] | None = None) -> dict:
         """What a teacher needs to see about a class rather than one student. FR-29.
 
         Two of these numbers are about the students and the rest are about the
@@ -644,29 +585,43 @@ class Repository(MongoStore):
         students and no teacher leaderboard, because a screen that ranks people
         gets used to rank people.
         """
-        # The numbers about the SCORING MACHINE count assessment responses only
-        # (D023): practice is never scored, and counting it would make "responses"
-        # and "scored responses" drift apart for no reason anyone could explain.
         responses = self.col("response")
+        # D071: a teacher's statistics are their classes' students; None, everyone's.
+        scope: dict = {} if owners is None else {"account_id": {"$in": sorted(owners)}}
         assessed = list(
             responses.find(
-                {"purpose": "assessment"},
-                {"overall_band": 1, "task_id": 1, "overall_0_6": 1, "status": 1, "account_id": 1},
+                scope,
+                {"overall_band": 1, "task_id": 1, "status": 1, "account_id": 1},
             )
         )
         by_band: dict[str, int] = {}
-        tasks: dict[str, dict] = {}
+        # D078: by the band of the prompt answered -- did learners answering a
+        # band's prompts land at that band, under it or above it?
+        prompt_band = {
+            t["task_id"]: t.get("band") for t in self.db["task"].find({}, {"task_id": 1, "band": 1})
+        }
+        order = ["A1", "A2", "B1", "B2", "C1", "C2"]
+        bands: dict[str, dict] = {}
         for r in assessed:
-            if r.get("overall_band") is not None:
-                by_band[r["overall_band"]] = by_band.get(r["overall_band"], 0) + 1
-            cell = tasks.setdefault(r["task_id"], {"n": 0, "scores": [], "waiting": 0})
+            got = r.get("overall_band")
+            if got is not None:
+                by_band[got] = by_band.get(got, 0) + 1
+            asked = prompt_band.get(r["task_id"])
+            if asked not in order:
+                continue
+            cell = bands.setdefault(
+                asked,
+                {"n": 0, "learners": set(), "at": 0, "below": 0, "above": 0, "waiting": 0},
+            )
             cell["n"] += 1
-            if r.get("overall_0_6") is not None:
-                cell["scores"].append(r["overall_0_6"])
+            cell["learners"].add(r.get("account_id"))
             cell["waiting"] += int(r["status"] == "REVIEW_REQUIRED")
+            if got in order:
+                gap = order.index(got) - order.index(asked)
+                cell["at" if gap == 0 else "below" if gap < 0 else "above"] += 1
         speakers = len({r["account_id"] for r in assessed if r.get("account_id") is not None})
         waiting = sum(1 for r in assessed if r["status"] == "REVIEW_REQUIRED")
-        verified = responses.count_documents({"teacher_verified": 1})
+        verified = responses.count_documents({"teacher_verified": 1, **scope})
 
         # Only decisions where the machine had proposed a band at all.
         # A review of a response the model refused to score is a teacher doing
@@ -677,7 +632,7 @@ class Repository(MongoStore):
             (
                 r
                 for row in self.col("response").find(
-                    {"reviews.old_band": {"$ne": None}}, {"reviews": 1}
+                    {"reviews.old_band": {"$ne": None}, **scope}, {"reviews": 1}
                 )
                 for r in row.get("reviews") or []
                 if r.get("old_band") is not None
@@ -699,16 +654,10 @@ class Repository(MongoStore):
             "waiting_for_review": waiting,
             "teacher_verified": verified,
             "by_band": by_band,
-            "by_task": [
-                {
-                    "task_id": task_id,
-                    "n": cell["n"],
-                    "avg_score": round(sum(cell["scores"]) / len(cell["scores"]), 2)
-                    if cell["scores"]
-                    else None,
-                    "waiting": cell["waiting"],
-                }
-                for task_id, cell in sorted(tasks.items(), key=lambda kv: str(kv[0]))
+            "by_prompt_band": [
+                {**cell, "band": b, "learners": len(cell["learners"] - {None})}
+                for b in order
+                if (cell := bands.get(b))
             ],
             "agreement": {
                 "decisions": len(decisions),
@@ -718,74 +667,7 @@ class Repository(MongoStore):
                 # of zero would read as "teachers never agree with the model".
                 "rate": round(kept / len(decisions), 3) if decisions else None,
             },
-            "practice": self.practice_summary(),
         }
-
-    def practice_summary(self) -> dict:
-        """How far the class has got with practice, per criterion. D023, outline 1.7.
-
-        Totals only, no row per learner: this screen tells a teacher which criterion
-        the class is stumbling on so they can pick work for the whole class, not who
-        practises more than whom.
-        """
-        from aicefr.practice.bank import PRACTICE_TASKS
-
-        criterion_of = {t.task_id: t.criterion.value for t in PRACTICE_TASKS}
-        rows = list(
-            self.col("response").find(
-                {"purpose": "practice", "status": ResponseStatus.COMPLETED.value},
-                {"account_id": 1, "task_id": 1, "report_json": 1},
-            )
-        )
-        by_criterion: dict[str, dict[str, int]] = {}
-        done = 0
-        for r in rows:
-            cell = by_criterion.setdefault(
-                criterion_of.get(r["task_id"], "khac"), {"attempts": 0, "completed": 0}
-            )
-            cell["attempts"] += 1
-            if _practice_completed(r.get("report_json")):
-                cell["completed"] += 1
-                done += 1
-        return {
-            "attempts": len(rows),
-            "learners": len({r["account_id"] for r in rows if r.get("account_id")}),
-            "completed": done,
-            "by_criterion": by_criterion,
-        }
-
-    # ---------- practice (D023) ----------
-
-    def practice_attempts(self, account_id: str, task_id: str | None = None) -> list[dict]:
-        """One learner's practice attempts, oldest first, with the outcome of each.
-
-        Rejected attempts (REJECTED, FAILED) are included: the task page has to say
-        "your last attempt was rejected for too much silence" rather than act as if it
-        never happened. The streak and the learning path count processed attempts only.
-        """
-        query = {"account_id": account_id, "purpose": "practice"}
-        if task_id is not None:
-            query["task_id"] = task_id
-        # _id keeps submission order when two attempts share a second
-        # (created_at only has second precision).
-        rows = (
-            self.col("response").find(query).sort([("created_at", ASCENDING), ("_id", ASCENDING)])
-        )
-        out = []
-        for r in rows:
-            result = (json.loads(r.get("report_json") or "{}").get("practice")) or {}
-            out.append(
-                {
-                    "response_id": r["response_id"],
-                    "task_id": r["task_id"],
-                    "status": r["status"],
-                    "created_at": r["created_at"],
-                    "completed": result.get("completed"),
-                    "met_count": result.get("met_count"),
-                    "total": len(result.get("checks") or []) or None,
-                }
-            )
-        return out
 
     def assessments_by_account(self, since: str, until: str) -> dict[str, int]:
         """Assessments submitted in [since, until), per account (D033: the monthly figure).
@@ -795,7 +677,6 @@ class Repository(MongoStore):
         """
         rows = self.col("response").find(
             {
-                "purpose": "assessment",
                 "account_id": {"$ne": None},
                 "created_at": {"$gte": since, "$lt": until},
             },
@@ -807,7 +688,7 @@ class Repository(MongoStore):
         return out
 
     def latest_assessment(self, account_id: str) -> dict | None:
-        """The latest scored assessment: the basis for suggesting practice.
+        """The latest scored assessment: the basis for suggesting what to learn next.
 
         The band is the one stored on the response, i.e. the teacher's band if
         the response was reviewed. `weakest_criteria` is empty for responses
@@ -815,7 +696,7 @@ class Repository(MongoStore):
         then does not rely on a weakest criterion rather than guess one.
         """
         row = self.col("response").find_one(
-            {"account_id": account_id, "purpose": "assessment", "overall_band": {"$ne": None}},
+            {"account_id": account_id, "overall_band": {"$ne": None}},
             sort=[("created_at", DESCENDING), ("_id", DESCENDING)],
         )
         if row is None:
@@ -853,25 +734,18 @@ class Repository(MongoStore):
         }
 
     def _forget_responses(self, ids: list[str]) -> None:
-        """Everything that hangs off these responses, then the responses.
+        """The responses, with everything their documents hold.
 
-        What a foreign key's ON DELETE CASCADE did in SQL: the blind-rating
-        sheets and their ratings go with the response they are about; the
-        review history, the lock and who saw the machine's result are part of
-        the response's own document (D060).
+        The review history and the replay labels are part of the response's
+        own document (D060) and go with it; its review session (D082) is
+        removed beside it.
         """
         if not ids:
             return
         db = self.db
         within = {"response_id": {"$in": ids}}
-        # The blind-rating sheets about them, from whichever batch holds them.
-        db["rating_batch"].update_many(
-            {"ratings.response_id": {"$in": ids}},
-            {"$pull": {"ratings": {"response_id": {"$in": ids}}}},
-        )
-        # The reviews, the lock, the visits and the replay labels are part of
-        # the response document and go with it.
         db["response"].delete_many(within)
+        db["review_session"].delete_many(within)
 
     def erase_speaker(self, speaker_id: str, actor_id: str) -> dict:
         """Delete one participant's recordings and reports. Irreversible.
@@ -901,46 +775,6 @@ class Repository(MongoStore):
         )
         return preview
 
-    def erase_one_response(self, response_id: str, actor_id: str) -> bool:
-        """Delete a single response: its document, its review history, its audio file.
-
-        Separate from `erase_speaker` because the two answer different requests.
-        `erase_speaker` is an administrator acting on a request to erase and
-        removes everything a person ever submitted. This is a person deleting one
-        recording of their own -- "I mumbled through that one, take it off" --
-        and it must not require asking anybody. A right that needs someone else
-        to act on your behalf is a queue, not a right.
-
-        A response a teacher has already verified is refused, and the caller is
-        told why. The verified result is a record of a decision somebody made,
-        and the audit trail behind it has to keep pointing at something real.
-
-        Returns False when there is nothing to delete, so the caller can answer
-        404 rather than claim success for a response that never existed.
-        """
-        row = self.col("response").find_one(
-            {"response_id": response_id}, {"audio_path": 1, "teacher_verified": 1}
-        )
-        if row is None:
-            return False
-        if row.get("teacher_verified"):
-            raise InvalidStateError(
-                "bài đã được giảng viên xác nhận nên không tự xoá được;"
-                " hãy liên hệ giảng viên phụ trách"
-            )
-
-        # The recording, not only the document. A recording of someone's voice
-        # is personal data whether or not a document still points at it.
-        self._drop_audio(row.get("audio_path"))
-        self._forget_responses([response_id])
-        # The entry records that a deletion happened and who asked for it. It
-        # carries no transcript and no score: an audit log that keeps a copy of
-        # what was deleted has not deleted it.
-        _audit(
-            self.db, actor_id, "ERASE_OWN_RESPONSE", response_id, "người học tự xoá bài của mình"
-        )
-        return True
-
     def audio_path_of(self, response_id: str) -> str | None:
         """Filesystem path of a response's audio file.
 
@@ -949,6 +783,150 @@ class Repository(MongoStore):
         """
         row = self.col("response").find_one({"response_id": response_id}, {"audio_path": 1})
         return row.get("audio_path") if row else None
+
+    # ---------- the upgraded answer (D069) ----------
+    def upgrade_of(self, response_id: str) -> dict | None:
+        """The learner's answer rewritten one band higher, if one was made."""
+        row = self.col("response").find_one({"response_id": response_id}, {"coach_upgrade": 1})
+        return (row or {}).get("coach_upgrade")
+
+    def save_upgrade(self, response_id: str, upgrade: dict) -> None:
+        """Kept with the response, so it is erased with it and paid for once."""
+        self.col("response").update_one(
+            {"response_id": response_id}, {"$set": {"coach_upgrade": upgrade}}
+        )
+
+    def upgrades_since(self, account_id: str, since: str) -> int:
+        """How many upgrades this account asked for since `since` (ISO time)."""
+        return self.col("response").count_documents(
+            {"account_id": account_id, "coach_upgrade.created_at": {"$gte": since}}
+        )
+
+    def upgrades_of_account(self, account_id: str, limit: int = 500) -> list[dict]:
+        """Every upgrade this account made, oldest first: the phrase book's source (D070)."""
+        rows = (
+            self.col("response")
+            .find(
+                {"account_id": account_id, "coach_upgrade.phrases": {"$exists": True}},
+                {"response_id": 1, "created_at": 1, "coach_upgrade": 1},
+            )
+            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
+            .limit(limit)
+        )
+        return [
+            {
+                "response_id": r["response_id"],
+                "created_at": r.get("created_at"),
+                **r["coach_upgrade"],
+            }
+            for r in rows
+        ]
+
+    def save_upgrade_phrases(self, response_id: str, phrases: list[dict]) -> None:
+        """The phrases of one upgrade with their review state (D070), written back whole."""
+        self.col("response").update_one(
+            {"response_id": response_id}, {"$set": {"coach_upgrade.phrases": phrases}}
+        )
+
+    def feature_series(
+        self, account_id: str, names: tuple[str, ...], limit: int = 100
+    ) -> list[dict]:
+        """The named measurements of one learner's scored assessments, in time order (D070).
+
+        Read from the report each response keeps, so nothing new is stored. A
+        name the recording did not yield is absent from that row's `values`.
+        """
+        rows = (
+            self.col("response")
+            .find(
+                {"account_id": account_id, "overall_0_6": {"$ne": None}},
+                {"response_id": 1, "task_id": 1, "created_at": 1, "report_json": 1},
+            )
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        out = []
+        for r in reversed(list(rows)):
+            try:
+                items = (json.loads(r.get("report_json") or "{}").get("features") or {}).get(
+                    "items"
+                )
+            except (TypeError, ValueError):
+                items = None
+            values = {
+                f["name"]: f["value"]
+                for f in items or []
+                if f.get("name") in names and isinstance(f.get("value"), int | float)
+            }
+            if values:
+                out.append(
+                    {
+                        "response_id": r["response_id"],
+                        "task_id": r.get("task_id"),
+                        "created_at": r.get("created_at"),
+                        "values": values,
+                    }
+                )
+        return out
+
+    # ---------- the language model's use per provider day (D072) ----------
+    #
+    # One document a day in `system`, `coach_usage.<YYYY-MM-DD>`, counted up as
+    # requests go out: the global cap reads it, the administrator's dashboard
+    # reads the last days of it. Counters, not a log: nothing about what was said.
+
+    COACH_DAY_FIELDS = (
+        "requests",
+        "free_requests",
+        "paid_requests",
+        "paid_cost_usd",
+        "upgrades",
+        "drafts",
+        "failed",
+        "refused_user",
+        "refused_global",
+        "input_tokens",
+        "output_tokens",
+        "cost_usd",
+    )
+
+    def record_coach(
+        self,
+        day: str,
+        *,
+        account_id: str | None = None,
+        error: str | None = None,
+        **counts: float,
+    ) -> None:
+        """Add `counts` (names from COACH_DAY_FIELDS) to the provider day `day`."""
+        unknown = set(counts) - set(self.COACH_DAY_FIELDS)
+        if unknown:
+            raise ValueError(f"unknown counters: {sorted(unknown)}")
+        inc = {k: v for k, v in counts.items() if v}
+        if error:
+            # A field name may not hold a dot or start with a dollar sign.
+            inc["errors." + error.replace(".", "·").lstrip("$")[:120]] = 1
+        update: dict = {"$set": {"day": day, "updated_at": _now()}}
+        if inc:
+            update["$inc"] = inc
+        if account_id and counts.get("requests"):
+            update["$addToSet"] = {"accounts": account_id}
+        self.col(SYSTEM).update_one({"key": "coach_usage." + day}, update, upsert=True)
+
+    def coach_days(self, days: list[str]) -> list[dict]:
+        """The counters of each of `days`, zeros for a day nothing happened; in order."""
+        keys = ["coach_usage." + d for d in days]
+        rows = {r["day"]: r for r in self.col(SYSTEM).find({"key": {"$in": keys}})}
+        out = []
+        for d in days:
+            row = rows.get(d, {})
+            item = {"day": d, **{k: row.get(k, 0) for k in self.COACH_DAY_FIELDS}}
+            for money in ("cost_usd", "paid_cost_usd"):
+                item[money] = round(float(item[money]), 6)
+            item["accounts"] = len(row.get("accounts") or [])
+            item["errors"] = dict(row.get("errors") or {})
+            out.append(item)
+        return out
 
     def owner_of(self, response_id: str) -> str | None:
         """Return the submitter's account_id, or None if the response has no owner."""
@@ -974,7 +952,7 @@ class Repository(MongoStore):
         }
         out = []
         for r in rows:
-            item = fields(r, (*LIST_FIELDS, "purpose"))
+            item = fields(r, LIST_FIELDS)
             item["reviewed_at"] = latest.get(r["response_id"])  # type: ignore[index]
             out.append(item)
         return out  # type: ignore[return-value]
@@ -988,75 +966,75 @@ class Repository(MongoStore):
         has not opened their list yet has not seen any of those decisions.
         """
         rows = self.col("response").find(
-            {"account_id": account_id, "purpose": "assessment", "reviews.0": {"$exists": True}},
+            {"account_id": account_id, "reviews.0": {"$exists": True}},
             {"reviews": 1},
         )
         return sum(
             1 for r in rows if since is None or any(x["created_at"] > since for x in r["reviews"])
         )
 
-    def count_waiting_review(self, exclude: Collection[str] = ()) -> int:
-        """How many assessed responses wait in the teacher queue, less the ones in `exclude`."""
-        rows = self.col("response").find(
-            {"status": ResponseStatus.REVIEW_REQUIRED.value, "purpose": "assessment"},
-            {"response_id": 1},
-        )
+    def count_waiting_review(
+        self, exclude: Collection[str] = (), owners: set[str] | None = None
+    ) -> int:
+        """Assessed responses waiting in the queue, less `exclude`; `owners` only (D071)."""
+        query: dict = {"status": ResponseStatus.REVIEW_REQUIRED.value}
+        if owners is not None:
+            query["account_id"] = {"$in": sorted(owners)}
+        rows = self.col("response").find(query, {"response_id": 1})
         hidden = set(exclude)
         return sum(r["response_id"] not in hidden for r in rows)
 
     def get(self, response_id: str) -> Response | None:
         row = self.col("response").find_one(
-            {"response_id": response_id}, {"report_json": 1, "reviews": 1}
+            {"response_id": response_id}, {"report_json": 1, "reviews": 1, "coach_upgrade": 1}
         )
         if row is None:
             return None
         report = Response.model_validate_json(row["report_json"])
         return report.model_copy(
-            update={"reviews": [Review(**r) for r in row.get("reviews") or []]}
+            update={
+                "reviews": [Review(**r) for r in row.get("reviews") or []],
+                "upgrade": _upgrade(row.get("coach_upgrade")),
+            }
         )
 
-    def queue_with_locks(self, status: ResponseStatus, limit: int = 50) -> list[dict]:
+    def queue_with_locks(
+        self, status: ResponseStatus, limit: int = 50, owners: set[str] | None = None
+    ) -> list[dict]:
         """The review queue plus, for each response, who currently holds it.
 
         Two reads rather than one read per queued response: the caller used to
         loop over the responses calling `locked_by` on each, which costs one
         round trip per response -- fine with three in a test, linear in the size
-        of the queue in a real term.
+        of the queue in a real term. `owners` keeps a teacher's queue to the
+        students of their classes (D071); None is everyone's.
         """
+        query: dict = {"status": status.value}
+        if owners is not None:
+            query["account_id"] = {"$in": sorted(owners)}
         rows = list(
             self.col("response")
-            .find({"status": status.value, "purpose": "assessment"})
+            .find(query)
             .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
             .limit(limit)
         )
         now = _now()
+        locks = {
+            x["response_id"]: x.get("lock")
+            for x in self.col("review_session").find(
+                {"response_id": {"$in": [r["response_id"] for r in rows]}},
+                {"response_id": 1, "lock": 1},
+            )
+        }
         out = []
         for r in rows:
             item = fields(r, LIST_FIELDS)
-            lock = r.get("review_lock")
+            lock = locks.get(r["response_id"])
             held = lock is not None and lock["locked_until"] > now
             item["locked_by"] = lock["reviewer_name"] if held else None  # type: ignore[index]
+            item["account_id"] = r.get("account_id")
             out.append(item)
         return out  # type: ignore[return-value]
-
-    def assessments_since(self, account_ids: list[str], task_id: str, since: str) -> list[dict]:
-        """Assessment responses of `task_id` by these accounts from `since` on, oldest first.
-
-        What a class assignment counts as handed in (D054).
-        """
-        rows = (
-            self.col("response")
-            .find(
-                {
-                    "account_id": {"$in": account_ids},
-                    "task_id": task_id,
-                    "purpose": {"$ne": "practice"},
-                    "created_at": {"$gte": since},
-                }
-            )
-            .sort([("created_at", ASCENDING), ("_id", ASCENDING)])
-        )
-        return [fields(r, (*LIST_FIELDS, "account_id")) for r in rows]  # type: ignore[misc]
 
     def list_all(self, limit: int = 200) -> list[dict]:
         rows = (
@@ -1200,50 +1178,6 @@ class Repository(MongoStore):
         self.save(report, owner["speaker_id"], owner["task_id"], account_id=owner["account_id"])
         return report
 
-    def research_rows(self, allowed_account_ids: set[str], limit: int = 5000) -> list[dict]:
-        """Rows for the research export, restricted to accounts that allow it.
-
-        The caller passes the allowed set rather than this method reading the
-        accounts itself. Two reasons: the scoring store and the accounts are
-        separate concerns, and a caller holding an explicit
-        set is auditable -- you can print it, count it, and show it to an ethics
-        reviewer. A join hidden inside the query cannot be shown to anybody.
-
-        Never returns the transcript. The export exists to analyse scores
-        against human ratings; shipping the words of a recording around is a
-        risk with no matching benefit.
-        """
-        if not allowed_account_ids:
-            return []
-        # Filtered in the query, then limited: limiting first and filtering
-        # after would silently drop the newer responses of allowed learners
-        # once there were more than `limit` in all.
-        rows = self.col("response").find(
-            {
-                "account_id": {"$in": sorted(allowed_account_ids)},
-                # D023: practice attempts are constrained exercises (given
-                # words, reading aloud), not free speech to compare with
-                # teacher ratings.
-                "purpose": "assessment",
-            }
-        )
-        names = (
-            "response_id",
-            "speaker_id",
-            "task_id",
-            "status",
-            "overall_0_6",
-            "overall_band",
-            "teacher_verified",
-            "model_version",
-            "config_version",
-            "created_at",
-            "account_id",
-        )
-        out = [fields(r, names) for r in rows]
-        out.sort(key=lambda r: r["created_at"])  # type: ignore[index]
-        return out[:limit]  # type: ignore[return-value]
-
     # ---------- runtime configuration (FR-08, FR-36) ----------
     #
     # Settings that an administrator may change while the system is running live
@@ -1304,8 +1238,15 @@ class Repository(MongoStore):
         }
 
 
-def _practice_completed(report_json: str | None) -> bool:
-    return bool((json.loads(report_json or "{}").get("practice") or {}).get("completed"))
+def _upgrade(stored: dict | None) -> CoachUpgrade | None:
+    """The kept upgrade as its contract, or None; one that no longer reads is left out."""
+    if not stored:
+        return None
+    try:
+        return CoachUpgrade.model_validate(stored)
+    except ValueError:
+        logger.warning("coach upgrade does not match its contract; left out of the report")
+        return None
 
 
 def _profile_row(row: dict) -> dict:
@@ -1316,20 +1257,15 @@ def _profile_row(row: dict) -> dict:
     Responses saved before D022 carry no indicators, so both fields stay empty
     rather than guessed.
 
-    D023 ADDS `next_task_id`: the practice task for the weakest criterion at the
-    verified band, so another system reading the profile (topics 3, 5 and 8 of
-    ALDM-L) can open the right practice task. `next_task_hint` keeps its meaning.
+    The `next_task_id` of D023, a practice task, went with the practice tasks (D083).
     """
-    from aicefr.contracts import Band, Criterion
-    from aicefr.practice.bank import practice_task_id
+    from aicefr.contracts import Criterion
     from aicefr.report.comments import NEXT_TASK_HINTS
 
     report = json.loads(row.pop("report_json") or "{}")
     weak = [Criterion(c) for c in ((report.get("assessment") or {}).get("weakest_criteria") or [])]
     row["weakest_criteria"] = [c.value for c in weak]
     row["next_task_hint"] = NEXT_TASK_HINTS[weak[0]] if weak else None
-    band = row.get("overall_band")
-    row["next_task_id"] = practice_task_id(weak[0], Band(band)) if weak and band else None
     return row
 
 

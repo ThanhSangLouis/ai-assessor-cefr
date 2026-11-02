@@ -97,8 +97,10 @@ def test_pseudonyms_cannot_carry_markup() -> None:
 def test_queue_screen_escapes_every_user_value() -> None:
     """The review queue was the one screen missing escaping."""
     source = pathlib.Path("src/aicefr/api/static/queue.js").read_text(encoding="utf-8")
-    for field in ("speaker_id", "task_id", "locked_by", "overall_band"):
+    for field in ("speaker_id", "locked_by", "overall_band"):
         assert f"escapeHtml(r.{field}" in source, f"{field} chua duoc escape"
+    # D078: the prompt is shown by its band title, escaped like the rest.
+    assert "escapeHtml(titles[r.task_id]" in source
 
 
 def test_login_redirect_stays_on_this_site() -> None:

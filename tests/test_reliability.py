@@ -20,6 +20,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 from conftest import feature_set
+from dbutil import one_school
 from fastapi.testclient import TestClient
 
 import aicefr
@@ -43,6 +44,7 @@ def app(tmp_path, monkeypatch):
 
 def login_as(app, pseudonym: str, role: str) -> TestClient:
     app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    one_school(pseudonym, role)
     c = TestClient(app)
     assert (
         c.post(

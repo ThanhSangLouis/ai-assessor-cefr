@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Kết quả thanh toán · AI Assessor CEFR{% endblock %}
+{% block title %}Kết quả thanh toán · SpeakUp{% endblock %}
 {% block content %}
 {#- D033, D035. Where the gateway sends the browser back. The route has applied
     the result the gateway vouched for already; this page says what the
     order's state now is. -#}
-{%- set credits = order and order.kind == "credits" -%}
-{%- set back = "/credits" if (credits or (account and account.role.value == "student")) else "/admin#billing" -%}
-{%- set back_label = "Về trang Lượt của tôi" if back == "/credits" else "Về trang Gói dịch vụ" -%}
+{#- D075: every order is a pack of runs; its buyer goes back to their runs. -#}
+{%- set back = "/credits" -%}
+{%- set back_label = "Về trang Lượt của tôi" -%}
 <div class="pay-page">
   {% if test %}
   <div class="notice notice-warn pay-banner" role="note">
@@ -18,18 +18,10 @@
     {% if state == "paid" %}
       <div class="pay-mark ok" aria-hidden="true">{{ icon("check-circle") }}</div>
       <h1 id="result-h">Thanh toán thành công</h1>
-      {% if credits %}
       <p class="pay-lede">
-        <b>{{ order.seats }} lượt</b> {% if order.credited %}đã được cộng vào ví của bạn.{% else %}sẽ được cộng vào ví trong ít phút.{% endif %}
+        <b>{{ order.runs }} lượt</b> {% if order.credited %}đã được cộng vào ví của bạn.{% else %}sẽ được cộng vào ví trong ít phút.{% endif %}
         Lượt mua không hết hạn theo chu kỳ; lượt miễn phí của chu kỳ vẫn được dùng trước.
       </p>
-      {% else %}
-      <p class="pay-lede">
-        Gói <b>{{ order.plan_name }}</b> cho <b>{{ order.seats }}</b> sinh viên, từ {{ order.starts_on | dmy }}
-        đến {{ order.ends_on | dmy }}.
-        {% if order.kind in ("renewal", "downgrade") %}Gói này bắt đầu khi gói đang dùng kết thúc.{% else %}Đã có hiệu lực.{% endif %}
-      </p>
-      {% endif %}
       <dl class="pay-facts">
         <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
         <dt>Đã thanh toán</dt><dd>{{ order.amount_vnd | vnd }}</dd>
@@ -44,7 +36,7 @@
       <div class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</div>
       <h1 id="result-h">{% if state == "cancelled" %}Đã huỷ giao dịch{% elif state == "expired" %}Đơn đã hết hạn chờ{% else %}Thanh toán không thành công{% endif %}</h1>
       {% if message %}<p class="pay-lede">{{ message }}</p>{% endif %}
-      <p>{% if credits %}Ví lượt không thay đổi{% else %}Gói đang dùng không thay đổi{% endif %} và không có khoản nào bị ghi nhận. Có thể đặt lại đơn.</p>
+      <p>Ví lượt không thay đổi và không có khoản nào bị ghi nhận. Có thể đặt lại đơn.</p>
       <dl class="pay-facts">
         <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
         <dt>Số tiền</dt><dd>{{ order.amount_vnd | vnd }}</dd>
@@ -74,7 +66,6 @@
       <p>
         {% if state == "amount" %}Số tiền cổng báo về không khớp với đơn, nên kết quả không được ghi nhận.
         {% else %}Địa chỉ trả về không có chữ ký hợp lệ hoặc không khớp đơn nào, nên không có gì thay đổi.{% endif %}
-        Nếu tài khoản đã bị trừ tiền, hãy liên hệ bộ phận hỗ trợ kèm mã giao dịch của ngân hàng.
       </p>
       <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
     {% endif %}

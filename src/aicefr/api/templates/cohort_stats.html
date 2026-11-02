@@ -1,14 +1,12 @@
 {% extends "base.html" %}
+{% from "_subnav.html" import subnav %}
 {% from "_icons.html" import icon %}
-{% block title %}Thống kê lớp · AI Assessor CEFR{% endblock %}
+{% block title %}Thống kê lớp · SpeakUp{% endblock %}
 {% block content %}
+{{ subnav('Thống kê', [['/review/stats', 'Cả lớp', 'stats'], ['/teach/insights', 'Theo lộ trình', 'insights']], 'stats') }}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("chart") }}</span>Thống kê lớp</h1>
-  <p class="lede">
-    Bức tranh chung của cả lớp, và — quan trọng hơn — <b>mức độ giảng viên đồng ý với máy</b>.
-    Không có bảng xếp hạng sinh viên và không có bảng xếp hạng giảng viên:
-    màn hình xếp hạng người thì sẽ được dùng để xếp hạng người.
-  </p>
+  <p class="lede">Bức tranh chung của cả lớp. Không xếp hạng sinh viên hay giảng viên.</p>
 </div>
 
 <div class="page-toolbar">
@@ -22,12 +20,6 @@
   <div class="skeleton skeleton-block"></div>
   <div class="skeleton skeleton-line"></div>
 </div>
-
-<section class="card" id="teacher-time" aria-labelledby="teacher-time-title" aria-busy="true">
-  <div class="card-head"><h2 id="teacher-time-title">Hiệu quả cho giảng viên</h2></div>
-  <p class="muted">Đo trên chính hệ thống: phút duyệt một bài khi có máy, so với phút chấm mù một bài không có máy; và phần máy tự xử lý được.</p>
-  <div id="teacher-time-body"><div class="skeleton skeleton-block"></div></div>
-</section>
 
 <section class="card" id="class-pronunciation" aria-labelledby="class-pron-title" aria-busy="true">
   <div class="card-head"><h2 id="class-pron-title">Phát âm của cả lớp</h2></div>

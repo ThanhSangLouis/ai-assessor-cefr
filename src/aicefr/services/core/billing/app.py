@@ -1,8 +1,6 @@
-"""The billing service: plans, orders, licences, payment gateways (D043).
+"""The billing service: run-pack orders and the payment gateways (D043, D075).
 
-What a plan counts -- student accounts, assessments this month, research
-participants -- is asked of identity and assessment when it is needed; the
-payment pages a gateway returns to are drawn here, where the order is.
+The payment pages a gateway returns to are drawn here, where the order is.
 """
 
 from __future__ import annotations
@@ -19,7 +17,6 @@ from aicefr.services import Parts, Peers
 from aicefr.services.core.billing import billing_api
 from aicefr.services.core.billing.facade import BillingFacade
 from aicefr.storage.audit_repository import AuditLog
-from aicefr.storage.auth_repository import Role
 from aicefr.storage.billing_repository import BillingRepository
 
 logger = logging.getLogger(__name__)
@@ -38,10 +35,6 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         logger.warning("billing: %s", problem)
     service = BillingService(
         store,
-        students=lambda: peers.identity.count_role(role=Role.STUDENT.value),
-        assessments=lambda since, until: peers.assessment.assessments_by_account(
-            since=since, until=until
-        ),
         settings=settings,
         gateways=gateways,
         audit=audit_log.write,
@@ -52,6 +45,11 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
                 account_id=account_id, runs=runs, order_id=order_id))
             if settings.metering_enabled else None
         ),
+        # D078: the packs an administrator put on sale, from the metering service.
+        packs=(
+            (lambda: tuple(tuple(p) for p in peers.metering.run_packs()))
+            if settings.metering_enabled else None
+        ),
     )  # fmt: skip
     facade = BillingFacade(service, audit_log)
     billing_api.configure(billing_api.Services(billing=service))
@@ -59,5 +57,5 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         name="billing",
         routers=[billing_api.router, internal_router("billing", facade, settings.internal_token)],
         facade=facade,
-        state={"billing": service, "ready": lambda: {"plan": service.standing().plan.value}},
+        state={"billing": service, "ready": lambda: {"payments": service.enabled}},
     )

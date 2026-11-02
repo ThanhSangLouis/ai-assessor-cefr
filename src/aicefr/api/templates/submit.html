@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Nộp bài nói · AI Assessor CEFR{% endblock %}
+{% block title %}Nộp bài nói · SpeakUp{% endblock %}
 {% block content %}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("mic") }}</span>Nộp bài đánh giá</h1>
@@ -9,11 +9,6 @@
     tổng thể</b> kèm bằng chứng trên bản ghi; bài máy chưa đủ chắc sẽ được giảng viên
     xem lại trước khi công bố.
   </p>
-</div>
-
-<div class="notice notice-danger" id="fake-asr-warning" hidden>
-  <b>Chế độ thử nghiệm.</b> Hệ thống đang dùng bộ nhận dạng tiếng nói giả lập nên
-  điểm số <b>không có ý nghĩa</b>. Đặt biến môi trường <code>AICEFR_ASR=whisper</code> để chấm thật.
 </div>
 
 {#- Two columns on a wide screen: the task list on the left, the recorder on
@@ -52,7 +47,7 @@
       {% include "_recorder.html" %}
     {% endwith %}
   </section>
-  <input type="hidden" id="task_id" name="task_id" value="P3">
+  <input type="hidden" id="task_id" name="task_id">
 </form>
 {% endblock %}
 {% block scripts %}

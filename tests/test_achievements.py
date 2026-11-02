@@ -135,15 +135,16 @@ def test_an_achievement_is_never_taken_back(m):
     assert win["result"]["passed"] is True
     assert {a["code"] for a in win["achievements"]} == {"retry_1"}
 
-    # A teacher finds the pass was not one after all, and the learner deletes
-    # the first attempt: the facts no longer hold, the achievements stay.
+    # A teacher finds the pass was not one after all, and the first attempt is
+    # erased (D078: by an administrator only): the facts no longer hold, the
+    # achievements stay.
     teacher = login_as(m, "GV-01", "teacher")
     r = teacher.post(
         f"/api/v1/teach/attempts/{win['attempt_id']}/override",
         json={"passed": False, "note": "Chưa nghe rõ cụm bus stop."},
     )
     assert r.status_code == 200
-    assert student.delete(f"/api/v1/learn/attempts/{miss['attempt_id']}").status_code == 200
+    m.lessons.delete_attempt(miss["attempt_id"])
 
     got = items(student)
     assert got["retry_1"]["unlocked"] and got["retry_1"]["value"] == 1

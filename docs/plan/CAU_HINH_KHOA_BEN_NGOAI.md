@@ -1,4 +1,6 @@
-# Cài khoá cho dịch vụ bên ngoài: Google, Stripe, MoMo, VNPay
+# Cài khoá cho dịch vụ bên ngoài: Google, Stripe
+
+> **D075 (01/11/2026):** hệ thống phục vụ một trung tâm, học viên (và giảng viên, cho bản soạn bài bằng AI) mua **gói lượt** qua **Stripe**; không còn gói dịch vụ của trường. VNPay và MoMo đã gỡ khỏi mã: mục 3 và 4 chỉ còn làm lịch sử.
 
 Tài liệu này dành cho người vận hành một bản triển khai: lấy khoá ở đâu, đặt vào đâu, và kiểm tra thế nào là đã đúng. Mã đã làm sẵn cả bốn dịch vụ (D029, D034, D035, D036); **mọi dịch vụ đều tắt cho tới khi có khoá**, và mọi cổng thanh toán mặc định chạy ở môi trường thử của chính nó.
 
@@ -8,7 +10,7 @@ Các bước dưới đây đã được đối chiếu với tài liệu chính
 
 1. **Khoá chỉ nằm trong `.env` hoặc biến môi trường của máy chủ.** Tệp `.env` đã có trong `.gitignore`; sao `.env.example` thành `.env` rồi điền. `demo.sh` tự đọc `.env` nếu có; chạy cách khác thì nạp bằng `set -a; . ./.env; set +a`. Không commit `.env`, không dán client secret hay khoá bí mật vào chat, issue hay ảnh chụp màn hình.
 2. **Không có tiền thật trong đồ án.** Cổng thu tiền thật — khoá Stripe `sk_live_`, địa chỉ thật của VNPay hay MoMo — chỉ chạy khi đặt `AICEFR_PAYMENTS_LIVE=on` (khi đó mọi cổng ở môi trường thử tự tắt, để không ai mua gói thật bằng thẻ thử), và việc đó cần một pháp nhân, hợp đồng với cổng, và giải quyết giấy phép dữ liệu huấn luyện (xem `DE_XUAT_GOI_DICH_VU.md`). Trong đồ án, không đặt biến này.
-3. **Kiểm tra trên chính ứng dụng.** Sau khi đặt khoá và khởi động lại, đăng nhập bằng tài khoản quản trị: tab **Cấu hình** có khung "Đăng nhập bằng Google", tab **Gói dịch vụ** liệt kê các cổng đang bật và nói rõ cổng nào còn thiếu khoá — bằng tên biến, không bao giờ bằng giá trị.
+3. **Kiểm tra trên chính ứng dụng.** Sau khi đặt khoá và khởi động lại, đăng nhập bằng tài khoản quản trị: tab **Cấu hình** có khung "Đăng nhập bằng Google", trang **Lượt của tôi** của học viên liệt kê các cổng đang bật; cổng nào còn thiếu khoá thì nhật ký của dịch vụ `core` ghi rõ tên biến, không bao giờ ghi giá trị.
 
 ## 1. Đăng nhập bằng Google (OAuth 2.0, luồng mã uỷ quyền có PKCE)
 
@@ -78,19 +80,60 @@ Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (develo
 
    ```bash
    AICEFR_BILLING=on
-   AICEFR_PAYMENT_GATEWAYS=stripe,sandbox
+   AICEFR_METERING=1
+   AICEFR_PAYMENT_GATEWAYS=stripe
    AICEFR_STRIPE_SECRET_KEY=sk_test_...
    AICEFR_STRIPE_WEBHOOK_SECRET=whsec_...
    ```
 
-   Thiếu khoá webhook thì Stripe ở chế độ thử vẫn chạy, nhưng tab Gói dịch vụ cảnh báo: đơn chỉ được ghi nhận khi trình duyệt quay về. Khoá `sk_live_` thì bắt buộc có khoá webhook.
-5. Thử: tab **Gói dịch vụ** → chọn gói → ở "Thanh toán qua" chọn **Stripe** → **Thanh toán** → trang của Stripe → thẻ `4242 4242 4242 4242`, hạn bất kỳ trong tương lai, CVC bất kỳ → về trang kết quả. Thẻ `4000 0000 0000 0002` cho kết quả bị từ chối.
+   Thiếu khoá webhook thì Stripe ở chế độ thử vẫn chạy, nhưng nhật ký cảnh báo: đơn chỉ được ghi nhận khi trình duyệt quay về. Khoá `sk_live_` thì bắt buộc có khoá webhook.
+5. Thử: đăng nhập học viên → **Lượt của tôi** → **Mua gói này** → trang của Stripe → thẻ `4242 4242 4242 4242`, hạn bất kỳ trong tương lai, CVC bất kỳ → về trang kết quả. Thẻ `4000 0000 0000 0002` cho kết quả bị từ chối.
 
-**Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên một khoản nâng cấp rất nhỏ có thể bị từ chối; khi đó tab báo lý do và có thể chọn cổng khác.
+**Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên gói lượt quá rẻ có thể bị từ chối; khi đó trang báo lý do.
 
 Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com/webhooks (mục "Verify webhook signatures manually"), docs.stripe.com/currencies.
 
-## 3. MoMo (môi trường thử)
+## 2b. Email qua Resend (D079)
+
+**Đã làm sẵn.** Gửi mã 6 số khi quên mật khẩu (dùng được 10 phút, 5 lần thử, mỗi phút gửi một lần), mã xác minh email khi đăng ký và ở trang Tài khoản, và thư nhắc học mỗi tối cho học viên đã xác minh email, chưa luyện trong ngày, đang có chuỗi ngày hoặc bài ôn đến hạn. Mỗi thư nhắc có liên kết tắt nhắc, không cần đăng nhập.
+
+**Cần một tên miền riêng.** Resend chỉ gửi tới mọi địa chỉ khi tên miền của người gửi đã được xác minh. Địa chỉ `sslip.io` hiện tại không xác minh được, vì mình không sửa được DNS của nó. Chưa có tên miền thì Resend chỉ gửi tới chính email chủ tài khoản Resend.
+
+1. Mua tên miền, ví dụ trên Namecheap.
+2. Đăng ký tại <https://resend.com/signup>.
+3. **Domains → Add domain**: nhập tên miền, nên dùng tên miền con như `mail.ten-mien.app`, vùng *Tokyo (ap-northeast-1)*. Resend hiện các bản ghi DNS (TXT cho SPF và DKIM, MX cho phản hồi).
+4. Ở Namecheap: **Domain List → Manage → Advanced DNS → Add new record**. Thêm đúng từng bản ghi Resend đưa (loại, Host, Value). Quay lại Resend bấm **Verify**, thường xong trong vài phút đến vài giờ.
+5. **API Keys → Create API Key**: quyền *Sending access*, chỉ cho tên miền vừa xác minh. Chép chuỗi `re_…`; Resend chỉ hiện chuỗi này một lần.
+6. Điền `.env` trên máy chủ:
+
+   ```bash
+   AICEFR_EMAIL_PROVIDER=resend
+   AICEFR_RESEND_API_KEY=re_...
+   AICEFR_EMAIL_FROM="SpeakUp <no-reply@mail.ten-mien.app>"
+   AICEFR_REMINDER_HOUR=19
+   ```
+
+   Liên kết trong thư nhắc dùng `AICEFR_PUBLIC_URL`. Trên máy chủ, `docker-compose.prod.yml` tự đặt biến này thành `https://<AICEFR_DOMAIN>`, nên **không** điền nó vào `.env`. Muốn liên kết trỏ về tên miền mới thì đổi `AICEFR_DOMAIN` theo mục "Trỏ trang web về tên miền" bên dưới. Máy mình (không chạy lớp production) thì tự điền `AICEFR_PUBLIC_URL`; thiếu nó thì hệ thống không gửi thư nhắc (nhật ký ghi lý do), nhưng mã OTP vẫn gửi được.
+7. Chạy lại dịch vụ: trên máy chủ, `cd /srv/aicefr && docker compose up -d` (container nào có biến đổi sẽ được tạo lại). Thử: trang **Quên mật khẩu** → nhập email → thư có mã 6 số → đặt mật khẩu mới.
+
+**Gói miễn phí của Resend:** 3.000 thư mỗi tháng, 100 thư mỗi ngày. Mỗi học viên nhận nhiều nhất một thư nhắc mỗi ngày.
+
+Tài liệu gốc: resend.com/docs/api-reference/emails/send-email, resend.com/docs/dashboard/domains/introduction.
+
+### Trỏ trang web về tên miền
+
+Làm việc này trước hoặc cùng lúc với Resend, để trang web và địa chỉ gửi thư dùng chung một tên miền.
+
+1. Namecheap → **Domain List → Manage → Advanced DNS**. Xoá hai bản ghi đỗ sẵn Namecheap tạo (`CNAME www → parkingpage.namecheap.com` và `URL Redirect @`).
+2. Thêm **A Record**: Host `@`, Value `52.64.179.250` (Elastic IP), TTL Automatic.
+3. Chờ tên miền trỏ đúng: `dig +short ten-mien.app` in ra `52.64.179.250`. **Phải chờ tới bước này rồi mới làm bước 4**: Caddy chỉ xin được chứng chỉ HTTPS khi tên miền đã trỏ về máy chủ; đổi sớm thì trang web không vào được cho tới khi DNS xong.
+4. Trên máy chủ, sửa `/srv/aicefr/.env`: `AICEFR_DOMAIN=ten-mien.app` (không có `https://`), rồi `cd /srv/aicefr && docker compose up -d`. Caddy tự xin chứng chỉ Let's Encrypt trong khoảng một phút. Kiểm tra: `curl https://ten-mien.app/healthz`.
+5. Đăng nhập bằng Google: thêm `https://ten-mien.app/auth/google/callback` vào **Authorized redirect URIs** (mục 1). Giữ dòng `sslip.io` cũ cho tới khi chắc chắn tên miền mới chạy ổn.
+6. GitHub → Settings → Secrets → Actions: `EC2_HOST` để nguyên IP thì không cần sửa gì. Nếu đổi sang tên miền thì sửa luôn `EC2_KNOWN_HOSTS` như `TRIEN_KHAI_EC2.md` bước 5.
+
+`www.ten-mien.app` không cần: Caddy chỉ phục vụ đúng `AICEFR_DOMAIN`.
+
+## 3. MoMo (đã gỡ bởi D075)
 
 **Đã làm sẵn.** Tạo giao dịch `captureWallet` ở `/v2/gateway/api/create` ký HMAC-SHA256, kết quả trả về và IPN ký theo thứ tự trường MoMo công bố, IPN được trả lời 204. Mặc định gọi môi trường thử `test-payment.momo.vn`.
 
@@ -112,7 +155,7 @@ Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com
 
 Tài liệu gốc: developers.momo.vn/v3/docs/payment/api/wallet/onetime và mục "Result code".
 
-## 4. VNPay (sandbox)
+## 4. VNPay (đã gỡ bởi D075)
 
 1. Đăng ký môi trường sandbox của VNPay để nhận **mã website (TMN code)** và **chuỗi bí mật (hash secret)**.
 2. Điền `.env`: `AICEFR_PAYMENT_GATEWAYS=vnpay,…`, `AICEFR_VNPAY_TMN_CODE`, `AICEFR_VNPAY_HASH_SECRET`. Không đặt `AICEFR_VNPAY_URL` thì dùng địa chỉ sandbox của VNPay.
@@ -122,5 +165,6 @@ Tài liệu gốc: developers.momo.vn/v3/docs/payment/api/wallet/onetime và m�
 ## 5. Kiểm tra cuối
 
 - `tab Cấu hình`: khung Google ghi "Đang bật", không có mục "Cần xem lại".
-- `tab Gói dịch vụ`: mỗi cổng muốn dùng có trong ô "Thanh toán qua" với nhãn "Thử"; không có khung "Cấu hình cổng thanh toán cần xem lại".
+- Trang `Lượt của tôi` (học viên): có các gói lượt và ghi "Môi trường thử"; nhật ký `core` không có dòng "billing: Stripe chưa bật".
+- Trang `Quên mật khẩu` có ô "Gửi mã qua email"; thư tới hộp thư trong khoảng một phút.
 - `git status` không có `.env`.

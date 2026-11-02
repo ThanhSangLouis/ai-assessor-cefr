@@ -29,8 +29,7 @@ async function api(method, url, body) {
     const msg = typeof d.detail === "string" ? d.detail : "Không lưu được. Kiểm tra lại các ô đã nhập.";
     const err = new Error(msg);
     err.status = r.status;
-    // A 403 on reading means no rights (the page says so); on writing it is
-    // the plan (D034), and its message says which plan includes it.
+    // A 403 on reading means no rights, and the page says so.
     if (r.status !== 403 || method !== "GET") window.toast(msg.charAt(0).toUpperCase() + msg.slice(1), "error");
     throw err;
   }
@@ -55,7 +54,6 @@ function lessonRow(l) {
   return (
     "<tr>" +
     `<td><a class="t-lesson-link" href="/teach/lessons/${id}">${escapeHtml(l.title)}</a>` +
-    (l.sample ? ' <span class="badge sample-badge">Mẫu</span>' : "") +
     `<div class="muted">${escapeHtml(l.band)}${l.criterion ? ` · ${escapeHtml(criterionName(l.criterion))}` : ""}</div></td>` +
     `<td class="t-steps">${ladder(l.kinds)} <span class="muted">${Number(l.steps)} bước</span></td>` +
     `<td>${state}</td>` +
@@ -94,7 +92,7 @@ function unitBlock(u) {
     (u.lessons.length
       ? ""
       : `<button type="button" class="small secondary" data-action="delete-unit" data-id="${uid}" data-name="${name}">${icon("trash")}<span>Xoá chặng</span></button>`) +
-    `<button type="button" class="small" data-action="add-lesson" data-id="${uid}" data-band="${escapeHtml(u.band || "A2")}">${icon("plus")}<span>Thêm bài học</span></button>` +
+    `<button type="button" class="small" data-action="add-lesson" data-id="${uid}" data-band="${escapeHtml(u.band || "")}">${icon("plus")}<span>Thêm bài học</span></button>` +
     "</div></div>" +
     table +
     "</div>"
@@ -116,7 +114,6 @@ function pathCard(p, i) {
     (published
       ? '<span class="badge state-on">Sinh viên đang thấy lộ trình này</span>'
       : '<span class="badge state-off">Nháp: sinh viên chưa thấy</span>') +
-    (p.sample ? '<span class="badge sample-badge">Nội dung mẫu, chờ giảng viên duyệt</span>' : "") +
     "</div>" +
     (p.description ? `<p class="muted">${escapeHtml(p.description)}</p>` : "") +
     '</div><div class="t-actions">' +
@@ -143,24 +140,7 @@ function render() {
   root.innerHTML = paths.map(pathCard).join("");
 }
 
-// The school's plan (D034): without lesson writing, the sample path is still
-// there to teach with, and the page says what would open the rest.
-async function planNote() {
-  const r = await fetch("/api/v1/plan");
-  if (!r.ok) return;
-  const plan = await r.json();
-  if (!plan.enabled || plan.features.includes("lesson_authoring")) return;
-  const note = $("plan-note");
-  note.innerHTML =
-    `Trường đang dùng gói <b>${escapeHtml(plan.plan_name)}</b>: dạy bằng lộ trình mẫu và các lộ trình ` +
-    "đã xuất bản, sinh viên học như thường. Tạo, sửa và xuất bản lộ trình có ở gói Chuẩn và Nâng cao; " +
-    "quản trị viên nâng cấp ở tab Gói dịch vụ.";
-  note.hidden = false;
-  for (const id of ["new-path", "import-path"]) $(id).disabled = true;
-}
-
 async function load() {
-  planNote().catch(() => {});
   try {
     paths = await api("GET", "/api/v1/teach/paths");
     render();
@@ -189,7 +169,7 @@ function openPath(id) {
   $("path-title").value = p ? p.title : "";
   $("path-description").value = p ? p.description || "" : "";
   $("path-band-from").value = (p && p.band_from) || "A1";
-  $("path-band-to").value = (p && p.band_to) || "B2";
+  $("path-band-to").value = (p && p.band_to) || "C2";
   $("path-dialog").showModal();
 }
 
@@ -212,13 +192,25 @@ $("path-form").addEventListener("submit", async (e) => {
   }
 });
 
+// A unit's band stays inside its path's bands (D074 composes a learner's path
+// from them); a new unit starts at the band of the path's last unit.
+const BAND_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
+
 function openUnit(pathId, unitId) {
   unitTarget = { path: pathId, unit: unitId };
   const u = unitId ? findUnit(unitId) : null;
+  const p = paths.find((x) => (u ? x.units.includes(u) : x.path_id === pathId));
+  const lo = BAND_ORDER.indexOf((p && p.band_from) || "A1");
+  const hi = BAND_ORDER.indexOf((p && p.band_to) || "C2");
+  [...$("unit-band").options].forEach((o) => {
+    const i = BAND_ORDER.indexOf(o.value);
+    o.disabled = o.hidden = i < lo || i > hi;
+  });
+  const last = p && p.units.length ? p.units[p.units.length - 1].band : null;
   $("unit-dialog-h").textContent = u ? "Sửa chặng" : "Chặng mới";
   $("unit-title").value = u ? u.title : "";
   $("unit-function").value = u ? u.function || "" : "";
-  $("unit-band").value = (u && u.band) || "A2";
+  $("unit-band").value = (u && u.band) || last || BAND_ORDER[lo];
   $("unit-topic").value = (u && u.topic) || "";
   $("unit-criterion").value = (u && u.criterion) || "";
   $("unit-dialog").showModal();
@@ -247,9 +239,56 @@ $("unit-form").addEventListener("submit", async (e) => {
 function openLesson(unitId, band) {
   lessonUnit = unitId;
   $("lesson-form").reset();
-  $("lesson-band").value = band || "A2";
+  if (band) $("lesson-band").value = band;
   $("lesson-dialog").showModal();
+  offerDraft();
 }
+
+// ---------------------------------------------------------------- AI draft (D075)
+// The language model writes the form's fields from a few words; the teacher
+// reads and corrects them before creating the lesson. Paid from the teacher's
+// own runs on a metered deployment, like a learner's upgraded answer.
+async function offerDraft() {
+  const box = $("ai-draft");
+  const r = await fetch("/api/v1/teach/lessons/draft");
+  const d = r.ok ? await r.json() : { available: false };
+  box.hidden = !d.available;
+  if (d.available && d.price) {
+    $("ai-draft-hint").textContent =
+      `Mỗi lần AI viết nháp trừ ${d.price.runs} lượt (${new Intl.NumberFormat("vi-VN").format(d.price.idpoint)} IDPoint) ` +
+      "trong ví của bạn, chỉ trừ khi viết xong. Bạn đọc lại và sửa trước khi tạo.";
+  }
+}
+
+$("ai-draft-go").addEventListener("click", async () => {
+  const topic = $("ai-draft-topic").value.trim();
+  if (topic.length < 3) {
+    window.toast("Hãy viết vài chữ về chủ đề của bài.", "error");
+    $("ai-draft-topic").focus();
+    return;
+  }
+  const button = $("ai-draft-go");
+  button.disabled = true;
+  button.setAttribute("aria-busy", "true");
+  try {
+    const d = await api("POST", "/api/v1/teach/lessons/draft", {
+      band: $("lesson-band").value,
+      criterion: $("lesson-criterion").value || null,
+      topic,
+    });
+    $("lesson-title").value = d.title;
+    $("lesson-summary").value = d.summary;
+    $("lesson-text").value = d.model_text;
+    $("lesson-keywords").value = d.keywords.join(", ");
+    $("lesson-prompt").value = d.free_prompt;
+    window.toast("AI đã viết nháp. Đọc lại và sửa trước khi tạo bài.", "ok");
+  } catch (err) {
+    /* the toast of api() says why */
+  } finally {
+    button.disabled = false;
+    button.removeAttribute("aria-busy");
+  }
+});
 
 $("lesson-form").addEventListener("submit", async (e) => {
   e.preventDefault();

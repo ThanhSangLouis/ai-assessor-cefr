@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
 {% from "_plan_goal.html" import goal_fields %}
-{% block title %}Lộ trình luyện · AI Assessor CEFR{% endblock %}
+{% block title %}Lộ trình luyện · SpeakUp{% endblock %}
 {% block content %}
 {#- Teachers author paths, units and lessons (D025, M16). Students see a path
     only once it is published, and a lesson only in its last published version. -#}
@@ -9,23 +9,19 @@
   <div>
     <p class="eyebrow">Soạn bài</p>
     <h1><span class="head-icon">{{ icon("layers") }}</span>Lộ trình luyện nói</h1>
-    <p class="lede">
-      Mỗi lộ trình gồm các chặng; mỗi chặng là một chức năng giao tiếp ở một band và gồm các
-      bài học. Sửa bài thoải mái: sinh viên chỉ thấy bản đã xuất bản, cho tới khi bạn xuất bản
-      lại.
-    </p>
+    <p class="lede">Sinh viên chỉ thấy bản đã xuất bản, cho tới khi bạn xuất bản lại.</p>
   </div>
   <div class="button-row teach-tools">
     <button type="button" id="new-path">{{ icon("plus") }}<span>Tạo lộ trình</span></button>
     <button type="button" class="secondary" id="compose-path">{{ icon("sparkle") }}<span>Ghép từ bài có sẵn</span></button>
-    <button type="button" class="secondary" id="import-path">{{ icon("upload") }}<span>Nhập từ tệp JSON</span></button>
-    <input type="file" id="import-file" accept="application/json,.json" hidden>
-    <a class="button secondary" href="/teach/insights">{{ icon("chart") }}<span>Thống kê luyện tập</span></a>
+    {#- D068: moving paths between installations is rare; kept out of the way. -#}
+    <details class="tools-more">
+      <summary>Nâng cao</summary>
+      <button type="button" class="secondary" id="import-path">{{ icon("upload") }}<span>Nhập từ tệp JSON</span></button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </details>
   </div>
 </div>
-
-{#- D034: on a plan without lesson writing, said here before anyone types. -#}
-<div id="plan-note" class="notice notice-info" hidden></div>
 
 <div id="teach-paths" aria-busy="true" aria-live="polite">
   <div class="card"><div class="skeleton skeleton-title"></div><div class="skeleton skeleton-block"></div></div>
@@ -121,12 +117,22 @@
     <p class="muted">Viết một đoạn văn mẫu và chọn vài từ khóa: hệ thống dựng sẵn các bước theo
       luật cố định (đọc to, nhắc lại, chỗ trống, đọc rồi nói lại, từ khóa, dàn ý, nói tự do). Bạn
       sửa từng bước trước khi xuất bản. Để trống đoạn văn thì bài chỉ có bước từ khóa và nói tự do.</p>
+    {#- D075: the language model writes a first draft from a few words; the teacher corrects it. -#}
+    <div class="ai-draft" id="ai-draft" hidden>
+      <label for="ai-draft-topic">{{ icon("sparkle") }} Nhờ AI viết nháp: bài nói về gì?</label>
+      <div class="ai-draft-row">
+        <input id="ai-draft-topic" maxlength="300" autocomplete="off"
+               placeholder="Ví dụ: kể về món ăn quê nhà, dùng thì quá khứ">
+        <button type="button" class="secondary" id="ai-draft-go">{{ icon("sparkle") }}<span>AI viết nháp</span></button>
+      </div>
+      <p class="field-hint" id="ai-draft-hint">AI điền các ô bên dưới theo band và tiêu chí đã chọn; bạn đọc lại và sửa trước khi tạo.</p>
+    </div>
     <label for="lesson-title">Tên bài học</label>
     <input id="lesson-title" name="title" required maxlength="160" autocomplete="off">
     <div class="field-row">
       <div>
-        <label for="lesson-band">Band</label>
-        <select id="lesson-band" name="band">
+        <label for="lesson-band">Band <span class="muted">(theo chặng)</span></label>
+        <select id="lesson-band" name="band" disabled>
           <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
         </select>
       </div>

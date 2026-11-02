@@ -353,16 +353,6 @@ if (mainEl && "MutationObserver" in window) {
       `<span class="badge ${window.escapeHtml(s)}">${window.escapeHtml(STATUS_NAMES[s] || s)}</span>`,
     reasonName: (code) => REASON_NAMES[code] || code,
 
-    // The practice task that trains one aspect at one band, e.g. PR-RAN-B1. Same
-    // id scheme as practice/bank.py, which covers A1 to C2 (D059).
-    practiceTaskFor(criterion, band) {
-      const codes = { fluency: "FLU", coherence: "COH", range: "RAN", accuracy: "ACC", phonology: "PHO" };
-      if (!codes[criterion]) return null;
-      const order = ["A1", "A2", "B1", "B2", "C1", "C2"];
-      const i = order.indexOf(band);
-      return `PR-${codes[criterion]}-${i < 0 ? "A2" : order[i]}`;
-    },
-
     // "06/10/2026 18:30", the way a Vietnamese reader writes it.
     localTime(iso) {
       const t = new Date(iso);
@@ -459,15 +449,13 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
 
 // ---------------------------------------------------------------- badges
 // How many things wait behind a sidebar item (D028): teacher decisions a
-// student has not seen, reviews due today, the review queue, blind ratings. A
+// student has not seen, reviews due today, the review queue. A
 // number for the eye and a sentence for a screen reader; nothing at zero.
 {
   const BADGE_WORDS = {
     results: "kết quả mới được giảng viên xác nhận",
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
-    ratings: "phiếu chấm mù chưa làm",
-    assignments: "bài được giao chưa nộp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {
@@ -531,3 +519,4 @@ window.apiJson = async function (url, options = {}) {
   }
   return d;
 };
+

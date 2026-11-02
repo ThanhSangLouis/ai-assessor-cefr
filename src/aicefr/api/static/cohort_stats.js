@@ -37,52 +37,12 @@ fetch("/api/v1/review/stats")
       "<h2>Không kết nối được máy chủ</h2><p>Hãy tải lại trang sau ít phút.</p></div>";
   });
 
-// D023. Practice across the class, per criterion. Totals only: this tells a
-// teacher which criterion the class is stumbling on, not who to rank.
-const PRACTICE_SKILLS = [
-  ["fluency", "Độ trôi chảy"],
-  ["coherence", "Mạch lạc"],
-  ["range", "Vốn từ"],
-  ["accuracy", "Ngữ pháp"],
-  ["phonology", "Phát âm dễ nghe"],
-];
-
-function practiceSection(p) {
-  let h = '<h2 style="margin-top:var(--sp-6)">Luyện tập của lớp</h2>';
-  if (!p || !p.attempts) {
-    return (
-      h +
-      '<div class="notice notice-info">Chưa có lần luyện tập nào được xử lý xong.</div>'
-    );
-  }
-  h += '<div class="stat-grid">';
-  h += `<div class="stat"><b>${Number(p.attempts)}</b><span>lần luyện đã xử lý</span></div>`;
-  h += `<div class="stat"><b>${Number(p.learners)}</b><span>người có luyện</span></div>`;
-  h += `<div class="stat"><b>${Math.round((p.completed / p.attempts) * 100)}%</b>` +
-    "<span>lần luyện hoàn thành mọi mục tiêu</span></div>";
-  h += "</div>";
-  h += "<table><thead><tr><th>Tiêu chí</th><th>Lần luyện</th><th>Hoàn thành</th>" +
-    "<th>Tỷ lệ</th></tr></thead><tbody>";
-  for (const [code, name] of PRACTICE_SKILLS) {
-    const c = (p.by_criterion || {})[code] || { attempts: 0, completed: 0 };
-    const rate = c.attempts ? `${Math.round((c.completed / c.attempts) * 100)}%` : "—";
-    h += `<tr><td><b>${name}</b></td><td>${Number(c.attempts)}</td>` +
-      `<td>${Number(c.completed)}</td><td>${rate}</td></tr>`;
-  }
-  h += "</tbody></table>";
-  h +=
-    '<p class="muted">Không có số liệu theo từng sinh viên. Tỷ lệ hoàn thành thấp ở một ' +
-    "tiêu chí là gợi ý để chọn bài cho cả lớp, không phải điểm của ai.</p>";
-  return h;
-}
-
 function build(d) {
   if (!d.responses) {
     return (
       '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◎</div>' +
       "<h2>Chưa có bài nào được chấm</h2>" +
-      "<p>Thống kê xuất hiện khi lớp bắt đầu nộp bài.</p></div>" +
-      practiceSection(d.practice)
+      "<p>Thống kê xuất hiện khi lớp bắt đầu nộp bài.</p></div>"
     );
   }
 
@@ -98,14 +58,17 @@ function build(d) {
   h += `<div class="stat"><b>${d.teacher_verified}</b><span>bài đã xác nhận</span></div>`;
   h += "</div>";
 
-  // Khối này đặt trước phân bố band, vì nó quyết định phân bố band bên dưới
-  // đáng tin đến đâu.
-  h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
-  if (!ag.decisions) {
+  // How often teachers keep the machine's band: a measurement of the model
+  // for the study, read by administrators only (D068).
+  if (!document.body.classList.contains("role-admin")) {
+    // nothing: a teacher reads the class, not the model
+  } else if (!ag.decisions) {
+    h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
     h +=
       '<div class="notice notice-info">Chưa có lượt duyệt nào để so sánh. ' +
       "Con số này chỉ có nghĩa sau vài chục quyết định.</div>";
   } else {
+    h += '<h2 style="margin-top:var(--sp-6)">Giảng viên và máy có đồng ý với nhau không</h2>';
     const rate = ag.rate == null ? null : Math.round(ag.rate * 100);
     const weak = rate != null && rate < 70;
     h += '<div class="stat-grid">';
@@ -121,8 +84,7 @@ function build(d) {
         ? "<b>Giảng viên đang sửa nhiều.</b> Dưới 70% đồng ý nghĩa là band của máy chưa đủ " +
           "ổn định để dùng như một kết quả; hãy tiếp tục coi nó là gợi ý và duyệt từng bài."
         : "<b>Đây là số đo về mô hình, không phải về giảng viên.</b> Tỷ lệ đồng ý cao không " +
-          "có nghĩa mô hình đúng — có thể giảng viên đang tin máy quá mức. Chỉ khảo sát " +
-          "chấm mù đôi (kế hoạch tuần 10–11) mới trả lời được câu đó.") +
+          "có nghĩa mô hình đúng — có thể giảng viên đang tin máy quá mức.") +
       "</div>";
   }
 
@@ -146,25 +108,24 @@ function build(d) {
   }
   h += "</tbody></table>";
   h +=
-    '<p class="muted">Phân bố này là band <b>máy ước lượng</b>. Trên dữ liệu kiểm định, ' +
-    "mô hình còn xếp sai band ở một phần đáng kể số bài và nhận ra mức A2 kém nhất, nên đừng đọc " +
-    "bảng này như bức tranh trình độ thật của lớp.</p>";
+    '<p class="muted">Band <b>máy ước lượng</b>, chưa phải trình độ thật của lớp.</p>';
 
-  h += '<h2 style="margin-top:var(--sp-6)">Theo đề bài</h2>';
-  h += "<table><thead><tr><th>Đề</th><th>Số bài</th><th>Điểm trung bình</th>" +
-    "<th>Đang chờ duyệt</th></tr></thead><tbody>";
-  for (const t of d.by_task || []) {
+  // D078: by the band of the prompt answered, where the class landed.
+  h += '<h2 style="margin-top:var(--sp-6)">Theo band của đề</h2>';
+  h += "<table><thead><tr><th>Đề band</th><th>Số bài</th><th>Người nộp</th>" +
+    "<th>Đạt đúng band</th><th>Thấp hơn</th><th>Cao hơn</th><th>Chờ duyệt</th></tr></thead><tbody>";
+  for (const t of d.by_prompt_band || []) {
+    const share = (k) => (t.n ? ` <span class="muted">${Math.round((k / t.n) * 100)}%</span>` : "");
     h +=
-      `<tr><td><b>${window.escapeHtml(t.task_id)}</b></td><td>${t.n}</td>` +
-      `<td>${t.avg_score == null ? "—" : t.avg_score.toFixed(2)}</td>` +
-      `<td>${t.waiting}</td></tr>`;
+      `<tr><td><b>${window.escapeHtml(t.band)}</b></td><td>${t.n}</td><td>${t.learners}</td>` +
+      `<td><b>${t.at}</b>${share(t.at)}</td><td>${t.below}${share(t.below)}</td>` +
+      `<td>${t.above}${share(t.above)}</td><td>${t.waiting}</td></tr>`;
   }
   h += "</tbody></table>";
   h +=
-    '<p class="muted">Điểm trung bình theo đề không so sánh được trực tiếp với nhau: ' +
-    "đề dài được chấm bằng cách cắt cửa sổ rồi lấy trung vị, một cách tính khác hẳn " +
-    "với đề ngắn chấm nguyên bài.</p>";
-  return h + practiceSection(d.practice);
+    '<p class="muted">Bài làm đề band nào thì so với chính band đó. Nhiều bài "thấp hơn" ' +
+    "nghĩa là đề đang khó so với lớp.</p>";
+  return h;
 }
 
 const printButton = document.getElementById("print-stats");
@@ -185,51 +146,5 @@ if (classPron) {
     .catch(() => {
       window.clearBusy(classPron);
       classPronBody.innerHTML = '<p class="error">Không tải được phần phát âm.</p>';
-    });
-}
-
-// D041: teacher time with and without the machine, measured, each figure with its count.
-const teacherTime = document.getElementById("teacher-time");
-const teacherTimeBody = document.getElementById("teacher-time-body");
-function pct(v) {
-  return v == null ? "—" : `${Math.round(v * 100)}%`;
-}
-function ci(c) {
-  return c ? ` (95%: ${pct(c[0])}–${pct(c[1])})` : "";
-}
-function teacherTimeView(k) {
-  const mins = (s) =>
-    s.median_minutes == null
-      ? `<span class="muted">chưa đủ ${k.min_samples} lần (có ${s.n})</span>`
-      : `<b>${s.median_minutes.toFixed(1).replace(".", ",")}</b> phút <span class="muted">· trung vị ${s.n} lần</span>`;
-  let h = '<div class="stat-grid">';
-  h += `<div class="stat"><span>Duyệt một bài, có máy</span>${mins(k.review_with_machine)}</div>`;
-  h += `<div class="stat"><span>Chấm mù một bài, không có máy</span>${mins(k.rating_without_machine)}</div>`;
-  h += `<div class="stat"><span>Thời gian tiết kiệm</span><b>${k.time_saved == null ? "—" : pct(k.time_saved)}</b></div>`;
-  h += "</div><ul class=\"kpi-list\">";
-  const a = k.settled_alone;
-  h += `<li>Máy tự xử lý: <b>${pct(a.rate)}</b>${window.escapeHtml(ci(a.ci95))} · ${a.k}/${a.n} bài có kết quả</li>`;
-  const b = k.band_kept;
-  h += `<li>Giảng viên giữ nguyên band máy đề xuất: <b>${pct(b.rate)}</b>${window.escapeHtml(ci(b.ci95))} · ${b.k}/${b.n} quyết định</li>`;
-  if (k.review_with_machine.idle_left_out) {
-    h += `<li class="muted">${k.review_with_machine.idle_left_out} lần mở bài quá ${k.idle_cap_minutes} phút không tính (người duyệt bỏ dở).</li>`;
-  }
-  if (k.rating_without_machine.idle_left_out) {
-    h += `<li class="muted">${k.rating_without_machine.idle_left_out} phiếu chấm mù mở quá ${k.idle_cap_minutes} phút không tính.</li>`;
-  }
-  h += "</ul>";
-  return h;
-}
-if (teacherTime) {
-  fetch("/api/v1/review/kpi")
-    .then((r) => (window.redirectToLoginIfExpired(r) ? null : r.ok ? r.json() : Promise.reject(r.status)))
-    .then((d) => {
-      if (!d) return;
-      window.clearBusy(teacherTime);
-      teacherTimeBody.innerHTML = teacherTimeView(d);
-    })
-    .catch(() => {
-      window.clearBusy(teacherTime);
-      teacherTimeBody.innerHTML = '<p class="error">Không tải được số đo thời gian.</p>';
     });
 }

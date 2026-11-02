@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_art.html" import terraces %}
+{% block title %}Quên mật khẩu · SpeakUp{% endblock %}
+{% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
+{% block content %}
+<div class="auth-split">
+  <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
+  <section class="auth-intro" aria-labelledby="auth-intro-h">
+    <p class="eyebrow">SpeakUp</p>
+    <h2 id="auth-intro-h">Đặt lại mật khẩu bằng mã gửi qua email</h2>
+    <ul class="auth-points">
+      <li>Nhập email của tài khoản, hệ thống gửi một mã 6 số, dùng được 10 phút.</li>
+      <li>Đặt lại xong, mọi thiết bị khác bị đăng xuất.</li>
+    </ul>
+  </section>
+
+  <section class="card auth-card" aria-labelledby="forgot-h">
+    <h1 id="forgot-h">Quên mật khẩu</h1>
+    {% if email_on %}
+    {#- D079: step 1 asks for a code, step 2 sets the password with it. -#}
+    <form id="fe" novalidate>
+      <label for="reset-email">Email</label>
+      <input id="reset-email" type="email" inputmode="email" autocomplete="username" required
+             autocapitalize="none" spellcheck="false">
+      <div class="button-row">
+        <button id="be" type="submit">Gửi mã qua email</button>
+      </div>
+      <div id="tbe" role="alert"></div>
+    </form>
+    <form id="fc" novalidate hidden>
+      <p class="notice notice-ok" id="sent-note" role="status"></p>
+      <label for="reset-code">Mã 6 số trong email</label>
+      <input id="reset-code" inputmode="numeric" autocomplete="one-time-code" required maxlength="6"
+             pattern="[0-9]{6}" spellcheck="false">
+      <label for="reset-password">Mật khẩu mới</label>
+      <input id="reset-password" type="password" autocomplete="new-password" required minlength="{{ min_length }}">
+      <label for="reset-again">Nhập lại mật khẩu mới</label>
+      <input id="reset-again" type="password" autocomplete="new-password" required>
+      <label class="check-row"><input type="checkbox" id="show"> Hiện mật khẩu đang gõ</label>
+      <div class="button-row">
+        <button id="bc" type="submit">Đặt mật khẩu mới</button>
+        <button id="resend" type="button" class="secondary">Gửi lại mã</button>
+      </div>
+      <div id="tbc" role="alert"></div>
+    </form>
+    {% else %}
+    <p class="notice" role="status">
+      Hệ thống chưa bật gửi email nên chưa gửi được mã. Báo giảng viên hoặc quản trị viên để nhận
+      mật khẩu tạm.
+    </p>
+    {% endif %}
+
+    <p class="muted auth-foot">
+      Không nhận được mã? Xem cả mục Spam, hoặc báo giảng viên hoặc quản trị viên để nhận mật khẩu
+      tạm. Tài khoản tạo bằng Google cũng đặt mật khẩu riêng ở đây, bằng chính email Google đó.
+    </p>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('forgot.js') }}"></script>{% endblock %}

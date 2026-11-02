@@ -54,7 +54,6 @@ billing_store = billing.store
 blobs = core_parts.state["blobs"]
 lessons = core_parts.state["lessons"]
 speech = speech_parts.state["speech"]
-studies = core_parts.state["studies"]
 
 
 @asynccontextmanager
@@ -66,7 +65,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="AI Assessor CEFR",
+    title="SpeakUp",
     description=(
         "AI-assisted assessment of English speaking against CEFR A1-C2.\n\n"
         "A study aid, not a certification service: the system produces an "

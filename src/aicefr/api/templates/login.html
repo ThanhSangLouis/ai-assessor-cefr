@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon, cube %}
 {% from "_art.html" import terraces %}
-{% block title %}Đăng nhập · AI Assessor CEFR{% endblock %}
+{% block title %}Đăng nhập · SpeakUp{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
 <div class="auth-split">
   {#- D037: the product page's terraces, coming in from behind the form. -#}
   <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
   <section class="auth-intro" aria-labelledby="auth-intro-h">
-    <p class="eyebrow">AI Assessor CEFR</p>
+    <p class="eyebrow">SpeakUp</p>
     <h2 id="auth-intro-h">Luyện nói có lộ trình, tiến bộ có bằng chứng</h2>
     {#- D031, D059: the product's six CEFR bands, A1 to C2. -#}
     <div class="cube-stage auth-cubes" aria-hidden="true"><div class="cube-row">{{ cube("A1", "tone-1", 52) }}{{ cube("A2", "tone-1", 72) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "tone-2", 120) }}{{ cube("C1", "is-solid", 144) }}{{ cube("C2", "is-solid", 168) }}</div></div>
@@ -21,15 +21,17 @@
 
   <section class="card auth-card" aria-labelledby="login-h">
     <h1 id="login-h">Đăng nhập</h1>
-    <p class="lede">Dùng mã bút danh do lớp cấp. Hệ thống không lưu họ tên thật.</p>
+    <p class="lede">Dùng email bạn đã đăng ký, hoặc đăng nhập bằng Google với cùng email đó.</p>
     {% if google_error %}
     <div class="notice notice-danger" role="alert">{{ google_error }}</div>
     {% endif %}
     <form id="f">
-      <label for="pseudonym">Mã bút danh</label>
-      <input id="pseudonym" name="pseudonym" autocomplete="username" required autofocus
-             autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
-      <p class="field-hint" id="pseudonym-hint">Ví dụ: SV-001, GV-02.</p>
+      {#- D071: the email. An account made before D071 that has no email yet
+          still signs in with its code (SV-001, GV-02) and is asked to add one. -#}
+      <label for="pseudonym">Email</label>
+      <input id="pseudonym" name="email" type="text" inputmode="email" autocomplete="username"
+             required autofocus autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
+      <p class="field-hint" id="pseudonym-hint">Tài khoản cũ chưa có email thì nhập mã tài khoản, ví dụ SV-001.</p>
 
       <label for="password">Mật khẩu</label>
       <div class="password-field">
@@ -55,29 +57,37 @@
     </a>
     {% if google_signup %}
     <p class="field-hint">
-      Lần đầu dùng Google, hệ thống tạo cho bạn một tài khoản sinh viên với bút danh ngẫu nhiên.
-      Hệ thống không lưu tên hay email Google của bạn.
+      Cùng một email là cùng một tài khoản, dù đăng nhập bằng mật khẩu hay Google. Email Google
+      chưa có tài khoản thì hệ thống tạo tài khoản sinh viên với tên và email đó.
     </p>
     {% else %}
     <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
     {% endif %}
+    {% elif google_missing_hint %}
+    <p class="field-hint" id="google-off">
+      Đăng nhập bằng Google chưa bật trên máy này: thiếu <code>AICEFR_GOOGLE_CLIENT_ID</code> và
+      <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
+    </p>
     {% endif %}
+    {% if self_signup %}
+    <p class="auth-help"><a href="/forgot" id="forgot-link">Quên mật khẩu?</a> Đặt lại bằng mã gửi qua email.</p>
+    {% else %}
     <details class="auth-help">
       <summary>Quên mật khẩu?</summary>
       <p>
-        Hệ thống không có email của bạn nên không gửi được thư đặt lại mật khẩu. Hãy báo giảng
-        viên hoặc quản trị viên của lớp: họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng
-        nhập tới bạn đặt mật khẩu mới. Nếu đã liên kết Google, bạn đăng nhập bằng Google rồi đổi
-        mật khẩu ở trang Tài khoản.
+        Hệ thống chưa gửi thư đặt lại mật khẩu. Hãy báo giảng viên hoặc quản trị viên của lớp:
+        họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng nhập tới bạn đặt mật khẩu mới.
+        Đã liên kết Google thì đăng nhập bằng Google.
       </p>
     </details>
+    {% endif %}
     <p class="muted auth-foot">
-      {% if google_enabled and google_signup %}
+      {% if self_signup %}
+      Sinh viên chưa có tài khoản? <a href="/signup" id="signup-link">Đăng ký</a>{% if google_enabled and google_signup %} hoặc dùng nút Google ở trên{% endif %}.
+      Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
+      {% elif google_enabled and google_signup %}
       Sinh viên chưa có tài khoản đăng ký bằng Google ở nút trên. Tài khoản giảng viên và quản trị
       viên do quản trị viên cấp.
-      {% else %}
-      Chưa có tài khoản thì liên hệ quản trị viên của lớp. Hệ thống không cho tự đăng ký vì mỗi
-      tài khoản phải gắn với một vai trò cụ thể.
       {% endif %}
     </p>
   </section>

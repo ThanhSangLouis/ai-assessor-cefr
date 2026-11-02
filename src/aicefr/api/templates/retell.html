@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Nói lại đề này · SpeakUp{% endblock %}
+{% block content %}
+{#- D069: the same task three times, shorter each time (4/3/2), right after its
+    report. Each round is measured like a lesson's free step and compared with
+    the first. The upgraded answer, when one was made, is read once before. -#}
+<p class="crumb"><a href="/report/{{ response_id }}">← Báo cáo bài nói</a></p>
+<div id="retell" data-response-id="{{ response_id }}" aria-busy="true">
+  <div class="page-head">
+    <h1><span class="head-icon">{{ icon("refresh") }}</span>Nói lại đề này</h1>
+    <p class="lede">Ba lượt cùng một đề, mỗi lượt ít thời gian hơn. Lặp lại khi đã quen ý giúp bạn nói
+      trôi chảy hơn; máy so mỗi lượt với lượt đầu.</p>
+  </div>
+
+  <section class="card" aria-labelledby="retell-task-h">
+    <h2 id="retell-task-h">Đề bài</h2>
+    <p class="prompt-text" id="retell-prompt"></p>
+    <ol class="retell-rounds" id="retell-rounds" aria-label="Ba lượt"></ol>
+  </section>
+
+  <details class="card retell-upgrade" id="retell-upgrade" hidden>
+    <summary><b>Đọc bản nâng cấp trước khi nói</b> <span class="muted">(gợi ý của AI)</span></summary>
+    <p class="muted small-note">Nghe và nhại theo một lần, chú ý các chỗ đổi. Khi ghi âm thì nói bằng lời của bạn, không đọc.</p>
+    <div id="retell-upgrade-text"></div>
+  </details>
+
+  <form class="card recorder-card" id="retell-form">
+    <h2 id="retell-rec-h">Lượt <span id="retell-round-no">1</span>: tối đa <span id="retell-round-max">60</span> giây</h2>
+    {% with submit_label="Nộp lượt này",
+             floor_seconds=0,
+             upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+      {% include "_recorder.html" %}
+    {% endwith %}
+    <div id="retell-wait" aria-live="polite"></div>
+  </form>
+
+  <section class="card" id="retell-results" aria-labelledby="retell-results-h" hidden>
+    <h2 id="retell-results-h">So với lượt đầu</h2>
+    <div id="retell-results-body" aria-live="polite"></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('shadow.js') }}"></script>
+<script src="{{ asset('retell.js') }}"></script>{% endblock %}

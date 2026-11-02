@@ -40,7 +40,7 @@ Phần nhìn — bố cục, màu ở hai giao diện, điện thoại — kiể
 | --- | --- |
 | W-NFR-2 — không tải tài nguyên từ ngoài | TC-UI-I01, TC-UI-E05 |
 | Đợt 12 — phông và logo | TC-UI-I01, TC-UI-I02, TC-UI-I03, TC-UI-I04, TC-UI-E05 |
-| Đợt 12 — trang giới thiệu | TC-UI-I05, TC-UI-E01, TC-UI-E02 |
+| Đợt 12 — trang giới thiệu | TC-UI-I05, TC-UI-E02 |
 | Đợt 12 — khối 3D dùng chung | TC-UI-I06, TC-UI-E04 |
 | Đợt 12 — mọi trang | TC-UI-I08, nhóm R |
 | W-NFR-3 — chuyển động là trang trí | TC-UI-I05, TC-UI-I06, TC-UI-I07, TC-UI-E03 |
@@ -55,7 +55,7 @@ Phần nhìn — bố cục, màu ở hai giao diện, điện thoại — kiể
 | TC-UI-I02 | `test_the_wheel_carries_the_fonts_and_their_licence` | `package-data` có `fonts/*.woff2` và `fonts/*.txt`; giấy phép OFL đi kèm |
 | TC-UI-I03 | `test_the_preloaded_fonts_are_the_ones_the_stylesheet_asks_for` | Hai thẻ tải trước trỏ đúng địa chỉ của `@font-face`, không có `?v=`; có tập vietnamese |
 | TC-UI-I04 | `test_the_mark_is_drawn_inline_with_names_of_its_own` | Logo nội tuyến có một bong bóng và ba thanh mang lớp `logo-*`, không mang lớp `bar`; favicon có ba thanh và bản màu tối |
-| TC-UI-I05 | `test_the_product_page_keeps_its_words_out_of_the_3d_scene` | Cảnh 3D `aria-hidden`, không chứa liên kết, nút, ô nhập hay `tabindex`; tiêu đề, hai neo `#how-it-works`, `#for-teachers` và `landing.js` có phiên bản |
+| TC-UI-I05 | `test_the_product_page_keeps_its_words_out_of_the_3d_scene` | Trang chủ không còn cảnh 3D (D078); tiêu đề và các phần vẫn đủ |
 | TC-UI-I06 | `test_the_blocks_on_other_screens_are_hidden_from_screen_readers` | Hàng khối ở trang đăng nhập và trang band đều `aria-hidden` |
 | TC-UI-I07 | `test_reduced_motion_stops_the_motion` | Luật giảm chuyển động dừng mọi hoạt ảnh và chuyển tiếp, tắt chuyển trang mờ dần; hiệu ứng khi cuộn và khi vào trang chỉ chạy khi người dùng không chọn giảm chuyển động; `landing.js` thoát ngay khi giảm chuyển động hoặc không có con trỏ chính xác |
 | TC-UI-I08 | `test_the_sidebar_is_frosted_only_where_it_holds_no_fixed_tab_bar` | Mọi luật đặt `backdrop-filter` cho thanh bên nằm trong `@media (min-width: 901px)` |
@@ -64,7 +64,6 @@ Phần nhìn — bố cục, màu ở hai giao diện, điện thoại — kiể
 
 | Mã | Test | Kiểm điều gì |
 | --- | --- | --- |
-| TC-UI-E01 | `test_the_scene_turns_toward_the_pointer_and_back` | Đưa con trỏ lên góc phải của phần mở đầu thì cảnh xoay theo; rời đi thì về góc nghỉ |
 | TC-UI-E02 | `test_a_step_card_leans_toward_the_pointer_and_settles` | Thẻ bước nghiêng về phía con trỏ (cạnh phải tiến ra), rời đi thì trả lại cho stylesheet |
 | TC-UI-E03 | `test_with_reduced_motion_nothing_follows_the_pointer` | Chọn giảm chuyển động: cảnh và thẻ không nhúc nhích |
 | TC-UI-E04 | `test_the_report_marks_the_estimated_band_among_the_three` | Bục band trên báo cáo: B1 là band ước lượng, B2 trong khoảng tin cậy, A2 nhạt nhất; bục ẩn với trình đọc màn hình, band vẫn viết ra bên cạnh |

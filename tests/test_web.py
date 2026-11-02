@@ -29,7 +29,6 @@ PAGES = [
     "/admin",
     "/practice",
     "/practice/PR-FLU-A2",
-    "/practice/results/abc123",
 ]
 
 # SRS section 11.3 forbids any wording that implies the system issues a certificate or
@@ -72,7 +71,19 @@ def test_displayed_thresholds_match_qc_module() -> None:
     Hardcoded values mean that every threshold change forgets the display, and the user
     reads one number while the machine applies another.
     """
-    t = client.get("/").text
+    # The submission page, where a student reads them before recording; the
+    # product page no longer quotes them (D068).
+    import importlib
+
+    from aicefr.api import main
+    from aicefr.storage.auth_repository import Role
+
+    importlib.reload(main)  # this test's own store, as conftest prepared it
+    main.app.state.auth_repo.create_account("SV-QC1", "matkhau-kiem-thu", Role.STUDENT)
+    student = TestClient(main.app)
+    body = {"pseudonym": "SV-QC1", "password": "matkhau-kiem-thu"}
+    assert student.post("/api/v1/auth/login", json=body).status_code == 200
+    t = student.get("/").text
     assert f"{int(audio_qc.MIN_DURATION_S)} đến {int(audio_qc.MAX_DURATION_S)} giây" in t
     assert f"{audio_qc.MAX_BYTES // (1024 * 1024)} MiB" in t
 
@@ -94,8 +105,23 @@ def test_no_external_resources_embedded() -> None:
         assert "https://" not in t
 
 
+def _signed_in(pseudonym: str, role: str) -> TestClient:
+    """A client signed in on this test's own store: these screens send a visitor to log in."""
+    import importlib
+
+    from aicefr.api import main
+    from aicefr.storage.auth_repository import Role
+
+    importlib.reload(main)
+    main.app.state.auth_repo.create_account(pseudonym, "matkhau-kiem-thu", Role(role))
+    c = TestClient(main.app)
+    body = {"pseudonym": pseudonym, "password": "matkhau-kiem-thu"}
+    assert c.post("/api/v1/auth/login", json=body).status_code == 200
+    return c
+
+
 def test_report_page_carries_the_response_id() -> None:
-    t = client.get("/report/xyz789").text
+    t = _signed_in("SV-WEB1", "student").get("/report/xyz789").text
     assert "xyz789" in t
 
 
@@ -108,7 +134,7 @@ def test_class_stats_page_is_not_mistaken_for_a_response_id() -> None:
     "duyệt bài stats" and then "không tìm thấy bài này" -- a page that is
     wrong in a way no 404 or exception ever reports.
     """
-    body = client.get("/review/stats").text
+    body = _signed_in("GV-WEB1", "teacher").get("/review/stats").text
     assert "Thống kê lớp" in body
     assert "Duyệt bài" not in body
 
@@ -199,3 +225,11 @@ def test_kieu_in_khong_an_toan_bo_nut() -> None:
     for rule in re.findall(r"([^{}]+)\{[^{}]*display:\s*none[^{}]*\}", block):
         selectors = [s.strip() for s in rule.split(",")]
         assert "button" not in selectors, "kiểu in đang ẩn mọi <button>, kể cả thẻ bằng chứng"
+
+
+def test_login_page_says_why_google_is_missing_outside_production() -> None:
+    """Without the Google keys the button is hidden; on a developer's machine the
+    page says why, so a missing key is not taken for a broken feature."""
+    t = client.get("/login").text
+    assert 'id="google-off"' in t
+    assert "AICEFR_GOOGLE_CLIENT_ID" in t
