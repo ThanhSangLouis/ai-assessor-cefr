@@ -102,7 +102,11 @@ def live_server(tmp_path_factory) -> Iterator[LiveServer]:
 
 @pytest.fixture
 def context(browser, live_server):
-    ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
+    ctx = browser.new_context(
+        base_url=live_server.base_url,
+        locale="vi-VN",
+        service_workers="block",  # D088
+    )
     ctx.set_default_timeout(20_000)
     yield ctx
     ctx.close()

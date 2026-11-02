@@ -74,5 +74,7 @@
 | Unit | `pytest tests/test_d088_push_unit.py` | 16 PASS (TC-PW-U01 có 12 trường hợp) |
 | Integration | `pytest tests/test_d088_push.py` | 7 PASS |
 | E2E | `AICEFR_TEST_MONGO=mongodb://localhost:27041 pytest tests/e2e/test_pwa_e2e.py` (MongoDB 7 trong Docker) | 4 PASS |
+| Toàn bộ (không e2e) | `pytest -m "not e2e and not slow"` trên MongoDB và Redis thật | 1.467 PASS, 20 SKIP |
+| Toàn bộ e2e | `pytest -m e2e` | 62 PASS. Lần đầu 1 FAIL: `page.route` của Playwright không thấy request do service worker gửi, nên test nút Google thấy trang trống. Sửa: service worker chỉ chuyển tiếp lượt mở trang bằng GET; các test e2e khác chặn service worker (`service_workers="block"`), riêng `test_pwa_e2e.py` cho phép |
 
 Giới hạn (`NOT_RUN`): Chromium của Playwright không có dịch vụ push (thiếu khoá Google), nên chặng máy chủ → dịch vụ push thật → trình duyệt chưa kiểm tự động; hai nửa của nó được kiểm riêng (TC-PW-U03 mã hoá và ký đúng chuẩn, TC-PW-E02 service worker nhận tin). Kiểm thủ công trên production sau khi chủ dự án dán khoá VAPID: bật thông báo trên Chrome Android và Safari iOS (đã thêm vào Màn hình chính), đóng tab, nộp bài.

@@ -50,7 +50,9 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(caches.match(ICON).then((hit) => hit || fetch(req)));
     return;
   }
-  if (req.mode !== "navigate") return;
+  // Only a page being opened, and only by GET: a form sent by POST (and every
+  // API call) goes to the network exactly as without a worker.
+  if (req.mode !== "navigate" || req.method !== "GET") return;
   e.respondWith(
     fetch(req).catch(
       () => new Response(OFFLINE, { headers: { "Content-Type": "text/html; charset=utf-8" } })

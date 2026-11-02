@@ -16,7 +16,6 @@ import pytest
 pytest.importorskip("playwright.sync_api")
 
 from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
-    context,
     live_server,
     login,
     wait_until,
@@ -35,6 +34,15 @@ def browser():
         b = p.chromium.launch(channel="chromium")
         yield b
         b.close()
+
+
+@pytest.fixture
+def context(browser, live_server):
+    """As test_practice_e2e's, with the service worker allowed: it is what is tested."""
+    ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
+    ctx.set_default_timeout(15_000)
+    yield ctx
+    ctx.close()
 
 
 def controlled(page) -> None:
