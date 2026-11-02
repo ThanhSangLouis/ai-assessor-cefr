@@ -6817,6 +6817,24 @@ button:not(:disabled):hover,
 .retell-round h3 { margin: 0; }
 .retell-round audio { width: 100%; }
 
+/* D089: saying again the words the machine heard unclearly. */
+.drill-callout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-2) 0; font-size: var(--t-sm); color: var(--fg-muted); }
+.drill-callout .button { margin: 0; }
+.drill-words { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0; margin: var(--sp-3) 0 0; list-style: none; }
+.drill-word { display: inline-flex; align-items: center; gap: var(--sp-2); margin: 0; padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--bg-elevated); color: var(--fg); font-weight: 600; cursor: pointer; }
+.drill-word.is-current { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.drill-word.is-done { color: var(--fg-muted); }
+.drill-stages { display: grid; gap: var(--sp-4); padding: 0; margin: 0; list-style: none; }
+.drill-stages h3 { margin: 0 0 var(--sp-2); font-size: var(--t-md); }
+.drill-stages .button-row { margin-top: 0; }
+.drill-phrase { margin: 0 0 var(--sp-3); font-size: var(--t-lg); line-height: 1.6; }
+.drill-phrase mark { padding: 0 2px; background: color-mix(in srgb, var(--warn) 22%, transparent); border-bottom: 2px dotted var(--warn); color: inherit; }
+.drill-result:empty { display: none; }
+.drill-result { display: grid; gap: var(--sp-2); margin-top: var(--sp-3); }
+.drill-result p { margin: 0; }
+.drill-ok { color: var(--ok); font-weight: 600; }
+.drill-miss { color: var(--warn); font-weight: 600; }
+
 /* D070: shadowing the upgraded answer, the phrase book, the habit charts. */
 .shadow { display: grid; gap: var(--sp-2); }
 .shadow-controls { align-items: center; }

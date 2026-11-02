@@ -56,11 +56,12 @@
   }
 
   // A play button for one phrase or sentence; nothing when there is no voice.
-  window.speakButton = function (text, label) {
+  // `rate` slows the voice down, e.g. 0.7 for a word said again (D089).
+  window.speakButton = function (text, label, rate) {
     if (!synth) return "";
     return (
-      `<button type="button" class="button secondary small speak-one" data-say="${escapeHtml(text)}">` +
-      `${escapeHtml(label || "Nghe")}</button>`
+      `<button type="button" class="button secondary small speak-one" data-say="${escapeHtml(text)}"` +
+      `${rate ? ` data-rate="${Number(rate)}"` : ""}>${escapeHtml(label || "Nghe")}</button>`
     );
   };
   document.addEventListener("click", async (e) => {
@@ -69,7 +70,7 @@
     const voice = await voiceReady();
     if (!voice) return window.toast("Trình duyệt này không có giọng đọc tiếng Anh.", "error");
     synth.cancel();
-    say(b.dataset.say, voice, 0.9);
+    say(b.dataset.say, voice, Number(b.dataset.rate) || 0.9);
   });
 
   window.setUpShadowing = async function (host, text) {

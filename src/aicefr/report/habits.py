@@ -69,3 +69,23 @@ def _movement(values: list[float], better: str) -> dict | None:
         "toward_better": went == better,
         "n": cut,
     }
+
+
+def clarity_series(rows: list[dict]) -> dict:
+    """The share of words the machine heard unclearly, as one more habit (D089).
+
+    Rows come from `Repository.unsure_series`, oldest first, already in percent.
+    Not a lever of the scoring model, so not in BETTER: it is the number the
+    word drill is meant to move, and the learner sees whether it does.
+    """
+    points = [
+        {"at": r["created_at"], "response_id": r["response_id"], "value": r["value"]} for r in rows
+    ]
+    return {
+        "feature": "unsure_share",
+        "label": "Từ máy nghe chưa rõ",
+        "unit": "% số từ",
+        "better": "down",
+        "points": points,
+        "movement": _movement([p["value"] for p in points], "down"),
+    }

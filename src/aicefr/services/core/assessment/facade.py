@@ -74,6 +74,23 @@ class AssessmentFacade:
         }
 
     @exposed
+    def drill_source(self, account_id: str, response_id: str) -> dict | None:
+        """The transcript's words of one of this learner's own scored responses (D089).
+
+        None for someone else's response, one without a result or one with no
+        transcript: the caller answers 404 either way.
+        """
+        if self.repo.owner_of(response_id) != account_id:
+            return None
+        report = self.repo.get(response_id)
+        if report is None or not report.was_scored or report.asr is None:
+            return None
+        return {
+            "response_id": response_id,
+            "words": [w.model_dump(mode="json") for w in report.asr.words],
+        }
+
+    @exposed
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         return self.repo.progress_series(account_id, limit)
 

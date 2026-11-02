@@ -406,5 +406,32 @@
       ],
       "unique": true
     }
+  ],
+  "word_drill": [
+    {
+      "name": "i_account_id_passed_updated_at",
+      "keys": [
+        "account_id",
+        "passed",
+        "updated_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_account_id_response_id_word",
+      "keys": [
+        "account_id",
+        "response_id",
+        "word"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_drill_id",
+      "keys": [
+        "drill_id"
+      ],
+      "unique": true
+    }
   ]
 }

@@ -796,6 +796,26 @@ def _d088_push_subscription(db: Database, target: str) -> None:
     )
 
 
+def _d089_word_drill(db: Database, target: str) -> None:
+    """The words a learner says again from one of their recordings: `word_drill` (D089).
+
+    One document per learner, response and word, holding its takes. Nothing to
+    move: the collection is new, and a `review_item` keeps its own shape (a
+    word sent to review from a drill points back with `drill_id`).
+    """
+    ensure_indexes(
+        db,
+        {
+            "word_drill": [
+                (("drill_id",), True),
+                (("account_id", "response_id", "word"), True),
+                (("account_id", "passed", "updated_at"), False),
+            ]
+        },
+        "migration-18",
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -830,6 +850,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(
         17, "push_subscription: a browser's Web Push endpoint (D088)", _d088_push_subscription
     ),
+    Migration(18, "word_drill: words said again from a recording (D089)", _d089_word_drill),
 )
 
 LATEST = MIGRATIONS[-1].version

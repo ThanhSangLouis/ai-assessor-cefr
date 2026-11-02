@@ -131,7 +131,8 @@ def test_the_progress_view_carries_each_habit_over_the_assessments(m):
     for rid in rids:
         scored(m, rid)
     got = student.get("/api/v1/me/progress").json()["habits"]
-    assert [h["feature"] for h in got] == list(habits.NAMES)
+    # D089 adds the share of unclear words after the four habits of D070.
+    assert [h["feature"] for h in got] == [*habits.NAMES, "unsure_share"]
     pace = got[0]
     assert pace["label"] == "Tốc độ nói" and pace["better"] == "up"
     assert [p["response_id"] for p in pace["points"]] == rids

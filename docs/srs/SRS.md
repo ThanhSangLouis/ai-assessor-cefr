@@ -41,6 +41,7 @@
 | **1.17** | **01/11/2026** | **D079..D085.** Email: mã quên mật khẩu, xác minh email, nhắc học (FR-92..FR-94). D080 tên hiển thị SpeakUp. D081 gỡ mã khôi phục: quên mật khẩu bằng mã qua email, email tắt thì nhờ quản trị viên. D082 việc duyệt tách thành `ReviewSession`. D083 gỡ bài luyện theo nhiệm vụ: gạch AC-40.2, 40.4, 41.1, 41.4, 42.3, 43.1, 44.1, 44.3, FR-42, FR-44; ngân hàng bài và luật đo mục tiêu ở lại cho bài học. D084 đơn nạp lượt tách `Order` và `Payment`. D085 `LessonPath.builtIn` thay `sample`. |
 | **1.18** | **02/11/2026** | **D086.** +1 FR: FR-95 thông báo trực tiếp qua Server-Sent Events: học viên biết bài đã chấm xong và đã được duyệt, hàng chờ duyệt tự cập nhật. FR-92 bỏ câu còn nhắc mã khôi phục (đã gỡ ở D081). | D086 (APPROVED) |
 | **1.19** | **02/11/2026** | **D088.** +1 FR: FR-96 cài SpeakUp như ứng dụng (PWA) và thông báo đẩy tới thiết bị của học viên khi bài chấm xong hay đã được duyệt; collection `push_subscription` (lược đồ phiên bản 17). | D088 (APPROVED) |
+| **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1600,6 +1601,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-96.5** — *Given* học viên đã bật thông báo, *When* giảng viên duyệt hoặc đóng bài, *Then* thiết bị nhận "Giảng viên đã duyệt bài nói" kèm đường dẫn tới báo cáo (`test_a_teachers_decision_reaches_the_learners_devices`). |
 | **AC-96.6** — *Given* một thông báo, *When* gửi tới dịch vụ push, *Then* nó được ký bằng khoá VAPID của máy chủ và mã hoá để chỉ trình duyệt đọc được (`test_a_real_message_is_signed_and_only_the_browser_can_read_it`). |
 | **AC-96.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* mọi trình duyệt nhận thông báo của người đó cũng bị xoá (`test_erasing_a_participant_forgets_their_browsers`). |
+
+### FR-97 — Luyện lại từ máy nghe chưa rõ (D089)
+
+**Mô tả:** Từ tô cam trên bản chép lời là từ máy nghe chưa rõ. Từ báo cáo, học viên mở trang luyện lại các từ đó (tối đa 8 từ mỗi bài, từ kém rõ nhất trước). Mỗi từ có bốn bước: nghe lại đúng đoạn mình nói, nghe giọng mẫu đọc chậm từ và cả cụm, đọc mẹo khi từ rơi vào một trong năm lỗi hay gặp của người Việt, rồi nói lại cả cụm 3–4 từ để máy chấm. Máy nghe rõ từ đó hai lần liền là xong từ; lượt chưa rõ đưa từ vào ôn ngắt quãng. Trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài đánh giá và các từ đang luyện dở. Giao diện nói rõ từ màu cam là máy nghe chưa rõ, chưa chắc là phát âm sai; giọng có chất Việt không phải lỗi; không hứa tăng band.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-97.1** — *Given* một bài đánh giá đã có điểm của học viên, *When* mở trang luyện lại từ, *Then* chỉ chủ bài xem và luyện được; người khác nhận 404, giảng viên và quản trị nhận 403 (`test_only_the_owner_of_a_scored_response_practises_its_words`). |
+| **AC-97.2** — *Given* bản chép lời có từ máy nghe chưa rõ, *When* lấy danh sách luyện, *Then* mỗi từ có đoạn ghi âm của nó, cụm 3–4 từ quanh nó và mẹo khi chính tả cho phép; từ ngập ngừng, số và từ trùng bị bỏ (`test_the_unclear_words_are_offered_with_their_place_phrase_and_tip`). |
+| **AC-97.3** — *Given* học viên nói lại cụm, *When* máy nghe rõ từ đó hai lượt liền, *Then* từ là đã xong; một lượt chưa rõ đưa từ vào ôn ngắt quãng với ngày đến hạn (`test_two_clear_takes_close_a_word_and_a_miss_sends_it_to_review`). |
+| **AC-97.4** — *Given* một lượt không đo được (im lặng, không phải tiếng Anh), *When* gửi, *Then* lượt đó không tính và học viên được nhắc nói lại (`test_a_take_nothing_could_be_measured_from_does_not_count`). |
+| **AC-97.5** — *Given* học viên có các bài đánh giá, *When* mở trang Tiến độ, *Then* có đường "Từ máy nghe chưa rõ" theo phần trăm số từ mỗi bài (thấp hơn là tốt) và danh sách từ đang luyện dở (`test_progress_shows_the_unclear_share_and_the_open_words`). |
+| **AC-97.6** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các từ luyện lại của người đó cũng bị xoá (`test_erasing_a_participant_forgets_their_drills`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
