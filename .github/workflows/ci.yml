@@ -1,6 +1,7 @@
 # CI of the project (W7): the submission repository's own guards (Markdown
 # links, forbidden files) plus the four jobs of the service architecture --
-# format, lint and tests; MongoDB and Redis; images and compose; secret scan.
+# format, lint and tests; MongoDB and Redis; images and compose (with a
+# Trivy scan, D087); secret scan. CodeQL runs in codeql.yml.
 # Ported from ThanhSangLouis/ai-assessor-cefr@059fa28 (.github/workflows/ci.yml).
 #
 # Only ".[dev]" for the main job: the `asr` and `vad` extras pull Whisper and
@@ -174,6 +175,24 @@ jobs:
             owner=$(stat -c %u "$d")
             [ "$owner" = 10001 ] || { echo "::error::$d thuoc uid $owner, phai la 10001 (aicefr)"; exit 1; }
             echo "$d ton tai, thuoc uid 10001"'
+      # D087: known vulnerabilities in the two images (OS packages and every
+      # Python package, pip's vendored copies included). A CRITICAL one with a
+      # fix fails the build; HIGH ones are listed in the job summary to be
+      # fixed, without blocking a deploy on a CVE published overnight.
+      - name: Quet lo hong anh (Trivy)
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy"
+          scan() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$RUNNER_TEMP/trivy:/root/.cache" aquasec/trivy:0.69.3 \
+              image --quiet --scanners vuln --ignore-unfixed --table-mode detailed "$@"
+          }
+          for img in aicefr-service:ci aicefr-speech:ci; do
+            { echo "### $img"; echo '```'
+              scan --severity HIGH,CRITICAL --format table "$img"
+              echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            scan --severity CRITICAL --exit-code 1 --format table "$img"
+          done
 
   quet-bi-mat:
     name: Quet lo khoa bi mat
