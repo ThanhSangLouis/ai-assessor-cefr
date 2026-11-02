@@ -552,11 +552,123 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
   }
 }
 
+// ---------------------------------------------------------------- app and push
+// D088: the service worker makes SpeakUp installable and turns a Web Push
+// message into a notification (sw.js). `window.ui.push` is what the account
+// page's switch uses; signing out turns notifications off on this browser, so
+// a shared computer does not keep showing the last person's results.
+{
+  const worker = "serviceWorker" in navigator;
+  const ready = worker
+    ? navigator.serviceWorker
+        .register("/sw.js")
+        .then(() => navigator.serviceWorker.ready)
+        .catch(() => null)
+    : Promise.resolve(null);
+  const pushable = worker && "PushManager" in window && "Notification" in window;
+  const bytes = (b64url) => {
+    const b64 = b64url.replace(/-/g, "+").replace(/_/g, "/");
+    const raw = atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4));
+    return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+  };
+  const sameKey = (sub, key) => {
+    const held = sub.options && sub.options.applicationServerKey;
+    if (!held) return true;
+    const a = new Uint8Array(held);
+    const b = bytes(key);
+    return a.length === b.length && a.every((x, i) => x === b[i]);
+  };
+  const send = (method, body) =>
+    fetch("/api/v1/me/push", {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  const config = () =>
+    fetch("/api/v1/me/push")
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .catch(() => ({ enabled: false }));
+
+  // This browser's subscription under the server's key, made if `create`.
+  async function subscription(cfg, create) {
+    const reg = await ready;
+    if (!reg) return null;
+    let sub = await reg.pushManager.getSubscription();
+    if (sub && !sameKey(sub, cfg.public_key)) {
+      await sub.unsubscribe(); // the server has a new key pair
+      sub = null;
+    }
+    if (!sub && create) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: bytes(cfg.public_key),
+      });
+    }
+    return sub;
+  }
+
+  window.ui.push = {
+    // "unsupported", "unavailable" (server has no keys), "denied", "on", "off".
+    async state() {
+      if (!pushable) return "unsupported";
+      const cfg = await config();
+      if (!cfg.enabled) return "unavailable";
+      if (Notification.permission === "denied") return "denied";
+      if (Notification.permission !== "granted") return "off";
+      return (await subscription(cfg, false)) ? "on" : "off";
+    },
+    async enable() {
+      const cfg = await config();
+      if (!pushable || !cfg.enabled) return false;
+      if ((await Notification.requestPermission()) !== "granted") return false;
+      const sub = await subscription(cfg, true);
+      return Boolean(sub) && (await send("PUT", sub.toJSON())).ok;
+    },
+    async disable() {
+      const reg = await ready;
+      const sub = reg ? await reg.pushManager.getSubscription() : null;
+      if (!sub) return true;
+      await send("DELETE", { endpoint: sub.endpoint }).catch(() => {});
+      return sub.unsubscribe();
+    },
+  };
+
+  // A browser that has notifications on tells the server again, once a
+  // session: the server forgets a browser its push service reported gone.
+  if (pushable && document.body.classList.contains("has-sidebar")) {
+    let told = false;
+    try {
+      told = sessionStorage.getItem("push-told") === "1";
+    } catch (err) {
+      told = false;
+    }
+    if (!told && Notification.permission === "granted") {
+      config()
+        .then((cfg) => (cfg.enabled ? subscription(cfg, false) : null))
+        .then((sub) => (sub ? send("PUT", sub.toJSON()) : null))
+        .then(() => {
+          try {
+            sessionStorage.setItem("push-told", "1");
+          } catch (err) {
+            /* private mode: tell again next page */
+          }
+        })
+        .catch(() => {});
+    }
+  }
+}
+
 // ---------------------------------------------------------------- session
 const logoutLink = document.getElementById("logout-link");
 if (logoutLink) {
   logoutLink.addEventListener("click", async (e) => {
     e.preventDefault();
+    // D088: no more notifications on this browser once signed out; at most a
+    // second and a half, the sign-out must not wait on a push service.
+    await Promise.race([
+      window.ui.push.disable().catch(() => {}),
+      new Promise((r) => setTimeout(r, 1500)),
+    ]);
     await fetch("/api/v1/auth/logout", { method: "POST" });
     location.href = "/login";
   });

@@ -782,6 +782,20 @@ def _d085_built_in(db: Database, target: str) -> None:
         db["path"].update_many({"sample": {"$exists": True}}, {"$rename": {"sample": "built_in"}})
 
 
+def _d088_push_subscription(db: Database, target: str) -> None:
+    """Where to send a browser's notifications: `push_subscription` (D088).
+
+    One document per browser that allowed SpeakUp's notifications, keyed by
+    the push service's endpoint; an account may have several (a phone and a
+    laptop). Nothing to move: the collection is new.
+    """
+    ensure_indexes(
+        db,
+        {"push_subscription": [(("endpoint",), True), (("account_id",), False)]},
+        "migration-17",
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -813,6 +827,9 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(14, "practice tasks and their attempts removed (D083)", _d083_practice_tasks),
     Migration(15, "payment: the gateway's part of an order on its own (D084)", _d084_payment),
     Migration(16, "path: sample renamed built_in (D085)", _d085_built_in),
+    Migration(
+        17, "push_subscription: a browser's Web Push endpoint (D088)", _d088_push_subscription
+    ),
 )
 
 LATEST = MIGRATIONS[-1].version

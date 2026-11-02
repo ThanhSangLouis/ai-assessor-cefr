@@ -15,6 +15,7 @@ from pathlib import Path
 from fastapi import HTTPException
 
 from aicefr.config import Settings
+from aicefr.notify.push import PushSender
 from aicefr.platform.bus import MessageBus
 from aicefr.platform.live import Live
 from aicefr.ports import BlobStore
@@ -61,6 +62,7 @@ class Services:
     classrooms: ClassroomRepository | None = None  # D054
     replays: ReplayRepository | None = None  # D056
     live: Live | None = None  # D086
+    push: PushSender | None = None  # D088
 
     @property
     def upload_dir(self) -> Path:

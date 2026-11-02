@@ -12,6 +12,10 @@
   <link rel="preload" href="/static/fonts/roboto-vietnamese-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{ asset('style.css') }}">
   <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
+  {#- D088: installable as an app; the colour of the browser's bar on a phone. -#}
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#1e3a5f">
   {#- D028: an account still on the temporary password an administrator handed
       out can only choose a new one; every page sends it there. The API refuses
       everything else too (deps.PASSWORD_CHANGE_PATHS), this only saves a click. -#}

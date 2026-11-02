@@ -575,3 +575,63 @@ loadMe();
   });
   load();
 })();
+
+// ---------------------------------------------------------------- notifications
+// D088: the switch for this device's notifications. What the browser allows
+// decides what the card says; the work is window.ui.push (common.js).
+(function () {
+  const card = document.getElementById("push-card");
+  if (!card) return;
+  const stateEl = document.getElementById("push-state");
+  const button = document.getElementById("push-toggle");
+  const SAYS = {
+    on: ["Đang bật trên thiết bị này.", "Tắt thông báo"],
+    off: ["Đang tắt trên thiết bị này.", "Bật thông báo"],
+    denied: [
+      "Trình duyệt đang chặn thông báo của SpeakUp. Mở cài đặt trang (biểu tượng cạnh địa chỉ) " +
+        "để cho phép, rồi tải lại trang này.",
+      null,
+    ],
+    unsupported: [
+      /iPhone|iPad/.test(navigator.userAgent)
+        ? "Trên iPhone và iPad: bấm Chia sẻ, chọn Thêm vào Màn hình chính, rồi mở SpeakUp từ đó " +
+          "để bật thông báo."
+        : "Trình duyệt này không hỗ trợ thông báo đẩy.",
+      null,
+    ],
+  };
+  let current = "off";
+
+  async function paint() {
+    current = await window.ui.push.state();
+    if (current === "unavailable") {
+      card.hidden = true; // the server has no keys: nothing to offer
+      return;
+    }
+    const [says, action] = SAYS[current] || SAYS.off;
+    card.hidden = false;
+    stateEl.textContent = says;
+    button.hidden = !action;
+    if (action) button.textContent = action;
+  }
+
+  button.addEventListener("click", async () => {
+    button.disabled = true;
+    try {
+      if (current === "on") {
+        await window.ui.push.disable();
+        window.toast("Đã tắt thông báo trên thiết bị này.", "ok");
+      } else if (await window.ui.push.enable()) {
+        window.toast("Đã bật thông báo. SpeakUp sẽ báo khi bài nói chấm xong.", "ok");
+      } else if (Notification.permission !== "denied") {
+        window.toast("Chưa bật được thông báo. Thử lại sau.", "warn");
+      }
+    } catch (err) {
+      window.toast("Chưa bật được thông báo trên trình duyệt này.", "error");
+    } finally {
+      button.disabled = false;
+      paint();
+    }
+  });
+  paint();
+})();

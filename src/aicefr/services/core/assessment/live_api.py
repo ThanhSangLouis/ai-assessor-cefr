@@ -26,6 +26,7 @@ from fastapi.responses import StreamingResponse
 from aicefr.api.deps import require_login
 from aicefr.contracts import ResponseStatus
 from aicefr.platform.live import TooManyConnections, stream
+from aicefr.services.core.assessment import push_api
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account, Role
 
@@ -104,6 +105,7 @@ def response_finished(response_id: str, owner_id: str | None = None) -> None:
     s.live.notify(
         RESPONSE_FINISHED, {"response_id": response_id, "status": status}, accounts=[owner_id]
     )
+    push_api.tell_device(owner_id, response_id, status, reviewed=False)  # D088
     if status == ResponseStatus.REVIEW_REQUIRED.value:
         queue_changed(owner_id)
 
@@ -117,4 +119,5 @@ def review_done(response_id: str) -> None:
     owner_id = s.repo.owner_of(response_id)
     status = (s.repo.status_of(response_id) or {}).get("status")
     s.live.notify(REVIEW_DONE, {"response_id": response_id, "status": status}, accounts=[owner_id])
+    push_api.tell_device(owner_id, response_id, status, reviewed=True)  # D088
     queue_changed(owner_id)

@@ -250,6 +250,16 @@ class Settings:
     # a comment every heartbeat keeps proxies from closing it while idle.
     live_max_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_MAX_SECONDS", 900.0))
     live_heartbeat_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_HEARTBEAT", 20.0))
+    # D088: Web Push. The VAPID key pair signs every message to a browser's
+    # push service (`python -m aicefr.maintenance_cli vapid` makes one); the
+    # subject is a contact the push services may write to. No keys, no push.
+    vapid_public_key: str = field(default_factory=lambda: os.getenv("AICEFR_VAPID_PUBLIC_KEY", ""))
+    vapid_private_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_VAPID_PRIVATE_KEY", "")
+    )
+    vapid_subject: str = field(
+        default_factory=lambda: os.getenv("AICEFR_VAPID_SUBJECT", "mailto:no-reply@speakup.fit")
+    )
     # The key internal calls and the gateway's account header carry. Must be
     # the same long random string on every service of a deployment.
     internal_token: str = field(default_factory=lambda: os.getenv("AICEFR_INTERNAL_TOKEN", ""))

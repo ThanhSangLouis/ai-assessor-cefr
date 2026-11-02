@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- D088: the home-screen icon, made from the product mark (favicon.svg).
+       "maskable" fills the square and keeps the mark inside the 80% safe zone. -->
+  <rect width="512" height="512" rx="112" fill="#1e3a5f"/>
+  <g transform="translate(96 100) scale(10)">
+    <path fill="#ffffff" d="M9 3h14a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7h-9l-5.4 4.4c-.5.4-1.2.1-1.2-.6v-4a7 7 0 0 1-5.4-6.8v-8a7 7 0 0 1 7-7z"/>
+    <rect fill="#1e3a5f" opacity="0.6" x="6.9" y="13.5" width="4.6" height="7" rx="2.3"/>
+    <rect fill="#1e3a5f" opacity="0.8" x="13.7" y="10" width="4.6" height="10.5" rx="2.3"/>
+    <rect fill="#1e3a5f" x="20.5" y="6.5" width="4.6" height="14" rx="2.3"/>
+  </g>
+</svg>
