@@ -1,4 +1,4 @@
-"""The D028..D078 test plans and their test code must name the same test cases.
+"""The D028..D086 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
@@ -144,6 +144,16 @@ PLANS = [
         },
         "85",
         10,
+    ),
+    Plan(
+        "D086",
+        ROOT / "docs" / "test" / "TEST_PLAN_D086.md",
+        {
+            "TC-LV-U": ROOT / "tests" / "test_d086_live_unit.py",
+            "TC-LV-I": ROOT / "tests" / "test_d086_live_events.py",
+        },
+        "95",
+        5,
     ),
 ]
 LAYERS = [(plan, prefix) for plan in PLANS for prefix in plan.layers]

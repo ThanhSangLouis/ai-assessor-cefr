@@ -12,6 +12,7 @@ import threading
 from aicefr.config import Settings
 from aicefr.infra.blobs import blob_store
 from aicefr.platform.bus import MessageBus
+from aicefr.platform.live import Live, LiveHub, end_streams_on_sigterm, live_from_url
 from aicefr.platform.rpc import internal_router
 from aicefr.services import Parts, Peers
 from aicefr.services.core.assessment import (
@@ -19,6 +20,7 @@ from aicefr.services.core.assessment import (
     classes_api,
     coach_api,
     context,
+    live_api,
     replay_api,
     responses_api,
     review_api,
@@ -39,6 +41,11 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     blobs = blob_store(settings)
     repo = Repository(store, blobs=blobs)
     tasks = TaskRepository(store)
+    # D086: the browsers' live streams held by this process, and the channel
+    # that carries an event to every process holding some (Redis beside a
+    # Redis bus).
+    hub = LiveHub()
+    live = Live(hub, live_from_url(settings.bus_url, hub))
     context.configure(
         context.Services(
             settings=settings,
@@ -49,6 +56,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             peers=peers,
             classrooms=ClassroomRepository(store),
             replays=ReplayRepository(store),
+            live=live,
         )
     )
 
@@ -57,6 +65,8 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     stop = threading.Event()
 
     def startup() -> None:
+        live.channel.start()
+        end_streams_on_sigterm(hub)
         # With an in-process bus, whatever was queued or running died with the
         # last process: close it now rather than leave the submitter waiting.
         # A broker keeps the jobs, so they are left to finish.
@@ -77,6 +87,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         routers=[
             responses_api.router,
             review_api.router,
+            live_api.router,
             admin_api.router,
             classes_api.router,
             replay_api.router,

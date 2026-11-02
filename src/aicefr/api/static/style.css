@@ -1469,6 +1469,7 @@ table.kv th { width: 40%; white-space: normal; }
 .toast.toast-error { border-left-color: var(--danger); }
 .toast.toast-warn { border-left-color: var(--warn); }
 .toast .toast-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.toast .toast-link { font-weight: 600; white-space: nowrap; }
 .toast .toast-close {
   margin: 0;
   padding: 0 var(--sp-1);

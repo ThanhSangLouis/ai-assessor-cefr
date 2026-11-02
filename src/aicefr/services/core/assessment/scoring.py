@@ -25,6 +25,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 
 from aicefr.contracts import ProcessingRequest, ReasonCode, Response, ResponseStatus
+from aicefr.services.core.assessment import live_api
 from aicefr.services.core.assessment.context import active_model_name, active_qc, svc
 from aicefr.storage.task_repository import Task, task_message
 
@@ -105,6 +106,7 @@ def on_scoring(message: dict) -> None:
             rid, ResponseStatus.FAILED, [ReasonCode(message["failed"])], only_from=WAITING
         )
         settle_charge(rid)
+        live_api.response_finished(rid, message.get("account_id"))
         return
     try:
         report = Response.model_validate(message["report"])
@@ -122,6 +124,7 @@ def on_scoring(message: dict) -> None:
             rid, ResponseStatus.FAILED, [ReasonCode.PROCESSING_INTERRUPTED], only_from=WAITING
         )
     settle_charge(rid)
+    live_api.response_finished(rid, message.get("account_id"))
 
 
 # A response still QUEUED this many timeouts after it was submitted was lost
@@ -156,6 +159,7 @@ def sweep_overdue(now: datetime | None = None) -> list[str]:
         logger.warning("job quá hạn %ss, đánh dấu FAILED: %s", limit, failed)
     for rid in failed:
         settle_charge(rid)
+        live_api.response_finished(rid)
     return failed
 
 

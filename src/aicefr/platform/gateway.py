@@ -30,7 +30,13 @@ PREFIXES: dict[str, str] = {
     # Every other path is a page or a static file.
     "/": "web",
 }
-EXACT: dict[str, str] = {}
+EXACT: dict[str, str] = {
+    # D086: the browser's live events, one long response per tab.
+    "/api/v1/me/events": "core",
+}
+# Responses that stay open and must reach the browser frame by frame: no
+# buffering, and a read timeout longer than the stream lives (AICEFR_LIVE_MAX_SECONDS).
+STREAMS = frozenset({"/api/v1/me/events"})
 
 SERVICES = ("core", "web")
 INTERNAL_PREFIX = "/internal/"
@@ -104,17 +110,30 @@ _LOCATION = """
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Forwarded-Proto $scheme;
         set $aicefr_upstream {service}:8000;
-        proxy_pass http://$aicefr_upstream;
+        proxy_pass http://$aicefr_upstream;{extra}
     }}
 """
+
+_STREAM = """
+        # Server-Sent Events (D086): each frame goes out as it comes.
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 1h;"""
 
 
 def nginx_config() -> str:
     locations = "".join(
-        _LOCATION.format(modifier="= ", path=path, service=service)
+        _LOCATION.format(
+            modifier="= ",
+            path=path,
+            service=service,
+            extra=_STREAM if path in STREAMS else "",
+        )
         for path, service in EXACT.items()
     ) + "".join(
-        _LOCATION.format(modifier="", path=path, service=service)
+        _LOCATION.format(modifier="", path=path, service=service, extra="")
         for path, service in sorted(PREFIXES.items(), key=lambda kv: -len(kv[0]))
     )
     return _HEAD.format(locations=locations)

@@ -56,7 +56,10 @@ COPY --from=builder /opt/venv /opt/venv
 USER aicefr
 # No --reload in production. --proxy-headers trusts X-Forwarded-* only from
 # FORWARDED_ALLOW_IPS (the gateway's address), never from everyone.
-CMD ["sh", "-c", "exec uvicorn --factory aicefr.services.${AICEFR_SERVICE:?set AICEFR_SERVICE}.app:create_app --host 0.0.0.0 --port 8000 --proxy-headers"]
+# --timeout-graceful-shutdown: a live stream (D086) never ends by itself before
+# AICEFR_LIVE_MAX_SECONDS; on a deploy it is cut after 5 s and the browser
+# reconnects to the new container, instead of holding the old one until killed.
+CMD ["sh", "-c", "exec uvicorn --factory aicefr.services.${AICEFR_SERVICE:?set AICEFR_SERVICE}.app:create_app --host 0.0.0.0 --port 8000 --proxy-headers --timeout-graceful-shutdown 5"]
 
 FROM base AS speech
 # ffmpeg transcodes the browser's WebM/MP4 recordings (FR-39).

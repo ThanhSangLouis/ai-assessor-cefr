@@ -16,6 +16,7 @@ from fastapi import HTTPException
 
 from aicefr.config import Settings
 from aicefr.platform.bus import MessageBus
+from aicefr.platform.live import Live
 from aicefr.ports import BlobStore
 from aicefr.qc import audio_qc
 from aicefr.services import Peers
@@ -59,6 +60,7 @@ class Services:
     peers: Peers
     classrooms: ClassroomRepository | None = None  # D054
     replays: ReplayRepository | None = None  # D056
+    live: Live | None = None  # D086
 
     @property
     def upload_dir(self) -> Path:

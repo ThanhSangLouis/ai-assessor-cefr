@@ -7,12 +7,30 @@ const barEl = document.getElementById("progress-bar");
 const fillEl = document.getElementById("progress-fill");
 
 const POLL_MS = 2000;
+// D086: while the live stream is up it says when this response is done, so
+// the page only checks now and then in case an event went missing.
+const LIVE_POLL_MS = 10000;
 // NFR-01 allows a 120 second response to take up to 60 seconds at P90. Wait at
 // most 5 minutes, then stop and say so plainly, instead of leaving the page
 // spinning with no idea how long it will go on.
 const TIMEOUT_MS = 5 * 60 * 1000;
 const startedAt = Date.now();
 let finished = false;
+let pending = null;
+
+function later() {
+  clearTimeout(pending);
+  pending = setTimeout(check, window.ui.live.connected ? LIVE_POLL_MS : POLL_MS);
+}
+
+// The response left the queue: look now rather than at the next check, and
+// keep the shared toast away -- this page opens the report itself.
+document.addEventListener("live:response.finished", (e) => {
+  if (e.detail.response_id !== ID || finished) return;
+  e.preventDefault();
+  clearTimeout(pending);
+  check();
+});
 
 // Which status maps to which step. The server does not report the exact step in
 // progress because the pipeline runs in one go; this is an estimate so the user
@@ -60,7 +78,7 @@ async function check() {
     d = await r.json();
   } catch (err) {
     messageEl.innerHTML = '<span class="error">Mất kết nối máy chủ, đang thử lại…</span>';
-    setTimeout(check, POLL_MS);
+    later();
     return;
   }
 
@@ -93,7 +111,7 @@ async function check() {
     });
     return;
   }
-  setTimeout(check, POLL_MS);
+  later();
 }
 
 check();
