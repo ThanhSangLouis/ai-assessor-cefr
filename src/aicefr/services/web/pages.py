@@ -445,6 +445,25 @@ def page_retell(
     )
 
 
+@router.get("/drill/{response_id}", response_class=HTMLResponse, tags=["web"])
+def page_drill(
+    request: Request, response_id: str, account: Account | None = Depends(optional_account)
+):
+    """Say again the words the machine heard unclearly in this recording (D089)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    lim = _limits()
+    return _page(
+        request,
+        "drill.html",
+        account,
+        "mine",
+        response_id=response_id,
+        max_size_mib=lim["max_size_mib"],
+        sample_rate_hz=lim["sample_rate_hz"],
+    )
+
+
 @router.get("/report/{response_id}", response_class=HTMLResponse, tags=["web"])
 def page_report(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)

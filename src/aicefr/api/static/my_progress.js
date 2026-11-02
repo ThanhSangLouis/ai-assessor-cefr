@@ -356,6 +356,27 @@ fetch("/api/v1/me/pronunciation")
     pronBody.innerHTML = '<p class="error">Không tải được phần phát âm. Hãy tải lại trang.</p>';
   });
 
+// D089: words said again from a recording, not yet clear twice in a row.
+fetch("/api/v1/learn/drill")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    if (!d || !d.practised) return;
+    const esc = window.escapeHtml;
+    const rows = d.open
+      .map(
+        (w) =>
+          `<li><a href="/drill/${encodeURIComponent(w.response_id)}"><b lang="en">${esc(w.word)}</b></a>` +
+          ` <span class="muted" lang="en">${esc(w.phrase)}</span>` +
+          ` <span class="badge">${w.streak}/${d.pass_streak}</span></li>`,
+      )
+      .join("");
+    document.getElementById("drill-words-body").innerHTML =
+      `<p>Đã luyện lại ${d.practised} từ, ${d.passed} từ máy đã nghe rõ.</p>` +
+      (rows ? `<ul class="plain-list">${rows}</ul>` : '<p class="muted">Không còn từ nào đang dở.</p>');
+    document.getElementById("drill-words-card").hidden = false;
+  })
+  .catch(() => {});
+
 // Arriving at #achievements from the practice page: the browser jumped to the
 // section before the panel above it had grown, so jump again once both are drawn.
 Promise.allSettled([progressDone, achievementsDone]).then(() => {

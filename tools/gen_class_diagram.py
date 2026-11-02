@@ -336,13 +336,33 @@ CLASSES = [
             "- createdAt: datetime",
         ],
     ),
+    # D089: a word the machine heard unclearly in a recording, said again until
+    # it comes through clearly twice in a row. Its takes live and go with it.
+    _e(
+        "Drill",
+        "WordDrill",
+        [
+            "- drillId: str",
+            "- learner: Account [1]",
+            "- response: Response [1]",
+            "- word: str",
+            "- wordIndex: int",
+            "- phrase: str",
+            "- streak: int",
+            "- passed: bool",
+            "- takes: List<str>",
+            "- createdAt: datetime",
+        ],
+    ),
+    # A word to review comes from a lesson step or, since D089, from a drill.
     _e(
         "RevItem",
         "ReviewItem",
         [
             "- itemId: str",
             "- learner: Account [1]",
-            "- lesson: Lesson [1]",
+            "- lesson: Lesson [0..1]",
+            "- drill: WordDrill [0..1]",
             "- kind: str",
             "- word: str",
             "- box: int",
@@ -513,7 +533,10 @@ EDGES = [
     ("Attempt", "Account", "0..* : 1", "assoc"),
     ("Attempt", "Step", "0..* : 1", "assoc"),
     ("RevItem", "Account", "0..* : 1", "assoc"),
-    ("RevItem", "Lesson", "0..* : 1", "assoc"),
+    ("RevItem", "Lesson", "0..* : 0..1", "assoc"),
+    ("RevItem", "Drill", "0..1 : 0..1", "assoc"),
+    ("Drill", "Account", "0..* : 1", "assoc"),
+    ("Drill", "Resp", "0..* : 1", "assoc"),
     ("Achv", "Account", "0..* : 1", "assoc"),
     ("Plan", "Account", "0..* : 1", "assoc"),
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
@@ -567,7 +590,7 @@ ZONES = [
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
       (3, ["Status", "Band", "Criterion", "RevSess"])]),
     ("learning", "Học tập", 1,
-     [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+     [(4, ["Achv", "Plan", "Drill", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["PathSt", ("StepKind", "Step")])]),
 ]  # fmt: skip
 COLUMNS = []

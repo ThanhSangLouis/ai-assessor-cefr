@@ -13,6 +13,7 @@ from aicefr.platform.rpc import exposed
 from aicefr.ports import BlobStore
 from aicefr.services.core.learning import lessons_api
 from aicefr.storage.audit_repository import AuditLog
+from aicefr.storage.drill_repository import DrillRepository
 from aicefr.storage.lesson_repository import LessonRepository
 from aicefr.storage.plan_repository import PlanRepository
 
@@ -26,11 +27,13 @@ class LearningFacade:
         blobs: BlobStore,
         audit: AuditLog,
         plans: PlanRepository | None = None,
+        drills: DrillRepository | None = None,
     ) -> None:
         self.lessons = lessons
         self.blobs = blobs
         self.audit = audit
         self.plans = plans
+        self.drills = drills
 
     @exposed
     def attempts(self, account_id: str, limit: int | None = None) -> list[dict]:
@@ -106,12 +109,19 @@ class LearningFacade:
         return self.lessons.count_attempts(account_id)
 
     @exposed
+    def drills_of(self, account_id: str) -> list[dict]:
+        """One learner's word drills with their takes, for the personal export (D089)."""
+        return self.drills.all_of(account_id) if self.drills is not None else []
+
+    @exposed
     def erase_account(self, account_id: str) -> int:
-        """Erase every attempt, review, achievement and composed path of one account,
-        recordings included."""
+        """Erase every attempt, review, achievement, composed path and word drill
+        of one account, recordings included."""
         keys = self.lessons.erase_account(account_id)
         if self.plans is not None:
             self.plans.erase_account(account_id)
+        if self.drills is not None:
+            self.drills.erase_account(account_id)
         for key in keys:
             try:
                 self.blobs.delete(key)

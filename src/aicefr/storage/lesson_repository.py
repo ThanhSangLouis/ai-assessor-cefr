@@ -52,9 +52,11 @@ from aicefr.storage.db import (
 from aicefr.storage.db import now_iso as _now
 
 # path.status: draft | published | archived. A unit's topic (D027): what it
-# talks about. review_item.kind: word | talk. A lesson's media kind: audio |
-# image. achievement (D032): achievements reached, kept even if the attempts
-# behind them go; seen_at None until the learner has seen it.
+# talks about. review_item.kind: word | talk; a word from a drill (D089) has no
+# lesson (lesson_id and step_id empty) and points back with drill_id. A
+# lesson's media kind: audio | image. achievement (D032): achievements reached,
+# kept even if the attempts behind them go; seen_at None until the learner has
+# seen it.
 INDEXES = {
     "path": [(("path_id",), True), (("units.unit_id",), False)],
     "lesson": [
@@ -130,6 +132,7 @@ REVIEW_FIELDS = (
     "done",
     "created_at",
     "updated_at",
+    "drill_id",
 )
 _BY_POSITION = [("position", ASCENDING), ("_id", ASCENDING)]
 
@@ -253,6 +256,8 @@ class ReviewItem:
     done: int
     created_at: str
     updated_at: str
+    # D089: the drill a word came from, when it came from a recording, not a lesson.
+    drill_id: str | None = None
 
     def is_due(self, today: date) -> bool:
         return not self.done and self.due_date <= today.isoformat()
@@ -890,7 +895,14 @@ class LessonRepository(MongoStore):
     # ------------------------------------------------------------ reviews
 
     def schedule(
-        self, account_id: str, kind: str, lesson_id: str, step_id: str, word: str, due: date
+        self,
+        account_id: str,
+        kind: str,
+        lesson_id: str,
+        step_id: str,
+        word: str,
+        due: date,
+        drill_id: str | None = None,
     ) -> None:
         """Add a review item, or bring a finished one back to box 1. An open item is left alone."""
         now = _now()
@@ -906,7 +918,7 @@ class LessonRepository(MongoStore):
         if row is None:
             made = ReviewItem(
                 **key, item_id=new_id("r"), box=1, due_date=due.isoformat(), done=0,
-                created_at=now, updated_at=now,
+                created_at=now, updated_at=now, drill_id=drill_id,
             )  # fmt: skip
             try:
                 items.insert_one(asdict(made))
