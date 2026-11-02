@@ -53,7 +53,7 @@ dev = [
 ]
 # D069: the upgraded answer through Claude (aicefr.coach.providers); the
 # other providers need nothing beyond the standard library.
-coach = ["anthropic>=1.0,<2"]
+coach = ["anthropic>=1.0,<3"]
 # E2E layer (D023): runs on developer machines only; CI does not install it,
 # so those tests skip themselves there.
 # Install: pip install -e ".[dev,e2e]" && playwright install chromium
