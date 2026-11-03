@@ -65,8 +65,14 @@ function applyTheme(theme) {
   const label = document.getElementById("theme-toggle-label");
   if (button) button.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
   // The label names what the button DOES, not the state it is in: "Giao diện
-  // tối" on a light page means "switch to dark".
-  if (label) label.textContent = theme === "dark" ? "Giao diện sáng" : "Giao diện tối";
+  // tối" on a light page means "switch to dark", unless a static label is set.
+  if (label) {
+    if (label.dataset.staticLabel) {
+      label.textContent = label.dataset.staticLabel;
+    } else {
+      label.textContent = theme === "dark" ? "Giao diện sáng" : "Giao diện tối";
+    }
+  }
 }
 
 applyTheme(currentTheme());
@@ -466,12 +472,48 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
   document.addEventListener("click", (e) => {
     if (menu.open && !menu.contains(e.target)) menu.open = false;
   });
-  menu.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape" || !menu.open) return;
     menu.open = false;
-    menu.querySelector("summary").focus();
+    const summary = menu.querySelector("summary");
+    if (summary) summary.focus();
   });
 });
+
+// ---------------------------------------------------------------- mobile drawer
+{
+  const drawerToggle = document.getElementById("drawer-toggle");
+  const drawerClose = document.getElementById("drawer-close");
+  const drawerScrim = document.getElementById("drawer-scrim");
+  const sidebarEl = document.getElementById("app-sidebar");
+
+  const openDrawer = () => {
+    document.body.classList.add("drawer-open");
+    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "true");
+  };
+  const closeDrawer = () => {
+    document.body.classList.remove("drawer-open");
+    if (drawerToggle) drawerToggle.setAttribute("aria-expanded", "false");
+  };
+
+  if (drawerToggle) drawerToggle.addEventListener("click", openDrawer);
+  if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
+  if (drawerScrim) drawerScrim.addEventListener("click", closeDrawer);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("drawer-open")) {
+      closeDrawer();
+    }
+  });
+
+  if (sidebarEl) {
+    sidebarEl.querySelectorAll(".site-nav a").forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 900) closeDrawer();
+      });
+    });
+  }
+}
 
 // ---------------------------------------------------------------- badges
 // How many things wait behind a sidebar item (D028): teacher decisions a
@@ -718,4 +760,141 @@ window.apiJson = async function (url, options = {}) {
   }
   return d;
 };
+
+// ---------------------------------------------------------------- custom dropdowns
+window.enhanceSelect = function (select) {
+  if (!select || select.getAttribute("data-enhanced") === "true") return;
+  select.setAttribute("data-enhanced", "true");
+
+  const wrap = document.createElement("div");
+  wrap.className = "c-dropdown" + (select.className ? " " + select.className : "");
+  if (select.id) wrap.setAttribute("data-for", select.id);
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "c-dropdown-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  trigger.setAttribute("aria-expanded", "false");
+
+  const label = document.createElement("span");
+  label.className = "c-dropdown-label";
+
+  const arrow = document.createElement("span");
+  arrow.className = "c-dropdown-arrow";
+  arrow.innerHTML =
+    '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 6 4 4 4-4"/></svg>';
+
+  trigger.appendChild(label);
+  trigger.appendChild(arrow);
+
+  const menu = document.createElement("div");
+  menu.className = "c-dropdown-menu";
+  menu.setAttribute("role", "listbox");
+
+  function sync() {
+    menu.innerHTML = "";
+    const options = Array.from(select.options);
+    const selected = select.options[select.selectedIndex] || options[0];
+    label.textContent = selected ? selected.text : "";
+
+    options.forEach((opt) => {
+      const item = document.createElement("div");
+      item.className = "c-dropdown-item" + (opt.selected ? " is-selected" : "");
+      item.setAttribute("role", "option");
+      item.setAttribute("data-value", opt.value);
+
+      const text = document.createElement("span");
+      text.className = "c-dropdown-item-text";
+      text.textContent = opt.text;
+
+      const check = document.createElement("span");
+      check.className = "c-dropdown-check";
+      check.innerHTML =
+        '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>';
+
+      item.appendChild(text);
+      item.appendChild(check);
+
+      item.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (select.value !== opt.value) {
+          select.value = opt.value;
+          select.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        sync();
+        wrap.classList.remove("is-open");
+        trigger.setAttribute("aria-expanded", "false");
+        trigger.focus();
+      });
+
+      menu.appendChild(item);
+    });
+  }
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = wrap.classList.contains("is-open");
+    document.querySelectorAll(".c-dropdown.is-open").forEach((d) => {
+      d.classList.remove("is-open");
+      d.querySelector(".c-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+    if (!isOpen) {
+      wrap.classList.add("is-open");
+      trigger.setAttribute("aria-expanded", "true");
+      const rect = trigger.getBoundingClientRect();
+      if (window.innerHeight - rect.bottom < 210 && rect.top > 210) {
+        wrap.classList.add("drop-up");
+      } else {
+        wrap.classList.remove("drop-up");
+      }
+    }
+  });
+
+  trigger.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      trigger.click();
+    } else if (e.key === "Escape") {
+      wrap.classList.remove("is-open");
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+
+  select.addEventListener("change", sync);
+
+  select.classList.add("c-select-hidden");
+  select.parentNode.insertBefore(wrap, select);
+  wrap.appendChild(trigger);
+  wrap.appendChild(menu);
+  wrap.appendChild(select);
+  sync();
+};
+
+window.enhanceSelects = function (root = document) {
+  root.querySelectorAll("select:not(.no-enhance)").forEach((s) => {
+    window.enhanceSelect(s);
+  });
+};
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".c-dropdown")) {
+    document.querySelectorAll(".c-dropdown.is-open").forEach((d) => {
+      d.classList.remove("is-open");
+      d.querySelector(".c-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    document.querySelectorAll(".c-dropdown.is-open").forEach((d) => {
+      d.classList.remove("is-open");
+      d.querySelector(".c-dropdown-trigger")?.setAttribute("aria-expanded", "false");
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  window.enhanceSelects();
+});
 

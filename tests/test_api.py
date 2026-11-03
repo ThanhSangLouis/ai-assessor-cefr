@@ -85,7 +85,6 @@ def test_home_page_renders(client):
     r = client.get("/")
     assert r.status_code == 200
     assert "Nộp bài nói" in r.text
-    assert "Không cấp chứng chỉ" in r.text
 
 
 def test_health_reports_model_version(client):

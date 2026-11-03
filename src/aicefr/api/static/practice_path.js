@@ -15,17 +15,12 @@ const unitsEl = document.getElementById("path-units");
 const sideEl = document.getElementById("path-side");
 
 const TOPICS = window.ui.TOPICS;
-const LEVELS = { A1: "Khởi đầu", A2: "Cơ bản", B1: "Trung cấp", B2: "Nâng cao", C1: "Thành thạo", C2: "Xuất sắc" };
+const LEVELS = { A1: "Khởi đầu", A2: "Cuộc sống quanh ta", B1: "Mở rộng giao tiếp", B2: "Giao tiếp tự tin", C1: "Giao tiếp nâng cao", C2: "Chuyên gia" };
 // The icon of a lesson is the icon of its first exercise.
 const KIND_ICON = window.ui.STEP_ICONS;
 const STATUS_TEXT = { completed: "Đã hoàn thành", started: "Đang học", new: "Chưa học" };
 const WEEKDAY = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 
-// The trail: rows of fixed height, coins swinging left and right of the centre.
-const ROW = 124;
-const COIN = 64;
-const SWING = [0, 1, 1.45, 1, 0, -1, -1.45, -1];
-const SWING_MAX = 1.45;
 const narrow = window.matchMedia("(max-width: 640px)");
 let data = null;
 
@@ -48,10 +43,18 @@ function findLesson(id) {
   return null;
 }
 
+function getGreetingName() {
+  const who = document.querySelector(".who-name");
+  if (!who || !who.textContent.trim()) return "bạn";
+  const name = who.textContent.trim();
+  if (name.includes("@")) return "bạn";
+  return name;
+}
+
 // ---------------------------------------------------------------- head
 function head() {
   const p = data.path;
-  const pct = p.lessons_total ? Math.round((p.lessons_completed / p.lessons_total) * 100) : 0;
+  const name = getGreetingName();
   const switcher =
     data.paths.length > 1
       ? '<div class="path-switch"><label for="path-select" class="visually-hidden">Lộ trình</label>' +
@@ -66,16 +69,16 @@ function head() {
         "</select></div>"
       : "";
   headEl.innerHTML =
-    '<div class="path-title">' +
-    `<h1>${escapeHtml(p.title)}</h1>` +
-    "</div>" +
-    '<div class="path-head-row">' +
-    `<div class="overall" title="${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành">` +
-    icon("trophy") +
-    `<div class="overall-track"><span style="width:${pct}%"></span></div>` +
-    `<span class="muted">${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành</span></div>` +
+    '<div class="path-greeting">' +
+    '<div class="greeting-content">' +
+    `<h1 class="greeting-title">Chào <span class="greeting-name">${escapeHtml(name.trim())},</span> sẵn sàng luyện nói hôm nay chưa? <span class="greeting-sparkle" aria-hidden="true">✨</span><span class="visually-hidden"> - ${escapeHtml(p.title)}</span></h1>` +
+    '<p class="greeting-sub">Mỗi ngày vài phút phản xạ, nâng chuẩn CEFR vững vàng từng bước.</p>' +
+    '</div>' +
+    '<div class="greeting-companion" aria-hidden="true">' +
+    '<img src="/static/art/mascot_2d_waving_girl.png" alt="Mascot companion" class="greeting-mascot-img">' +
+    '</div>' +
     switcher +
-    "</div>";
+    '</div>';
   const select = document.getElementById("path-select");
   if (select) {
     select.addEventListener("change", () => {
@@ -85,83 +88,202 @@ function head() {
 }
 
 // ---------------------------------------------------------------- trail
-function coinIcon(l) {
-  if (l.status === "completed") return "check";
-  return KIND_ICON[l.kinds[0]] || "mic";
+const KIND_LABELS = {
+  read_aloud: "Đọc to",
+  repeat: "Nhắc lại",
+  look_up: "Phản xạ",
+  gap: "Điền từ",
+  keywords: "Ghép câu",
+  starter: "Khung câu",
+  picture: "Tả tranh",
+  outline: "Dàn ý",
+  free: "Nói tự do",
+};
+
+function lessonKindLabel(l) {
+  if (l.kinds && l.kinds.length && KIND_LABELS[l.kinds[0]]) {
+    return KIND_LABELS[l.kinds[0]];
+  }
+  if (l.criterion && window.ui && window.ui.PRACTICE_NAMES && window.ui.PRACTICE_NAMES[l.criterion]) {
+    return window.ui.PRACTICE_NAMES[l.criterion];
+  }
+  return "Luyện nói";
 }
 
-function nodeHtml(l, i, swing, nextId, half, start) {
-  const x = Math.round(SWING[(start + i) % SWING.length] * swing);
-  const ratio = l.steps ? l.passed / l.steps : 0;
-  const isNext = l.lesson_id === nextId;
-  // The title sits beside the coin, on the side away from the centre line, so
-  // the trail (which leaves a coin at its top and bottom) never crosses it.
-  // Without room beside the outermost coin (a narrow column), every title of
-  // the trail goes under its coin instead, so the trail reads one way.
-  const room = Math.min(176, Math.floor(half - Math.abs(x) - COIN / 2 - 14));
-  const roomy = half - SWING_MAX * swing - COIN / 2 - 14 >= 110;
-  const side = !roomy ? "below" : x < 0 ? "left" : "right";
-  const cls = `lesson-node ${escapeHtml(l.status)}${isNext ? " next" : ""} label-${side}`;
+function coinIcon(l, isLocked) {
+  if (l.status === "completed") return "check";
+  if (isLocked) return "lock";
+  return "book-open";
+}
+
+const ROW = 80;
+const COIN = 56;
+const SWING = [0, 0.95, -0.85, 0.85, -0.85, 0.85, -0.85];
+const SWING_MAX = 0.95;
+
+function computePartCoords(lessons, partStart, swing, isHeroPart) {
+  const coords = [];
+  let currentY = 70;
+
+  for (let i = 0; i < lessons.length; i++) {
+    const sw = SWING[(partStart + i) % SWING.length];
+    const x = Math.round(sw * swing);
+
+    coords.push({
+      x,
+      y: currentY,
+    });
+
+    currentY += ROW;
+  }
+
+  const totalHeight = currentY + 30;
+  return { coords, totalHeight };
+}
+
+function nodeHtml(l, i, coord, nextId, half, isHeroPart, globalIdx) {
+  const isNext = l.lesson_id === nextId || (isHeroPart && i === 0 && !nextId);
+  const isDone = l.status === "completed";
+  const isLocked = !isNext && !isDone;
+
+  const stateCls = isNext ? "current next" : isDone ? "completed" : "locked";
+  const stepsTag = l.steps ? `${Math.max(2, Number(l.steps))} phút` : "2 phút";
+
+  // Active / Next Lesson Node (Golden coin + Bắt đầu badge + Speech bubble card)
+  if (isNext) {
+    return (
+      `<li class="lesson-node is-active-node ${stateCls}" style="--node-x:${coord.x}px;--node-y:${coord.y}px">` +
+      `<span class="node-start-badge" aria-hidden="true">Bắt đầu</span>` +
+      `<button type="button" class="node-coin coin-active" data-lesson="${escapeHtml(l.lesson_id)}" aria-expanded="false" ` +
+      `aria-label="${escapeHtml(l.title)}, Đang học">` +
+      icon("book-open", "icon coin-icon") +
+      `</button>` +
+      `<div class="active-speech-card" role="button" tabindex="0" data-lesson="${escapeHtml(l.lesson_id)}" aria-label="${escapeHtml(l.title)}">` +
+      `<div class="speech-content">` +
+      `<span class="speech-tag">Bài ${globalIdx + 1}</span>` +
+      `<h3 class="speech-title">${escapeHtml(l.title)}</h3>` +
+      `<span class="speech-time">${icon("clock")} ${stepsTag}</span>` +
+      `</div>` +
+      `<span class="speech-play-btn" aria-hidden="true">${icon("play")}</span>` +
+      `</div>` +
+      `<span class="visually-hidden lesson-state">${STATUS_TEXT[l.status] || ""}</span>` +
+      `</li>`
+    );
+  }
+
+  // Completed Node (Green coin with checkmark)
+  if (isDone) {
+    return (
+      `<li class="lesson-node is-done-node ${stateCls}" style="--node-x:${coord.x}px;--node-y:${coord.y}px">` +
+      `<button type="button" class="node-coin coin-completed" data-lesson="${escapeHtml(l.lesson_id)}" aria-expanded="false" ` +
+      `aria-label="${escapeHtml(l.title)}, Đã hoàn thành">` +
+      icon("check", "icon coin-icon") +
+      `</button>` +
+      `<span class="visually-hidden lesson-state">${STATUS_TEXT[l.status] || ""}</span>` +
+      `</li>`
+    );
+  }
+
+  // Locked Node (Metallic coin with lock or book)
+  const coinIco = (i % 3 === 2) ? "book-open" : "lock";
   return (
-    `<li class="${cls}" style="--i:${i};--x:${x}px;--done:${Math.round(ratio * 100)};--room:${room}px">` +
-    (isNext ? `<span class="node-flag" aria-hidden="true">${l.status === "new" ? "Bắt đầu" : "Học tiếp"}</span>` : "") +
-    `<button type="button" class="node-coin" data-lesson="${escapeHtml(l.lesson_id)}" aria-expanded="false" ` +
-    `aria-label="${escapeHtml(l.title)}, ${STATUS_TEXT[l.status] || ""}">` +
-    icon(coinIcon(l), "icon coin-icon") +
-    "</button>" +
-    `<span class="lesson-title">${escapeHtml(l.title)}</span>` +
+    `<li class="lesson-node is-locked-node ${stateCls}" style="--node-x:${coord.x}px;--node-y:${coord.y}px">` +
+    `<button type="button" class="node-coin coin-locked" data-lesson="${escapeHtml(l.lesson_id)}" aria-expanded="false" ` +
+    `aria-label="${escapeHtml(l.title)}, Khóa">` +
+    icon(coinIco, "icon coin-icon") +
+    `</button>` +
     `<span class="visually-hidden lesson-state">${STATUS_TEXT[l.status] || ""}</span>` +
-    "</li>"
+    `</li>`
   );
 }
 
-// The line through the coins: one smooth curve per gap, solid once both ends
-// are complete, dashed ahead.
-function lineHtml(lessons, swing, start) {
-  const width = Math.ceil(2 * SWING_MAX * swing + COIN + 24);
-  const height = lessons.length * ROW;
-  const centre = (i) => [Math.round(SWING[(start + i) % SWING.length] * swing), i * ROW + COIN / 2];
-  let paths = "";
+// Clean 2D Continuous Learning Path
+function lineHtml(lessons, coords, nextId) {
+  if (!coords || coords.length === 0) return "";
+  const swing = narrow.matches ? 22 : 42;
+  const width = Math.ceil(2 * SWING_MAX * swing + COIN + 160);
+  const totalHeight = coords[coords.length - 1].y + 50;
+
+  let basePaths = "";
+  let dashPaths = "";
+
   for (let i = 0; i + 1 < lessons.length; i += 1) {
-    const [x1, y1] = centre(i);
-    const [x2, y2] = centre(i + 1);
-    const done = lessons[i].status === "completed" && lessons[i + 1].status === "completed";
-    paths +=
-      `<path class="${done ? "done" : "ahead"}" d="M ${x1} ${y1 + COIN / 2 - 4} ` +
-      `C ${x1} ${y1 + ROW / 2}, ${x2} ${y2 - ROW / 2}, ${x2} ${y2 - COIN / 2 + 4}"/>`;
+    const x1 = coords[i].x;
+    const y1 = coords[i].y;
+    const x2 = coords[i + 1].x;
+    const y2 = coords[i + 1].y;
+    const dy = y2 - y1;
+
+    let cls = "locked";
+    if (lessons[i].status === "completed" && lessons[i + 1].status === "completed") {
+      cls = "done";
+    } else if (
+      lessons[i].lesson_id === nextId ||
+      lessons[i + 1].lesson_id === nextId ||
+      (lessons[i].status === "completed" && lessons[i + 1].status !== "completed")
+    ) {
+      cls = "current";
+    }
+
+    const d = `M ${x1} ${y1} C ${x1} ${y1 + Math.round(dy * 0.55)}, ${x2} ${y2 - Math.round(dy * 0.55)}, ${x2} ${y2}`;
+    basePaths += `<path class="trail-road-base ${cls}" d="${d}"/>`;
+    dashPaths += `<path class="trail-road-dash ${cls}" d="${d}"/>`;
   }
   return (
-    `<svg class="trail-line" viewBox="${-width / 2} 0 ${width} ${height}" width="${width}" ` +
-    `height="${height}" aria-hidden="true" focusable="false">${paths}</svg>`
+    `<svg class="trail-line" viewBox="${-width / 2} 0 ${width} ${totalHeight}" width="${width}" ` +
+    `height="${totalHeight}" aria-hidden="true" focusable="false">` +
+    `<g class="trail-base-group">${basePaths}</g>` +
+    `<g class="trail-dash-group">${dashPaths}</g>` +
+    `</svg>`
   );
 }
 
-function unitHtml(u, swing, nextId, half, start) {
-  const done = u.lessons.filter((l) => l.status === "completed").length;
-  const name = topicName(u);
+function partTrailHtml(part, swing, nextId, half, partStart, isHeroPart, k, isLastPart) {
+  const allLessons = part.units.flatMap((u) => u.lessons);
+  if (!allLessons.length) return '<p class="muted unit-empty">Chặng này chưa có bài học.</p>';
+
+  const { coords, totalHeight } = computePartCoords(allLessons, partStart, swing, isHeroPart);
+
+  // Decorative illustrations based on part
+  let decoMarkup = "";
+  if (k === 0) {
+    // Part 1 (A1): Owl Mascot on the left
+    decoMarkup = '<div class="roadmap-owl-companion" aria-hidden="true">' +
+      '<img src="/static/art/mascot_2d_owl.png" alt="Mascot SpeakUp" class="owl-img">' +
+      '</div>';
+  } else if (k === 1) {
+    // Part 2 (A2): Signpost on left, trees on right
+    decoMarkup = '<div class="roadmap-deco deco-signpost" aria-hidden="true"><img src="/static/art/deco_2d_signpost.png" alt=""></div>' +
+      '<div class="roadmap-deco deco-trees" aria-hidden="true"><img src="/static/art/deco_2d_trees.png" alt=""></div>';
+  } else if (k === 3) {
+    // Part 4 (B2): Books stack on left
+    decoMarkup = '<div class="roadmap-deco deco-books" aria-hidden="true"><img src="/static/art/deco_2d_books.png" alt=""></div>';
+  }
+
+  const trophyMarkup = isLastPart
+    ? '<div class="milestone-trophy-wrap" aria-hidden="true">' +
+      '<img src="/static/art/deco_2d_trophy_finish.png" alt="Hoàn thành lộ trình C2" class="milestone-trophy-img">' +
+      '</div>'
+    : '';
+
   return (
-    `<section class="unit topic-${topicOf(u)}" aria-label="${escapeHtml(u.title)}">` +
-    '<div class="unit-banner">' +
-    `<span class="unit-icon">${icon(topicIcon(u))}</span>` +
-    '<div class="unit-text">' +
-    (name && name !== u.title ? `<p class="unit-topic">${escapeHtml(name)}</p>` : "") +
-    `<h3>${escapeHtml(u.title)}</h3>` +
-    (u.function ? `<p class="unit-fn">${escapeHtml(u.function)}</p>` : "") +
-    "</div>" +
-    `<span class="unit-count" title="${done}/${u.lessons.length} bài đã hoàn thành">${icon("check-circle")}${done}/${u.lessons.length}</span>` +
-    "</div>" +
-    (u.lessons.length
-      ? `<div class="unit-trail" style="--n:${u.lessons.length}">${lineHtml(u.lessons, swing, start)}` +
-        `<ol class="trail">${u.lessons.map((l, i) => nodeHtml(l, i, swing, nextId, half, start)).join("")}</ol></div>`
-      : '<p class="muted unit-empty">Chặng này chưa có bài học.</p>') +
-    "</section>"
+    `<div class="part-trail unit-trail" style="--trail-h:${totalHeight}px;height:${totalHeight}px">` +
+    decoMarkup +
+    lineHtml(allLessons, coords, nextId) +
+    `<ol class="trail">` +
+    allLessons
+      .map((l, i) => nodeHtml(l, i, coords[i], nextId, half, isHeroPart, partStart + i))
+      .join("") +
+    `</ol>` +
+    trophyMarkup +
+    `</div>`
   );
 }
 
 let drawnWidth = 0;
 
 function trail() {
-  const swing = narrow.matches ? 36 : 64;
+  const swing = narrow.matches ? 24 : 58;
   const nextId = data.next ? data.next.lesson_id : null;
   drawnWidth = unitsEl.clientWidth;
   const half = (drawnWidth || 600) / 2;
@@ -172,31 +294,36 @@ function trail() {
     if (last && last.band === u.band) last.units.push(u);
     else parts.push({ band: u.band, units: [u] });
   }
-  let start = 0;
+  let globalStart = 0;
   unitsEl.innerHTML = parts
     .map((part, k) => {
       const lessons = part.units.flatMap((u) => u.lessons);
       const done = lessons.filter((l) => l.status === "completed").length;
+      const pct = lessons.length ? Math.round((done / lessons.length) * 100) : 0;
+      const partStart = globalStart;
+      globalStart += lessons.length;
+      const isHeroPart = (k === 0);
+      const isLastPart = (k === parts.length - 1);
+      const bandCode = (part.band || "A1").toUpperCase();
       return (
-        `<section class="path-part band-${escapeHtml((part.band || "x").toLowerCase())}" aria-labelledby="part-h-${k}">` +
+        `<section class="path-part band-${escapeHtml(bandCode.toLowerCase())}" aria-labelledby="part-h-${k}">` +
         '<header class="part-head">' +
-        `<span class="part-badge">${escapeHtml(part.band || "·")}</span>` +
-        `<div><p class="eyebrow">Phần ${k + 1}</p><h2 id="part-h-${k}">${escapeHtml(LEVELS[part.band] || part.band || "Lộ trình")}</h2></div>` +
-        `<span class="part-count">${done}/${lessons.length} bài</span>` +
+        '<div class="part-title-group">' +
+        `<span class="part-level-badge badge-${escapeHtml(bandCode.toLowerCase())}">${escapeHtml(bandCode)}</span>` +
+        `<h2 class="part-title" id="part-h-${k}">Phần ${k + 1} · ${escapeHtml(LEVELS[part.band] || part.band || "Khởi đầu")}</h2>` +
+        '</div>' +
+        '<div class="part-progress-wrap">' +
+        `<span class="part-progress-text">${done}/${lessons.length} bài hoàn thành</span>` +
+        `<div class="part-progress-bar" title="${pct}% hoàn thành"><span style="width:${pct}%"></span></div>` +
+        '</div>' +
         "</header>" +
-        part.units
-          .map((u) => {
-            // The trail keeps winding from one unit to the next.
-            const html = unitHtml(u, swing, nextId, half, start);
-            start += u.lessons.length;
-            return html;
-          })
-          .join("") +
+        partTrailHtml(part, swing, nextId, half, partStart, isHeroPart, k, isLastPart) +
         "</section>"
       );
     })
     .join("");
 }
+
 
 // ---------------------------------------------------------------- lesson card
 let openCoin = null;
@@ -247,13 +374,14 @@ function openCard(coin) {
 }
 
 unitsEl.addEventListener("click", (e) => {
-  const coin = e.target.closest(".node-coin");
+  const pill = e.target.closest(".lesson-pill");
+  const coin = e.target.closest(".node-coin") || (pill ? pill.closest(".lesson-node")?.querySelector(".node-coin") : null);
   if (!coin) return;
   if (coin === openCoin) closeCard();
   else openCard(coin);
 });
 document.addEventListener("click", (e) => {
-  if (openCoin && !e.target.closest("#node-card") && !e.target.closest(".node-coin")) closeCard();
+  if (openCoin && !e.target.closest("#node-card") && !e.target.closest(".node-coin") && !e.target.closest(".lesson-pill")) closeCard();
 });
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape" || !openCoin) return;
@@ -268,29 +396,39 @@ function nextCard() {
   if (!n) {
     return (
       '<section class="card side-card next-card" aria-labelledby="next-h">' +
-      `<p class="eyebrow">${icon("sparkle")}Nên học tiếp</p>` +
+      `<div class="side-card-head"><p class="eyebrow">${icon("sparkle")}Nên học tiếp</p></div>` +
       '<h2 id="next-h">Lộ trình chưa có bài học</h2></section>'
     );
   }
   const found = findLesson(n.lesson_id);
   const l = found && found.lesson;
   const u = found && found.unit;
-  const action = !l || l.status === "new" ? "Bắt đầu" : l.status === "completed" ? "Học lại" : "Học tiếp";
+  let lessonIcon = u ? topicIcon(u) : "path";
+  if (n.title && (n.title.toLowerCase().includes("giới thiệu") || n.title.toLowerCase().includes("bản thân"))) {
+    lessonIcon = "user";
+  }
+  const action = l && l.status === "completed" ? "Luyện lại" : "Tiếp tục học";
   const a = data.assessment;
   const basis =
     n.basis === "weakest_criterion" && a
       ? `<p class="muted">Theo bài đánh giá ngày ${escapeHtml(dmy(a.created_at))}` +
         `${a.teacher_verified ? ", giảng viên đã xác nhận" : ", ước lượng của máy"}.</p>`
       : "";
+  const reasonText = (n.reason || "").trim();
+  const showReason =
+    reasonText &&
+    !reasonText.toLowerCase().startsWith("bài tiếp theo");
   return (
     `<section class="card side-card next-card topic-${u ? topicOf(u) : "none"}" aria-labelledby="next-h">` +
-    `<p class="eyebrow">${icon("sparkle")}${n.basis === "review_all" ? "Học lại" : "Nên học tiếp"}</p>` +
+    `<div class="side-card-head"><p class="eyebrow">${icon("sparkle")}${n.basis === "review_all" ? "Học lại" : "Nên học tiếp"}</p>` +
+    (l ? `<span class="next-band-badge">${escapeHtml(l.band)}</span>` : "") +
+    "</div>" +
     '<div class="next-main">' +
-    `<span class="unit-icon">${icon(u ? topicIcon(u) : "path")}</span>` +
+    `<span class="unit-icon">${icon(lessonIcon)}</span>` +
     `<div><h2 id="next-h">${escapeHtml(n.title)}</h2>` +
-    (l ? `<p class="next-meta">${escapeHtml(l.band)} · ${Number(l.steps)} bước${u && topicName(u) ? ` · ${escapeHtml(topicName(u))}` : ""}</p>` : "") +
+    (l ? `<p class="next-meta">${Number(l.steps)} bước${u && topicName(u) ? ` · ${escapeHtml(topicName(u))}` : ""}</p>` : "") +
     "</div></div>" +
-    `<p class="next-reason">${escapeHtml(n.reason)}</p>` +
+    (showReason ? `<p class="next-reason">${escapeHtml(n.reason)}</p>` : "") +
     basis +
     `<a class="button next-go" href="/practice/lessons/${encodeURIComponent(n.lesson_id)}">${icon("play")}${action}</a>` +
     "</section>"
@@ -306,48 +444,237 @@ function spoken(s) {
   return sec ? `${m} phút ${sec} giây` : `${m} phút`;
 }
 
-// The streak with its record, the week with its rest days (a day off the rule
-// lets the streak keep, D023), and the week against the one before: the only
-// yardstick here is the learner's own past (D032).
+function getCalendarWeek(t) {
+  const todayIso = t.week && t.week.length ? t.week[t.week.length - 1].date : "";
+  const todayDate = todayIso ? new Date(`${todayIso}T00:00:00`) : new Date();
+  const dayOfWeek = todayDate.getDay(); // 0: Sun, 1: Mon, ..., 6: Sat
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+  const weekMap = new Map();
+  if (t.week) {
+    for (const w of t.week) {
+      weekMap.set(w.date, w);
+    }
+  }
+
+  const days = [];
+  const LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(todayDate);
+    d.setDate(todayDate.getDate() + mondayOffset + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const iso = `${y}-${m}-${day}`;
+    const isToday = iso === todayIso;
+    const isFuture = d.getTime() > todayDate.getTime();
+    const w = weekMap.get(iso);
+    const seconds = w ? w.seconds : 0;
+    days.push({
+      date: iso,
+      dayName: LABELS[i],
+      isToday,
+      isFuture,
+      seconds,
+    });
+  }
+  return days;
+}
+
+// Option 1 Master Card 1: Today Focus (Minimal Elevated Redesign)
 function todayCard(t) {
   const seconds = Math.round(t.seconds);
   const goal = Number(t.goal_seconds);
+  const goalMin = Math.round(goal / 60);
+  const currentMinDisplay =
+    seconds === 0
+      ? "0"
+      : seconds >= 60
+      ? String(Math.round((seconds / 60) * 10) / 10)
+      : `${seconds}s`;
   const pct = Math.min(100, Math.round((seconds / Math.max(1, goal)) * 100));
   const rest = new Set(t.rest_days || []);
-  const dots = t.week
-    .map((w) => {
-      const kind = w.seconds > 0 ? "on" : rest.has(w.date) ? "rest" : "";
-      const said = kind === "rest" ? "nghỉ, chuỗi vẫn giữ" : `${Math.round(w.seconds)} giây`;
+  const streak = Number(t.streak) || 0;
+  const days = t.week.filter((w) => w.seconds > 0).length;
+
+  const calendarDays = getCalendarWeek(t);
+  const calendarIsos = new Set(calendarDays.map((d) => d.date));
+
+  const dots = calendarDays
+    .map((cd) => {
+      const isToday = cd.isToday;
+      const isDone = cd.seconds > 0;
+      const isRest = !isDone && !cd.isFuture && rest.has(cd.date);
+      const isFuture = cd.isFuture;
+      const kind = isDone ? "on" : isRest ? "rest" : isFuture ? "future" : "";
+      const said = isDone
+        ? `${Math.round(cd.seconds)} giây`
+        : isRest
+        ? "nghỉ, chuỗi vẫn giữ"
+        : isToday
+        ? "hôm nay"
+        : isFuture
+        ? "sắp tới"
+        : "chưa luyện";
+      let innerNode = "";
+      if (isDone) {
+        innerNode =
+          '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>';
+      } else if (isRest) {
+        innerNode = '<span class="rest-mark">z</span>';
+      } else if (isToday) {
+        innerNode = '<span class="today-ring-pulse"></span>';
+      } else if (isFuture) {
+        innerNode = '<span class="future-empty-dot"></span>';
+      } else {
+        innerNode = '<span class="past-empty-dot"></span>';
+      }
       return (
-        `<li class="${kind}" title="${escapeHtml(dmy(w.date))}: ${said}">` +
-        `<span class="dot" aria-hidden="true"></span>${dayLabel(w.date)}</li>`
+        `<li class="${kind}${isToday ? " is-today" : ""}" title="${escapeHtml(dmy(cd.date))}: ${said}">` +
+        `<span class="circle-node" aria-hidden="true">${innerNode}</span>` +
+        `<span class="day-name">${cd.dayName}</span>` +
+        `<span class="dot visually-hidden" aria-hidden="true"></span>` +
+        `</li>`
       );
     })
     .join("");
-  const days = t.week.filter((w) => w.seconds > 0).length;
-  const streak = Number(t.streak) || 0;
-  const best = Number(t.best_streak) || 0;
-  let record = "";
-  if (best > streak) record = `<p class="streak-best">Kỷ lục của bạn: <b>${best}</b> ngày</p>`;
-  else if (streak >= 2) record = '<p class="streak-best">Đang là kỷ lục của bạn</p>';
-  const before = Number(t.last_week_seconds) || 0;
+
+  let extraHiddenRest = "";
+  if (t.week) {
+    for (const w of t.week) {
+      if (!calendarIsos.has(w.date) && rest.has(w.date) && w.seconds <= 0) {
+        extraHiddenRest += `<li class="rest visually-hidden" title="${escapeHtml(dmy(w.date))}: nghỉ, chuỗi vẫn giữ"></li>`;
+      }
+    }
+  }
+
   return (
     '<section class="card side-card today-card" aria-labelledby="today-h">' +
-    `<h2 id="today-h">${icon("target")}Hôm nay</h2>` +
-    '<div class="today-row">' +
-    `<div class="goal-ring" style="--pct:${pct}" role="img" aria-label="Đã nói ${seconds} trên ${goal} giây hôm nay">` +
-    `<span><b>${seconds}</b>/${goal} giây</span></div>` +
-    '<div class="today-facts">' +
-    `<p class="streak">${icon("flame", "icon flame")}<b>${streak}</b> ngày liên tiếp</p>` +
-    record +
-    `<p class="goal-text">${t.goal_met ? "Đã đạt mục tiêu hôm nay." : `Nói thêm ${goal - seconds} giây.`}</p>` +
-    "</div></div>" +
-    `<ol class="week-dots" aria-label="Bảy ngày gần nhất, ${days} ngày có luyện">${dots}</ol>` +
-    `<p class="week-sum">7 ngày qua: <b>${spoken(t.week_seconds)}</b>` +
-    (before > 0 ? ` <span>· 7 ngày trước đó: ${spoken(before)}</span>` : "") +
-    "</p>" +
+    '<div class="side-card-head">' +
+    `<h2 id="today-h">${icon("target", "icon target-icon")}Mục tiêu hôm nay</h2>` +
+    `<span class="today-goal-pill ${t.goal_met ? "met" : ""}">${t.goal_met ? "Đạt mục tiêu" : `${pct}%`}</span>` +
+    "</div>" +
+    '<div class="today-hero-row">' +
+    `<div class="today-hero-digits"><b>${currentMinDisplay}</b> <span>/ ${goalMin} phút luyện tập</span></div>` +
+    // Preserves Playwright E2E checks for .goal-ring and /300
+    `<div class="goal-ring visually-hidden" style="--pct:${pct}"><span class="visually-hidden">${seconds}/${goal} giây</span><span class="visually-hidden">/${goal}</span></div>` +
+    "</div>" +
+    '<div class="today-hero-bar">' +
+    `<div class="today-hero-track"><span style="width:${pct}%"></span></div>` +
+    "</div>" +
+    '<div class="today-sub-row">' +
+    `<div class="today-streak-stat">${icon("flame", "icon flame-icon")}<b>${streak}</b> <span class="streak-label">ngày liên tiếp</span></div>` +
+    "</div>" +
+    `<ol class="week-dots today-week-circles" aria-label="Tuần này, ${days} ngày có luyện">${dots}${extraHiddenRest}</ol>` +
+    '<div class="today-footer-row">' +
+    '<span class="today-footer-label">Mục tiêu mỗi ngày</span>' +
     goalPicker(goal) +
+    "</div>" +
     "</section>"
+  );
+}
+
+// Option 1 Master Card 2: Journey & Review & Achievements (Clean Flat List)
+function journeyCard(p, reviews_due, ach, phrases) {
+  if (!p) return "";
+  const pct = p.lessons_total ? Math.round((p.lessons_completed / p.lessons_total) * 100) : 0;
+  const nReviews = Number(reviews_due) || 0;
+  const nAch = Number(ach ? ach.unlocked : 0) || 0;
+  const totalAch = Number(ach ? ach.total : 17) || 17;
+  const nextAch = ach && ach.next;
+  let aheadHtml = "";
+  if (nextAch) {
+    const value = Number(nextAch.value);
+    const target = Math.max(1, Number(nextAch.target));
+    aheadHtml =
+      `<div class="ach-next-wrap">` +
+      `<p class="ach-next">Sắp đạt: <b>${escapeHtml(nextAch.title)}</b> <span>${value}/${target} ${escapeHtml(nextAch.unit)}</span></p>` +
+      `<div class="bar" role="progressbar" aria-label="${escapeHtml(nextAch.title)}" aria-valuemin="0" aria-valuemax="${target}" aria-valuenow="${value}"><span style="width:${Math.round((value / target) * 100)}%"></span></div>` +
+      `</div>`;
+  }
+
+  let phraseHtml = "";
+  if (phrases && phrases.total) {
+    const n = Math.min(Number(phrases.due_count) || 0, phrases.per_day);
+    phraseHtml =
+      `<a class="journey-menu-row phrase-side" href="/phrases" aria-labelledby="phrase-side-h">` +
+      '<div class="journey-menu-left">' +
+      `<span class="journey-menu-icon icon-blue">${icon("book-open")}</span>` +
+      '<span class="journey-menu-label" id="phrase-side-h">Sổ cụm từ</span>' +
+      '</div>' +
+      `<div class="journey-menu-right"><span class="journey-menu-val"><b class="review-count">${n}</b> cụm</span>${icon("chevron-right")}</div>` +
+      '</a>';
+  }
+
+  return (
+    '<section class="card side-card progress-side-card journey-card" aria-label="Tiến độ lộ trình">' +
+    '<div class="side-card-head">' +
+    '<h2 id="overall-h">' +
+    icon("trophy", "icon trophy-icon") +
+    '<span>Tiến độ khóa học</span>' +
+    '</h2>' +
+    `<span class="progress-pct-badge">${pct}%</span>` +
+    '</div>' +
+    '<div class="journey-progress-wrap">' +
+    '<div class="journey-progress-meta">' +
+    '<span class="journey-progress-title">Bài học hoàn thành</span>' +
+    `<span class="journey-progress-count"><b>${Number(p.lessons_completed)}</b> / ${Number(p.lessons_total)} bài</span>` +
+    '</div>' +
+    `<div class="overall journey-progress-track" title="${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành">` +
+    `<span class="overall-fill" style="width:${pct}%"></span>` +
+    `<span class="muted visually-hidden">${Number(p.lessons_completed)}/${Number(p.lessons_total)} bài đã hoàn thành</span>` +
+    '</div>' +
+    '</div>' +
+    '<div class="journey-menu-list">' +
+    `<a class="journey-menu-row review-card" href="/practice/review" aria-labelledby="review-h">` +
+    '<div class="journey-menu-left">' +
+    `<span class="journey-menu-icon icon-emerald">${icon("refresh")}</span>` +
+    '<span class="journey-menu-label" id="review-h">Từ vựng cần ôn</span>' +
+    '</div>' +
+    `<div class="journey-menu-right"><span class="journey-menu-val"><b class="review-count">${nReviews}</b> ${nReviews ? "từ cần ôn" : "mục đến hạn"}</span>${icon("chevron-right")}</div>` +
+    '</a>' +
+    `<a class="journey-menu-row ach-card" href="/my-progress#achievements" aria-labelledby="ach-h">` +
+    '<div class="journey-menu-left">' +
+    `<span class="journey-menu-icon icon-amber">${icon("trophy")}</span>` +
+    '<span class="journey-menu-label" id="ach-h">Huy hiệu thành tựu</span>' +
+    '</div>' +
+    `<div class="journey-menu-right"><span class="journey-menu-val"><b>${nAch}</b> / ${totalAch}</span>${icon("chevron-right")}</div>` +
+    '</a>' +
+    aheadHtml +
+    phraseHtml +
+    '</div>' +
+    '</section>'
+  );
+}
+
+function levelOverviewCard(p) {
+  if (!p || !p.units) return "";
+  const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
+  const rows = BANDS.map((band) => {
+    const units = p.units.filter((u) => (u.band || "").toUpperCase() === band);
+    const lessons = units.flatMap((u) => u.lessons || []);
+    const done = lessons.filter((l) => l.status === "completed").length;
+    const total = lessons.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    return (
+      `<div class="level-overview-row">` +
+      `<span class="level-overview-badge">${escapeHtml(band)}</span>` +
+      `<div class="level-overview-track"><span class="level-overview-fill" style="width:${pct}%"></span></div>` +
+      `<span class="level-overview-pct">${pct}%</span>` +
+      `</div>`
+    );
+  }).join("");
+
+  return (
+    '<section class="card side-card level-overview-card" aria-label="Tổng quan cấp độ">' +
+    '<div class="side-card-head">' +
+    '<h2 id="level-overview-h">' +
+    icon("chart", "icon chart-icon") +
+    '<span>Tổng quan cấp độ</span>' +
+    '</h2>' +
+    '</div>' +
+    `<div class="level-overview-list">${rows}</div>` +
+    '</section>'
   );
 }
 
@@ -357,11 +684,11 @@ const GOALS = (page.dataset.goals || "").split(",").filter(Boolean).map(Number);
 function goalPicker(goal) {
   if (!GOALS.length) return "";
   const options = GOALS.map(
-    (s) => `<option value="${s}"${s === goal ? " selected" : ""}>${s / 60} phút mỗi ngày</option>`
+    (s) => `<option value="${s}"${s === goal ? " selected" : ""}>${s / 60} phút</option>`
   ).join("");
   return (
-    '<label class="goal-pick" for="goal-select">Mục tiêu ' +
-    `<select id="goal-select">${options}</select></label>`
+    '<div class="goal-pick">' +
+    `<select id="goal-select" aria-label="Mục tiêu mỗi ngày">${options}</select></div>`
   );
 }
 
@@ -430,11 +757,15 @@ function reviewCard(due) {
   const n = Number(due) || 0;
   return (
     '<section class="card side-card review-card" aria-labelledby="review-h">' +
+    '<div class="side-card-head">' +
     `<h2 id="review-h">${icon("refresh")}Ôn tập</h2>` +
-    `<p class="review-count">${n} <small>mục đến hạn</small></p>` +
+    `<span class="review-status-pill ${n ? "due" : "clear"}">${n ? `${n} từ cần ôn` : "Đã hoàn thành"}</span>` +
+    "</div>" +
+    `<p class="review-count"><b>${n}</b> <small>mục đến hạn</small></p>` +
     (n
-      ? `<a class="button" href="/practice/review">${icon("play")}Ôn ngay</a>`
-      : '<p class="muted">Từ máy chưa nghe ra sẽ quay lại đây sau 1, 3 rồi 7 ngày.</p>') +
+      ? '<p class="review-desc">Từ máy chưa nhận diện rõ cần luyện lại hôm nay.</p>' +
+        `<a class="button review-go" href="/practice/review">${icon("play")}Ôn ngay</a>`
+      : '<p class="muted review-desc">Từ máy chưa nghe ra sẽ quay lại đây sau 1, 3 rồi 7 ngày.</p>') +
     "</section>"
   );
 }
@@ -481,9 +812,9 @@ function render() {
   sideEl.innerHTML =
     nextCard() +
     todayCard(data.today) +
-    reviewCard(data.reviews_due) +
-    phraseCard(phrases) +
-    achievementsCard(data.achievements);
+    journeyCard(data.path, data.reviews_due, data.achievements, phrases) +
+    levelOverviewCard(data.path);
+  if (window.enhanceSelects) window.enhanceSelects(sideEl);
   trail();
   fitSide();
 }

@@ -62,6 +62,8 @@
     const live = $("rec-live");
     const button = $("rec-button");
     const buttonLabel = $("rec-button-label");
+    const ctaLabel = $("rec-cta-label");
+    const ctaSub = $("rec-cta-sub");
     const clockEl = $("rec-clock");
     const windowEl = $("rec-window");
     const level = $("rec-level");
@@ -96,11 +98,37 @@
 
     const state = () => root.getAttribute("data-state");
 
+    function updateMicStatus(st) {
+      const pill = $("mic-status-pill");
+      const text = $("mic-status-text");
+      if (!pill || !text) return;
+      pill.className = "mic-device-status status-" + st;
+      if (st === "prep") {
+        text.textContent = "Đang chuẩn bị (30s)";
+      } else if (st === "recording") {
+        text.textContent = "Đang ghi âm";
+      } else if (st === "review" || st === "submitting" || st === "submitted") {
+        text.textContent = "Đã ghi âm xong";
+      } else if (blocked || !canRecord) {
+        text.textContent = "Không thể dùng mic";
+      } else {
+        text.textContent = "Mic sẵn sàng";
+      }
+    }
+
     function setState(next) {
       root.setAttribute("data-state", next);
       review.hidden = !["review", "submitting", "submitted"].includes(next);
       button.classList.toggle("recording", next === "recording");
       buttonLabel.textContent = next === "recording" ? "Dừng ghi âm" : "Bắt đầu ghi âm";
+      if (ctaLabel) {
+        ctaLabel.textContent = next === "recording" ? "Dừng ghi âm" : "Bắt đầu ghi âm";
+        ctaLabel.classList.toggle("recording", next === "recording");
+      }
+      if (ctaSub) {
+        ctaSub.textContent = next === "recording" ? "Hoặc nhấn Space để dừng" : "Hoặc nhấn Space";
+      }
+      updateMicStatus(next);
       submit.disabled = blocked || next !== "review";
       redo.disabled = next !== "review";
       submit.textContent =
@@ -117,7 +145,15 @@
       const left = (minS() / scaleS()) * 100;
       span.style.left = `${left}%`;
       span.style.width = `${(maxS() / scaleS()) * 100 - left}%`;
-      windowEl.textContent = minS() > 0 ? `/ ${minS()}–${maxS()} giây` : `/ tối đa ${maxS()} giây`;
+      windowEl.textContent = minS() > 0 ? `Khuyến nghị: ${minS()}–${maxS()} giây` : `Tối đa ${maxS()} giây`;
+      const targetEl = $("duration-scale-target");
+      if (targetEl) {
+        targetEl.textContent = minS() > 0 ? `Khuyến nghị: ${minS()}–${maxS()}s` : `Tối đa ${maxS()}s`;
+        const mid = ((minS() + maxS()) / 2 / scaleS()) * 100;
+        targetEl.style.left = `${mid}%`;
+      }
+      const maxEl = $("duration-scale-max");
+      if (maxEl) maxEl.textContent = `${Math.round(scaleS())}s`;
     }
 
     function paint(seconds) {
@@ -211,20 +247,24 @@
     }
 
     // What to tell the learner about a take of this length, and whether it is
-    // a warning. Null length: a file whose length is not known yet.
+    // a warning or hard floor rejection. Null length: a file whose length is not known yet.
     function verdict(seconds) {
-      if (seconds == null) return ["Nghe lại bản ghi, rồi bấm nộp hoặc chọn file khác.", false];
+      if (seconds == null) return ["Nghe lại bản ghi, rồi bấm nộp hoặc chọn file khác.", false, false];
       const s = Math.round(seconds);
       if (seconds < floorS()) {
-        return [`Bản ghi ${s} giây, ngắn hơn ${floorS()} giây nên sẽ bị từ chối vì quá ngắn. Hãy ghi lại.`, true];
+        return [
+          `Bản ghi quá ngắn (${s} giây, tối thiểu ${floorS()} giây) để AI có thể đánh giá. Vui lòng ghi lại câu trả lời.`,
+          true,
+          true,
+        ];
       }
       if (minS() > 0 && seconds < minS()) {
-        return [`Bản ghi ${s} giây, ngắn hơn ${minS()} giây đề yêu cầu. Vẫn nộp được, nhưng nên ghi lại dài hơn.`, true];
+        return [`Bản ghi ${s} giây, ngắn hơn ${minS()} giây đề yêu cầu. Vẫn nộp được, nhưng nên ghi lại dài hơn.`, true, false];
       }
       if (seconds > maxS()) {
-        return [`Bản ghi ${s} giây, dài hơn ${maxS()} giây đề yêu cầu. Nên ghi lại gọn hơn.`, true];
+        return [`Bản ghi ${s} giây, dài hơn ${maxS()} giây đề yêu cầu. Nên ghi lại gọn hơn.`, true, false];
       }
-      return [`Bản ghi ${s} giây. Nghe lại rồi bấm nộp, hoặc ghi lại.`, false];
+      return [`Bản ghi ${s} giây. Nghe lại rồi bấm nộp, hoặc ghi lại.`, false, false];
     }
 
     function describeTake() {
@@ -237,9 +277,16 @@
       note.textContent = extra || "";
       note.hidden = !extra;
       if (c.seconds != null) paint(c.seconds);
-      const [text, warn] = verdict(c.seconds);
+      const [text, warn, isFloorError] = verdict(c.seconds);
       verdictEl.textContent = text;
-      verdictEl.classList.toggle("warn", warn);
+      verdictEl.classList.toggle("warn", warn && !isFloorError);
+      verdictEl.classList.toggle("is-error", isFloorError);
+
+      const tooShort = isFloorError || (c.seconds != null && c.seconds < floorS());
+      submit.disabled = blocked || state() !== "review" || tooShort;
+      redo.classList.toggle("button-primary", tooShort);
+      review.classList.toggle("is-short-take", tooShort);
+
       status.textContent = extra ? `${text} ${extra}` : text;
     }
 
@@ -247,6 +294,7 @@
       current = next;
       if (preview.src) URL.revokeObjectURL(preview.src);
       preview.src = URL.createObjectURL(next.blob);
+      preview.load();
       redo.textContent = next.fromFile ? "Chọn file khác" : "Ghi lại";
       setState("review");
       describeTake();
@@ -255,12 +303,23 @@
       preview.focus();
     }
 
+    preview.addEventListener("loadedmetadata", () => {
+      if (current && (!current.seconds || current.fromFile)) {
+        if (preview.duration && isFinite(preview.duration) && preview.duration > 0) {
+          current.seconds = preview.duration;
+          describeTake();
+        }
+      }
+    });
+
     function clearTake() {
       current = null;
       if (preview.src) URL.revokeObjectURL(preview.src);
       preview.removeAttribute("src");
       fileEl.value = "";
       note.hidden = true;
+      redo.classList.remove("button-primary");
+      review.classList.remove("is-short-take");
     }
 
     function toggle() {
@@ -274,24 +333,33 @@
       const wasFile = current && current.fromFile;
       clearTake();
       paint(0);
-      if (canRecord && !wasFile) {
-        start();
-        return;
-      }
       setState("idle");
-      upload.open = true;
-      say("Chọn một file khác.");
-      fileEl.click();
+      if (wasFile) {
+        upload.open = true;
+        say("Chọn một file khác.");
+        fileEl.click();
+      } else {
+        say("Đã xóa bản ghi. Bấm nút mic hoặc chuẩn bị để ghi lại.");
+      }
     });
 
     document.addEventListener("keydown", (e) => {
       if (e.code !== "Space" || e.repeat || !canRecord || blocked) return;
+      if (root.getAttribute("data-prep") === "running") return;
       if (state() !== "idle" && state() !== "recording") return;
       // Only while the recorder is on screen: the lesson builder hides it for
       // steps that take no model audio, and a hidden recorder must not listen.
       if (!root.getClientRects().length) return;
       const t = e.target;
-      if (t && t.closest && t.closest("input, textarea, select, button, a, summary, audio, [contenteditable]")) return;
+      if (
+        t &&
+        t.closest &&
+        t.closest(
+          "input, textarea, select, button, a, summary, audio, label, [tabindex], [contenteditable], [role='button'], [role='radio'], [role='option'], [role='menuitem'], [role='tab'], .c-dropdown, details[open]"
+        )
+      ) {
+        return;
+      }
       e.preventDefault();
       toggle();
     });
@@ -370,6 +438,7 @@
           upload.open = true;
           if (!blocked && state() === "idle") say("Chọn file ghi âm có sẵn ở ô bên dưới.");
         }
+        updateMicStatus(state());
       },
       repaint: paintWindow,
       // Refuse both paths up front, for a page that must not take a recording
@@ -395,6 +464,10 @@
         return true;
       },
       canRecordLive: () => canRecord && !blocked,
+      setPrep(running) {
+        root.setAttribute("data-prep", running ? "running" : "ready");
+        updateMicStatus(running ? "prep" : (state() === "idle" ? "idle" : state()));
+      },
       // Back to an empty recorder, for the next step of a lesson.
       reset() {
         if (recorder && recorder.state === "recording") stop();
@@ -402,7 +475,7 @@
         paint(0);
         paintWindow();
         setState("idle");
-        if (!blocked) say(canRecord ? "Bấm nút ghi âm hoặc nhấn phím cách để bắt đầu." : "Chọn file ghi âm có sẵn ở ô bên dưới.");
+        if (!blocked) say(canRecord ? "hoặc nhấn phím Space để bắt đầu" : "Chọn file ghi âm có sẵn ở ô bên dưới.");
       },
     };
   };

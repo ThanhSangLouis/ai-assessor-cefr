@@ -23,16 +23,21 @@
     const goal = (plan && plan.goal) || {};
     const from = goal.band_from || d.suggested_from;
     const to = goal.band_to || d.suggested_to;
-    const hint = d.assessed_band
-      ? `Gợi ý từ bài đánh giá gần nhất của bạn: <b>${escapeHtml(d.assessed_band)}</b>. Bạn đổi được.`
-      : "Bạn chưa có bài đánh giá nào, nên gợi ý bắt đầu từ A1. Làm một bài đánh giá để có gợi ý sát hơn.";
     return `<form id="band-form" class="band-form">
-      <div class="field"><label for="band-from">Bắt đầu từ</label><select id="band-from">${options(from)}</select></div>
-      <span class="band-arrow" aria-hidden="true">${icon("arrow-right")}</span>
-      <div class="field"><label for="band-to">Mục tiêu</label><select id="band-to">${options(to)}</select></div>
-      <button type="submit">${icon("path")} ${plan ? "Tạo lại lộ trình" : "Tạo lộ trình"}</button>
-    </form>
-    <p class="muted small-note">${hint} Mỗi band khoảng 6 bài, lấy từ các bài giảng viên đã xuất bản.</p>`;
+      <div class="band-action-row">
+        <div class="field">
+          <label for="band-from">Trình độ hiện tại</label>
+          <select id="band-from">${options(from)}</select>
+        </div>
+        <div class="field">
+          <label for="band-to">Mục tiêu</label>
+          <select id="band-to">${options(to)}</select>
+        </div>
+        <div class="field field-action">
+          <button type="submit" class="band-submit-btn">${plan ? "Tạo lại lộ trình" : "Tạo lộ trình"} <span class="band-btn-arrow" aria-hidden="true">→</span></button>
+        </div>
+      </div>
+    </form>`;
   }
 
   function lessonsOf(plan) {
@@ -63,9 +68,16 @@
     const plan = d.plan;
     window.clearBusy(box);
     if (!plan) {
-      box.innerHTML = `<div class="card-head"><h2>${icon("target")} Học theo band</h2></div>
-        <p class="muted">Chọn band bạn đang ở và band muốn đạt; hệ thống ghép lộ trình gồm các bài của đúng những band đó.</p>
-        ${chooser(d, null)}`;
+      const hint = d.assessed_band
+        ? `Gợi ý từ kết quả: <b>${escapeHtml(d.assessed_band)}</b>`
+        : 'Chuẩn lộ trình đề xuất · <a href="/" class="band-assess-link">Kiểm tra trình độ</a>';
+      box.innerHTML = `<div class="band-plan-bar">
+          <div class="band-title-col">
+            <h2>${icon("target")} Học theo band</h2>
+          </div>
+          ${chooser(d, null)}
+          <div class="band-hint-pill">${icon("sparkle")} <span>${hint}</span></div>
+        </div>`;
       wire(d);
       return;
     }
@@ -87,6 +99,7 @@
   }
 
   function wire(d) {
+    if (window.enhanceSelects) window.enhanceSelects(box);
     const form = document.getElementById("band-form");
     form.addEventListener("submit", async (e) => {
       e.preventDefault();

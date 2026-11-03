@@ -5,7 +5,7 @@
     Variables: submit_label (button text), upload_hint (formats and limits),
     floor_seconds (the QC floor in force: a recording shorter than this is
     rejected, whatever the task asks for). -#}
-<div class="rec" id="rec" data-state="idle" data-floor-seconds="{{ floor_seconds | default(0) | int }}">
+<div class="rec" id="rec" data-state="idle" data-prep="ready" data-floor-seconds="{{ floor_seconds | default(0) | int }}">
   {#- First in the reading order, but only shown once there is something to hear. -#}
   <div class="rec-review" id="rec-review" hidden>
     <p class="rec-take" id="rec-take"></p>
@@ -20,43 +20,68 @@
 
   <div id="rec-live" class="rec-live" hidden>
     <div class="rec-stage">
-      <button type="button" class="rec-button" id="rec-button" aria-describedby="rec-hint">
-        <span class="rec-dot" aria-hidden="true"></span>
-        <span id="rec-button-label">Bắt đầu ghi âm</span>
-      </button>
-      <div class="rec-readout">
-        <p class="rec-time">
-          <span class="rec-clock" id="rec-clock" aria-hidden="true">0:00</span>
-          <span class="rec-window muted" id="rec-window"></span>
-        </p>
-        {#- Where the length stands against the task window: grey under the
-            minimum, green inside it, red past the maximum. -#}
-        <div class="duration-guide" id="duration-guide" aria-hidden="true">
-          <div class="duration-track">
-            <span class="duration-fill" id="duration-fill"></span>
-            <span class="duration-window" id="duration-window"></span>
+      <div class="rec-hero-mic-wrap">
+        <div class="rec-action-group">
+          <button type="button" class="rec-button rec-circle-hero" id="rec-button" aria-describedby="rec-hint">
+            <span class="rec-dot" aria-hidden="true">
+              <svg class="mic-svg-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </span>
+            <span id="rec-button-label" class="visually-hidden">Bắt đầu ghi âm</span>
+          </button>
+          <div class="rec-cta-group">
+            <span class="rec-cta-label" id="rec-cta-label">Bắt đầu ghi âm</span>
+            <span class="rec-cta-sub" id="rec-cta-sub">Hoặc nhấn Space</span>
           </div>
         </div>
-        <span class="meter" role="img" aria-label="Vạch mức âm thanh vào micro">
-          <span class="meter-bar" id="rec-level"></span>
-        </span>
+
+        <div class="rec-timer-group">
+          <span class="rec-clock" id="rec-clock" aria-hidden="true">00:00</span>
+          <span class="visually-hidden" id="rec-window"></span>
+          <div class="rec-readout-center">
+            <div class="duration-guide-wrap">
+              <div class="duration-guide" id="duration-guide" aria-hidden="true">
+                <div class="duration-track">
+                  <span class="duration-window" id="duration-window"></span>
+                  <span class="duration-fill" id="duration-fill"></span>
+                </div>
+              </div>
+              <div class="duration-scale-labels" aria-hidden="true">
+                <span>0s</span>
+                <span class="scale-target" id="duration-scale-target">Khuyến nghị: 40–60s</span>
+                <span id="duration-scale-max">120s</span>
+              </div>
+            </div>
+            <span class="meter visually-hidden" role="img" aria-label="Vạch mức âm thanh vào micro">
+              <span class="meter-bar" id="rec-level"></span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
-  <p class="rec-hint" id="rec-hint">Bấm nút ghi âm hoặc nhấn phím cách để bắt đầu.</p>
+  <p class="rec-hint visually-hidden" id="rec-hint">hoặc nhấn phím <kbd class="kbd-key">Space</kbd> để bắt đầu</p>
   <div id="recorder-off" class="notice" hidden></div>
 
-  <details class="rec-upload" id="rec-upload">
-    <summary>Hoặc chọn file ghi âm có sẵn</summary>
-    <div class="dropzone-wrap">
-      <label for="audio" class="dropzone" id="dropzone">
-        <span class="drop-mark" aria-hidden="true">⇪</span>
-        <span class="drop-title">Kéo thả file vào đây</span>
-        <span class="muted">hoặc bấm để chọn file từ máy</span>
-        <input id="audio" type="file" name="audio" accept="audio/*">
-      </label>
+  <div class="rec-footer-row">
+    <details class="rec-upload" id="rec-upload">
+      <summary><span class="upload-icon" aria-hidden="true">↑</span> Chọn file âm thanh</summary>
+      <div class="dropzone-wrap">
+        <label for="audio" class="dropzone" id="dropzone">
+          <span class="drop-mark" aria-hidden="true">⇪</span>
+          <span class="drop-title">Kéo thả file vào đây</span>
+          <span class="muted">hoặc bấm để chọn file từ máy</span>
+          <input id="audio" type="file" name="audio" accept="audio/*">
+        </label>
+      </div>
+      <p class="field-hint">{{ upload_hint }}</p>
+    </details>
+    <div class="mic-device-status status-idle" id="mic-status-pill">
+      <span class="mic-status-dot" id="mic-status-dot"></span>
+      <span class="mic-status-text" id="mic-status-text">Mic sẵn sàng</span>
     </div>
-    <p class="field-hint">{{ upload_hint }}</p>
-  </details>
+  </div>
   <p class="visually-hidden" id="rec-status" role="status" aria-live="polite"></p>
 </div>

@@ -32,6 +32,24 @@
     </aside>
   </div>
 
+  <nav class="mobile-bottom-bar" aria-label="Điều hướng di động">
+    <a href="/practice" class="mobile-tab-item active" aria-current="page">
+      <span class="tab-icon" aria-hidden="true">{{ icon("flag") }}</span>
+      <span class="tab-label">Lộ trình học</span>
+    </a>
+    <a href="/submit" class="mobile-tab-item">
+      <span class="tab-icon" aria-hidden="true">{{ icon("book-open") }}</span>
+      <span class="tab-label">Nộp bài</span>
+    </a>
+    <a href="/my-responses" class="mobile-tab-item">
+      <span class="tab-icon" aria-hidden="true">{{ icon("target") }}</span>
+      <span class="tab-label">Kết quả</span>
+    </a>
+    <a href="/account" class="mobile-tab-item">
+      <span class="tab-icon" aria-hidden="true">{{ icon("user") }}</span>
+      <span class="tab-label">Cá nhân</span>
+    </a>
+  </nav>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('practice_path.js') }}"></script>
