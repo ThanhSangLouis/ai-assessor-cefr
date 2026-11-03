@@ -4,7 +4,7 @@
 {% block title %}Tiến độ của tôi · SpeakUp{% endblock %}
 {% block content %}
 {{ subnav('Kết quả', [['/my-progress', 'Tiến độ', 'progress'], ['/my-responses', 'Bài đã nộp', 'mine']], 'progress') }}
-<div class="page-head page-head-row">
+<div class="page-head page-head-row progress-head">
   <div>
     <h1><span class="head-icon">{{ icon("trend") }}</span>Tiến độ của tôi</h1>
     <p class="lede">
@@ -14,8 +14,9 @@
     </p>
   </div>
   <div class="button-row page-tools">
-    <button type="button" class="button secondary small" id="print-progress">In hoặc lưu PDF</button>
-    <a class="button secondary small" href="/api/v1/me/profile.json">Tải hồ sơ năng lực (JSON)</a>
+    <button type="button" class="button secondary small" id="print-progress">{{ icon("printer") }}<span>In báo cáo</span></button>
+    <a class="button secondary small" href="/api/v1/me/profile.json" download
+       title="Hồ sơ năng lực dạng JSON, để mang sang hệ thống khác">{{ icon("download") }}<span>Tải JSON</span></a>
   </div>
 </div>
 
@@ -54,6 +55,10 @@
     các từ này cũng có trong phần ôn tập hằng ngày.</p>
   <div id="drill-words-body"></div>
 </section>
+
+{#- The page printed: a one-page summary built from what the page loaded
+    (my_progress.js, printReport), in place of the screen's cards. -#}
+<section class="print-report" id="print-report" aria-hidden="true" data-name="{{ account.display_name if account else "" }}"></section>
 
 <section class="card ach-panel" id="achievements" aria-labelledby="ach-title" aria-busy="true">
   <h2 id="ach-title" class="visually-hidden">Thành tựu</h2>

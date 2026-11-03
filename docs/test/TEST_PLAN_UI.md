@@ -40,6 +40,7 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | TC-UI-E09 | `test_admin_edits_a_threshold_and_the_submit_page_follows` | UX-10 | Thuận | Sửa ngưỡng ngắn nhất 20 → 15 giây: phiên bản mới, trang nộp bài của sinh viên ghi "15 đến" (từ D026, `/` đưa quản trị viên về trang quản trị); trả lại 20 sau ca |
 | TC-UI-E10 | `test_admin_activation_asks_first_and_only_compatible_models_offer_it` | UX-10 | Âm | Mô hình không tương thích hoặc hỏng không có nút kích hoạt; bấm kích hoạt rồi Huỷ thì mô hình đang chấm không đổi |
 | TC-UI-E11 | `test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll` | UX-02 | Biên | Ở 375 px, bốn trang của sinh viên: điều hướng cố định sát đáy, không cuộn ngang |
+| TC-UI-E12 | `test_the_progress_page_prints_as_a_report_not_as_the_screen` | FR-27 | Thuận | Trang Tiến độ: hai nút mỗi nút một dòng; khi in chỉ còn báo cáo một trang (Kết quả, Cần luyện tiếp, Thành tựu, lưu ý không phải chứng chỉ), không còn thẻ, đầu trang hay nút của màn hình, và báo cáo không bị in mờ |
 
 ## 3. Ma trận phủ tiêu chí
 
