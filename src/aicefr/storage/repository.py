@@ -918,6 +918,7 @@ class Repository(MongoStore):
         "paid_cost_usd",
         "upgrades",
         "drafts",
+        "passages",
         "failed",
         "refused_user",
         "refused_global",

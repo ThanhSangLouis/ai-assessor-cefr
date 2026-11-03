@@ -38,7 +38,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, STAFF_ONLY, require_login
-from aicefr.coach import lesson_draft, phrasebook, usage
+from aicefr.coach import lesson_draft, passage, phrasebook, usage
 from aicefr.coach.providers import OPENAI_COMPATIBLE, PAID_KEY_ENV, provider_from
 from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
 from aicefr.contracts import Band, Criterion, ResponseStatus
@@ -285,6 +285,92 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
     return {"band": body.band.value, "criterion": criterion, **draft.as_dict()}
 
 
+# ================================================================= reading passages (D090)
+
+
+def passage_offer() -> dict:
+    """Whether a passage can be written by the model now, and what one costs."""
+    metering = getattr(svc().peers, "metering", None)
+    available = _provider(_tier()) is not None
+    price = metering.passage_price() if metering is not None and available else None
+    return {"available": available, "price": price}
+
+
+def write_passage(account_id: str, band: str | None, words: list[str], key: str) -> dict:
+    """A reading passage around `words` by the language model, paid by the learner (D090).
+
+    Asked by the learning service, which keeps the passage: here are the
+    provider, the caps and the day's counters the upgrades use. The price is
+    the passage's own, held before the model is asked and charged only when a
+    passage came back with every word in it. A refusal is returned, not
+    raised (`platform.rpc`): `{"refused": reason, "status": http status}`.
+    """
+    s = svc()
+    tier = _tier()
+    provider = _provider(tier)
+    if provider is None:
+        return {"refused": "máy chủ chưa bật mô hình ngôn ngữ", "status": 503}
+    day = usage.provider_day()
+    today = s.repo.coach_days([day])[0]
+    refusal = None
+    if usage.global_refusal(s.settings, tier, today):
+        # The shared cap's own sentence speaks of upgrades; this one of passages.
+        refusal = (
+            "hôm nay hệ thống đã dùng hết lượt AI trong ngày: hãy ghép đoạn từ cụm của bạn"
+            " (miễn phí) hoặc thử lại vào ngày mai"
+        )
+    elif today["passages"] >= s.settings.passage_global_daily:
+        refusal = "hôm nay hệ thống đã viết hết số đoạn đọc trong ngày, hãy thử lại vào ngày mai"
+    if refusal:
+        s.repo.record_coach(day, refused_global=1)
+        return {"refused": refusal, "status": 429}
+    metering = getattr(s.peers, "metering", None)
+    if metering is not None:
+        refused = metering.hold_upgrade(account_id=account_id, key=key, action="drill_passage")
+        if refused:
+            return {"refused": refused, "status": 402}
+    calls = usage.Calls()
+    used: dict = {}
+    try:
+        raw, used = provider.complete_with_usage(
+            passage.user_message(band, words),
+            calls,
+            system=passage.SYSTEM,
+            schema=passage.SCHEMA,
+            max_tokens=passage.MAX_OUTPUT_TOKENS,
+        )
+        made = passage.parse(raw, words, band)
+    except UpgradeError as e:
+        s.repo.record_coach(
+            day, account_id=account_id, error=str(e), failed=1,
+            **_counts(s.settings, tier, calls, used),
+        )  # fmt: skip
+        if metering is not None:
+            metering.settle_upgrade(key=key, result=False, action="drill_passage")
+        count("coach_passage_failed_total")
+        return {"refused": str(e), "status": 502}
+    s.repo.record_coach(
+        day, account_id=account_id, passages=1, **_counts(s.settings, tier, calls, used)
+    )
+    if metering is not None:
+        metering.settle_upgrade(
+            key=key,
+            result=True,
+            input_tokens=used.get("input_tokens"),
+            output_tokens=used.get("output_tokens"),
+            action="drill_passage",
+        )
+    count("coach_passage_total")
+    return {
+        "text": made.text,
+        "provider": provider.name,
+        "model": provider.model,
+        "prompt_version": passage.PROMPT_VERSION,
+        "input_tokens": used.get("input_tokens"),
+        "output_tokens": used.get("output_tokens"),
+    }
+
+
 # ================================================================= the dashboard (D072)
 
 DASHBOARD_DAYS = 14
@@ -322,6 +408,7 @@ def coach_dashboard() -> dict:
         "cap_today": usage.cap_of(st, tier),
         "free_used_up": days[-1]["free_requests"] >= st.coach_global_daily,
         "per_student_daily": st.coach_daily,
+        "passage_daily": st.passage_global_daily,
         "price_input_usd": st.coach_price_input_usd,
         "price_output_usd": st.coach_price_output_usd,
         "today": days[-1],

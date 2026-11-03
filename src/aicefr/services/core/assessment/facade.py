@@ -91,6 +91,24 @@ class AssessmentFacade:
         }
 
     @exposed
+    def passage_offer(self) -> dict:
+        """Whether the language model can write a reading passage now, and its price (D090)."""
+        from aicefr.services.core.assessment import coach_api
+
+        return coach_api.passage_offer()
+
+    @exposed
+    def write_passage(self, account_id: str, band: str | None, words: list[str], key: str) -> dict:
+        """A reading passage around a learner's unclear words, paid by them (D090).
+
+        `{"text": ...}` with the provider and its token counts, or
+        `{"refused": reason, "status": http status}`.
+        """
+        from aicefr.services.core.assessment import coach_api
+
+        return coach_api.write_passage(account_id, band, words, key)
+
+    @exposed
     def progress_series(self, account_id: str, limit: int = 100) -> list[dict]:
         return self.repo.progress_series(account_id, limit)
 

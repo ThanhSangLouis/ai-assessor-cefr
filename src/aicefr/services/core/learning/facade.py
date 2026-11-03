@@ -114,9 +114,14 @@ class LearningFacade:
         return self.drills.all_of(account_id) if self.drills is not None else []
 
     @exposed
+    def passages_of(self, account_id: str) -> list[dict]:
+        """One learner's reading passages with their takes, for the personal export (D090)."""
+        return self.drills.passages_of(account_id) if self.drills is not None else []
+
+    @exposed
     def erase_account(self, account_id: str) -> int:
-        """Erase every attempt, review, achievement, composed path and word drill
-        of one account, recordings included."""
+        """Erase every attempt, review, achievement, composed path, word drill and
+        reading passage of one account, recordings included."""
         keys = self.lessons.erase_account(account_id)
         if self.plans is not None:
             self.plans.erase_account(account_id)

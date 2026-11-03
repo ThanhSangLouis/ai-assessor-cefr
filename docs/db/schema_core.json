@@ -119,6 +119,23 @@
       "unique": true
     }
   ],
+  "drill_passage": [
+    {
+      "name": "i_account_id_created_at",
+      "keys": [
+        "account_id",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_passage_id",
+      "keys": [
+        "passage_id"
+      ],
+      "unique": true
+    }
+  ],
   "learning_plan": [
     {
       "name": "i_account_id_active",

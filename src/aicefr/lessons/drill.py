@@ -223,3 +223,44 @@ def unsure_share(words: list[Word]) -> float | None:
     if not scored:
         return None
     return sum(1 for w in scored if w.is_uncertain) / len(scored)
+
+
+def judge_passage(result: StepResult, places: dict[str, list[int]]) -> dict[str, Judgement]:
+    """Whether the machine heard each word clearly in one reading of a passage (D090).
+
+    A word passes when every place it stands in the passage was heard
+    clearly; what the machine heard instead, and the pattern that names the
+    gap, come from the first place that was not.
+    """
+    marks = {m.index: m for m in result.words}
+    out: dict[str, Judgement] = {}
+    for word, at in places.items():
+        if not result.measured:
+            out[word] = Judgement(False, False, None, None)
+            continue
+        missed = [
+            marks.get(i)
+            for i in at
+            if marks.get(i) is None or marks[i].final is not WordStatus.HEARD
+        ]
+        if not at or missed:
+            first = next((m for m in missed if m is not None), None)
+            said = first.said if first else None
+            pattern = Pattern(first.pattern) if first and first.pattern else None
+            out[word] = Judgement(True, False, said, pattern)
+        else:
+            out[word] = Judgement(True, True, None, None)
+    return out
+
+
+def passage_step(text: str, words: list[str]) -> Step:
+    """A passage as a read-aloud step, its words highlighted; long enough to read slowly."""
+    return Step(
+        step_id="drill-passage",
+        kind=StepKind.READ_ALOUD,
+        title="Đọc đoạn văn",
+        text=text,
+        hint_words=list(words),
+        max_seconds=90,
+        strictness=Strictness.NORMAL,
+    )

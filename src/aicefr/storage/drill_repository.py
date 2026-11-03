@@ -6,6 +6,11 @@ once the learner has said the word again: the words offered are worked out
 from the stored transcript each time (`lessons.drill.pick`), so a report
 nobody practises from leaves nothing behind.
 
+D090 adds `drill_passage`: a `DrillPassage` per passage written around a
+learner's open drills, holding the drills it was written for and its reading
+takes (`PassageTake`). A take of a passage is also a take of each of its
+words, recorded on that word's `WordDrill`.
+
 It lives in the learning store, beside the attempts and reviews, and is erased
 with them (`LessonRepository.erase_account` is not enough: see
 `LearningFacade.erase_account`).
@@ -37,6 +42,24 @@ DRILL_FIELDS = (
     "created_at",
     "updated_at",
 )
+PASSAGE_FIELDS = (
+    "passage_id",
+    "account_id",
+    "band",
+    "words",
+    "drill_ids",
+    "text",
+    "source",
+    "provider",
+    "model",
+    "prompt_version",
+    "input_tokens",
+    "output_tokens",
+    "takes",
+    "created_at",
+)
+# Takes kept per passage, as per word.
+MAX_PASSAGE_TAKES = MAX_TAKES
 
 
 @dataclass
@@ -78,6 +101,56 @@ class WordDrill:
             "passed": self.passed,
             "takes": len(self.takes),
             "last_said": self.takes[-1].said if self.takes else None,
+        }
+
+
+@dataclass
+class PassageTake:
+    """One reading of a passage: which of its words came through clearly."""
+
+    clear: list[str]
+    unclear: list[str]
+    created_at: str
+
+
+@dataclass
+class DrillPassage:
+    """A passage written around some of a learner's open drills (D090).
+
+    `source` is "model" when the language model wrote it (and it was paid
+    for), "phrases" when it is the learner's own phrases put together.
+    """
+
+    passage_id: str
+    account_id: str
+    band: str | None
+    words: list[str]
+    drill_ids: list[str]
+    text: str
+    source: str
+    provider: str | None = None
+    model: str | None = None
+    prompt_version: str | None = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    takes: list[PassageTake] = field(default_factory=list)
+    created_at: str = ""
+
+    @classmethod
+    def from_doc(cls, doc: dict) -> DrillPassage:
+        row = fields(doc, PASSAGE_FIELDS) or {}
+        row["takes"] = [PassageTake(**t) for t in row.get("takes") or []]
+        return cls(**row)
+
+    def view(self) -> dict:
+        return {
+            "passage_id": self.passage_id,
+            "band": self.band,
+            "words": list(self.words),
+            "text": self.text,
+            "source": self.source,
+            "takes": len(self.takes),
+            "created_at": self.created_at,
         }
 
 
@@ -146,10 +219,19 @@ class DrillRepository(MongoStore):
         rows = (
             self.col("word_drill")
             .find({"account_id": account_id, "passed": False})
-            .sort([("updated_at", DESCENDING)])
+            # Same second: the one written last first (D090 picks from the top).
+            .sort([("updated_at", DESCENDING), ("_id", DESCENDING)])
             .limit(limit)
         )
         return [WordDrill.from_doc(r) for r in rows]
+
+    def by_ids(self, account_id: str, drill_ids: list[str]) -> list[WordDrill]:
+        """This learner's drills among `drill_ids`, in the order given."""
+        rows = self.col("word_drill").find(
+            {"account_id": account_id, "drill_id": {"$in": drill_ids}}
+        )
+        found = {d.drill_id: d for d in map(WordDrill.from_doc, rows)}
+        return [found[i] for i in drill_ids if i in found]
 
     def all_of(self, account_id: str) -> list[dict]:
         """Every drill of one learner with its takes, oldest first."""
@@ -163,5 +245,47 @@ class DrillRepository(MongoStore):
             "passed": col.count_documents({"account_id": account_id, "passed": True}),
         }
 
+    # ------------------------------------------------------------ passages (D090)
+
+    def save_passage(self, passage: DrillPassage) -> DrillPassage:
+        passage.created_at = passage.created_at or _now()
+        self.col("drill_passage").insert_one(asdict(passage))
+        return passage
+
+    def passage(self, account_id: str, passage_id: str) -> DrillPassage | None:
+        doc = self.col("drill_passage").find_one(
+            {"account_id": account_id, "passage_id": passage_id}
+        )
+        return DrillPassage.from_doc(doc) if doc else None
+
+    def passage_for(self, account_id: str, drill_ids: list[str]) -> DrillPassage | None:
+        """The latest passage written for exactly these drills: read again, never paid again."""
+        doc = self.col("drill_passage").find_one(
+            {"account_id": account_id, "drill_ids": {"$size": len(drill_ids), "$all": drill_ids}},
+            sort=[("created_at", DESCENDING)],
+        )
+        return DrillPassage.from_doc(doc) if doc else None
+
+    def model_passages_since(self, account_id: str, since: str) -> int:
+        """Passages the model wrote for this learner since `since`: their daily cap."""
+        return self.col("drill_passage").count_documents(
+            {"account_id": account_id, "source": "model", "created_at": {"$gte": since}}
+        )
+
+    def record_passage_take(self, account_id: str, passage_id: str, take: PassageTake) -> None:
+        self.col("drill_passage").update_one(
+            {"account_id": account_id, "passage_id": passage_id},
+            {"$push": {"takes": {"$each": [asdict(take)], "$slice": -MAX_PASSAGE_TAKES}}},
+        )
+
+    def passages_of(self, account_id: str) -> list[dict]:
+        """Every passage of one learner with its takes, oldest first."""
+        rows = self.col("drill_passage").find({"account_id": account_id}).sort("created_at", 1)
+        return [asdict(DrillPassage.from_doc(r)) for r in rows]
+
     def erase_account(self, account_id: str) -> int:
-        return self.col("word_drill").delete_many({"account_id": account_id}).deleted_count
+        """Forget the learner's drills and passages; how many documents went."""
+        gone = self.col("word_drill").delete_many({"account_id": account_id}).deleted_count
+        return (
+            gone + self.col("drill_passage").delete_many({"account_id": account_id}).deleted_count
+        )

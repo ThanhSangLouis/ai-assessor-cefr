@@ -1,4 +1,4 @@
-%% ERD - các collection sau D060, D075, D078, D081..D085, D088, D089 (lược đồ phiên bản 18): một aggregate root
+%% ERD - các collection sau D060, D075, D078, D081..D085, D088..D090 (lược đồ phiên bản 19): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
@@ -24,6 +24,8 @@ erDiagram
     lesson |o--o{ review_item : "ôn"
     response ||..o{ word_drill : "từ máy nghe chưa rõ"
     word_drill |o--o| review_item : "đưa vào ôn"
+    account ||..o{ drill_passage : "đọc đoạn văn (D090)"
+    drill_passage }o--|{ word_drill : "viết quanh 3-5 từ"
     learning_plan }o--o{ lesson : "gợi ý"
     learning_plan |o--o| path : "lưu thành"
 
@@ -105,6 +107,14 @@ erDiagram
         int streak
         bool passed
         array takes "lượt nói lại, tối đa 20"
+    }
+    drill_passage {
+        string passage_id PK
+        string account_id
+        array drill_ids "3-5 từ đang luyện dở"
+        string text
+        string source "model hoặc phrases"
+        array takes "lần đọc, tối đa 20"
     }
     achievement {
         string account_id PK

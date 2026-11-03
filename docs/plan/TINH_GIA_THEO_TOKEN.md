@@ -25,7 +25,10 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_PRICE_PRACTICE_FACTOR` | Phần bài luyện tập phải trả | 0,5 |
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
 | `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); 0 là miễn phí | 0,3 |
+| `AICEFR_PRICE_PASSAGE_RUNS` | Lượt cho một đoạn đọc do AI viết quanh từ đang luyện dở (D090); đọc lại miễn phí; 0 là miễn phí | 0,1 |
 | `AICEFR_COACH_GLOBAL_DAILY` | Số yêu cầu gửi nhà cung cấp của cả hệ thống trong một ngày của nhà cung cấp (Google: hết lúc 0 giờ giờ Thái Bình Dương), tính cả lỗi và lần gọi lại, dưới hạn mức miễn phí 500 | 475 |
+| `AICEFR_PASSAGE_GLOBAL_DAILY` | Trong số đó, số đoạn đọc (D090) mô hình viết tối đa mỗi ngày, để bản nâng cấp còn phần | 150 |
+| `AICEFR_PASSAGE_DAILY` | Số đoạn đọc mới mô hình viết cho một học viên trong 24 giờ | 3 |
 | `AICEFR_COACH_DAILY_BUDGET_USD` | Gói khởi đầu: lớn hơn 0 là bắt đầu ở gói trả phí với ngân sách USD/ngày này; sau đó quản trị viên đổi trên dashboard (D073) | 0 |
 | `AICEFR_COACH_PAID_API_KEY` | Khoá của project Google đã bật thanh toán, dùng khi quản trị viên chuyển sang gói trả phí (D073); trống thì nút Trả phí bị khoá | trống |
 | `AICEFR_COACH_PRICE_INPUT_USD`, `AICEFR_COACH_PRICE_OUTPUT_USD` | Giá 1 triệu token vào/ra để tính chi phí (giá niêm yết Gemini 3.5 Flash-Lite; token ra gồm cả token suy nghĩ) | 0,30 / 2,50 |

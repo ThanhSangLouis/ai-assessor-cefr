@@ -328,6 +328,9 @@ FIELD_PURPOSES: dict[str, str] = {
     " được chọn. Chỉ dùng để hiện trên trang Luyện tập; xoá dữ liệu là xoá luôn.",
     "word_drills": "Các từ máy nghe chưa rõ bạn đã luyện lại (D089): từ, cụm từ, mỗi lượt nói"
     " lại máy nghe rõ hay chưa. Bản ghi các lượt này không được lưu; xoá dữ liệu là xoá luôn.",
+    "drill_passages": "Các đoạn đọc viết quanh những từ đó (D090): các từ, đoạn văn, ai viết (AI"
+    " hay ghép từ cụm từ của bạn) và mỗi lần đọc, từ nào máy nghe rõ. Bản ghi không được lưu;"
+    " xoá dữ liệu là xoá luôn.",
 }
 
 
@@ -380,6 +383,7 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
             "lesson_attempts": lesson_attempts,
             "learning_plans": s.peers.learning.plans_of(account_id=account.account_id),
             "word_drills": s.peers.learning.drills_of(account_id=account.account_id),
+            "drill_passages": s.peers.learning.passages_of(account_id=account.account_id),
             "replay_labels": replay_api.my_labels(account.account_id) if s.replays else [],
             "achievements": [
                 {

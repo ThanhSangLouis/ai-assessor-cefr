@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Đọc đoạn văn · SpeakUp{% endblock %}
+{% block content %}
+{#- D090: a passage written around the words still being said again (D089),
+    read aloud and measured; each word heard clearly counts towards its two
+    clear takes in a row. Written by the language model (paid once per set of
+    words, read again for free) or put together from the learner's own phrases. -#}
+<p class="crumb"><a href="/my-progress">← Tiến độ</a></p>
+<div id="passage" aria-busy="true">
+  <div class="page-head">
+    <h1><span class="head-icon">{{ icon("book-open") }}</span>Đọc đoạn văn có từ đang luyện</h1>
+    <p class="lede">Các từ bạn đang luyện dở được đặt vào một đoạn văn mới. Đọc to cả đoạn:
+      mỗi lần máy nghe rõ một từ được tính như một lượt nói lại từ đó.</p>
+  </div>
+
+  <section class="card" aria-labelledby="passage-words-h">
+    <h2 id="passage-words-h">Các từ trong đoạn</h2>
+    <ul class="drill-words" id="passage-words" aria-label="Từ trong đoạn"></ul>
+    <p class="muted small-note" id="passage-empty" hidden></p>
+  </section>
+
+  <section class="card" id="passage-make" aria-labelledby="passage-make-h" hidden>
+    <h2 id="passage-make-h">Tạo đoạn đọc</h2>
+    <p class="muted small-note" id="passage-offer"></p>
+    <div class="button-row">
+      <button type="button" class="button" id="passage-model">{{ icon("sparkle") }} AI viết đoạn</button>
+      <button type="button" class="button secondary" id="passage-phrases">Ghép từ cụm của bạn (miễn phí)</button>
+    </div>
+  </section>
+
+  <section class="card drill-step" id="passage-read" aria-labelledby="passage-read-h" hidden>
+    <h2 id="passage-read-h">Đọc to đoạn này</h2>
+    <p class="muted small-note" id="passage-source"></p>
+    <p class="drill-phrase passage-text" lang="en" id="passage-text"></p>
+    <div class="button-row" id="passage-voice"></div>
+    <form class="recorder-card" id="passage-form">
+      {% with submit_label="Gửi lần đọc này",
+               floor_seconds=0,
+               upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+        {% include "_recorder.html" %}
+      {% endwith %}
+      <div id="passage-wait" aria-live="polite"></div>
+    </form>
+    <div class="drill-result" id="passage-result" aria-live="polite"></div>
+    <details class="passage-again">
+      <summary>Muốn đoạn khác?</summary>
+      <div class="button-row">
+        <button type="button" class="button secondary small" data-fresh="model">AI viết đoạn khác</button>
+        <button type="button" class="button secondary small" data-fresh="phrases">Ghép từ cụm của bạn</button>
+      </div>
+    </details>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('shadow.js') }}"></script>
+<script src="{{ asset('passage.js') }}"></script>{% endblock %}

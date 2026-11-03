@@ -144,6 +144,7 @@ class PricesIn(BaseModel):
     first_minute_runs: float = Field(ge=0, le=100)
     extra_minute_runs: float = Field(ge=0, le=100)
     upgrade_runs: float = Field(ge=0, le=100)
+    passage_runs: float = Field(default=0.1, ge=0, le=100)
     idpoint_per_run: int = Field(ge=0, le=10_000_000)
     free_runs: float = Field(ge=0, le=1000)
     packs: list[PackIn] = Field(min_length=1, max_length=10)

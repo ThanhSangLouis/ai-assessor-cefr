@@ -105,6 +105,8 @@ class Services:
     peers: Peers
     # D089: the words said again from a recording.
     drills: DrillRepository | None = None
+    # D090: new reading passages one learner may have the model write a day.
+    passage_daily: int = 3
 
 
 _services: Services | None = None

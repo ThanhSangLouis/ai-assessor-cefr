@@ -6835,6 +6835,14 @@ button:not(:disabled):hover,
 .drill-ok { color: var(--ok); font-weight: 600; }
 .drill-miss { color: var(--warn); font-weight: 600; }
 
+/* D090: a passage read around the words still being said again. */
+span.drill-word { cursor: default; }
+.passage-text { max-width: 65ch; }
+.passage-text mark.is-heard { background: var(--ok-soft); border-bottom-color: var(--ok); }
+.passage-verdicts { display: grid; gap: var(--sp-1); padding: 0; margin: 0; list-style: none; }
+.passage-again { margin-top: var(--sp-3); font-size: var(--t-sm); }
+.passage-again summary { cursor: pointer; color: var(--fg-muted); }
+
 /* D070: shadowing the upgraded answer, the phrase book, the habit charts. */
 .shadow { display: grid; gap: var(--sp-2); }
 .shadow-controls { align-items: center; }
