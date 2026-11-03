@@ -6718,6 +6718,58 @@ button:not(:disabled):hover,
 @keyframes art-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes art-breathe { to { transform: scaleY(1.035); } }
 @keyframes art-sunrise { from { transform: translateY(24px); opacity: 0; } }
+/* The progress page's tools: one line each. */
+.page-tools .button { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+
+/* The progress page on paper is its report (my_progress.js, paintReport): one
+   page to read in a minute, not the screen printed. Nothing of the screen. */
+.print-report { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 14mm 12mm; }
+  body:has(#print-report) .site-header,
+  body:has(#print-report) .site-footer,
+  body:has(#print-report) main > :not(#print-report) { display: none !important; }
+  body:has(#print-report) main { max-width: none; margin: 0; padding: 0; }
+  /* Hidden on screen, it would start its rise-in animation the moment paper
+     shows it, and print half transparent. */
+  .print-report { display: block; animation: none !important; color: #111; font-size: 10pt; line-height: 1.4; }
+  /* wrapTables boxes every table for scrolling; paper does not scroll. */
+  .print-report .table-scroll { overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; }
+  .print-report h1 { margin: 2pt 0 0; font-size: 18pt; letter-spacing: -0.01em; }
+  .print-report h2 {
+    margin: 12pt 0 5pt; padding-bottom: 2pt; border-bottom: 0.75pt solid #999;
+    font-size: 11pt; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .print-report section { break-inside: avoid; }
+  .print-report p { margin: 0 0 4pt; }
+  .pr-head { padding-bottom: 6pt; border-bottom: 2pt solid #111; }
+  .pr-brand { margin: 0; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+  .pr-meta { margin: 2pt 0 0; color: #555; font-size: 9pt; }
+  .pr-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 0 0 8pt; }
+  .pr-facts > div { border-left: 2pt solid #111; padding-left: 6pt; }
+  .pr-facts dt { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+  .pr-facts dd { margin: 1pt 0; font-size: 15pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pr-facts p { font-size: 8.5pt; color: #333; }
+  .print-report .trend-chart { max-height: 50mm; margin: 0 0 6pt; }
+  .print-report .trend-chart .line { stroke: #111; }
+  .print-report .trend-chart .dot { fill: #fff; stroke: #111; }
+  .print-report .trend-chart .dot.verified { fill: #111; }
+  .print-report .trend-chart .grid { stroke: #ccc; }
+  .print-report .trend-chart .axis-label { fill: #555; }
+  .print-report h1, .print-report h2, .print-report dd, .print-report b, .print-report li,
+  .print-report td, .print-report th { color: #111; }
+  .pr-table { width: 100%; border: 0; border-radius: 0; box-shadow: none; border-collapse: collapse;
+    font-size: 9pt; font-variant-numeric: tabular-nums; }
+  .pr-table th { text-align: left; font-weight: 600; background: none; border: 0;
+    border-bottom: 0.75pt solid #111; padding: 2pt 4pt; }
+  .pr-table td { border: 0; border-bottom: 0.5pt solid #ddd; padding: 2pt 4pt; }
+  .pr-table tr { break-inside: avoid; }
+  .pr-next { margin: 0; padding-left: 14pt; }
+  .pr-next li { margin: 0 0 4pt; }
+  .pr-empty { color: #555; }
+  .pr-foot { margin-top: 12pt; padding-top: 4pt; border-top: 0.5pt solid #999; font-size: 8pt; color: #555; }
+}
+
 
 @media print {
   .ground,
@@ -7009,54 +7061,3 @@ span.drill-word { cursor: default; }
 .price-packs button { margin: 0; }
 .price-history { margin-top: var(--sp-4); }
 
-/* The progress page's tools: one line each. */
-.page-tools .button { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
-
-/* The progress page on paper is its report (my_progress.js, paintReport): one
-   page to read in a minute, not the screen printed. Nothing of the screen. */
-.print-report { display: none; }
-@media print {
-  @page { size: A4; margin: 14mm 14mm 12mm; }
-  body:has(#print-report) .site-header,
-  body:has(#print-report) .site-footer,
-  body:has(#print-report) main > :not(#print-report) { display: none !important; }
-  body:has(#print-report) main { max-width: none; margin: 0; padding: 0; }
-  /* Hidden on screen, it would start its rise-in animation the moment paper
-     shows it, and print half transparent. */
-  .print-report { display: block; animation: none !important; color: #111; font-size: 10pt; line-height: 1.4; }
-  /* wrapTables boxes every table for scrolling; paper does not scroll. */
-  .print-report .table-scroll { overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; }
-  .print-report h1 { margin: 2pt 0 0; font-size: 18pt; letter-spacing: -0.01em; }
-  .print-report h2 {
-    margin: 12pt 0 5pt; padding-bottom: 2pt; border-bottom: 0.75pt solid #999;
-    font-size: 11pt; text-transform: uppercase; letter-spacing: 0.06em;
-  }
-  .print-report section { break-inside: avoid; }
-  .print-report p { margin: 0 0 4pt; }
-  .pr-head { padding-bottom: 6pt; border-bottom: 2pt solid #111; }
-  .pr-brand { margin: 0; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
-  .pr-meta { margin: 2pt 0 0; color: #555; font-size: 9pt; }
-  .pr-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 0 0 8pt; }
-  .pr-facts > div { border-left: 2pt solid #111; padding-left: 6pt; }
-  .pr-facts dt { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
-  .pr-facts dd { margin: 1pt 0; font-size: 15pt; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .pr-facts p { font-size: 8.5pt; color: #333; }
-  .print-report .trend-chart { max-height: 50mm; margin: 0 0 6pt; }
-  .print-report .trend-chart .line { stroke: #111; }
-  .print-report .trend-chart .dot { fill: #fff; stroke: #111; }
-  .print-report .trend-chart .dot.verified { fill: #111; }
-  .print-report .trend-chart .grid { stroke: #ccc; }
-  .print-report .trend-chart .axis-label { fill: #555; }
-  .print-report h1, .print-report h2, .print-report dd, .print-report b, .print-report li,
-  .print-report td, .print-report th { color: #111; }
-  .pr-table { width: 100%; border: 0; border-radius: 0; box-shadow: none; border-collapse: collapse;
-    font-size: 9pt; font-variant-numeric: tabular-nums; }
-  .pr-table th { text-align: left; font-weight: 600; background: none; border: 0;
-    border-bottom: 0.75pt solid #111; padding: 2pt 4pt; }
-  .pr-table td { border: 0; border-bottom: 0.5pt solid #ddd; padding: 2pt 4pt; }
-  .pr-table tr { break-inside: avoid; }
-  .pr-next { margin: 0; padding-left: 14pt; }
-  .pr-next li { margin: 0 0 4pt; }
-  .pr-empty { color: #555; }
-  .pr-foot { margin-top: 12pt; padding-top: 4pt; border-top: 0.5pt solid #999; font-size: 8pt; color: #555; }
-}
