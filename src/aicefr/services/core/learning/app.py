@@ -33,6 +33,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             max_bytes=audio_qc.MAX_BYTES,
             peers=peers,
             drills=drills,
+            passage_daily=settings.passage_daily,
         )
     )
     plans_api.configure(plans)

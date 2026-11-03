@@ -816,6 +816,24 @@ def _d089_word_drill(db: Database, target: str) -> None:
     )
 
 
+def _d090_drill_passage(db: Database, target: str) -> None:
+    """Reading passages written around a learner's unclear words: `drill_passage` (D090).
+
+    One document per passage, holding the words it was written for and its
+    takes. New collection, nothing to move.
+    """
+    ensure_indexes(
+        db,
+        {
+            "drill_passage": [
+                (("passage_id",), True),
+                (("account_id", "created_at"), False),
+            ]
+        },
+        "migration-19",
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -851,6 +869,7 @@ MIGRATIONS: tuple[Migration, ...] = (
         17, "push_subscription: a browser's Web Push endpoint (D088)", _d088_push_subscription
     ),
     Migration(18, "word_drill: words said again from a recording (D089)", _d089_word_drill),
+    Migration(19, "drill_passage: passages read around unclear words (D090)", _d090_drill_passage),
 )
 
 LATEST = MIGRATIONS[-1].version

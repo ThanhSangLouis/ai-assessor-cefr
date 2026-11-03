@@ -151,6 +151,13 @@ class Settings:
     # day (aicefr.coach.usage), failures and retries included, under its free
     # daily quota (Gemini 3.5 Flash-Lite: 500).
     coach_global_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_GLOBAL_DAILY", 475))
+    # D090: reading passages around the unclear words share that cap; within
+    # it they may take at most this many a day, so the upgrades keep their
+    # share, and one learner at most `passage_daily` new ones a day.
+    passage_global_daily: int = field(
+        default_factory=lambda: _int("AICEFR_PASSAGE_GLOBAL_DAILY", 150)
+    )
+    passage_daily: int = field(default_factory=lambda: _int("AICEFR_PASSAGE_DAILY", 3))
     # On a paid tier: a daily budget in USD replaces the request cap when set,
     # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
     # prices by default; output includes thinking tokens).
@@ -236,6 +243,10 @@ class Settings:
     # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
     price_upgrade_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
+    )
+    # D090: what one reading passage around the unclear words costs, in runs.
+    price_passage_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.1)
     )
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.

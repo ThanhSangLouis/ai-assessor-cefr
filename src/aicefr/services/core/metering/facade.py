@@ -16,6 +16,7 @@ from aicefr.metering.pricing import (
     as_idpoint,
     as_runs,
     hold_for,
+    passage_units,
     units_for,
     upgrade_units,
     usage_of,
@@ -104,22 +105,36 @@ class MeteringFacade:
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
     @exposed
+    def passage_price(self) -> dict | None:
+        """What one reading passage costs (D090); None when nothing is counted."""
+        if not self.enabled:
+            return None
+        units = passage_units(self.prices)
+        return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
+
+    @exposed
     def hold_upgrade(self, account_id: str, key: str, action: str = "upgrade") -> str | None:
         """Hold the price of one language-model answer before the model is asked.
 
-        `action` is "upgrade", a learner's upgraded answer (D072), or
-        "lesson_draft", a teacher's lesson draft (D075): one price for both.
-        Free runs first, then the wallet, as for a recording. The refusal, or
-        None; settled with `settle_upgrade` once the model answered or failed.
+        `action` is "upgrade", a learner's upgraded answer (D072),
+        "lesson_draft", a teacher's lesson draft (D075): one price for both; or
+        "drill_passage", a reading passage around the unclear words (D090), at
+        its own lower price. Free runs first, then the wallet, as for a
+        recording. The refusal, or None; settled with `settle_upgrade` once the
+        model answered or failed.
         """
-        units = upgrade_units(self.prices)
+        what = MeteredAction(action)
+        passage = what is MeteredAction.DRILL_PASSAGE
+        units = passage_units(self.prices) if passage else upgrade_units(self.prices)
         if not self.enabled or units <= 0:
             return None
-        what = MeteredAction(action)
         try:
             self.store.hold(account_id, what, key, units, self.prices.version)
         except InsufficientCredits as e:
-            thing = "bản soạn bài bằng AI" if what is MeteredAction.LESSON_DRAFT else "bản nâng cấp"
+            thing = {
+                MeteredAction.LESSON_DRAFT: "bản soạn bài bằng AI",
+                MeteredAction.DRILL_PASSAGE: "đoạn đọc",
+            }.get(what, "bản nâng cấp")
             return (
                 f"{thing} cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
                 f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"

@@ -36,6 +36,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         extra_minute_runs=settings.price_extra_minute_runs,
         idpoint_per_run=settings.idpoint_per_run,
         upgrade_runs=settings.price_upgrade_runs,
+        passage_runs=settings.price_passage_runs,
     )
     book = PriceBook(store, prices, settings.credit_packs)
     facade = MeteringFacade(store, audit_log, enabled, book)

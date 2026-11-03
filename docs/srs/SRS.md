@@ -42,6 +42,7 @@
 | **1.18** | **02/11/2026** | **D086.** +1 FR: FR-95 thông báo trực tiếp qua Server-Sent Events: học viên biết bài đã chấm xong và đã được duyệt, hàng chờ duyệt tự cập nhật. FR-92 bỏ câu còn nhắc mã khôi phục (đã gỡ ở D081). | D086 (APPROVED) |
 | **1.19** | **02/11/2026** | **D088.** +1 FR: FR-96 cài SpeakUp như ứng dụng (PWA) và thông báo đẩy tới thiết bị của học viên khi bài chấm xong hay đã được duyệt; collection `push_subscription` (lược đồ phiên bản 17). | D088 (APPROVED) |
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
+| **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1615,6 +1616,21 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-97.4** — *Given* một lượt không đo được (im lặng, không phải tiếng Anh), *When* gửi, *Then* lượt đó không tính và học viên được nhắc nói lại (`test_a_take_nothing_could_be_measured_from_does_not_count`). |
 | **AC-97.5** — *Given* học viên có các bài đánh giá, *When* mở trang Tiến độ, *Then* có đường "Từ máy nghe chưa rõ" theo phần trăm số từ mỗi bài (thấp hơn là tốt) và danh sách từ đang luyện dở (`test_progress_shows_the_unclear_share_and_the_open_words`). |
 | **AC-97.6** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các từ luyện lại của người đó cũng bị xoá (`test_erasing_a_participant_forgets_their_drills`). |
+
+### FR-98 — Đoạn đọc viết quanh từ đang luyện dở (D090)
+
+**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Mỗi đoạn mới trừ một số lượt nhỏ (mặc định 0,1 lượt), chỉ khi viết xong; đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-98.1** — *Given* học viên có ít hơn 3 từ đang luyện dở, *When* xin đoạn đọc, *Then* bị từ chối (409) và mô hình không được hỏi; giảng viên không mở được trang này (`test_a_passage_needs_three_open_words_and_is_for_learners`). |
+| **AC-98.2** — *Given* học viên có đủ từ, *When* xin đoạn đọc, *Then* mô hình nhận band, các từ và độ dài, viết một đoạn chứa mọi từ; xin lại cho cùng các từ trả đúng đoạn đó mà không hỏi mô hình lần nữa (`test_the_model_writes_a_passage_once_and_it_is_read_again_for_free`). |
+| **AC-98.3** — *Given* hệ thống tính lượt, *When* mô hình viết xong một đoạn, *Then* học viên bị trừ đúng giá đoạn đọc kèm số token; đoạn thiếu từ hay mô hình lỗi thì lượt được trả lại (`test_metered_a_passage_costs_its_own_price_and_a_failure_nothing`). |
+| **AC-98.4** — *Given* học viên đọc to đoạn văn, *When* máy đo xong, *Then* mỗi từ là một lượt: rõ thì tính vào chuỗi hai lượt rõ, chưa rõ thì vào ôn ngắt quãng kèm điều máy nghe thành (`test_a_reading_is_one_take_of_each_word`). |
+| **AC-98.5** — *Given* mô hình ngôn ngữ đang tắt, *When* học viên chọn ghép từ cụm của mình, *Then* đoạn được ghép miễn phí từ các cụm đó (`test_without_the_model_the_learners_phrases_make_a_free_passage`). |
+| **AC-98.6** — *Given* đoạn đọc đã dùng hết phần trong ngày của hệ thống hay của học viên, *When* xin đoạn mới, *Then* bị từ chối (429) với lý do rõ ràng; khi hết giới hạn AI chung, học viên vẫn ghép được đoạn từ cụm của mình (`test_the_caps_keep_the_upgrades_share_and_the_learners_own`). |
+| **AC-98.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các đoạn đọc của người đó cũng bị xoá; trước đó bản xuất dữ liệu cá nhân có chúng (`test_erasing_a_participant_forgets_their_passages`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

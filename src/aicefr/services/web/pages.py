@@ -464,6 +464,22 @@ def page_drill(
     )
 
 
+@router.get("/passage", response_class=HTMLResponse, tags=["web"])
+def page_passage(request: Request, account: Account | None = Depends(optional_account)):
+    """Read a passage written around the words still being said again (D090)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    lim = _limits()
+    return _page(
+        request,
+        "passage.html",
+        account,
+        "progress",
+        max_size_mib=lim["max_size_mib"],
+        sample_rate_hz=lim["sample_rate_hz"],
+    )
+
+
 @router.get("/report/{response_id}", response_class=HTMLResponse, tags=["web"])
 def page_report(
     request: Request, response_id: str, account: Account | None = Depends(optional_account)

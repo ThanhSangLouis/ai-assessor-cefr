@@ -370,9 +370,16 @@ fetch("/api/v1/learn/drill")
           ` <span class="badge">${w.streak}/${d.pass_streak}</span></li>`,
       )
       .join("");
+    // D090: three words or more still open can be read in a passage around them.
+    const distinct = new Set(d.open.map((w) => w.word)).size;
+    const read =
+      distinct >= 3
+        ? '<div class="button-row"><a class="button secondary" href="/passage">Đọc đoạn văn có các từ này</a></div>'
+        : "";
     document.getElementById("drill-words-body").innerHTML =
       `<p>Đã luyện lại ${d.practised} từ, ${d.passed} từ máy đã nghe rõ.</p>` +
-      (rows ? `<ul class="plain-list">${rows}</ul>` : '<p class="muted">Không còn từ nào đang dở.</p>');
+      (rows ? `<ul class="plain-list">${rows}</ul>` : '<p class="muted">Không còn từ nào đang dở.</p>') +
+      read;
     document.getElementById("drill-words-card").hidden = false;
   })
   .catch(() => {});
