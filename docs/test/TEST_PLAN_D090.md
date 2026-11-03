@@ -67,7 +67,8 @@
 | --- | --- | --- |
 | Unit | `pytest tests/test_d090_passage_unit.py` | 9 PASS |
 | Integration | `pytest tests/test_d090_passage.py` | 7 PASS |
+| Gemini thật, một lần (03/11/2026) | Script gọi thử một lần (ngoài repo, chủ dự án chạy trên máy mình), khoá gói miễn phí của chủ dự án, band B1, từ giả "worked", "three", "station" | PASS: `gemini-3.5-flash-lite` nhận `max_tokens` 1200 và `reasoning_effort: low`; 1 yêu cầu, 2,3 giây; **199 token vào, 75 token ra** (≈ 0,00025 USD theo giá gói trả phí, khoảng 6 đồng); đoạn 60 từ có đủ ba từ, mỗi từ một chỗ |
 
-**Giới hạn (`NOT_RUN`):**
-- **Chưa gọi Gemini thật.** Phải gửi dữ liệu ra ngoài nên chờ chủ dự án cho phép. Chưa biết số token thật, và chưa biết Gemini 3.5 Flash-Lite có nhận `reasoning_effort: low` qua cổng tương thích OpenAI hay không. Nếu không nhận, yêu cầu sẽ lỗi, lượt được trả lại, và dashboard ghi lỗi.
-- **Chưa có e2e trình duyệt cho trang `/passage`**, vì phần ghi âm cần micro.
+Số đo thật thấp hơn ước tính ban đầu (khoảng 350 vào, 200 ra): token ra không có phần suy nghĩ.
+
+**Giới hạn (`NOT_RUN`):** chưa có e2e trình duyệt cho trang `/passage` (ghi âm cần micro); giao diện được kiểm bằng tay trên bản chạy cục bộ.
