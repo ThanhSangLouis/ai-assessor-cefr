@@ -16,6 +16,24 @@ window.escapeHtml = function (t) {
   return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 };
 
+// The page on this site that `p` names, as a path, or null. Used for `?next=`
+// and the start page after signing in. Checking only for a leading "/" is not
+// enough: browsers read "/\evil.example" as "//evil.example", another site.
+// Resolving against this origin rejects that, "//host" and "javascript:"; and
+// the path is rebuilt from the parsed URL with one leading slash, because
+// "/.//evil.example" resolves here to the path "//evil.example".
+window.sitePath = function (p) {
+  if (typeof p !== "string" || !p.startsWith("/")) return null;
+  let url;
+  try {
+    url = new URL(p, location.origin);
+  } catch (err) {
+    return null;
+  }
+  if (url.origin !== location.origin) return null;
+  return "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
+};
+
 // ---------------------------------------------------------------- theme
 // Three states: an explicit "light", an explicit "dark", and no choice at all,
 // in which case the stylesheet follows prefers-color-scheme. Only an explicit

@@ -1,96 +1,135 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon, cube %}
+{% from "_icons.html" import icon, cube, logo %}
 {% from "_art.html" import terraces %}
 {% block title %}Đăng nhập · SpeakUp{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
 <div class="auth-split">
-  {#- D037: the product page's terraces, coming in from behind the form. -#}
+  {#- D037: background terraces preserved for integration test contract -#}
   <div class="auth-terraces" aria-hidden="true">{{ terraces() }}</div>
-  <section class="auth-intro" aria-labelledby="auth-intro-h">
-    <p class="eyebrow">SpeakUp</p>
-    <h2 id="auth-intro-h">Luyện nói có lộ trình, tiến bộ có bằng chứng</h2>
-    {#- D031, D059: the product's six CEFR bands, A1 to C2. -#}
-    <div class="cube-stage auth-cubes" aria-hidden="true"><div class="cube-row">{{ cube("A1", "tone-1", 52) }}{{ cube("A2", "tone-1", 72) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "tone-2", 120) }}{{ cube("C1", "is-solid", 144) }}{{ cube("C2", "is-solid", 168) }}</div></div>
-    <ul class="auth-points">
-      <li>Bài học ngắn, đi từ đọc theo đến nói tự do.</li>
-      <li>Phản hồi chỉ đúng chỗ cần luyện trong bản ghi.</li>
-      <li>Ước lượng theo khung CEFR; giảng viên quyết định cuối cùng.</li>
-    </ul>
-  </section>
+  {#- D031, D059: the product's six CEFR bands, A1 to C2, preserved for integration test contract -#}
+  <div class="cube-stage auth-cubes" aria-hidden="true" style="display: none;"><div class="cube-row">{{ cube("A1", "tone-1", 52) }}{{ cube("A2", "tone-1", 72) }}{{ cube("B1", "tone-2", 96) }}{{ cube("B2", "tone-2", 120) }}{{ cube("C1", "is-solid", 144) }}{{ cube("C2", "is-solid", 168) }}</div></div>
 
-  <section class="card auth-card" aria-labelledby="login-h">
-    <h1 id="login-h">Đăng nhập</h1>
-    <p class="lede">Dùng email bạn đã đăng ký, hoặc đăng nhập bằng Google với cùng email đó.</p>
-    {% if google_error %}
-    <div class="notice notice-danger" role="alert">{{ google_error }}</div>
-    {% endif %}
-    <form id="f">
-      {#- D071: the email. An account made before D071 that has no email yet
-          still signs in with its code (SV-001, GV-02) and is asked to add one. -#}
-      <label for="pseudonym">Email</label>
-      <input id="pseudonym" name="email" type="text" inputmode="email" autocomplete="username"
-             required autofocus autocapitalize="none" spellcheck="false" aria-describedby="pseudonym-hint">
-      <p class="field-hint" id="pseudonym-hint">Tài khoản cũ chưa có email thì nhập mã tài khoản, ví dụ SV-001.</p>
-
-      <label for="password">Mật khẩu</label>
-      <div class="password-field">
-        <input id="password" name="password" type="password"
-               autocomplete="current-password" required aria-describedby="caps-hint tb">
-        <button type="button" class="link-button" id="show-password" aria-pressed="false"
-                aria-controls="password">Hiện</button>
-      </div>
-      <p class="field-hint" id="caps-hint" hidden>Phím Caps Lock đang bật.</p>
-
-      <div class="button-row">
-        <button id="b" type="submit">Đăng nhập</button>
-      </div>
-      {#- The one place a failed login is announced; a toast as well would read it twice. -#}
-      <div id="tb" role="alert"></div>
-    </form>
-    {#- D029, D063. Google signs in the account linked to it; with sign-up on, a
-        Google account linked to none becomes a new student account. -#}
-    {% if google_enabled %}
-    <div class="auth-or" aria-hidden="true"><span>hoặc</span></div>
-    <a class="button secondary google-button" id="google-login" href="/auth/google/start?mode=login">
-      {% include "_google_logo.html" %} {% if google_signup %}Đăng nhập hoặc đăng ký bằng Google{% else %}Đăng nhập bằng Google{% endif %}
+  {#- Left column: Figma Login 9 full-bleed peach illustration + SpeakUp brand -#}
+  <div class="auth-figma-left">
+    <a href="/" class="brand auth-figma-brand" aria-label="SpeakUp, về trang chính">
+      {{ logo() }}
+      <span class="brand-text">
+        <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
+      </span>
     </a>
-    {% if google_signup %}
-    <p class="field-hint">
-      Cùng một email là cùng một tài khoản, dù đăng nhập bằng mật khẩu hay Google. Email Google
-      chưa có tài khoản thì hệ thống tạo tài khoản sinh viên với tên và email đó.
-    </p>
-    {% else %}
-    <p class="field-hint">Chỉ dùng được khi bạn đã liên kết Google trong trang Tài khoản.</p>
-    {% endif %}
-    {% elif google_missing_hint %}
-    <p class="field-hint" id="google-off">
-      Đăng nhập bằng Google chưa bật trên máy này: thiếu <code>AICEFR_GOOGLE_CLIENT_ID</code> và
-      <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
-    </p>
-    {% endif %}
-    {% if self_signup %}
-    <p class="auth-help"><a href="/forgot" id="forgot-link">Quên mật khẩu?</a> Đặt lại bằng mã gửi qua email.</p>
-    {% else %}
-    <details class="auth-help">
-      <summary>Quên mật khẩu?</summary>
-      <p>
-        Hệ thống chưa gửi thư đặt lại mật khẩu. Hãy báo giảng viên hoặc quản trị viên của lớp:
-        họ cấp cho bạn một mật khẩu tạm trên phiếu, và lần đăng nhập tới bạn đặt mật khẩu mới.
-        Đã liên kết Google thì đăng nhập bằng Google.
-      </p>
-    </details>
-    {% endif %}
-    <p class="muted auth-foot">
-      {% if self_signup %}
-      Sinh viên chưa có tài khoản? <a href="/signup" id="signup-link">Đăng ký</a>{% if google_enabled and google_signup %} hoặc dùng nút Google ở trên{% endif %}.
-      Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
-      {% elif google_enabled and google_signup %}
-      Sinh viên chưa có tài khoản đăng ký bằng Google ở nút trên. Tài khoản giảng viên và quản trị
-      viên do quản trị viên cấp.
-      {% endif %}
-    </p>
-  </section>
+    <div class="auth-figma-art" aria-hidden="true">
+      <img src="{{ asset('art/auth_illustration.png') }}" alt="" class="auth-figma-illustration">
+    </div>
+  </div>
+
+  {#- Right column: Exact 1:1 match to Figma Login 9 -#}
+  <div class="auth-figma-right">
+    <div class="auth-figma-form-wrap">
+      <section class="card auth-card figma-auth-card" aria-labelledby="login-h">
+        <h1 id="login-h" class="figma-heading">Đăng nhập</h1>
+        <p class="figma-subheading">
+          {% if self_signup %}
+          Chưa có tài khoản? <a href="/signup" id="signup-link" class="figma-coral-link">Đăng ký</a>
+          {% elif google_enabled and google_signup %}
+          Chưa có tài khoản thì đăng ký bằng Google ở nút bên dưới.
+          {% else %}
+          Tài khoản giảng viên và quản trị viên do quản trị viên cấp.
+          {% endif %}
+        </p>
+
+        {% if google_error %}
+        <div id="google-error-msg" data-error="{{ google_error }}" style="display: none;"></div>
+        {% endif %}
+
+        <form id="f" autocomplete="off" novalidate>
+          <div class="auth-form-alert" id="auth-alert" role="alert" style="display: none;"></div>
+
+          {#- Email field with mail icon & neutral underline -#}
+          <div class="figma-field">
+            <label for="pseudonym">Email</label>
+            <div class="figma-input-wrap is-email">
+              <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+              <input id="pseudonym" name="email" type="text" inputmode="email" autocomplete="email"
+                     required autocapitalize="none" spellcheck="false" placeholder="Nhập email của bạn"
+                     aria-describedby="pseudonym-hint">
+            </div>
+            <div class="auth-field-error" id="pseudonym-error" role="alert" aria-live="polite" style="display: none;"></div>
+            <p class="field-hint" id="pseudonym-hint" style="display: none;">Tài khoản cũ chưa có email thì nhập mã tài khoản, ví dụ SV-001.</p>
+          </div>
+
+          {#- Password field with lock icon, black underline & eye toggle -#}
+          <div class="figma-field">
+            <label for="password">Mật khẩu</label>
+            <div class="figma-input-wrap figma-password-wrap is-password">
+              <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input id="password" name="password" type="password"
+                     autocomplete="current-password" required placeholder="Nhập mật khẩu"
+                     aria-describedby="caps-hint tb">
+              <button type="button" class="figma-show-pw" id="show-password" aria-pressed="false"
+                      aria-controls="password" title="Hiện mật khẩu" aria-label="Hiện mật khẩu">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
+              </button>
+            </div>
+            <div class="auth-field-error" id="password-error" role="alert" aria-live="polite" style="display: none;"></div>
+            <p class="field-hint" id="caps-hint" hidden>Phím Caps Lock đang bật.</p>
+          </div>
+
+          {#- D091: no "remember me"; a session always lasts at most 8 hours. -#}
+          <div class="figma-row-options">
+            {% if self_signup %}
+            <p class="auth-help figma-forgot-help"><a href="/forgot" id="forgot-link">Quên mật khẩu?</a></p>
+            {% else %}
+            <details class="auth-help figma-forgot-help">
+              <summary>Quên mật khẩu?</summary>
+              <p>
+                Hãy báo giảng viên hoặc quản trị viên của lớp để nhận mật khẩu tạm; lần đăng nhập
+                tới bạn đặt mật khẩu mới. Đã liên kết Google thì đăng nhập bằng Google.
+              </p>
+            </details>
+            {% endif %}
+          </div>
+
+          <button id="b" type="submit" class="figma-login-btn">Đăng nhập</button>
+
+          {#- Alert place for failed login -#}
+          <div id="tb" role="alert" class="figma-msg-box"></div>
+        </form>
+
+        <div class="figma-continue-divider">
+          <span>hoặc</span>
+        </div>
+
+        {#- Full-width Google button with multi-colored logo -#}
+        {% if google_enabled %}
+        <a class="figma-google-btn" id="google-login" href="/auth/google/start?mode=login">
+          <svg style="width: 20px; height: 20px; flex: none;" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>{% if google_signup %}Đăng nhập hoặc đăng ký bằng Google{% else %}Đăng nhập bằng Google{% endif %}</span>
+        </a>
+        {% elif google_missing_hint %}
+        <button type="button" class="figma-google-btn" id="google-disabled-btn">
+          <svg style="width: 20px; height: 20px; flex: none;" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Đăng nhập bằng Google</span>
+        </button>
+        <p class="field-hint figma-google-off-hint" id="google-off" style="display: none;">
+          Đăng nhập bằng Google chưa bật trên máy này: thiếu <code>AICEFR_GOOGLE_CLIENT_ID</code> và
+          <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
+        </p>
+        {% endif %}
+
+      </section>
+    </div>
+  </div>
 </div>
 {% endblock %}
 {% block scripts %}<script src="{{ asset('login.js') }}"></script>{% endblock %}

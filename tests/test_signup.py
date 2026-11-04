@@ -186,8 +186,11 @@ def test_sign_up_and_forgot_pages_are_for_the_signed_out(m, path: str) -> None:
 
 
 def test_the_login_page_puts_both_links_inside_the_form_card(m) -> None:
-    """Both links sit under the sign-in card, after the page heading, not above the page."""
+    """Both links sit in the sign-in card, after its heading, not above the page (D092:
+    the sign-up link is under the heading, "forgot password" beside the password)."""
     page = TestClient(m.app).get("/login").text
     heading = page.index('id="login-h"')
-    assert heading < page.index('id="forgot-link"') < page.index('id="signup-link"')
+    card_end = page.index("</section>", heading)
+    for link in ('id="signup-link"', 'id="forgot-link"'):
+        assert heading < page.index(link) < card_end
     assert page.count("auth-help") == 1
