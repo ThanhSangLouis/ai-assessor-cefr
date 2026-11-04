@@ -7,7 +7,10 @@ bug from coming back.
 
 from __future__ import annotations
 
+import base64
 import io
+import json
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -15,9 +18,9 @@ import soundfile as sf
 from dbutil import teach
 from fastapi.testclient import TestClient
 
-from aicefr.auth import passwords
+from aicefr.auth import passwords, sessions
 from aicefr.auth.sessions import COOKIE_NAME
-from aicefr.storage.auth_repository import MAX_FAILED_ATTEMPTS, Role
+from aicefr.storage.auth_repository import MAX_FAILED_ATTEMPTS, SESSION_KEY, Role
 
 PASSWORD = "matkhau-check-thu"
 
@@ -183,6 +186,61 @@ def test_database_never_stores_raw_session_token(app) -> None:
     stored_hashes = [r["token_hash"] for r in app.state.auth_repo.col("session").find()]
     assert token not in stored_hashes
     assert len(stored_hashes) == 1
+
+
+def _part(token: str, i: int) -> dict:
+    text = token.split(".")[i]
+    return json.loads(base64.urlsafe_b64decode(text + "=" * (-len(text) % 4)))
+
+
+def _with(token: str, i: int, value: dict) -> str:
+    parts = token.split(".")
+    parts[i] = sessions._part(value)
+    return ".".join(parts)
+
+
+def test_the_session_cookie_is_a_jwt_naming_the_account_and_ending_within_8_hours(app) -> None:
+    """D091: the cookie is an HS256 JWT; `sub` is the account, `exp` at most 8 hours away."""
+    c = login_as(app, "SV-001", "student")
+    token = c.cookies[COOKIE_NAME]
+    assert _part(token, 0) == {"alg": "HS256", "typ": "JWT"}
+    claims = _part(token, 1)
+    me = c.get("/api/v1/me").json()
+    assert claims["sub"] == me["account_id"]
+    left = claims["exp"] - datetime.now(UTC).timestamp()
+    assert 0 < left <= sessions.LIFETIME_HOURS * 3600
+
+
+def test_a_token_with_a_changed_claim_or_another_algorithm_is_refused(app) -> None:
+    """Rewriting `sub`, or claiming "alg": "none", breaks the signature: 401."""
+    other = login_as(app, "SV-002", "student").get("/api/v1/me").json()["account_id"]
+    c = login_as(app, "SV-001", "student")
+    token = c.cookies[COOKIE_NAME]
+    for forged in (
+        _with(token, 1, {**_part(token, 1), "sub": other}),
+        _with(token, 0, {"alg": "none", "typ": "JWT"}),
+        token.rsplit(".", 1)[0] + ".",
+    ):
+        c.cookies.set(COOKIE_NAME, forged)
+        assert c.get("/api/v1/me").status_code == 401
+
+
+def test_an_expired_token_is_refused_even_while_its_session_row_exists(app) -> None:
+    """`exp` is checked on its own: a token signed with the right key but past its end is 401."""
+    c = login_as(app, "SV-001", "student")
+    claims = _part(c.cookies[COOKIE_NAME], 1)
+    ended = (datetime.now(UTC) - timedelta(minutes=1)).isoformat(timespec="seconds")
+    key = app.state.auth_repo.secret(SESSION_KEY)
+    c.cookies.set(COOKIE_NAME, sessions.encode_jwt(key, claims["sub"], claims["sid"], ended))
+    assert c.get("/api/v1/me").status_code == 401
+
+
+def test_a_valid_jwt_stops_working_once_its_session_is_revoked(app) -> None:
+    """BR-09 still holds with JWT: ending every session makes a still-unexpired token 401."""
+    c = login_as(app, "SV-001", "student")
+    account_id = c.get("/api/v1/me").json()["account_id"]
+    assert app.state.auth_repo.revoke_sessions(account_id) == 1
+    assert c.get("/api/v1/me").status_code == 401
 
 
 # ---------- account lockout ----------
