@@ -234,6 +234,89 @@ def test_error_does_not_distinguish_unknown_user_from_wrong_password(app) -> Non
     assert a.json()["detail"] == b.json()["detail"]
 
 
+# ---------- re-entering the password while signed in (SEC-03) ----------
+# Changing the sign-in email asks for the password again. Those guesses count
+# towards the same lockout as a login: a session must not be an unthrottled
+# way to try passwords.
+
+
+def _with_email(app) -> TestClient:
+    c = login_as(app, "SV-001", "student")
+    r = c.patch("/api/v1/me/contact", json={"email": "sv1@example.edu.vn"})
+    assert r.status_code == 200, r.text  # a first email needs no password
+    return c
+
+
+def _move(c: TestClient, password: str):
+    return c.patch(
+        "/api/v1/me/contact", json={"email": "moi@example.edu.vn", "current_password": password}
+    )
+
+
+def test_wrong_passwords_on_the_email_change_lock_the_account(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        assert _move(c, "sai").status_code == 403
+    assert _move(c, "sai").status_code == 429
+    # Locked: even the right password is refused, and nothing moved.
+    assert _move(c, PASSWORD).status_code == 429
+    assert app.state.auth_repo.get_by_pseudonym("SV-001")["email"] == "sv1@example.edu.vn"
+    # The login door is shut by the same counter.
+    r = TestClient(app).post(
+        "/api/v1/auth/login", json={"email": "sv1@example.edu.vn", "password": PASSWORD}
+    )
+    assert r.status_code == 429
+
+
+def test_the_email_change_opens_again_when_the_lock_expires(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        _move(c, "sai")
+    repo = app.state.auth_repo
+    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+    # Fifteen minutes later, written into the record instead of waited for.
+    repo.col("account").update_one(
+        {"account_id": aid}, {"$set": {"locked_until": "2000-01-01T00:00:00+00:00"}}
+    )
+    assert _move(c, PASSWORD).status_code == 200
+    row = repo.get(aid)
+    assert row["email"] == "moi@example.edu.vn"
+    assert (row["failed_attempts"], row["locked_until"]) == (0, None)
+
+
+def test_other_profile_changes_need_no_password_even_while_locked(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        _move(c, "sai")
+    assert c.patch("/api/v1/me/contact", json={"full_name": "Lê Văn B"}).status_code == 200
+    assert c.patch("/api/v1/me/profile", json={"avatar_icon": "star"}).status_code == 200
+
+
+def test_reauthentication_counts_every_concurrent_guess(app) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from aicefr.storage.auth_repository import AccountLocked, WrongPassword
+
+    make_account(app, "SV-001", "student")
+    repo = app.state.auth_repo
+    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+
+    def guess(_):
+        try:
+            repo.reauthenticate(aid, "sai")
+        except (WrongPassword, AccountLocked) as e:
+            return type(e).__name__
+        return "ok"
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(guess, range(8)))
+    assert "ok" not in results
+    row = repo.get(aid)
+    assert row["failed_attempts"] >= MAX_FAILED_ATTEMPTS and row["locked_until"]
+    with pytest.raises(AccountLocked):
+        repo.reauthenticate(aid, PASSWORD)
+
+
 # ---------- audit log ----------
 
 

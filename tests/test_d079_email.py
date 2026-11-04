@@ -160,3 +160,74 @@ def test_the_daily_reminder_goes_once_to_who_needs_it_and_stops_on_request(m):
     assert c.get("/api/v1/me/email").json()["reminders"] is False
     forged = TestClient(m.app).get("/api/v1/email/unsubscribe?t=" + account_id + ".beef")
     assert "không hợp lệ" in forged.text
+
+
+# ================================================================= a code belongs to one address
+
+OTHER_EMAIL = "dia.chi.moi@example.edu.vn"
+
+
+def _move(c: TestClient, email: str = OTHER_EMAIL) -> None:
+    r = c.patch("/api/v1/me/contact", json={"email": email, "current_password": PASSWORD})
+    assert r.status_code == 200, r.text
+
+
+@pytest.mark.integration
+def test_a_code_sent_to_the_old_address_cannot_verify_the_new_one(m):
+    """SEC-01: the code went to the first mailbox; it proves nothing about the second."""
+    c = _signup(m)
+    old_code = _code()
+    _move(c)
+    refused = c.post("/api/v1/me/email/verify", json={"code": old_code})
+    assert refused.status_code == 422
+    assert c.get("/api/v1/me/email").json()["verified"] is False
+    # Changing the address dropped the old code, so a new one goes out at once,
+    # to the new address, and that one verifies it.
+    assert c.post("/api/v1/me/email/verify/send").json() == {"status": "sent"}
+    assert outbox().sent[-1].to == OTHER_EMAIL
+    assert c.post("/api/v1/me/email/verify", json={"code": _code()}).json() == {"verified": True}
+    assert c.get("/api/v1/me/email").json() == {
+        "email": OTHER_EMAIL,
+        "verified": True,
+        "reminders": True,
+        "sending": True,
+    }
+
+
+@pytest.mark.integration
+def test_a_reset_code_sent_to_the_old_address_dies_with_the_change(m):
+    c = _signup(m)
+    anon = TestClient(m.app)
+    anon.post("/api/v1/auth/forgot/email", json={"email": EMAIL})
+    reset_code = _code()
+    _move(c)
+    body = {"email": OTHER_EMAIL, "code": reset_code, "new_password": NEW_PASSWORD}
+    assert anon.post("/api/v1/auth/forgot/email/reset", json=body).status_code == 401
+    assert c.get("/api/v1/me/email").json()["verified"] is False
+    login = TestClient(m.app).post(
+        "/api/v1/auth/login", json={"email": OTHER_EMAIL, "password": PASSWORD}
+    )
+    assert login.status_code == 200  # the password was not replaced
+
+
+@pytest.mark.integration
+def test_a_code_bound_to_another_address_or_late_is_refused(m):
+    """Bound even if the codes were not dropped: the check is at spending time, too."""
+    c = _signup(m)
+    auth = m.app.state.auth_repo
+    aid = c.get("/api/v1/me").json()["account_id"]
+    accounts = auth.col("account")
+    accounts.update_one({"account_id": aid}, {"$unset": {"email_codes": ""}})
+    code = auth.issue_email_code(aid, "verify")
+    # The address changes behind the code's back, as a racing request would.
+    accounts.update_one({"account_id": aid}, {"$set": {"email": OTHER_EMAIL}})
+    assert auth.verify_email(aid, code) is False
+    accounts.update_one({"account_id": aid}, {"$set": {"email": EMAIL}})
+    late = "2000-01-01T00:00:00+00:00"
+    accounts.update_one({"account_id": aid}, {"$set": {"email_codes.verify.expires_at": late}})
+    assert auth.verify_email(aid, code) is False  # late
+    assert auth.get(aid)["email_verified"] == 0
+    accounts.update_one({"account_id": aid}, {"$unset": {"email_codes": ""}})
+    fresh = auth.issue_email_code(aid, "verify")
+    assert auth.verify_email(aid, fresh) is True
+    assert auth.verify_email(aid, fresh) is False  # spent

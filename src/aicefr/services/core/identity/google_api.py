@@ -181,7 +181,9 @@ def google_callback(
         # Google just verified is this person's: join the two.
         same = auth.get_by_email(identity.email) if identity.email else None
         if same is not None:
-            reset = auth.adopt_by_email(same["account_id"], google.PROVIDER, identity.subject_hash)
+            reset = auth.adopt_by_email(
+                same["account_id"], google.PROVIDER, identity.subject_hash, identity.email
+            )
             audit(same["pseudonym"], "account.google_adopt", same["account_id"],
                   "reset" if reset else None)  # fmt: skip
             opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)

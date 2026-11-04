@@ -20,11 +20,44 @@ showButton.addEventListener("click", () => {
   })
 );
 
+// Where to go after login: a path of this site, or null. Only same-site paths.
+// Without this check, a link like /login?next=https://evil.example sends the
+// user to a copy of the login page right after a real login, and `javascript:`
+// would run in this origin. A leading "//" is a protocol-relative URL, so it
+// is rejected too. SEC-04: startsWith alone missed "/\evil.example" and
+// "/<tab>/evil.example": the browser reads a backslash as "/" and drops tab
+// and newline, so both leave the site. Such characters are refused, written
+// plainly or percent-encoded, and what is left must resolve to this origin.
+// The same rule is safe_next in aicefr/auth/google.py.
+function safeNext(value, origin) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  if (/[\\\s\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
+  let decoded;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch (err) {
+    return null;
+  }
+  if (decoded.startsWith("//") || /[\\\u0000-\u001f\u007f-\u009f]/.test(decoded)) return null;
+  let url;
+  try {
+    url = new URL(value, origin);
+  } catch (err) {
+    return null;
+  }
+  if (url.origin !== origin || (url.protocol !== "http:" && url.protocol !== "https:")) {
+    return null;
+  }
+  return url.pathname + url.search + url.hash;
+}
+
 // Google comes back to the page the person was heading for.
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
-  const asked = new URLSearchParams(location.search).get("next");
-  if (asked && asked.startsWith("/") && !asked.startsWith("//")) {
+  const asked = safeNext(new URLSearchParams(location.search).get("next"), location.origin);
+  if (asked) {
     googleLink.href += `&next=${encodeURIComponent(asked)}`;
   }
 }
@@ -46,20 +79,17 @@ form.onsubmit = async (e) => {
     if (r.ok) {
       // Go back to the page the user was heading for; otherwise to the start
       // page of their role (practice, queue or admin), which the server names.
-      // Only same-site paths. Without this check, a link like
-      // /login?next=https://evil.example sends the user to a copy of the login
-      // page right after a real login, and `javascript:` would run in this
-      // origin. A leading "//" is a protocol-relative URL, so it is rejected too.
+      // Both go through safeNext above.
       const d = await r.json().catch(() => ({}));
-      const safe = (p) => typeof p === "string" && p.startsWith("/") && !p.startsWith("//");
-      const asked = new URLSearchParams(location.search).get("next");
+      const asked = safeNext(new URLSearchParams(location.search).get("next"), location.origin);
+      const home = safeNext(d.home, location.origin);
       // A temporary password goes to the account page whatever was asked for:
       // nothing else works until a new password is chosen (D028).
-      if (d.must_change_password && safe(d.home)) {
-        location.href = d.home;
+      if (d.must_change_password && home) {
+        location.href = home;
         return;
       }
-      location.href = safe(asked) ? asked : safe(d.home) ? d.home : "/";
+      location.href = asked || home || "/";
       return;
     }
     const d = await r.json();
