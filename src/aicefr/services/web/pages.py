@@ -13,10 +13,10 @@ from dataclasses import dataclass
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from aicefr.api.deps import ROLE_HOME, optional_account
-from aicefr.api.web import templates
+from aicefr.api.web import STATIC_DIR, templates
 from aicefr.auth import google, passwords
 from aicefr.config import Settings
 from aicefr.notify.email import sender_from
@@ -102,6 +102,54 @@ def _response_nav(account: Account | None) -> str:
 
 
 # ================================================================= everyone
+
+# D088: SpeakUp installs on a phone or a computer as an app (PWA).
+MANIFEST = {
+    "name": "SpeakUp — Luyện nói tiếng Anh",
+    "short_name": "SpeakUp",
+    "description": "Luyện nói tiếng Anh theo CEFR, có kết quả và nhận xét cho từng bài nói.",
+    "lang": "vi",
+    "dir": "ltr",
+    "start_url": "/",
+    "scope": "/",
+    "id": "/",
+    "display": "standalone",
+    "background_color": "#f5f6f8",
+    "theme_color": "#1e3a5f",
+    "icons": [
+        {"src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+        {"src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+        {
+            "src": "/static/icons/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable",
+        },
+    ],
+}
+
+
+@router.get("/manifest.webmanifest", include_in_schema=False)
+def web_manifest() -> JSONResponse:
+    return JSONResponse(
+        MANIFEST,
+        media_type="application/manifest+json",
+        headers={"Cache-Control": "public, max-age=3600"},
+    )
+
+
+@router.get("/sw.js", include_in_schema=False)
+def service_worker() -> Response:
+    """The service worker, from the site's root so that it covers every page (D088).
+
+    Never cached: a browser checks it for a new version on each visit anyway,
+    and a stale worker is the one thing that can keep an old page alive.
+    """
+    return Response(
+        (STATIC_DIR / "sw.js").read_text(encoding="utf-8"),
+        media_type="text/javascript",
+        headers={"Cache-Control": "no-cache", "Service-Worker-Allowed": "/"},
+    )
 
 
 @router.get("/", response_class=HTMLResponse, tags=["web"])
@@ -393,6 +441,41 @@ def page_retell(
         "mine",
         response_id=response_id,
         min_duration_s=lim["min_duration_s"],
+        max_size_mib=lim["max_size_mib"],
+        sample_rate_hz=lim["sample_rate_hz"],
+    )
+
+
+@router.get("/drill/{response_id}", response_class=HTMLResponse, tags=["web"])
+def page_drill(
+    request: Request, response_id: str, account: Account | None = Depends(optional_account)
+):
+    """Say again the words the machine heard unclearly in this recording (D089)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    lim = _limits()
+    return _page(
+        request,
+        "drill.html",
+        account,
+        "mine",
+        response_id=response_id,
+        max_size_mib=lim["max_size_mib"],
+        sample_rate_hz=lim["sample_rate_hz"],
+    )
+
+
+@router.get("/passage", response_class=HTMLResponse, tags=["web"])
+def page_passage(request: Request, account: Account | None = Depends(optional_account)):
+    """Read a passage written around the words still being said again (D090)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    lim = _limits()
+    return _page(
+        request,
+        "passage.html",
+        account,
+        "progress",
         max_size_mib=lim["max_size_mib"],
         sample_rate_hz=lim["sample_rate_hz"],
     )

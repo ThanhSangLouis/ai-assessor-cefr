@@ -182,8 +182,10 @@ function loadTitles() {
     .catch(() => {});
 }
 
-function load() {
-  window.showSkeleton(listEl, "table");
+// `quiet`: a refresh the teacher did not ask for (D086) keeps the list on screen
+// until the new one is in, instead of flashing a placeholder.
+function load(quiet = false) {
+  if (!quiet) window.showSkeleton(listEl, "table");
   Promise.all([
     fetch("/api/v1/review/queue").then((r) => {
       if (window.redirectToLoginIfExpired(r)) return null;
@@ -201,6 +203,11 @@ function load() {
     .then(([data]) => {
       if (data === null) return;
       window.clearBusy(listEl);
+      // Reasons already fetched stay shown while they are fetched again.
+      const known = new Map(rows.map((r) => [r.response_id, r.reasons]));
+      data.forEach((r) => {
+        if (known.has(r.response_id)) r.reasons = known.get(r.response_id);
+      });
       rows = data;
       queueCountEl.textContent = `${rows.length} bài`;
       paintNext();
@@ -226,6 +233,15 @@ function load() {
 }
 
 [reasonFilterEl, lockFilterEl].forEach((el) => el.addEventListener("change", apply));
-document.getElementById("queue-refresh").addEventListener("click", load);
+document.getElementById("queue-refresh").addEventListener("click", () => load());
+
+// D086: a response flagged, locked, decided or closed by anyone changes this
+// queue. Several changes in a row (a teacher saving and moving on) make one
+// refresh.
+let liveRefresh = null;
+document.addEventListener("live:queue.changed", () => {
+  clearTimeout(liveRefresh);
+  liveRefresh = setTimeout(() => load(true), 800);
+});
 
 load();

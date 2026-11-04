@@ -43,14 +43,16 @@ from aicefr.storage.migrations import ensure_current
 
 
 class MeteredAction(str, Enum):
-    """What a ledger entry paid for: a recording, (D072) an upgraded answer, or
-    (D075) a teacher's lesson draft. PRACTICE is a recording of a practice task
-    (D023): none is made since D083, the entries made before keep it."""
+    """What a ledger entry paid for: a recording, (D072) an upgraded answer,
+    (D075) a teacher's lesson draft, or (D090) a reading passage. PRACTICE is
+    a recording of a practice task (D023): none is made since D083, the
+    entries made before keep it."""
 
     ASSESSMENT = "assessment"
     PRACTICE = "practice"
     UPGRADE = "upgrade"
     LESSON_DRAFT = "lesson_draft"
+    DRILL_PASSAGE = "drill_passage"
 
 
 class LedgerState(str, Enum):

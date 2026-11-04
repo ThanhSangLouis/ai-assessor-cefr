@@ -70,6 +70,7 @@ from aicefr.services import Peers
 from aicefr.services.speech.worker import PROBE_QUEUE, STEP_QUEUE, STEP_TIMEOUT_S
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import Account, Role
+from aicefr.storage.drill_repository import DrillRepository
 from aicefr.storage.lesson_repository import LessonRepository, NotFound
 
 router = APIRouter()
@@ -102,6 +103,10 @@ class Services:
     # paths and read class insights (D034); learners are never affected. None
     # there: no plans, as before D033.
     peers: Peers
+    # D089: the words said again from a recording.
+    drills: DrillRepository | None = None
+    # D090: new reading passages one learner may have the model write a day.
+    passage_daily: int = 3
 
 
 _services: Services | None = None

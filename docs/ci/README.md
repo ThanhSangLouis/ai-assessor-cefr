@@ -17,6 +17,23 @@ Hai job chay song song:
 
 Tong **chin buoc**, vuot muc 5 cua TC2.6 (yeu cau >= 6 chang).
 
+## Quet bao mat (D087, 02/11/2026)
+
+| O dau | Cong cu | Lam gi | Chan build? |
+|---|---|---|---|
+| `ci.yml`, job `anh-docker` | Trivy 0.69.3 | Quet lo hong da biet trong hai anh `service` va `speech`: goi he dieu hanh va moi goi Python, ke ca ban sao ma pip mang theo | Chan khi co lo hong **CRITICAL co ban va**; HIGH liet ke o job summary |
+| `codeql.yml` | CodeQL (`security-extended`) | Phan tich tinh Python, JavaScript cua trang va chinh cac workflow: injection, path traversal, XSS phia trinh duyet... | Khong; ket qua vao tab Security > Code scanning de nguoi doc va xu ly |
+| `.github/dependabot.yml` | Dependabot | Moi thu Hai mo PR nang thu vien Python, GitHub Actions, anh Docker; canh bao bao mat thi mo ngay | Khong; PR van qua CI va nguoi merge |
+
+Lan quet dau tien tim ra 5 lo hong HIGH co ban va trong anh dich vu va 8 trong
+anh speech (`urllib3`, `msgpack`, `setuptools`, `wheel`). Tat ca nam trong
+**ban sao rieng cua pip**, khong phai thu vien he thong dung. Anh chay that khong
+cai goi nao luc chay nen da go pip khoi ca hai anh (va nang `setuptools` trong
+anh speech): sau do con 0 lo hong HIGH/CRITICAL co ban va.
+
+Chi chan o CRITICAL vi mot CVE moi cong bo qua dem khong nen lam do CI cua moi
+PR va chan deploy; HIGH van hien o job summary de sua trong tuan.
+
 ## Ba quyet dinh dang giai thich
 
 **Chi cai `.[dev]`, khong cai extras `asr` va `vad`.** `asr` keo mlx-whisper (chi

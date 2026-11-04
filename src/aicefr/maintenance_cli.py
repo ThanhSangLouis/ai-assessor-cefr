@@ -6,6 +6,7 @@ Run:
     python -m aicefr.maintenance_cli orphans
     python -m aicefr.maintenance_cli backup --to backups/aicefr.json
     python -m aicefr.maintenance_cli restore --from backups/aicefr-20261021T000000+0000.json
+    python -m aicefr.maintenance_cli vapid                          # khoá Web Push (D088)
 """
 
 from __future__ import annotations
@@ -101,6 +102,17 @@ def _restore(args: argparse.Namespace) -> int:
     return 0
 
 
+def _vapid(args: argparse.Namespace) -> int:
+    """A new key pair for Web Push (D088), to paste into the server's .env."""
+    from aicefr.notify.push import generate_vapid_keys
+
+    public, private = generate_vapid_keys()
+    print("# Dán hai dòng này vào .env của máy chủ; giữ kín khoá riêng.")
+    print(f"AICEFR_VAPID_PUBLIC_KEY={public}")
+    print(f"AICEFR_VAPID_PRIVATE_KEY={private}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Bảo trì hệ thống SpeakUp")
     ap.add_argument(
@@ -129,6 +141,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("restore", help="khôi phục tệp sao lưu vào một kho rỗng")
     p.add_argument("--from", dest="source", required=True)
     p.set_defaults(func=_restore)
+
+    p = sub.add_parser("vapid", help="tạo cặp khoá VAPID cho thông báo đẩy (D088)")
+    p.set_defaults(func=_vapid)
 
     args = ap.parse_args(argv)
     try:

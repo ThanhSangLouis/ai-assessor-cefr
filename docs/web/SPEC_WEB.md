@@ -30,7 +30,7 @@ rồi mới phát hiện, sẽ phải làm lại.
 | X-2 | **Có làm** ghi âm trên trình duyệt, thêm FR-39 vào SRS | QD-06 |
 | X-3 | Theo SRS: 20–300 giây, thêm vùng REVIEW 20–29 | QD-08, commit `5488887` |
 | X-4 | Theo SRS: giữ enum 5 tiêu chí, báo cáo luôn có dòng Interaction | QD-08 |
-| X-5 | Cookie phiên có chữ ký, không JWT | QD-07 |
+| X-5 | JWT trong cookie, vẫn tra phiên phía máy chủ | D091 (thay QD-07) |
 | X-6 | Sửa ma trận truy vết theo cấu trúc mã thật | QD-05 |
 
 ### X-1 — Nền tảng giao diện: Streamlit hay FastAPI?
@@ -136,10 +136,7 @@ cáo tưởng hệ thống đã đánh giá đủ. Nói rõ ra là trung thực 
 SRS NFR-07 nói **JWT hết hạn ≤ 8 giờ**, khóa tài khoản 15 phút sau 5 lần sai,
 lần thứ 6 trả HTTP 429.
 
-**Đã chốt: cookie phiên có chữ ký, không JWT** (QD-07). Lý do: JWT không thu hồi được
-trước hạn — đăng xuất chỉ là xoá phía client, token vẫn hợp lệ tới khi hết hạn.
-Với hệ thống có vai trò giảng viên sửa được điểm, không thu hồi được phiên là
-điểm yếu thật. Cookie tra bảng `session` thì xoá là mất hiệu lực ngay.
+**Đã chốt: JWT trong cookie, vẫn tra phiên phía máy chủ** (D091, ngày 04/11/2026, thay QD-07). Cookie `aicefr_session` (`HttpOnly`, `SameSite=Lax`, `Secure` sau TLS) mang một JWT HS256 gồm `sub` (tài khoản), `sid` (phiên), `iat`, `exp`; khoá ký do bản triển khai tự sinh và giữ trong collection `system`. Chữ ký sai, header khác `HS256` hay quá `exp` là 401 trước khi hỏi database. QD-07 từng chọn cookie mã ngẫu nhiên vì JWT thuần không thu hồi được trước hạn; D091 giữ điều đó bằng cách chỉ chấp nhận token khi bản ghi `session` của `sid` còn, nên đăng xuất, đổi mật khẩu hay tắt tài khoản vẫn làm token mất hiệu lực ngay.
 
 Các ràng buộc còn lại của NFR-07 **giữ nguyên**: hết hạn 8 giờ, khóa 15 phút sau
 5 lần sai, 429 ở lần thứ 6. Chỉ đổi cơ chế mang phiên, không nới lỏng bảo mật.
@@ -221,7 +218,7 @@ liệu cá nhân theo Luật 91/2025/QH15 và Nghị định 356/2025/NĐ-CP.
 | Mã | Quyết định | Thay cho | Lý do ngắn |
 | --- | --- | --- | --- |
 | QĐ-W1 | FastAPI + Jinja2, render phía máy chủ | Streamlit, SPA | Xem X-1 |
-| QĐ-W2 | Cookie phiên ký `HttpOnly`, `SameSite=Lax`, tra bảng `auth_sessions`; băm **bcrypt cost ≥ 12** theo NFR-07 | JWT | Xem X-5 |
+| QĐ-W2 | JWT HS256 trong cookie `HttpOnly`, `SameSite=Lax`, chỉ hợp lệ khi phiên của nó còn trong collection `session` (D091); băm **bcrypt cost ≥ 12** theo NFR-07 | Cookie mã ngẫu nhiên (QD-07, đã thay); JWT thuần không tra phiên | Xem X-5 |
 | QĐ-W3 | `BackgroundTasks` của Starlette | Celery + Redis | 60–90 sinh viên một học kỳ là tải rất nhẹ; thêm Redis là thêm dịch vụ phải dựng và phải giải thích |
 | QĐ-W4 | Thêm trạng thái `QUEUED`, `RUNNING` | — | SRS FR-05 đã liệt kê hai trạng thái này; `contracts.py` chưa có |
 | QĐ-W5 | **Có** ghi âm trên trình duyệt, kèm đường lùi khi thiếu `ffmpeg` | — | Xem X-2, QD-06 |

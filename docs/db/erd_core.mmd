@@ -1,14 +1,16 @@
-%% ERD - các collection sau D060, D075, D078, D081..D085 (lược đồ phiên bản 16): một aggregate root
+%% ERD - các collection sau D060, D075, D078, D081..D085, D088..D090 (lược đồ phiên bản 19): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
 %% account_id, không có khoá ngoại do kho ép. Chỉ ghi khoá và vài trường chính.
 erDiagram
     account ||--o{ session : "đăng nhập"
+    account ||--o{ push_subscription : "nhận thông báo (D088)"
     account ||--o{ response : "nộp"
     account ||--o{ classroom : "dạy, học"
     account ||..o{ attempt : "luyện"
     account ||..o{ review_item : "ôn"
+    account ||..o{ word_drill : "luyện lại từ (D089)"
     account ||..o{ achievement : "đạt"
     account ||..o{ learning_plan : "nhận gợi ý"
     account ||..o| wallet : "ví lượt"
@@ -19,7 +21,11 @@ erDiagram
 
     path ||--o{ lesson : "chặng gồm bài"
     lesson ||--o{ attempt : "lượt nói"
-    lesson ||--o{ review_item : "ôn"
+    lesson |o--o{ review_item : "ôn"
+    response ||..o{ word_drill : "từ máy nghe chưa rõ"
+    word_drill |o--o| review_item : "đưa vào ôn"
+    account ||..o{ drill_passage : "đọc đoạn văn (D090)"
+    drill_passage }o--|{ word_drill : "viết quanh 3-5 từ"
     learning_plan }o--o{ lesson : "gợi ý"
     learning_plan |o--o| path : "lưu thành"
 
@@ -38,6 +44,10 @@ erDiagram
         string token_hash PK
         string account_id
         string expires_at
+    }
+    push_subscription {
+        string endpoint PK
+        string account_id
     }
     task {
         string task_id PK
@@ -87,6 +97,24 @@ erDiagram
         string item_id PK
         string account_id
         string due_date
+        string drill_id "D089, rỗng với từ của bài học"
+    }
+    word_drill {
+        string drill_id PK
+        string account_id
+        string response_id
+        string word
+        int streak
+        bool passed
+        array takes "lượt nói lại, tối đa 20"
+    }
+    drill_passage {
+        string passage_id PK
+        string account_id
+        array drill_ids "3-5 từ đang luyện dở"
+        string text
+        string source "model hoặc phrases"
+        array takes "lần đọc, tối đa 20"
     }
     achievement {
         string account_id PK

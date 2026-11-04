@@ -43,6 +43,7 @@ def new_context(browser, live_server, width=1280, height=820, **extra):
         base_url=live_server.base_url,
         locale="vi-VN",
         viewport={"width": width, "height": height},
+        service_workers="block",  # D088: as in test_practice_e2e.context
         **extra,
     )
     ctx.set_default_timeout(15_000)

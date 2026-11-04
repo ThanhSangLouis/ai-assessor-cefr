@@ -50,10 +50,14 @@ class PriceList:
     idpoint_per_run: int = 2000  # what one run is on NetID (1 IDPoint = 1 VND)
     # D072: one upgraded answer (D069) written by a language model; 0 is free.
     upgrade_runs: float = 0.3
+    # D090: one reading passage written around the learner's unclear words.
+    passage_runs: float = 0.1
     version: str = PRICE_VERSION
 
     def __post_init__(self) -> None:
-        lowest = min(self.first_minute_runs, self.extra_minute_runs, self.upgrade_runs)
+        lowest = min(
+            self.first_minute_runs, self.extra_minute_runs, self.upgrade_runs, self.passage_runs
+        )
         if lowest < 0 or self.idpoint_per_run < 0:
             raise ValueError("giá không được âm")
 
@@ -64,6 +68,7 @@ class PriceList:
             "extra_minute_runs": self.extra_minute_runs,
             "idpoint_per_run": self.idpoint_per_run,
             "upgrade_runs": self.upgrade_runs,
+            "passage_runs": self.passage_runs,
             "max_minutes": MAX_MINUTES,
         }
 
@@ -110,6 +115,11 @@ def units_for(prices: PriceList, seconds: float) -> int:
 def upgrade_units(prices: PriceList) -> int:
     """The charge for one upgraded answer (D072), in thousandths of a run."""
     return math.ceil(round(prices.upgrade_runs * UNITS_PER_RUN, 6))
+
+
+def passage_units(prices: PriceList) -> int:
+    """The charge for one reading passage (D090), in thousandths of a run."""
+    return math.ceil(round(prices.passage_runs * UNITS_PER_RUN, 6))
 
 
 def hold_for(prices: PriceList, max_seconds: float) -> int:

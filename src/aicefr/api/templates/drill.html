@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Luyện lại từ · SpeakUp{% endblock %}
+{% block content %}
+{#- D089: the words the machine heard unclearly in one recording, four steps
+    each: listen to yourself, listen to a model, a tip, say the phrase again.
+    Clear twice in a row closes a word; a take that is not sends it to review. -#}
+<p class="crumb"><a href="/report/{{ response_id }}">← Báo cáo bài nói</a></p>
+<div id="drill" data-response-id="{{ response_id }}" aria-busy="true">
+  <div class="page-head">
+    <h1><span class="head-icon">{{ icon("headphones") }}</span>Luyện lại từ máy nghe chưa rõ</h1>
+    <p class="lede">Với mỗi từ: nghe lại chính bạn, nghe giọng mẫu, đọc mẹo nếu có, rồi nói lại cả cụm.
+      Máy nghe rõ từ đó hai lần liền là xong từ.</p>
+  </div>
+
+  <section class="card" aria-labelledby="drill-words-h">
+    <h2 id="drill-words-h">Các từ trong bài này</h2>
+    <p class="muted small-note" id="drill-note"></p>
+    <ul class="drill-words" id="drill-words" aria-label="Từ cần luyện"></ul>
+    <audio id="drill-audio" preload="metadata" src="/api/v1/responses/{{ response_id }}/audio" hidden></audio>
+  </section>
+
+  <section class="card drill-step" id="drill-step" aria-labelledby="drill-word-h" hidden>
+    <h2 id="drill-word-h">Từ <span lang="en" id="drill-word"></span></h2>
+    <ol class="drill-stages">
+      <li>
+        <h3>1. Nghe lại bạn nói</h3>
+        <div class="button-row">
+          <button type="button" class="button secondary small" data-play="word">{{ icon("play") }} Từ này</button>
+          <button type="button" class="button secondary small" data-play="phrase">{{ icon("play") }} Cả cụm</button>
+        </div>
+      </li>
+      <li>
+        <h3>2. Nghe giọng mẫu</h3>
+        <div class="button-row" id="drill-model"></div>
+      </li>
+      <li>
+        <h3>3. Mẹo</h3>
+        <p id="drill-tip"></p>
+      </li>
+      <li>
+        <h3>4. Nói lại cả cụm</h3>
+        <p class="drill-phrase" lang="en" id="drill-phrase"></p>
+        <form class="recorder-card" id="drill-form">
+          {% with submit_label="Gửi lượt này",
+                   floor_seconds=0,
+                   upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+            {% include "_recorder.html" %}
+          {% endwith %}
+          <div id="drill-wait" aria-live="polite"></div>
+        </form>
+        <div class="drill-result" id="drill-result" aria-live="polite"></div>
+      </li>
+    </ol>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('recorder.js') }}"></script>
+<script src="{{ asset('shadow.js') }}"></script>
+<script src="{{ asset('drill.js') }}"></script>{% endblock %}

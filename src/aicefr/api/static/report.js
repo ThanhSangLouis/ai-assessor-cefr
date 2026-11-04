@@ -23,6 +23,18 @@
 // range -- shown as evidence with a timestamp.
 const reportEl = document.getElementById("evidence");
 const ID = reportEl.dataset.responseId;
+
+// D086: a teacher decided this very response while it is open. Say so here
+// rather than link to the page already on screen; reloading is the reader's
+// choice, since they may be listening to the recording.
+document.addEventListener("live:review.done", (e) => {
+  if (e.detail.response_id !== ID) return;
+  e.preventDefault();
+  window.toast("Giảng viên vừa duyệt bài này.", "ok", {
+    sticky: true,
+    link: { href: location.pathname, label: "Tải lại để xem" },
+  });
+});
 // The QC limits in force, rendered by the server from active_qc().
 const LIMITS = {
   minSeconds: Number(reportEl.dataset.minSeconds) || 20,
@@ -698,6 +710,13 @@ function transcriptBlock(d) {
     '<span class="legend"><span class="swatch" aria-hidden="true"></span>' +
     "Máy nghe không rõ</span>";
   h += "</div>";
+  // D089: the orange words, said again one by one on their own page.
+  const scored = d.assessment && d.assessment.overall_0_6 != null;
+  if (isStudent && scored && (asr.words || []).some((w) => w.is_uncertain)) {
+    h +=
+      '<p class="drill-callout">Từ tô cam là từ máy nghe chưa rõ. Nghe lại, nghe mẫu rồi nói lại từng từ ' +
+      `<a class="button small" href="/drill/${encodeURIComponent(ID)}">Luyện lại các từ này</a></p>`;
+  }
   h += '<div class="transcript" id="transcript-body">';
   if (asr.words && asr.words.length) {
     asr.words.forEach((w, i) => {

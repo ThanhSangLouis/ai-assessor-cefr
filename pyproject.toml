@@ -26,6 +26,9 @@ dependencies = [
   # D048: the store is MongoDB. pymongo is the official driver, Apache-2.0,
   # pure Python with an optional C extension; it ships bson for Extended JSON.
   "pymongo>=4.8,<5",
+  # D088: Web Push. Signs each message with the server's VAPID key (RFC 8292)
+  # and encrypts it for the browser (RFC 8291); MPL-2.0, used unmodified.
+  "pywebpush>=2.0,<3",
 ]
 
 [project.optional-dependencies]
@@ -125,6 +128,7 @@ extend-immutable-calls = [
 "tests/e2e/test_lessons_e2e.py" = ["F811"]
 "tests/e2e/test_accounts_e2e.py" = ["F811"]
 "tests/e2e/test_profile_e2e.py" = ["F811"]
+"tests/e2e/test_pwa_e2e.py" = ["F811"]
 "tests/e2e/test_signup_e2e.py" = ["F811"]
 "tests/e2e/test_ui_depth_e2e.py" = ["F811"]
 "tests/e2e/test_achievements_e2e.py" = ["F811"]
@@ -143,6 +147,7 @@ extend-immutable-calls = [
 "tests/test_learning_plans.py" = ["F811"]
 "tests/test_d074_band_path.py" = ["F811"]
 "tests/test_d078_band_only.py" = ["F811"]
+"tests/test_d089_drill.py" = ["F811"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

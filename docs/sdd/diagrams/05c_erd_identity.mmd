@@ -1,8 +1,10 @@
 %% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
 %% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
-%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han.
+%% nhap la collection rieng vi can chi muc TTL tu xoa phien het han; trinh
+%% duyet nhan thong bao day (D088) cung rieng, mot tai khoan nhieu trinh duyet.
 erDiagram
     account ||--o{ session : "đăng nhập · account_id"
+    account ||--o{ push_subscription : "nhận thông báo · account_id"
 
     account {
         string account_id PK
@@ -32,4 +34,12 @@ erDiagram
         string expires_at
         string device
         string method "password · google"
+    }
+
+    push_subscription {
+        string endpoint PK "địa chỉ của dịch vụ push của trình duyệt (D088)"
+        string account_id
+        string p256dh "khoá công khai của trình duyệt"
+        string auth "bí mật xác thực của trình duyệt"
+        string created_at
     }

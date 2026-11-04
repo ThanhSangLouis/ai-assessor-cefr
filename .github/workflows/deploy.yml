@@ -76,7 +76,7 @@ jobs:
             echo "current=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.latest.outputs.current == 'true'
         with:
           ref: ${{ env.DEPLOY_SHA }}

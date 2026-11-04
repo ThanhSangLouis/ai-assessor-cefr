@@ -295,3 +295,21 @@ def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     box = nav.bounding_box()
     assert box and abs(box["y"] + box["height"] - 812) < 2
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
+
+
+def test_the_progress_page_prints_as_a_report_not_as_the_screen(context, live_server):
+    """ "In báo cáo" (or Ctrl+P) prints one summary page, not the screen's cards."""
+    page = student_page(context, live_server, "/my-progress")
+    report = page.locator("#print-report")
+    expect(report).to_contain_text("Báo cáo tiến độ")  # built once the page has loaded
+    assert report.evaluate("e => getComputedStyle(e).display") == "none"
+    for tool in page.locator(".page-tools .button").all():
+        assert tool.bounding_box()["height"] < 40  # one line each, label and icon
+
+    page.emulate_media(media="print")
+    expect(report).to_be_visible()
+    expect(report.locator("h2")).to_have_text(["Kết quả", "Cần luyện tiếp", "Thành tựu"])
+    expect(report).to_contain_text("không phải chứng chỉ CEFR")
+    for screen_only in ("#progress-panel", "#achievements", ".site-header", ".page-tools"):
+        expect(page.locator(screen_only).first).to_be_hidden()
+    assert report.evaluate("e => getComputedStyle(e).opacity") == "1"  # no half-run animation

@@ -782,6 +782,58 @@ def _d085_built_in(db: Database, target: str) -> None:
         db["path"].update_many({"sample": {"$exists": True}}, {"$rename": {"sample": "built_in"}})
 
 
+def _d088_push_subscription(db: Database, target: str) -> None:
+    """Where to send a browser's notifications: `push_subscription` (D088).
+
+    One document per browser that allowed SpeakUp's notifications, keyed by
+    the push service's endpoint; an account may have several (a phone and a
+    laptop). Nothing to move: the collection is new.
+    """
+    ensure_indexes(
+        db,
+        {"push_subscription": [(("endpoint",), True), (("account_id",), False)]},
+        "migration-17",
+    )
+
+
+def _d089_word_drill(db: Database, target: str) -> None:
+    """The words a learner says again from one of their recordings: `word_drill` (D089).
+
+    One document per learner, response and word, holding its takes. Nothing to
+    move: the collection is new, and a `review_item` keeps its own shape (a
+    word sent to review from a drill points back with `drill_id`).
+    """
+    ensure_indexes(
+        db,
+        {
+            "word_drill": [
+                (("drill_id",), True),
+                (("account_id", "response_id", "word"), True),
+                (("account_id", "passed", "updated_at"), False),
+            ]
+        },
+        "migration-18",
+    )
+
+
+def _d090_drill_passage(db: Database, target: str) -> None:
+    """Reading passages written around a learner's unclear words: `drill_passage` (D090).
+
+    One document per passage, holding the words it was written for and its
+    takes. New collection, nothing to move.
+    """
+    ensure_indexes(
+        db,
+        {
+            "drill_passage": [
+                (("passage_id",), True),
+                (("account_id", "created_at"), False),
+            ]
+        },
+        "migration-19",
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -813,6 +865,11 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(14, "practice tasks and their attempts removed (D083)", _d083_practice_tasks),
     Migration(15, "payment: the gateway's part of an order on its own (D084)", _d084_payment),
     Migration(16, "path: sample renamed built_in (D085)", _d085_built_in),
+    Migration(
+        17, "push_subscription: a browser's Web Push endpoint (D088)", _d088_push_subscription
+    ),
+    Migration(18, "word_drill: words said again from a recording (D089)", _d089_word_drill),
+    Migration(19, "drill_passage: passages read around unclear words (D090)", _d090_drill_passage),
 )
 
 LATEST = MIGRATIONS[-1].version

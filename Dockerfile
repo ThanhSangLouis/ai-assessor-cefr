@@ -29,12 +29,18 @@ RUN /opt/venv/bin/pip install ".[services,asr]" \
  && if [ "$VAD" = "1" ]; then \
       /opt/venv/bin/pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu \
       && /opt/venv/bin/pip install ".[vad]"; \
-    fi
+    fi \
+ && /opt/venv/bin/pip install --upgrade "setuptools>=78.1.1"
 
 # ---------------------------------------------------------------------------
 
 FROM python:3.12-slim AS base
 
+# Nothing installs packages at run time, and pip carries its own copies of
+# urllib3, msgpack and setuptools, older than ours and with known CVEs (Trivy
+# in CI). The image's pip goes here, the venv's in each target below.
+RUN python -m pip uninstall --yes --quiet pip \
+ && rm -rf /usr/local/lib/python3.12/ensurepip
 # libsndfile1 is what `soundfile` binds to; curl for the health checks.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends libsndfile1 curl \
@@ -53,10 +59,14 @@ HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
 
 FROM base AS service
 COPY --from=builder /opt/venv /opt/venv
+RUN /opt/venv/bin/python -m pip uninstall --yes --quiet pip
 USER aicefr
 # No --reload in production. --proxy-headers trusts X-Forwarded-* only from
 # FORWARDED_ALLOW_IPS (the gateway's address), never from everyone.
-CMD ["sh", "-c", "exec uvicorn --factory aicefr.services.${AICEFR_SERVICE:?set AICEFR_SERVICE}.app:create_app --host 0.0.0.0 --port 8000 --proxy-headers"]
+# --timeout-graceful-shutdown: a live stream (D086) never ends by itself before
+# AICEFR_LIVE_MAX_SECONDS; on a deploy it is cut after 5 s and the browser
+# reconnects to the new container, instead of holding the old one until killed.
+CMD ["sh", "-c", "exec uvicorn --factory aicefr.services.${AICEFR_SERVICE:?set AICEFR_SERVICE}.app:create_app --host 0.0.0.0 --port 8000 --proxy-headers --timeout-graceful-shutdown 5"]
 
 FROM base AS speech
 # ffmpeg transcodes the browser's WebM/MP4 recordings (FR-39).
@@ -65,6 +75,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ffmpeg \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=builder-speech /opt/venv /opt/venv
+RUN /opt/venv/bin/python -m pip uninstall --yes --quiet pip
 ENV HF_HOME=/home/aicefr/.cache/huggingface
 # The `models` volume mounts here. A new named volume takes the owner of the
 # image's directory; without it Docker creates the path as root and Whisper

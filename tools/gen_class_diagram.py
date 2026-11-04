@@ -336,13 +336,49 @@ CLASSES = [
             "- createdAt: datetime",
         ],
     ),
+    # D089: a word the machine heard unclearly in a recording, said again until
+    # it comes through clearly twice in a row. Its takes live and go with it.
+    _e(
+        "Drill",
+        "WordDrill",
+        [
+            "- drillId: str",
+            "- learner: Account [1]",
+            "- response: Response [1]",
+            "- word: str",
+            "- wordIndex: int",
+            "- phrase: str",
+            "- streak: int",
+            "- passed: bool",
+            "- takes: List<str>",
+            "- createdAt: datetime",
+        ],
+    ),
+    # D090: a passage written around three to five open drills and read aloud;
+    # a reading is one take of each of its words. Its readings live with it.
+    _e(
+        "Passage",
+        "DrillPassage",
+        [
+            "- passageId: str",
+            "- learner: Account [1]",
+            "- words: WordDrill [3..5]",
+            "- band: str",
+            "- text: str",
+            "- source: str",
+            "- takes: List<str>",
+            "- createdAt: datetime",
+        ],
+    ),
+    # A word to review comes from a lesson step or, since D089, from a drill.
     _e(
         "RevItem",
         "ReviewItem",
         [
             "- itemId: str",
             "- learner: Account [1]",
-            "- lesson: Lesson [1]",
+            "- lesson: Lesson [0..1]",
+            "- drill: WordDrill [0..1]",
             "- kind: str",
             "- word: str",
             "- box: int",
@@ -426,6 +462,7 @@ CLASSES = [
             "- firstMinuteRuns: float",
             "- extraMinuteRuns: float",
             "- upgradeRuns: float",
+            "- passageRuns: float",
             "- idpointPerRun: int",
             "- freeRuns: float",
             "- packs: List<str>",
@@ -487,7 +524,11 @@ ENUMS = [
     _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
     _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
     # D072: what a ledger entry paid for -- a recording, or an upgraded answer.
-    _n("MeterAct", "MeteredAction", ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT"]),
+    _n(
+        "MeterAct",
+        "MeteredAction",
+        ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT", "DRILL_PASSAGE"],
+    ),
 ]
 
 # (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
@@ -513,7 +554,12 @@ EDGES = [
     ("Attempt", "Account", "0..* : 1", "assoc"),
     ("Attempt", "Step", "0..* : 1", "assoc"),
     ("RevItem", "Account", "0..* : 1", "assoc"),
-    ("RevItem", "Lesson", "0..* : 1", "assoc"),
+    ("RevItem", "Lesson", "0..* : 0..1", "assoc"),
+    ("RevItem", "Drill", "0..1 : 0..1", "assoc"),
+    ("Drill", "Account", "0..* : 1", "assoc"),
+    ("Drill", "Resp", "0..* : 1", "assoc"),
+    ("Passage", "Account", "0..* : 1", "assoc"),
+    ("Passage", "Drill", "0..* : 3..5", "assoc"),
     ("Achv", "Account", "0..* : 1", "assoc"),
     ("Plan", "Account", "0..* : 1", "assoc"),
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
@@ -567,8 +613,8 @@ ZONES = [
      [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
       (3, ["Status", "Band", "Criterion", "RevSess"])]),
     ("learning", "Học tập", 1,
-     [(4, ["Achv", "Plan", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
-      (6, ["PathSt", ("StepKind", "Step")])]),
+     [(4, ["Achv", "Plan", "Drill", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
+      (6, ["Passage", "PathSt", ("StepKind", "Step")])]),
 ]  # fmt: skip
 COLUMNS = []
 

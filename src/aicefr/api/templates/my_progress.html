@@ -4,7 +4,7 @@
 {% block title %}Tiến độ của tôi · SpeakUp{% endblock %}
 {% block content %}
 {{ subnav('Kết quả', [['/my-progress', 'Tiến độ', 'progress'], ['/my-responses', 'Bài đã nộp', 'mine']], 'progress') }}
-<div class="page-head page-head-row">
+<div class="page-head page-head-row progress-head">
   <div>
     <h1><span class="head-icon">{{ icon("trend") }}</span>Tiến độ của tôi</h1>
     <p class="lede">
@@ -14,8 +14,9 @@
     </p>
   </div>
   <div class="button-row page-tools">
-    <button type="button" class="button secondary small" id="print-progress">In hoặc lưu PDF</button>
-    <a class="button secondary small" href="/api/v1/me/profile.json">Tải hồ sơ năng lực (JSON)</a>
+    <button type="button" class="button secondary small" id="print-progress">{{ icon("printer") }}<span>In báo cáo</span></button>
+    <a class="button secondary small" href="/api/v1/me/profile.json" download
+       title="Hồ sơ năng lực dạng JSON, để mang sang hệ thống khác">{{ icon("download") }}<span>Tải JSON</span></a>
   </div>
 </div>
 
@@ -28,7 +29,8 @@
 {#- D070. The habits the next-band targets name, one small chart each. -#}
 <section class="card" id="habits" aria-labelledby="habits-h" hidden>
   <div class="card-head"><h2 id="habits-h">Thói quen nói qua các bài</h2></div>
-  <p class="muted">Bốn phép đo mà mục “Để lên band tiếp theo” nhắm tới, đo trên từng bài đánh giá.
+  <p class="muted">Các phép đo mà mục “Để lên band tiếp theo” nhắm tới, cùng tỉ lệ từ máy nghe chưa rõ
+    (giảm dần khi bạn luyện lại từ), đo trên từng bài đánh giá.
     Đề dài ngắn khác nhau thì số cũng khác, nên xem hướng đi của nhiều bài, đừng so hai bài lẻ.</p>
   <div class="habit-grid" id="habits-body"></div>
 </section>
@@ -45,6 +47,18 @@
   <p class="muted">Đọc từ các bài đọc to, nhắc lại và điền từ của bạn: những lỗi người Việt hay gặp, mỗi lỗi kèm số lần mắc trên số lần gặp.</p>
   <div id="pronunciation-body"><div class="skeleton skeleton-block"></div></div>
 </section>
+
+{#- D089. Words said again from a recording but not yet clear twice in a row. -#}
+<section class="card" id="drill-words-card" aria-labelledby="drill-words-title" hidden>
+  <div class="card-head"><h2 id="drill-words-title">Từ cần luyện</h2></div>
+  <p class="muted">Từ máy nghe chưa rõ mà bạn đã luyện lại nhưng chưa rõ hai lần liền. Mở lại bài để luyện tiếp;
+    các từ này cũng có trong phần ôn tập hằng ngày.</p>
+  <div id="drill-words-body"></div>
+</section>
+
+{#- The page printed: a one-page summary built from what the page loaded
+    (my_progress.js, printReport), in place of the screen's cards. -#}
+<section class="print-report" id="print-report" aria-hidden="true" data-name="{{ account.display_name if account else "" }}"></section>
 
 <section class="card ach-panel" id="achievements" aria-labelledby="ach-title" aria-busy="true">
   <h2 id="ach-title" class="visually-hidden">Thành tựu</h2>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- D088: the status-bar badge of a notification. Android draws only its
+       alpha channel, so the mark is one shape with the bars cut out. -->
+  <path fill="#ffffff" fill-rule="evenodd" d="M9 3h14a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7h-9l-5.4 4.4c-.5.4-1.2.1-1.2-.6v-4a7 7 0 0 1-5.4-6.8v-8a7 7 0 0 1 7-7z M9.2 13.5a2.3 2.3 0 0 0-2.3 2.3v2.4a2.3 2.3 0 0 0 4.6 0v-2.4a2.3 2.3 0 0 0-2.3-2.3z M16 10a2.3 2.3 0 0 0-2.3 2.3v5.9a2.3 2.3 0 0 0 4.6 0v-5.9a2.3 2.3 0 0 0-2.3-2.3z M22.8 6.5a2.3 2.3 0 0 0-2.3 2.3v9.4a2.3 2.3 0 0 0 4.6 0v-9.4a2.3 2.3 0 0 0-2.3-2.3z"/>
+</svg>

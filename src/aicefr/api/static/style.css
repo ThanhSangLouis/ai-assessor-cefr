@@ -1600,6 +1600,7 @@ table.kv th { width: 40%; white-space: normal; }
 .toast.toast-error { border-left-color: var(--danger); }
 .toast.toast-warn { border-left-color: var(--warn); }
 .toast .toast-body { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.toast .toast-link { font-weight: 600; white-space: nowrap; }
 .toast .toast-close {
   margin: 0;
   padding: 0 var(--sp-1);
@@ -8999,6 +9000,58 @@ button:not(:disabled):hover,
 @keyframes art-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 @keyframes art-breathe { to { transform: scaleY(1.035); } }
 @keyframes art-sunrise { from { transform: translateY(24px); opacity: 0; } }
+/* The progress page's tools: one line each. */
+.page-tools .button { display: inline-flex; align-items: center; gap: var(--sp-1); white-space: nowrap; }
+
+/* The progress page on paper is its report (my_progress.js, paintReport): one
+   page to read in a minute, not the screen printed. Nothing of the screen. */
+.print-report { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm 14mm 12mm; }
+  body:has(#print-report) .site-header,
+  body:has(#print-report) .site-footer,
+  body:has(#print-report) main > :not(#print-report) { display: none !important; }
+  body:has(#print-report) main { max-width: none; margin: 0; padding: 0; }
+  /* Hidden on screen, it would start its rise-in animation the moment paper
+     shows it, and print half transparent. */
+  .print-report { display: block; animation: none !important; color: #111; font-size: 10pt; line-height: 1.4; }
+  /* wrapTables boxes every table for scrolling; paper does not scroll. */
+  .print-report .table-scroll { overflow: visible; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; }
+  .print-report h1 { margin: 2pt 0 0; font-size: 18pt; letter-spacing: -0.01em; }
+  .print-report h2 {
+    margin: 12pt 0 5pt; padding-bottom: 2pt; border-bottom: 0.75pt solid #999;
+    font-size: 11pt; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .print-report section { break-inside: avoid; }
+  .print-report p { margin: 0 0 4pt; }
+  .pr-head { padding-bottom: 6pt; border-bottom: 2pt solid #111; }
+  .pr-brand { margin: 0; font-size: 8.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #555; }
+  .pr-meta { margin: 2pt 0 0; color: #555; font-size: 9pt; }
+  .pr-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt; margin: 0 0 8pt; }
+  .pr-facts > div { border-left: 2pt solid #111; padding-left: 6pt; }
+  .pr-facts dt { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.05em; color: #555; }
+  .pr-facts dd { margin: 1pt 0; font-size: 15pt; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pr-facts p { font-size: 8.5pt; color: #333; }
+  .print-report .trend-chart { max-height: 50mm; margin: 0 0 6pt; }
+  .print-report .trend-chart .line { stroke: #111; }
+  .print-report .trend-chart .dot { fill: #fff; stroke: #111; }
+  .print-report .trend-chart .dot.verified { fill: #111; }
+  .print-report .trend-chart .grid { stroke: #ccc; }
+  .print-report .trend-chart .axis-label { fill: #555; }
+  .print-report h1, .print-report h2, .print-report dd, .print-report b, .print-report li,
+  .print-report td, .print-report th { color: #111; }
+  .pr-table { width: 100%; border: 0; border-radius: 0; box-shadow: none; border-collapse: collapse;
+    font-size: 9pt; font-variant-numeric: tabular-nums; }
+  .pr-table th { text-align: left; font-weight: 600; background: none; border: 0;
+    border-bottom: 0.75pt solid #111; padding: 2pt 4pt; }
+  .pr-table td { border: 0; border-bottom: 0.5pt solid #ddd; padding: 2pt 4pt; }
+  .pr-table tr { break-inside: avoid; }
+  .pr-next { margin: 0; padding-left: 14pt; }
+  .pr-next li { margin: 0 0 4pt; }
+  .pr-empty { color: #555; }
+  .pr-foot { margin-top: 12pt; padding-top: 4pt; border-top: 0.5pt solid #999; font-size: 8pt; color: #555; }
+}
+
 
 @media print {
   .ground,
@@ -9097,6 +9150,32 @@ button:not(:disabled):hover,
 .retell-round { display: grid; gap: var(--sp-2); padding: var(--sp-3) 0; border-bottom: 1px solid var(--border); }
 .retell-round h3 { margin: 0; }
 .retell-round audio { width: 100%; }
+
+/* D089: saying again the words the machine heard unclearly. */
+.drill-callout { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin: var(--sp-2) 0; font-size: var(--t-sm); color: var(--fg-muted); }
+.drill-callout .button { margin: 0; }
+.drill-words { display: flex; flex-wrap: wrap; gap: var(--sp-2); padding: 0; margin: var(--sp-3) 0 0; list-style: none; }
+.drill-word { display: inline-flex; align-items: center; gap: var(--sp-2); margin: 0; padding: var(--sp-1) var(--sp-3); border: 1px solid var(--border); border-radius: var(--r-pill); background: var(--bg-elevated); color: var(--fg); font-weight: 600; cursor: pointer; }
+.drill-word.is-current { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.drill-word.is-done { color: var(--fg-muted); }
+.drill-stages { display: grid; gap: var(--sp-4); padding: 0; margin: 0; list-style: none; }
+.drill-stages h3 { margin: 0 0 var(--sp-2); font-size: var(--t-md); }
+.drill-stages .button-row { margin-top: 0; }
+.drill-phrase { margin: 0 0 var(--sp-3); font-size: var(--t-lg); line-height: 1.6; }
+.drill-phrase mark { padding: 0 2px; background: color-mix(in srgb, var(--warn) 22%, transparent); border-bottom: 2px dotted var(--warn); color: inherit; }
+.drill-result:empty { display: none; }
+.drill-result { display: grid; gap: var(--sp-2); margin-top: var(--sp-3); }
+.drill-result p { margin: 0; }
+.drill-ok { color: var(--ok); font-weight: 600; }
+.drill-miss { color: var(--warn); font-weight: 600; }
+
+/* D090: a passage read around the words still being said again. */
+span.drill-word { cursor: default; }
+.passage-text { max-width: 65ch; }
+.passage-text mark.is-heard { background: var(--ok-soft); border-bottom-color: var(--ok); }
+.passage-verdicts { display: grid; gap: var(--sp-1); padding: 0; margin: 0; list-style: none; }
+.passage-again { margin-top: var(--sp-3); font-size: var(--t-sm); }
+.passage-again summary { cursor: pointer; color: var(--fg-muted); }
 
 /* D070: shadowing the upgraded answer, the phrase book, the habit charts. */
 .shadow { display: grid; gap: var(--sp-2); }
@@ -9263,3 +9342,4 @@ button:not(:disabled):hover,
 .price-packs td { vertical-align: middle; }
 .price-packs button { margin: 0; }
 .price-history { margin-top: var(--sp-4); }
+

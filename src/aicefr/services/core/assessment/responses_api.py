@@ -326,6 +326,11 @@ FIELD_PURPOSES: dict[str, str] = {
     " khi bạn cho phép dùng cho nghiên cứu; xoá dữ liệu là xoá luôn.",
     "learning_plans": "Lộ trình riêng bạn đã nhờ hệ thống ghép: mục tiêu bạn nhập và các bài"
     " được chọn. Chỉ dùng để hiện trên trang Luyện tập; xoá dữ liệu là xoá luôn.",
+    "word_drills": "Các từ máy nghe chưa rõ bạn đã luyện lại (D089): từ, cụm từ, mỗi lượt nói"
+    " lại máy nghe rõ hay chưa. Bản ghi các lượt này không được lưu; xoá dữ liệu là xoá luôn.",
+    "drill_passages": "Các đoạn đọc viết quanh những từ đó (D090): các từ, đoạn văn, ai viết (AI"
+    " hay ghép từ cụm từ của bạn) và mỗi lần đọc, từ nào máy nghe rõ. Bản ghi không được lưu;"
+    " xoá dữ liệu là xoá luôn.",
 }
 
 
@@ -377,6 +382,8 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
             "lesson_attempt_count": len(lesson_attempts),
             "lesson_attempts": lesson_attempts,
             "learning_plans": s.peers.learning.plans_of(account_id=account.account_id),
+            "word_drills": s.peers.learning.drills_of(account_id=account.account_id),
+            "drill_passages": s.peers.learning.passages_of(account_id=account.account_id),
             "replay_labels": replay_api.my_labels(account.account_id) if s.replays else [],
             "achievements": [
                 {
@@ -409,7 +416,7 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
     RMSE of 0.53 on its own validation data).
     """
     from aicefr.report.habits import NAMES as HABIT_NAMES
-    from aicefr.report.habits import habit_series
+    from aicefr.report.habits import clarity_series, habit_series
     from aicefr.scoring.scorer import load_model
 
     # The instrument's own error, read from the artifact rather than typed in
@@ -462,7 +469,11 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
         "verified_count": sum(1 for r in rows if r["teacher_verified"]),
         "trend": trend,
         # D070: the habits the next-band targets name, over the same assessments.
-        "habits": habit_series(svc().repo.feature_series(account.account_id, HABIT_NAMES)),
+        "habits": [
+            *habit_series(svc().repo.feature_series(account.account_id, HABIT_NAMES)),
+            # D089: the share of unclear words, which the word drill aims to lower.
+            clarity_series(svc().repo.unsure_series(account.account_id)),
+        ],
         "note": (
             "Điểm chưa được giảng viên xác nhận chỉ là ước lượng của máy."
             " Biểu đồ vẽ cả hai loại nhưng phân biệt rõ."

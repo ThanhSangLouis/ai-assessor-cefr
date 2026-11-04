@@ -57,6 +57,7 @@ Mặc định `speech` dùng bộ nhận dạng giả: điểm không có nghĩa
 - **Lưu trữ có thời hạn:** `docker compose exec core python -m aicefr.maintenance_cli retention --days 180` (xem trước; thêm `--apply` để thực hiện).
 - **Nâng từ PostgreSQL (D048):** chưa có dữ liệu thật nào trên PostgreSQL, nên D048 không kèm công cụ chuyển dữ liệu. Volume `pgdata` cũ có thể xoá (`docker volume rm ai-assessor-cefr_pgdata`). `init-core-user.js` chỉ chạy khi volume `mongodata` mới tạo.
 - **Cập nhật cấu hình gateway:** sửa bảng định tuyến ở `src/aicefr/platform/gateway.py`, chạy `python tools/gen_gateway.py`; không sửa tay `deploy/gateway/default.conf.template`.
+- **Luồng sự kiện trực tiếp (D086):** `/api/v1/me/events` là đường duy nhất gateway không đệm (`STREAMS` trong `gateway.py`). Luồng tự đóng sau `AICEFR_LIVE_MAX_SECONDS` (mặc định 900) và khi `core` nhận SIGTERM, nên deploy không phải chờ; trình duyệt tự nối lại sau 5 giây.
 
 ## 5. Bảo mật
 

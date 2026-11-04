@@ -80,6 +80,7 @@ class Provider:
         calls: Calls | None = None,
         system: str = SYSTEM,
         schema: dict = SCHEMA,
+        max_tokens: int | None = None,
     ) -> tuple[str, dict]:
         """The raw answer and the tokens the provider says it used (D072).
 
@@ -88,12 +89,19 @@ class Provider:
         `calls` counts every request sent, retries and failures included,
         as the provider's quota counts them. `system` and `schema` are the
         upgraded answer's by default; a teacher's lesson draft (D075) has its own.
+        `max_tokens` caps the answer and asks for little deliberation (D090):
+        a thinking model bills its thinking as output.
         """
         calls = calls if calls is not None else Calls()
         if self.name == "anthropic":
-            return _anthropic(self.model, self.key, user, calls, system, schema)
+            return _anthropic(self.model, self.key, user, calls, system, schema, max_tokens)
         base_url = OPENAI_COMPATIBLE[self.name].base_url
-        return _openai_compatible(base_url, self.model, self.key, user, calls, system)
+        extra: dict = {}
+        if max_tokens:
+            extra["max_tokens"] = max_tokens
+            if self.name == "gemini":
+                extra["reasoning_effort"] = "low"
+        return _openai_compatible(base_url, self.model, self.key, user, calls, system, extra)
 
 
 # D073: the key of a project with billing on, used while an administrator has
@@ -148,12 +156,19 @@ def _usage(input_tokens, output_tokens) -> dict:
 
 
 def _openai_compatible(
-    base_url: str, model: str, key: str, user: str, calls: Calls, system: str = SYSTEM
+    base_url: str,
+    model: str,
+    key: str,
+    user: str,
+    calls: Calls,
+    system: str = SYSTEM,
+    extra: dict | None = None,
 ) -> tuple[str, dict]:
     body = {
         "model": model,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "response_format": {"type": "json_object"},
+        **(extra or {}),
     }
     request = urllib.request.Request(
         f"{base_url}/chat/completions",
@@ -180,7 +195,13 @@ def _openai_compatible(
 
 
 def _anthropic(
-    model: str, key: str, user: str, calls: Calls, system: str = SYSTEM, schema: dict = SCHEMA
+    model: str,
+    key: str,
+    user: str,
+    calls: Calls,
+    system: str = SYSTEM,
+    schema: dict = SCHEMA,
+    max_tokens: int | None = None,
 ) -> tuple[str, dict]:
     try:
         import anthropic
@@ -192,7 +213,7 @@ def _anthropic(
     try:
         response = client.messages.create(
             model=model,
-            max_tokens=4000,
+            max_tokens=max_tokens or 4000,
             system=system,
             messages=[{"role": "user", "content": user}],
             # A rewrite needs little deliberation; the schema keeps the JSON valid.

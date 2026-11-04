@@ -47,6 +47,8 @@ const progressDone = Promise.all([
     panel.innerHTML = build(d);
     window.wrapTables(panel);
     paintHabits(d.habits || []);
+    report.progress = d;
+    paintReport();
   })
   .catch(() => {
     window.clearBusy(panel);
@@ -326,6 +328,8 @@ const achievementsDone = fetch("/api/v1/me/achievements")
     if (!d) return;
     window.clearBusy(achPanel);
     achPanel.innerHTML = achievementList(d);
+    report.achievements = d;
+    paintReport();
     const fresh = d.items.filter((i) => i.new).map((i) => i.code);
     if (fresh.length) {
       fetch("/api/v1/me/achievements/seen", {
@@ -350,11 +354,45 @@ fetch("/api/v1/me/pronunciation")
     if (!d) return;
     window.clearBusy(pronPanel);
     pronBody.innerHTML = window.ui.pronunciationList(d, { lessonLinks: true });
+    report.pronunciation = d;
+    paintReport();
   })
   .catch(() => {
     window.clearBusy(pronPanel);
     pronBody.innerHTML = '<p class="error">Không tải được phần phát âm. Hãy tải lại trang.</p>';
   });
+
+// D089: words said again from a recording, not yet clear twice in a row.
+fetch("/api/v1/learn/drill")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    if (d) {
+      report.drills = d;
+      paintReport();
+    }
+    if (!d || !d.practised) return;
+    const esc = window.escapeHtml;
+    const rows = d.open
+      .map(
+        (w) =>
+          `<li><a href="/drill/${encodeURIComponent(w.response_id)}"><b lang="en">${esc(w.word)}</b></a>` +
+          ` <span class="muted" lang="en">${esc(w.phrase)}</span>` +
+          ` <span class="badge">${w.streak}/${d.pass_streak}</span></li>`,
+      )
+      .join("");
+    // D090: three words or more still open can be read in a passage around them.
+    const distinct = new Set(d.open.map((w) => w.word)).size;
+    const read =
+      distinct >= 3
+        ? '<div class="button-row"><a class="button secondary" href="/passage">Đọc đoạn văn có các từ này</a></div>'
+        : "";
+    document.getElementById("drill-words-body").innerHTML =
+      `<p>Đã luyện lại ${d.practised} từ, ${d.passed} từ máy đã nghe rõ.</p>` +
+      (rows ? `<ul class="plain-list">${rows}</ul>` : '<p class="muted">Không còn từ nào đang dở.</p>') +
+      read;
+    document.getElementById("drill-words-card").hidden = false;
+  })
+  .catch(() => {});
 
 // Arriving at #achievements from the practice page: the browser jumped to the
 // section before the panel above it had grown, so jump again once both are drawn.
@@ -377,3 +415,119 @@ Promise.allSettled([progressDone, achievementsDone]).then(() => {
     .join("")}</ul>`;
   document.getElementById("replay-notes").hidden = false;
 })();
+
+// ---------------------------------------------------------------- printed report
+// What "In báo cáo" (and Ctrl+P) prints: not the screen, but one page a learner
+// or their teacher reads in a minute -- where the learner is, whether it is
+// moving, and what to practise next. Built from what this page already loaded;
+// style.css hides everything else on paper.
+const report = {};
+const reportEl = document.getElementById("print-report");
+const comma = (v) => String(v).replace(".", ",");
+const score = (v) => (v == null ? "—" : comma(Number(v).toFixed(2)));
+
+function reportSummary(d) {
+  const rows = d.results || [];
+  if (!rows.length) {
+    return (
+      '<p class="pr-empty">Chưa có bài đánh giá nào được chấm. Nộp bài ở mục <b>Nộp bài</b>; ' +
+      "sau vài bài, báo cáo này cho thấy bạn đang ở band nào và có tiến bộ hay không.</p>"
+    );
+  }
+  const first = rows[0];
+  const last = rows[rows.length - 1];
+  const t = d.trend || {};
+  const label = (TREND_LABEL[t.direction] || TREND_LABEL.chua_du_du_lieu).text;
+  const where = last.band_position ? `, ${PLACE[last.band_position.part]} band` : "";
+  const change = last.overall_0_6 - first.overall_0_6;
+  const cell = (k, v, note) =>
+    `<div><dt>${k}</dt><dd>${v}</dd>${note ? `<p>${note}</p>` : ""}</div>`;
+  let h = '<dl class="pr-facts">';
+  h += cell("Band gần nhất", window.escapeHtml(last.overall_band || "—"), `${score(last.overall_0_6)} điểm${where}`);
+  h += cell(
+    "So với bài đầu",
+    rows.length > 1 ? `${change >= 0 ? "+" : "−"}${score(Math.abs(change))}` : "—",
+    rows.length > 1
+      ? `${window.escapeHtml(first.overall_band || "—")} ${score(first.overall_0_6)} → ${window.escapeHtml(last.overall_band || "—")} ${score(last.overall_0_6)}`
+      : "mới có một bài"
+  );
+  h += cell("Xu hướng", label, window.escapeHtml(t.note || ""));
+  h += cell("Giảng viên xác nhận", `${d.verified_count || 0}/${rows.length}`, "bài; còn lại là điểm máy");
+  h += "</dl>";
+  h += chart(rows, d.band_thresholds || {});
+  h += '<table class="pr-table"><thead><tr><th>Ngày</th><th>Đề</th><th>Điểm · band</th><th>Giảng viên</th></tr></thead><tbody>';
+  for (const r of [...rows].reverse()) {
+    h +=
+      `<tr><td>${window.escapeHtml(dayOf(r.created_at))}</td>` +
+      `<td>${window.escapeHtml(titles[r.task_id] || r.task_id)}</td>` +
+      `<td>${score(r.overall_0_6)} · ${window.escapeHtml(r.overall_band || "—")}` +
+      `${r.band_position ? ` ${PLACE[r.band_position.part]}` : ""}</td>` +
+      `<td>${r.teacher_verified ? "Đã xác nhận" : "—"}</td></tr>`;
+  }
+  return h + "</tbody></table>";
+}
+
+// What to practise next, from the three places the page knows it: words not
+// yet clear, the pronunciation patterns missed most, habits going the wrong way.
+function reportNext() {
+  const items = [];
+  const open = [...new Set(((report.drills || {}).open || []).map((w) => w.word))];
+  if (open.length) {
+    items.push(
+      `<b>Nói lại cho rõ ${open.length} từ:</b> <span lang="en">${open.map(window.escapeHtml).join(", ")}</span>. ` +
+        "Mục Tiến độ → Từ cần luyện" + (open.length >= 3 ? ", hoặc đọc đoạn văn có các từ này." : ".")
+    );
+  }
+  const weak = ((report.pronunciation || {}).patterns || [])
+    .filter((p) => p.enough && p.rate != null && p.rate >= 0.3)
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 2);
+  for (const p of weak) {
+    items.push(
+      `<b>${window.escapeHtml(p.name)}:</b> máy nghe sai ${p.errors}/${p.opportunities} lần (${Math.round(p.rate * 100)}%). ` +
+        window.escapeHtml(p.tip || "")
+    );
+  }
+  for (const h of ((report.progress || {}).habits || [])) {
+    const m = h.movement;
+    if (!m || m.toward_better || m.delta === 0) continue;
+    items.push(
+      `<b>${window.escapeHtml(h.label)}:</b> ${m.delta > 0 ? "tăng" : "giảm"} từ ${comma(m.first)}` +
+        ` ${m.delta > 0 ? "lên" : "xuống"} ${comma(m.last)} ` +
+        `${window.escapeHtml(h.unit)}, trong khi ${h.better === "up" ? "cao hơn" : "thấp hơn"} mới là tốt.`
+    );
+  }
+  if (!items.length) {
+    return '<p class="pr-empty">Chưa thấy điều gì cần chú ý thêm. Tiếp tục nộp bài và luyện để có thêm dữ liệu.</p>';
+  }
+  return `<ol class="pr-next">${items.map((i) => `<li>${i}</li>`).join("")}</ol>`;
+}
+
+function reportAchievements(d) {
+  const got = (d.items || []).filter((i) => i.unlocked);
+  if (!got.length) return `<p class="pr-empty">Chưa đạt thành tựu nào (0/${Number(d.total) || 0}).</p>`;
+  return (
+    `<p>Đã đạt ${got.length}/${Number(d.total)}: ` +
+    got.map((i) => `${window.escapeHtml(i.title)} (${window.escapeHtml(dayOf(i.unlocked_at))})`).join("; ") +
+    ".</p>"
+  );
+}
+
+function paintReport() {
+  if (!reportEl || !report.progress) return;
+  const rows = report.progress.results || [];
+  const span = rows.length
+    ? ` · ${rows.length} bài có điểm, ${dayOf(rows[0].created_at)}–${dayOf(rows[rows.length - 1].created_at)}`
+    : "";
+  let h =
+    '<header class="pr-head"><p class="pr-brand">SpeakUp · Báo cáo tiến độ</p>' +
+    `<h1>${window.escapeHtml(reportEl.dataset.name || "")}</h1>` +
+    `<p class="pr-meta">In ngày ${window.escapeHtml(dayOf(new Date().toISOString()))}${window.escapeHtml(span)}</p></header>`;
+  h += `<section><h2>Kết quả</h2>${reportSummary(report.progress)}</section>`;
+  h += `<section><h2>Cần luyện tiếp</h2>${reportNext()}</section>`;
+  if (report.achievements) h += `<section><h2>Thành tựu</h2>${reportAchievements(report.achievements)}</section>`;
+  h +=
+    '<p class="pr-foot">Điểm là ước lượng của máy để luyện tập, không phải chứng chỉ CEFR. ' +
+    "Chênh lệch nhỏ giữa hai bài nằm trong sai số đo; giảng viên quyết định cuối cùng.</p>";
+  reportEl.innerHTML = h;
+}

@@ -187,7 +187,12 @@ def browser():
 @pytest.fixture
 def context(browser, live_server):
     """A fresh browser context per test: its own cookies, cache and microphone permission."""
-    ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
+    # D088: the site's service worker sends pages through itself, and
+    # `page.route` does not see what a worker fetches. Blocked here; the
+    # worker's own tests (test_pwa_e2e.py) allow it.
+    ctx = browser.new_context(
+        base_url=live_server.base_url, locale="vi-VN", service_workers="block"
+    )
     ctx.grant_permissions(["microphone"], origin=live_server.base_url)
     ctx.set_default_timeout(15_000)
     yield ctx

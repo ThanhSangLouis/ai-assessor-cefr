@@ -39,6 +39,11 @@
 | **1.15** | **01/11/2026** | **D075.** Một trung tâm, trả theo lượt: gỡ gói dịch vụ, dùng thử, giới hạn chỗ, mã giấy phép (FR-67..FR-70 thành lịch sử); chỉ còn Stripe (FR-73 MoMo thành lịch sử); FR-88 lớp học không còn giao bài và mã lớp; FR-89 bỏ nhắc bài được giao; +1 FR: FR-91 giảng viên soạn bài bằng AI trả theo lượt | D075 (APPROVED) |
 | **1.16** | **01/11/2026** | **D078.** Gỡ công cụ nghiên cứu: chấm mù kép (FR-61..FR-64, UC-21, UC-22) và thực nghiệm phản hồi (FR-77, FR-78) thành lịch sử; số đo thời gian giảng viên (AC-79.2..79.5) và sai số đo cho tiến bộ đáng tin (FR-80) thành lịch sử; báo cáo phân tích nghe lại có dẫn đường gỡ; gỡ bản xuất tập dữ liệu nghiên cứu và trang luyện theo nhiệm vụ cũ (AC-42.1, AC-42.2 thành lịch sử). Đề đánh giá chỉ gọi theo band, bỏ nhãn phần thi P3/P4; học viên thấy band và vị trí trong band thay cho điểm 0–6; thống kê lớp theo band của đề; mục 4: bảng use case rà lại theo hệ thống đang chạy (UC-13, UC-18, UC-21..UC-23 gạch; UC-07, UC-14, UC-15, UC-19, UC-20 đổi tên; +11 use case UC-24..UC-34 có đặc tả), ba sơ đồ use case vẽ lại; giá lượt do quản trị viên đặt; D079: FR-92..FR-94 (mã qua email khi quên mật khẩu, xác minh email, nhắc học qua email), UC-35 | D078, D079 (APPROVED) |
 | **1.17** | **01/11/2026** | **D079..D085.** Email: mã quên mật khẩu, xác minh email, nhắc học (FR-92..FR-94). D080 tên hiển thị SpeakUp. D081 gỡ mã khôi phục: quên mật khẩu bằng mã qua email, email tắt thì nhờ quản trị viên. D082 việc duyệt tách thành `ReviewSession`. D083 gỡ bài luyện theo nhiệm vụ: gạch AC-40.2, 40.4, 41.1, 41.4, 42.3, 43.1, 44.1, 44.3, FR-42, FR-44; ngân hàng bài và luật đo mục tiêu ở lại cho bài học. D084 đơn nạp lượt tách `Order` và `Payment`. D085 `LessonPath.builtIn` thay `sample`. |
+| **1.18** | **02/11/2026** | **D086.** +1 FR: FR-95 thông báo trực tiếp qua Server-Sent Events: học viên biết bài đã chấm xong và đã được duyệt, hàng chờ duyệt tự cập nhật. FR-92 bỏ câu còn nhắc mã khôi phục (đã gỡ ở D081). | D086 (APPROVED) |
+| **1.19** | **02/11/2026** | **D088.** +1 FR: FR-96 cài SpeakUp như ứng dụng (PWA) và thông báo đẩy tới thiết bị của học viên khi bài chấm xong hay đã được duyệt; collection `push_subscription` (lược đồ phiên bản 17). | D088 (APPROVED) |
+| **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
+| **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
+| **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1544,7 +1549,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-92 — Đặt lại mật khẩu bằng mã gửi qua email (D079)
 
-**Mô tả:** Người quên mật khẩu nhập email; nếu email có tài khoản, hệ thống gửi một mã 6 số dùng được 10 phút, tối đa 5 lần thử, mỗi phút gửi được một mã. Câu trả lời giống nhau dù email có tài khoản hay không. Đặt mật khẩu mới bằng mã thì đăng nhập, kết thúc mọi phiên khác và đánh dấu email đã xác minh. Mã khôi phục (D065) vẫn là đường dự phòng; khi hệ thống chưa bật gửi email, chỉ còn đường đó.
+**Mô tả:** Người quên mật khẩu nhập email; nếu email có tài khoản, hệ thống gửi một mã 6 số dùng được 10 phút, tối đa 5 lần thử, mỗi phút gửi được một mã. Câu trả lời giống nhau dù email có tài khoản hay không. Đặt mật khẩu mới bằng mã thì đăng nhập, kết thúc mọi phiên khác và đánh dấu email đã xác minh. Khi hệ thống chưa bật gửi email, người quên mật khẩu nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (D081).
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1570,6 +1575,63 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | Acceptance Criteria |
 | --- |
 | **AC-94.1** — *Given* học viên đã xác minh email, đang có chuỗi 3 ngày và chưa luyện hôm nay, *When* tới giờ nhắc, *Then* nhận đúng một thư; trước giờ, khi đã luyện, khi không có lý do hoặc lần chạy thứ hai trong ngày thì không có thư; liên kết trong thư tắt được nhắc và liên kết giả bị từ chối (`test_the_daily_reminder_goes_once_to_who_needs_it_and_stops_on_request`). |
+
+### FR-95 — Thông báo trực tiếp (D086)
+
+**Mô tả:** Người đã đăng nhập nhận thông báo ngay khi việc mình đang chờ xảy ra, không phải tải lại trang: học viên biết bài nói đã chấm xong (hoặc cần giảng viên xác nhận, hoặc không xử lý được) và biết khi giảng viên đã duyệt; giảng viên và quản trị viên thấy hàng chờ duyệt tự cập nhật khi có bài mới, có người giữ hay nhả bài, hay bài đã được quyết định. Thông báo chỉ mang mã bài và trạng thái; nội dung vẫn đọc qua API với quyền xem như cũ (D071). Mất kết nối thì mọi trang vẫn chạy như trước.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-95.1** — *Given* học viên vừa nộp bài, *When* bài chấm xong, *Then* chỉ học viên đó nhận một sự kiện mang mã bài và trạng thái; bài cần giảng viên xác nhận thì hàng chờ của người duyệt cũng được báo (`test_a_scored_response_tells_its_owner_by_id_only`). |
+| **AC-95.2** — *Given* giảng viên mở một bài trong hàng chờ, *When* giữ khoá rồi đóng hoặc quyết định bài, *Then* giảng viên các lớp có học viên đó và quản trị viên được báo hàng chờ đổi, học viên được báo bài đã duyệt (`test_locking_and_deciding_tell_the_reviewers_and_the_student`). |
+| **AC-95.3** — *Given* một tab đã đăng nhập, *When* mở luồng sự kiện, *Then* nhận sự kiện của chính tài khoản mình và không của ai khác, luồng tự đóng sau thời hạn đặt sẵn; chưa đăng nhập thì bị từ chối (`test_a_signed_in_tab_receives_its_own_events_on_the_stream`). |
+| **AC-95.4** — *Given* gateway, *When* trình duyệt mở luồng sự kiện, *Then* yêu cầu được xác thực như mọi API và đi thẳng tới `core` không qua bộ đệm (`test_the_gateway_streams_the_events_to_core_unbuffered`). |
+| **AC-95.5** — *Given* kênh sự kiện hỏng, *When* một việc cần báo vừa xong, *Then* việc đó vẫn thành công, không báo lỗi cho người làm (`test_publishing_never_raises_and_an_event_for_nobody_is_not_sent`). |
+
+### FR-96 — Cài như ứng dụng và thông báo đẩy (D088)
+
+**Mô tả:** SpeakUp cài được lên điện thoại và máy tính như một ứng dụng (PWA): có biểu tượng, mở toàn màn hình, mất mạng thì hiện trang báo mất kết nối thay cho lỗi của trình duyệt. Học viên bật thông báo cho từng thiết bị ở trang Tài khoản; khi không có tab SpeakUp nào đang mở, bài nói chấm xong hay giảng viên đã duyệt hiện thành thông báo trên thiết bị, bấm vào thì mở báo cáo. Thông báo không kèm điểm hay tên và được mã hoá cho trình duyệt. Đăng xuất là tắt thông báo trên thiết bị đó.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-96.1** — *Given* một trình duyệt, *When* mở SpeakUp, *Then* trang có manifest ứng dụng với tên, biểu tượng 192 và 512 điểm ảnh (cả bản maskable), service worker phục vụ từ gốc trang và không bị lưu đệm (`test_the_app_is_installable_from_the_sites_root`). |
+| **AC-96.2** — *Given* học viên đã đăng nhập, *When* đăng ký nhận thông báo, *Then* chỉ địa chỉ trên dịch vụ push của trình duyệt và khoá đúng dạng được nhận; địa chỉ khác (mạng nội bộ, HTTP thường) bị từ chối; tắt thì xoá (`test_a_learner_registers_a_browser_on_a_push_service_only`). |
+| **AC-96.3** — *Given* học viên đã bật thông báo và không mở tab nào, *When* bài nói chấm xong, *Then* mỗi thiết bị nhận một thông báo chỉ có tiêu đề, một câu và đường dẫn tới báo cáo (`test_a_scored_response_reaches_the_learners_devices_when_no_tab_is_open`). |
+| **AC-96.4** — *Given* học viên đang mở SpeakUp, *When* bài nói chấm xong, *Then* không gửi thông báo đẩy vì tab đã báo qua luồng trực tiếp (`test_an_open_tab_hears_it_on_the_live_stream_instead`). |
+| **AC-96.5** — *Given* học viên đã bật thông báo, *When* giảng viên duyệt hoặc đóng bài, *Then* thiết bị nhận "Giảng viên đã duyệt bài nói" kèm đường dẫn tới báo cáo (`test_a_teachers_decision_reaches_the_learners_devices`). |
+| **AC-96.6** — *Given* một thông báo, *When* gửi tới dịch vụ push, *Then* nó được ký bằng khoá VAPID của máy chủ và mã hoá để chỉ trình duyệt đọc được (`test_a_real_message_is_signed_and_only_the_browser_can_read_it`). |
+| **AC-96.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* mọi trình duyệt nhận thông báo của người đó cũng bị xoá (`test_erasing_a_participant_forgets_their_browsers`). |
+
+### FR-97 — Luyện lại từ máy nghe chưa rõ (D089)
+
+**Mô tả:** Từ tô cam trên bản chép lời là từ máy nghe chưa rõ. Từ báo cáo, học viên mở trang luyện lại các từ đó (tối đa 8 từ mỗi bài, từ kém rõ nhất trước). Mỗi từ có bốn bước: nghe lại đúng đoạn mình nói, nghe giọng mẫu đọc chậm từ và cả cụm, đọc mẹo khi từ rơi vào một trong năm lỗi hay gặp của người Việt, rồi nói lại cả cụm 3–4 từ để máy chấm. Máy nghe rõ từ đó hai lần liền là xong từ; lượt chưa rõ đưa từ vào ôn ngắt quãng. Trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài đánh giá và các từ đang luyện dở. Giao diện nói rõ từ màu cam là máy nghe chưa rõ, chưa chắc là phát âm sai; giọng có chất Việt không phải lỗi; không hứa tăng band.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-97.1** — *Given* một bài đánh giá đã có điểm của học viên, *When* mở trang luyện lại từ, *Then* chỉ chủ bài xem và luyện được; người khác nhận 404, giảng viên và quản trị nhận 403 (`test_only_the_owner_of_a_scored_response_practises_its_words`). |
+| **AC-97.2** — *Given* bản chép lời có từ máy nghe chưa rõ, *When* lấy danh sách luyện, *Then* mỗi từ có đoạn ghi âm của nó, cụm 3–4 từ quanh nó và mẹo khi chính tả cho phép; từ ngập ngừng, số và từ trùng bị bỏ (`test_the_unclear_words_are_offered_with_their_place_phrase_and_tip`). |
+| **AC-97.3** — *Given* học viên nói lại cụm, *When* máy nghe rõ từ đó hai lượt liền, *Then* từ là đã xong; một lượt chưa rõ đưa từ vào ôn ngắt quãng với ngày đến hạn (`test_two_clear_takes_close_a_word_and_a_miss_sends_it_to_review`). |
+| **AC-97.4** — *Given* một lượt không đo được (im lặng, không phải tiếng Anh), *When* gửi, *Then* lượt đó không tính và học viên được nhắc nói lại (`test_a_take_nothing_could_be_measured_from_does_not_count`). |
+| **AC-97.5** — *Given* học viên có các bài đánh giá, *When* mở trang Tiến độ, *Then* có đường "Từ máy nghe chưa rõ" theo phần trăm số từ mỗi bài (thấp hơn là tốt) và danh sách từ đang luyện dở (`test_progress_shows_the_unclear_share_and_the_open_words`). |
+| **AC-97.6** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các từ luyện lại của người đó cũng bị xoá (`test_erasing_a_participant_forgets_their_drills`). |
+
+### FR-98 — Đoạn đọc viết quanh từ đang luyện dở (D090)
+
+**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Mỗi đoạn mới trừ một số lượt nhỏ (mặc định 0,1 lượt), chỉ khi viết xong; đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-98.1** — *Given* học viên có ít hơn 3 từ đang luyện dở, *When* xin đoạn đọc, *Then* bị từ chối (409) và mô hình không được hỏi; giảng viên không mở được trang này (`test_a_passage_needs_three_open_words_and_is_for_learners`). |
+| **AC-98.2** — *Given* học viên có đủ từ, *When* xin đoạn đọc, *Then* mô hình nhận band, các từ và độ dài, viết một đoạn chứa mọi từ; xin lại cho cùng các từ trả đúng đoạn đó mà không hỏi mô hình lần nữa (`test_the_model_writes_a_passage_once_and_it_is_read_again_for_free`). |
+| **AC-98.3** — *Given* hệ thống tính lượt, *When* mô hình viết xong một đoạn, *Then* học viên bị trừ đúng giá đoạn đọc kèm số token; đoạn thiếu từ hay mô hình lỗi thì lượt được trả lại (`test_metered_a_passage_costs_its_own_price_and_a_failure_nothing`). |
+| **AC-98.4** — *Given* học viên đọc to đoạn văn, *When* máy đo xong, *Then* mỗi từ là một lượt: rõ thì tính vào chuỗi hai lượt rõ, chưa rõ thì vào ôn ngắt quãng kèm điều máy nghe thành (`test_a_reading_is_one_take_of_each_word`). |
+| **AC-98.5** — *Given* mô hình ngôn ngữ đang tắt, *When* học viên chọn ghép từ cụm của mình, *Then* đoạn được ghép miễn phí từ các cụm đó (`test_without_the_model_the_learners_phrases_make_a_free_passage`). |
+| **AC-98.6** — *Given* đoạn đọc đã dùng hết phần trong ngày của hệ thống hay của học viên, *When* xin đoạn mới, *Then* bị từ chối (429) với lý do rõ ràng; khi hết giới hạn AI chung, học viên vẫn ghép được đoạn từ cụm của mình (`test_the_caps_keep_the_upgrades_share_and_the_learners_own`). |
+| **AC-98.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các đoạn đọc của người đó cũng bị xoá; trước đó bản xuất dữ liệu cá nhân có chúng (`test_erasing_a_participant_forgets_their_passages`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
@@ -2416,7 +2478,7 @@ Mọi NFR dưới đây đều có ràng buộc định lượng và phương ph
 | **NFR-04** | Độ chính xác — chấm điểm | Trên tập dev Speak & Improve 2025 chia theo speaker, mô hình fusion đạt **QWK(AI, nhãn) ≥ 0,60** và **RMSE ≤ 1,10** trên thang 0–6; **tỷ lệ lệch từ 2 band trở lên ≤ 5%** | `make evaluate` sinh `reports/eval_{model_version}.json` với QWK, RMSE, confusion matrix và khoảng tin cậy 95% bằng cluster bootstrap 2.000 vòng theo `speaker_id`, seed = 0 |
 | **NFR-05** | Độ chính xác — ASR | WER của ASR trên tập 20 bài do người chép tay (from scratch) phải được **đo và báo cáo**; nếu WER > **35%** trên một nhóm điều kiện, hệ thống phải tự bật `ASR_LOW_CONFIDENCE` cho nhóm đó | `scripts/measure_wer.py` so transcript ASR với transcript tay bằng `jiwer`, xuất bảng WER theo nhóm SNR và theo band; kết quả lưu `reports/wer_report.md` |
 | **NFR-06** | Độ chính xác — hiệu quả cờ review | Bộ quy tắc cờ phải bắt được ≥ **70% số bài lệch từ 2 band trở lên** trong khi gắn cờ ≤ **25% tổng số bài** | `scripts/evaluate_flags.py` dựng đường cong yield–flag rate trên tập có nhãn giảng viên; kiểm tra ngưỡng tự động, xuất `reports/flag_yield.md` |
-| **NFR-07** | Bảo mật — xác thực | Mật khẩu băm bằng bcrypt cost ≥ **12**; phiên đăng nhập mang bằng **cookie có chữ ký** (`HttpOnly`, `SameSite=Lax`) tra bảng `auth_sessions` phía máy chủ, hết hạn sau ≤ **8 giờ** và bị vô hiệu ngay khi đăng xuất; khóa tài khoản **15 phút** sau **5 lần** đăng nhập sai liên tiếp. Chọn phiên phía máy chủ thay vì JWT vì JWT không thu hồi được trước hạn: đăng xuất không làm token mất hiệu lực, mà hệ thống có vai trò giảng viên sửa được điểm nên đó là điểm yếu thật | `tests/test_auth_security.py`: kiểm tra tiền tố hash `$2b$12$`, kiểm tra `expires_at` của bản ghi `auth_sessions` ≤ 8 h kể từ khi phát hành, kiểm tra cookie có cờ `HttpOnly` và `SameSite=Lax`, kiểm tra cookie sau khi đăng xuất trả HTTP 401, mô phỏng 6 lần đăng nhập sai và xác nhận HTTP 429 ở lần thứ 6 |
+| **NFR-07** | Bảo mật — xác thực | Mật khẩu băm bằng bcrypt cost ≥ **12**; phiên đăng nhập mang bằng **JWT (HS256)** trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá riêng của bản triển khai; token hết hạn (`exp`) sau ≤ **8 giờ** và chỉ có hiệu lực khi bản ghi phiên của nó (`sid`) còn trong collection `session`, nên đăng xuất, đổi mật khẩu hay tắt tài khoản vô hiệu token ngay (D091, thay QD-07); khóa tài khoản **15 phút** sau **5 lần** đăng nhập sai liên tiếp | `tests/test_auth_security.py`: kiểm tra tiền tố hash `$2b$12$`, kiểm tra `expires_at` của bản ghi `auth_sessions` ≤ 8 h kể từ khi phát hành, kiểm tra cookie có cờ `HttpOnly` và `SameSite=Lax`, kiểm tra cookie sau khi đăng xuất trả HTTP 401, kiểm tra cookie là JWT HS256 có `exp` ≤ 8 h và token bị sửa, đổi thuật toán hay hết hạn trả HTTP 401 (`tests/test_auth.py`), mô phỏng 6 lần đăng nhập sai và xác nhận HTTP 429 ở lần thứ 6 |
 | **NFR-08** | Bảo mật — quét phụ thuộc và bí mật | **0 lỗ hổng mức High/Critical** trong dependency và **0 secret** trong repository tại mỗi lần push | GitHub Actions chạy `pip-audit` và `gitleaks detect` ở mọi PR; pipeline fail khi phát hiện bất kỳ mục High/Critical hoặc bất kỳ secret nào |
 | **NFR-09** | Riêng tư — không rò rỉ PII trong log | **0 dòng log** chứa email, chuỗi số 7–10 chữ số, họ tên trong danh sách kiểm tra, hoặc đoạn ≥ 5 từ liên tiếp của transcript, trên một lần chạy pipeline đầy đủ | `tests/test_log_privacy.py` chạy pipeline trên fixture, quét toàn bộ file log bằng regex và so khớp n-gram; CI fail nếu tìm thấy ≥ 1 vi phạm |
 | **NFR-10** | Riêng tư — thời gian đáp ứng yêu cầu xóa | Quy trình xóa dữ liệu của một người tham gia hoàn tất trong ≤ **7 ngày làm việc** kể từ khi xác minh, và thao tác kỹ thuật chạy trong ≤ **5 phút** cho một người có tối đa 20 response | Đo bằng timestamp trong deletion log (`verified_at` → `completed_at`); thao tác kỹ thuật đo bằng `tests/test_withdrawal_performance.py` trên dữ liệu synthetic |

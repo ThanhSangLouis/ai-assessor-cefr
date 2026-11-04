@@ -18,8 +18,9 @@
   const dm = (day) => day.slice(8, 10) + "/" + day.slice(5, 7);
   const vnTime = (iso) =>
     new Date(iso).toLocaleTimeString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit", hour12: false });
-  // Answers written: learners' upgrades and (D075) teachers' lesson drafts.
-  const done = (d) => (Number(d.upgrades) || 0) + (Number(d.drafts) || 0);
+  // Answers written: learners' upgrades, (D075) teachers' lesson drafts and
+  // (D090) learners' reading passages.
+  const done = (d) => (Number(d.upgrades) || 0) + (Number(d.drafts) || 0) + (Number(d.passages) || 0);
   const retries = (d) => Math.max(0, d.requests - done(d) - d.failed);
   const sum = (days, k) => days.reduce((a, d) => a + (Number(d[k]) || 0), 0);
 
@@ -53,7 +54,7 @@
     const tile = (value, label, attention) =>
       `<div class="stat${attention ? " attention" : ""}"><b>${value}</b><span>${label}</span></div>`;
     return `<div class="stat-grid coach-stats">
-      ${tile(int(done(t)), `bản AI viết xong · ${int(t.upgrades)} nâng cấp, ${int(t.drafts || 0)} soạn bài`)}
+      ${tile(int(done(t)), `bản AI viết xong · ${int(t.upgrades)} nâng cấp, ${int(t.drafts || 0)} soạn bài, ${int(t.passages || 0)}/${int(d.passage_daily || 0)} đoạn đọc`)}
       ${tile(int(t.failed), `lỗi · ${int(retries(t))} lần gọi lại`, t.failed > 0)}
       ${tile(int(refused), `bị từ chối · ${int(t.refused_global)} do giới hạn chung, ${int(t.refused_user)} do giới hạn mỗi người`, t.refused_global > 0)}
       ${tile(int(t.accounts), "người dùng")}

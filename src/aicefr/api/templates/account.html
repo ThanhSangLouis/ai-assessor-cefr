@@ -138,6 +138,19 @@
         <p class="muted small-note">Lưu trên trình duyệt này, không gửi về máy chủ.</p>
       </div>
 
+      {#- D088: notifications on this device, also with SpeakUp closed. Only a
+          learner's own events are sent, so only a learner sees the switch. -#}
+      {% if account.role.value == "student" %}
+      <div class="card" id="push-card" aria-labelledby="push-h" hidden>
+        <h2 id="push-h">{{ icon("bell") }} Thông báo trên thiết bị này</h2>
+        <p id="push-state" aria-live="polite"></p>
+        <div class="button-row">
+          <button type="button" id="push-toggle" hidden></button>
+        </div>
+        <p class="muted small-note">Báo khi bài nói chấm xong hoặc được giảng viên duyệt, kể cả lúc đã đóng SpeakUp. Thông báo không kèm điểm. Đăng xuất là tắt trên thiết bị này.</p>
+      </div>
+      {% endif %}
+
       <div class="card" aria-labelledby="me-h">
         <h2 id="me-h">{{ icon("user") }} Thông tin đăng nhập</h2>
         <dl class="facts" id="me-facts" aria-busy="true">

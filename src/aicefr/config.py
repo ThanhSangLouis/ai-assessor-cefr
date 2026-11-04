@@ -151,6 +151,13 @@ class Settings:
     # day (aicefr.coach.usage), failures and retries included, under its free
     # daily quota (Gemini 3.5 Flash-Lite: 500).
     coach_global_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_GLOBAL_DAILY", 475))
+    # D090: reading passages around the unclear words share that cap; within
+    # it they may take at most this many a day, so the upgrades keep their
+    # share, and one learner at most `passage_daily` new ones a day.
+    passage_global_daily: int = field(
+        default_factory=lambda: _int("AICEFR_PASSAGE_GLOBAL_DAILY", 150)
+    )
+    passage_daily: int = field(default_factory=lambda: _int("AICEFR_PASSAGE_DAILY", 3))
     # On a paid tier: a daily budget in USD replaces the request cap when set,
     # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
     # prices by default; output includes thinking tokens).
@@ -237,6 +244,10 @@ class Settings:
     price_upgrade_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
     )
+    # D090: what one reading passage around the unclear words costs, in runs.
+    price_passage_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.1)
+    )
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.
     credit_packs: tuple[tuple[int, int], ...] = field(
@@ -245,6 +256,21 @@ class Settings:
     # "inline" runs events, work and calls in this process; a redis:// URL
     # sends them through Redis: BullMQ for work, Streams for events (D050).
     bus_url: str = field(default_factory=lambda: os.getenv("AICEFR_BUS", "inline"))
+    # D086: a live stream (SSE) ends after this many seconds and the browser
+    # reconnects through the gateway, so a session ended meanwhile is noticed;
+    # a comment every heartbeat keeps proxies from closing it while idle.
+    live_max_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_MAX_SECONDS", 900.0))
+    live_heartbeat_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_HEARTBEAT", 20.0))
+    # D088: Web Push. The VAPID key pair signs every message to a browser's
+    # push service (`python -m aicefr.maintenance_cli vapid` makes one); the
+    # subject is a contact the push services may write to. No keys, no push.
+    vapid_public_key: str = field(default_factory=lambda: os.getenv("AICEFR_VAPID_PUBLIC_KEY", ""))
+    vapid_private_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_VAPID_PRIVATE_KEY", "")
+    )
+    vapid_subject: str = field(
+        default_factory=lambda: os.getenv("AICEFR_VAPID_SUBJECT", "mailto:no-reply@speakup.fit")
+    )
     # The key internal calls and the gateway's account header carry. Must be
     # the same long random string on every service of a deployment.
     internal_token: str = field(default_factory=lambda: os.getenv("AICEFR_INTERNAL_TOKEN", ""))

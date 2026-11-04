@@ -119,6 +119,23 @@
       "unique": true
     }
   ],
+  "drill_passage": [
+    {
+      "name": "i_account_id_created_at",
+      "keys": [
+        "account_id",
+        "created_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_passage_id",
+      "keys": [
+        "passage_id"
+      ],
+      "unique": true
+    }
+  ],
   "learning_plan": [
     {
       "name": "i_account_id_active",
@@ -258,6 +275,22 @@
       "unique": true
     }
   ],
+  "push_subscription": [
+    {
+      "name": "i_account_id",
+      "keys": [
+        "account_id"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_endpoint",
+      "keys": [
+        "endpoint"
+      ],
+      "unique": true
+    }
+  ],
   "response": [
     {
       "name": "i_account_id_created_at",
@@ -387,6 +420,33 @@
       "name": "u_user_ref",
       "keys": [
         "user_ref"
+      ],
+      "unique": true
+    }
+  ],
+  "word_drill": [
+    {
+      "name": "i_account_id_passed_updated_at",
+      "keys": [
+        "account_id",
+        "passed",
+        "updated_at"
+      ],
+      "unique": false
+    },
+    {
+      "name": "u_account_id_response_id_word",
+      "keys": [
+        "account_id",
+        "response_id",
+        "word"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_drill_id",
+      "keys": [
+        "drill_id"
       ],
       "unique": true
     }

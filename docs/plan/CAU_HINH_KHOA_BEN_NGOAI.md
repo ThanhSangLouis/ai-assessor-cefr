@@ -133,6 +133,24 @@ Làm việc này trước hoặc cùng lúc với Resend, để trang web và đ
 
 `www.ten-mien.app` không cần: Caddy chỉ phục vụ đúng `AICEFR_DOMAIN`.
 
+## 2c. Thông báo đẩy và cài SpeakUp như ứng dụng (D088)
+
+**Đã làm sẵn.** SpeakUp cài được lên điện thoại và máy tính như một ứng dụng (PWA): Chrome và Edge hiện nút "Cài đặt" trên thanh địa chỉ; trên iPhone mở bằng Safari, bấm **Chia sẻ → Thêm vào Màn hình chính**. Học viên bật **Thông báo trên thiết bị này** ở trang Tài khoản thì nhận thông báo khi bài nói chấm xong hoặc giảng viên đã duyệt, kể cả khi đã đóng SpeakUp. Thông báo không kèm điểm hay tên.
+
+**Không cần tài khoản bên ngoài.** Thông báo đi qua dịch vụ push của chính trình duyệt (Google cho Chrome, Mozilla cho Firefox, Apple cho Safari, Microsoft cho Edge trên Windows), miễn phí. Máy chủ chỉ cần một cặp khoá VAPID do mình tự tạo:
+
+1. Trên máy chủ, tạo cặp khoá (lệnh chỉ in ra màn hình, không lưu ở đâu):
+
+   ```bash
+   cd /srv/aicefr && docker compose exec core python -m aicefr.maintenance_cli vapid
+   ```
+
+2. Chép hai dòng `AICEFR_VAPID_PUBLIC_KEY=…` và `AICEFR_VAPID_PRIVATE_KEY=…` vào `/srv/aicefr/.env`. Khoá riêng (`PRIVATE`) giữ kín như mật khẩu; không gửi qua chat, không commit.
+3. `cd /srv/aicefr && docker compose up -d` để `core` đọc khoá mới.
+4. Thử: đăng nhập tài khoản học viên → **Tài khoản → Thông báo trên thiết bị này → Bật thông báo** → cho phép → đóng tab → nộp một bài từ máy khác hoặc nhờ giảng viên duyệt một bài → thông báo hiện trên máy.
+
+**Đừng đổi cặp khoá khi không cần:** đổi rồi thì mọi trình duyệt đã bật phải bật lại (trình duyệt tự đăng ký lại ở lần mở SpeakUp kế tiếp nếu vẫn cho phép thông báo). Trình duyệt chỉ nhận thông báo đẩy từ trang `https://` (hoặc `http://localhost` khi chạy thử trên máy).
+
 ## 3. MoMo (đã gỡ bởi D075)
 
 **Đã làm sẵn.** Tạo giao dịch `captureWallet` ở `/v2/gateway/api/create` ký HMAC-SHA256, kết quả trả về và IPN ký theo thứ tự trường MoMo công bố, IPN được trả lời 204. Mặc định gọi môi trường thử `test-payment.momo.vn`.

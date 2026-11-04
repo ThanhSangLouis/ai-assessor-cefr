@@ -828,6 +828,42 @@ class Repository(MongoStore):
             {"response_id": response_id}, {"$set": {"coach_upgrade.phrases": phrases}}
         )
 
+    def unsure_series(self, account_id: str, limit: int = 100) -> list[dict]:
+        """Share of the words the recogniser was unsure of, per scored assessment (D089).
+
+        Read from the transcript each report keeps, like `feature_series`. A
+        recording whose words carry no probability gives no point.
+        """
+        from aicefr.contracts import Word
+        from aicefr.lessons.drill import unsure_share
+
+        rows = (
+            self.col("response")
+            .find(
+                {"account_id": account_id, "overall_0_6": {"$ne": None}},
+                {"response_id": 1, "created_at": 1, "report_json": 1},
+            )
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        out = []
+        for r in reversed(list(rows)):
+            try:
+                asr = json.loads(r.get("report_json") or "{}").get("asr") or {}
+                words = [Word.model_validate(w) for w in asr.get("words") or []]
+            except (TypeError, ValueError):
+                continue
+            share = unsure_share(words)
+            if share is not None:
+                out.append(
+                    {
+                        "response_id": r["response_id"],
+                        "created_at": r.get("created_at"),
+                        "value": round(share * 100, 1),
+                    }
+                )
+        return out
+
     def feature_series(
         self, account_id: str, names: tuple[str, ...], limit: int = 100
     ) -> list[dict]:
@@ -882,6 +918,7 @@ class Repository(MongoStore):
         "paid_cost_usd",
         "upgrades",
         "drafts",
+        "passages",
         "failed",
         "refused_user",
         "refused_global",

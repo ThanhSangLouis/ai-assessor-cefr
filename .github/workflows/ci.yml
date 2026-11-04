@@ -1,6 +1,7 @@
 # CI of the project (W7): the submission repository's own guards (Markdown
 # links, forbidden files) plus the four jobs of the service architecture --
-# format, lint and tests; MongoDB and Redis; images and compose; secret scan.
+# format, lint and tests; MongoDB and Redis; images and compose (with a
+# Trivy scan, D087); secret scan. CodeQL runs in codeql.yml.
 # Ported from ThanhSangLouis/ai-assessor-cefr@059fa28 (.github/workflows/ci.yml).
 #
 # Only ".[dev]" for the main job: the `asr` and `vad` extras pull Whisper and
@@ -26,8 +27,8 @@ jobs:
     name: Tài liệu và file bị cấm
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Kiểm tra link Markdown
@@ -43,10 +44,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Lay ma nguon
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cai Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -70,7 +71,7 @@ jobs:
 
       - name: Luu bao cao do phu
         if: always()          # bao cao van huu ich khi test do, nhat la luc do
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bao-cao-do-phu
           path: coverage.xml
@@ -102,8 +103,8 @@ jobs:
       AICEFR_TEST_MONGO: mongodb://localhost:27017
       AICEFR_TEST_REDIS: redis://localhost:6379/0
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -142,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Cau hinh compose hop le
         run: |
           for k in AICEFR_INTERNAL_TOKEN AICEFR_GATEWAY_TOKEN MONGO_ROOT_PASSWORD CORE_DB_PASSWORD \
@@ -174,6 +175,24 @@ jobs:
             owner=$(stat -c %u "$d")
             [ "$owner" = 10001 ] || { echo "::error::$d thuoc uid $owner, phai la 10001 (aicefr)"; exit 1; }
             echo "$d ton tai, thuoc uid 10001"'
+      # D087: known vulnerabilities in the two images (OS packages and every
+      # Python package, pip's vendored copies included). A CRITICAL one with a
+      # fix fails the build; HIGH ones are listed in the job summary to be
+      # fixed, without blocking a deploy on a CVE published overnight.
+      - name: Quet lo hong anh (Trivy)
+        run: |
+          mkdir -p "$RUNNER_TEMP/trivy"
+          scan() {
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+              -v "$RUNNER_TEMP/trivy:/root/.cache" aquasec/trivy:0.69.3 \
+              image --quiet --scanners vuln --ignore-unfixed --table-mode detailed "$@"
+          }
+          for img in aicefr-service:ci aicefr-speech:ci; do
+            { echo "### $img"; echo '```'
+              scan --severity HIGH,CRITICAL --format table "$img"
+              echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+            scan --severity CRITICAL --exit-code 1 --format table "$img"
+          done
 
   quet-bi-mat:
     name: Quet lo khoa bi mat
@@ -189,11 +208,11 @@ jobs:
     steps:
       # Tach thanh job rieng chu khong ghep vao job tren: mot truc trac cua
       # gitleaks khong duoc che mat ket qua kiem thu, va nguoc lai.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0      # gitleaks can toan bo lich su de quet
 
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # GITLEAKS_LICENSE chi bat buoc voi repository thuoc to chuc.
