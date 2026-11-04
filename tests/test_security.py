@@ -104,10 +104,13 @@ def test_queue_screen_escapes_every_user_value() -> None:
 
 
 def test_login_redirect_stays_on_this_site() -> None:
-    """`?next=` used to accept any URL, including another host."""
+    """`?next=` used to accept any URL, including another host. It now goes through
+    samePath, which resolves the path against this origin: "//evil.example" and
+    "/\\evil.example" (read by browsers as "//evil.example") are both refused (D092)."""
+    common = pathlib.Path("src/aicefr/api/static/common.js").read_text(encoding="utf-8")
+    assert "new URL(p, location.origin).origin === location.origin" in common
     source = pathlib.Path("src/aicefr/api/static/login.js").read_text(encoding="utf-8")
-    assert 'startsWith("/")' in source
-    assert 'startsWith("//")' in source
+    assert "window.samePath(asked)" in source and "const safe = window.samePath;" in source
 
 
 # ---------------------------------------------------------------- uploads

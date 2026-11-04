@@ -134,7 +134,8 @@ def make_mock_id_token(
 
 def test_tc_login_01_page_renders_figma_layout_and_elements(tmp_path, monkeypatch):
     """TC-LOGIN-01: Login page renders with status 200, contains brand title,
-    email input, password input, eye toggle button, remember checkbox, and submit button."""
+    email input, password input, eye toggle button and submit button; no
+    remember-me checkbox (D091: a session always lasts at most 8 hours)."""
     m = make_test_app(monkeypatch, tmp_path, google_on=True)
     c = TestClient(m.app)
     r = c.get("/login")
@@ -152,8 +153,8 @@ def test_tc_login_01_page_renders_figma_layout_and_elements(tmp_path, monkeypatc
     assert 'id="b"' in html
     assert 'id="tb"' in html  # Toast message box
 
-    # Remember me & links
-    assert "Remember me" in html
+    # D091: no remember-me box; sign-up link while self sign-up is on
+    assert 'id="remember"' not in html and "Remember me" not in html
     assert 'href="/signup"' in html
 
 
@@ -168,7 +169,7 @@ def test_tc_login_02_google_oauth_button_enabled_when_configured(tmp_path, monke
 
     assert 'id="google-login"' in html
     assert 'href="/auth/google/start?mode=login"' in html
-    assert "Sign in with Google" in html
+    assert "bằng Google" in html
     assert 'id="google-disabled-btn"' not in html
 
 
@@ -292,13 +293,17 @@ def test_tc_login_09_case_insensitive_and_whitespace_email_login(tmp_path, monke
     # 3. Login with mixed case + whitespace
     r_mixed = c.post(
         "/api/v1/auth/login",
-        json={"email": " \t Learner_CI_Case@Example.EDU.vn \n ", "password": signup_data["password"]},
+        json={
+            "email": " \t Learner_CI_Case@Example.EDU.vn \n ",
+            "password": signup_data["password"],
+        },
     )
     assert r_mixed.status_code == 200
 
 
 def test_tc_login_10_password_special_characters_and_spaces_preserved(tmp_path, monkeypatch):
-    """TC-LOGIN-10: Passwords preserve exact special characters and spaces without unexpected trimming."""
+    """TC-LOGIN-10: Passwords keep their exact special characters and spaces; nothing is
+    trimmed."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     complex_password = "  P@ssw0rd with spaces & $ymbols!  "
@@ -324,7 +329,7 @@ def test_tc_login_10_password_special_characters_and_spaces_preserved(tmp_path, 
 
 
 def test_tc_login_11_session_expired_query_param_handling(tmp_path, monkeypatch):
-    """TC-LOGIN-11: Visiting /login?expired=1 renders successfully and login.js contains expired message hook."""
+    """TC-LOGIN-11: /login?expired=1 renders, and login.js has the expired-session message."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     r = c.get("/login?expired=1")
@@ -337,22 +342,26 @@ def test_tc_login_11_session_expired_query_param_handling(tmp_path, monkeypatch)
     js_r = c.get("/static/login.js")
     assert js_r.status_code == 200
     assert 'get("expired")' in js_r.text
-    assert "Your session has expired. Please sign in again." in js_r.text
+    assert "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." in js_r.text
 
 
 def test_tc_login_12_safe_next_url_redirect_contract(tmp_path, monkeypatch):
-    """TC-LOGIN-12: Client login logic enforces relative redirect validation (rejecting open redirects)."""
+    """TC-LOGIN-12: `next` goes through samePath (common.js), which resolves the path
+    against this origin, so "//evil.example" and "/\\evil.example" are both refused."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
-    js_r = c.get("/static/login.js")
-    assert js_r.status_code == 200
-    # Must enforce startsWith("/") and reject protocol-relative startsWith("//")
-    assert 'startsWith("/")' in js_r.text
-    assert '!p.startsWith("//")' in js_r.text or '!asked.startsWith("//")' in js_r.text
+    common = c.get("/static/common.js").text
+    assert "window.samePath = function" in common
+    assert "new URL(p, location.origin).origin === location.origin" in common
+    for page in ("login.js", "signup.js"):
+        js = c.get(f"/static/{page}").text
+        assert "window.samePath(asked)" in js
+        assert 'startsWith("//")' not in js
 
 
 def test_tc_login_13_client_validation_and_form_alert_contract(tmp_path, monkeypatch):
-    """TC-LOGIN-13: Login form includes novalidate, form-level alert, inline error containers, and English copy."""
+    """TC-LOGIN-13: The login form has novalidate, a form-level alert, inline error
+    containers and Vietnamese copy."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     r = c.get("/login")
@@ -368,10 +377,10 @@ def test_tc_login_13_client_validation_and_form_alert_contract(tmp_path, monkeyp
     js_r = c.get("/static/login.js")
     assert js_r.status_code == 200
     js = js_r.text
-    assert "Email is required." in js
-    assert "Enter a valid email address." in js
-    assert "Password is required." in js
-    assert "Invalid email or password." in js
+    assert "Hãy nhập email." in js
+    assert "Hãy nhập một email hợp lệ." in js
+    assert "Hãy nhập mật khẩu." in js
+    assert "Email hoặc mật khẩu không đúng." in js
 
 
 # ==============================================================================
@@ -409,7 +418,7 @@ def test_tc_signup_02_google_oauth_button_on_signup_page(tmp_path, monkeypatch):
     html = r.text
 
     assert 'id="google-login"' in html
-    assert "Sign in with Google" in html
+    assert "bằng Google" in html
 
 
 def test_tc_signup_03_google_oauth_button_disabled_when_not_configured(tmp_path, monkeypatch):
@@ -495,7 +504,8 @@ def test_tc_signup_08_authenticated_user_visiting_signup_redirects(tmp_path, mon
 
 
 def test_tc_signup_09_email_stored_normalized_lowercase(tmp_path, monkeypatch):
-    """TC-SIGNUP-09: Registering with uppercase or untrimmed email normalizes to lowercase in account records."""
+    """TC-SIGNUP-09: An email given in capitals or with spaces is stored trimmed and in
+    lowercase."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     signup_data = fresh_signup_payload(email="   LEARNER_LOWERCASE_CHECK@EXAMPLE.EDU.VN   ")
@@ -520,7 +530,8 @@ def test_tc_signup_10_full_name_max_length_80_enforced(tmp_path, monkeypatch):
 
 
 def test_tc_signup_11_client_validation_contract_and_error_messages(tmp_path, monkeypatch):
-    """TC-SIGNUP-11: Signup form has novalidate, inline error spans, and English validation strings."""
+    """TC-SIGNUP-11: The sign-up form has novalidate, inline error spans and Vietnamese
+    validation messages."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     r = c.get("/signup")
@@ -537,16 +548,17 @@ def test_tc_signup_11_client_validation_contract_and_error_messages(tmp_path, mo
     js_r = c.get("/static/signup.js")
     assert js_r.status_code == 200
     js = js_r.text
-    assert "Email is required." in js
-    assert "Enter a valid email address." in js
-    assert "Full name is required." in js
-    assert "Password is required." in js
-    assert "Passwords do not match." in js
-    assert "This email is already registered. Please sign in." in js
+    assert "Hãy nhập email." in js
+    assert "Hãy nhập một email hợp lệ." in js
+    assert "Hãy nhập họ và tên." in js
+    assert "Hãy nhập mật khẩu." in js
+    assert "Hai lần nhập mật khẩu chưa khớp nhau." in js
+    assert "Email này đã có tài khoản. Hãy đăng nhập." in js
 
 
 def test_tc_signup_12_password_show_hide_toggles_contract(tmp_path, monkeypatch):
-    """TC-SIGNUP-12: Signup page provides dual eye toggles with proper button types and accessibility labels."""
+    """TC-SIGNUP-12: The sign-up page has two show-password toggles, each with its own
+    accessible label."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     r = c.get("/signup")
@@ -555,8 +567,8 @@ def test_tc_signup_12_password_show_hide_toggles_contract(tmp_path, monkeypatch)
 
     assert 'id="show-password"' in html
     assert 'id="show-again"' in html
-    assert 'aria-label="Show password"' in html
-    assert 'aria-label="Show confirm password"' in html
+    assert 'aria-label="Hiện mật khẩu"' in html
+    assert 'aria-label="Hiện mật khẩu nhập lại"' in html
 
 
 def test_tc_signup_13_enlarged_brand_logo_styling_contract(tmp_path, monkeypatch):
@@ -629,7 +641,7 @@ def test_tc_google_03_callback_tampered_state_refused(tmp_path, monkeypatch):
     c = TestClient(m.app)
 
     # Start flow to obtain signed cookie
-    start_res = c.get("/auth/google/start?mode=login", follow_redirects=False)
+    c.get("/auth/google/start?mode=login", follow_redirects=False)
     assert "aicefr_oauth" in c.cookies
 
     # Callback with wrong state query param
@@ -723,4 +735,3 @@ def test_tc_google_07_oauth_missing_state_redirects_safely(tmp_path, monkeypatch
     r = c.get("/auth/google/callback", follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"] == "/login?google=state"
-

@@ -25,9 +25,9 @@
   <div class="auth-figma-right">
     <div class="auth-figma-form-wrap">
       <section class="card auth-card figma-auth-card" aria-labelledby="signup-h">
-        <h1 id="signup-h" class="figma-heading">Sign up</h1>
+        <h1 id="signup-h" class="figma-heading">Đăng ký</h1>
         <p class="figma-subheading">
-          Already have an account? <a href="/login" class="figma-coral-link">Sign in</a>
+          Đã có tài khoản? <a href="/login" class="figma-coral-link">Đăng nhập</a>
         </p>
 
         <form id="f" autocomplete="off" novalidate>
@@ -39,17 +39,17 @@
             <div class="figma-input-wrap is-email">
               <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
               <input id="email" type="email" autocomplete="email" required autocapitalize="none"
-                     spellcheck="false" maxlength="254" placeholder="Enter your email address">
+                     spellcheck="false" maxlength="254" placeholder="Nhập email của bạn">
             </div>
             <div class="auth-field-error" id="email-error" role="alert" aria-live="polite" style="display: none;"></div>
           </div>
 
           {#- Full name with user icon & underline -#}
           <div class="figma-field">
-            <label for="full-name">Full name</label>
+            <label for="full-name">Họ và tên</label>
             <div class="figma-input-wrap is-password">
               <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <input id="full-name" type="text" autocomplete="name" required maxlength="80" placeholder="Enter your full name" aria-describedby="name-hint">
+              <input id="full-name" type="text" autocomplete="name" required maxlength="80" placeholder="Nhập họ và tên" aria-describedby="name-hint">
             </div>
             <div class="auth-field-error" id="name-error" role="alert" aria-live="polite" style="display: none;"></div>
             <p class="field-hint" id="name-hint" style="display: none;">Tên giảng viên lớp bạn sẽ thấy.</p>
@@ -57,28 +57,28 @@
 
           {#- Password with lock icon & underline -#}
           <div class="figma-field">
-            <label for="password">Password</label>
+            <label for="password">Mật khẩu</label>
             <div class="figma-input-wrap figma-password-wrap is-password">
               <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <input id="password" type="password" autocomplete="new-password" required
-                     minlength="{{ min_length }}" placeholder="Enter your password" aria-describedby="pw-hint">
+                     minlength="{{ min_length }}" placeholder="Nhập mật khẩu" aria-describedby="pw-hint">
               <button type="button" class="figma-show-pw" id="show-password" aria-pressed="false"
-                      aria-controls="password" title="Show password" aria-label="Show password">
+                      aria-controls="password" title="Hiện mật khẩu" aria-label="Hiện mật khẩu">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
               </button>
             </div>
             <div class="auth-field-error" id="password-error" role="alert" aria-live="polite" style="display: none;"></div>
-            <p class="field-hint" id="pw-hint" style="display: none;">At least {{ min_length }} characters.</p>
+            <p class="field-hint" id="pw-hint" style="display: none;">Ít nhất {{ min_length }} ký tự.</p>
           </div>
 
           {#- Confirm Password with lock icon & underline -#}
           <div class="figma-field">
-            <label for="again">Confirm password</label>
+            <label for="again">Nhập lại mật khẩu</label>
             <div class="figma-input-wrap figma-password-wrap is-password">
               <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input id="again" type="password" autocomplete="new-password" required placeholder="Confirm your password">
+              <input id="again" type="password" autocomplete="new-password" required placeholder="Nhập lại mật khẩu">
               <button type="button" class="figma-show-pw" id="show-again" aria-pressed="false"
-                      aria-controls="again" title="Show confirm password" aria-label="Show confirm password">
+                      aria-controls="again" title="Hiện mật khẩu nhập lại" aria-label="Hiện mật khẩu nhập lại">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
               </button>
             </div>
@@ -89,14 +89,13 @@
             <input type="checkbox" id="show">
           </div>
 
-          <button id="b" type="submit" class="figma-login-btn" aria-label="Sign up">Sign up</button>
+          <button id="b" type="submit" class="figma-login-btn">Tạo tài khoản</button>
 
           <div id="tb" role="alert" class="figma-msg-box"></div>
         </form>
 
-        {#- Divider "or continue with" -#}
         <div class="figma-continue-divider">
-          <span>or continue with</span>
+          <span>hoặc</span>
         </div>
 
         {#- Full-width Google button with multi-colored logo -#}
@@ -108,7 +107,7 @@
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          <span>Sign in with Google</span>
+          <span>{% if google_signup %}Đăng ký bằng Google{% else %}Đăng nhập bằng Google{% endif %}</span>
         </a>
         {% elif google_missing_hint %}
         <button type="button" class="figma-google-btn" id="google-disabled-btn">
@@ -118,19 +117,19 @@
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
           </svg>
-          <span>Sign in with Google</span>
+          <span>Đăng ký bằng Google</span>
         </button>
         <p class="field-hint figma-google-off-hint" id="google-off" style="display: none;">
-          Google sign-in is not enabled on this machine: missing <code>AICEFR_GOOGLE_CLIENT_ID</code> and
-          <code>AICEFR_GOOGLE_CLIENT_SECRET</code> in <code>.env</code>.
+          Đăng nhập bằng Google chưa bật trên máy này: thiếu <code>AICEFR_GOOGLE_CLIENT_ID</code> và
+          <code>AICEFR_GOOGLE_CLIENT_SECRET</code> trong <code>.env</code>.
         </p>
         {% endif %}
 
         <div id="done" hidden class="figma-done-box">
-          <p class="notice notice-ok" role="status">Account created successfully.</p>
-          <p class="notice" id="verify-note" hidden>A verification code was sent to your email. Enter the code on your Account page to receive study reminders and reset passwords via email.</p>
+          <p class="notice notice-ok" role="status">Đã tạo tài khoản và đăng nhập.</p>
+          <p class="notice" id="verify-note" hidden>Đã gửi mã xác minh tới email của bạn. Nhập mã ở trang Tài khoản để nhận nhắc học và đặt lại mật khẩu qua email.</p>
           <div class="button-row">
-            <a class="button figma-coral-btn" id="go" href="/practice">Start speaking practice</a>
+            <a class="button figma-coral-btn" id="go" href="/practice">Bắt đầu luyện nói</a>
           </div>
         </div>
       </section>

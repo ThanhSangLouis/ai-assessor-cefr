@@ -24,13 +24,13 @@ function bindPasswordToggle(btn, inputEl, labelPrefix) {
     const show = inputEl.type === "password";
     inputEl.type = show ? "text" : "password";
     btn.setAttribute("aria-pressed", String(show));
-    btn.setAttribute("aria-label", show ? `Hide ${labelPrefix}` : `Show ${labelPrefix}`);
-    btn.title = show ? `Hide ${labelPrefix}` : `Show ${labelPrefix}`;
+    btn.setAttribute("aria-label", show ? `Ẩn ${labelPrefix}` : `Hiện ${labelPrefix}`);
+    btn.title = show ? `Ẩn ${labelPrefix}` : `Hiện ${labelPrefix}`;
     btn.innerHTML = show ? EYE_OPEN_ICON : EYE_SLASH_ICON;
   });
 }
-bindPasswordToggle(document.getElementById("show-password"), passwordEl, "password");
-bindPasswordToggle(document.getElementById("show-again"), againEl, "confirm password");
+bindPasswordToggle(document.getElementById("show-password"), passwordEl, "mật khẩu");
+bindPasswordToggle(document.getElementById("show-again"), againEl, "mật khẩu nhập lại");
 
 const legacyShow = document.getElementById("show");
 if (legacyShow) {
@@ -45,7 +45,7 @@ if (legacyShow) {
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
   const asked = new URLSearchParams(location.search).get("next");
-  if (asked && asked.startsWith("/") && !asked.startsWith("//")) {
+  if (window.samePath(asked)) {
     googleLink.href += `&next=${encodeURIComponent(asked)}`;
   }
 }
@@ -55,7 +55,7 @@ const googleDisabledBtn = document.getElementById("google-disabled-btn");
 if (googleDisabledBtn) {
   googleDisabledBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    showToast("Google sign-in is not configured on this machine (missing credentials in .env).", "info");
+    showToast("Đăng nhập bằng Google chưa bật trên máy này (thiếu khoá Google trong .env).", "info");
   });
 }
 
@@ -70,7 +70,7 @@ function showToast(message, type = "error") {
     <div class="toast-item is-${type} error" role="alert">
       ${icon}
       <span class="toast-text">${escaped}</span>
-      <button type="button" class="toast-close" aria-label="Close notification">
+      <button type="button" class="toast-close" aria-label="Đóng thông báo">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>`;
@@ -155,31 +155,31 @@ function clearFieldError(inputEl) {
 // Validation rules
 function validateEmail(val) {
   const trimmed = (val || "").trim();
-  if (!trimmed) return "Email is required.";
+  if (!trimmed) return "Hãy nhập email.";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(trimmed)) {
-    return "Enter a valid email address.";
+    return "Hãy nhập một email hợp lệ.";
   }
   return null;
 }
 
 function validateFullName(val) {
   const trimmed = (val || "").trim();
-  if (!trimmed) return "Full name is required.";
-  if (trimmed.length > 80) return "Full name must be 80 characters or fewer.";
+  if (!trimmed) return "Hãy nhập họ và tên.";
+  if (trimmed.length > 80) return "Họ và tên tối đa 80 ký tự.";
   return null;
 }
 
 function validatePassword(val) {
-  if (!val) return "Password is required.";
+  if (!val) return "Hãy nhập mật khẩu.";
   const min = (passwordEl && Number(passwordEl.getAttribute("minlength"))) || 8;
-  if (val.length < min) return `Password must be at least ${min} characters.`;
+  if (val.length < min) return `Mật khẩu cần ít nhất ${min} ký tự.`;
   return null;
 }
 
 function validateConfirmPassword(val, pwdVal) {
-  if (!val) return "Please confirm your password.";
-  if (val !== pwdVal) return "Passwords do not match.";
+  if (!val) return "Hãy nhập lại mật khẩu.";
+  if (val !== pwdVal) return "Hai lần nhập mật khẩu chưa khớp nhau.";
   return null;
 }
 
@@ -301,7 +301,7 @@ if (form) {
     }
 
     submitButton.disabled = true;
-    submitButton.textContent = "Signing up…";
+    submitButton.textContent = "Đang tạo…";
 
     try {
       const r = await fetch("/api/v1/auth/signup", {
@@ -326,24 +326,24 @@ if (form) {
         if (verifyNote) verifyNote.hidden = d.email_verification !== "sent";
 
         const go = document.getElementById("go");
-        if (go && typeof d.home === "string" && d.home.startsWith("/") && !d.home.startsWith("//")) {
+        if (go && window.samePath(d.home)) {
           go.href = d.home;
         }
         return;
       }
 
       if (r.status === 409) {
-        setFieldError(emailEl, "This email is already registered. Please sign in.");
+        setFieldError(emailEl, "Email này đã có tài khoản. Hãy đăng nhập.");
         emailEl.focus();
         return;
       }
 
       if (r.status === 429) {
-        showToast("Too many attempts. Please try again later.", "warning");
+        showToast("Thử quá nhiều lần. Hãy thử lại sau.", "warning");
         return;
       }
 
-      const detail = typeof d.detail === "string" ? d.detail : "Could not create account. Please check your information.";
+      const detail = typeof d.detail === "string" ? d.detail : "Không tạo được tài khoản. Hãy kiểm tra lại thông tin.";
       if (r.status === 422 && (detail.includes("mật khẩu") || detail.includes("password"))) {
         setFieldError(passwordEl, detail);
         passwordEl.focus();
@@ -352,13 +352,13 @@ if (form) {
       }
     } catch (err) {
       if (!navigator.onLine) {
-        showToast("No internet connection. Please try again.", "error");
+        showToast("Không có kết nối mạng. Hãy thử lại.", "error");
       } else {
-        showToast("Something went wrong. Please try again later.", "error");
+        showToast("Không kết nối được máy chủ. Tài khoản chưa được tạo.", "error");
       }
     } finally {
       submitButton.disabled = false;
-      submitButton.textContent = "Sign up";
+      submitButton.textContent = "Tạo tài khoản";
     }
   };
 }

@@ -16,6 +16,19 @@ window.escapeHtml = function (t) {
   return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 };
 
+// A path on this site, safe to send the browser to after signing in. Checking
+// only for a leading "/" is not enough: browsers read "/\evil.example" as
+// "//evil.example", another site. Resolving the path against this origin and
+// comparing origins rejects that, "//host" and "javascript:" alike.
+window.samePath = function (p) {
+  if (typeof p !== "string" || !p.startsWith("/")) return false;
+  try {
+    return new URL(p, location.origin).origin === location.origin;
+  } catch (err) {
+    return false;
+  }
+};
+
 // ---------------------------------------------------------------- theme
 // Three states: an explicit "light", an explicit "dark", and no choice at all,
 // in which case the stylesheet follows prefers-color-scheme. Only an explicit

@@ -1,4 +1,4 @@
-// Login screen. Clean, accessible, robust SaaS authentication.
+// Login screen. See docs/web/SPEC_WEB.md section M1.
 const form = document.getElementById("f");
 const submitButton = document.getElementById("b");
 const messageBox = document.getElementById("tb");
@@ -24,8 +24,8 @@ if (showButton && passwordEl) {
     const show = passwordEl.type === "password";
     passwordEl.type = show ? "text" : "password";
     showButton.setAttribute("aria-pressed", String(show));
-    showButton.setAttribute("aria-label", show ? "Hide password" : "Show password");
-    showButton.title = show ? "Hide password" : "Show password";
+    showButton.setAttribute("aria-label", show ? "Ẩn mật khẩu" : "Hiện mật khẩu");
+    showButton.title = show ? "Ẩn mật khẩu" : "Hiện mật khẩu";
     showButton.innerHTML = show ? EYE_OPEN_ICON : EYE_SLASH_ICON;
   });
 }
@@ -43,7 +43,7 @@ if (passwordEl && capsHint) {
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
   const asked = new URLSearchParams(location.search).get("next");
-  if (asked && asked.startsWith("/") && !asked.startsWith("//")) {
+  if (window.samePath(asked)) {
     googleLink.href += `&next=${encodeURIComponent(asked)}`;
   }
 }
@@ -53,7 +53,7 @@ const googleDisabledBtn = document.getElementById("google-disabled-btn");
 if (googleDisabledBtn) {
   googleDisabledBtn.addEventListener("click", (e) => {
     e.preventDefault();
-    showToast("Google sign-in is not configured on this machine (missing credentials in .env).", "info");
+    showToast("Đăng nhập bằng Google chưa bật trên máy này (thiếu khoá Google trong .env).", "info");
   });
 }
 
@@ -68,7 +68,7 @@ function showToast(message, type = "error") {
     <div class="toast-item is-${type} error" role="alert">
       ${icon}
       <span class="toast-text">${escaped}</span>
-      <button type="button" class="toast-close" aria-label="Close notification">
+      <button type="button" class="toast-close" aria-label="Đóng thông báo">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>`;
@@ -153,17 +153,17 @@ function clearFieldError(inputEl) {
 // Validation rules
 function validateEmail(val) {
   const trimmed = (val || "").trim();
-  if (!trimmed) return "Email is required.";
+  if (!trimmed) return "Hãy nhập email.";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   // If input contains '@', check standard email format. Legacy pseudonyms (SV-001) allowed if no '@'.
   if (trimmed.includes("@") && !emailRegex.test(trimmed)) {
-    return "Enter a valid email address.";
+    return "Hãy nhập một email hợp lệ.";
   }
   return null;
 }
 
 function validatePassword(val) {
-  if (!val) return "Password is required.";
+  if (!val) return "Hãy nhập mật khẩu.";
   return null;
 }
 
@@ -212,7 +212,7 @@ if (googleServerErr && googleServerErr.dataset.error) {
 
 // Check session expired from query params
 if (new URLSearchParams(location.search).get("expired") === "1") {
-  showToast("Your session has expired. Please sign in again.", "warning");
+  showToast("Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại.", "warning");
 }
 
 // Submit handler
@@ -245,7 +245,7 @@ if (form) {
     }
 
     submitButton.disabled = true;
-    submitButton.textContent = "Signing in…";
+    submitButton.textContent = "Đang đăng nhập…";
     try {
       const r = await fetch("/api/v1/auth/login", {
         method: "POST",
@@ -256,9 +256,11 @@ if (form) {
         }),
       });
 
+      const d = await r.json().catch(() => ({}));
       if (r.ok) {
-        const d = await r.json().catch(() => ({}));
-        const safe = (p) => typeof p === "string" && p.startsWith("/") && !p.startsWith("//");
+        // Back to the page the person was heading for, else the start page of
+        // their role; only paths on this site (common.js, samePath).
+        const safe = window.samePath;
         const asked = new URLSearchParams(location.search).get("next");
         if (d.must_change_password && safe(d.home)) {
           location.href = d.home;
@@ -269,29 +271,29 @@ if (form) {
       }
 
       if (r.status === 401) {
-        showFormAlert("Invalid email or password.");
+        showFormAlert(d.detail || "Email hoặc mật khẩu không đúng.");
         passwordEl.select();
         return;
       }
 
       if (r.status === 429) {
-        showToast("Too many attempts. Please try again later.", "warning");
+        // NFR-07: the account is locked for a while; the server says how long.
+        showToast(d.detail || "Đăng nhập sai quá nhiều lần. Hãy thử lại sau.", "warning");
         return;
       }
 
-      const d = await r.json().catch(() => ({}));
-      const detail = d.detail || "Something went wrong. Please try again later.";
+      const detail = d.detail || "Đăng nhập không thành công. Hãy thử lại sau.";
       showToast(detail, "error");
       passwordEl.select();
     } catch (err) {
       if (!navigator.onLine) {
-        showToast("No internet connection. Please try again.", "error");
+        showToast("Không có kết nối mạng. Hãy thử lại.", "error");
       } else {
-        showToast("Something went wrong. Please try again later.", "error");
+        showToast("Không kết nối được máy chủ.", "error");
       }
     } finally {
       submitButton.disabled = false;
-      submitButton.textContent = "Sign in";
+      submitButton.textContent = "Đăng nhập";
     }
   };
 }

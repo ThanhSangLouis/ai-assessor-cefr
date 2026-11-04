@@ -813,6 +813,14 @@ Bốn hướng chủ dự án chọn sau đề xuất làm đề tài mạnh hơ
 - **Thống kê lớp** (M9) thêm hai thẻ: **"Hiệu quả cho giảng viên"** — phút duyệt một bài có máy, phút chấm mù một bài không có máy, thời gian tiết kiệm, tỉ lệ máy tự xử lý và tỉ lệ giữ nguyên band, mỗi tỉ lệ có khoảng tin cậy và số đếm; **"Phát âm của cả lớp"** — danh sách như M8, ví dụ không dẫn tới bài của ai.
 - **Tab Cấu hình** (M7) thêm khung **"Sai số đo cho tiến bộ đáng tin"**: sai số đang dùng và nguồn, số cặp bài thử lại hiện có, nút dùng sai số từ bài thử lại (tắt khi chưa đủ 10 cặp), ô nhập tay bắt buộc kèm nguồn.
 
+### Đợt 18 — Giao diện SpeakUp mới của Thắng (D092) — **xong**
+
+Thắng thiết kế lại giao diện theo Figma (PR #119); chủ dự án chốt giữ nguyên toàn bộ UI mới.
+
+- **Thương hiệu.** Màu Coral (`--accent` `#ff5722`, tối `#ff8a65`), logo và linh vật mới (`static/art/speakup_*`), favicon PNG; phông Poppins tự phục vụ cùng Roboto (thay phần phông và logo của Đợt 12).
+- **Trang chủ.** Có lại cảnh 3D đầu trang (khối A1–C2, thẻ đọc to, thẻ ước lượng band; trang trí, `aria-hidden`), dải ba thông số, các mục cách hoạt động, phương pháp, giảng viên, nguyên tắc, câu hỏi thường gặp. Không có khối Demo AI chạy âm thanh mẫu với điểm tự đặt (giữ D078).
+- **Đăng nhập và đăng ký.** Hai cột: ảnh minh hoạ bên trái, biểu mẫu bên phải; kiểm tra từng ô ngay trên trình duyệt, thông báo lỗi dạng toast. Chữ bằng tiếng Việt; không có ô "Ghi nhớ đăng nhập" (D091). Sau đăng nhập chỉ chuyển tới đường dẫn của chính trang (`samePath` trong `common.js`, chặn cả `/\evil.example`).
+
 ### Ngoài phạm vi tài liệu này nhưng phải lên lịch
 
 Đóng gói Docker và triển khai staging. Mốc ký cam kết sản phẩm cuối là **hết tuần 7**,
