@@ -56,6 +56,10 @@ def session_check(request: Request, opened: Account) -> SessionCheck:
     The same lookup as `require_login` (`app.state.callers`): in core it reads
     the session cookie against the identity store, so a session ended, an
     account disabled or a role changed since the stream opened ends the stream.
+    Core is behind the gateway, but the identity part sets `SessionCallers` over
+    the runtime's `GatewayCallers`, so this is never the header the gateway
+    forwarded once; `test_core_reads_the_session_from_the_store_not_the_gateway_header`
+    (tests/test_services_split.py) fails if that wiring ever changes.
     """
     callers = request.app.state.callers
 
