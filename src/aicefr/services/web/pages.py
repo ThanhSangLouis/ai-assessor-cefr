@@ -432,7 +432,7 @@ def page_retell(
 ):
     """Say the same task again, three times, shorter each time (D069)."""
     if account is None:
-        return RedirectResponse(f"/login?next=/retell/{response_id}", status_code=303)
+        return RedirectResponse(f"/login?next={quote(request.url.path)}", status_code=303)
     lim = _limits()
     return _page(
         request,
