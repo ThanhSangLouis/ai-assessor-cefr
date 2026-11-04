@@ -16,17 +16,22 @@ window.escapeHtml = function (t) {
   return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 };
 
-// A path on this site, safe to send the browser to after signing in. Checking
-// only for a leading "/" is not enough: browsers read "/\evil.example" as
-// "//evil.example", another site. Resolving the path against this origin and
-// comparing origins rejects that, "//host" and "javascript:" alike.
-window.samePath = function (p) {
-  if (typeof p !== "string" || !p.startsWith("/")) return false;
+// The page on this site that `p` names, as a path, or null. Used for `?next=`
+// and the start page after signing in. Checking only for a leading "/" is not
+// enough: browsers read "/\evil.example" as "//evil.example", another site.
+// Resolving against this origin rejects that, "//host" and "javascript:"; and
+// the path is rebuilt from the parsed URL with one leading slash, because
+// "/.//evil.example" resolves here to the path "//evil.example".
+window.sitePath = function (p) {
+  if (typeof p !== "string" || !p.startsWith("/")) return null;
+  let url;
   try {
-    return new URL(p, location.origin).origin === location.origin;
+    url = new URL(p, location.origin);
   } catch (err) {
-    return false;
+    return null;
   }
+  if (url.origin !== location.origin) return null;
+  return "/" + url.pathname.replace(/^\/+/, "") + url.search + url.hash;
 };
 
 // ---------------------------------------------------------------- theme

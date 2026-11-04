@@ -819,7 +819,7 @@ Thắng thiết kế lại giao diện theo Figma (PR #119); chủ dự án ch�
 
 - **Thương hiệu.** Màu Coral (`--accent` `#ff5722`, tối `#ff8a65`), logo và linh vật mới (`static/art/speakup_*`), favicon PNG; phông Poppins tự phục vụ cùng Roboto (thay phần phông và logo của Đợt 12).
 - **Trang chủ.** Có lại cảnh 3D đầu trang (khối A1–C2, thẻ đọc to, thẻ ước lượng band; trang trí, `aria-hidden`), dải ba thông số, các mục cách hoạt động, phương pháp, giảng viên, nguyên tắc, câu hỏi thường gặp. Không có khối Demo AI chạy âm thanh mẫu với điểm tự đặt (giữ D078).
-- **Đăng nhập và đăng ký.** Hai cột: ảnh minh hoạ bên trái, biểu mẫu bên phải; kiểm tra từng ô ngay trên trình duyệt, thông báo lỗi dạng toast. Chữ bằng tiếng Việt; không có ô "Ghi nhớ đăng nhập" (D091). Sau đăng nhập chỉ chuyển tới đường dẫn của chính trang (`samePath` trong `common.js`, chặn cả `/\evil.example`).
+- **Đăng nhập và đăng ký.** Hai cột: ảnh minh hoạ bên trái, biểu mẫu bên phải; kiểm tra từng ô ngay trên trình duyệt, thông báo lỗi dạng toast. Chữ bằng tiếng Việt; không có ô "Ghi nhớ đăng nhập" (D091). Sau đăng nhập chỉ chuyển tới đường dẫn của chính trang (`sitePath` trong `common.js`, chặn cả `/\evil.example`).
 
 ### Ngoài phạm vi tài liệu này nhưng phải lên lịch
 

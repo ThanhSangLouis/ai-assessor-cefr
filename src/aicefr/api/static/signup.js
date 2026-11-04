@@ -44,9 +44,11 @@ if (legacyShow) {
 // Google comes back to the page the person was heading for.
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
-  const asked = new URLSearchParams(location.search).get("next");
-  if (window.samePath(asked)) {
-    googleLink.href += `&next=${encodeURIComponent(asked)}`;
+  const next = window.sitePath(new URLSearchParams(location.search).get("next"));
+  if (next) {
+    const start = new URL(googleLink.href, location.origin);
+    start.searchParams.set("next", next);
+    googleLink.href = start.pathname + start.search;
   }
 }
 
@@ -326,8 +328,9 @@ if (form) {
         if (verifyNote) verifyNote.hidden = d.email_verification !== "sent";
 
         const go = document.getElementById("go");
-        if (go && window.samePath(d.home)) {
-          go.href = d.home;
+        const home = window.sitePath(d.home);
+        if (go && home) {
+          go.href = home;
         }
         return;
       }

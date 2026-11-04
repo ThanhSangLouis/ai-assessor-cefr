@@ -42,9 +42,11 @@ if (passwordEl && capsHint) {
 // Google OAuth next path preserved
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
-  const asked = new URLSearchParams(location.search).get("next");
-  if (window.samePath(asked)) {
-    googleLink.href += `&next=${encodeURIComponent(asked)}`;
+  const next = window.sitePath(new URLSearchParams(location.search).get("next"));
+  if (next) {
+    const start = new URL(googleLink.href, location.origin);
+    start.searchParams.set("next", next);
+    googleLink.href = start.pathname + start.search;
   }
 }
 
@@ -259,14 +261,12 @@ if (form) {
       const d = await r.json().catch(() => ({}));
       if (r.ok) {
         // Back to the page the person was heading for, else the start page of
-        // their role; only paths on this site (common.js, samePath).
-        const safe = window.samePath;
-        const asked = new URLSearchParams(location.search).get("next");
-        if (d.must_change_password && safe(d.home)) {
-          location.href = d.home;
-          return;
-        }
-        location.href = safe(asked) ? asked : safe(d.home) ? d.home : "/";
+        // their role; only pages on this site (common.js, sitePath). A
+        // temporary password goes to the account page whatever was asked (D028).
+        const home = window.sitePath(d.home);
+        const next = window.sitePath(new URLSearchParams(location.search).get("next"));
+        const path = d.must_change_password && home ? home : next || home || "/";
+        location.assign(location.origin + path);
         return;
       }
 

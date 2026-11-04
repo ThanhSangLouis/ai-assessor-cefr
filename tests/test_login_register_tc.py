@@ -346,16 +346,16 @@ def test_tc_login_11_session_expired_query_param_handling(tmp_path, monkeypatch)
 
 
 def test_tc_login_12_safe_next_url_redirect_contract(tmp_path, monkeypatch):
-    """TC-LOGIN-12: `next` goes through samePath (common.js), which resolves the path
+    """TC-LOGIN-12: `next` goes through sitePath (common.js), which resolves the path
     against this origin, so "//evil.example" and "/\\evil.example" are both refused."""
     m = make_test_app(monkeypatch, tmp_path)
     c = TestClient(m.app)
     common = c.get("/static/common.js").text
-    assert "window.samePath = function" in common
-    assert "new URL(p, location.origin).origin === location.origin" in common
+    assert "window.sitePath = function" in common
+    assert "url.origin !== location.origin" in common
     for page in ("login.js", "signup.js"):
         js = c.get(f"/static/{page}").text
-        assert "window.samePath(asked)" in js
+        assert 'start.searchParams.set("next", next)' in js
         assert 'startsWith("//")' not in js
 
 
