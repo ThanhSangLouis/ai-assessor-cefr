@@ -221,8 +221,9 @@ def test_a_token_with_a_changed_claim_or_another_algorithm_is_refused(app) -> No
         _with(token, 0, {"alg": "none", "typ": "JWT"}),
         token.rsplit(".", 1)[0] + ".",
     ):
-        c.cookies.set(COOKIE_NAME, forged)
-        assert c.get("/api/v1/me").status_code == 401
+        fresh = TestClient(app)
+        fresh.cookies.set(COOKIE_NAME, forged)
+        assert fresh.get("/api/v1/me").status_code == 401
 
 
 def test_an_expired_token_is_refused_even_while_its_session_row_exists(app) -> None:
@@ -231,8 +232,9 @@ def test_an_expired_token_is_refused_even_while_its_session_row_exists(app) -> N
     claims = _part(c.cookies[COOKIE_NAME], 1)
     ended = (datetime.now(UTC) - timedelta(minutes=1)).isoformat(timespec="seconds")
     key = app.state.auth_repo.secret(SESSION_KEY)
-    c.cookies.set(COOKIE_NAME, sessions.encode_jwt(key, claims["sub"], claims["sid"], ended))
-    assert c.get("/api/v1/me").status_code == 401
+    fresh = TestClient(app)
+    fresh.cookies.set(COOKIE_NAME, sessions.encode_jwt(key, claims["sub"], claims["sid"], ended))
+    assert fresh.get("/api/v1/me").status_code == 401
 
 
 def test_a_valid_jwt_stops_working_once_its_session_is_revoked(app) -> None:
