@@ -1121,30 +1121,34 @@ class AuthRepository(MongoStore):
         every session ended.
 
         The link and the takeover are each one update conditioned on that
-        address, so an account that moves to another address meanwhile is not
-        touched at all: nothing linked, nothing reset. Returns None then.
+        address and on the links read here, which it replaces whole (the old
+        link of this provider dropped, the new one added): an account that
+        moves to another address, or whose links change, meanwhile is not
+        touched at all -- nothing linked, nothing unlinked, nothing reset.
+        Returns None then.
         """
-        row = self.get(account_id)
-        if row is None:
+        accounts = self.col("account")
+        raw = accounts.find_one({"account_id": account_id}, {"identities": 1})
+        if raw is None:
             raise KeyError(account_id)
         owner = self.account_by_identity(provider, subject_hash)
         if owner is not None and owner["account_id"] != account_id:
             raise IdentityTaken(provider)
-        accounts = self.col("account")
-        at: dict[str, object] = {"account_id": account_id}
+        held = raw.get("identities")
+        at: dict[str, object] = {"account_id": account_id, "identities": held}
         if email:
             at["email"] = contact.normalize_email(email)
         link = {"provider": provider, "subject_hash": subject_hash, "linked_at": _now()}
-        accounts.update_one(at, {"$pull": {"identities": {"provider": provider}}})
+        links = [i for i in held or [] if i.get("provider") != provider] + [link]
         try:
-            kept = accounts.update_one({**at, "email_verified": 1}, {"$push": {"identities": link}})
+            kept = accounts.update_one({**at, "email_verified": 1}, {"$set": {"identities": links}})
             if kept.matched_count == 1:
                 return False
             taken = accounts.update_one(
                 {**at, "email_verified": {"$ne": 1}},
                 {
-                    "$push": {"identities": link},
                     "$set": {
+                        "identities": links,
                         "email_verified": 1,
                         "password_hash": passwords.hash_password(secrets.token_urlsafe(32)),
                         "must_change_password": 0,

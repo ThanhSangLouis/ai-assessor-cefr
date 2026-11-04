@@ -248,3 +248,40 @@ def test_google_joins_nothing_when_the_account_left_the_address_meanwhile(tmp_pa
     assert row["email_verified"] == 0
     assert creator.get("/api/v1/me").status_code == 200
     assert _password_login(m, CREATOR) == 200
+
+
+def test_an_adoption_cut_short_by_a_new_address_keeps_the_old_google_link(tmp_path, monkeypatch):
+    """Codex review (2nd pass): the email changes in the middle of the join.
+
+    Whatever step the change lands between, an adoption that does not happen
+    leaves the account's existing Google link where it was.
+    """
+    m = make_app(monkeypatch, tmp_path)
+    _, aid = _signup(m, VICTIM)
+    auth = m.app.state.auth_repo
+    old = {"provider": google.PROVIDER, "subject_hash": "g-old", "linked_at": "2026-01-01"}
+    auth.col("account").update_one({"account_id": aid}, {"$set": {"identities": [old]}})
+    real_col = auth.col
+
+    class Moving:
+        """The account collection; the first write of the join moves the account away."""
+
+        def __init__(self, col):
+            self.col, self.moved = col, False
+
+        def __getattr__(self, name):
+            return getattr(self.col, name)
+
+        def update_one(self, flt, update, *a, **k):
+            done = self.col.update_one(flt, update, *a, **k)
+            if not self.moved:
+                self.moved = True
+                self.col.update_one({"account_id": aid}, {"$set": {"email": CREATOR}})
+            return done
+
+    moving = Moving(real_col("account"))
+    monkeypatch.setattr(auth, "col", lambda name: moving if name == "account" else real_col(name))
+    assert auth.adopt_by_email(aid, google.PROVIDER, "g-new", VICTIM) is None
+    monkeypatch.setattr(auth, "col", real_col)
+    links = [i["subject_hash"] for i in auth.get(aid).get("identities") or []]
+    assert links == ["g-old"]
