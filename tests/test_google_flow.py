@@ -230,3 +230,21 @@ def test_a_code_from_the_old_address_does_not_make_google_trust_the_new(tmp_path
     assert owner.get("/api/v1/me").json()["account_id"] == aid
     assert creator.get("/api/v1/me").status_code == 401
     assert _password_login(m, VICTIM) == 401
+
+
+def test_google_joins_nothing_when_the_account_left_the_address_meanwhile(tmp_path, monkeypatch):
+    """Codex review: the account found by Google's address moves before the join.
+
+    Nothing may happen to it then: no Google identity linked, no password
+    replaced, no session ended, its new address not marked verified.
+    """
+    m = make_app(monkeypatch, tmp_path)
+    creator, aid = _signup(m, VICTIM)
+    auth = m.app.state.auth_repo
+    auth.col("account").update_one({"account_id": aid}, {"$set": {"email": CREATOR}})
+    assert auth.adopt_by_email(aid, google.PROVIDER, "g-race", VICTIM) is None
+    row = auth.get(aid)
+    assert not [i for i in row.get("identities") or [] if i["provider"] == google.PROVIDER]
+    assert row["email_verified"] == 0
+    assert creator.get("/api/v1/me").status_code == 200
+    assert _password_login(m, CREATOR) == 200

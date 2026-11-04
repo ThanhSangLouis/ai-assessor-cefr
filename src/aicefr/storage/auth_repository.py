@@ -744,12 +744,15 @@ class AuthRepository(MongoStore):
 
     # ---------- email codes, verification, reminders (D079) ----------
 
-    def issue_email_code(self, account_id: str, purpose: str) -> str | None:
+    def issue_email_code(self, account_id: str, purpose: str, to: str | None = None) -> str | None:
         """A new six-digit code for `purpose`, kept hashed; None within a minute of the last.
 
         A new code replaces the one before, so only the latest email works. The
         code is bound to the address it goes to (SEC-01): it spends only while
-        that is still the account's email.
+        that is still the account's email. `to` is the address the caller is
+        about to send it to; when it is no longer the account's -- the address
+        changed after the caller read it -- no code is issued (None), so none
+        goes to a mailbox the account has left.
         """
         if purpose not in EMAIL_CODE_PURPOSES:
             raise ValueError(purpose)
@@ -758,6 +761,8 @@ class AuthRepository(MongoStore):
         )
         if not (row or {}).get("email"):
             raise ValueError("tài khoản chưa có email")
+        if to is not None and row["email"] != to:
+            return None
         last = (row.get("email_codes") or {}).get(purpose)
         now = datetime.now(UTC)
         if last and (now - datetime.fromisoformat(last["sent_at"])).total_seconds() < (
@@ -765,8 +770,10 @@ class AuthRepository(MongoStore):
         ):
             return None
         code = f"{secrets.randbelow(10**6):06d}"
-        self.col("account").update_one(
-            {"account_id": account_id},
+        # On the address just read: a change racing this one leaves no code bound
+        # to an address it was not sent to.
+        issued = self.col("account").update_one(
+            {"account_id": account_id, "email": row["email"]},
             {
                 "$set": {
                     f"email_codes.{purpose}": {
@@ -781,7 +788,7 @@ class AuthRepository(MongoStore):
                 }
             },
         )
-        return code
+        return code if issued.matched_count == 1 else None
 
     def _spend_email_code(
         self,
@@ -1097,7 +1104,7 @@ class AuthRepository(MongoStore):
 
     def adopt_by_email(
         self, account_id: str, provider: str, subject_hash: str, email: str | None = None
-    ) -> bool:
+    ) -> bool | None:
         """Join a Google sign-in to the account that already has its verified email (D071).
 
         Google has proved the address belongs to whoever is signing in. If the
@@ -1112,28 +1119,44 @@ class AuthRepository(MongoStore):
         since codes are bound to their address, means proved for this one.
         Anything else is a takeover: password replaced, codes by email dropped,
         every session ended.
+
+        The link and the takeover are each one update conditioned on that
+        address, so an account that moves to another address meanwhile is not
+        touched at all: nothing linked, nothing reset. Returns None then.
         """
         row = self.get(account_id)
         if row is None:
             raise KeyError(account_id)
-        self.link_identity(account_id, provider, subject_hash)
+        owner = self.account_by_identity(provider, subject_hash)
+        if owner is not None and owner["account_id"] != account_id:
+            raise IdentityTaken(provider)
         accounts = self.col("account")
-        kept = {"account_id": account_id, "email_verified": 1}
+        at: dict[str, object] = {"account_id": account_id}
         if email:
-            kept["email"] = contact.normalize_email(email)
-        if accounts.find_one(kept, {"_id": 1}) is not None:
-            return False
-        accounts.update_one(
-            {"account_id": account_id},
-            {
-                "$set": {
-                    "email_verified": 1,
-                    "password_hash": passwords.hash_password(secrets.token_urlsafe(32)),
-                    "must_change_password": 0,
+            at["email"] = contact.normalize_email(email)
+        link = {"provider": provider, "subject_hash": subject_hash, "linked_at": _now()}
+        accounts.update_one(at, {"$pull": {"identities": {"provider": provider}}})
+        try:
+            kept = accounts.update_one({**at, "email_verified": 1}, {"$push": {"identities": link}})
+            if kept.matched_count == 1:
+                return False
+            taken = accounts.update_one(
+                {**at, "email_verified": {"$ne": 1}},
+                {
+                    "$push": {"identities": link},
+                    "$set": {
+                        "email_verified": 1,
+                        "password_hash": passwords.hash_password(secrets.token_urlsafe(32)),
+                        "must_change_password": 0,
+                    },
+                    "$unset": {"email_codes": ""},
                 },
-                "$unset": {"email_codes": ""},
-            },
-        )
+            )
+        except IntegrityError as e:
+            # Linked to another account between the check and the update.
+            raise IdentityTaken(provider) from e
+        if taken.matched_count == 0:
+            return None
         self.revoke_sessions(account_id)
         return True
 

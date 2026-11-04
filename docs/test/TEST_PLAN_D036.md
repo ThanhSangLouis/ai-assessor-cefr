@@ -71,6 +71,7 @@ Tiêu chí chấp nhận AC-74.1..AC-74.8 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-GG-I05 | `test_a_code_from_the_old_address_does_not_make_google_trust_the_new` | FR-74 | SEC-01: mã gửi tới email cũ không xác minh được email mới sau khi đổi; Google đăng nhập bằng email mới coi tài khoản là chưa xác minh |
 | TC-GG-I06 | `test_google_takes_over_an_unverified_account_and_ends_the_old_way_in` | FR-74 | SEC-01: tài khoản chưa xác minh bị Google tiếp quản: mật khẩu cũ hết hiệu lực, mọi phiên cũ bị thu hồi |
 | TC-GG-I07 | `test_google_joins_an_account_verified_at_that_address` | FR-74 | SEC-01: tài khoản đã xác minh đúng địa chỉ Google xác nhận thì được liên kết, mật khẩu và phiên giữ nguyên |
+| TC-GG-I08 | `test_google_joins_nothing_when_the_account_left_the_address_meanwhile` | FR-74 | SEC-01: tài khoản rời địa chỉ Google xác nhận giữa lúc tra và lúc liên kết: không liên kết, không thay mật khẩu, không thu hồi phiên |
 
 ### Tầng 3 — E2E (`tests/e2e/test_google_setup_e2e.py`)
 

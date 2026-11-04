@@ -231,3 +231,26 @@ def test_a_code_bound_to_another_address_or_late_is_refused(m):
     fresh = auth.issue_email_code(aid, "verify")
     assert auth.verify_email(aid, fresh) is True
     assert auth.verify_email(aid, fresh) is False  # spent
+
+
+@pytest.mark.integration
+def test_a_code_is_never_sent_to_an_address_the_account_has_left(m):
+    """Codex review: the row `send_code` holds may be older than the account.
+
+    The address changes between reading the row and issuing the code, as a
+    racing change of contact would: no code may go to the old mailbox, since
+    whoever reads it there could spend it on the new address.
+    """
+    c = _signup(m)
+    auth = m.app.state.auth_repo
+    aid = c.get("/api/v1/me").json()["account_id"]
+    accounts = auth.col("account")
+    accounts.update_one({"account_id": aid}, {"$unset": {"email_codes": ""}})
+    stale = auth.get(aid)
+    assert stale["email"] == EMAIL
+    accounts.update_one({"account_id": aid}, {"$set": {"email": OTHER_EMAIL}})
+    before = len(outbox().sent)
+    email_api.send_code(stale, "verify")
+    assert [e.to for e in outbox().sent[before:]] == []
+    held = accounts.find_one({"account_id": aid}, {"email_codes": 1}).get("email_codes") or {}
+    assert "verify" not in held
