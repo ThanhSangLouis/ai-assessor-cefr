@@ -113,10 +113,10 @@ def standalone(
     def readiness() -> JSONResponse:
         try:
             checks = ready() if ready else {}
-        except Exception as e:  # noqa: BLE001 - report the failure, never raise here
-            return JSONResponse(
-                {"status": "degraded", "service": name, "error": str(e)}, status_code=503
-            )
+        except Exception:  # noqa: BLE001 - report the failure, never raise here
+            # Public route: the reason goes to the log, not to whoever asked.
+            logger.warning("readiness: %s failed", name, exc_info=True)
+            return JSONResponse({"status": "degraded", "service": name}, status_code=503)
         return JSONResponse({"status": "ready", "service": name, "checks": checks})
 
     return app

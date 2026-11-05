@@ -410,6 +410,8 @@ Luật 91/2025/QH15.
 | `AICEFR_MODEL_DIR` | `../aicefr-models` | thư mục artifact mô hình chấm (ngoài Git) |
 | `AICEFR_UPLOADS` | `uploads` | thư mục chứa file ghi âm |
 | `AICEFR_MAX_UPLOAD` | 25 MiB | giới hạn kích thước tệp |
+| `AICEFR_MAX_DECODED_BYTES` | 126720000 (~121 MiB) | trần bộ nhớ PCM mono sau giải mã (SEC-02); `core` và `speech` phải cùng giá trị |
+| `AICEFR_LIVE_RECHECK` | 30 | số giây giữa hai lần luồng sự kiện kiểm tra lại phiên (SEC-05) |
 | `AICEFR_JOB_MODE` | `threadpool` | `inline` để chấm đồng bộ, tiện gỡ lỗi |
 | `AICEFR_MAX_JOBS` | 2 | số bài chấm song song |
 

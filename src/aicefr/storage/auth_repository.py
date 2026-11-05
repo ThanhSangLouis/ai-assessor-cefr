@@ -14,7 +14,7 @@ import os
 import re
 import secrets
 import uuid
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -62,6 +62,7 @@ INDEXES = {
     "session": [(("token_hash",), True), (("account_id",), False)],
 }
 SETTING = "identity."  # this part's keys in `system`
+SESSION_KEY = "session_jwt"  # the key session JWTs are signed with (D091)
 
 # Every field of an account document, so a reader gets None for one never set,
 # as it got NULL from a column.
@@ -425,11 +426,14 @@ class AuthRepository(MongoStore):
 
         A changed email is no longer one Google vouched for, so it loses its
         verified mark until a Google sign-in with that address restores it.
+        SEC-01: in the same update every code sent by email (verify and reset)
+        is dropped: it went to the old mailbox and proves nothing about the new.
         """
         row = self.get(account_id)
         if row is None:
             raise KeyError(account_id)
         changes: dict[str, object] = {}
+        update: dict[str, dict] = {}
         if full_name is not None:
             changes["full_name"] = contact.normalize_name(full_name)
         if email is not None:
@@ -439,9 +443,11 @@ class AuthRepository(MongoStore):
                 if other is not None and other["account_id"] != account_id:
                     raise EmailTaken(email)
                 changes.update(email=email, email_verified=0)
+                update["$unset"] = {"email_codes": ""}
         if changes:
+            update["$set"] = changes
             try:
-                self.col("account").update_one({"account_id": account_id}, {"$set": changes})
+                self.col("account").update_one({"account_id": account_id}, update)
             except IntegrityError as e:
                 raise EmailTaken(email) from e
         return self.get(account_id)
@@ -492,8 +498,10 @@ class AuthRepository(MongoStore):
         Shared by the password and the code sent by email (D079): both are
         guesses at a secret, so both count towards, and are stopped by, one lockout.
         """
-        row = self.by_sign_in_name(identifier)
+        return self._check_lock(self.by_sign_in_name(identifier))
 
+    def _check_lock(self, row: dict | None) -> dict | None:
+        """The row with an expired lockout cleared; AccountLocked inside a live one."""
         # Clear the counter once the lock window has passed.
         #
         # Only a successful login reset it before, so after one lockout the
@@ -516,9 +524,34 @@ class AuthRepository(MongoStore):
             raise AccountLocked(row["locked_until"])
         return row
 
-    def record_failure(self, account_id: str) -> None:
-        """A wrong secret given while signed in (a password check on the account page)."""
-        self._record_failure(account_id)
+    def reauthenticate(self, account_id: str, raw_password: str) -> None:
+        """Check the password of a signed-in account before a sensitive change (SEC-03).
+
+        Raises WrongPassword or AccountLocked; returns None when the password is
+        right. Shares the login's counter and lockout (NFR-07): a session must
+        not be an unthrottled way to guess the password, so a wrong one counts
+        as a failed login and, while the account is locked, even the right one
+        is refused. The counter goes up with an atomic $inc, so guesses sent at
+        once all count; a right password resets it only if no lock was set
+        meanwhile, so a guess racing the lock does not slip through.
+        """
+        row = self.get(account_id)
+        if row is None or row["disabled"]:
+            passwords.waste_equivalent_time(raw_password)
+            raise WrongPassword(account_id)
+        self._check_lock(row)
+        if not passwords.verify_password(raw_password, row["password_hash"]):
+            self._record_failure(account_id)
+            raise WrongPassword(account_id)
+        cleared = self.col("account").update_one(
+            {
+                "account_id": account_id,
+                "$or": [{"locked_until": None}, {"locked_until": {"$lte": _now()}}],
+            },
+            {"$set": {"failed_attempts": 0, "locked_until": None}},
+        )
+        if cleared.matched_count == 0:
+            raise AccountLocked((self.get(account_id) or {}).get("locked_until"))
 
     def _record_failure(self, account_id: str) -> None:
         """Tang bo dem NGUYEN TU va khoa ngay khi cham nguong.
@@ -547,26 +580,38 @@ class AuthRepository(MongoStore):
     def _open_session(
         self, account_id: str, device: str | None = None, method: str = "password"
     ) -> str:
-        token = session_tokens.new_token()
+        sid = session_tokens.new_token()
+        expires_at = session_tokens.new_expiry()
         self.col("session").insert_one(
             {
-                "token_hash": session_tokens.hash_token(token),
+                "token_hash": session_tokens.hash_token(sid),
                 "account_id": account_id,
-                "expires_at": session_tokens.new_expiry(),
+                "expires_at": expires_at,
                 "created_at": _now(),
                 "device": device,
                 "method": method,
             }
         )
-        return token
+        return session_tokens.encode_jwt(self.secret(SESSION_KEY), account_id, sid, expires_at)
 
     # ---------- sessions ----------
 
+    def _claims(self, token: str | None) -> dict | None:
+        return session_tokens.decode_jwt(self.secret(SESSION_KEY), token)
+
+    def session_hash(self, token: str | None) -> str:
+        """The stored key of the session a token stands for, or "" for no valid token."""
+        claims = self._claims(token)
+        return session_tokens.hash_token(claims["sid"]) if claims else ""
+
     def account_for_token(self, token: str | None) -> Account | None:
         """Return the account matching the session token, or None if it is invalid."""
-        if not token:
+        claims = self._claims(token)
+        if claims is None:
             return None
-        found = self.col("session").find_one({"token_hash": session_tokens.hash_token(token)})
+        found = self.col("session").find_one(
+            {"token_hash": session_tokens.hash_token(claims["sid"]), "account_id": claims["sub"]}
+        )
         if found is None:
             return None
         row = _account(
@@ -596,16 +641,16 @@ class AuthRepository(MongoStore):
     def logout(self, token: str | None) -> None:
         """Delete the session. AC-32.4: after logout the old cookie must return 401
         immediately."""
-        if not token:
-            return
-        self.col("session").delete_one({"token_hash": session_tokens.hash_token(token)})
+        key = self.session_hash(token)
+        if key:
+            self.col("session").delete_one({"token_hash": key})
 
     def purge_expired_sessions(self) -> int:
         return self.col("session").delete_many({"expires_at": {"$lte": _now()}}).deleted_count
 
     def revoke_sessions(self, account_id: str, keep_token: str | None = None) -> int:
         """End every session of an account except, optionally, the caller's own."""
-        keep = session_tokens.hash_token(keep_token) if keep_token else ""
+        keep = self.session_hash(keep_token)
         return (
             self.col("session")
             .delete_many({"account_id": account_id, "token_hash": {"$ne": keep}})
@@ -624,14 +669,8 @@ class AuthRepository(MongoStore):
         is about to replace. Every other session ends, because the reason to
         change a password is often that somebody else knows it.
         """
+        self.reauthenticate(account_id, current)
         row = self.get(account_id)
-        if row is None or row["disabled"]:
-            raise WrongPassword(account_id)
-        if row["locked_until"] and not session_tokens.is_expired(row["locked_until"]):
-            raise AccountLocked(row["locked_until"])
-        if not passwords.verify_password(current, row["password_hash"]):
-            self._record_failure(account_id)
-            raise WrongPassword(account_id)
         passwords.check_new_password(new, row["pseudonym"], current)
         self.col("account").update_one(
             {"account_id": account_id},
@@ -718,27 +757,41 @@ class AuthRepository(MongoStore):
 
     # ---------- email codes, verification, reminders (D079) ----------
 
-    def issue_email_code(self, account_id: str, purpose: str) -> str | None:
+    def issue_email_code(self, account_id: str, purpose: str, to: str | None = None) -> str | None:
         """A new six-digit code for `purpose`, kept hashed; None within a minute of the last.
 
-        A new code replaces the one before, so only the latest email works.
+        A new code replaces the one before, so only the latest email works. The
+        code is bound to the address it goes to (SEC-01): it spends only while
+        that is still the account's email. `to` is the address the caller is
+        about to send it to; when it is no longer the account's -- the address
+        changed after the caller read it -- no code is issued (None), so none
+        goes to a mailbox the account has left.
         """
         if purpose not in EMAIL_CODE_PURPOSES:
             raise ValueError(purpose)
-        row = self.col("account").find_one({"account_id": account_id}, {"email_codes": 1})
-        last = ((row or {}).get("email_codes") or {}).get(purpose)
+        row = self.col("account").find_one(
+            {"account_id": account_id}, {"email_codes": 1, "email": 1}
+        )
+        if not (row or {}).get("email"):
+            raise ValueError("tài khoản chưa có email")
+        if to is not None and row["email"] != to:
+            return None
+        last = (row.get("email_codes") or {}).get(purpose)
         now = datetime.now(UTC)
         if last and (now - datetime.fromisoformat(last["sent_at"])).total_seconds() < (
             EMAIL_CODE_GAP_S
         ):
             return None
         code = f"{secrets.randbelow(10**6):06d}"
-        self.col("account").update_one(
-            {"account_id": account_id},
+        # On the address just read: a change racing this one leaves no code bound
+        # to an address it was not sent to.
+        issued = self.col("account").update_one(
+            {"account_id": account_id, "email": row["email"]},
             {
                 "$set": {
                     f"email_codes.{purpose}": {
                         "hash": passwords.hash_password(code),
+                        "email": row["email"],
                         "sent_at": now.isoformat(timespec="seconds"),
                         "expires_at": (now + timedelta(minutes=EMAIL_CODE_MINUTES)).isoformat(
                             timespec="seconds"
@@ -748,29 +801,60 @@ class AuthRepository(MongoStore):
                 }
             },
         )
-        return code
+        return code if issued.matched_count == 1 else None
 
-    def _spend_email_code(self, account_id: str, purpose: str, code: str) -> bool:
-        """Whether `code` is the live one for `purpose`; a right one is spent, a wrong counts."""
-        row = self.col("account").find_one({"account_id": account_id}, {"email_codes": 1})
+    def _spend_email_code(
+        self,
+        account_id: str,
+        purpose: str,
+        code: str,
+        then: Callable[[], dict] | None = None,
+    ) -> bool:
+        """Whether `code` is the live one for `purpose`; a right one is spent, a wrong counts.
+
+        SEC-01: a code is live only while the account's email is still the
+        address it was sent to; a code issued before that rule, bound to no
+        address, is dead. `then` gives the fields to set when the code is right;
+        they are written in the same conditional update that spends it -- code,
+        address and expiry checked by the database, not read then written -- so
+        no change of address can slip between the check and the effect.
+        """
+        row = self.col("account").find_one(
+            {"account_id": account_id}, {"email_codes": 1, "email": 1}
+        )
         held = ((row or {}).get("email_codes") or {}).get(purpose)
         typed = "".join(ch for ch in str(code) if ch.isdigit())
         if (
             not held
             or held["tries"] >= EMAIL_CODE_TRIES
             or session_tokens.is_expired(held["expires_at"])
+            or not held.get("email")
+            or held["email"] != row.get("email")
         ):
             passwords.waste_equivalent_time(typed)
             return False
         if not passwords.verify_password(typed, held["hash"]):
             self.col("account").update_one(
-                {"account_id": account_id}, {"$inc": {f"email_codes.{purpose}.tries": 1}}
+                {"account_id": account_id, f"email_codes.{purpose}.hash": held["hash"]},
+                {"$inc": {f"email_codes.{purpose}.tries": 1}},
             )
             return False
-        # Conditional on the hash just checked: of two requests racing, one spends it.
+        update: dict[str, dict] = {"$unset": {f"email_codes.{purpose}": ""}}
+        if then is not None:
+            update["$set"] = then()
+        # Conditional on the hash just checked: of two requests racing, one spends
+        # it; and on the address and the clock, so a code moved away from or
+        # gone stale meanwhile spends nothing.
         done = self.col("account").update_one(
-            {"account_id": account_id, f"email_codes.{purpose}.hash": held["hash"]},
-            {"$unset": {f"email_codes.{purpose}": ""}},
+            {
+                "account_id": account_id,
+                "email": held["email"],
+                f"email_codes.{purpose}.hash": held["hash"],
+                f"email_codes.{purpose}.email": held["email"],
+                f"email_codes.{purpose}.tries": {"$lt": EMAIL_CODE_TRIES},
+                f"email_codes.{purpose}.expires_at": {"$gt": _now()},
+            },
+            update,
         )
         return done.modified_count == 1
 
@@ -788,34 +872,32 @@ class AuthRepository(MongoStore):
         if row is None or row["disabled"] or not row.get("email"):
             passwords.waste_equivalent_time(code)
             return None
-        if not self._spend_email_code(row["account_id"], "reset", code):
+        now = _now()
+        if not self._spend_email_code(
+            row["account_id"],
+            "reset",
+            code,
+            then=lambda: {
+                "password_hash": passwords.hash_password(new_password),
+                "must_change_password": 0,
+                "password_changed_at": now,
+                "last_login_at": now,
+                "failed_attempts": 0,
+                "locked_until": None,
+                "email_verified": 1,
+            },
+        ):
             self._record_failure(row["account_id"])
             return None
-        now = _now()
-        self.col("account").update_one(
-            {"account_id": row["account_id"]},
-            {
-                "$set": {
-                    "password_hash": passwords.hash_password(new_password),
-                    "must_change_password": 0,
-                    "password_changed_at": now,
-                    "last_login_at": now,
-                    "failed_attempts": 0,
-                    "locked_until": None,
-                    "email_verified": 1,
-                }
-            },
-        )
         self.revoke_sessions(row["account_id"])
         token = self._open_session(row["account_id"], device, method="email_code")
         return token, self.get(row["account_id"])
 
     def verify_email(self, account_id: str, code: str) -> bool:
-        """Mark the account's email verified with the code sent to it."""
-        if not self._spend_email_code(account_id, "verify", code):
-            return False
-        self.col("account").update_one({"account_id": account_id}, {"$set": {"email_verified": 1}})
-        return True
+        """Mark the account's email verified with the code sent to that same address."""
+        return self._spend_email_code(
+            account_id, "verify", code, then=lambda: {"email_verified": 1}
+        )
 
     def set_email_reminders(self, account_id: str, on: bool) -> None:
         self.col("account").update_one(
@@ -1033,7 +1115,9 @@ class AuthRepository(MongoStore):
             return aid
         raise RuntimeError("không tạo được mã tài khoản ngẫu nhiên chưa dùng")
 
-    def adopt_by_email(self, account_id: str, provider: str, subject_hash: str) -> bool:
+    def adopt_by_email(
+        self, account_id: str, provider: str, subject_hash: str, email: str | None = None
+    ) -> bool | None:
         """Join a Google sign-in to the account that already has its verified email (D071).
 
         Google has proved the address belongs to whoever is signing in. If the
@@ -1041,22 +1125,57 @@ class AuthRepository(MongoStore):
         may have typed it: the password is replaced by an unknown one and every
         session ends, so only the address's owner, via
         Google, gets in. Returns whether that reset happened.
+
+        SEC-01: "verified" is decided by the database at the moment of joining,
+        on the address Google vouched for (`email`, when given): the account
+        must still have that address and still be marked verified -- which,
+        since codes are bound to their address, means proved for this one.
+        Anything else is a takeover: password replaced, codes by email dropped,
+        every session ended.
+
+        The link and the takeover are each one update conditioned on that
+        address and on the links read here, which it replaces whole (the old
+        link of this provider dropped, the new one added): an account that
+        moves to another address, or whose links change, meanwhile is not
+        touched at all -- nothing linked, nothing unlinked, nothing reset.
+        Returns None then.
         """
-        row = self.get(account_id)
-        if row is None:
+        accounts = self.col("account")
+        raw = accounts.find_one({"account_id": account_id}, {"identities": 1})
+        if raw is None:
             raise KeyError(account_id)
-        self.link_identity(account_id, provider, subject_hash)
-        reset = not row["email_verified"]
-        changes: dict[str, object] = {"email_verified": 1}
-        if reset:
-            changes.update(
-                password_hash=passwords.hash_password(secrets.token_urlsafe(32)),
-                must_change_password=0,
+        owner = self.account_by_identity(provider, subject_hash)
+        if owner is not None and owner["account_id"] != account_id:
+            raise IdentityTaken(provider)
+        held = raw.get("identities")
+        at: dict[str, object] = {"account_id": account_id, "identities": held}
+        if email:
+            at["email"] = contact.normalize_email(email)
+        link = {"provider": provider, "subject_hash": subject_hash, "linked_at": _now()}
+        links = [i for i in held or [] if i.get("provider") != provider] + [link]
+        try:
+            kept = accounts.update_one({**at, "email_verified": 1}, {"$set": {"identities": links}})
+            if kept.matched_count == 1:
+                return False
+            taken = accounts.update_one(
+                {**at, "email_verified": {"$ne": 1}},
+                {
+                    "$set": {
+                        "identities": links,
+                        "email_verified": 1,
+                        "password_hash": passwords.hash_password(secrets.token_urlsafe(32)),
+                        "must_change_password": 0,
+                    },
+                    "$unset": {"email_codes": ""},
+                },
             )
-        self.col("account").update_one({"account_id": account_id}, {"$set": changes})
-        if reset:
-            self.revoke_sessions(account_id)
-        return reset
+        except IntegrityError as e:
+            # Linked to another account between the check and the update.
+            raise IdentityTaken(provider) from e
+        if taken.matched_count == 0:
+            return None
+        self.revoke_sessions(account_id)
+        return True
 
     def fill_contact(self, account_id: str, email: str | None, full_name: str | None) -> None:
         """Fill what an older Google account lacks from what Google says, never overwriting."""

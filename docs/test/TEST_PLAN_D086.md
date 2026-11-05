@@ -45,6 +45,10 @@
 | TC-LV-U05 | `test_an_event_crosses_processes_unchanged_and_the_channel_follows_the_bus` | FR-95 | Sự kiện qua Redis không đổi; bus Redis thì kênh Redis, không thì trong tiến trình |
 | TC-LV-U06 | `test_the_gateway_streams_the_events_to_core_unbuffered` | AC-95.4 | Gateway chuyển luồng tới `core`, có `auth_request`, tắt đệm và chờ đọc 1 giờ; chỉ riêng đường này |
 | TC-LV-U07 | `test_stopping_the_process_ends_every_stream_at_once_even_a_full_one` | FR-95 | SIGTERM đóng mọi luồng ngay, kể cả luồng có hàng đợi đầy |
+| TC-LV-U08 | `test_a_stream_whose_session_holds_keeps_its_events_and_heartbeats` | FR-95 | SEC-05: phiên còn hiệu lực thì luồng vẫn nhận sự kiện và nhịp giữ kết nối |
+| TC-LV-U09 | `test_a_stream_ends_soon_after_its_session_does_and_carries_nothing_after` | FR-95 | SEC-05: phiên hết hiệu lực thì luồng đóng, không mang sự kiện nào sau đó |
+| TC-LV-U10 | `test_a_stream_rechecks_its_session_on_its_own_while_no_event_comes` | FR-95 | SEC-05: luồng tự kiểm tra lại phiên theo `AICEFR_LIVE_RECHECK` khi không có sự kiện |
+| TC-LV-U11 | `test_a_session_check_that_fails_ends_the_stream_rather_than_keeping_it` | FR-95 | SEC-05: kiểm tra phiên lỗi thì đóng luồng thay vì giữ mở |
 
 ### 4.2. Integration — `tests/test_d086_live_events.py`
 
@@ -57,6 +61,10 @@
 | TC-LV-I05 | `test_a_response_closed_by_the_timeout_sweep_tells_its_owner` | FR-95 | Bài quá hạn bị đóng `FAILED` cũng báo học viên |
 | TC-LV-I06 | `test_an_event_published_in_one_process_reaches_the_streams_of_another` | FR-95 | Với Redis thật: sự kiện phát ở tiến trình này tới luồng ở tiến trình khác |
 | TC-LV-I07 | `test_a_failed_lookup_of_whom_to_tell_never_fails_the_action` | AC-95.5 | Tra chủ bài hay giảng viên của lớp lỗi: bài vẫn được chấm và lưu một lần, quyết định không thành 500 |
+| TC-LV-I08 | `test_a_session_that_holds_keeps_its_stream_and_its_events` | FR-95 | SEC-05: phiên hợp lệ vẫn giữ luồng và nhận sự kiện |
+| TC-LV-I09 | `test_signing_out_ends_the_open_stream_before_it_tells_anything_more` | FR-95 | SEC-05: đăng xuất thì luồng đang mở đóng trước khi báo thêm sự kiện nào |
+| TC-LV-I10 | `test_disabling_the_account_ends_its_open_stream` | FR-95 | SEC-05: vô hiệu hóa tài khoản thì luồng đang mở đóng |
+| TC-LV-I11 | `test_a_new_role_ends_the_stream_opened_under_the_old_one` | FR-95 | SEC-05: đổi vai trò thì luồng mở dưới vai trò cũ đóng |
 
 ## 5. Kết quả
 

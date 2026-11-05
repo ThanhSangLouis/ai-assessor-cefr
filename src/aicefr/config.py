@@ -103,6 +103,14 @@ class Settings:
     max_upload_bytes: int = field(
         default_factory=lambda: _int("AICEFR_MAX_UPLOAD", 25 * 1024 * 1024)
     )
+    # SEC-02: tran bo nho cua mang PCM float32 mono sau giai ma (byte), kiem tu
+    # header TRUOC khi cap phat. Mac dinh = 330 s (MAX_DECODE_SECONDS) x 96 kHz x
+    # 4 byte ~ 121 MiB: du cho ban ghi 96 kHz (ke ca stereo, vi tron mono theo
+    # khoi) dai toi 330 s, trong khi header 192 kHz x 8 kenh (~1,9 GiB) bi tu
+    # choi ngay. core va speech phai cung gia tri (docker-compose dat o x-bus).
+    max_decoded_pcm_bytes: int = field(
+        default_factory=lambda: _int("AICEFR_MAX_DECODED_BYTES", 330 * 96_000 * 4)
+    )
     max_concurrent_jobs: int = field(default_factory=lambda: _int("AICEFR_MAX_JOBS", 2))
     # "threadpool" runs jobs on a bounded worker pool; "inline" runs them on the
     # calling thread. Tests use inline so they observe a finished result without
@@ -261,6 +269,10 @@ class Settings:
     # a comment every heartbeat keeps proxies from closing it while idle.
     live_max_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_MAX_SECONDS", 900.0))
     live_heartbeat_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_HEARTBEAT", 20.0))
+    # SEC-05: an open stream asks this often (and before each event) whether
+    # the session that opened it still holds, so signing out, a disabled
+    # account or a new role ends it within seconds, not at live_max_s.
+    live_recheck_s: float = field(default_factory=lambda: _float("AICEFR_LIVE_RECHECK", 30.0))
     # D088: Web Push. The VAPID key pair signs every message to a browser's
     # push service (`python -m aicefr.maintenance_cli vapid` makes one); the
     # subject is a contact the push services may write to. No keys, no push.

@@ -117,8 +117,24 @@ def test_a_flow_survives_the_cookie_and_expires_after_ten_minutes():
 
 def test_only_same_site_paths_are_kept_as_where_to_go_next():
     assert google.safe_next("/practice?x=1") == "/practice?x=1"
+    assert google.safe_next("/my-progress?q=a%20b#top") == "/my-progress?q=a%20b#top"
     for bad in ("https://evil.example", "//evil.example", "/\\evil.example", "javascript:x", None):
         assert google.safe_next(bad) == ""
+    # SEC-04: what a browser strips (tab, newline) or reads as "/" (a backslash),
+    # written plainly or percent-encoded, must not turn into "//evil.example".
+    for bad in (
+        "/\t/evil.example",
+        "/\n/evil.example",
+        "/\r/evil.example",
+        "/ /evil.example",
+        "/\x00/evil.example",
+        "/%09/evil.example",
+        "/%5Cevil.example",
+        "/%2F%2Fevil.example",
+        "/%2f/evil.example",
+        "\\/evil.example",
+    ):
+        assert google.safe_next(bad) == "", repr(bad)
 
 
 def test_a_failed_exchange_says_so_without_leaking_the_reason():

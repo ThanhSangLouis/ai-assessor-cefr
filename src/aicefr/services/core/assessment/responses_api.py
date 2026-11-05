@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from aicefr.api.deps import require_login
 from aicefr.api.schemas import QueueItem, SubmitResponse
-from aicefr.audio.decoder import SNIFF_BYTES, sniff
+from aicefr.audio.decoder import SNIFF_BYTES, DecodeBudgetExceeded, probe_budget, sniff
 from aicefr.contracts import (
     ProcessingRequest,
     ReasonCode,
@@ -101,6 +101,18 @@ async def submit_response(
         raise HTTPException(
             415, "không nhận ra định dạng audio. Hãy nộp file wav, flac, mp3, m4a hoặc webm"
         )
+
+    # SEC-02: WAV/FLAC/OGG khai trong header bao nhieu kenh, Hz va khung; mot file
+    # nen nho co the hua hang GB float32. Chi doc header -- khong mot mau nao --
+    # va tu choi truoc khi luu blob hay xep hang. Dinh dang qua ffmpeg da bi -t/-fs
+    # chan o may cham.
+    if kind in ("wav", "flac", "ogg"):
+        try:
+            probe_budget(tmp_path)
+        except DecodeBudgetExceeded as e:
+            tmp_path.unlink(missing_ok=True)
+            logger.warning("audio.decode_rejected request=%s %s", rid, e.log_fields())
+            raise HTTPException(413, str(e)) from e
 
     # The rest -- the blob store, the database, the bus, the metering call --
     # blocks. Run on the event loop, it held every other request of this

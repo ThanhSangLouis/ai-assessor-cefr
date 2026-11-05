@@ -7,7 +7,10 @@ bug from coming back.
 
 from __future__ import annotations
 
+import base64
 import io
+import json
+from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pytest
@@ -15,9 +18,9 @@ import soundfile as sf
 from dbutil import teach
 from fastapi.testclient import TestClient
 
-from aicefr.auth import passwords
+from aicefr.auth import passwords, sessions
 from aicefr.auth.sessions import COOKIE_NAME
-from aicefr.storage.auth_repository import MAX_FAILED_ATTEMPTS, Role
+from aicefr.storage.auth_repository import MAX_FAILED_ATTEMPTS, SESSION_KEY, Role
 
 PASSWORD = "matkhau-check-thu"
 
@@ -185,6 +188,63 @@ def test_database_never_stores_raw_session_token(app) -> None:
     assert len(stored_hashes) == 1
 
 
+def _part(token: str, i: int) -> dict:
+    text = token.split(".")[i]
+    return json.loads(base64.urlsafe_b64decode(text + "=" * (-len(text) % 4)))
+
+
+def _with(token: str, i: int, value: dict) -> str:
+    parts = token.split(".")
+    parts[i] = sessions._part(value)
+    return ".".join(parts)
+
+
+def test_the_session_cookie_is_a_jwt_naming_the_account_and_ending_within_8_hours(app) -> None:
+    """D091: the cookie is an HS256 JWT; `sub` is the account, `exp` at most 8 hours away."""
+    c = login_as(app, "SV-001", "student")
+    token = c.cookies[COOKIE_NAME]
+    assert _part(token, 0) == {"alg": "HS256", "typ": "JWT"}
+    claims = _part(token, 1)
+    me = c.get("/api/v1/me").json()
+    assert claims["sub"] == me["account_id"]
+    left = claims["exp"] - datetime.now(UTC).timestamp()
+    assert 0 < left <= sessions.LIFETIME_HOURS * 3600
+
+
+def test_a_token_with_a_changed_claim_or_another_algorithm_is_refused(app) -> None:
+    """Rewriting `sub`, or claiming "alg": "none", breaks the signature: 401."""
+    other = login_as(app, "SV-002", "student").get("/api/v1/me").json()["account_id"]
+    c = login_as(app, "SV-001", "student")
+    token = c.cookies[COOKIE_NAME]
+    for forged in (
+        _with(token, 1, {**_part(token, 1), "sub": other}),
+        _with(token, 0, {"alg": "none", "typ": "JWT"}),
+        token.rsplit(".", 1)[0] + ".",
+    ):
+        fresh = TestClient(app)
+        fresh.cookies.set(COOKIE_NAME, forged)
+        assert fresh.get("/api/v1/me").status_code == 401
+
+
+def test_an_expired_token_is_refused_even_while_its_session_row_exists(app) -> None:
+    """`exp` is checked on its own: a token signed with the right key but past its end is 401."""
+    c = login_as(app, "SV-001", "student")
+    claims = _part(c.cookies[COOKIE_NAME], 1)
+    ended = (datetime.now(UTC) - timedelta(minutes=1)).isoformat(timespec="seconds")
+    key = app.state.auth_repo.secret(SESSION_KEY)
+    fresh = TestClient(app)
+    fresh.cookies.set(COOKIE_NAME, sessions.encode_jwt(key, claims["sub"], claims["sid"], ended))
+    assert fresh.get("/api/v1/me").status_code == 401
+
+
+def test_a_valid_jwt_stops_working_once_its_session_is_revoked(app) -> None:
+    """BR-09 still holds with JWT: ending every session makes a still-unexpired token 401."""
+    c = login_as(app, "SV-001", "student")
+    account_id = c.get("/api/v1/me").json()["account_id"]
+    assert app.state.auth_repo.revoke_sessions(account_id) == 1
+    assert c.get("/api/v1/me").status_code == 401
+
+
 # ---------- account lockout ----------
 
 
@@ -232,6 +292,89 @@ def test_error_does_not_distinguish_unknown_user_from_wrong_password(app) -> Non
     b = c.post("/api/v1/auth/login", json={"pseudonym": "khong-ton-tai", "password": "sai"})
     assert a.status_code == b.status_code == 401
     assert a.json()["detail"] == b.json()["detail"]
+
+
+# ---------- re-entering the password while signed in (SEC-03) ----------
+# Changing the sign-in email asks for the password again. Those guesses count
+# towards the same lockout as a login: a session must not be an unthrottled
+# way to try passwords.
+
+
+def _with_email(app) -> TestClient:
+    c = login_as(app, "SV-001", "student")
+    r = c.patch("/api/v1/me/contact", json={"email": "sv1@example.edu.vn"})
+    assert r.status_code == 200, r.text  # a first email needs no password
+    return c
+
+
+def _move(c: TestClient, password: str):
+    return c.patch(
+        "/api/v1/me/contact", json={"email": "moi@example.edu.vn", "current_password": password}
+    )
+
+
+def test_wrong_passwords_on_the_email_change_lock_the_account(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        assert _move(c, "sai").status_code == 403
+    assert _move(c, "sai").status_code == 429
+    # Locked: even the right password is refused, and nothing moved.
+    assert _move(c, PASSWORD).status_code == 429
+    assert app.state.auth_repo.get_by_pseudonym("SV-001")["email"] == "sv1@example.edu.vn"
+    # The login door is shut by the same counter.
+    r = TestClient(app).post(
+        "/api/v1/auth/login", json={"email": "sv1@example.edu.vn", "password": PASSWORD}
+    )
+    assert r.status_code == 429
+
+
+def test_the_email_change_opens_again_when_the_lock_expires(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        _move(c, "sai")
+    repo = app.state.auth_repo
+    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+    # Fifteen minutes later, written into the record instead of waited for.
+    repo.col("account").update_one(
+        {"account_id": aid}, {"$set": {"locked_until": "2000-01-01T00:00:00+00:00"}}
+    )
+    assert _move(c, PASSWORD).status_code == 200
+    row = repo.get(aid)
+    assert row["email"] == "moi@example.edu.vn"
+    assert (row["failed_attempts"], row["locked_until"]) == (0, None)
+
+
+def test_other_profile_changes_need_no_password_even_while_locked(app) -> None:
+    c = _with_email(app)
+    for _ in range(MAX_FAILED_ATTEMPTS):
+        _move(c, "sai")
+    assert c.patch("/api/v1/me/contact", json={"full_name": "Lê Văn B"}).status_code == 200
+    assert c.patch("/api/v1/me/profile", json={"avatar_icon": "star"}).status_code == 200
+
+
+def test_reauthentication_counts_every_concurrent_guess(app) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from aicefr.storage.auth_repository import AccountLocked, WrongPassword
+
+    make_account(app, "SV-001", "student")
+    repo = app.state.auth_repo
+    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+
+    def guess(_):
+        try:
+            repo.reauthenticate(aid, "sai")
+        except (WrongPassword, AccountLocked) as e:
+            return type(e).__name__
+        return "ok"
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(guess, range(8)))
+    assert "ok" not in results
+    row = repo.get(aid)
+    assert row["failed_attempts"] >= MAX_FAILED_ATTEMPTS and row["locked_until"]
+    with pytest.raises(AccountLocked):
+        repo.reauthenticate(aid, PASSWORD)
 
 
 # ---------- audit log ----------

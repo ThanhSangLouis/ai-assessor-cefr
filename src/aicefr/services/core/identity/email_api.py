@@ -70,7 +70,9 @@ def send_code(row: dict, purpose: str) -> str:
     s = svc()
     if s.sender is None:
         return "off"
-    code = s.auth.issue_email_code(row["account_id"], purpose)
+    # Issued only while row["email"] is still the account's, so the code never
+    # goes to an address the account has just left (SEC-01).
+    code = s.auth.issue_email_code(row["account_id"], purpose, to=row["email"])
     if code is None:
         return "wait"
     try:
