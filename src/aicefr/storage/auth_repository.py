@@ -62,6 +62,7 @@ INDEXES = {
     "session": [(("token_hash",), True), (("account_id",), False)],
 }
 SETTING = "identity."  # this part's keys in `system`
+SESSION_KEY = "session_jwt"  # the key session JWTs are signed with (D091)
 
 # Every field of an account document, so a reader gets None for one never set,
 # as it got NULL from a column.
@@ -579,26 +580,38 @@ class AuthRepository(MongoStore):
     def _open_session(
         self, account_id: str, device: str | None = None, method: str = "password"
     ) -> str:
-        token = session_tokens.new_token()
+        sid = session_tokens.new_token()
+        expires_at = session_tokens.new_expiry()
         self.col("session").insert_one(
             {
-                "token_hash": session_tokens.hash_token(token),
+                "token_hash": session_tokens.hash_token(sid),
                 "account_id": account_id,
-                "expires_at": session_tokens.new_expiry(),
+                "expires_at": expires_at,
                 "created_at": _now(),
                 "device": device,
                 "method": method,
             }
         )
-        return token
+        return session_tokens.encode_jwt(self.secret(SESSION_KEY), account_id, sid, expires_at)
 
     # ---------- sessions ----------
 
+    def _claims(self, token: str | None) -> dict | None:
+        return session_tokens.decode_jwt(self.secret(SESSION_KEY), token)
+
+    def session_hash(self, token: str | None) -> str:
+        """The stored key of the session a token stands for, or "" for no valid token."""
+        claims = self._claims(token)
+        return session_tokens.hash_token(claims["sid"]) if claims else ""
+
     def account_for_token(self, token: str | None) -> Account | None:
         """Return the account matching the session token, or None if it is invalid."""
-        if not token:
+        claims = self._claims(token)
+        if claims is None:
             return None
-        found = self.col("session").find_one({"token_hash": session_tokens.hash_token(token)})
+        found = self.col("session").find_one(
+            {"token_hash": session_tokens.hash_token(claims["sid"]), "account_id": claims["sub"]}
+        )
         if found is None:
             return None
         row = _account(
@@ -628,16 +641,16 @@ class AuthRepository(MongoStore):
     def logout(self, token: str | None) -> None:
         """Delete the session. AC-32.4: after logout the old cookie must return 401
         immediately."""
-        if not token:
-            return
-        self.col("session").delete_one({"token_hash": session_tokens.hash_token(token)})
+        key = self.session_hash(token)
+        if key:
+            self.col("session").delete_one({"token_hash": key})
 
     def purge_expired_sessions(self) -> int:
         return self.col("session").delete_many({"expires_at": {"$lte": _now()}}).deleted_count
 
     def revoke_sessions(self, account_id: str, keep_token: str | None = None) -> int:
         """End every session of an account except, optionally, the caller's own."""
-        keep = session_tokens.hash_token(keep_token) if keep_token else ""
+        keep = self.session_hash(keep_token)
         return (
             self.col("session")
             .delete_many({"account_id": account_id, "token_hash": {"$ne": keep}})

@@ -1,16 +1,38 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="SpeakUp">
-  <!-- The product mark (D031), drawn as in templates/_icons.html logo(). A tab
-       strip has no page tokens, so the two themes are spelled out here. -->
+  <!-- Official SpeakUp Mascot Mark (Optimized for square icon & favicon display) -->
   <style>
-    .logo-bubble { fill: #1e3a5f; }
+    .logo-bubble { fill: #ff5722; }
     .logo-bar { fill: #ffffff; }
+    .mascot-casing { fill: #ffffff; stroke: #ff5722; stroke-width: 2.2; }
+    .mascot-screen { fill: #4a1c0d; }
+    .mascot-eye { stroke: #ffffff; stroke-width: 1.2; stroke-linecap: round; fill: none; }
+    .mascot-antenna { fill: #ff5722; }
+    .mascot-ear { fill: #ff5722; }
     @media (prefers-color-scheme: dark) {
-      .logo-bubble { fill: #a9c3e6; }
-      .logo-bar { fill: #0e1724; }
+      .logo-bubble { fill: #ff5722; }
+      .logo-bar { fill: #ffffff; }
+      .mascot-casing { fill: #ffffff; stroke: #ff5722; stroke-width: 2.2; }
     }
   </style>
-  <path class="logo-bubble" d="M9 3h14a7 7 0 0 1 7 7v8a7 7 0 0 1-7 7h-9l-5.4 4.4c-.5.4-1.2.1-1.2-.6v-4a7 7 0 0 1-5.4-6.8v-8a7 7 0 0 1 7-7z"/>
-  <rect class="logo-bar" opacity="0.6" x="6.9" y="13.5" width="4.6" height="7" rx="2.3"/>
-  <rect class="logo-bar" opacity="0.8" x="13.7" y="10" width="4.6" height="10.5" rx="2.3"/>
-  <rect class="logo-bar" x="20.5" y="6.5" width="4.6" height="14" rx="2.3"/>
+  <g transform="translate(0.5, 0.5) scale(1.18)">
+    <!-- Speech Bubble -->
+    <path class="logo-bubble" d="M20.5 1a5.8 5.8 0 0 1 5.8 5.8c0 2.7-1.8 4.9-4.3 5.6l-2.1 1.8c-.4.3-.8 0-.7-.4l.2-1.8a5.8 5.8 0 0 1-4.6-5.2A5.8 5.8 0 0 1 20.5 1z"/>
+    <!-- 3 Soundwave bars -->
+    <rect class="logo-bar" x="17.8" y="4.6" width="1.2" height="4.5" rx="0.6"/>
+    <rect class="logo-bar" x="20.0" y="3.0" width="1.2" height="7.7" rx="0.6"/>
+    <rect class="logo-bar" x="22.2" y="4.4" width="1.2" height="4.9" rx="0.6"/>
+    <!-- Antenna -->
+    <circle class="mascot-antenna" cx="9.5" cy="3.5" r="1.9"/>
+    <rect class="mascot-antenna" x="8.7" y="5.1" width="1.6" height="2.8" rx="0.8"/>
+    <!-- Left & Right Headphones -->
+    <rect class="mascot-ear" x="0.5" y="12.5" width="2.8" height="8" rx="1.4"/>
+    <rect class="mascot-ear" x="17.5" y="12.5" width="2.8" height="8" rx="1.4"/>
+    <!-- Robot Head Casing -->
+    <rect class="mascot-casing" x="2.2" y="7.2" width="16.5" height="16.5" rx="6.0"/>
+    <!-- Dark Screen -->
+    <rect class="mascot-screen" x="4.6" y="10.4" width="11.8" height="10.0" rx="3.8"/>
+    <!-- Smiling Eyes -->
+    <path class="mascot-eye" d="M6.8 15.6a1.5 1.5 0 0 1 2.5 0"/>
+    <path class="mascot-eye" d="M11.5 15.6a1.5 1.5 0 0 1 2.5 0"/>
+  </g>
 </svg>

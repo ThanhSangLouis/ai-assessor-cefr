@@ -37,7 +37,7 @@ from aicefr.api.deps import (
     require_login,
 )
 from aicefr.auth import google, passwords
-from aicefr.auth.sessions import COOKIE_NAME, hash_token
+from aicefr.auth.sessions import COOKIE_NAME
 from aicefr.config import get_settings
 from aicefr.services import Peers
 from aicefr.storage.audit_repository import AuditLog
@@ -262,8 +262,7 @@ def my_sessions(
     auth: AuthRepository = Depends(get_auth_repo),
 ) -> list[dict]:
     """Open sessions of this account; the one making the request is marked `current`."""
-    token = request.cookies.get(COOKIE_NAME)
-    here = hash_token(token)[:16] if token else ""
+    here = auth.session_hash(request.cookies.get(COOKIE_NAME))[:16]
     return [{**s, "current": s["session_id"] == here} for s in auth.sessions(account.account_id)]
 
 
@@ -277,8 +276,8 @@ def end_my_session(
     """End one session of this account, this one included (that is signing out)."""
     if not auth.revoke_session(account.account_id, session_id):
         raise HTTPException(404, "không có phiên này")
-    token = request.cookies.get(COOKIE_NAME)
-    current = bool(token) and hash_token(token)[:16] == session_id
+    here = auth.session_hash(request.cookies.get(COOKIE_NAME))[:16]
+    current = bool(here) and here == session_id
     svc().audit(account.pseudonym, "account.session_revoked", account.account_id, None)
     return {"revoked": True, "current": current}
 

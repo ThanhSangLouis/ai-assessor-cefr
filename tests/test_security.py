@@ -104,10 +104,39 @@ def test_queue_screen_escapes_every_user_value() -> None:
 
 
 def test_login_redirect_stays_on_this_site() -> None:
-    """`?next=` used to accept any URL, including another host."""
+    """`?next=` used to accept any URL, including another host. It now goes through
+    sitePath, which resolves the path against this origin: "//evil.example" and
+    "/\\evil.example" (read by browsers as "//evil.example") are both refused (D092)."""
+    common = pathlib.Path("src/aicefr/api/static/common.js").read_text(encoding="utf-8")
+    assert "url.origin !== location.origin" in common
     source = pathlib.Path("src/aicefr/api/static/login.js").read_text(encoding="utf-8")
-    assert 'startsWith("/")' in source
-    assert 'startsWith("//")' in source
+    assert "location.assign(location.origin + path)" in source
+
+
+def test_readyz_names_a_failed_check_without_the_exception_text(app, monkeypatch) -> None:
+    """/readyz is public: an exception's text (a host, a path, a connection string)
+    goes to the log, the response only says which check failed."""
+    import sys
+
+    def broken() -> None:
+        raise RuntimeError("mongodb://admin:secret@db.internal:27017")
+
+    monkeypatch.setattr(sys.modules["aicefr.api.main"].repo, "stats", broken)
+    r = TestClient(app).get("/readyz")
+    assert r.status_code == 503
+    assert r.json()["checks"]["database"] == "failed"
+    assert "secret" not in r.text and "db.internal" not in r.text
+
+
+@pytest.mark.parametrize("path", ["/retell/x&next=evil.example", "/billing/orders/x&a=b/receipt"])
+def test_the_sign_in_detour_keeps_the_whole_path_in_next(app, path) -> None:
+    """A path parameter is encoded into `next`, so it cannot add query parameters."""
+    from urllib.parse import parse_qs, quote, urlsplit
+
+    r = TestClient(app).get(quote(path, safe="/"), follow_redirects=False)
+    assert r.status_code == 303
+    query = parse_qs(urlsplit(r.headers["location"]).query)
+    assert query == {"next": [path]}
 
 
 # SEC-04: startsWith alone let through "/\evil", a tab or a newline, which the

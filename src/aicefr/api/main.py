@@ -116,6 +116,8 @@ def readiness() -> JSONResponse:
     Checks the three things that silently make the system useless: the database
     is writable, the scoring artifact loads, and the recogniser is reachable.
     Returns 503 when any of them fails, so a load balancer stops sending work.
+    The route is public, so a failure is named here and explained only in the
+    log: an exception's text can carry hosts, paths or connection strings.
     """
     from aicefr.scoring.scorer import RidgeScorer
     from aicefr.services.core.assessment.context import active_model_name
@@ -125,13 +127,15 @@ def readiness() -> JSONResponse:
     try:
         repo.stats()
         checks["database"] = "ok"
-    except Exception as e:  # noqa: BLE001 - report the failure, never raise here
-        checks["database"] = f"failed: {e}"
+    except Exception:  # noqa: BLE001 - report the failure, never raise here
+        logger.warning("readiness: database failed", exc_info=True)
+        checks["database"] = "failed"
         ok = False
     try:
         checks["scoring_model"] = RidgeScorer(active_model_name()).model_version
-    except Exception as e:  # noqa: BLE001
-        checks["scoring_model"] = f"failed: {e}"
+    except Exception:  # noqa: BLE001
+        logger.warning("readiness: scoring model failed", exc_info=True)
+        checks["scoring_model"] = "failed"
         ok = False
     health = speech.health()
     checks["asr_engine"] = health["asr_engine"]

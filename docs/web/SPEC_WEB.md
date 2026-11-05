@@ -30,7 +30,7 @@ rồi mới phát hiện, sẽ phải làm lại.
 | X-2 | **Có làm** ghi âm trên trình duyệt, thêm FR-39 vào SRS | QD-06 |
 | X-3 | Theo SRS: 20–300 giây, thêm vùng REVIEW 20–29 | QD-08, commit `5488887` |
 | X-4 | Theo SRS: giữ enum 5 tiêu chí, báo cáo luôn có dòng Interaction | QD-08 |
-| X-5 | Cookie phiên có chữ ký, không JWT | QD-07 |
+| X-5 | JWT trong cookie, vẫn tra phiên phía máy chủ | D091 (thay QD-07) |
 | X-6 | Sửa ma trận truy vết theo cấu trúc mã thật | QD-05 |
 
 ### X-1 — Nền tảng giao diện: Streamlit hay FastAPI?
@@ -136,10 +136,7 @@ cáo tưởng hệ thống đã đánh giá đủ. Nói rõ ra là trung thực 
 SRS NFR-07 nói **JWT hết hạn ≤ 8 giờ**, khóa tài khoản 15 phút sau 5 lần sai,
 lần thứ 6 trả HTTP 429.
 
-**Đã chốt: cookie phiên có chữ ký, không JWT** (QD-07). Lý do: JWT không thu hồi được
-trước hạn — đăng xuất chỉ là xoá phía client, token vẫn hợp lệ tới khi hết hạn.
-Với hệ thống có vai trò giảng viên sửa được điểm, không thu hồi được phiên là
-điểm yếu thật. Cookie tra bảng `session` thì xoá là mất hiệu lực ngay.
+**Đã chốt: JWT trong cookie, vẫn tra phiên phía máy chủ** (D091, ngày 04/11/2026, thay QD-07). Cookie `aicefr_session` (`HttpOnly`, `SameSite=Lax`, `Secure` sau TLS) mang một JWT HS256 gồm `sub` (tài khoản), `sid` (phiên), `iat`, `exp`; khoá ký do bản triển khai tự sinh và giữ trong collection `system`. Chữ ký sai, header khác `HS256` hay quá `exp` là 401 trước khi hỏi database. QD-07 từng chọn cookie mã ngẫu nhiên vì JWT thuần không thu hồi được trước hạn; D091 giữ điều đó bằng cách chỉ chấp nhận token khi bản ghi `session` của `sid` còn, nên đăng xuất, đổi mật khẩu hay tắt tài khoản vẫn làm token mất hiệu lực ngay.
 
 Các ràng buộc còn lại của NFR-07 **giữ nguyên**: hết hạn 8 giờ, khóa 15 phút sau
 5 lần sai, 429 ở lần thứ 6. Chỉ đổi cơ chế mang phiên, không nới lỏng bảo mật.
@@ -221,7 +218,7 @@ liệu cá nhân theo Luật 91/2025/QH15 và Nghị định 356/2025/NĐ-CP.
 | Mã | Quyết định | Thay cho | Lý do ngắn |
 | --- | --- | --- | --- |
 | QĐ-W1 | FastAPI + Jinja2, render phía máy chủ | Streamlit, SPA | Xem X-1 |
-| QĐ-W2 | Cookie phiên ký `HttpOnly`, `SameSite=Lax`, tra bảng `auth_sessions`; băm **bcrypt cost ≥ 12** theo NFR-07 | JWT | Xem X-5 |
+| QĐ-W2 | JWT HS256 trong cookie `HttpOnly`, `SameSite=Lax`, chỉ hợp lệ khi phiên của nó còn trong collection `session` (D091); băm **bcrypt cost ≥ 12** theo NFR-07 | Cookie mã ngẫu nhiên (QD-07, đã thay); JWT thuần không tra phiên | Xem X-5 |
 | QĐ-W3 | `BackgroundTasks` của Starlette | Celery + Redis | 60–90 sinh viên một học kỳ là tải rất nhẹ; thêm Redis là thêm dịch vụ phải dựng và phải giải thích |
 | QĐ-W4 | Thêm trạng thái `QUEUED`, `RUNNING` | — | SRS FR-05 đã liệt kê hai trạng thái này; `contracts.py` chưa có |
 | QĐ-W5 | **Có** ghi âm trên trình duyệt, kèm đường lùi khi thiếu `ffmpeg` | — | Xem X-2, QD-06 |
@@ -815,6 +812,14 @@ Bốn hướng chủ dự án chọn sau đề xuất làm đề tài mạnh hơ
 - **Trang `/admin/study`** (từ tab Xoá dữ liệu của M7): biểu mẫu bắt đầu (tên, số ngày tối thiểu giữa bài đầu và cuối) khi không có thực nghiệm chưa đóng; bảng thực nghiệm với trạng thái, số tham gia, số khảo sát, nút Xem kết quả, CSV và chuyển giai đoạn; khung kết quả hai cột theo nhóm và một dòng chênh lệch kèm khoảng tin cậy 95 % và Hedges g, ghi rõ là nghiên cứu thăm dò.
 - **Thống kê lớp** (M9) thêm hai thẻ: **"Hiệu quả cho giảng viên"** — phút duyệt một bài có máy, phút chấm mù một bài không có máy, thời gian tiết kiệm, tỉ lệ máy tự xử lý và tỉ lệ giữ nguyên band, mỗi tỉ lệ có khoảng tin cậy và số đếm; **"Phát âm của cả lớp"** — danh sách như M8, ví dụ không dẫn tới bài của ai.
 - **Tab Cấu hình** (M7) thêm khung **"Sai số đo cho tiến bộ đáng tin"**: sai số đang dùng và nguồn, số cặp bài thử lại hiện có, nút dùng sai số từ bài thử lại (tắt khi chưa đủ 10 cặp), ô nhập tay bắt buộc kèm nguồn.
+
+### Đợt 18 — Giao diện SpeakUp mới của Thắng (D092) — **xong**
+
+Thắng thiết kế lại giao diện theo Figma (PR #119); chủ dự án chốt giữ nguyên toàn bộ UI mới.
+
+- **Thương hiệu.** Màu Coral (`--accent` `#ff5722`, tối `#ff8a65`), logo và linh vật mới (`static/art/speakup_*`), favicon PNG; phông Poppins tự phục vụ cùng Roboto (thay phần phông và logo của Đợt 12).
+- **Trang chủ.** Có lại cảnh 3D đầu trang (khối A1–C2, thẻ đọc to, thẻ ước lượng band; trang trí, `aria-hidden`), dải ba thông số, các mục cách hoạt động, phương pháp, giảng viên, nguyên tắc, câu hỏi thường gặp. Không có khối Demo AI chạy âm thanh mẫu với điểm tự đặt (giữ D078).
+- **Đăng nhập và đăng ký.** Hai cột: ảnh minh hoạ bên trái, biểu mẫu bên phải; kiểm tra từng ô ngay trên trình duyệt, thông báo lỗi dạng toast. Chữ bằng tiếng Việt; không có ô "Ghi nhớ đăng nhập" (D091). Sau đăng nhập chỉ chuyển tới đường dẫn của chính trang (`sitePath` trong `common.js`, chặn cả `/\evil.example`).
 
 ### Ngoài phạm vi tài liệu này nhưng phải lên lịch
 
