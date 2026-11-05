@@ -25,7 +25,7 @@ import time
 from collections.abc import Callable
 
 from aicefr.asr.fake import FakeAsrEngine
-from aicefr.audio.decoder import DecodeError, FirstMatchDecoder
+from aicefr.audio.decoder import DecodeBudgetExceeded, DecodeError, FirstMatchDecoder
 from aicefr.config import Settings
 from aicefr.contracts import ProcessingRequest, ReasonCode, ResponseStatus
 from aicefr.observability import observe
@@ -41,6 +41,11 @@ STEP_QUEUE = "speech.step"
 PROBE_QUEUE = "speech.probe"
 RESULT_QUEUE = "assessment.scoring"
 STEP_TIMEOUT_S = 120.0
+
+
+def _log_rejected(job_id: str | None, e: DecodeBudgetExceeded) -> None:
+    """SEC-02: mot dong log co cau truc; khong bao gio byte audio hay ten file goc."""
+    logger.warning("audio.decode_rejected job=%s %s", job_id, e.log_fields())
 
 
 def fake_engine_from_env() -> FakeAsrEngine:
@@ -82,7 +87,8 @@ class SpeechWorker:
         self.settings = settings
         self.blobs = blobs
         self.report = report  # sends one message to the assessment service
-        self.decoder = decoder or FirstMatchDecoder()
+        # SEC-02: ngan sach PCM lay tu chinh settings cua worker, khong tu env toan cuc.
+        self.decoder = decoder or FirstMatchDecoder(max_pcm_bytes=settings.max_decoded_pcm_bytes)
         # Cap on how many recordings are transcribed at once, scoring and steps
         # together. Dozens of Whisper copies competing for memory swap the
         # machine and stall everything; one student with a loop is enough.
@@ -208,6 +214,10 @@ class SpeechWorker:
             # transcoding a five-minute WebM through ffmpeg takes seconds, and
             # the submission answers "202" within 300 ms.
             pcm, sr = self.decoder.decode(self.blobs.get(job["audio_key"]), job["audio_key"])
+        except DecodeBudgetExceeded as e:
+            _log_rejected(rid, e)
+            self.report({"response_id": rid, "failed": e.reason.value})
+            return
         except (DecodeError, OSError) as e:
             logger.warning("decode failed for %s: %s", rid, e)
             self.report({"response_id": rid, "failed": ReasonCode.AUDIO_UNSUPPORTED.value})
@@ -237,12 +247,17 @@ class SpeechWorker:
         """Measure one recorded lesson step; `{"result": ...}` or `{"error": ...}`."""
         from aicefr.lessons.model import Step
 
-        try:
-            pcm, sr = self.decoder.decode(self.blobs.get(req["audio_key"]), req["audio_key"])
-        except (DecodeError, OSError) as e:
-            return {"error": "decode", "detail": str(e)}
-        step = Step.model_validate(req["step"])
+        # Giai ma NAM TRONG semaphore (SEC-02): truoc day moi request bai luyen
+        # giai ma ngay, nen N request dong thoi la N mang PCM cung song trong bo nho.
         with self.slots:
+            try:
+                pcm, sr = self.decoder.decode(self.blobs.get(req["audio_key"]), req["audio_key"])
+            except DecodeBudgetExceeded as e:
+                _log_rejected(req.get("audio_key"), e)
+                return {"error": "decode", "detail": str(e), "reason": e.reason.value}
+            except (DecodeError, OSError) as e:
+                return {"error": "decode", "detail": str(e)}
+            step = Step.model_validate(req["step"])
             result = self.lesson_runner().run(
                 step,
                 pcm,
@@ -261,6 +276,9 @@ class SpeechWorker:
         """
         try:
             pcm, sr = self.decoder.decode(self.blobs.get(req["audio_key"]), req["audio_key"])
+        except DecodeBudgetExceeded as e:
+            _log_rejected(req.get("audio_key"), e)
+            return {"error": "decode", "detail": str(e), "reason": e.reason.value}
         except (DecodeError, OSError) as e:
             return {"error": "decode", "detail": str(e)}
         return {"seconds": round(len(pcm) / sr, 2)}

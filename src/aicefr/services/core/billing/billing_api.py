@@ -25,7 +25,7 @@ import hmac
 import logging
 from dataclasses import dataclass
 from datetime import datetime
-from urllib.parse import urlencode
+from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -349,7 +349,7 @@ def billing_receipt(
 ):
     """A printable receipt for a paid order. Not a VAT invoice, and it says so."""
     if account is None:
-        return RedirectResponse(f"/login?next=/billing/orders/{order_id}/receipt", status_code=303)
+        return RedirectResponse(f"/login?next={quote(request.url.path)}", status_code=303)
     billing = _billing()
     order = billing.store.order(order_id)
     if order is None or order["status"] != OrderStatus.PAID.value:

@@ -113,6 +113,91 @@ def test_login_redirect_stays_on_this_site() -> None:
     assert "location.assign(location.origin + path)" in source
 
 
+def test_readyz_names_a_failed_check_without_the_exception_text(app, monkeypatch) -> None:
+    """/readyz is public: an exception's text (a host, a path, a connection string)
+    goes to the log, the response only says which check failed."""
+    import sys
+
+    def broken() -> None:
+        raise RuntimeError("mongodb://admin:secret@db.internal:27017")
+
+    monkeypatch.setattr(sys.modules["aicefr.api.main"].repo, "stats", broken)
+    r = TestClient(app).get("/readyz")
+    assert r.status_code == 503
+    assert r.json()["checks"]["database"] == "failed"
+    assert "secret" not in r.text and "db.internal" not in r.text
+
+
+@pytest.mark.parametrize("path", ["/retell/x&next=evil.example", "/billing/orders/x&a=b/receipt"])
+def test_the_sign_in_detour_keeps_the_whole_path_in_next(app, path) -> None:
+    """A path parameter is encoded into `next`, so it cannot add query parameters."""
+    from urllib.parse import parse_qs, quote, urlsplit
+
+    r = TestClient(app).get(quote(path, safe="/"), follow_redirects=False)
+    assert r.status_code == 303
+    query = parse_qs(urlsplit(r.headers["location"]).query)
+    assert query == {"next": [path]}
+
+
+# SEC-04: startsWith alone let through "/\evil", a tab or a newline, which the
+# browser's URL parser still reads as another origin.
+NEXT_CASES = [
+    ("/practice", "/practice"),
+    ("/practice?x=1#top", "/practice?x=1#top"),
+    ("/my-progress?q=a%20b", "/my-progress?q=a%20b"),
+    ("https://evil.example/", None),
+    ("http://localhost:8000.evil.example/", None),
+    ("//evil.example", None),
+    ("/\\evil.example", None),
+    ("\\/evil.example", None),
+    ("\\\\evil.example", None),
+    ("/%5Cevil.example", None),
+    ("/%2F%2Fevil.example", None),
+    ("/%2f/evil.example", None),
+    ("/\t/evil.example", None),
+    ("/\n/evil.example", None),
+    ("/\r/evil.example", None),
+    ("/%09/evil.example", None),
+    ("/ /evil.example", None),
+    ("/\x00/evil.example", None),
+    ("javascript:alert(1)", None),
+    ("JavaScript:alert(1)", None),
+    ("data:text/html,x", None),
+    ("", None),
+    (None, None),
+]
+
+
+def test_login_next_is_resolved_against_this_origin() -> None:
+    """SEC-04: `safeNext` in login.js keeps only paths of this origin."""
+    import json
+    import re
+    import shutil
+
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node is not installed here")
+    source = pathlib.Path("src/aicefr/api/static/login.js").read_text(encoding="utf-8")
+    found = re.search(r"^function safeNext\(.*?^}$", source, re.S | re.M)
+    assert found, "login.js must define a pure function safeNext(value, origin)"
+    script = (
+        found.group(0)
+        + "\nconst cases = JSON.parse(process.argv[1]);"
+        + "\nprocess.stdout.write(JSON.stringify("
+        + "cases.map(([v]) => safeNext(v, 'http://localhost:8000'))));"
+    )
+    out = subprocess.run(
+        [node, "-e", script, json.dumps(NEXT_CASES)],
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=30,
+    )
+    got = json.loads(out.stdout)
+    for (value, want), have in zip(NEXT_CASES, got, strict=True):
+        assert have == want, f"safeNext({value!r}) = {have!r}, expected {want!r}"
+
+
 # ---------------------------------------------------------------- uploads
 
 
@@ -142,6 +227,36 @@ def test_upload_is_capped_before_it_reaches_memory(app) -> None:
         data={"task_id": "P3"},
     )
     assert r.status_code == 413
+
+
+def test_upload_over_the_decoded_budget_is_refused_before_queueing(app, monkeypatch) -> None:
+    """SEC-02: mot WAV/FLAC nho co the khai header bung ra hang GB float32.
+
+    Core doc header (khong doc mau) va tu choi 413 truoc khi luu blob/xep hang.
+    """
+    from aicefr import config
+
+    c = login_as(app, "SV-001", "student")
+    monkeypatch.setenv("AICEFR_MAX_DECODED_BYTES", "1000")
+    config.get_settings.cache_clear()
+    try:
+        r = c.post(
+            "/api/v1/responses",
+            files={"audio": ("a.wav", wav(2), "audio/wav")},
+            data={"task_id": "P3"},
+        )
+    finally:
+        monkeypatch.delenv("AICEFR_MAX_DECODED_BYTES")
+        config.get_settings.cache_clear()
+    assert r.status_code == 413
+    assert "giải mã" in r.json()["detail"]
+    # Trong ngan sach mac dinh thi van nhan nhu cu.
+    r = c.post(
+        "/api/v1/responses",
+        files={"audio": ("a.wav", wav(40), "audio/wav")},
+        data={"task_id": "P3"},
+    )
+    assert r.status_code == 202
 
 
 @pytest.mark.skipif(not ffmpeg_available(), reason="may chay test khong co ffmpeg")

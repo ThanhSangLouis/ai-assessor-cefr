@@ -238,6 +238,19 @@ def test_an_account_header_is_trusted_only_beside_the_gateway_key(system):
     )
 
 
+def test_core_reads_the_session_from_the_store_not_the_gateway_header(system):
+    """SEC-05 rests on this: core, where the live stream runs, asks the store.
+
+    The identity part sets SessionCallers over the runtime's GatewayCallers, so
+    a stream's recheck sees a session ended after the gateway let it in. Were
+    core to trust the header instead, signing out would never close a stream.
+    """
+    from aicefr.platform.callers import GatewayCallers, SessionCallers
+
+    assert isinstance(system["apps"]["core"].state.callers, SessionCallers)
+    assert isinstance(system["apps"]["web"].state.callers, GatewayCallers)
+
+
 def test_internal_calls_need_the_key(system):
     identity = system["clients"]["core"]
     assert (

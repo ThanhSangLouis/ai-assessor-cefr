@@ -181,10 +181,15 @@ def google_callback(
         # Google just verified is this person's: join the two.
         same = auth.get_by_email(identity.email) if identity.email else None
         if same is not None:
-            reset = auth.adopt_by_email(same["account_id"], google.PROVIDER, identity.subject_hash)
-            audit(same["pseudonym"], "account.google_adopt", same["account_id"],
-                  "reset" if reset else None)  # fmt: skip
-            opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
+            reset = auth.adopt_by_email(
+                same["account_id"], google.PROVIDER, identity.subject_hash, identity.email
+            )
+            # None: the account left this address meanwhile; nothing was joined,
+            # so this sign-in goes on as a Google account of its own.
+            if reset is not None:
+                audit(same["pseudonym"], "account.google_adopt", same["account_id"],
+                      "reset" if reset else None)  # fmt: skip
+                opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
     if opened is None:
         if not get_settings().google_signup:
             return _back("/login", "not_linked")

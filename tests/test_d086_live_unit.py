@@ -154,3 +154,108 @@ def test_stopping_the_process_ends_every_stream_at_once_even_a_full_one():
     assert quiet == ["retry: 5000\nevent: ready\ndata: {}\n\n"]
     # A full queue gives up its oldest frame for the end; the rest is still sent.
     assert busy[0].startswith("retry:") and busy[1:] == [": old\n\n"] * (64 - 1)
+
+
+# ======================================================== SEC-05: the session behind a stream
+
+
+class Session:
+    """A stand-in for the session check: valid until `reason` names why it ended."""
+
+    def __init__(self) -> None:
+        self.reason: str | None = None
+        self.calls = 0
+
+    def __call__(self) -> str | None:
+        self.calls += 1
+        return self.reason
+
+
+def test_a_stream_ends_soon_after_its_session_does_and_carries_nothing_after():
+    async def run():
+        hub = LiveHub()
+        sub = hub.open("a1", "student")
+        session = Session()
+        frames = []
+        started = time.monotonic()
+        async for frame in stream(
+            hub, sub, heartbeat_s=5, lifetime_s=30, check=session, recheck_s=0.05
+        ):
+            frames.append(frame)
+            if len(frames) == 1:
+                session.reason = "session_revoked"  # signed out in another tab
+                hub.deliver(LiveEvent("review.done", {"response_id": "r1"}, frozenset({"a1"})))
+        return frames, time.monotonic() - started, hub.count()
+
+    frames, took, left = asyncio.run(run())
+    assert frames == ["retry: 5000\nevent: ready\ndata: {}\n\n"]  # r1 was not told
+    assert took < 1 and left == 0  # not the 30 s lifetime
+
+
+def test_a_stream_rechecks_its_session_on_its_own_while_no_event_comes(caplog):
+    async def run():
+        hub = LiveHub()
+        sub = hub.open("a1", "student")
+        session = Session()
+
+        async def end_later():
+            await asyncio.sleep(0.15)
+            session.reason = "account_disabled"
+
+        ending = asyncio.create_task(end_later())
+        started = time.monotonic()
+        frames = [
+            f
+            async for f in stream(
+                hub, sub, heartbeat_s=5, lifetime_s=30, check=session, recheck_s=0.05,
+                session_id="abcdef0123456789",
+            )
+        ]  # fmt: skip
+        await ending
+        return frames, time.monotonic() - started, session.calls
+
+    with caplog.at_level("INFO", logger="aicefr.platform.live"):
+        frames, took, calls = asyncio.run(run())
+    assert len(frames) == 1 and took < 1 and calls >= 2
+    closed = [r for r in caplog.records if "session.stream_closed" in r.getMessage()]
+    assert len(closed) == 1
+    assert "account_disabled" in closed[0].getMessage()
+    assert "abcdef0123456789" in closed[0].getMessage()
+
+
+def test_a_stream_whose_session_holds_keeps_its_events_and_heartbeats():
+    async def run():
+        hub = LiveHub()
+        sub = hub.open("a1", "student")
+        session = Session()
+        frames = []
+        async for frame in stream(
+            hub, sub, heartbeat_s=0.05, lifetime_s=0.3, check=session, recheck_s=0.02
+        ):
+            frames.append(frame)
+            if len(frames) == 1:
+                hub.deliver(LiveEvent("review.done", {"response_id": "r1"}, frozenset({"a1"})))
+        return frames, session.calls
+
+    frames, calls = asyncio.run(run())
+    assert 'event: review.done\ndata: {"response_id": "r1"}\n\n' in frames
+    assert ": ping\n\n" in frames and calls >= 3
+
+
+def test_a_session_check_that_fails_ends_the_stream_rather_than_keeping_it():
+    def broken() -> str | None:
+        raise ConnectionError("the store is unreachable")
+
+    async def run():
+        hub = LiveHub()
+        sub = hub.open("a1", "student")
+        frames = [
+            f
+            async for f in stream(
+                hub, sub, heartbeat_s=5, lifetime_s=30, check=broken, recheck_s=0.02
+            )
+        ]
+        return frames, hub.count()
+
+    frames, left = asyncio.run(asyncio.wait_for(run(), 2))
+    assert len(frames) == 1 and left == 0

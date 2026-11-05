@@ -269,6 +269,16 @@
     </div>
   </div>
 </footer>
+{% else %}
+<footer class="site-footer">
+  {#- D068: one line inside the app, where every screen is work. It says the
+      two required phrases word for word (SRS 11.3, tests/test_web.py), as the
+      visitors' footer above does. -#}
+  <div class="footer-inner">
+    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
+      <a href="/bands">Band A1–C2 là gì?</a></p>
+  </div>
+</footer>
 {% endif %}
 
 <!-- Toasts are announced politely so a screen reader hears the outcome of an

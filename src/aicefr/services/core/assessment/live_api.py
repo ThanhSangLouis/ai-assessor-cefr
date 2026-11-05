@@ -20,12 +20,13 @@ import functools
 import logging
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from aicefr.api.deps import require_login
+from aicefr.auth.sessions import COOKIE_NAME, hash_token
 from aicefr.contracts import ResponseStatus
-from aicefr.platform.live import TooManyConnections, stream
+from aicefr.platform.live import SessionCheck, TooManyConnections, stream
 from aicefr.services.core.assessment import push_api
 from aicefr.services.core.assessment.context import svc
 from aicefr.storage.auth_repository import Account, Role
@@ -38,8 +39,51 @@ REVIEW_DONE = "review.done"
 QUEUE_CHANGED = "queue.changed"
 
 
+def _why_gone(account_id: str) -> str:
+    """The session behind a stream no longer reads: was the account turned off?"""
+    identity = svc().peers.identity
+    who = identity.account(account_id=account_id) if identity is not None else {}
+    if who is None or (who or {}).get("disabled"):
+        return "account_disabled"
+    # Signed out, signed out everywhere, or past its expiry: the store keeps
+    # neither apart once the session is gone.
+    return "session_revoked"
+
+
+def session_check(request: Request, opened: Account) -> SessionCheck:
+    """SEC-05: whether the session that opened the stream still holds, as it did then.
+
+    The same lookup as `require_login` (`app.state.callers`): in core it reads
+    the session cookie against the identity store, so a session ended, an
+    account disabled or a role changed since the stream opened ends the stream.
+    Core is behind the gateway, but the identity part sets `SessionCallers` over
+    the runtime's `GatewayCallers`, so this is never the header the gateway
+    forwarded once; `test_core_reads_the_session_from_the_store_not_the_gateway_header`
+    (tests/test_services_split.py) fails if that wiring ever changes.
+    """
+    callers = request.app.state.callers
+
+    def check() -> str | None:
+        now = callers.for_request(request)
+        if now is None or now.account_id != opened.account_id:
+            return _why_gone(opened.account_id)
+        if now.role is not opened.role:
+            # The stream was addressed by the old role (`queue.changed` to every
+            # admin): the browser reconnects and opens one under the new role.
+            return "role_changed"
+        return None
+
+    return check
+
+
+def session_label(request: Request) -> str:
+    """The session in the log: a prefix of the token's hash, useless for signing in."""
+    token = request.cookies.get(COOKIE_NAME)
+    return hash_token(token)[:16] if token else ""
+
+
 @router.get("/api/v1/me/events", tags=["me"])
-async def events(account: Account = Depends(require_login)) -> StreamingResponse:
+async def events(request: Request, account: Account = Depends(require_login)) -> StreamingResponse:
     """The signed-in account's live events, as Server-Sent Events. D086."""
     s = svc()
     if s.live is None:
@@ -54,6 +98,9 @@ async def events(account: Account = Depends(require_login)) -> StreamingResponse
             sub,
             heartbeat_s=s.settings.live_heartbeat_s,
             lifetime_s=s.settings.live_max_s,
+            check=session_check(request, account),
+            recheck_s=s.settings.live_recheck_s,
+            session_id=session_label(request),
         ),
         media_type="text/event-stream",
         headers={
