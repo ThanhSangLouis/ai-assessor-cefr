@@ -294,6 +294,30 @@ def _mentions(annotation: str, cls: str) -> bool:
     return cls in re.findall(r"[A-Za-z_]\w*", annotation)
 
 
+def _is_composition(style: str) -> bool:
+    """A filled diamond is composition; a hollow diamond is aggregation."""
+    parts = dict(item.split("=", 1) for item in style.split(";") if "=" in item)
+    return any(
+        parts.get(f"{end}Arrow") in {"diamond", "diamondThin"}
+        and parts.get(f"{end}Fill", "1") != "0"
+        for end in ("start", "end")
+    )
+
+
+@pytest.mark.parametrize(
+    ("style", "expected"),
+    [
+        ("startArrow=diamondThin;startFill=1;", True),
+        ("startArrow=diamondThin;startFill=0;", False),
+        ("endArrow=diamondThin;endFill=1;", True),
+        ("endArrow=diamondThin;endFill=0;", False),
+        ("endArrow=open;", False),
+    ],
+)
+def test_composition_requires_a_filled_diamond(style: str, expected: bool) -> None:
+    assert _is_composition(style) is expected
+
+
 @pytest.mark.parametrize("diagram", DIAGRAMS, ids=lambda p: p.name)
 def test_every_composition_has_a_real_containing_field(diagram: pathlib.Path) -> None:
     """Hinh thoi DAC noi bo phan nam BEN TRONG the. Phai co truong that.
@@ -317,9 +341,14 @@ def test_every_composition_has_a_real_containing_field(diagram: pathlib.Path) ->
     bad = []
     for c in cells:
         style = c.get("style") or ""
-        if c.get("edge") != "1" or "diamondThin" not in style:
+        if c.get("edge") != "1" or not _is_composition(style):
             continue
-        whole, part = names.get(c.get("source")), names.get(c.get("target"))
+        at_end = "endArrow=diamond" in style and "endFill=0" not in style
+        whole, part = (
+            (names.get(c.get("target")), names.get(c.get("source")))
+            if at_end
+            else (names.get(c.get("source")), names.get(c.get("target")))
+        )
         if whole is None or part is None:
             continue
         if not any(_mentions(t, part) for t in fields.get(whole, {}).values()):
@@ -357,9 +386,11 @@ def test_every_composition_part_has_exactly_one_owner(diagram: pathlib.Path) -> 
     drawn = set(names.values())
     bad = []
     for c in cells:
-        if c.get("edge") != "1" or "diamondThin" not in (c.get("style") or ""):
+        if c.get("edge") != "1" or not _is_composition(c.get("style") or ""):
             continue
-        part = names.get(c.get("target"))
+        style = c.get("style") or ""
+        at_end = "endArrow=diamond" in style and "endFill=0" not in style
+        part = names.get(c.get("source" if at_end else "target"))
         if part is None:
             continue
         owners = [
