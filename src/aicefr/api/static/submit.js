@@ -12,20 +12,6 @@ let chosenTask = null;
 // away from the rule applied after submission.
 let scorableMaxS = null;
 const WINDOW_TARGET_S = 45;
-// The preparation countdown, declared before the recorder because the
-// recorder reports its first state while it is being set up.
-let prepTimer = null;
-
-const recorder = window.setUpRecorder({
-  minSeconds: () => (chosenTask ? chosenTask.min_seconds : 20),
-  maxSeconds: () => (chosenTask ? chosenTask.max_seconds : 300),
-  onTake: tooLongToScore,
-  onSubmit: submit,
-  // Recording started by hand, or a file chosen: the countdown has no job left.
-  onChange: (state) => {
-    if (state !== "idle" && prepTimer) stopPrep();
-  },
-});
 
 // ---------------------------------------------------------------- preparation
 // Thirty seconds to read the prompt and plan, then recording starts by itself
@@ -33,17 +19,41 @@ const recorder = window.setUpRecorder({
 // leave: the record button works at any moment and ends the countdown. The
 // status line speaks at the start, at ten seconds and at the end -- not every
 // second, which would drown a screen reader.
+// Declared BEFORE the recorder because the recorder reports its first state
+// while it is being set up.
 const prepEl = document.getElementById("prep");
 const prepSeconds = Number(document.getElementById("f").dataset.prepSeconds) || 30;
 const prepLeftEl = document.getElementById("prep-left");
 const prepRing = document.getElementById("prep-ring");
 const prepTitle = document.getElementById("prep-title");
+const prepHint = document.getElementById("prep-hint");
 const prepStart = document.getElementById("prep-start");
 const prepSkip = document.getElementById("prep-skip");
 const prepCancel = document.getElementById("prep-cancel");
 const prepStatus = document.getElementById("prep-status");
 let prepEnds = 0;
 let prepWarned = false;
+let prepTimer = null;
+let recorder = null;
+
+recorder = window.setUpRecorder({
+  minSeconds: () => (chosenTask ? chosenTask.min_seconds : 20),
+  maxSeconds: () => (chosenTask ? chosenTask.max_seconds : 300),
+  onTake: tooLongToScore,
+  onSubmit: submit,
+  // Recording started by hand, or a file chosen: the countdown has no job left.
+  onChange: (state) => {
+    if (state !== "idle" && prepTimer) stopPrep();
+    updateStepper(state);
+    if (prepEl) {
+      if (state === "recording" || state === "review" || state === "submitting" || state === "submitted") {
+        prepEl.hidden = true;
+      } else if (state === "idle" && recorder) {
+        prepEl.hidden = !recorder.canRecordLive();
+      }
+    }
+  },
+});
 
 function paintPrep(left) {
   prepLeftEl.textContent = String(left);
@@ -51,11 +61,17 @@ function paintPrep(left) {
 }
 
 function setPrepRunning(running) {
+  if (recorder && recorder.setPrep) recorder.setPrep(running);
   prepEl.dataset.state = running ? "running" : "ready";
   prepStart.hidden = running;
   prepSkip.hidden = !running;
   prepCancel.hidden = !running;
-  prepTitle.textContent = running ? "Đang chuẩn bị" : `Chuẩn bị ${prepSeconds} giây như phòng thi`;
+  prepTitle.textContent = running ? "Đang chuẩn bị câu trả lời..." : "Chuẩn bị câu trả lời (tùy chọn)";
+  if (prepHint) {
+    prepHint.textContent = running
+      ? "Đọc đề, nghĩ ý chính và ví dụ. Hết giờ, máy tự bắt đầu ghi âm."
+      : `${prepSeconds} giây suy nghĩ trước khi nói.`;
+  }
 }
 
 function stopPrep(message) {
@@ -124,6 +140,28 @@ function tooLongToScore(take) {
   );
 }
 
+function updateStepper(state) {
+  const s2 = document.getElementById("step-nav-2");
+  const d1 = document.getElementById("step-div-1");
+  const s3 = document.getElementById("step-nav-3");
+  const d2 = document.getElementById("step-div-2");
+  const b2 = document.getElementById("step-badge-2");
+  if (!s2 || !d1) return;
+  if (state === "review" || state === "submitting" || state === "submitted") {
+    s2.classList.add("is-done");
+    s2.classList.remove("is-active");
+    if (b2) b2.innerHTML = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>';
+    if (d2) d2.classList.add("is-active");
+    if (s3) s3.classList.add("is-active");
+  } else {
+    s2.classList.remove("is-done");
+    s2.classList.add("is-active");
+    if (b2) b2.textContent = "02";
+    if (d2) d2.classList.remove("is-active");
+    if (s3) s3.classList.remove("is-active");
+  }
+}
+
 // ---------------------------------------------------------------- tasks
 // A real radio group: arrow keys move between prompts and a screen reader
 // announces which one is selected.
@@ -131,23 +169,39 @@ function taskCard(t, i) {
   return `
     <label class="task${i === 0 ? " chosen" : ""}">
       <input type="radio" name="task-choice" value="${escapeHtml(t.task_id)}"${i === 0 ? " checked" : ""}>
-      <span class="chosen-mark" aria-hidden="true">✓ Đã chọn</span>
-      <span class="task-band">${escapeHtml(t.band || "")}</span>
-      <p class="task-prompt">${escapeHtml(t.prompt_text)}</p>
-      <p class="task-meta"><span>${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span></p>
+      <div class="task-card-main">
+        <div class="task-top-meta">
+          <span class="task-meta">${Number(t.min_seconds)}–${Number(t.max_seconds)} giây</span>
+        </div>
+        <p class="task-prompt">${escapeHtml(t.prompt_text)}</p>
+      </div>
+      <div class="task-card-indicator" aria-hidden="true">
+        <span class="task-check-icon">
+          <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/>
+          </svg>
+        </span>
+        <span class="radio-indicator"></span>
+      </div>
     </label>`;
 }
 
 // The chosen prompt sits right above the record button, so it is in view while
 // the student answers it.
 function chooseTask(task) {
+  if (chosenTask && chosenTask.task_id !== task.task_id) {
+    // If learner changes task after recording or review, reset recorder so old audio is discarded
+    recorder.reset();
+  }
   if (prepTimer) stopPrep("Đã đổi đề, thời gian chuẩn bị bắt đầu lại từ đầu khi bạn bấm.");
   chosenTask = task;
   taskIdEl.value = task.task_id;
+  const bandBadge = task.band ? `ĐỀ ${task.band} · SPEAKING` : (task.title || "ĐỀ BÀI · SPEAKING");
   promptEl.innerHTML =
-    `<p class="eyebrow">${escapeHtml(task.title)}</p>` +
-    `<p class="prompt-text">${escapeHtml(task.prompt_text)}</p>` +
-    `<p class="muted">Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây</p>` +
+    `<div class="prompt-header-row">` +
+    `<span class="prompt-band-badge">${escapeHtml(bandBadge)}</span>` +
+    `</div>` +
+    `<h3 class="prompt-question">${escapeHtml(task.prompt_text)}</h3>` +
     '<p class="muted small" id="price-note" hidden></p>';
   recorder.repaint();
   showPrice(task);
@@ -196,11 +250,8 @@ function paintTasks() {
       (b) => `<label class="task-band-chip${b === band ? " on" : ""}"><input type="radio" name="task-band" value="${b}"${b === band ? " checked" : ""}>${b}</label>`,
     )
     .join("");
-  const pool = allTasks.filter((t) => t.band === band).length;
   taskListEl.innerHTML =
-    `<div class="task-band-bar"><div class="task-bands" role="radiogroup" aria-label="Band của đề">${chips}</div>` +
-    (pool > SHOWN ? '<button type="button" class="secondary small" id="task-shuffle">Đổi đề khác</button>' : "") +
-    "</div>" +
+    `<div class="task-band-bar"><div class="task-bands" role="radiogroup" aria-label="Band của đề">${chips}</div></div>` +
     '<div class="task-grid" role="radiogroup" aria-label="Danh sách đề bài">' +
     shown.map(taskCard).join("") +
     "</div>";
@@ -222,7 +273,7 @@ function paintTasks() {
     }),
   );
   const shuffle = document.getElementById("task-shuffle");
-  if (shuffle) shuffle.addEventListener("click", () => draw());
+  if (shuffle) shuffle.onclick = () => draw();
   if (inputs.length) {
     inputs[0].checked = true;
     mark(inputs[0]);

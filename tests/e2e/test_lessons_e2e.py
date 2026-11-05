@@ -181,7 +181,8 @@ def test_new_learner_sees_the_path_and_the_first_lesson_next(student):
     expect(student.locator(".path-part")).to_have_count(6)  # A1 to C2
     expect(student.locator(".lesson-node.next .node-flag")).to_have_text("Bắt đầu")
     expect(student.locator(".today-card .goal-ring")).to_contain_text("0/180 giây")
-    expect(student.locator(".review-count")).to_contain_text("0")
+    # D092: the review card shows only when something is due.
+    expect(student.locator(".review-card")).to_have_count(0)
     # D074 (replacing D025's "no band on this page"): the learner chooses the
     # bands to study; with no assessment yet the suggestion is A1 to A2.
     expect(student.locator("#band-plan h2")).to_contain_text("Học theo band")
@@ -263,9 +264,9 @@ def test_navigation_is_a_sidebar_on_the_left_with_icons(student):
     # D068: Kết quả holds history and progress; D075: no "Bài được giao".
     expect(links).to_have_count(3)
     expect(links.first.locator("svg use")).to_have_attribute(
-        "href", re.compile(r"icons\.svg.*#i-path$")
+        "href", re.compile(r"icons\.svg.*#i-home$")
     )
-    expect(sidebar.locator(".site-nav a[aria-current='page']")).to_have_text("Luyện tập")
+    expect(sidebar.locator(".site-nav a[aria-current='page']")).to_have_text("Lộ trình học")
 
 
 def test_review_page_without_due_items_says_when_the_next_one_comes(student, live_server):

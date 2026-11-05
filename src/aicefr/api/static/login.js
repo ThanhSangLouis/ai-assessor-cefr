@@ -205,6 +205,7 @@ function validatePassword(val) {
 // Input event listeners (validate on blur, update on typing if already in error)
 if (emailEl) {
   emailEl.addEventListener("blur", () => {
+    emailEl.value = emailEl.value.trim();
     const err = validateEmail(emailEl.value);
     if (err) setFieldError(emailEl, err);
     else clearFieldError(emailEl);

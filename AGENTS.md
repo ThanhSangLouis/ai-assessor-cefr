@@ -2,9 +2,10 @@
 
 Áp dụng cho toàn repo và mọi agent. Làm theo yêu cầu mới nhất của chủ dự án. Quy trình dưới đây kết hợp kỷ luật kiểm soát bối cảnh, phụ thuộc kỹ thuật, kiểm thử tập trung và cơ chế dừng an toàn (`BLOCKED`), nhưng vẫn linh hoạt theo quy mô để không biến việc nhỏ thành chuỗi thủ tục.
 
-## 0. Chạy dự án
+## 0. Chạy dự án & Quy định Git quan trọng
 
-Được nhờ chạy project, cài môi trường hay chạy test: làm theo
+- **QUY ĐỊNH BẮT BUỘC VỀ GIT COMMIT:** Tuyệt đối **KHÔNG ĐƯỢC TỰ Ý COMMIT** (`git commit`) khi người dùng chưa yêu cầu hoặc chưa giao việc commit. Bất kể là hoàn thành tính năng, fix bug, chạy test thành công hay bất kỳ lý do nào khác, agent chỉ sửa đổi code/tài liệu, chạy kiểm thử, rà soát diff và báo cáo kết quả. **CHỈ commit khi có lệnh trực tiếp từ người dùng** (ví dụ: "commit đi", "hãy commit", "commit cho tôi").
+- Được nhờ chạy project, cài môi trường hay chạy test: làm theo
 [docs/plan/CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md) trước khi thử cách khác.
 Tóm tắt: `./demo.sh` (cần Docker cho MongoDB); artifact mô hình nằm ngoài repo ở
 `../aicefr-models`, thiếu thì `demo.sh` dùng artifact giả lập và điểm vô nghĩa; không
@@ -26,8 +27,8 @@ Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. V�
 4. **04 — Plan & Gate Check:** Lập kế hoạch ngắn và chọn bộ test/check tương ứng phạm vi. Kiểm tra điều kiện `BLOCKED` hoặc điểm cần chủ dự án quyết định trước khi viết code.
 5. **05 — Implementation:** Triển khai đúng phạm vi owner, giữ nguyên comment/docstring hiện hữu và tuân thủ thứ tự phụ thuộc kỹ thuật theo từng loại task ở Mục 2.
 6. **06 — Verification:** Ưu tiên chạy focused test, lint và typecheck trên đúng file/module thay đổi; tránh build hoặc chạy toàn bộ test suite của repo khi không cần thiết. Chạy integration test khi thay đổi chạm contract/API liên module.
-7. **07 — Review & Fix:** Xem lại `git diff`, đối chiếu yêu cầu ban đầu, kiểm tra không lọt thay đổi ngoài phạm vi hoặc dữ liệu nhạy cảm, sửa lỗi phát sinh và verify lại.
-8. **08 — Handover:** Báo cáo ngắn gọn gồm: file đã đổi, lệnh và kết quả kiểm tra thực tế, các kiểm tra chưa chạy (`NOT_RUN`/`NOT_EVALUATED` hoặc để CI chạy), giới hạn còn lại, và các mục `BLOCKED`/cần chủ dự án chốt.
+7. **07 — Review & Fix:** Xem lại `git diff`, đối chiếu yêu cầu ban đầu, kiểm tra không lọt thay đổi ngoài phạm vi hoặc dữ liệu nhạy cảm, sửa lỗi phát sinh và verify lại. **Tuyệt đối không tự ý chạy git commit.**
+8. **08 — Handover:** Báo cáo ngắn gọn gồm: file đã đổi, lệnh và kết quả kiểm tra thực tế, các kiểm tra chưa chạy (`NOT_RUN`/`NOT_EVALUATED` hoặc để CI chạy), giới hạn còn lại, và các mục `BLOCKED`/cần chủ dự án chốt. Chờ người dùng nghiệm thu và chỉ định commit nếu hài lòng.
 
 ## 2. Điều chỉnh quy trình theo loại task
 
@@ -37,12 +38,13 @@ Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. V�
 - **Task Full-stack hoặc liên module:** Triển khai tuần tự theo phụ thuộc kỹ thuật thay vì sửa tự do hoặc chạy đồng thời thiếu đồng bộ:
   `Contract / API types (shared)` → `Backend / Service logic` → `API / Controllers` → `Frontend / UI` → `Tests & Verification`.
 - **Thay đổi lớn hoặc rủi ro cao:** Tóm tắt tác động, phương án và quyết định còn thiếu; dừng ở checkpoint cần chủ dự án chốt trước khi triển khai sâu. Tạo hoặc cập nhật SDD khi task cần hợp đồng bền vững, nhiều owner/dependency, bằng chứng đồ án yêu cầu, hoặc chủ dự án chỉ định.
-- **Handoff Antigravity:** Chỉ dùng khi chủ dự án yêu cầu hoặc task được giao cho Antigravity. Gửi brief gọn (mục tiêu, file/phạm vi, ràng buộc, lệnh check cần chạy); lưu prompt/evidence khi rubric hoặc task yêu cầu. Khi nhận kết quả, kiểm tra `git diff` và chạy/đối chiếu kết quả thực tế rồi báo cáo. Không đòi Phase 01–09 hay `APPROVED` mặc định.
+- **Handoff Antigravity:** Chỉ dùng khi chủ dự án yêu cầu hoặc task được giao cho Antigravity. Gửi brief gọn (mục tiêu, file/phạm vi, ràng buộc, lệnh check cần chạy); lưu prompt/evidence khi rubric hoặc task yêu cầu. Khi nhận kết quả, kiểm tra `git diff` và chạy/đối chiếu kết quả thực tế rồi báo cáo. Không đòi Phase 01–09 hay `APPROVED` mặc định; **không tự ý commit**.
 
 ## 3. Cơ chế `BLOCKED` và ranh giới phê duyệt
 
 Không mặc định mọi task đều có thể tự động hoàn thành. Agent **phải dừng và báo `BLOCKED`** (hoặc yêu cầu xác nhận rõ từ chủ dự án) trước khi thực hiện các hành động sau:
 
+- **Tự ý thực hiện `git commit`:** Tuyệt đối **KHÔNG** tự ý chạy `git commit` hoặc tạo commit mới nếu người dùng chưa yêu cầu / giao việc commit rõ ràng.
 - Thay đổi rubric chấm điểm, trọng số hoặc quy tắc quy đổi band CEFR (thuộc scope M05).
 - Thay đổi kiến trúc liên module chưa có contract, thay đổi cơ chế auth/phân quyền, billing, hoặc migration làm biến đổi/xóa dữ liệu lưu trữ.
 - Xử lý, commit hoặc phát tán secret, audio thật, dữ liệu cá nhân thật (PII) hoặc model weights không có quyền phân phối.

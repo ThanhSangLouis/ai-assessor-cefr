@@ -738,39 +738,49 @@
 <!-- Bento Grid: Triết lý & Nguyên tắc hệ thống -->
 <section class="lp-section lp-bento-section" id="principles" aria-labelledby="principles-h">
   <div class="lp-head center">
-    <span class="lp-eyebrow-text">{{ icon("shield") }} Triết lý phát triển &amp; Đạo đức AI</span>
-    <h2 id="principles-h">Minh bạch về công nghệ. Đặt người học làm trung tâm.</h2>
-    <p class="lp-subhead">AI hỗ trợ đánh giá, con người giữ vai trò quyết định. SpeakUp hướng đến trải nghiệm học minh bạch, công bằng và tôn trọng quyền riêng tư.</p>
+    <span class="lp-eyebrow-text">◇ Triết lý phát triển &amp; Đạo đức AI</span>
+    <h2 id="principles-h">Minh bạch về công nghệ. Đặt<br class="lp-hide-mobile"> <span class="lp-grad-center">người học làm trung tâm.</span></h2>
+    <div class="lp-head-bullets">
+      <span class="lp-bullet-chip">{{ icon("check") }} Đánh giá công bằng</span>
+      <span class="lp-bullet-chip">{{ icon("check") }} Có giảng viên kiểm chứng</span>
+      <span class="lp-bullet-chip">{{ icon("check") }} Tôn trọng sự đa dạng</span>
+      <span class="lp-bullet-chip">{{ icon("check") }} Bảo vệ dữ liệu</span>
+    </div>
   </div>
 
   <div class="lp-bento-grid">
-    <!-- Card 1: Khoảng tin cậy CEFR & 5 Tiêu chí sư phạm -->
+    <!-- Card 1: Biết rõ trình độ và kỹ năng cần cải thiện -->
     <div class="lp-bento-card card-confidence lp-rise">
       <div class="lp-bento-header">
         <div class="lp-bento-icon-badge">
-          <span class="lp-bento-icon icon-coral">{{ icon("scale") }}</span>
-          <span class="lp-bento-pill pill-coral">Nguyên tắc 01 · Định hướng tự luyện</span>
+          <span class="lp-bento-icon icon-coral">{{ icon("chart") }}</span>
+          <span class="lp-bento-pill pill-coral">01 · Năng lực thực tế</span>
         </div>
       </div>
       <div class="lp-bento-copy">
-        <h3>Ước lượng năng lực, không phán xét bằng một điểm số cứng</h3>
-        <p>Hệ thống đo lường bài nói dựa trên khoảng tin cậy (Confidence Interval) của 5 tiêu chí CEFR, giúp bạn thấy rõ vùng năng lực hiện tại và mục tiêu rèn luyện thay vì áp lực thi cử.</p>
+        <h3>Biết rõ trình độ và kỹ năng cần cải thiện</h3>
       </div>
 
-      <!-- Mock UI: CEFR Bracket & 5-Criteria Meters -->
+      <!-- Mock UI: CEFR Level & 5 Speaking Skills -->
       <div class="lp-bento-showcase showcase-confidence">
         <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag">{{ icon("chart") }} VÙNG ĐO LƯỜNG NĂNG LỰC</span>
-          <span class="lp-confidence-badge">{{ icon("check-circle") }} Độ tin cậy 95%</span>
+          <span class="lp-showcase-tag">{{ icon("chart") }} Trình độ CEFR</span>
+          <span class="lp-confidence-badge">{{ icon("layers") }} 5 kỹ năng nói</span>
         </div>
         
         <!-- CEFR Scale Range Track -->
         <div class="lp-bracket-scale">
           <div class="lp-scale-track">
-            <div class="lp-scale-bracket" style="left: 33%; width: 28%;">
-              <span class="bracket-label">Vùng ước lượng: <b>B1 (54–62)</b></span>
-              <span class="bracket-pin"></span>
+            <div class="lp-scale-pointer" style="left: 45%;">
+              <span class="pointer-label">B1 · 3.48/6.0</span>
+              <span class="pointer-dot"></span>
             </div>
+            <div class="lp-scale-node" style="left: 8%;"></div>
+            <div class="lp-scale-node" style="left: 26%;"></div>
+            <div class="lp-scale-node active" style="left: 45%;"></div>
+            <div class="lp-scale-node" style="left: 64%;"></div>
+            <div class="lp-scale-node" style="left: 82%;"></div>
+            <div class="lp-scale-node" style="left: 95%;"></div>
           </div>
           <div class="lp-scale-ticks">
             <span>A1</span>
@@ -782,226 +792,226 @@
           </div>
         </div>
 
-        <!-- 5 CEFR Criteria Micro Metrics -->
-        <div class="lp-criteria-matrix">
-          <div class="criteria-chip">
-            <span class="c-name">Phát âm</span>
-            <div class="c-bar"><i style="width: 88%;" class="bar-coral"></i></div>
-            <b class="c-val">88%</b>
+        <!-- 5 Speaking Skills Progress Meters -->
+        <div class="lp-skills-grid">
+          <div class="skill-tile">
+            <span class="sc-icon icon-coral">{{ icon("mic") }}</span>
+            <div class="sc-body">
+              <span class="sc-name">Phát âm</span>
+              <div class="sc-bar"><i style="width: 82%;" class="bar-coral"></i></div>
+            </div>
+            <span class="sc-val">82%</span>
           </div>
-          <div class="criteria-chip">
-            <span class="c-name">Trôi chảy</span>
-            <div class="c-bar"><i style="width: 92%;" class="bar-cyan"></i></div>
-            <b class="c-val">92%</b>
+          <div class="skill-tile">
+            <span class="sc-icon icon-cyan"><svg class="icon icon-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0"/></svg></span>
+            <div class="sc-body">
+              <span class="sc-name">Trôi chảy</span>
+              <div class="sc-bar"><i style="width: 78%;" class="bar-cyan"></i></div>
+            </div>
+            <span class="sc-val">78%</span>
           </div>
-          <div class="criteria-chip">
-            <span class="c-name">Từ vựng</span>
-            <div class="c-bar"><i style="width: 85%;" class="bar-amber"></i></div>
-            <b class="c-val">85%</b>
+          <div class="skill-tile">
+            <span class="sc-icon icon-amber">{{ icon("book-open") }}</span>
+            <div class="sc-body">
+              <span class="sc-name">Từ vựng</span>
+              <div class="sc-bar"><i style="width: 75%;" class="bar-amber"></i></div>
+            </div>
+            <span class="sc-val">75%</span>
           </div>
-          <div class="criteria-chip">
-            <span class="c-name">Ngữ pháp</span>
-            <div class="c-bar"><i style="width: 82%;" class="bar-purple"></i></div>
-            <b class="c-val">82%</b>
+          <div class="skill-tile">
+            <span class="sc-icon icon-purple">{{ icon("layers") }}</span>
+            <div class="sc-body">
+              <span class="sc-name">Ngữ pháp</span>
+              <div class="sc-bar"><i style="width: 72%;" class="bar-purple"></i></div>
+            </div>
+            <span class="sc-val">72%</span>
           </div>
-          <div class="criteria-chip span-full">
-            <span class="c-name">Mạch lạc &amp; liên kết ý</span>
-            <div class="c-bar"><i style="width: 90%;" class="bar-emerald"></i></div>
-            <b class="c-val">90%</b>
+          <div class="skill-tile">
+            <span class="sc-icon icon-emerald"><svg class="icon icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+            <div class="sc-body">
+              <span class="sc-name">Mạch lạc</span>
+              <div class="sc-bar"><i style="width: 80%;" class="bar-emerald"></i></div>
+            </div>
+            <span class="sc-val">80%</span>
           </div>
-        </div>
-        <div class="lp-criteria-note">
-          <span>* Các chỉ số trên mô phỏng ước lượng năng lực theo 5 tiêu chí CEFR chuẩn.</span>
         </div>
       </div>
     </div>
 
-    <!-- Card 2: Giảng viên phê duyệt cuối cùng (Human-in-the-loop) -->
+    <!-- Card 2: AI hỗ trợ đánh giá, giảng viên kiểm chứng -->
     <div class="lp-bento-card card-human lp-rise">
       <div class="lp-bento-header">
         <div class="lp-bento-icon-badge">
           <span class="lp-bento-icon icon-emerald">{{ icon("cap") }}</span>
-          <span class="lp-bento-pill pill-emerald">Nguyên tắc 02 · Tính sư phạm</span>
+          <span class="lp-bento-pill pill-emerald">02 · Giảng viên đồng hành</span>
         </div>
       </div>
       <div class="lp-bento-copy">
-        <h3>AI là trợ lý phân tích, Giảng viên là người quyết định</h3>
-        <p>AI đóng vai trò phân tích sơ bộ và chỉ ra các điểm cần hoàn thiện. Giảng viên bộ môn trực tiếp nghe lại bản ghi âm, đánh giá ngữ cảnh và xác nhận kết quả cuối cùng.</p>
+        <h3>AI hỗ trợ đánh giá, giảng viên kiểm chứng</h3>
       </div>
 
-      <!-- Mock UI: Human-in-the-Loop Audit Pass -->
+      <!-- Mock UI: Vertical Timeline Flow -->
       <div class="lp-bento-showcase showcase-human">
         <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag">{{ icon("users") }} QUY TRÌNH THẨM ĐỊNH HAI LỚP</span>
-          <span class="lp-audit-badge">{{ icon("shield") }} Human-in-the-loop</span>
+          <span class="lp-showcase-tag"><svg class="icon icon-flow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 12h-8"/><circle cx="18" cy="12" r="3"/><path d="M6 9v6"/></svg> Quy trình đánh giá</span>
+          <span class="lp-flow-status pill-flow-emerald">AI + Giảng viên</span>
         </div>
 
-        <div class="lp-audit-steps">
-          <!-- Step 1: AI Assistant Suggestion -->
-          <div class="lp-audit-step step-ai">
-            <div class="step-icon">🤖</div>
-            <div class="step-info">
-              <div class="step-head"><b>AI đánh giá sơ bộ</b> <span class="step-badge">Gợi ý chẩn đoán</span></div>
-              <p>Phát hiện 2 điểm nuốt âm · Gợi ý dải điểm <b>B1+ (60/100)</b></p>
-            </div>
-            <span class="step-check">{{ icon("check") }}</span>
+        <div class="lp-timeline-container">
+          <div class="lp-timeline-track">
+            <span class="track-dot dot-1"></span>
+            <span class="track-dot dot-2"></span>
+            <span class="track-dot dot-3"></span>
           </div>
-
-          <!-- Connector -->
-          <div class="lp-audit-connector">
-            <i></i><span>Chuyển giao thẩm định</span><i></i>
-          </div>
-
-          <!-- Step 2: Teacher Final Verification -->
-          <div class="lp-audit-step step-teacher">
-            <div class="step-avatar">
-              <span class="teacher-mark">{{ icon("cap") }}</span>
+          <div class="lp-timeline-list">
+            <div class="lp-t-item">
+              <div class="t-item-icon icon-robot">
+                <svg class="icon icon-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
+              </div>
+              <div class="t-item-info">
+                <b>1. AI đánh giá</b>
+                <span>Nhận diện kỹ năng</span>
+              </div>
+              <div class="t-item-check">{{ icon("check") }}</div>
             </div>
-            <div class="step-info">
-              <div class="step-head"><b>Giảng viên xác nhận kết quả</b> <span class="step-badge role">Thẩm định sư phạm</span></div>
-              <p>Đã nghe lại file ghi âm (0:14) · <span class="teacher-quote">"Ngữ điệu tự nhiên, lập luận rõ ràng."</span></p>
-            </div>
-          </div>
-        </div>
 
-        <!-- Official Seal of Pedagogical Approval -->
-        <div class="lp-verified-seal">
-          <span class="seal-ring">{{ icon("check-circle") }}</span>
-          <div class="seal-text">
-            <b>ĐÃ PHÊ DUYỆT CHÍNH THỨC · ĐẠT CHUẨN B1</b>
-            <small>Xác nhận bởi giảng viên phụ trách học phần</small>
+            <div class="lp-t-item">
+              <div class="t-item-icon icon-teacher">
+                {{ icon("user") }}
+              </div>
+              <div class="t-item-info">
+                <b>2. Giảng viên xem xét</b>
+                <span>Nghe lại bài nói</span>
+              </div>
+              <div class="t-item-check">{{ icon("check") }}</div>
+            </div>
+
+            <div class="lp-t-item item-seal">
+              <div class="t-item-icon icon-shield-seal">
+                {{ icon("shield") }}
+              </div>
+              <div class="t-item-info">
+                <b>3. Xác nhận kết quả</b>
+                <span>B1</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Card 3: Đánh giá độ thông hiểu, tôn trọng mọi Accent -->
+    <!-- Card 3: Tôn trọng chất giọng riêng, chú trọng giao tiếp hiệu quả -->
     <div class="lp-bento-card card-accent lp-rise">
       <div class="lp-bento-header">
         <div class="lp-bento-icon-badge">
           <span class="lp-bento-icon icon-cyan">{{ icon("headphones") }}</span>
-          <span class="lp-bento-pill pill-cyan">Nguyên tắc 03 · Công bằng ngôn ngữ</span>
+          <span class="lp-bento-pill pill-cyan">03 · Công bằng ngôn ngữ</span>
         </div>
       </div>
       <div class="lp-bento-copy">
-        <h3>Tôn trọng chất giọng, đánh giá khả năng giao tiếp</h3>
-        <p>Hệ thống tập trung đo lường độ rõ nghĩa (Intelligibility) và nhịp điệu tự nhiên (Fluency). Mọi chất giọng vùng miền hay cá nhân đều được tôn trọng theo chuẩn giao tiếp quốc tế CEFR.</p>
+        <h3>Tôn trọng chất giọng riêng,<br>chú trọng giao tiếp hiệu quả</h3>
       </div>
 
-      <!-- Mock UI: Live Acoustic Waveform & Intelligibility Meter -->
+      <!-- Mock UI: Natural Rhythm & Communication Delivery -->
       <div class="lp-bento-showcase showcase-accent">
         <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag">{{ icon("mic") }} ÂM PHỔ &amp; KHẢ NĂNG GIAO TIẾP</span>
-          <span class="lp-live-wave-tag"><i class="wave-dot"></i> Tín hiệu chuẩn hóa</span>
+          <span class="lp-showcase-tag"><svg class="icon icon-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0"/></svg> Phân tích bài nói</span>
+          <span class="lp-live-wave-tag"><i class="wave-dot"></i> Minh họa</span>
         </div>
 
-        <!-- Equalizer & Wave Representation -->
-        <div class="lp-spectrum-box">
-          <div class="spectrum-bars">
-            <span style="--h: 35%;"></span>
-            <span style="--h: 65%;"></span>
-            <span style="--h: 45%;"></span>
-            <span style="--h: 85%;"></span>
-            <span style="--h: 95%;"></span>
-            <span style="--h: 60%;"></span>
-            <span style="--h: 75%;"></span>
-            <span style="--h: 100%;"></span>
-            <span style="--h: 80%;"></span>
-            <span style="--h: 55%;"></span>
-            <span style="--h: 90%;"></span>
-            <span style="--h: 70%;"></span>
-            <span style="--h: 40%;"></span>
-            <span style="--h: 85%;"></span>
-            <span style="--h: 60%;"></span>
-            <span style="--h: 30%;"></span>
+        <!-- Symmetrical Waveform + Audio Player -->
+        <div class="lp-audio-player-box">
+          <div class="lp-waveform-bars">
+            <span style="height: 18%;"></span><span style="height: 32%;"></span><span style="height: 48%;"></span>
+            <span style="height: 72%;"></span><span style="height: 94%;"></span><span style="height: 72%;"></span>
+            <span style="height: 48%;"></span><span style="height: 28%;"></span><span style="height: 38%;"></span>
+            <span style="height: 62%;"></span><span style="height: 88%;"></span><span style="height: 100%;"></span>
+            <span style="height: 88%;"></span><span style="height: 62%;"></span><span style="height: 38%;"></span>
+            <span style="height: 28%;"></span><span style="height: 48%;"></span><span style="height: 72%;"></span>
+            <span style="height: 94%;"></span><span style="height: 72%;"></span><span style="height: 48%;"></span>
+            <span style="height: 32%;"></span><span style="height: 18%;"></span>
           </div>
-          <div class="spectrum-caption">
-            <span>Dữ liệu vào: Giọng nói tự nhiên</span>
-            <b>142 từ / phút · Nhịp độ chuẩn</b>
+          <div class="lp-player-controls">
+            <button type="button" class="lp-play-btn" aria-label="Phát âm thanh">{{ icon("play") }}</button>
+            <span class="lp-play-time">0:00 / 0:14</span>
+            <div class="lp-play-track"><i style="width: 32%;"></i></div>
           </div>
         </div>
 
-        <!-- 2 Core Dual Metrics -->
-        <div class="lp-dual-meters">
-          <div class="meter-block">
-            <div class="meter-head">
-              <span class="m-title">Độ thông hiểu (Intelligibility)</span>
-              <b class="m-val val-cyan">96%</b>
+        <!-- 2 Metric Cards -->
+        <div class="lp-metrics-dual">
+          <div class="lp-metric-card">
+            <div class="m-card-top">
+              <span class="m-card-icon val-cyan">{{ icon("chat") }}</span>
+              <span class="m-card-label">Độ rõ nghĩa</span>
             </div>
-            <div class="m-track"><i style="width: 96%;" class="bar-cyan"></i></div>
-            <small>Người nghe nắm bắt trọn vẹn thông điệp và nội dung cốt lõi</small>
+            <div class="m-card-num val-cyan">96%</div>
+            <div class="m-card-bar"><i style="width: 96%;" class="bar-cyan"></i></div>
           </div>
-          <div class="meter-block">
-            <div class="meter-head">
-              <span class="m-title">Độ trôi chảy &amp; ngắt nghỉ (Fluency)</span>
-              <b class="m-val val-emerald">92%</b>
+          <div class="lp-metric-card">
+            <div class="m-card-top">
+              <span class="m-card-icon val-emerald">{{ icon("chart") }}</span>
+              <span class="m-card-label">Độ trôi chảy</span>
             </div>
-            <div class="m-track"><i style="width: 92%;" class="bar-emerald"></i></div>
-            <small>Ngắt nghỉ đúng ngữ đoạn nghĩa, luồng nói liền mạch</small>
+            <div class="m-card-num val-emerald">92%</div>
+            <div class="m-card-bar"><i style="width: 92%;" class="bar-emerald"></i></div>
           </div>
         </div>
 
         <div class="lp-accent-banner">
-          {{ icon("sparkle") }} <span><b>Tiêu chí CEFR:</b> Không trừ điểm chất giọng nếu phát âm rõ nghĩa và mạch lạc.</span>
+          {{ icon("info") }} <span>Đánh giá dựa trên khả năng truyền đạt.</span>
         </div>
       </div>
     </div>
 
-    <!-- Card 4: Chủ quyền dữ liệu & Két bảo mật riêng tư -->
+    <!-- Card 4: Minh bạch dữ liệu, bạn nắm quyền kiểm soát -->
     <div class="lp-bento-card card-privacy lp-rise">
       <div class="lp-bento-header">
         <div class="lp-bento-icon-badge">
           <span class="lp-bento-icon icon-purple">{{ icon("lock") }}</span>
-          <span class="lp-bento-pill pill-purple">Nguyên tắc 04 · Quyền riêng tư</span>
+          <span class="lp-bento-pill pill-purple">04 · Quyền riêng tư</span>
         </div>
       </div>
       <div class="lp-bento-copy">
-        <h3>Dữ liệu giọng nói của bạn được bảo vệ và quản lý minh bạch</h3>
-        <p>Bản ghi âm giọng nói là dữ liệu học tập cá nhân. SpeakUp áp dụng mã hóa đầu cuối, phân quyền nghiêm ngặt và trao toàn quyền kiểm soát cho chính người học.</p>
+        <h3>Minh bạch dữ liệu, bạn nắm quyền kiểm soát</h3>
       </div>
 
-      <!-- Mock UI: Data Sovereignty & Privacy Controls Console -->
+      <!-- Mock UI: Clean Product Action Rows -->
       <div class="lp-bento-showcase showcase-privacy">
-        <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag">{{ icon("shield") }} QUẢN TRỊ DỮ LIỆU MINH BẠCH</span>
-          <span class="lp-enc-badge">Mã hóa AES-256</span>
-        </div>
-
-        <!-- 3 Interactive Control Actions -->
-        <div class="lp-vault-actions">
-          <div class="vault-card">
-            <div class="vault-icon icon-dl">{{ icon("download") }}</div>
-            <div class="vault-info">
-              <b>Xuất dữ liệu 1 chạm (1-Click Export)</b>
-              <p>Tải toàn bộ file âm thanh (.wav) và phiếu chấm điểm (.json/pdf) bất cứ lúc nào.</p>
-            </div>
-            <span class="vault-status">Sẵn sàng</span>
+        <div class="lp-action-list">
+          <div class="action-row">
+            <div class="action-icon icon-blue">{{ icon("download") }}</div>
+            <span class="action-text">Xuất dữ liệu học tập</span>
+            <span class="action-arrow">{{ icon("chevron-right") }}</span>
           </div>
 
-          <div class="vault-card">
-            <div class="vault-icon icon-lock">{{ icon("lock") }}</div>
-            <div class="vault-info">
-              <b>Phạm vi truy cập giới hạn</b>
-              <p>Chỉ người học và giảng viên phụ trách học phần có quyền nghe lại bài nộp.</p>
-            </div>
-            <span class="vault-status active">Riêng tư</span>
+          <div class="action-row">
+            <div class="action-icon icon-purple">{{ icon("users") }}</div>
+            <span class="action-text">Kiểm soát quyền truy cập</span>
+            <span class="action-arrow">{{ icon("chevron-right") }}</span>
           </div>
 
-          <div class="vault-card">
-            <div class="vault-icon icon-trash">{{ icon("trash") }}</div>
-            <div class="vault-info">
-              <b>Quyền xóa vĩnh viễn (Right to Erasure)</b>
-              <p>Xóa sạch mọi bản ghi âm và lịch sử luyện tập khỏi máy chủ chỉ với một yêu cầu.</p>
-            </div>
-            <span class="vault-status">Toàn quyền</span>
+          <div class="action-row">
+            <div class="action-icon icon-red">{{ icon("trash") }}</div>
+            <span class="action-text">Xóa dữ liệu</span>
+            <span class="action-arrow">{{ icon("chevron-right") }}</span>
           </div>
         </div>
 
-        <!-- Privacy Guarantee Footer Bar -->
+        <!-- Footer Guarantees (3 columns matching mockup) -->
         <div class="lp-vault-guarantee">
-          <span class="g-item">{{ icon("check") }} Không bán dữ liệu</span>
-          <span class="g-item">{{ icon("check") }} Không chia sẻ bên thứ ba</span>
-          <span class="g-item">{{ icon("check") }} Quyền xóa dữ liệu</span>
+          <div class="g-col">
+            <span class="g-check">{{ icon("check") }}</span>
+            <span class="g-label">Dữ liệu cá nhân</span>
+          </div>
+          <div class="g-col">
+            <span class="g-check">{{ icon("check") }}</span>
+            <span class="g-label">Không chia sẻ<br>bên thứ ba</span>
+          </div>
+          <div class="g-col">
+            <span class="g-check">{{ icon("check") }}</span>
+            <span class="g-label">Bạn toàn quyền<br>kiểm soát</span>
+          </div>
         </div>
       </div>
     </div>

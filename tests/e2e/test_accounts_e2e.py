@@ -77,8 +77,8 @@ def test_an_administrator_hands_out_an_account_and_its_first_login_sets_a_passwo
         page = ctx.new_page()
         page.goto("/login?next=/review/stats")
         page.get_by_label("Email", exact=True).fill("E2E-GV-NEW")
-        page.get_by_label("Mật khẩu").fill(temporary)
-        page.get_by_role("button", name="Đăng nhập").click()
+        page.get_by_label("Mật khẩu", exact=True).fill(temporary)
+        page.get_by_role("button", name="Đăng nhập", exact=True).click()
         # Wherever it was heading, a temporary password goes to the account page.
         page.wait_for_url(lambda url: urlparse(url).path == "/account")
         expect(page.locator("#first-time")).to_be_visible()

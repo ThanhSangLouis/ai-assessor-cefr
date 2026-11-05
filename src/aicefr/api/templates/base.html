@@ -51,14 +51,18 @@
 {% endblock %}
 
 {% if account %}
-<aside class="app-sidebar" aria-label="Thanh điều khiển">
-  <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="SpeakUp, về trang chính">
-    {{ logo() }}
-    <span class="brand-text">
-      <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
-      <span class="brand-sub">Luyện nói A1–C2</span>
-    </span>
-  </a>
+<aside class="app-sidebar" id="app-sidebar" aria-label="Thanh điều khiển">
+  <div class="sidebar-head">
+    <a class="brand" href="{{ homes.get(role, '/') }}" aria-label="SpeakUp, về trang chính">
+      {{ logo() }}
+      <span class="brand-text">
+        <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
+      </span>
+    </a>
+    <button type="button" class="drawer-close" id="drawer-close" aria-label="Đóng menu điều hướng">
+      {{ icon("x") }}
+    </button>
+  </div>
 
   <nav class="site-nav" aria-label="Điều hướng chính">
     {#- A `nav-badge` shows how many things wait behind an item (D028); filled
@@ -68,7 +72,7 @@
       {%- if not account.must_change_password %}<span class="nav-badge" data-badge="{{ name }}" hidden></span>{% endif -%}
     {%- endmacro %}
     {% if role == "student" %}
-      <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("path") }}<span class="nav-label">Luyện tập</span>{{ badge("reviews_due") }}</a>
+      <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("home") }}<span class="nav-label">Lộ trình học</span>{{ badge("reviews_due") }}</a>
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
       {#- D068: one entry for the history and the progress, two tabs inside. -#}
       <a href="/my-progress"{% if here in ("mine", "progress") %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Kết quả</span>{{ badge("results") }}</a>
@@ -104,19 +108,43 @@
         {{ icon("chevron-down", "icon chevron") }}
       </summary>
       <div class="account-panel">
-        <p class="account-head">Đang đăng nhập là <b>{{ account.display_name }}</b>{% if account.email %}<br><span class="muted small">{{ account.email }}</span>{% endif %}<br>{{ role_names.get(role, role) }}</p>
-        <a href="/account"{% if here == "account" %} aria-current="page"{% endif %}>{{ icon("key") }}<span>Tài khoản và mật khẩu</span></a>
+        <div class="account-panel-user">
+          <span class="account-panel-name">{{ account.display_name }}</span>
+          {% if account.email %}<span class="account-panel-email">{{ account.email }}</span>{% endif %}
+        </div>
+        <div class="account-panel-divider"></div>
+        <a href="/account"{% if here == "account" %} aria-current="page"{% endif %} class="account-panel-item">
+          {{ icon("key") }}<span>Tài khoản và mật khẩu</span>
+        </a>
         {% if role == "admin" and api_docs %}
-          <a href="/docs">{{ icon("book-open") }}<span>Tài liệu API</span></a>
+          <a href="/docs" class="account-panel-item">{{ icon("book-open") }}<span>Tài liệu API</span></a>
         {% endif %}
-        <button type="button" id="theme-toggle" aria-pressed="false">
-          {{ icon("moon", "icon theme-dark") }}{{ icon("sun", "icon theme-light") }}<span id="theme-toggle-label">Giao diện tối</span>
+        <button type="button" id="theme-toggle" class="account-panel-item theme-toggle-btn" aria-pressed="false">
+          <span class="theme-toggle-left">
+            {{ icon("moon", "icon theme-moon") }}
+            <span id="theme-toggle-label" data-static-label="Giao diện tối">Giao diện tối</span>
+          </span>
+          <span class="toggle-switch" aria-hidden="true"><span class="toggle-thumb"></span></span>
         </button>
-        <button type="button" id="logout-link">{{ icon("logout") }}<span>Đăng xuất</span></button>
+        <button type="button" id="logout-link" class="account-panel-item logout-btn">
+          {{ icon("logout") }}<span>Đăng xuất</span>
+        </button>
       </div>
     </details>
   </div>
 </aside>
+<header class="mobile-topbar" aria-label="Thanh công cụ di động">
+  <button type="button" class="mobile-drawer-toggle" id="drawer-toggle" aria-label="Mở menu điều hướng" aria-expanded="false" aria-controls="app-sidebar">
+    {{ icon("menu") }}
+  </button>
+  <a class="brand mobile-brand" href="{{ homes.get(role, '/') }}" aria-label="SpeakUp, về trang chính">
+    {{ logo() }}
+    <span class="brand-text">
+      <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
+    </span>
+  </a>
+</header>
+<div class="drawer-scrim" id="drawer-scrim" aria-hidden="true"></div>
 {% else %}
 <header class="site-header">
   <div class="header-inner">
@@ -159,15 +187,8 @@
 {% block content %}{% endblock %}
 </main>
 
+{% if not account %}
 <footer class="site-footer">
-  {#- D068 + FE (31/10/2026): the full footer for visitors; one line inside the
-      app, where every screen is work. Both say the two required phrases
-      word for word (SRS 11.3, tests/test_web.py). -#}
-  {% if account %}
-  <div class="footer-inner">
-    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
-      <a href="/bands">Band A1–C2 là gì?</a></p>
-  {% else %}
   <div class="footer-wrap footer-inner">
     <div class="footer-grid">
       <!-- Cột 1: Thương hiệu -->
@@ -246,9 +267,19 @@
         </a>
       </div>
     </div>
-  {% endif %}
   </div>
 </footer>
+{% else %}
+<footer class="site-footer">
+  {#- D068: one line inside the app, where every screen is work. It says the
+      two required phrases word for word (SRS 11.3, tests/test_web.py), as the
+      visitors' footer above does. -#}
+  <div class="footer-inner">
+    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
+      <a href="/bands">Band A1–C2 là gì?</a></p>
+  </div>
+</footer>
+{% endif %}
 
 <!-- Toasts are announced politely so a screen reader hears the outcome of an
      action without the focus being stolen. -->
