@@ -15,6 +15,8 @@ x-bus: &bus
   # D050: Redis carries the work (BullMQ), the events (Streams) and the calls.
   AICEFR_BUS: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD in .env}@redis:6379/0
   AICEFR_MAX_JOBS: "2"
+  # SEC-02: core (from-header check on upload) and speech (decoder) must agree.
+  AICEFR_MAX_DECODED_BYTES: ${AICEFR_MAX_DECODED_BYTES:-126720000}
 
 x-env: &env
   <<: *bus

@@ -140,10 +140,24 @@ def new_flow(mode: str, next_path: str, account_id: str | None = None) -> Flow:
 
 
 def safe_next(path: str | None) -> str:
-    """A same-site path to return to, or an empty string."""
-    if path and path.startswith("/") and not path.startswith("//") and "\\" not in path:
-        return path
-    return ""
+    """A same-site path to return to, or an empty string.
+
+    SEC-04: a browser drops tab and newline from a URL and reads a backslash
+    as "/", so "/\\t/evil.example" or "/\\evil.example" leave the site. Those
+    characters are refused written plainly, and once percent-decoded too.
+    The same rule is `safeNext` in static/login.js.
+    """
+    if not path or not path.startswith("/") or path.startswith("//"):
+        return ""
+    if any(c == "\\" or c.isspace() or not c.isprintable() for c in path):
+        return ""
+    decoded = urllib.parse.unquote(path)
+    if decoded.startswith("//") or any(c == "\\" or not c.isprintable() for c in decoded):
+        return ""
+    parts = urllib.parse.urlsplit(path)
+    if parts.scheme or parts.netloc:
+        return ""
+    return path
 
 
 def cookie_name(secure: bool) -> str:

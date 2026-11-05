@@ -356,7 +356,9 @@ def test_tc_login_12_safe_next_url_redirect_contract(tmp_path, monkeypatch):
     for page in ("login.js", "signup.js"):
         js = c.get(f"/static/{page}").text
         assert 'start.searchParams.set("next", next)' in js
-        assert 'startsWith("//")' not in js
+        assert "window.sitePath(" in js
+        if page == "login.js":
+            assert "window.sitePath(safeNext(" in js
 
 
 def test_tc_login_13_client_validation_and_form_alert_contract(tmp_path, monkeypatch):

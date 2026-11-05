@@ -227,19 +227,22 @@ def change_my_contact(
     one the account already signs in with needs the password, as changing the
     password does -- otherwise a borrowed session could move the account to
     another address and lock its owner out. A wrong password counts as a failed
-    login (NFR-07).
+    login (NFR-07), and while the account is locked even the right one is
+    refused with 429 (SEC-03): the shared `reauthenticate` keeps one counter.
     """
     row = auth.get(account.account_id)
     changing = (
         body.email is not None and row["email"] and body.email.strip().lower() != row["email"]
     )
     if changing:
-        if not body.current_password or not passwords.verify_password(
-            body.current_password, row["password_hash"]
-        ):
-            if body.current_password:
-                auth.record_failure(account.account_id)
+        if not body.current_password:
             raise HTTPException(403, "nhập đúng mật khẩu hiện tại để đổi email")
+        try:
+            auth.reauthenticate(account.account_id, body.current_password)
+        except AccountLocked as e:
+            raise HTTPException(429, f"tài khoản tạm khóa đến {e.args[0]}, thử lại sau") from e
+        except WrongPassword as e:
+            raise HTTPException(403, "nhập đúng mật khẩu hiện tại để đổi email") from e
     try:
         row = auth.set_contact(account.account_id, email=body.email, full_name=body.full_name)
     except EmailTaken as e:

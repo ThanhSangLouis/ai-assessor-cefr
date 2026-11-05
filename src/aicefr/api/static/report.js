@@ -274,7 +274,10 @@ const HINTS = {
     `Bài nói ngắn hơn ${LIMITS.minSeconds} giây. Hãy nói dài hơn, ` +
     "khoảng 30 giây trở lên để chấm ổn định.",
   AUDIO_TOO_LONG: `Bài nói dài hơn ${LIMITS.maxSeconds} giây. Hãy rút gọn lại.`,
-  AUDIO_TOO_LARGE: `File vượt quá ${LIMITS.maxMib} MiB.`,
+  AUDIO_TOO_LARGE:
+    `File vượt quá ${LIMITS.maxMib} MiB, hoặc giải mã ra quá lớn ` +
+    "(tần số mẫu quá cao hay quá nhiều kênh). Hãy ghi âm ngay trên trang, " +
+    "hoặc xuất lại bản ghi tối đa 48 kHz.",
   WRONG_SAMPLE_RATE: "File không ở tần số 16 kHz. Hãy xuất lại đúng định dạng.",
   HIGH_SILENCE_RATIO: "Bản ghi có quá nhiều khoảng lặng. Hãy thu ở nơi yên tĩnh và nói liên tục hơn.",
   CLIPPING_DETECTED: "Âm thu quá to nên bị méo. Hãy để micro xa miệng hơn hoặc giảm mức thu.",

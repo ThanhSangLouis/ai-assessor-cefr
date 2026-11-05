@@ -31,11 +31,15 @@ import json
 import logging
 import signal
 import threading
-from collections.abc import AsyncIterator, Iterable
+from collections.abc import AsyncIterator, Callable, Iterable
 from dataclasses import dataclass, field
 from typing import Protocol
 
 logger = logging.getLogger(__name__)
+
+# SEC-05: asks whether the session behind a stream still holds; returns None
+# while it does, else why not (`session_revoked`, `account_disabled`, ...).
+SessionCheck = Callable[[], str | None]
 
 CHANNEL = "aicefr:live"
 # How long a browser waits before reconnecting after the stream ends.
@@ -185,8 +189,31 @@ def end_streams_on_sigterm(hub: LiveHub) -> None:
     signal.signal(signal.SIGTERM, on_term)
 
 
+async def _session_ended(check: SessionCheck, session_id: str) -> str | None:
+    """Why the stream's session no longer holds, or None while it does.
+
+    Run off the loop: the check reads the session store. A check that fails is
+    an ended session -- the browser reconnects and is checked again at the door.
+    """
+    try:
+        reason = await asyncio.to_thread(check)
+    except Exception:  # noqa: BLE001 - see the docstring
+        logger.warning("live session check failed", exc_info=True)
+        reason = "check_failed"
+    if reason:
+        logger.info("session.stream_closed reason=%s session=%s", reason, session_id or "-")
+    return reason
+
+
 async def stream(
-    hub: LiveHub, sub: Subscription, *, heartbeat_s: float, lifetime_s: float
+    hub: LiveHub,
+    sub: Subscription,
+    *,
+    heartbeat_s: float,
+    lifetime_s: float,
+    check: SessionCheck | None = None,
+    recheck_s: float = 30.0,
+    session_id: str = "",
 ) -> AsyncIterator[str]:
     """The frames of one open stream, until the browser leaves or `lifetime_s` passes.
 
@@ -194,19 +221,38 @@ async def stream(
     own, through the gateway, so a session ended meanwhile stops receiving. A
     comment line every `heartbeat_s` keeps proxies from closing an idle
     connection.
+
+    SEC-05: with a `check`, the stream also asks every `recheck_s`, and before
+    each event, whether the session that opened it still holds; when it does
+    not, the stream ends there and the event is not sent. `session_id` names
+    the session in the log only (a prefix of the token's hash, never the token).
     """
     loop = asyncio.get_running_loop()
-    deadline = loop.time() + lifetime_s
+    now = loop.time()
+    deadline = now + lifetime_s
+    next_ping = now + heartbeat_s
+    next_check = now + recheck_s if check is not None else float("inf")
     try:
         yield f"retry: {RETRY_MS}\nevent: ready\ndata: {{}}\n\n"
-        while (left := deadline - loop.time()) > 0:
+        while (left := deadline - (now := loop.time())) > 0:
+            wait = max(0.0, min(left, next_ping - now, next_check - now))
             try:
-                frame = await asyncio.wait_for(sub.queue.get(), timeout=min(heartbeat_s, left))
+                frame = await asyncio.wait_for(sub.queue.get(), timeout=wait)
             except TimeoutError:
-                frame = ": ping\n\n"
+                frame = ""
             if frame is None:  # `end`: the process is stopping
                 return
-            yield frame
+            now = loop.time()
+            if check is not None and (frame or now >= next_check):
+                if await _session_ended(check, session_id):
+                    return
+                next_check = loop.time() + recheck_s
+            if frame:
+                yield frame
+                next_ping = loop.time() + heartbeat_s
+            elif now >= next_ping:
+                yield ": ping\n\n"
+                next_ping = loop.time() + heartbeat_s
     finally:
         hub.close(sub)
 

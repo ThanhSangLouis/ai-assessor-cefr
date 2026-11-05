@@ -39,10 +39,43 @@ if (passwordEl && capsHint) {
   );
 }
 
+// Where to go after login: a path of this site, or null. Only same-site paths.
+// Without this check, a link like /login?next=https://evil.example sends the
+// user to a copy of the login page right after a real login, and `javascript:`
+// would run in this origin. A leading "//" is a protocol-relative URL, so it
+// is rejected too. SEC-04: startsWith alone missed "/\evil.example" and
+// "/<tab>/evil.example": the browser reads a backslash as "/" and drops tab
+// and newline, so both leave the site. Such characters are refused, written
+// plainly or percent-encoded, and what is left must resolve to this origin.
+// The same rule is safe_next in aicefr/auth/google.py.
+function safeNext(value, origin) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+  if (/[\\\s\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
+  let decoded;
+  try {
+    decoded = decodeURIComponent(value);
+  } catch (err) {
+    return null;
+  }
+  if (decoded.startsWith("//") || /[\\\u0000-\u001f\u007f-\u009f]/.test(decoded)) return null;
+  let url;
+  try {
+    url = new URL(value, origin);
+  } catch (err) {
+    return null;
+  }
+  if (url.origin !== origin || (url.protocol !== "http:" && url.protocol !== "https:")) {
+    return null;
+  }
+  return url.pathname + url.search + url.hash;
+}
+
 // Google OAuth next path preserved
 const googleLink = document.getElementById("google-login");
 if (googleLink) {
-  const next = window.sitePath(new URLSearchParams(location.search).get("next"));
+  const next = window.sitePath(safeNext(new URLSearchParams(location.search).get("next"), location.origin));
   if (next) {
     const start = new URL(googleLink.href, location.origin);
     start.searchParams.set("next", next);
@@ -263,8 +296,8 @@ if (form) {
         // Back to the page the person was heading for, else the start page of
         // their role; only pages on this site (common.js, sitePath). A
         // temporary password goes to the account page whatever was asked (D028).
-        const home = window.sitePath(d.home);
-        const next = window.sitePath(new URLSearchParams(location.search).get("next"));
+        const home = window.sitePath(safeNext(d.home, location.origin));
+        const next = window.sitePath(safeNext(new URLSearchParams(location.search).get("next"), location.origin));
         const path = d.must_change_password && home ? home : next || home || "/";
         location.assign(location.origin + path);
         return;

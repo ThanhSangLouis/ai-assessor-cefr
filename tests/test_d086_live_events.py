@@ -77,6 +77,88 @@ def test_a_signed_in_tab_receives_its_own_events_on_the_stream(m):
     assert hub.count(me) == 0
 
 
+# ======================================================== SEC-05: a stream outlives no session
+
+
+@pytest.fixture
+def rechecked(tmp_path, monkeypatch):
+    """A stream that would last 3 s and asks every 0.1 s whether its session holds."""
+    return boot(
+        tmp_path,
+        monkeypatch,
+        AICEFR_LIVE_MAX_SECONDS="3",
+        AICEFR_LIVE_HEARTBEAT="5",
+        AICEFR_LIVE_RECHECK="0.1",
+    )
+
+
+def _stream_while(m, client, me: str, act) -> tuple[str, float]:
+    """Open the stream, `act` once it is open, then tell the account of `r-after`."""
+    hub = context.svc().live.hub
+
+    def when_open():
+        deadline = time.monotonic() + 5
+        while hub.count(me) == 0 and time.monotonic() < deadline:
+            time.sleep(0.02)
+        act()
+        context.svc().live.notify("response.finished", {"response_id": "r-after"}, accounts=[me])
+
+    threading.Thread(target=when_open, daemon=True).start()
+    started = time.monotonic()
+    r = client.get("/api/v1/me/events")
+    assert r.status_code == 200
+    return r.text, time.monotonic() - started
+
+
+def _closed_reasons(caplog) -> list[str]:
+    return [r.getMessage() for r in caplog.records if "session.stream_closed" in r.getMessage()]
+
+
+def test_signing_out_ends_the_open_stream_before_it_tells_anything_more(rechecked, caplog):
+    student = login_as(rechecked, "SV-001")
+    me = account_id(rechecked, "SV-001")
+    token = student.cookies.get("aicefr_session")
+    auth = rechecked.app.state.auth_repo
+    with caplog.at_level("INFO"):
+        text, took = _stream_while(rechecked, student, me, lambda: auth.logout(token))
+    assert "event: ready" in text and "r-after" not in text
+    assert took < 2  # within a few rechecks, not the 3 s lifetime
+    closed = _closed_reasons(caplog)
+    assert len(closed) == 1 and "session_revoked" in closed[0]
+    assert token not in " ".join(r.getMessage() for r in caplog.records)
+
+
+def test_disabling_the_account_ends_its_open_stream(rechecked, caplog):
+    student = login_as(rechecked, "SV-001")
+    me = account_id(rechecked, "SV-001")
+    auth = rechecked.app.state.auth_repo
+    with caplog.at_level("INFO"):
+        text, took = _stream_while(rechecked, student, me, lambda: auth.set_disabled(me, True))
+    assert "r-after" not in text and took < 2
+    assert any("account_disabled" in m for m in _closed_reasons(caplog))
+
+
+def test_a_new_role_ends_the_stream_opened_under_the_old_one(rechecked, caplog):
+    from aicefr.storage.auth_repository import Role
+
+    student = login_as(rechecked, "SV-001")
+    me = account_id(rechecked, "SV-001")
+    auth = rechecked.app.state.auth_repo
+    with caplog.at_level("INFO"):
+        text, took = _stream_while(rechecked, student, me, lambda: auth.set_role(me, Role.ADMIN))
+    assert "r-after" not in text and took < 2
+    assert any("role_changed" in m for m in _closed_reasons(caplog))
+
+
+def test_a_session_that_holds_keeps_its_stream_and_its_events(rechecked, caplog):
+    student = login_as(rechecked, "SV-001")
+    me = account_id(rechecked, "SV-001")
+    with caplog.at_level("INFO"):
+        text, took = _stream_while(rechecked, student, me, lambda: time.sleep(0.5))
+    assert "r-after" in text and took > 2.5  # several rechecks passed, and the lifetime ran
+    assert _closed_reasons(caplog) == []
+
+
 def test_a_scored_response_tells_its_owner_by_id_only(m, recorder):
     student = login_as(m, "SV-001")
     rid = submit_assessment(student)

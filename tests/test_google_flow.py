@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 from test_profile import (
     CLIENT_ID,
     account_id,
+    audit,
     finish,
     google_note,
     login_as,
@@ -152,3 +153,135 @@ def test_the_administrator_sees_what_to_register_with_google(tmp_path, monkeypat
     assert {"Chưa đặt AICEFR_GOOGLE_CLIENT_ID.", "Chưa đặt AICEFR_GOOGLE_CLIENT_SECRET."} <= set(
         off["problems"]
     )
+
+
+# ================================================================= Google and a password account
+# SEC-01: Google proves who owns an address. A password account with that
+# address is joined to the Google sign-in as it is only when its email was
+# proved by a code sent to that very address; otherwise Google takes it over:
+# the old password stops working and every old session ends.
+
+SIGNUP_PASSWORD = "-".join(["mot", "cau", "dai", "de", "nho", "789"])
+VICTIM = "sinhvien@example.edu.vn"  # the address the stand-in Google vouches for
+CREATOR = "nguoi.tao@example.edu.vn"
+
+
+def _signup(m, email: str) -> tuple[TestClient, str]:
+    c = TestClient(m.app)
+    r = c.post(
+        "/api/v1/auth/signup",
+        json={"email": email, "full_name": "Nguyễn An", "password": SIGNUP_PASSWORD},
+    )
+    assert r.status_code == 200, r.text
+    return c, c.get("/api/v1/me").json()["account_id"]
+
+
+def _password_login(m, email: str) -> int:
+    r = TestClient(m.app).post(
+        "/api/v1/auth/login", json={"email": email, "password": SIGNUP_PASSWORD}
+    )
+    return r.status_code
+
+
+def _google_login(m, monkeypatch) -> TestClient:
+    browser = TestClient(m.app)
+    _, flow = start(browser)
+    r, _ = finish(monkeypatch, browser, flow, sub="g-sec-01")
+    assert r.status_code == 303 and "google=" not in r.headers["location"], r.headers
+    return browser
+
+
+def test_google_takes_over_an_unverified_account_and_ends_the_old_way_in(tmp_path, monkeypatch):
+    m = make_app(monkeypatch, tmp_path)
+    creator, aid = _signup(m, VICTIM)
+    owner = _google_login(m, monkeypatch)
+    assert owner.get("/api/v1/me").json()["account_id"] == aid
+    assert creator.get("/api/v1/me").status_code == 401  # every old session ended
+    assert _password_login(m, VICTIM) == 401  # the typed password no longer opens it
+    assert [e.detail for e in audit(m, "account.google_adopt")] == ["reset"]
+
+
+def test_google_joins_an_account_verified_at_that_address(tmp_path, monkeypatch):
+    m = make_app(monkeypatch, tmp_path)
+    creator, aid = _signup(m, VICTIM)
+    auth = m.app.state.auth_repo
+    auth.col("account").update_one({"account_id": aid}, {"$unset": {"email_codes": ""}})
+    assert auth.verify_email(aid, auth.issue_email_code(aid, "verify")) is True
+    owner = _google_login(m, monkeypatch)
+    assert owner.get("/api/v1/me").json()["account_id"] == aid
+    assert creator.get("/api/v1/me").status_code == 200  # the same person: nothing ends
+    assert _password_login(m, VICTIM) == 200
+    assert [e.detail for e in audit(m, "account.google_adopt")] == [None]
+
+
+def test_a_code_from_the_old_address_does_not_make_google_trust_the_new(tmp_path, monkeypatch):
+    """The reported path: code to A, move to B, verify B with A's code, wait for B's owner."""
+    m = make_app(monkeypatch, tmp_path)
+    creator, aid = _signup(m, CREATOR)
+    auth = m.app.state.auth_repo
+    auth.col("account").update_one({"account_id": aid}, {"$unset": {"email_codes": ""}})
+    code_for_a = auth.issue_email_code(aid, "verify")
+    moved = creator.patch(
+        "/api/v1/me/contact", json={"email": VICTIM, "current_password": SIGNUP_PASSWORD}
+    )
+    assert moved.status_code == 200, moved.text
+    assert creator.post("/api/v1/me/email/verify", json={"code": code_for_a}).status_code == 422
+    owner = _google_login(m, monkeypatch)
+    assert owner.get("/api/v1/me").json()["account_id"] == aid
+    assert creator.get("/api/v1/me").status_code == 401
+    assert _password_login(m, VICTIM) == 401
+
+
+def test_google_joins_nothing_when_the_account_left_the_address_meanwhile(tmp_path, monkeypatch):
+    """Codex review: the account found by Google's address moves before the join.
+
+    Nothing may happen to it then: no Google identity linked, no password
+    replaced, no session ended, its new address not marked verified.
+    """
+    m = make_app(monkeypatch, tmp_path)
+    creator, aid = _signup(m, VICTIM)
+    auth = m.app.state.auth_repo
+    auth.col("account").update_one({"account_id": aid}, {"$set": {"email": CREATOR}})
+    assert auth.adopt_by_email(aid, google.PROVIDER, "g-race", VICTIM) is None
+    row = auth.get(aid)
+    assert not [i for i in row.get("identities") or [] if i["provider"] == google.PROVIDER]
+    assert row["email_verified"] == 0
+    assert creator.get("/api/v1/me").status_code == 200
+    assert _password_login(m, CREATOR) == 200
+
+
+def test_an_adoption_cut_short_by_a_new_address_keeps_the_old_google_link(tmp_path, monkeypatch):
+    """Codex review (2nd pass): the email changes in the middle of the join.
+
+    Whatever step the change lands between, an adoption that does not happen
+    leaves the account's existing Google link where it was.
+    """
+    m = make_app(monkeypatch, tmp_path)
+    _, aid = _signup(m, VICTIM)
+    auth = m.app.state.auth_repo
+    old = {"provider": google.PROVIDER, "subject_hash": "g-old", "linked_at": "2026-01-01"}
+    auth.col("account").update_one({"account_id": aid}, {"$set": {"identities": [old]}})
+    real_col = auth.col
+
+    class Moving:
+        """The account collection; the first write of the join moves the account away."""
+
+        def __init__(self, col):
+            self.col, self.moved = col, False
+
+        def __getattr__(self, name):
+            return getattr(self.col, name)
+
+        def update_one(self, flt, update, *a, **k):
+            done = self.col.update_one(flt, update, *a, **k)
+            if not self.moved:
+                self.moved = True
+                self.col.update_one({"account_id": aid}, {"$set": {"email": CREATOR}})
+            return done
+
+    moving = Moving(real_col("account"))
+    monkeypatch.setattr(auth, "col", lambda name: moving if name == "account" else real_col(name))
+    assert auth.adopt_by_email(aid, google.PROVIDER, "g-new", VICTIM) is None
+    monkeypatch.setattr(auth, "col", real_col)
+    links = [i["subject_hash"] for i in auth.get(aid).get("identities") or []]
+    assert links == ["g-old"]
