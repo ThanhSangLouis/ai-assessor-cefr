@@ -3,8 +3,8 @@
 Guards:
 - Fixed calendar week alignment (T2 to CN) across various days of the week.
 - Rendering states: empty vs in-progress vs goal-met.
-- Journey / Course progress rendering with different completion ratios.
-- CSS classes, selectors, and accessibility DOM attributes.
+- The selectors other tests read, and the parts of the mockup (D092).
+- The page's stylesheet: themes, breakpoints, nothing left in style.css.
 """
 
 from __future__ import annotations
@@ -114,7 +114,7 @@ class TestCalendarWeekLogic:
 
 
 class TestPracticePathJavaScriptIntegrity:
-    """Verify fixed calendar week helpers and data states in practice_path.js."""
+    """Verify fixed calendar week helpers and the selectors other tests rely on."""
 
     def test_js_has_calendar_week_helper(self):
         js = (STATIC_DIR / "practice_path.js").read_text(encoding="utf-8")
@@ -124,59 +124,101 @@ class TestPracticePathJavaScriptIntegrity:
 
     def test_js_preserves_e2e_selectors(self):
         js = (STATIC_DIR / "practice_path.js").read_text(encoding="utf-8")
-        # Must preserve selectors tested by Playwright & integration tests
-        assert 'class="today-card"' in js or "today-card" in js
-        assert 'id="goal-select"' in js
-        assert "week-dots" in js
-        assert "goal-ring" in js
-        assert "journey-card" in js
-        assert "review-card" in js
-        assert "ach-card" in js
-        assert "overall" in js
+        # Selectors read by the Playwright tests (tests/e2e).
+        for hook in (
+            "today-card",
+            'id="goal-select"',
+            "week-dots",
+            "goal-ring",
+            "next-card",
+            "review-card",
+            "review-count",
+            "overall",
+            "path-part",
+            "lesson-node",
+            "node-coin",
+            "node-flag",
+            "lesson-state",
+            'card.id = "node-card"',
+        ):
+            assert hook in js, hook
 
-    def test_js_supports_user_icon_for_intro_lesson(self):
+    def test_js_draws_the_mockup_parts(self):
         js = (STATIC_DIR / "practice_path.js").read_text(encoding="utf-8")
-        assert 'lessonIcon = "user"' in js
+        # D092: the start flag, the lesson card beside it and the scenery.
+        assert "Bắt đầu" in js
+        assert "rm-bubble" in js
         assert "Tiếp tục học" in js
+        assert "/static/art/mascot_owl.png" in js
+        assert "/static/art/mascot_girl.png" in js
+        assert "Hoàn thành lộ trình" in js
+
+    def test_js_draws_the_plan_when_there_is_one(self):
+        js = (STATIC_DIR / "practice_path.js").read_text(encoding="utf-8")
+        # D074: the roadmap follows the plan band_plan.js announces.
+        assert 'addEventListener("bandplan"' in js
+        assert "plan.units" in js
+
+
+class TestRoadmapCompanions:
+    """A companion and a tip beside every band's part (D092)."""
+
+    def test_every_band_has_a_companion_and_a_tip(self):
+        js = (STATIC_DIR / "practice_mascots.js").read_text(encoding="utf-8")
+        for band in ("A1", "A2", "B1", "B2", "C1", "C2"):
+            assert f"{band}: {{ name:" in js, band
+        for name in ("robot", "fox", "cat", "penguin", "bunny"):
+            assert f"    {name}:\n" in js, name
+
+    def test_the_page_loads_the_companions_before_the_roadmap(self):
+        html = (STATIC_DIR.parent / "templates" / "practice_path.html").read_text(encoding="utf-8")
+        assert html.index("practice_mascots.js") < html.index("practice_path.js")
 
 
 class TestPracticeStyleSheetIntegrity:
-    """Verifies that style.css maintains balanced syntax and all required styling states."""
+    """The page's own stylesheet: balanced, both themes, every layout."""
 
     def test_css_braces_are_balanced(self):
-        css = (STATIC_DIR / "style.css").read_text(encoding="utf-8")
-        opens = css.count("{")
-        closes = css.count("}")
-        assert opens == closes, f"Unbalanced braces in style.css: {opens} opens vs {closes} closes"
+        for name in ("style.css", "practice_path.css"):
+            css = (STATIC_DIR / name).read_text(encoding="utf-8")
+            assert css.count("{") == css.count("}"), f"Unbalanced braces in {name}"
 
-    def test_css_has_fixed_calendar_week_and_future_styles(self):
+    def test_css_has_both_themes_and_the_week_states(self):
+        css = (STATIC_DIR / "practice_path.css").read_text(encoding="utf-8")
+        assert "@media (prefers-color-scheme: dark)" in css
+        assert ':root[data-theme="dark"] body:has(.roadmap-page)' in css
+        assert ".rm-week li.future .rm-day" in css
+        assert ".rm-week li.on .rm-day" in css
+        assert ".rm-week li.rest .rm-day" in css
+        assert ".rm-week li.is-today" in css
+
+    def test_css_has_the_breakpoints_of_the_mockups(self):
+        css = (STATIC_DIR / "practice_path.css").read_text(encoding="utf-8")
+        for width in ("1440px", "1280px", "1100px", "700px"):
+            assert f"@media (max-width: {width})" in css, width
+
+    def test_old_roadmap_styles_are_gone_from_the_shared_sheet(self):
         css = (STATIC_DIR / "style.css").read_text(encoding="utf-8")
-        assert ".today-week-circles li.future .circle-node" in css
-        assert ".today-week-circles li.on .circle-node" in css
-        assert ".today-week-circles li.rest .circle-node" in css
-        assert ".today-week-circles li.is-today" in css
-        assert ".today-hero-track" in css
-        assert ".journey-progress-track" in css
-        assert ".next-band-badge" in css
+        for gone in (".today-card", ".next-card", ".lesson-node", ".band-plan", ".path-side"):
+            assert gone not in css, gone
 
 
 class TestBandPlanIntegrity:
-    """Verify the two-row band plan layout and its styles."""
+    """The band bar of the mockup and its hooks."""
 
-    def test_band_plan_js_has_new_layout_and_selectors(self):
+    def test_band_plan_js_has_the_bar_and_selectors(self):
         js = (STATIC_DIR / "band_plan.js").read_text(encoding="utf-8")
         assert 'id="band-from"' in js
         assert 'id="band-to"' in js
         assert 'id="band-form"' in js
         assert "Trình độ hiện tại" in js
         assert "Mục tiêu" in js
-        assert 'class="band-assess-link"' in js
         assert "Kiểm tra trình độ" in js
-        assert "band-action-row" in js
-        assert "band-submit-btn" in js
+        assert "Tạo lộ trình" in js
+        assert 'new CustomEvent("bandplan"' in js
 
-    def test_band_plan_css_has_clean_grid_and_submit_btn(self):
-        css = (STATIC_DIR / "style.css").read_text(encoding="utf-8")
-        assert ".band-action-row" in css
-        assert ".band-submit-btn" in css
-        assert ".band-assess-link" in css
+    def test_band_plan_css_has_the_bar(self):
+        css = (STATIC_DIR / "practice_path.css").read_text(encoding="utf-8")
+        assert ".rm-band-bar" in css
+        assert ".rm-btn-orange" in css
+        assert ".rm-btn-outline" in css

@@ -206,8 +206,8 @@ def login(page, server, pseudonym: str, next_path: str = "/practice") -> None:
     """Log in through the real form, then wait for the target page."""
     page.goto(f"/login?next={next_path}")
     page.get_by_label("Email", exact=True).fill(pseudonym)
-    page.get_by_label("Mật khẩu").fill(server.password)
-    page.get_by_role("button", name="Đăng nhập").click()
+    page.get_by_label("Mật khẩu", exact=True).fill(server.password)
+    page.get_by_role("button", name="Đăng nhập", exact=True).click()
     # Compare the PATH, not the URL's tail: "/login?next=/practice" also ends in
     # "/practice", and waiting on the tail lets the test go on before login is done.
     page.wait_for_url(lambda url: urlparse(url).path == next_path)
