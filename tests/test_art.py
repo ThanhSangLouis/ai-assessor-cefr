@@ -116,14 +116,13 @@ def test_every_page_stands_on_the_ground(m):
         assert page.count(GROUND) == 1 and "ground-hills" not in page, url
 
 
-def test_the_product_and_sign_in_pages_carry_the_scene():
+def test_the_sign_in_page_carries_the_scene():
+    # The product page shows the product itself since D093; the scene stays on sign-in.
     from aicefr.api.main import app
 
     client = TestClient(app)
-    for url, holder, cls in (
-        ("/", "lp-hero", "lp-terraces"),
-        ("/login", "auth-split", "auth-terraces"),
-    ):
+    assert "art-terraces" not in client.get("/").text
+    for url, holder, cls in (("/login", "auth-split", "auth-terraces"),):
         page = client.get(url).text
         drawing = scene(page, cls)
         # Inside the part of the page it belongs to, before its words.
@@ -193,7 +192,7 @@ def test_the_art_stays_out_of_the_way():
     assert printed and all(enclosing_media(pos) == "print" for pos, _b in printed)
     rule = CSS[CSS.rindex("@media print") :]
     rule = rule[: rule.index("}")]
-    for selector in (".ground", ".lp-terraces", ".auth-terraces", ".empty-state::after"):
+    for selector in (".ground", ".auth-terraces", ".empty-state::after"):
         assert selector in rule, selector
 
 

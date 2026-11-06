@@ -51,10 +51,10 @@ Phần nhìn được kiểm bằng ảnh chụp từ máy chủ tạm, ở cả
 | Mục | Test case |
 | --- | --- |
 | W-NFR-2 — không tải tài nguyên từ ngoài | TC-ART-I02, TC-ART-I04, TC-ART-I05, TC-ART-E01 |
-| W-NFR-3 — chuyển động là trang trí | TC-ART-I04, TC-ART-I06, TC-ART-E02, TC-ART-E03 |
+| W-NFR-3 — chuyển động là trang trí | TC-ART-I04, TC-ART-I06, TC-ART-E03 |
 | W-NFR-4 — ảnh nền không cản việc đọc | TC-ART-I07, TC-ART-E06, TC-ART-E07, TC-ART-E08 |
 | Đợt 16 — mọi trang | TC-ART-I03, TC-ART-I08, TC-ART-E01 |
-| Đợt 16 — trang giới thiệu và trang đăng nhập | TC-ART-I04, TC-ART-E02, TC-ART-E05 |
+| Đợt 16 — trang giới thiệu và trang đăng nhập | TC-ART-I04, TC-ART-E05 |
 | Đợt 16 — trạng thái rỗng | TC-ART-E07, TC-ART-E08 |
 | Đợt 16 — cách làm (script xác định) | TC-ART-U01, TC-ART-U02, TC-ART-U03, TC-ART-U04, TC-ART-I01 |
 | Kế hoạch khớp mã | TC-ART-U05 |
@@ -78,7 +78,7 @@ Phần nhìn được kiểm bằng ảnh chụp từ máy chủ tạm, ở cả
 | TC-ART-I01 | `test_the_committed_art_is_what_the_script_draws` | `hills.svg`, `contours.svg` và `_art.html` giống từng byte với tệp `tools/make_art.py` vẽ ra |
 | TC-ART-I02 | `test_the_drawings_are_inert_and_small` | Hai tệp SVG là XML hợp lệ, có `viewBox`, mỗi tệp dưới 12 KB. Không có DOCTYPE hay ENTITY. Chỉ gồm hình và dải màu: không script, không thuộc tính `on*`, không liên kết |
 | TC-ART-I03 | `test_every_page_stands_on_the_ground` | Trang khách, trang của sinh viên, giảng viên và quản trị viên đều có đúng một phần nền `aria-hidden` gồm đường đồng mức và dãy đồi, và `body` mang lớp vai trò. Trang giới thiệu và trang đăng nhập chỉ giữ đường đồng mức |
-| TC-ART-I04 | `test_the_product_and_sign_in_pages_carry_the_scene` | Cảnh nằm trong phần mở đầu, trước tiêu đề, và `aria-hidden`. Cảnh có mặt trời, 4 tầng, 4 sống đồi `pathLength="1"`, 8 bờ ruộng, `preserveAspectRatio="none"`. Không có liên kết, nút, ô nhập, ảnh, script hay `url(`; dưới 16 KB |
+| TC-ART-I04 | `test_the_sign_in_page_carries_the_scene` | Từ D093 cảnh chỉ còn ở trang đăng nhập; trang chủ không có cảnh. Cảnh nằm trong phần mở đầu, trước tiêu đề, và `aria-hidden`. Cảnh có mặt trời, 4 tầng, 4 sống đồi `pathLength="1"`, 8 bờ ruộng, `preserveAspectRatio="none"`. Không có liên kết, nút, ô nhập, ảnh, script hay `url(`; dưới 16 KB |
 | TC-ART-I05 | `test_the_art_is_served_as_svg_and_carried_in_the_wheel` | Mọi `url("art/…")` trong CSS trỏ tới tệp có thật, trả 200 kiểu `image/svg+xml`. `package-data` có `art/*.svg` và các template |
 | TC-ART-I06 | `test_motion_plays_only_when_welcome` | Bốn hoạt ảnh `art-*` và nét đứt chờ vẽ chỉ nằm trong `prefers-reduced-motion: no-preference` |
 | TC-ART-I07 | `test_the_art_stays_out_of_the_way` | Nền, cảnh đồi và dải đồi của trạng thái rỗng đặt `pointer-events: none`. Nền cố định, `z-index: -1`, đứng yên khi chuyển trang. Khi in, mọi phần đều `display: none` |
@@ -89,9 +89,8 @@ Phần nhìn được kiểm bằng ảnh chụp từ máy chủ tạm, ở cả
 | Mã | Test | Kiểm điều gì |
 | --- | --- | --- |
 | TC-ART-E01 | `test_the_ground_is_drawn_in_both_themes` | Ở cả giao diện sáng và tối: hai tệp hình tải về với mã 200; đường đồng mức nằm góc trên bên phải, dãy đồi góc dưới bên phải, đủ lớn; mỗi giao diện một màu |
-| TC-ART-E02 | `test_the_ridges_draw_themselves_in_when_motion_is_welcome` | Bốn tầng trồi lên, bốn sống đồi tự vẽ, mặt trời mọc, tầng gần "thở" mãi. Vẽ xong thì đường vẫn còn nguyên |
 | TC-ART-E03 | `test_with_reduced_motion_the_scene_is_simply_there` | Khi chọn giảm chuyển động: không hoạt ảnh `art-*` nào, đường không đứt nét, con trỏ không làm cảnh dịch đi |
-| TC-ART-E05 | `test_any_width_gets_the_whole_far_hill_and_a_round_sun` | Ở 390, 1280, 1920 và 2560 px: không tầng nào bị cắt ở mép trên; mặt trời tròn và nằm trong khung; trang đăng nhập không có mặt trời |
+| TC-ART-E05 | `test_any_width_gets_the_whole_far_hill_and_a_round_sun` | Ở 390, 1280, 1920 và 2560 px: không tầng nào bị cắt ở mép trên của trang đăng nhập, và trang đăng nhập không có mặt trời (từ D093 trang chủ không còn cảnh) |
 | TC-ART-E06 | `test_on_a_phone_the_art_takes_no_tap_and_no_room` | Ở 390 px, trang giới thiệu, trang đăng nhập và trang band không cuộn ngang. Không điểm nào trên lưới 23 px (đầu và chân trang) rơi vào hình. Nút đăng nhập nhận được cú chạm |
 | TC-ART-E07 | `test_printing_leaves_the_art_out` | Khi in, phần nền, cảnh đồi và dải đồi của trạng thái rỗng đều biến mất; trên màn hình thì dải đồi vẫn hiện |
 | TC-ART-E08 | `test_the_words_on_the_art_keep_their_contrast` | Đo trên điểm ảnh ở bốn trang (giới thiệu, đăng nhập, band, tiến độ), hai khổ màn hình và hai giao diện. Chụp trang với chữ trong suốt, một lần có hình, một lần không. Mỗi dòng chữ được so với từng điểm ảnh nằm sau nó. Có hình thì chữ vẫn đạt AA (4,5:1; chữ lớn 3:1); chỗ nào chưa đạt khi không có hình thì hình không làm tệ hơn |

@@ -21,6 +21,9 @@ const bodyEl = document.getElementById("step-body");
 const formEl = document.getElementById("step-form");
 const feedbackEl = document.getElementById("step-feedback");
 const summaryEl = document.getElementById("lesson-summary");
+const sideEl = document.getElementById("ls-side");
+const prevEl = document.getElementById("ls-prev");
+const nextEl = document.getElementById("ls-next");
 
 let data = null;
 let steps = [];
@@ -262,19 +265,21 @@ function completeHere() {
 }
 
 function renderRail() {
+  const passedCount = steps.filter((s) => statusOf(s) === "passed").length;
   railEl.innerHTML =
+    `<div class="ls-track" aria-hidden="true"><span style="width:${steps.length ? (passedCount / steps.length) * 100 : 0}%"></span></div>` +
     "<ol>" +
     steps
       .map((s, i) => {
         const st = statusOf(s);
-        const mark = icon(st === "passed" ? "check" : KIND_ICON[s.kind] || "mic", "icon rail-icon");
+        const mark = st === "passed" ? icon("check", "icon rail-icon") : String(i + 1);
         const label = st === "passed" ? "đã đạt" : st === "tried" ? "đã thử" : "chưa làm";
         return (
           `<li class="${st}${i === index ? " now" : ""}"${i === index ? ' aria-current="step"' : ""}>` +
-          `<button type="button" class="rail-step" data-step-index="${i}">` +
-          `<span class="rail-mark" aria-hidden="true">${mark}</span>` +
-          `<span class="rail-text"><span class="rail-stage">${i + 1} · ${escapeHtml(s.stage_name)}</span>` +
-          `<span class="rail-title">${escapeHtml(s.display_title)}</span></span>` +
+          `<button type="button" class="rail-step st-step${st === "passed" ? " is-done" : ""}${i === index ? " is-active" : ""}" data-step-index="${i}">` +
+          `<span class="rail-mark st-step-num" aria-hidden="true">${mark}</span>` +
+          `<span class="rail-text"><span class="rail-title">${escapeHtml(s.display_title)}</span>` +
+          `<span class="rail-stage">${escapeHtml(s.stage_name)}</span></span>` +
           `<span class="visually-hidden">, ${label}</span></button></li>`
         );
       })
@@ -283,28 +288,44 @@ function renderRail() {
   railEl.querySelectorAll("[data-step-index]").forEach((b) =>
     b.addEventListener("click", () => showStep(Number(b.dataset.stepIndex)))
   );
-  const passed = steps.filter((s) => statusOf(s) === "passed").length;
-  const bar = document.getElementById("lesson-progress");
-  if (bar) {
-    bar.style.width = `${steps.length ? (passed / steps.length) * 100 : 0}%`;
-    document.getElementById("lesson-progress-text").textContent = `${passed}/${steps.length} bước đã đạt`;
-  }
+  const text = document.getElementById("lesson-progress-text");
+  if (text) text.textContent = `${passedCount}/${steps.length} bước đã đạt`;
+  railEl.querySelector('[aria-current="step"]')?.scrollIntoView({ block: "nearest", inline: "center" });
 }
 
+function companion(say) {
+  return (
+    '<div class="st-companion" aria-hidden="true">' +
+    `<p class="st-say" id="ls-say">${escapeHtml(say)}</p>` +
+    '<img id="ls-mascot" src="/static/art/adventure/mascot-forest-v3.webp" alt="" width="210" height="210"></div>'
+  );
+}
+
+// D093: the header is a scene of the band's world, with its companion.
 function renderHead() {
   if (MODE === "review") {
     headEl.innerHTML =
-      '<p class="eyebrow">Ôn tập giãn cách</p><h1>Ôn tập hôm nay</h1>' +
-      '<p class="lede">Những từ máy chưa nghe ra và những bài nói tự do bạn đã làm quay lại sau 1, 3 rồi 7 ngày. Nói câu mới của riêng bạn, không cần nhớ nguyên văn.</p>';
+      '<div class="st-hero-copy"><p class="st-place"><b>Ôn tập</b><span>Giãn cách 1 · 3 · 7 ngày</span></p>' +
+      "<h1>Ôn tập hôm nay</h1>" +
+      '<p class="st-hero-lede">Những từ máy chưa nghe ra quay lại đây. Nói câu mới của riêng bạn, không cần nhớ nguyên văn.</p></div>' +
+      companion("Mỗi lần ôn là một lần nhớ lâu hơn.");
+    window.studentStage.setWorld(root, "B2", { mascot: document.getElementById("ls-mascot") });
     return;
   }
   const l = data.lesson;
   headEl.innerHTML =
-    `<p class="eyebrow">${escapeHtml(data.unit.title)} · ${escapeHtml(l.band)}</p>` +
+    '<div class="st-hero-copy">' +
+    `<p class="st-place"><b>${escapeHtml(l.band)}</b><span id="ls-world"></span><span class="ls-unit">· ${escapeHtml(data.unit.title)}</span></p>` +
     `<h1>${escapeHtml(l.title)}</h1>` +
-    (l.summary ? `<p class="lede">${escapeHtml(l.summary)}</p>` : "") +
-    '<div class="lesson-progress"><div class="lesson-progress-track"><span id="lesson-progress"></span></div>' +
-    '<span class="muted" id="lesson-progress-text"></span></div>';
+    (l.summary ? `<p class="st-hero-lede">${escapeHtml(l.summary)}</p>` : "") +
+    `<p class="st-meta"><span>${icon("list")}${steps.length} bước</span>` +
+    `<span>${icon("check-circle")}<span id="lesson-progress-text"></span></span></p></div>` +
+    companion("");
+  window.studentStage.setWorld(root, l.band, {
+    name: document.getElementById("ls-world"),
+    mascot: document.getElementById("ls-mascot"),
+    say: document.getElementById("ls-say"),
+  });
   document.title = l.title + " · Luyện tập";
 }
 
@@ -340,7 +361,38 @@ function showStep(i) {
   }
   recorder.reset();
   renderRail();
+  renderSide(step);
+  prevEl.disabled = index === 0;
+  nextEl.disabled = index >= steps.length - 1;
 }
+
+// D093: "Bỏ túi" -- the words this step leans on and its tip, beside the card
+// when the screen has room (lesson_stage.css hides it otherwise). The tip also
+// stays in the card, so nothing lives only here.
+function renderSide(step) {
+  const words = [...new Set([...(step.hint_words || []), ...(step.keywords || [])].map((w) => w.trim()).filter(Boolean))].slice(0, 6);
+  const markers = (step.markers || []).map((g) => g.join(" / ")).filter(Boolean);
+  const keep = words.length ? words : markers;
+  if (!keep.length && !step.tip) {
+    sideEl.hidden = true;
+    sideEl.innerHTML = "";
+    return;
+  }
+  sideEl.innerHTML =
+    `<h3>${keep.length ? "Bỏ túi" : "Mẹo nhỏ"}</h3>` +
+    (keep.length ? `<ul class="ls-keep">${keep.map((w) => `<li lang="en">${escapeHtml(w)}</li>`).join("")}</ul>` : "") +
+    (step.tip ? `<p class="ls-tip">${escapeHtml(step.tip)}</p>` : "");
+  sideEl.hidden = false;
+}
+
+prevEl.addEventListener("click", () => {
+  if (index > 0) showStep(index - 1);
+  document.getElementById("step-h")?.focus();
+});
+nextEl.addEventListener("click", () => {
+  if (index < steps.length - 1) showStep(index + 1);
+  document.getElementById("step-h")?.focus();
+});
 
 function lastTry(a) {
   if (!a) return "";
@@ -670,9 +722,10 @@ async function load() {
   } catch (err) {
     window.clearBusy(root);
     headEl.innerHTML =
-      '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
-      (err.message === "lesson_locked" ? "<h2>Bài học chưa mở khóa</h2><p>Hoàn thành bài trước trong phần này để tiếp tục.</p>" : "<h2>Không mở được bài học này</h2><p>Bài có thể chưa được xuất bản hoặc đã bị gỡ.</p>") +
-      '<p><a href="/practice">Quay lại lộ trình</a></p></div>';
+      '<div class="st-hero-copy">' +
+      (err.message === "lesson_locked" ? "<h1>Bài học chưa mở khóa</h1><p class=\"st-hero-lede\">Hoàn thành bài trước trong phần này để tiếp tục.</p>" : "<h1>Không mở được bài học này</h1><p class=\"st-hero-lede\">Bài có thể chưa được xuất bản hoặc đã bị gỡ.</p>") +
+      `<p><a class="st-link-button" href="/practice">${icon("path")} Quay lại lộ trình</a></p></div>` +
+      companion("Mình đợi bạn ở bài kế nhé.");
   }
 }
 

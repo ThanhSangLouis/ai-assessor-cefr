@@ -111,6 +111,7 @@ Tổng 91 test case: 38 unit, 39 integration, 14 E2E. Theo loại: 45 ca thuận
 | TC-LS-U36 | `test_sample_path_runs_by_level_and_topic_with_one_lesson_per_practice_task` | AC-45.3 | Thuận | Lộ trình mẫu đi A2 → B1 → B2, mỗi trình độ ít nhất năm chủ đề khác nhau; 16 bài soạn đủ và một bài cho mỗi nhiệm vụ D023 (D027) |
 | TC-LS-U37 | `test_sample_lessons_raise_no_linter_warnings` | FR-47 | Thuận | Ba mươi mốt bài mẫu không có cảnh báo soát lỗi nào |
 | TC-LS-U38 | `test_passed_reading_with_a_missed_word_names_it_in_the_tip` | FR-46 | Thuận | Bước đọc đạt nhưng thiếu một từ mang nghĩa: gợi ý nêu đúng từ đó (D025-B19) |
+| TC-LS-U39 | `test_access_gate_spans_units_without_mutating_stored_plan` | FR-45 | Biên | Cổng mở khoá tính xuyên các chặng mà không sửa lộ trình đã lưu (Thắng, f84b377) |
 
 Tệp: `tests/test_lessons_unit.py`.
 
@@ -157,6 +158,7 @@ Tệp: `tests/test_lessons_unit.py`.
 | TC-LS-I37 | `test_next_lesson_follows_the_weakest_criterion` | AC-50.2 | Thuận | Band B1, tiêu chí yếu nhất Range: bài nên học là bài chưa xong đầu tiên của chặng Range B1 |
 | TC-LS-I38 | `test_units_carry_their_topic_through_the_api_export_and_import` | FR-47 | Thuận | Chủ đề của chặng đi qua API, sửa được, chủ đề lạ bị từ chối, giữ nguyên khi xuất rồi nhập (D027) |
 | TC-LS-I39 | `test_an_older_sample_path_is_laid_out_by_topic_once` | FR-45 | Biên | Cơ sở dữ liệu có lộ trình mẫu kiểu cũ (chưa có chủ đề) được xếp lại theo chủ đề đúng một lần: lượt luyện giữ nguyên, chặng của giảng viên giữ nguyên, lần khởi động sau không đè thay đổi của giảng viên (D027) |
+| TC-LS-I40 | `test_band_entry_open_but_later_lessons_require_completion` | FR-45 | Biên | Bài đầu mỗi band mở sẵn, các bài sau khoá; bài khoá trả 403 cả khi xem lẫn khi nộp (chặn trước khi đọc âm thanh); xong bài đầu thì mở đúng bài kế (Thắng, f84b377) |
 
 Tệp: `tests/test_lessons_integration.py`.
 

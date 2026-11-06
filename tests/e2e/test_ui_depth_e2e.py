@@ -44,34 +44,34 @@ def desktop(browser, live_server, **extra):
     return ctx
 
 
-def test_a_step_card_leans_toward_the_pointer_and_settles(browser, live_server):
-    ctx = desktop(browser, live_server)
+def test_the_example_report_plays_once_then_answers_a_press(browser, live_server):
+    # D093: the product page's report plays once, rests with every mark showing,
+    # and a pressed word says what the report noticed about it.
+    ctx = desktop(browser, live_server, reduced_motion="no-preference")
     try:
         page = ctx.new_page()
         page.goto("/")
-        card = page.locator(".lp-step").first
-        card.scroll_into_view_if_needed()
-        box = card.bounding_box()
-        page.mouse.move(box["x"] + box["width"] * 0.85, box["y"] + box["height"] * 0.2, steps=4)
-        expect(card).to_have_class(re.compile(r"\bis-tilting\b"))
-        # The edge under the pointer comes forward: right side, so a negative turn.
-        assert card.evaluate("e => e.style.getPropertyValue('--tilt-y')").startswith("-")
-        page.mouse.move(5, 5)
-        expect(card).not_to_have_class(re.compile(r"\bis-tilting\b"))
-        assert card.evaluate("e => e.style.getPropertyValue('--tilt-y')") == ""
+        words = page.locator("[data-words]")
+        expect(words).to_have_class(re.compile(r"\bis-playing\b"))
+        expect(words).not_to_have_class(re.compile(r"\bis-playing\b"), timeout=10_000)
+        expect(page.locator("[data-clock]")).to_have_text("0:14")
+        word = page.get_by_role("button", name="friendly.")
+        word.click()
+        expect(word).to_have_attribute("aria-pressed", "true")
+        expect(page.locator("[data-note-out]")).to_contain_text("friendly")
     finally:
         ctx.close()
 
 
-def test_with_reduced_motion_nothing_follows_the_pointer(browser, live_server):
+def test_with_reduced_motion_the_report_is_simply_there(browser, live_server):
     ctx = desktop(browser, live_server, reduced_motion="reduce")
     try:
         page = ctx.new_page()
         page.goto("/")
-        card = page.locator(".lp-step").first
-        card.hover()
-        page.wait_for_timeout(400)
-        assert "is-tilting" not in (card.get_attribute("class") or "")
+        page.wait_for_timeout(600)
+        assert "is-playing" not in (page.locator("[data-words]").get_attribute("class") or "")
+        expect(page.locator("[data-clock]")).to_have_text("0:14")
+        assert page.locator(".hm-w.is-heard").count() == page.locator(".hm-w").count()
     finally:
         ctx.close()
 

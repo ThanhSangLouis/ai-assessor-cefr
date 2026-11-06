@@ -51,11 +51,14 @@ def test_every_page_renders(url: str) -> None:
 
 
 @pytest.mark.parametrize("url", PAGES)
-def test_every_page_carries_required_disclaimer(url: str) -> None:
-    """A study-support tool, no certificate issued, the teacher has the final say."""
+def test_no_page_repeats_the_disclaimer_line(url: str) -> None:
+    """D093: the owner removed the footer disclaimer and its "Band A1–C2 là gì?" link.
+
+    The ban on certificate wording above still holds; only the repeated line went.
+    """
     t = client.get(url).text
-    assert "Không cấp chứng chỉ" in t
-    assert "Giảng viên quyết định cuối cùng" in t
+    assert "Giảng viên quyết định cuối cùng" not in t
+    assert "Band A1–C2 là gì?</a>" not in t
 
 
 @pytest.mark.parametrize("path", sorted(Path(TEMPLATE_DIR).glob("*.html")))
