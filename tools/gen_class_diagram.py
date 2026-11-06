@@ -448,6 +448,9 @@ CLASSES = [
             "- balance: int",
             "- freeUsed: int",
             "- period: str",
+            "- lessonDay: str",
+            "- lessonUsed: int",
+            "- lessonFreeUsed: int",
             "- grants: List<str>",
             "+ available(): int",
         ],
@@ -463,6 +466,9 @@ CLASSES = [
             "- extraMinuteRuns: float",
             "- upgradeRuns: float",
             "- passageRuns: float",
+            "- lessonMinuteRuns: float",
+            "- lessonFreePerDay: int",
+            "- lessonDailyCap: int",
             "- idpointPerRun: int",
             "- freeRuns: float",
             "- packs: List<str>",
@@ -485,6 +491,8 @@ CLASSES = [
             "- charged: int",
             "- state: LedgerState",
             "- priceVersion: str",
+            "- day: str",
+            "- freeSlot: bool",
         ],
     ),
 ]
@@ -527,7 +535,7 @@ ENUMS = [
     _n(
         "MeterAct",
         "MeteredAction",
-        ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT", "DRILL_PASSAGE"],
+        ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT", "DRILL_PASSAGE", "LESSON"],
     ),
 ]
 

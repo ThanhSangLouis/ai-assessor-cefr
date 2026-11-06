@@ -52,14 +52,29 @@ class PriceList:
     upgrade_runs: float = 0.3
     # D090: one reading passage written around the learner's unclear words.
     passage_runs: float = 0.1
+    # D094: a recording on the lesson path (a step, a review, a retelling, a
+    # word or a passage said again), per started minute of speech; the first
+    # `lesson_free_per_day` recordings of a Vietnam day are free, and no more
+    # than `lesson_daily_cap` are measured in a day.
+    lesson_minute_runs: float = 0.1
+    lesson_free_per_day: int = 5
+    lesson_daily_cap: int = 30
     version: str = PRICE_VERSION
 
     def __post_init__(self) -> None:
         lowest = min(
-            self.first_minute_runs, self.extra_minute_runs, self.upgrade_runs, self.passage_runs
+            self.first_minute_runs,
+            self.extra_minute_runs,
+            self.upgrade_runs,
+            self.passage_runs,
+            self.lesson_minute_runs,
         )
         if lowest < 0 or self.idpoint_per_run < 0:
             raise ValueError("giá không được âm")
+        if self.lesson_daily_cap < 1:
+            raise ValueError("trần bản ghi bài học mỗi ngày phải từ 1 trở lên")
+        if not 0 <= self.lesson_free_per_day <= self.lesson_daily_cap:
+            raise ValueError("số bản ghi miễn phí mỗi ngày phải từ 0 tới trần mỗi ngày")
 
     def as_dict(self) -> dict:
         return {
@@ -69,6 +84,9 @@ class PriceList:
             "idpoint_per_run": self.idpoint_per_run,
             "upgrade_runs": self.upgrade_runs,
             "passage_runs": self.passage_runs,
+            "lesson_minute_runs": self.lesson_minute_runs,
+            "lesson_free_per_day": self.lesson_free_per_day,
+            "lesson_daily_cap": self.lesson_daily_cap,
             "max_minutes": MAX_MINUTES,
         }
 
@@ -120,6 +138,15 @@ def upgrade_units(prices: PriceList) -> int:
 def passage_units(prices: PriceList) -> int:
     """The charge for one reading passage (D090), in thousandths of a run."""
     return math.ceil(round(prices.passage_runs * UNITS_PER_RUN, 6))
+
+
+def lesson_units(prices: PriceList, seconds: float) -> int:
+    """The charge for one recording on the lesson path (D094), in thousandths of a run.
+
+    Priced by the started minutes of SPEECH the recording held (`StepResult.speaking_s`,
+    measured by VAD), at least one: a five-second step is one minute's price.
+    """
+    return math.ceil(round(prices.lesson_minute_runs * minutes(seconds) * UNITS_PER_RUN, 6))
 
 
 def hold_for(prices: PriceList, max_seconds: float) -> int:

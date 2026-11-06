@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -236,6 +237,41 @@ def _ask(queue: str, request: dict, data: bytes, kind: str, keep: str | None) ->
     finally:
         if not ok:
             svc().blobs.delete(key)
+
+
+def _metered(
+    account: Account, max_seconds: float, measure: Callable[[], tuple[dict, StepResult]]
+) -> dict:
+    """Run one recording of the lesson path through the metered channel (D094).
+
+    Before the recording is measured, a place among the day's recordings and,
+    past the free ones, its price are held: a refusal is a 429 (the day is
+    full) or a 402 (no runs left), and nothing is measured. Once measured it is
+    charged for the speech it held; when nothing was measured (silence, not
+    English, too short) or anything failed, the place and the runs go back.
+    Off (the school and research deployments, BR-29/BR-30) it only measures.
+    """
+    metering = getattr(svc().peers, "metering", None)
+    if metering is None:
+        return measure()[0]
+    key = f"lesson-{datetime.now(UTC).strftime('%y%m%d')}{_rand()}{_rand()}"
+    refusal = metering.hold_lesson(
+        account_id=account.account_id, key=key, max_seconds=float(max_seconds)
+    )
+    if refusal:
+        raise HTTPException(refusal["status"], refusal["message"])
+    try:
+        out, result = measure()
+    except BaseException:
+        metering.settle_lesson(key=key, result=False)
+        raise
+    metering.settle_lesson(
+        key=key,
+        result=result.measured,
+        speaking_seconds=result.speaking_s,
+        words=len(result.transcript.split()),
+    )
+    return out
 
 
 # ---------------------------------------------------------------- shared reads
@@ -697,7 +733,7 @@ async def retell_round(
     data, kind = await _read_audio(audio)
 
     # The speech service answers in seconds; not on the event loop (D066).
-    def measure_and_store() -> dict:
+    def measure_and_store() -> tuple[dict, StepResult]:
         attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
         audio_key = f"lesson-audio-{attempt_id}.{kind}"
         result = _measure(step, data, kind, round_index, None, keep=audio_key)
@@ -710,9 +746,10 @@ async def retell_round(
             "attempt_id": attempt_id,
             "result": result.model_dump(mode="json"),
             "audio_url": _audio_url(attempt_id),
-        }
+        }, result
 
-    return await run_in_threadpool(measure_and_store)
+    limit = step.round_limits()[round_index - 1]
+    return await run_in_threadpool(_metered, account, limit, measure_and_store)
 
 
 @router.post("/api/v1/learn/lessons/{lesson_id}/steps/{step_id}/attempts", tags=["student"])
@@ -738,7 +775,7 @@ async def learn_attempt(
 
     # The speech service answers in seconds; waiting for it on the event loop
     # stalled every other request of this service meanwhile (D066).
-    def measure_and_store() -> dict:
+    def measure_and_store() -> tuple[dict, StepResult]:
         before = lesson_state(
             lesson,
             _infos(lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)),
@@ -774,9 +811,10 @@ async def learn_attempt(
             },
             "completed_now": is_complete(lesson, after) and not is_complete(lesson, before),
             "achievements": _just_reached(account),
-        }
+        }, result
 
-    return await run_in_threadpool(measure_and_store)
+    limit = limits[(round_index or 1) - 1]
+    return await run_in_threadpool(_metered, account, limit, measure_and_store)
 
 
 def _rand() -> str:
@@ -920,7 +958,7 @@ async def learn_review_attempt(
 
     # The speech service answers in seconds; waiting for it on the event loop
     # stalled every other request of this service meanwhile (D066).
-    def measure_and_store() -> dict:
+    def measure_and_store() -> tuple[dict, StepResult]:
         attempt_id = f"a{datetime.now(UTC).strftime('%y%m%d')}{_rand()}"
         audio_key = f"lesson-audio-{attempt_id}.{kind}"
         result = _measure(
@@ -973,9 +1011,10 @@ async def learn_review_attempt(
             "audio_url": _audio_url(attempt_id),
             "items": outcome,
             "achievements": _just_reached(account),
-        }
+        }, result
 
-    return await run_in_threadpool(measure_and_store)
+    limit = step.round_limits()[0]
+    return await run_in_threadpool(_metered, account, limit, measure_and_store)
 
 
 # ---------------------------------------------------------------- achievements (D032)

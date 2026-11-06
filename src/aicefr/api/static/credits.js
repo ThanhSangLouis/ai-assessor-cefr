@@ -7,7 +7,7 @@ const escapeHtml = window.escapeHtml;
 const balanceEl = document.getElementById("balance");
 const historyEl = document.getElementById("history");
 
-const ACTION = { assessment: "Bài đánh giá", practice: "Bài luyện tập", upgrade: "Bản nâng cấp (AI)", lesson_draft: "Soạn bài bằng AI", drill_passage: "Đoạn đọc (AI)" };
+const ACTION = { assessment: "Bài đánh giá", practice: "Bài luyện tập", upgrade: "Bản nâng cấp (AI)", lesson_draft: "Soạn bài bằng AI", drill_passage: "Đoạn đọc (AI)", lesson: "Bản ghi bài học" };
 const STATE = { held: "Đang giữ", charged: "Đã trừ", released: "Đã trả lại" };
 const runs = (n) => `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 3 })} lượt`;
 const vnd = (n) => `${Number(n).toLocaleString("vi-VN")} ₫`;
@@ -36,17 +36,23 @@ async function load() {
       <div class="stat"><b>${runs(credits.free_runs_left)}</b><span>Miễn phí chu kỳ ${escapeHtml(credits.cycle)}</span></div>
       <div class="stat"><b>${runs(credits.wallet_runs)}</b><span>Đã mua</span></div>
     </div>
-    <p class="muted">Bài đánh giá tới 1 phút: <b>${runs(credits.one_minute.assessment)}</b> (${idp(credits.prices.first_minute_runs)}), mỗi phút thêm ${runs(credits.prices.extra_minute_runs)} (${idp(credits.prices.extra_minute_runs)}), tối đa ${credits.prices.max_minutes} phút. Mỗi bản nâng cấp hay bản soạn bài do AI viết: ${runs(credits.prices.upgrade_runs)} (${idp(credits.prices.upgrade_runs)}); mỗi đoạn đọc do AI viết: ${runs(credits.prices.passage_runs ?? 0.1)} (${idp(credits.prices.passage_runs ?? 0.1)}); chỉ trừ khi viết xong. Lượt miễn phí được dùng trước và làm mới vào ngày 16 hằng tháng.</p>`;
+    <p class="muted">Bài đánh giá tới 1 phút: <b>${runs(credits.one_minute.assessment)}</b> (${idp(credits.prices.first_minute_runs)}), mỗi phút thêm ${runs(credits.prices.extra_minute_runs)} (${idp(credits.prices.extra_minute_runs)}), tối đa ${credits.prices.max_minutes} phút. Mỗi bản nâng cấp hay bản soạn bài do AI viết: ${runs(credits.prices.upgrade_runs)} (${idp(credits.prices.upgrade_runs)}); mỗi đoạn đọc do AI viết: ${runs(credits.prices.passage_runs ?? 0.1)} (${idp(credits.prices.passage_runs ?? 0.1)}); chỉ trừ khi viết xong. Lượt miễn phí được dùng trước và làm mới vào ngày 16 hằng tháng.</p>${lessonNote(credits.lesson)}`;
   historyEl.innerHTML = credits.history.length
     ? `<ul class="plain-list">${credits.history
         .map(
-          (e) => `<li><b>${ACTION[e.action] || escapeHtml(e.action)}</b> · ${STATE[e.state] || escapeHtml(e.state)}
-            · ${e.state === "charged" ? runs(e.charged_runs) : runs(e.held_runs)}
+          (e) => `<li><b>${ACTION[e.action] || escapeHtml(e.action)}</b> · ${e.free_slot && e.state === "charged" ? "Miễn phí trong ngày" : `${STATE[e.state] || escapeHtml(e.state)}
+            · ${e.state === "charged" ? runs(e.charged_runs) : runs(e.held_runs)}`}
             <span class="muted">· ${when(e.created_at)}</span></li>`,
         )
         .join("")}</ul>`
     : '<p class="muted">Chưa có bài nào được tính lượt.</p>';
   if (packs && packs.on_sale) showPacks(packs);
+}
+
+// D094: what a recording on the lesson path costs, and what is left today.
+function lessonNote(q) {
+  if (!q) return "";
+  return `<p class="muted">Bài học trong lộ trình (cả ôn tập, kể lại, luyện từ): ${Number(q.free_per_day)} bản ghi đầu mỗi ngày miễn phí, hôm nay còn <b>${Number(q.free_left_today)}</b>; sau đó mỗi phút nói ${runs(q.minute_runs)} (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint). Tối đa ${Number(q.daily_cap)} bản ghi mỗi ngày. Bản ghi máy không đo được (im lặng, không phải tiếng Anh) không bị tính.</p>`;
 }
 
 function showPacks(d) {

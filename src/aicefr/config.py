@@ -256,6 +256,13 @@ class Settings:
     price_passage_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.1)
     )
+    # D094: a recording on the lesson path, per started minute of speech, and
+    # how many recordings of a Vietnam day are free and measured at most.
+    price_lesson_minute_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_LESSON_MINUTE_RUNS", 0.1)
+    )
+    lesson_free_per_day: int = field(default_factory=lambda: _int("AICEFR_LESSON_FREE_PER_DAY", 5))
+    lesson_daily_cap: int = field(default_factory=lambda: _int("AICEFR_LESSON_DAILY_CAP", 30))
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.
     credit_packs: tuple[tuple[int, int], ...] = field(

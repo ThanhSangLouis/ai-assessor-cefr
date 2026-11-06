@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.23** | **07/11/2026** | **D094.** +1 FR: FR-99 tính lượt cho bản ghi trong lộ trình học trên kênh NetID: 5 bản ghi đầu mỗi ngày (giờ Việt Nam) miễn phí, sau đó 0,1 lượt mỗi phút nói đã bắt đầu, tối đa 30 bản ghi mỗi ngày; bản ghi không đo được thì trả lại. `MeteredAction` thêm `LESSON`; `Wallet` thêm số bản ghi trong ngày; `LedgerEntry` thêm ngày và cờ miễn phí; `PriceList` thêm ba con số của bài học. Bản của trường và nghiên cứu không đổi (BR-29, BR-30) | D094 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -1632,6 +1633,22 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-98.5** — *Given* mô hình ngôn ngữ đang tắt, *When* học viên chọn ghép từ cụm của mình, *Then* đoạn được ghép miễn phí từ các cụm đó (`test_without_the_model_the_learners_phrases_make_a_free_passage`). |
 | **AC-98.6** — *Given* đoạn đọc đã dùng hết phần trong ngày của hệ thống hay của học viên, *When* xin đoạn mới, *Then* bị từ chối (429) với lý do rõ ràng; khi hết giới hạn AI chung, học viên vẫn ghép được đoạn từ cụm của mình (`test_the_caps_keep_the_upgrades_share_and_the_learners_own`). |
 | **AC-98.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các đoạn đọc của người đó cũng bị xoá; trước đó bản xuất dữ liệu cá nhân có chúng (`test_erasing_a_participant_forgets_their_passages`). |
+
+### FR-99 — Tính lượt cho bản ghi trong lộ trình học (D094)
+
+**Mô tả:** Trên bản triển khai tính lượt (FR-85, kênh NetID), mỗi bản ghi học viên nói trong lộ trình (bước bài học, ôn tập, kể lại bài, luyện lại từ, đọc đoạn) chiếm một suất trong ngày theo giờ Việt Nam. Các suất đầu của ngày miễn phí (mặc định 5). Từ suất sau, bản ghi giữ giá của thời lượng tối đa của bước rồi chỉ thu theo số giây nói thật đo bằng VAD, mỗi phút đã bắt đầu một mức (mặc định 0,1 lượt = 200 IDPoint, ít nhất một phút); lượt miễn phí của tháng được dùng trước, rồi tới ví. Mỗi ngày đo tối đa một số bản ghi (mặc định 30). Bản ghi máy không đo được hoặc máy đo lỗi thì trả lại cả suất lẫn lượt. Học viên thấy giá và số còn lại hôm nay dưới bộ ghi âm và ở trang Lượt của tôi; quản trị viên đổi ba con số trong bảng giá (D078). Bản xem thử và audio mẫu của giảng viên không tính. Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-99.1** — *Given* hệ thống tính lượt, *When* học viên nộp các bản ghi đầu tiên trong ngày, *Then* chúng không giữ và không trừ lượt nào, sổ lượt ghi là bản miễn phí trong ngày (`test_the_first_recordings_of_a_day_are_free_and_hold_nothing`). |
+| **AC-99.2** — *Given* đã hết bản miễn phí trong ngày, *When* học viên nộp một bản ghi, *Then* bị trừ đúng giá theo phút nói đã bắt đầu, lượt miễn phí của tháng trước rồi tới ví (`test_past_the_free_ones_the_months_free_runs_pay_first_then_the_wallet`). |
+| **AC-99.3** — *Given* học viên đã nộp đủ trần bản ghi trong ngày, *When* nộp thêm, *Then* bị từ chối (429), không đếm và không trừ gì (`test_past_the_cap_nothing_more_is_counted_or_taken`). |
+| **AC-99.4** — *Given* học viên hết bản miễn phí và hết lượt, *When* nộp một bản ghi, *Then* bị từ chối (402), không bản ghi nào được đo hay lưu; nạp thêm lượt thì học tiếp được (`test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on`). |
+| **AC-99.5** — *Given* một bản ghi bị QC loại hoặc máy đo lỗi, *When* yêu cầu kết thúc, *Then* suất trong ngày và lượt đã giữ được trả lại; suất miễn phí trả lại thì bản sau lại miễn phí (`test_a_recording_with_no_result_gives_its_place_and_runs_back`). |
+| **AC-99.6** — *Given* năm đường nộp bản ghi của lộ trình, *When* rà mã, *Then* đường nào cũng đi qua tính lượt, còn bản xem thử và audio mẫu của giảng viên thì không (`test_every_recording_endpoint_of_the_lesson_path_is_metered`). |
+| **AC-99.7** — *Given* hệ thống tính lượt, *When* học viên mở bài học hay trang Lượt của tôi, *Then* thấy giá mỗi phút nói, số bản miễn phí còn lại hôm nay và trần ngày (`test_the_quote_says_what_is_left_today`). |
+| **AC-99.8** — *Given* bản triển khai không tính lượt, *When* học viên nộp bản ghi vượt mọi con số trên, *Then* không có gì bị giữ, đếm hay từ chối (`test_with_metering_off_lessons_are_never_held_counted_or_refused`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

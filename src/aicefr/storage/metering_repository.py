@@ -4,9 +4,10 @@ Three collections (D060, D078), as the class diagram has them:
 
 * `wallet` -- one document per account (`Wallet`): what it has paid for in
   advance (on the NetID channel, what NetID reports as prepaid IDPoint), the
-  free runs used in the current monthly cycle, and every top-up (`grants`),
-  each kept once per (source, reference) so a payment notification replayed
-  never credits twice;
+  free runs used in the current monthly cycle, the lesson recordings of the
+  current Vietnam day (D094: how many were measured, how many of them free),
+  and every top-up (`grants`), each kept once per (source, reference) so a
+  payment notification replayed never credits twice;
 * `ledger` -- one `LedgerEntry` per (response, purpose): what was held when the
   recording came in, what was charged when it had a result, or that it was
   released. Unique on (key, action), so a retried submission or a duplicated
@@ -44,15 +45,16 @@ from aicefr.storage.migrations import ensure_current
 
 class MeteredAction(str, Enum):
     """What a ledger entry paid for: a recording, (D072) an upgraded answer,
-    (D075) a teacher's lesson draft, or (D090) a reading passage. PRACTICE is
-    a recording of a practice task (D023): none is made since D083, the
-    entries made before keep it."""
+    (D075) a teacher's lesson draft, (D090) a reading passage, or (D094) a
+    recording on the lesson path. PRACTICE is a recording of a practice task
+    (D023): none is made since D083, the entries made before keep it."""
 
     ASSESSMENT = "assessment"
     PRACTICE = "practice"
     UPGRADE = "upgrade"
     LESSON_DRAFT = "lesson_draft"
     DRILL_PASSAGE = "drill_passage"
+    LESSON = "lesson"
 
 
 class LedgerState(str, Enum):
@@ -83,6 +85,10 @@ class LedgerEntry:
     output_tokens: int | None = None
     usage_estimated: bool | None = None
     settled_at: str | None = None
+    # D094, a lesson recording: the Vietnam day whose count it took, and
+    # whether it was one of that day's free recordings.
+    day: str | None = None
+    free_slot: bool | None = None
 
     @classmethod
     def from_doc(cls, doc: dict) -> LedgerEntry:
@@ -105,6 +111,10 @@ class Wallet:
     period: str = ""  # the cycle `free_used` counts in
     free_used: int = 0
     grants: list[dict] = field(default_factory=list)
+    # D094: the lesson recordings of `lesson_day`, and how many were free.
+    lesson_day: str = ""
+    lesson_used: int = 0
+    lesson_free_used: int = 0
 
     @classmethod
     def from_doc(cls, doc: dict) -> Wallet:
@@ -114,6 +124,9 @@ class Wallet:
             period=doc.get("period", ""),
             free_used=int(doc.get("free_used", 0)),
             grants=list(doc.get("grants", [])),
+            lesson_day=doc.get("lesson_day", ""),
+            lesson_used=int(doc.get("lesson_used", 0)),
+            lesson_free_used=int(doc.get("lesson_free_used", 0)),
         )
 
     def available(self, free_units: int, period: str) -> int:
@@ -133,6 +146,14 @@ class InsufficientCredits(Exception):
         super().__init__(f"needed {needed} units, {available} available")
         self.needed = needed
         self.available = available
+
+
+class DailyCapReached(Exception):
+    """D094: the lesson recordings of this day reached the cap."""
+
+    def __init__(self, cap: int) -> None:
+        super().__init__(f"{cap} lesson recordings today")
+        self.cap = cap
 
 
 def cycle(now: datetime | None = None) -> str:
@@ -289,6 +310,22 @@ class MeteringRepository(MongoStore):
     def entry(self, key: str, action: MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
+    def _take(self, user_ref: str, period: str, units: int) -> tuple[int, int]:
+        """Take `units`: free runs of `period` first, then the wallet; (free, wallet).
+
+        Raises InsufficientCredits, taking nothing, when the two fall short.
+        """
+        free = self._take_free(user_ref, period, units)
+        rest = units - free
+        if rest:
+            paid = self.col("wallet").update_one(
+                {"user_ref": user_ref, "balance": {"$gte": rest}}, {"$inc": {"balance": -rest}}
+            )
+            if not paid.modified_count:
+                self._give_back(user_ref, period, free, 0)
+                raise InsufficientCredits(units, self.available(user_ref))
+        return free, rest
+
     def hold(
         self,
         user_ref: str,
@@ -307,15 +344,7 @@ class MeteringRepository(MongoStore):
         if existing is not None:
             return existing
         period = cycle()
-        free = self._take_free(user_ref, period, units)
-        rest = units - free
-        if rest:
-            paid = self.col("wallet").update_one(
-                {"user_ref": user_ref, "balance": {"$gte": rest}}, {"$inc": {"balance": -rest}}
-            )
-            if not paid.modified_count:
-                self._give_back(user_ref, period, free, 0)
-                raise InsufficientCredits(units, self.available(user_ref))
+        free, rest = self._take(user_ref, period, units)
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
             user_ref=user_ref,
@@ -336,6 +365,117 @@ class MeteringRepository(MongoStore):
             # The same key held by a concurrent request: give back what this one took.
             self._give_back(user_ref, period, free, rest)
             return self.entry(key, action)  # type: ignore[return-value]
+        return entry.to_doc()
+
+    # ------------------------------------------------------------ lesson recordings (D094)
+
+    def lesson_today(self, user_ref: str, day: str) -> dict:
+        """The lesson recordings of `day` so far: measured, and free among them."""
+        w = self._wallet(user_ref)
+        if w.lesson_day != day:
+            return {"used": 0, "free_used": 0}
+        return {"used": w.lesson_used, "free_used": w.lesson_free_used}
+
+    def _take_lesson_slot(self, user_ref: str, day: str, cap: int) -> str:
+        """Count one more lesson recording of `day`, or raise DailyCapReached.
+
+        One conditional update moves the count up only while it is under the
+        cap, so two recordings at once never both take the last place (and
+        `_take_free_lesson` does the same for the free ones). Returns the day
+        counted in: `day`, unless another request already moved the wallet on
+        to the next one.
+        """
+        wallets = self.col("wallet")
+        self._ensure_wallet(user_ref)
+        # A new day starts from nothing. Only forward: a request computed a
+        # moment before midnight never takes the wallet back a day.
+        wallets.update_one(
+            {
+                "user_ref": user_ref,
+                "$or": [{"lesson_day": {"$exists": False}}, {"lesson_day": {"$lt": day}}],
+            },
+            {"$set": {"lesson_day": day, "lesson_used": 0, "lesson_free_used": 0}},
+        )
+        for _ in range(3):
+            day = max(day, self._wallet(user_ref).lesson_day)
+            counted = wallets.update_one(
+                {"user_ref": user_ref, "lesson_day": day, "lesson_used": {"$lt": cap}},
+                {"$inc": {"lesson_used": 1}},
+            )
+            if counted.modified_count:
+                return day
+            if self._wallet(user_ref).lesson_day == day:
+                raise DailyCapReached(cap)
+        raise DailyCapReached(cap)
+
+    def _take_free_lesson(self, user_ref: str, day: str, free_per_day: int) -> bool:
+        took = self.col("wallet").update_one(
+            {"user_ref": user_ref, "lesson_day": day, "lesson_free_used": {"$lt": free_per_day}},
+            {"$inc": {"lesson_free_used": 1}},
+        )
+        return bool(took.modified_count)
+
+    def _give_back_slot(self, user_ref: str, day: str, free_slot: bool) -> None:
+        """Uncount a lesson recording of `day` that got no result; a later day is left alone."""
+        give: dict = {"lesson_used": -1}
+        where: dict = {"user_ref": user_ref, "lesson_day": day, "lesson_used": {"$gt": 0}}
+        if free_slot:
+            give["lesson_free_used"] = -1
+            where["lesson_free_used"] = {"$gt": 0}
+        self.col("wallet").update_one(where, {"$inc": give})
+
+    def hold_lesson(
+        self,
+        user_ref: str,
+        key: str,
+        units: int,
+        day: str,
+        free_per_day: int,
+        cap: int,
+        version: str = PRICE_VERSION,
+    ) -> dict:
+        """Hold one lesson recording (D094): a place among the day's `cap`, then its price.
+
+        The first `free_per_day` recordings of a day hold nothing; the others
+        hold `units`, free runs of the month first, then the wallet. Raises
+        DailyCapReached when the day is full, InsufficientCredits when the
+        runs fall short; either way nothing is counted or taken. Idempotent on
+        `key`, as `hold` is.
+        """
+        existing = self.entry(key, MeteredAction.LESSON)
+        if existing is not None:
+            return existing
+        day = self._take_lesson_slot(user_ref, day, cap)
+        free_slot = self._take_free_lesson(user_ref, day, free_per_day)
+        units = 0 if free_slot else units
+        period = cycle()
+        try:
+            free, rest = self._take(user_ref, period, units)
+        except InsufficientCredits:
+            self._give_back_slot(user_ref, day, free_slot)
+            raise
+        entry = LedgerEntry(
+            entry_id=uuid.uuid4().hex[:16],
+            user_ref=user_ref,
+            action=MeteredAction.LESSON,
+            key=key,
+            held=units,
+            from_free=free,
+            from_wallet=rest,
+            charged=0,
+            state=LedgerState.HELD,
+            period=period,
+            price_version=version,
+            created_at=_now(),
+            day=day,
+            free_slot=free_slot,
+        )
+        try:
+            self.col("ledger").insert_one(entry.to_doc())
+        except IntegrityError:
+            self._give_back(user_ref, period, free, rest)
+            self._give_back_slot(user_ref, day, free_slot)
+            return self.entry(key, MeteredAction.LESSON)  # type: ignore[return-value]
         return entry.to_doc()
 
     def settle(
@@ -378,6 +518,9 @@ class MeteringRepository(MongoStore):
         refund = current["held"] - charged
         to_wallet = min(refund, current["from_wallet"])
         self._give_back(current["user_ref"], current["period"], refund - to_wallet, to_wallet)
+        if not result and current.get("day"):
+            # D094: a lesson recording with no result gives its place of the day back.
+            self._give_back_slot(current["user_ref"], current["day"], bool(current["free_slot"]))
         return _entry(moved)
 
     def release_stale(self, cutoff: str) -> list[str]:
