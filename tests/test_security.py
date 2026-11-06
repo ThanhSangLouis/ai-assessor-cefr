@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import pathlib
+import re
 import subprocess
 import time
 
@@ -357,3 +358,26 @@ def test_runtime_assets_are_declared_as_package_data() -> None:
     # The scoring artifacts are the opposite: corpus statistics that must never
     # ship (W7-S01). They are read from AICEFR_MODEL_DIR at run time.
     assert "scoring/models" not in config
+
+
+def test_every_template_and_static_file_ships_in_the_wheel() -> None:
+    """Each file under api/static and api/templates matches a package-data glob.
+
+    Checking a few patterns by name missed the roadmap's art (D093): it lives
+    in a folder of its own, nothing declared it, and production served 404s
+    for every scene and mascot while every test passed.
+    """
+    config = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+    data = config[config.index("[tool.setuptools.package-data]") :]
+    data = data[: data.index("]", data.index("aicefr = ["))]
+    package = pathlib.Path("src/aicefr")
+    shipped: set[pathlib.Path] = set()
+    for pattern in re.findall(r'^\s*"([^"]+)"', data, re.MULTILINE):
+        shipped.update(package.glob(pattern))
+    left_out = [
+        str(path.relative_to(package))
+        for folder in ("api/static", "api/templates")
+        for path in sorted((package / folder).rglob("*"))
+        if path.is_file() and not path.name.startswith(".") and path not in shipped
+    ]
+    assert not left_out, f"thiếu trong package-data: {left_out[:10]}"

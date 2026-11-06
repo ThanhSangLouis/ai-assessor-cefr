@@ -86,11 +86,20 @@ aicefr = [
   "api/templates/*.html",
   "api/static/*.css",
   "api/static/*.js",
-  # The icon sprite (D027) and the favicon.
+  # The icon sprite (D027) and the favicons.
   "api/static/*.svg",
+  "api/static/*.png",
+  # The icons of the installed app (PWA) and of its notifications.
+  "api/static/icons/*.svg",
+  "api/static/icons/*.png",
   # The ground's art (D037), drawn by tools/make_art.py.
   "api/static/art/*.svg",
   "api/static/art/*.png",
+  # The roadmap's worlds, scenes and mascots (D093), from tools/build_adventure_*.py.
+  "api/static/art/adventure/*.svg",
+  "api/static/art/adventure/*.png",
+  "api/static/art/adventure/*.webp",
+  "api/static/art/adventure/*.json",
   # Roboto, served by the app itself (D031), and its licence.
   "api/static/fonts/*.woff2",
   "api/static/fonts/*.txt",
