@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="vi">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>SpeakUp · Nộp bài đánh giá — Từng bước tự tin</title
+  ><link rel="stylesheet" href="submit-mockup.css" />
+  <body>
+    <div class="review-tools">
+      <div>
+        <strong>SUBMIT / TỪNG BƯỚC TỰ TIN</strong
+        ><span>Hướng B đã chốt · Mockup bàn giao</span>
+      </div>
+      <div class="controls">
+        <label
+          >Vùng cảnh<select id="world">
+            <option value="forest">Rừng xanh</option>
+            <option value="volcano">Núi lửa</option>
+            <option value="snow">Xứ tuyết</option>
+            <option value="river">Sông ngọc</option>
+            <option value="desert">Sa mạc</option>
+            <option value="flowers">Đồng hoa</option>
+          </select></label
+        ><label
+          >Theme<select id="theme">
+            <option value="light">Ban ngày</option>
+            <option value="dark">Ban đêm</option>
+          </select></label
+        ><label
+          >Trạng thái<select id="state">
+            <option value="choose">Chọn đề</option>
+            <option value="ready">Sẵn sàng</option>
+            <option value="prep">Chuẩn bị</option>
+            <option value="recording">Đang ghi âm</option>
+            <option value="playback">Nghe lại & nộp</option>
+            <option value="sending">Đang gửi</option>
+            <option value="success">Đã gửi</option>
+            <option value="error">Lỗi micro</option>
+            <option value="empty">Chưa có đề</option>
+          </select></label
+        ><button id="mobile" aria-pressed="false">Xem mobile</button>
+      </div>
+      <p>Chọn đề → chuẩn bị và nói → nghe lại và gửi. Mỗi thời điểm tập trung một việc; thao tác được mô phỏng.</p>
+    </div>
+    <div id="preview" data-submit="guided" data-state="choose">
+      <div class="app">
+        <aside class="sidebar">
+          <a class="brand" href="http://localhost:8000/practice"
+            ><span class="brand-icon">♬</span> Speak<span>Up</span></a
+          ><span class="nav-caption">KHÔNG GIAN CỦA BẠN</span
+          ><a class="nav-link" href="http://localhost:8000/practice"
+            ><span>⌂</span> Lộ trình học</a
+          ><a class="nav-link selected" href="http://localhost:8000/"
+            ><span>♩</span> Nộp bài</a
+          ><a class="nav-link" href="http://localhost:8000/my-progress"
+            ><span>↗</span> Kết quả</a
+          >
+          <div class="sidebar-bottom">
+            <div class="avatar">TL</div>
+            <div><b>Thắng Lê</b><small>Nhà thám hiểm ngôn ngữ</small></div>
+          </div>
+        </aside>
+        <div class="workspace">
+          <header class="topbar">
+            <a href="http://localhost:8000/practice"
+              >← <span>Về lộ trình học</span></a
+            ><a class="brand mobile-brand" href="http://localhost:8000/practice"
+              >Speak<span>Up</span></a
+            ><span>Nộp bài đánh giá</span>
+          </header>
+          <main class="assessment">
+            <section class="hero">
+              <div class="hero-scenery"></div>
+              <div class="hero-copy">
+                <div class="eyebrow">TRẠM THỬ THÁCH / SPEAKUP</div>
+                <h1>Mỗi lần cất lời,<br />thêm một lần tự tin.</h1>
+                <p>
+                  Chọn một chủ đề, kể câu chuyện của bạn.<br />Mình cùng nhìn
+                  lại khả năng nói hôm nay nhé.
+                </p>
+                <div class="hero-meta">
+                  <span>◷ Chuẩn bị 30 giây</span
+                  ><span>✦ Khuyến nghị nói 40–60 giây</span>
+                </div>
+              </div>
+              <div class="companion">
+                <div class="speech" id="mascot-message">
+                  Bạn không cần hoàn hảo.<br />Cứ bắt đầu bằng một câu nhé!
+                </div>
+                <img id="mascot" alt="Bạn đồng hành" />
+              </div>
+            </section>
+            <nav class="submit-steps" aria-label="Tiến trình nộp bài">
+              <button data-phase="0" class="active">
+                <span>1</span>Chọn đề</button
+              ><i></i
+              ><button data-phase="1"><span>2</span>Chuẩn bị & nói</button
+              ><i></i
+              ><button data-phase="2"><span>3</span>Nghe lại & gửi</button>
+            </nav>
+            <div class="submit-layout">
+              <section class="task-panel panel">
+                <div class="panel-head">
+                  <div>
+                    <span class="activity-label"
+                      >ĐẦU TIÊN, CHỌN MỘT CHỦ ĐỀ</span
+                    >
+                    <h2>Bạn muốn kể điều gì?</h2>
+                  </div>
+                  <button
+                    class="icon-button"
+                    id="shuffle"
+                    aria-label="Đổi bộ đề mẫu"
+                  >
+                    ↻
+                  </button>
+                </div>
+                <p class="panel-intro">Chọn một đề phù hợp để bắt đầu.</p>
+                <div
+                  class="task-list"
+                  role="radiogroup"
+                  aria-label="Đề bài mẫu"
+                >
+                  <label class="task-option"
+                    ><input type="radio" name="task" value="0" /><span
+                      class="task-art"
+                      >☀</span
+                    ><span
+                      ><small>ĐỜI SỐNG HẰNG NGÀY</small
+                      ><b>Một nơi bạn yêu thích</b
+                      ><em>Kể về nơi khiến bạn cảm thấy thoải mái.</em></span
+                    ><span class="radio-mark"></span></label
+                  ><label class="task-option"
+                    ><input type="radio" name="task" value="1" /><span
+                      class="task-art"
+                      >✧</span
+                    ><span
+                      ><small>CON NGƯỜI & KỶ NIỆM</small
+                      ><b>Một người truyền cảm hứng</b
+                      ><em
+                        >Ai đã giúp bạn thay đổi theo hướng tốt hơn?</em
+                      ></span
+                    ><span class="radio-mark"></span></label
+                  ><label class="task-option"
+                    ><input type="radio" name="task" value="2" /><span
+                      class="task-art"
+                      >♧</span
+                    ><span
+                      ><small>TRẢI NGHIỆM CỦA BẠN</small
+                      ><b>Một điều mới bạn đã thử</b
+                      ><em>Chia sẻ lần bạn bước ra khỏi vùng an toàn.</em></span
+                    ><span class="radio-mark"></span
+                  ></label>
+                </div>
+                <div class="empty-state" hidden>
+                  <span>☁</span>
+                  <h3>Chưa có đề để luyện</h3>
+                  <p>Thử tải lại bộ đề hoặc quay lại sau nhé.</p>
+                  <button class="secondary" id="reload">Tải lại đề mẫu</button>
+                </div>
+                <div class="task-note">
+                  ✧ Một câu trả lời tự nhiên đáng giá hơn một bài học thuộc.
+                </div>
+              </section>
+              <section class="studio panel">
+                <div class="placeholder">
+                  <span class="placeholder-icon">♩</span
+                  ><span class="activity-label">SÂN KHẤU NHỎ CỦA BẠN</span>
+                  <h2>Một câu chuyện đang chờ được kể.</h2>
+                  <p>Chọn đề bên cạnh để xem gợi ý và bắt đầu ghi âm.</p>
+                </div>
+                <div class="studio-content" hidden>
+                  <div class="prompt-heading">
+                    <span class="activity-label">ĐỀ BÀI CỦA BẠN</span
+                    ><button class="text-button" id="change">Đổi đề</button>
+                  </div>
+                  <h2 id="task-title">Một nơi bạn yêu thích</h2>
+                  <p class="english-prompt" id="prompt">
+                    Describe a place where you feel relaxed. Where is it, what
+                    do you do there, and why do you enjoy it?
+                  </p>
+                  <details class="prompt-hints">
+                    <summary>Cần một chút gợi ý?</summary>
+                    <ul id="hints">
+                      <li>Nơi đó ở đâu?</li>
+                      <li>Bạn thường làm gì ở đó?</li>
+                      <li>Vì sao bạn thích nơi đó?</li>
+                    </ul>
+                  </details>
+                  <div class="preparation">
+                    <div class="prep-clock" id="prep-clock">30</div>
+                    <div>
+                      <b id="prep-title">Một chút thời gian suy nghĩ</b>
+                      <p id="prep-description">
+                        30 giây chuẩn bị, hoặc nói ngay khi bạn sẵn sàng.
+                      </p>
+                    </div>
+                    <button class="secondary" id="prepare">Chuẩn bị</button>
+                  </div>
+                  <div class="recorder">
+                    <div class="recorder-top">
+                      <span id="record-status"
+                        ><i></i> Micro · Chưa bắt đầu</span
+                      ><span id="timer">00:00</span>
+                    </div>
+                    <div class="wave" aria-hidden="true"></div>
+                    <button class="record-button" id="record">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        aria-hidden="true"
+                      >
+                        <rect x="9" y="3" width="6" height="11" rx="3" />
+                        <path
+                          d="M6 10v2a6 6 0 0 0 12 0v-2M12 18v3M8 21h8"
+                        /></svg
+                      ><span>Bắt đầu ghi âm</span>
+                    </button>
+                    <p class="record-hint" id="record-hint">
+                      Nói tự nhiên, hướng tới 40–60 giây.
+                    </p>
+                    <div class="duration-track">
+                      <div></div>
+                      <span></span>
+                    </div>
+                    <div class="duration-labels">
+                      <span>0s</span><b>40–60s khuyến nghị</b><span>120s</span>
+                    </div>
+                  </div>
+                  <div class="review-recording" hidden>
+                    <div>
+                      <span class="take-icon">▷</span>
+                      <div>
+                        <b>Bản ghi của bạn</b
+                        ><small>00:48 · Bản mô phỏng</small>
+                      </div>
+                      <button class="secondary" id="play">▷ Nghe lại</button>
+                    </div>
+                    <p>Nghe lại để chắc rằng giọng nói rõ và bản ghi đầy đủ.</p>
+                    <div class="send-actions">
+                      <button class="secondary" id="retry">Ghi lại</button
+                      ><button class="primary" id="send">
+                        Nộp bài và chấm →
+                      </button>
+                    </div>
+                  </div>
+                  <div class="error-note" hidden role="alert">
+                    <b>Chưa truy cập được micro</b>
+                    <p>
+                      Cho phép micro trong trình duyệt, hoặc chọn một tệp ghi âm
+                      có sẵn.
+                    </p>
+                    <button class="secondary" id="retry-mic">Thử lại</button>
+                  </div>
+                  <details class="upload">
+                    <summary>Hoặc tải bản ghi có sẵn</summary>
+                    <label for="audio"
+                      >Chọn tệp âm thanh để mô phỏng bản nghe lại</label
+                    ><input id="audio" type="file" accept="audio/*" />
+                    <p>
+                      Định dạng và giới hạn thực tế lấy từ cấu hình máy chủ.
+                    </p>
+                  </details>
+                </div>
+                <div class="sending" hidden role="status">
+                  <div class="sending-orb">↑</div>
+                  <h2>Đang gửi câu chuyện của bạn…</h2>
+                  <p>
+                    Bản ghi đang được tải lên. Giữ trang này mở thêm một chút
+                    nhé.
+                  </p>
+                  <div class="loading-line"></div>
+                  <small>Bản mô phỏng · Không tải dữ liệu lên máy chủ</small>
+                </div>
+                <div class="success" hidden role="status">
+                  <div class="success-orb">✦</div>
+                  <span class="activity-label"
+                    >BẠN ĐÃ HOÀN THÀNH MỘT THỬ THÁCH</span
+                  >
+                  <h2>Đã gửi bài nói!</h2>
+                  <p>
+                    Bài của bạn đã vào hàng đợi xử lý.<br />Kết quả sẽ có sau
+                    khi phân tích xong.
+                  </p>
+                  <button class="primary" id="new-attempt">
+                    Thử một chủ đề khác →</button
+                  ><a
+                    class="secondary"
+                    href="http://localhost:8000/my-responses"
+                    >Bài đã nộp</a
+                  >
+                </div>
+              </section>
+              <aside class="confidence-note">
+                <span>✦</span>
+                <div>
+                  <b>Một lượt nói, một cơ hội hiểu mình hơn.</b>
+                  <p>
+                    Bạn sẽ nhận được nhận xét để biết điểm mạnh và điều nên
+                    luyện tiếp.
+                  </p>
+                </div>
+              </aside>
+            </div>
+            <div class="wizard-footer">
+              <button id="back" class="secondary">← Quay lại chọn đề</button
+              ><span>Thao tác và dữ liệu trong mockup đều được mô phỏng.</span>
+            </div>
+            <p class="prototype-note">
+              Mockup thiết kế · Không thu âm, không chấm điểm, không gửi dữ
+              liệu. Đề và thời lượng hiển thị là ví dụ.
+            </p>
+          </main>
+        </div>
+      </div>
+    </div>
+    <script src="submit-mockup.js"></script>
+  </body>
+</html>
