@@ -135,3 +135,27 @@ def test_plans_are_in_the_export_and_go_with_erasure(m):
     )
     assert r.status_code == 200, r.text
     assert m.app.state.plans.of_account(account_id(m, "SV-001")) == []
+
+
+def test_active_band_plan_enforces_its_order_on_reads_and_attempts(m):
+    student = login_as(m, "SV-PLAN-GATE")
+    response = student.post("/api/v1/learn/bands", json={"band_from": "A1", "band_to": "C2"})
+    assert response.status_code == 200, response.text
+    units = response.json()["units"]
+    by_band = {}
+    for unit in units:
+        by_band.setdefault(unit["band"], []).extend(unit["lessons"])
+    assert len(by_band) == 6
+    for items in by_band.values():
+        assert items[0]["status"] == "new"
+        assert student.get(f"/api/v1/learn/lessons/{items[0]['lesson_id']}").status_code == 200
+        for item in items[1:]:
+            assert item["status"] == "locked"
+            lid = item["lesson_id"]
+            assert student.get(f"/api/v1/learn/lessons/{lid}").status_code == 403
+            lesson, _ = m.lessons.published(lid)
+            result = student.post(
+                f"/api/v1/learn/lessons/{lid}/steps/{lesson.steps[0].step_id}/attempts",
+                files={"audio": ("clip.wav", b"invalid", "audio/wav")},
+            )
+            assert result.status_code == 403

@@ -9,6 +9,8 @@
     page; since D074 the learner chooses the bands they study, and the roadmap
     then follows that plan. -#}
 <link rel="stylesheet" href="{{ asset('practice_path.css') }}">
+<link rel="stylesheet" href="{{ asset('band_plan.css') }}">
+<link rel="stylesheet" href="{{ asset('practice_adventure.css') }}">
 <div id="path-page" class="roadmap-page" aria-busy="true" data-goals="{{ daily_goals | join(',') }}">
   <header class="rm-hero" id="path-head">
     <div class="skeleton skeleton-title"></div>
@@ -31,16 +33,11 @@
       <div class="skeleton skeleton-block"></div>
     </aside>
   </div>
-
-  <nav class="rm-tabbar" aria-label="Điều hướng di động">
-    <a href="/practice" class="on" aria-current="page">{{ icon("home") }}<span>Lộ trình học</span></a>
-    <a href="/">{{ icon("book-open") }}<span>Nộp bài</span></a>
-    <a href="/my-progress">{{ icon("trend") }}<span>Kết quả</span></a>
-    <a href="/account">{{ icon("user") }}<span>Cá nhân</span></a>
-  </nav>
 </div>
 {% endblock %}
+
 {% block scripts %}<script src="{{ asset('practice_mascots.js') }}"></script>
+<script src="{{ asset('practice_adventure.js') }}"></script>
 <script src="{{ asset('practice_path.js') }}"></script>
 <script src="{{ asset('nudges.js') }}"></script>
 <script src="{{ asset('band_plan.js') }}"></script>{% endblock %}

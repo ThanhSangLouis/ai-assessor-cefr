@@ -1,11 +1,10 @@
 // The learner's roadmap (D025, M13; a trail since D027, drawn after Thắng's
 // mockup in D092).
 //
-// One part per band, each a zigzag of lessons on a grey road: a tick once a
-// lesson is complete, the golden coin with its "Bắt đầu" flag and its card for
-// the lesson to study next, a padlock for the others. The padlock only says
-// "not reached yet": nothing is locked -- a teacher may set any lesson -- so a
-// click on any coin opens its card and its button. When the learner has chosen
+// One part per band, split into visual chapters on an adaptive 2D trail.
+// A tick marks completed lessons; a golden coin marks the suggested next one.
+// Locked lessons show a padlock and never expose a study action.
+// Clicking a coin opens its card without changing the road or scenery. When the learner has chosen
 // bands (D074) the roadmap is that plan; otherwise it is the whole path. The
 // column beside it: what to study next, today's speaking time, the progress of
 // the course and of each band. No score, no band estimate and no ranking.
@@ -26,7 +25,7 @@ const LEVELS = {
   C2: "Thành thạo",
 };
 const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
-const STATUS_TEXT = { completed: "Đã hoàn thành", started: "Đang học", new: "Chưa học", unavailable: "Không còn mở" };
+const STATUS_TEXT = { completed: "Đã hoàn thành", started: "Đang học", new: "Chưa học", locked: "Chưa mở khóa", unavailable: "Không còn mở" };
 
 const narrow = window.matchMedia("(max-width: 700px)");
 let data = null;
@@ -64,7 +63,7 @@ function parts() {
     if (last && last.band === band) last.lessons.push(lesson);
     else out.push({ band, lessons: [lesson] });
   };
-  if (plan && plan.units && plan.units.length) {
+  if (plan && Array.isArray(plan.units)) {
     for (const u of plan.units) {
       for (const item of u.lessons) {
         const hit = byId.get(item.lesson_id);
@@ -113,9 +112,9 @@ function head() {
       : "";
   headEl.innerHTML =
     '<div class="rm-hero-text">' +
-    `<h1>Chào <span class="rm-name">${escapeHtml(getGreetingName())}</span>, sẵn sàng luyện nói hôm nay chưa? ${SPARK}` +
+    `<h1>Chào <span class="rm-name">${escapeHtml(getGreetingName())}</span>, cùng luyện nói nhé! ${SPARK}` +
     `<span class="visually-hidden"> - ${escapeHtml(p.title)}</span></h1>` +
-    "<p>Mỗi ngày vài phút phản xạ, nâng chuẩn CEFR vững vàng từng bước.</p>" +
+    "<p>Luyện nói mỗi ngày, tiến bộ từng bước.</p>" +
     switcher +
     "</div>" +
     '<span class="rm-girl" aria-hidden="true"><img src="/static/art/mascot_girl.png" alt="" width="224" height="150"></span>';
@@ -132,29 +131,20 @@ function head() {
 // Geometry in pixels from the centre line of the road: the coins swing left
 // and right of it, a row apart; the coin to study next gets room for its flag.
 function geometry() {
-  return narrow.matches
-    ? { row: 46, top: 30, flag: 46, tail: 40, swing: [-26, 26], finale: 170 }
-    : { row: 90, top: 50, flag: 62, tail: 74, swing: [-44, 40], finale: 250 };
+  return window.rmAdventure.geometry(narrow.matches);
 }
 
 function layout(lessons, nextId, g) {
-  let y = g.top;
-  return lessons.map((l, i) => {
-    if (l.lesson_id === nextId) y += g.flag;
-    const point = { x: g.swing[i % 2], y };
-    y += g.row;
-    return point;
-  });
+  return window.rmAdventure.layout(lessons, nextId, g);
 }
 
 // The road winds: from each coin it leaves straight down and reaches the next
 // straight from above, a smooth S between them (cubic Béziers with vertical
-// tangents), then runs on past the last coin towards the next part. Drawn as a
-// slab: a soft shadow and a darker side under the surface give it depth.
+// tangents), ending at the last coin so no road protrudes below it. Drawn as a
+// translucent guide with small stars; its scale is independent of lesson count.
 function roadHtml(points, height) {
-  if (!points.length) return "";
-  const last = points[points.length - 1];
-  const all = [...points, { x: last.x + (last.x < 0 ? 26 : -26), y: height }];
+  if (points.length < 2) return "";
+  const all = points;
   let d = `M${all[0].x} ${all[0].y}`;
   for (let i = 1; i < all.length; i += 1) {
     const a = all[i - 1];
@@ -162,10 +152,15 @@ function roadHtml(points, height) {
     const k = Math.round((z.y - a.y) * 0.55);
     d += ` C${a.x} ${a.y + k} ${z.x} ${z.y - k} ${z.x} ${z.y}`;
   }
+  const stars = all.slice(1).map((point, i) => {
+    const x = (all[i].x + point.x) / 2;
+    const y = (all[i].y + point.y) / 2;
+    return `<path class="rm-road-star" d="M${x} ${y - 4}l1.2 2.8 3.1 1.2-3.1 1.2-1.2 2.8-1.2-2.8-3.1-1.2 3.1-1.2Z"/>`;
+  }).join("");
   return (
     `<svg class="rm-road" width="2" height="${height}" viewBox="-1 0 2 ${height}" aria-hidden="true" focusable="false">` +
     `<path class="rm-road-shadow" d="${d}"/><path class="rm-road-side" d="${d}"/>` +
-    `<path class="rm-road-edge" d="${d}"/><path class="rm-road-fill" d="${d}"/><path class="rm-road-dash" d="${d}"/></svg>`
+    `<path class="rm-road-edge" d="${d}"/><path class="rm-road-fill" d="${d}"/><path class="rm-road-dash" d="${d}"/>${stars}</svg>`
   );
 }
 
@@ -178,7 +173,7 @@ const GLYPHS = {
     '<circle cx="12" cy="15" r="1.7" fill="var(--glyph-ink)"/><rect x="11.2" y="15.5" width="1.6" height="3.2" rx=".8" fill="var(--glyph-ink)"/>',
   book:
     '<path d="M2.5 5.2c3.1-1.3 6.3-1 8.8.9V20c-2.6-1.7-5.8-2-8.8-.8ZM21.5 5.2c-3.1-1.3-6.3-1-8.8.9V20c2.6-1.7 5.8-2 8.8-.8Z" fill="currentColor"/>' +
-    '<path d="M5 9.2h3.8M5 12.2h3.8M5 15.2h3.8M15.2 9.2H19M15.2 12.2H19M15.2 15.2H19" stroke="var(--glyph-ink)" stroke-width="1.4" stroke-linecap="round"/>',
+    '<path d="M5 9.2h3.8M5 12.2h3.8M5 15.2h3.8M15.2 9.2H19M15.2 12.2H19M15.2 15.2H19" stroke="var(--book-detail, var(--glyph-ink))" stroke-width="1.4" stroke-linecap="round"/>',
   check: '<path d="m5 12.6 4.6 4.6L19.2 7.4" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>',
 };
 // A solid triangle, the play mark of the mockup's buttons.
@@ -188,121 +183,60 @@ const PLAY =
 const glyph = (name, cls = "rm-coin-icon") =>
   `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${GLYPHS[name]}</svg>`;
 
-function nodeHtml(l, i, point, nextId) {
-  const isNext = l.lesson_id === nextId;
+function lessonCardContent(l, number, detail = false) {
+  const action = l.status === "completed" ? "Học lại" : l.status === "started" ? "Học tiếp" : "Học bài";
+  const meta = `${minutes(l)} · ${Number(l.steps) || 0} bước`;
+  const label = `<span class="rm-lesson-action">${action}${icon("arrow-right")}</span>`;
+  return `<small class="rm-node-card-eyebrow">Bài ${number}${l.band ? ` · ${escapeHtml(l.band)}` : ""}</small>` +
+    `<strong class="rm-lesson-title">${escapeHtml(l.title)}</strong>` +
+    (l.summary ? `<p class="rm-node-card-summary">${escapeHtml(l.summary)}</p>` : "") +
+    `<span class="rm-bubble-time">${icon("clock")}${escapeHtml(meta)}</span>` +
+    (["locked", "unavailable"].includes(l.status) ? `<p class="muted">${l.status === "locked" ? "Hoàn thành bài trước để mở khóa." : "Bài này không còn mở."}</p>` :
+      detail ? `<a class="rm-lesson-link" href="/practice/lessons/${encodeURIComponent(l.lesson_id)}">${label}</a>` : label);
+}
+
+// A compact reward emblem shares the lesson coin footprint.
+function victoryEmblem() {
+  const center = '<path fill="var(--reward-center)" d="m24 13 1.8 3.6 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4-2.9-2.8 4-.6Z"/>';
+  return `<svg class="rm-reward-emblem" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <path d="M14 12H8v5c0 5 4 8 9 8M34 12h6v5c0 5-4 8-9 8" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round"/>
+    <path fill="currentColor" d="M14 9h20v10a10 10 0 0 1-8 9.8V34h6v5H16v-5h6v-5.2A10 10 0 0 1 14 19Z"/>
+    ${center}
+  </svg>`;
+}
+
+function nodeHtml(l, i, point, nextId, isFinish = false) {
+  const isNext = l.lesson_id === nextId && !["locked", "unavailable"].includes(l.status);
   const isDone = l.status === "completed";
-  const state = isNext ? "current next" : isDone ? "complete" : "locked";
-  const mark = isNext ? "book" : isDone ? "check" : i % 3 === 2 ? "book" : "lock";
+  const isUnavailable = ["locked", "unavailable"].includes(l.status);
+  const state = isUnavailable ? "locked" : isNext ? "current next" : isDone ? "complete" : "available";
+  const mark = isFinish
+    ? victoryEmblem()
+    : isUnavailable ? glyph("lock") : glyph("book");
   const said = isNext ? (l.status === "started" ? "Đang học" : "Học tiếp theo") : STATUS_TEXT[l.status] || "Chưa học";
   const id = escapeHtml(l.lesson_id);
   let html =
-    `<li class="lesson-node ${state} ${escapeHtml(l.status || "new")}" style="--dx:${point.x}px;--y:${point.y}px">` +
+    `<li class="lesson-node ${state}${isFinish ? " rm-victory" : ""} ${escapeHtml(l.status || "new")}" style="--dx:${point.x}px;--y:${point.y}px">` +
     `<button type="button" class="node-coin rm-coin" data-lesson="${id}" aria-expanded="false" ` +
-    `aria-label="${escapeHtml(l.title)}, ${said}">${glyph(mark)}</button>` +
+    `aria-label="${escapeHtml(l.title)}${isFinish ? ", Bài cuối phần" : ""}, ${said}">${mark}</button>` +
     `<span class="visually-hidden lesson-state">${STATUS_TEXT[l.status] || ""}</span>`;
   if (isNext) {
-    html +=
-      `<span class="node-flag rm-flag" aria-hidden="true">${l.status === "started" ? "Học tiếp" : "Bắt đầu"}</span>` +
-      `<a class="rm-bubble" href="/practice/lessons/${encodeURIComponent(l.lesson_id)}">` +
-      `<span class="rm-bubble-text"><small>Bài <b>${i + 1}</b></small><strong>${escapeHtml(l.title)}</strong>` +
-      `<span class="rm-bubble-time">${icon("clock")}${minutes(l)}</span></span>` +
-      `<span class="rm-play" aria-hidden="true">${PLAY}</span></a>`;
+    html += `<span class="node-flag rm-flag" aria-hidden="true">${l.status === "started" ? "Học tiếp" : "Bắt đầu"}</span>`;
   }
   return `${html}</li>`;
 }
 
-// Scenery, as in the mockup: clouds, hills, a signpost, books, a mountain;
-// the trophy at the end of the last part.
-const HILL =
-  '<svg class="rm-hill" viewBox="0 0 170 70" aria-hidden="true" focusable="false">' +
-  '<path class="rm-hill-ground" d="M0 70C20 40 60 30 92 34s62 14 78 36Z"/>' +
-  '<rect class="rm-trunk" x="104" y="34" width="4" height="18" rx="2"/><rect class="rm-trunk" x="124" y="40" width="3" height="14" rx="1.5"/>' +
-  '<ellipse class="rm-leaf" cx="106" cy="24" rx="12" ry="16"/><ellipse class="rm-leaf-2" cx="125.5" cy="33" rx="9" ry="11"/></svg>';
-const SIGN =
-  '<svg class="rm-sign" viewBox="0 0 120 84" aria-hidden="true" focusable="false">' +
-  '<path class="rm-hill-ground" d="M0 84c14-18 40-26 62-24s44 10 58 24Z"/>' +
-  '<rect x="44" y="18" width="7" height="56" rx="3" fill="#b8742f"/>' +
-  '<path d="M30 14h44l12 9-12 9H30Z" fill="#f2a24b"/><path d="M30 14h44l12 9H30Z" fill="#f7b866"/>' +
-  '<ellipse class="rm-leaf-2" cx="22" cy="70" rx="12" ry="8"/><ellipse class="rm-leaf" cx="98" cy="68" rx="10" ry="7"/></svg>';
-const BOOKS =
-  '<svg class="rm-books" viewBox="0 0 130 70" aria-hidden="true" focusable="false">' +
-  '<ellipse class="rm-hill-ground" cx="65" cy="62" rx="64" ry="8"/>' +
-  '<rect x="30" y="44" width="70" height="14" rx="3" fill="#2eb6a5"/><rect x="32" y="47" width="58" height="8" rx="2" fill="#e9f7f4"/>' +
-  '<rect x="26" y="30" width="72" height="14" rx="3" fill="#7bc74d"/><rect x="28" y="33" width="60" height="8" rx="2" fill="#f2f9ea"/>' +
-  '<rect x="34" y="16" width="66" height="14" rx="3" fill="#ff8a2b"/><rect x="36" y="19" width="54" height="8" rx="2" fill="#fff4e8"/></svg>';
-const MOUNTAIN =
-  '<svg class="rm-mountain" viewBox="0 0 170 80" aria-hidden="true" focusable="false">' +
-  '<path class="rm-hill-ground" d="M0 80 58 22l26 22 24-30 62 66Z"/>' +
-  '<path class="rm-leaf-2" d="M108 14 92 34l10-4 6 6 6-6 12 4Z" opacity=".55"/>' +
-  '<rect class="rm-trunk" x="122" y="56" width="3" height="12" rx="1.5"/><ellipse class="rm-leaf" cx="123.5" cy="50" rx="7" ry="10"/></svg>';
-const TROPHY =
-  '<svg class="rm-cup" viewBox="0 0 120 120" aria-hidden="true" focusable="false">' +
-  '<circle cx="60" cy="60" r="56" class="rm-cup-glow"/>' +
-  '<path d="M38 30h44v14c0 15-9 26-22 26S38 59 38 44Z" fill="#ffc21a"/>' +
-  '<path d="M38 34H26c0 14 8 22 18 22M82 34h12c0 14-8 22-18 22" fill="none" stroke="#ffb000" stroke-width="5" stroke-linecap="round"/>' +
-  '<rect x="55" y="68" width="10" height="12" fill="#f0a500"/><rect x="44" y="80" width="32" height="10" rx="3" fill="#e28c00"/>' +
-  '<path d="m60 38 3.6 7.4 8 1.1-5.8 5.6 1.4 8-7.2-3.8-7.2 3.8 1.4-8-5.8-5.6 8-1.1Z" fill="#fff6d6"/></svg>';
-
-// The meadow at the end of the road: two rolling hills, bushes, a few flowers.
-const FLOWER = (x, y) =>
-  `<g transform="translate(${x} ${y})"><path d="M0 0v12" stroke="#7cc561" stroke-width="1.6"/>` +
-  '<circle cx="0" cy="-3" r="3.4" fill="#fff"/><circle cx="-3.4" cy="0" r="3.4" fill="#fff"/><circle cx="3.4" cy="0" r="3.4" fill="#fff"/>' +
-  '<circle cx="0" cy="3" r="3.4" fill="#fff"/><circle cx="0" cy="0" r="2.4" fill="#ffc21a"/></g>';
-const MEADOW =
-  '<svg class="rm-meadow" viewBox="0 0 800 130" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
-  '<path class="rm-hill-ground" d="M0 52C120 18 240 22 360 46s250 34 440 4V130H0Z"/>' +
-  '<path class="rm-meadow-front" d="M0 84c140-30 280-26 420-6s260 24 380-2V130H0Z"/></svg>' +
-  '<svg class="rm-bushes rm-bushes-l" viewBox="0 0 140 70" aria-hidden="true" focusable="false">' +
-  '<circle class="rm-leaf-2" cx="40" cy="44" r="26"/><circle class="rm-leaf" cx="74" cy="40" r="30"/><circle class="rm-leaf-2" cx="106" cy="50" r="20"/>' +
-  `${FLOWER(52, 58)}${FLOWER(84, 62)}</svg>` +
-  '<svg class="rm-bushes rm-bushes-r" viewBox="0 0 140 70" aria-hidden="true" focusable="false">' +
-  '<circle class="rm-leaf-2" cx="36" cy="50" r="20"/><circle class="rm-leaf" cx="70" cy="40" r="30"/><circle class="rm-leaf-2" cx="102" cy="46" r="24"/>' +
-  `${FLOWER(48, 60)}${FLOWER(96, 62)}</svg>`;
-
-function cloud(cls) {
-  return `<span class="rm-deco rm-cloud ${cls}" aria-hidden="true"></span>`;
-}
-
-// The companion of a part: the owl's picture or a drawn one, with its tip.
-// It stands beside a coin the card of the next lesson does not cover.
-function mascotHtml(band, k, points, lessons, nextId) {
+// The themed companion of a part, with its tip.
+// Each companion sits halfway down its band’s lesson area.
+function mascotHtml(band, k) {
   const cast = window.rmMascots && window.rmMascots.CAST[band];
   if (!cast) return "";
-  const n = points.length;
-  const at = k === 0 ? Math.min(2, n - 1) : Math.max(0, Math.min(n - 1, Math.floor((n - 1) / 2)));
-  const next = lessons.findIndex((l) => l.lesson_id === nextId);
-  let side = k % 2 ? "right" : "left";
-  if (side === "right" && next >= 0 && Math.abs(next - at) <= 1) side = "left";
-  const art =
-    cast.name === "owl"
-      ? '<img src="/static/art/mascot_owl.png" alt="" width="178" height="153">'
-      : window.rmMascots.ART[cast.name];
+  const side = k % 2 ? "right" : "left";
+  const art = window.rmMascots.ART[cast.name];
   return (
-    `<span class="rm-deco rm-mascot rm-mascot-${side} rm-mascot-${cast.name}" style="--m-y:${points[at].y}px" aria-hidden="true">` +
+    `<span class="rm-deco rm-mascot rm-mascot-${side} rm-mascot-${cast.name}" aria-hidden="true">` +
     `<span class="rm-say">${escapeHtml(cast.tip)}</span><span class="rm-mascot-art">${art}</span></span>`
   );
-}
-
-function sceneryHtml(k, isLast, band) {
-  if (k === 0) return "";
-  const scenes = [
-    "",
-    cloud("rm-cloud-a") + `<span class="rm-deco rm-at-bl">${SIGN}</span><span class="rm-deco rm-at-br">${HILL}</span>`,
-    cloud("rm-cloud-b") + `<span class="rm-deco rm-at-br">${HILL}</span>`,
-    cloud("rm-cloud-a") + cloud("rm-cloud-c") + `<span class="rm-deco rm-at-bl">${BOOKS}</span>`,
-    cloud("rm-cloud-a") + `<span class="rm-deco rm-at-r">${MOUNTAIN}</span>`,
-    cloud("rm-cloud-b") + cloud("rm-cloud-c"),
-  ];
-  let html = scenes[k % scenes.length] || scenes[1];
-  if (isLast) {
-    html +=
-      '<div class="rm-finale" aria-hidden="true">' +
-      MEADOW +
-      '<span class="rm-rays"></span>' +
-      TROPHY +
-      `<span class="rm-ribbon">Hoàn thành lộ trình ${escapeHtml(band)}</span></div>`;
-  }
-  return html;
 }
 
 let drawnNarrow = null;
@@ -310,7 +244,6 @@ let drawnNarrow = null;
 function trail() {
   const g = geometry();
   drawnNarrow = narrow.matches;
-  const nextId = data.next ? data.next.lesson_id : null;
   const all = parts();
   if (!all.length) {
     unitsEl.innerHTML = '<p class="muted rm-empty">Lộ trình này chưa có bài học.</p>';
@@ -318,33 +251,98 @@ function trail() {
   }
   unitsEl.innerHTML = all
     .map((part, k) => {
+      const nextId = part.lessons.find(l => ["new", "started"].includes(l.status))?.lesson_id || null;
       const done = part.lessons.filter((l) => l.status === "completed").length;
       const total = part.lessons.length;
       const pct = total ? Math.round((done / total) * 100) : 0;
       const isLast = k === all.length - 1;
       const points = layout(part.lessons, nextId, g);
-      const height = points[points.length - 1].y + g.tail;
+      const height = window.rmAdventure.height(points, g);
       const band = part.band || "A1";
+      const theme = window.rmAdventure.THEMES[band] || window.rmAdventure.THEMES.A1;
+      const chapterLabels = window.rmAdventure.chapters(points).map((chapter) =>
+        `<span class="rm-chapter-label" style="top:${chapter.y}px">Chặng ${chapter.number}<span>${chapter.start + 1}–${chapter.end}</span></span>`
+      ).join("");
       return (
         `<section class="path-part rm-level band-${escapeHtml(band.toLowerCase())}" aria-labelledby="part-h-${k}">` +
         '<header class="rm-level-head">' +
         `<span class="rm-pill" aria-hidden="true">${escapeHtml(band)}</span>` +
         `<h2 class="rm-level-name" id="part-h-${k}"><span class="visually-hidden">${escapeHtml(band)}: </span>` +
-        `Phần ${k + 1} · ${escapeHtml(LEVELS[band] || band)}</h2>` +
-        `<div class="rm-level-stat"><span><b>${done}/${total}</b> bài hoàn thành</span>` +
+        `<span class="rm-adventure-title">${escapeHtml(theme.title)}</span><span class="rm-band-description">${escapeHtml(LEVELS[band] || band)}</span></h2>` +
+        `<div class="rm-level-stat"><span><b>${done}/${total}</b> bài</span>` +
         `<span class="rm-bar" role="progressbar" aria-label="Tiến độ ${escapeHtml(band)}" aria-valuemin="0" aria-valuemax="100" ` +
         `aria-valuenow="${pct}"><span style="width:${pct}%"></span></span></div>` +
         "</header>" +
-        `<div class="rm-path${isLast ? " is-last" : ""}" style="--h:${height}px">` +
-        sceneryHtml(k, isLast, band) +
-        mascotHtml(band, k, points, part.lessons, nextId) +
+        `<div class="rm-path rm-adventure-path${isLast ? " is-last" : ""}" style="--h:${height}px">` +
+        window.rmAdventure.sceneryHtml() + chapterLabels +
+        mascotHtml(band, k) +
         roadHtml(points, height) +
-        `<ol class="rm-nodes">${part.lessons.map((l, i) => nodeHtml(l, i, points[i], nextId)).join("")}</ol>` +
+        `<ol class="rm-nodes">${part.lessons.map((l, i) => nodeHtml(l, i, points[i], nextId, i === part.lessons.length - 1)).join("")}</ol>` +
         "</div></section>"
       );
     })
     .join("");
+  positionCompanions();
   wakeMascots();
+}
+
+// Place companions in the clearing beside nearby lessons, rather than at the border.
+// Observe path width so sidebar and viewport changes use the same collision rules.
+let companionObserver = null;
+function positionCompanions() {
+  if (companionObserver) companionObserver.disconnect();
+  const place = (path) => {
+    const scenery = path.querySelector(".rm-adventure-scenery");
+    const ratio = Number(getComputedStyle(path).getPropertyValue("--scene-ratio")) || 3;
+    const tiles = window.rmAdventure.terrainTiles(path.clientHeight, path.clientWidth, ratio);
+    if (scenery && scenery.childElementCount !== tiles.length) {
+      scenery.innerHTML = tiles.map(tile =>
+        `<span class="rm-terrain-tile" style="--tile-index:${tile.index}"></span>`).join("");
+    }
+    const mascot = path.querySelector(".rm-mascot");
+    if (!mascot) return;
+    const bounds = path.getBoundingClientRect();
+    const size = mascot.getBoundingClientRect().width;
+    const bubbleWidth = Math.min(bounds.width <= 400 ? 112 : 180, size + 30);
+    const footprint = Math.max(size, bubbleWidth);
+    const nodes = [...path.querySelectorAll(".node-coin")].map(node => {
+      const r = node.getBoundingClientRect();
+      return { left: r.left - bounds.left - 10, right: r.right - bounds.left + 10,
+        top: r.top - bounds.top - 32, bottom: r.bottom - bounds.top + 12 };
+    });
+    const middle = bounds.height / 2;
+    let best = null;
+    const reach = Math.max(220, size);
+    const start = Math.max(64 + size / 2, middle - reach);
+    const end = Math.min(bounds.height - size / 2 - 8, middle + reach);
+    for (let y = start; y <= end; y += 8) {
+      for (let x = footprint / 2 + 12; x <= bounds.width - footprint / 2 - 12; x += 8) {
+        const box = { left: x - footprint / 2, right: x + footprint / 2,
+          top: y - size / 2 - 60, bottom: y + size / 2 + 6 };
+        const overlap = nodes.reduce((sum, n) => sum +
+          Math.max(0, Math.min(box.right, n.right) - Math.max(box.left, n.left)) *
+          Math.max(0, Math.min(box.bottom, n.bottom) - Math.max(box.top, n.top)), 0);
+        const preferredLeft = mascot.classList.contains("rm-mascot-left");
+        const wrongSide = preferredLeft ? x > bounds.width / 2 : x < bounds.width / 2;
+        const artOverlap = nodes.reduce((sum, n) => sum +
+          Math.max(0, Math.min(x + size / 2, n.right) - Math.max(x - size / 2, n.left)) *
+          Math.max(0, Math.min(y + size / 2, n.bottom) - Math.max(y - size / 2, n.top + 32)), 0);
+        const score = artOverlap * 1000000 + overlap * 10000 + Math.abs(x - bounds.width / 2) +
+          Math.abs(y - middle) * .45 + (wrongSide ? 24 : 0);
+        if (!best || score < best.score) best = { x, y, score };
+      }
+    }
+    if (!best) return;
+    mascot.style.left = `${best.x - size / 2}px`;
+    mascot.style.right = "auto";
+    mascot.style.top = `${best.y}px`;
+    mascot.style.setProperty("--companion-bubble-width", `${bubbleWidth}px`);
+  };
+  companionObserver = new ResizeObserver(entries => entries.forEach(entry => place(entry.target)));
+  unitsEl.querySelectorAll(".rm-adventure-path").forEach(path => {
+    place(path);
+    companionObserver.observe(path);
+  });
 }
 
 // A companion says its tip once its part scrolls into view, and hops when
@@ -396,8 +394,7 @@ function openCard(coin) {
   const found = findLesson(coin.dataset.lesson);
   if (!found) return;
   closeCard();
-  const { lesson: l, unit: u } = found;
-  const action = l.status === "completed" ? "Học lại" : l.status === "started" ? "Học tiếp" : "Bắt đầu";
+  const { lesson: l } = found;
   const node = coin.closest(".lesson-node");
   const box = coin.closest(".rm-path");
   const card = document.createElement("div");
@@ -405,28 +402,47 @@ function openCard(coin) {
   card.className = "rm-node-card";
   card.setAttribute("role", "dialog");
   card.setAttribute("aria-label", l.title);
-  const facts = [
-    `<li>${icon("layers")}${Number(l.steps) || 0} bước</li>`,
-    l.passed ? `<li>${icon("check-circle")}đạt ${Number(l.passed)}/${Number(l.steps)}</li>` : "",
-    l.criterion ? `<li>${icon("target")}${escapeHtml(window.ui.practiceName(l.criterion))}</li>` : "",
-  ].join("");
-  card.innerHTML =
-    `<p class="rm-node-card-eyebrow">${escapeHtml(topicName(u) || (u && u.title) || "")}${l.band ? ` · ${escapeHtml(l.band)}` : ""}</p>` +
-    `<h3>${escapeHtml(l.title)}</h3>` +
-    (l.summary ? `<p class="rm-node-card-summary">${escapeHtml(l.summary)}</p>` : "") +
-    `<ul class="rm-node-card-facts">${facts}</ul>` +
-    (l.status === "unavailable"
-      ? '<p class="muted">Bài này không còn mở. Hãy tạo lại lộ trình để thay bài khác.</p>'
-      : `<a class="rm-btn rm-btn-orange" href="/practice/lessons/${encodeURIComponent(l.lesson_id)}">${PLAY}${action}</a>`);
+  card.innerHTML = lessonCardContent(l, orderOf(l.lesson_id), true);
   box.appendChild(card);
   // Under the coin, kept inside the roadmap's box.
-  const width = Math.min(300, box.clientWidth - 16);
-  const centre = node.offsetLeft;
-  const left = Math.max(8, Math.min(box.clientWidth - width - 8, centre - width / 2));
-  card.style.width = `${width}px`;
-  card.style.left = `${left}px`;
-  card.style.top = `${node.offsetTop + coin.offsetHeight / 2 + 14}px`;
-  card.style.setProperty("--arrow", `${centre - left}px`);
+  const points = [...box.querySelectorAll(".lesson-node")];
+  const rightEdge = Math.max(...points.map((item) => item.offsetLeft)) + 60;
+  const leftEdge = Math.min(...points.map((item) => item.offsetLeft)) - 60;
+  const bounds = box.getBoundingClientRect();
+  const obstacles = [...box.querySelectorAll(".rm-mascot, .rm-bubble, .node-coin")];
+  let placed = false;
+  for (const side of ["right", "left"]) {
+    const space = side === "right" ? box.clientWidth - rightEdge - 12 : leftEdge - 12;
+    if (space < 230) continue;
+    const width = Math.min(270, space);
+    card.style.width = `${width}px`;
+    const left = side === "right" ? rightEdge : leftEdge - width;
+    const top = Math.max(8, Math.min(node.offsetTop - card.offsetHeight / 2, box.clientHeight - card.offsetHeight - 12));
+    const rect = { left: bounds.left + left, right: bounds.left + left + width,
+      top: bounds.top + top, bottom: bounds.top + top + card.offsetHeight };
+    const collides = obstacles.some((item) => {
+      const r = item.getBoundingClientRect();
+      return rect.left < r.right + 12 && rect.right > r.left - 12 && rect.top < r.bottom + 12 && rect.bottom > r.top - 12;
+    });
+    if (collides || card.offsetHeight > box.clientHeight - 20) continue;
+    card.style.left = `${left}px`;
+    card.style.top = `${top}px`;
+    card.classList.add("rm-node-card-side");
+    placed = true;
+    break;
+  }
+  if (!placed) {
+    const width = Math.min(270, box.clientWidth - 24);
+    card.style.width = `${width}px`;
+    card.style.left = `${Math.max(12, Math.min(box.clientWidth - width - 12, node.offsetLeft - width / 2))}px`;
+    card.style.top = `${node.offsetTop + coin.offsetHeight / 2 + 20}px`;
+    // Float the card over the page; opening a lesson never changes the trail.
+    const below = node.offsetTop + coin.offsetHeight / 2 + 20;
+    const top = below + card.offsetHeight <= box.clientHeight
+      ? below : Math.max(8, node.offsetTop - coin.offsetHeight / 2 - card.offsetHeight - 20);
+    card.style.top = `${top}px`;
+    card.classList.add("rm-node-card-floating");
+  }
   coin.setAttribute("aria-expanded", "true");
   openCoin = coin;
   const go = card.querySelector("a");
@@ -463,7 +479,7 @@ function nextCard() {
   const l = found && found.lesson;
   const u = found && found.unit;
   const order = l ? orderOf(n.lesson_id) : 0;
-  const action = l && l.status === "completed" ? "Luyện lại" : "Tiếp tục học";
+  const action = l && l.status === "completed" ? "Luyện lại" : l && l.status === "started" ? "Tiếp tục học" : "Bắt đầu học";
   const meta = l ? [minutes(l), topicName(u)].filter(Boolean).join(" · ") : "";
   return (
     `<section class="rm-card rm-next next-card" aria-labelledby="next-h"${n.reason ? ` title="${escapeHtml(n.reason)}"` : ""}>` +
@@ -590,7 +606,7 @@ function progressCard(all) {
     '<section class="rm-card rm-progress" aria-labelledby="overall-h">' +
     '<div class="rm-card-head">' +
     `<h2 class="rm-card-title" id="overall-h">${icon("trophy", "icon rm-gold")}Tiến độ khóa học</h2>` +
-    `<span class="rm-chip rm-chip-orange">${pct}%</span></div>` +
+    `</div>` +
     `<p class="rm-row"><span>Bài học hoàn thành</span><b>${done} / ${total} bài</b></p>` +
     `<span class="rm-bar rm-bar-lg overall"><span style="width:${pct}%"></span>` +
     `<span class="visually-hidden">${done}/${total} bài đã hoàn thành</span></span>` +
@@ -715,6 +731,7 @@ function fitSide() {
 }
 let refit = null;
 window.addEventListener("resize", () => {
+  closeCard();
   if (!data || !data.path) return;
   clearTimeout(refit);
   refit = setTimeout(fitSide, 150);

@@ -203,3 +203,25 @@ def today_summary(
             sum(per_day.get(first - timedelta(days=k), 0.0) for k in range(1, WEEK_DAYS + 1)), 1
         ),
     )
+
+
+def gate_units(units: list[dict]) -> list[dict]:
+    """Open the first unfinished lesson per band; completed lessons remain replayable.
+
+    Bands span multiple authored units. Unpublished entries do not satisfy a prerequisite.
+    Return copies so stored plans never acquire learner-specific access state.
+    """
+    blocked: set[str] = set()
+    result = []
+    for unit in units:
+        items = []
+        for item in unit["lessons"]:
+            band = item.get("band") or unit.get("band")
+            status = item["status"]
+            if status not in ("completed", "unavailable"):
+                status = "locked" if band in blocked else status
+            if item["status"] != "completed":
+                blocked.add(band)
+            items.append({**item, "status": status})
+        result.append({**unit, "lessons": items})
+    return result

@@ -149,9 +149,12 @@ class TestPracticePathJavaScriptIntegrity:
         assert "Bắt đầu" in js
         assert "rm-bubble" in js
         assert "Tiếp tục học" in js
-        assert "/static/art/mascot_owl.png" in js
+        assert "window.rmMascots.ART[cast.name]" in js
         assert "/static/art/mascot_girl.png" in js
-        assert "Hoàn thành lộ trình" in js
+        assert "rm-reward-emblem" in js
+        assert "i === part.lessons.length - 1" in js
+        assert "rm-victory-lock" not in js
+        assert "rm-adventure-finish" not in js
 
     def test_js_draws_the_plan_when_there_is_one(self):
         js = (STATIC_DIR / "practice_path.js").read_text(encoding="utf-8")
@@ -167,8 +170,10 @@ class TestRoadmapCompanions:
         js = (STATIC_DIR / "practice_mascots.js").read_text(encoding="utf-8")
         for band in ("A1", "A2", "B1", "B2", "C1", "C2"):
             assert f"{band}: {{ name:" in js, band
-        for name in ("robot", "fox", "cat", "penguin", "bunny"):
-            assert f"    {name}:\n" in js, name
+        for name in ("forest", "volcano", "snow", "river", "desert", "flowers"):
+            asset = STATIC_DIR / "art" / "adventure" / f"mascot-{name}-v3.webp"
+            assert f"mascot-{name}-v3.webp" in js, name
+            assert asset.is_file(), name
 
     def test_the_page_loads_the_companions_before_the_roadmap(self):
         html = (STATIC_DIR.parent / "templates" / "practice_path.html").read_text(encoding="utf-8")

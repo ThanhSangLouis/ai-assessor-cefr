@@ -13,27 +13,52 @@ const BADGE = "/static/icons/badge-96.png";
 const OFFLINE = `<!doctype html>
 <html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
 <title>Mất kết nối · SpeakUp</title>
 <style>
-  :root { --bg: #f5f7fa; --fg: #1b2430; --muted: #5b6676; --brand: #1e3a5f; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #0e1724; --fg: #e6ecf3; --muted: #a3afbf; --brand: #a9c3e6; }
-  }
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-    background: var(--bg); color: var(--fg);
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 32rem; padding: 2rem 1.25rem; text-align: center; }
-  h1 { font-size: 1.375rem; margin: 1rem 0 .5rem; }
-  p { color: var(--muted); margin: 0 0 1.25rem; }
-  a { color: var(--brand); font-weight: 600; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+    background: #fafbfc; color: #192033; font: 15px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { padding: 26px 36px; }
+  .brand { display: inline-flex; align-items: center; gap: 9px; font-size: 21px; font-weight: 750; letter-spacing: -.6px; }
+  .brand svg { width: 30px; height: 30px; color: #ff7b17; }
+  main { flex: 1; display: grid; place-items: center; padding: 24px 20px 60px; }
+  .card { width: 100%; max-width: 460px; padding: 36px 32px; text-align: center; background: #fff;
+    border: 1px solid #eceef2; border-radius: 24px; box-shadow: 0 8px 32px #1e293b06; }
+  .illustration { display: block; width: 148px; height: 122px; margin: 0 auto 22px; }
+  h1 { margin: 0 0 10px; font-size: 25px; line-height: 1.35; font-weight: 700; letter-spacing: -.5px; }
+  p { margin: 0 auto; max-width: 330px; color: #657086; }
+  .retry { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px;
+    margin-top: 26px; padding: 10px 28px; border: 1px solid #f47715; border-radius: 11px;
+    background: #ff7b17; color: white; text-decoration: none; font-weight: 650; }
+  .retry:hover { background: #eb6b0a; }
+  .retry:focus-visible { outline: 3px solid #ffc897; outline-offset: 4px; }
+  .retry svg { width: 18px; height: 18px; }
+  .hint { margin-top: 20px; font-size: 12px; color: #7c8596; }
+  footer { padding: 16px 20px 24px; color: #7c8596; text-align: center; font-size: 12px; }
+  @media (max-width: 480px) { header { padding: 20px; } .card { padding: 28px 20px; } h1 { font-size: 23px; } }
 </style></head>
-<body><main>
-  <img src="${ICON}" width="72" height="72" alt="">
-  <h1>Bạn đang mất kết nối mạng</h1>
-  <p>SpeakUp cần mạng để nộp bài và chấm điểm. Khi có mạng lại, tải lại trang này.</p>
-  <a href="">Tải lại</a>
-</main></body></html>`;
+<body>
+<header><span class="brand"><svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M7 4h18a4 4 0 0 1 4 4v13a4 4 0 0 1-4 4H14l-7 5v-5a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4Z" fill="currentColor"/><path d="M10 16v3m6-8v8m6-11v11" stroke="white" stroke-width="3" stroke-linecap="round"/></svg>SpeakUp</span></header>
+<main><section class="card" aria-labelledby="offline-title">
+  <svg class="illustration" viewBox="0 0 148 122" fill="none" aria-hidden="true">
+    <circle cx="74" cy="59" r="54" fill="#fff3e8"/>
+    <circle cx="127" cy="29" r="5" fill="#ffe0c4"/><circle cx="20" cy="94" r="3" fill="#ffd1a8"/>
+    <rect x="40" y="80" width="68" height="25" rx="9" fill="white" stroke="#ffc28f" stroke-width="2"/>
+    <path d="M54 91h18m7 0h3" stroke="#ff9b4d" stroke-width="3" stroke-linecap="round"/>
+    <path d="M100 80V66" stroke="#ffc28f" stroke-width="3" stroke-linecap="round"/>
+    <path d="M43 43a48 48 0 0 1 62 0M53 56a32 32 0 0 1 42 0M65 68a14 14 0 0 1 18 0" stroke="#ff8b32" stroke-width="5" stroke-linecap="round"/>
+    <path d="m48 28 54 49" stroke="#fff3e8" stroke-width="10" stroke-linecap="round"/>
+    <path d="m48 28 54 49" stroke="#dc8b53" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="74" cy="78" r="3" fill="#ff8b32"/>
+  </svg>
+  <h1 id="offline-title">Kết nối bị gián đoạn</h1>
+  <p>Chưa thể kết nối với SpeakUp.<br>Kiểm tra mạng rồi thử lại nhé.</p>
+  <a class="retry" href=""><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 7a7 7 0 0 1 12-1l2 6M4 12l2 6a7 7 0 0 0 12-1"/></svg>Thử lại</a>
+  <p class="hint">Cần kết nối để nộp bài và chấm điểm.</p>
+</section></main>
+<footer>SpeakUp · Luyện nói mỗi ngày, tiến bộ từng bước.</footer>
+</body></html>`;
 
 self.addEventListener("install", (e) => {
   // The offline page shows the icon: fetch it while the network is there.

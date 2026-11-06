@@ -182,7 +182,9 @@ def _with_progress(plan: dict, account: Account) -> dict:
             done += status == "completed"
             lessons.append({**item, "status": status})
         units.append({**u, "lessons": lessons})
-    return {**plan, "units": units, "lessons_total": total, "lessons_completed": done}
+    from aicefr.lessons.progress import gate_units
+
+    return {**plan, "units": gate_units(units), "lessons_total": total, "lessons_completed": done}
 
 
 def _view(stored: dict, account: Account) -> dict:

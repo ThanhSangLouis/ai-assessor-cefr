@@ -43,6 +43,7 @@ from aicefr.lessons.model import (
 )
 from aicefr.lessons.progress import (
     AttemptInfo,
+    gate_units,
     is_complete,
     lesson_state,
     next_lesson,
@@ -334,7 +335,7 @@ def _next_in_plan(account: Account) -> dict | None:
     goal = plan.get("goal") or {}
     for u in plan["units"]:
         for item in u["lessons"]:
-            if item["status"] not in ("completed", "unavailable"):
+            if item["status"] not in ("completed", "unavailable", "locked"):
                 lo, hi = goal.get("band_from"), goal.get("band_to")
                 where = f"{lo} → {hi}" if lo != hi else lo
                 return {
@@ -402,7 +403,16 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
     band = (
         Band(latest["band"]) if latest and latest.get("band") in Band._value2member_map_ else None
     )
-    nxt = next_lesson(ordered, states, weakest, band)
+    units = gate_units(units)
+    accessible = {
+        item["lesson_id"]
+        for unit in units
+        for item in unit["lessons"]
+        if item["status"] != "locked"
+    }
+    nxt = next_lesson(
+        [(ls, crit) for ls, crit in ordered if ls.lesson_id in accessible], states, weakest, band
+    )
     title = {ls.lesson_id: ls.title for ls, _ in ordered}
     planned = _next_in_plan(account)
     all_rows = lessons_repo.attempts(account_id=account.account_id)
@@ -498,6 +508,45 @@ def _live(lesson_id: str) -> tuple[Lesson, int]:
     return found
 
 
+def _require_unlocked(lesson_id: str, account: Account) -> None:
+    """Apply the active plan order, otherwise the published path order, before reading audio."""
+    if account.role is not Role.STUDENT:
+        return
+    from aicefr.services.core.learning import plans_api
+
+    try:
+        stored = plans_api.plans().active(account.account_id)
+    except RuntimeError:
+        stored = None
+    if stored:
+        units = plans_api._view(stored, account)["units"]
+        item = next((i for u in units for i in u["lessons"] if i["lesson_id"] == lesson_id), None)
+        if item is not None:
+            if item["status"] == "locked":
+                raise HTTPException(403, "Hoàn thành bài trước trong phần này để mở khóa.")
+            return
+    _, path, _ = _lesson_context(lesson_id)
+    infos = _infos(svc().lessons.attempts(account_id=account.account_id))
+    units = []
+    for unit in svc().lessons.outline(path["path_id"], published_only=True):
+        items = []
+        for entry in unit["lessons"]:
+            lesson = entry["lesson"]
+            state = lesson_state(lesson, infos)
+            items.append(
+                {
+                    "lesson_id": lesson.lesson_id,
+                    "band": lesson.band.value,
+                    "status": "completed" if is_complete(lesson, state) else state.status,
+                }
+            )
+        units.append({"band": unit["band"], "lessons": items})
+    for unit in gate_units(units):
+        for item in unit["lessons"]:
+            if item["lesson_id"] == lesson_id and item["status"] == "locked":
+                raise HTTPException(403, "Hoàn thành bài trước trong phần này để mở khóa.")
+
+
 def _attempt_view(row: dict) -> dict:
     return {
         "attempt_id": row["attempt_id"],
@@ -518,6 +567,7 @@ def learn_lesson(lesson_id: str, account: Account = Depends(require_login)) -> d
     if found is None or path["status"] != "published":
         raise HTTPException(404, "không tìm thấy bài học")
     lesson, version = found
+    _require_unlocked(lesson_id, account)
     rows = lessons_repo.attempts(account_id=account.account_id, lesson_id=lesson_id)
     st = lesson_state(lesson, _infos(rows))
     latest: dict[str, dict] = {}
@@ -677,6 +727,7 @@ async def learn_attempt(
     """Record one step and measure it right away. FR-46."""
     lessons_repo = svc().lessons
     lesson, version = _live(lesson_id)
+    _require_unlocked(lesson_id, account)
     step = lesson.step(step_id)
     if step is None:
         raise HTTPException(404, "không tìm thấy bước này")

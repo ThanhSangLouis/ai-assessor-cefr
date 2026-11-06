@@ -1118,29 +1118,6 @@ main:has(.lp) {
   border-top: 1px solid rgba(226, 232, 240, 0.9);
   color: #475569;
 }
-body.has-sidebar .site-footer {
-  background: transparent !important;
-  border-top: 1px solid var(--border) !important;
-  padding: 18px var(--sp-5) !important;
-  margin-top: auto !important;
-  color: var(--fg-muted);
-}
-body.has-sidebar .site-footer .footer-inner {
-  max-width: var(--page-max);
-  margin: 0 auto;
-  padding: 0;
-  text-align: center;
-  font-size: 0.78rem;
-}
-body.has-sidebar .site-footer p {
-  margin: 0;
-}
-body.has-sidebar .site-footer a {
-  color: var(--brand);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 .site-footer .footer-wrap {
   max-width: var(--page-max);
   margin: 0 auto;
@@ -8423,14 +8400,14 @@ body.has-sidebar {
   color: var(--sb-text-primary);
 }
 .app-sidebar .site-nav a[aria-current="page"] {
-  background: linear-gradient(135deg, #FF7A1A 0%, #EA580C 100%) !important;
-  color: #FFFFFF !important;
+  background: var(--sb-active-bg) !important;
+  color: var(--sb-primary) !important;
   font-weight: 750 !important;
   border-radius: 12px !important;
-  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3) !important;
+  box-shadow: none !important;
 }
 .app-sidebar .site-nav a[aria-current="page"] .icon {
-  color: #FFFFFF !important;
+  color: var(--sb-primary) !important;
 }
 .app-sidebar .site-nav a[aria-current="page"]::before {
   display: none !important;
@@ -8707,7 +8684,10 @@ body.has-sidebar {
     padding-left: 0;
     --header-h: 56px;
   }
-  body.has-sidebar main {
+  body.has-sidebar main,
+  body.has-sidebar main:has(.work-split) {
+    max-width: 100%;
+    min-width: 0;
     padding-top: calc(56px + var(--sp-4));
     padding-bottom: var(--sp-6);
   }
@@ -8727,25 +8707,38 @@ body.has-sidebar {
     z-index: 60;
     transition: background-color 200ms ease, border-color 200ms ease;
   }
-  .mobile-drawer-toggle {
+  .mobile-topbar .mobile-drawer-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex: 0 0 38px;
     width: 38px;
     height: 38px;
+    margin: 0;
     padding: 0;
     border: 0;
     border-radius: 8px;
     background: transparent;
+    box-shadow: none;
     color: var(--sb-text-primary);
     cursor: pointer;
+  }
+  .mobile-topbar .mobile-drawer-toggle:hover,
+  .mobile-topbar .mobile-drawer-toggle:active {
+    background: transparent;
+    box-shadow: none;
+    color: var(--sb-text-primary);
+    transform: none;
   }
   .mobile-drawer-toggle .icon {
     width: 22px;
     height: 22px;
   }
   .mobile-brand {
+    align-self: center;
     gap: 10px;
+    margin: 0;
+    line-height: 1;
   }
   .mobile-brand .brand-mark {
     width: 28px;
@@ -9520,7 +9513,7 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
   gap: var(--sp-3);
 }
 .ach {
@@ -10748,4 +10741,16 @@ button.c-dropdown-trigger:hover,
   padding: 0 !important;
   margin: -1px !important;
   pointer-events: none !important;
+}
+
+/* Shared student navigation, including pages outside the roadmap. */
+.app-sidebar .site-nav { gap: 6px; }
+.app-sidebar .site-nav a { height: 44px; min-height: 44px; font-size: 14px; }
+.app-tabbar { display: none; }
+@media (max-width: 900px) {
+  body.role-student.has-sidebar #main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+  .app-tabbar.rm-tabbar { position: fixed; inset: auto 0 0; z-index: 40; display: flex; gap: 4px; padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--sb-border); background: var(--sb-bg); }
+  .app-tabbar a { flex: 1; min-width: 0; display: grid; justify-items: center; gap: 4px; padding: 7px 2px; border-radius: 12px; font-size: 11px; line-height: 1.4; color: var(--sb-text-secondary); text-decoration: none; }
+  .app-tabbar .icon { width: 21px; height: 21px; }
+  .app-tabbar a.on { background: var(--sb-active-bg); color: var(--sb-primary); font-weight: 650; }
 }

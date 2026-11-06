@@ -64,7 +64,7 @@ def test_the_worker_installs_and_an_offline_page_replaces_the_browsers_error(con
     context.set_offline(True)
     try:
         page.goto("/my-responses")
-        assert page.get_by_role("heading", name="Bạn đang mất kết nối mạng").is_visible()
+        assert page.get_by_role("heading", name="Kết nối bị gián đoạn").is_visible()
     finally:
         context.set_offline(False)
     page.goto("/my-responses")  # back online: the real page, nothing cached
