@@ -1,5 +1,6 @@
-// The prices of the runs, the administrator's side (D078): what a recording, a
-// practice attempt and an upgraded answer cost, what a run is in IDPoint, the
+// The prices of the runs, the administrator's side (D078): what a recording, an
+// upgraded answer, a reading passage and (D094) a lesson recording cost, how
+// many lesson recordings a day are free or allowed, what a run is in IDPoint, the
 // free runs each month and the run packs on sale. Saving makes a new version;
 // charges already made keep the version they were held under.
 (function () {
@@ -14,6 +15,10 @@
     ["extra_minute_runs", "Mỗi phút thêm", "lượt", "0.1"],
     ["upgrade_runs", "Một lần AI viết lại / soạn bài", "lượt", "0.1"],
     ["passage_runs", "Một đoạn đọc AI viết", "lượt", "0.1"],
+    // D094: a recording on the lesson path, and how many a day are free or allowed.
+    ["lesson_minute_runs", "Bài học: mỗi phút nói", "lượt", "0.05"],
+    ["lesson_free_per_day", "Bài học: bản ghi miễn phí mỗi ngày", "bản ghi / người", "1"],
+    ["lesson_daily_cap", "Bài học: tối đa mỗi ngày", "bản ghi / người", "1"],
     ["idpoint_per_run", "Một lượt bằng", "IDPoint", "100"],
     ["free_runs", "Lượt miễn phí mỗi tháng", "lượt / người", "1"],
   ];

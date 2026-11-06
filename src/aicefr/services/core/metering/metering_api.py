@@ -65,6 +65,8 @@ def _entry(e: dict, prices: PriceList) -> dict:
         "input_tokens": e.get("input_tokens"),
         "output_tokens": e.get("output_tokens"),
         "usage_estimated": e.get("usage_estimated"),
+        # D094: one of the day's free lesson recordings.
+        "free_slot": bool(e.get("free_slot")),
     }
 
 
@@ -85,6 +87,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
         # What a one-minute recording costs, for people to read (D057).
         "one_minute": {"assessment": as_runs(hold_for(s.prices, 60.0))},
+        "lesson": s.peers.metering.lesson_quote(account_id=account.account_id),
         "history": [_entry(e, s.prices) for e in s.store.history(account.account_id, limit=20)],
     }
 
@@ -106,6 +109,13 @@ def quote(
         "free_runs_left": as_runs(s.store.free_left(account.account_id)),
         "wallet_runs": as_runs(s.store.wallet(account.account_id)),
     }
+
+
+@router.get("/api/v1/me/credits/lesson", tags=["student"])
+def lesson_quote(account: Account = Depends(require_login)) -> dict:
+    """What a lesson recording costs me now (D094): the free ones left today, the cap, the price."""
+    quote = svc().peers.metering.lesson_quote(account_id=account.account_id)
+    return {"metering": False} if quote is None else {"metering": True, **quote}
 
 
 class GrantIn(BaseModel):
@@ -145,6 +155,10 @@ class PricesIn(BaseModel):
     extra_minute_runs: float = Field(ge=0, le=100)
     upgrade_runs: float = Field(ge=0, le=100)
     passage_runs: float = Field(default=0.1, ge=0, le=100)
+    # D094: defaults, so a dashboard of before keeps working.
+    lesson_minute_runs: float = Field(default=0.1, ge=0, le=100)
+    lesson_free_per_day: int = Field(default=5, ge=0, le=1000)
+    lesson_daily_cap: int = Field(default=30, ge=1, le=1000)
     idpoint_per_run: int = Field(ge=0, le=10_000_000)
     free_runs: float = Field(ge=0, le=1000)
     packs: list[PackIn] = Field(min_length=1, max_length=10)

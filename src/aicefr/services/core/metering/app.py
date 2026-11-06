@@ -37,6 +37,9 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         idpoint_per_run=settings.idpoint_per_run,
         upgrade_runs=settings.price_upgrade_runs,
         passage_runs=settings.price_passage_runs,
+        lesson_minute_runs=settings.price_lesson_minute_runs,
+        lesson_free_per_day=settings.lesson_free_per_day,
+        lesson_daily_cap=settings.lesson_daily_cap,
     )
     book = PriceBook(store, prices, settings.credit_packs)
     facade = MeteringFacade(store, audit_log, enabled, book)

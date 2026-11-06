@@ -37,10 +37,17 @@ from aicefr.lessons.drill import (
     step_for,
     unsure_share,
 )
-from aicefr.lessons.model import new_id
+from aicefr.lessons.model import StepResult, new_id
 from aicefr.lessons.review import first_schedule
 from aicefr.pronunciation.vietnamese import PATTERN_NAMES, PATTERN_TIPS
-from aicefr.services.core.learning.lessons_api import _measure, _now, _read_audio, _today, svc
+from aicefr.services.core.learning.lessons_api import (
+    _measure,
+    _metered,
+    _now,
+    _read_audio,
+    _today,
+    svc,
+)
 from aicefr.storage.auth_repository import Account
 from aicefr.storage.drill_repository import DrillPassage, PassageTake, WordDrill
 
@@ -102,8 +109,10 @@ async def drill_take(
     data, kind = await _read_audio(audio)
 
     # The speech service answers in seconds; not on the event loop (D066).
-    def measure_and_record() -> dict:
-        result = _measure(step_for(found), data, kind, None, None)
+    step = step_for(found)
+
+    def measure_and_record() -> tuple[dict, StepResult]:
+        result = _measure(step, data, kind, None, None)
         verdict = judge(result, found.target)
         out: dict = {
             "measured": verdict.measured,
@@ -116,7 +125,7 @@ async def drill_take(
             "review_due": None,
         }
         if not verdict.measured:
-            return out  # nothing heard, or not English: say it again, nothing counts
+            return out, result  # nothing heard, or not English: say it again, nothing counts
         drills = _drills()
         made = drills.record(
             account.account_id,
@@ -134,9 +143,9 @@ async def drill_take(
             )
             out["review_due"] = due.isoformat()
         out["drill"] = made.view()
-        return out
+        return out, result
 
-    return await run_in_threadpool(measure_and_record)
+    return await run_in_threadpool(_metered, account, step.round_limits()[0], measure_and_record)
 
 
 @router.get("/api/v1/learn/drill", tags=["student"])
@@ -261,8 +270,10 @@ async def passage_take(passage_id: str, audio: UploadFile, account: Account = ST
         raise HTTPException(404, "không tìm thấy đoạn đọc này")
     data, kind = await _read_audio(audio)
 
-    def measure_and_record() -> dict:
-        result = _measure(passage_step(found.text, found.words), data, kind, None, None)
+    step = passage_step(found.text, found.words)
+
+    def measure_and_record() -> tuple[dict, StepResult]:
+        result = _measure(step, data, kind, None, None)
         verdicts = judge_passage(result, passages.places(found.text, found.words))
         out: dict = {
             "measured": result.measured,
@@ -272,7 +283,7 @@ async def passage_take(passage_id: str, audio: UploadFile, account: Account = ST
             "words": [],
         }
         if not result.measured:
-            return out  # nothing heard, or not English: read it again, nothing counts
+            return out, result  # nothing heard, or not English: read it again, nothing counts
         by_word = {d.word: d for d in drills.by_ids(account.account_id, found.drill_ids)}
         due = first_schedule(_today()).due
         for word in found.words:
@@ -303,6 +314,6 @@ async def passage_take(passage_id: str, audio: UploadFile, account: Account = ST
         unclear = [w["word"] for w in out["words"] if not w["passed"]]
         take = PassageTake(clear=clear, unclear=unclear, created_at=_now().isoformat())
         drills.record_passage_take(account.account_id, passage_id, take)
-        return out
+        return out, result
 
-    return await run_in_threadpool(measure_and_record)
+    return await run_in_threadpool(_metered, account, step.round_limits()[0], measure_and_record)

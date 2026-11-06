@@ -8,6 +8,8 @@ sentence to show, or None for "allowed".
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from aicefr.metering.pricing import (
     DEFAULT_PRICES,
     UNITS_PER_RUN,
@@ -16,6 +18,7 @@ from aicefr.metering.pricing import (
     as_idpoint,
     as_runs,
     hold_for,
+    lesson_units,
     passage_units,
     units_for,
     upgrade_units,
@@ -23,9 +26,11 @@ from aicefr.metering.pricing import (
 )
 from aicefr.observability import count
 from aicefr.platform.rpc import exposed
+from aicefr.practice.streak import LOCAL_TZ
 from aicefr.services.core.metering.price_book import PriceBook
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.metering_repository import (
+    DailyCapReached,
     InsufficientCredits,
     MeteredAction,
     MeteringRepository,
@@ -93,6 +98,95 @@ class MeteringFacade:
             entry = self.store.settle(key, MeteredAction(action), result, charge, usage)
             if entry is not None:
                 count("metering_units_total", entry["charged"], action=action, state=entry["state"])
+
+    # ------------------------------------------------------------ lesson recordings (D094)
+
+    @staticmethod
+    def today() -> str:
+        """The Vietnam day a lesson recording counts in, as the streak's days are."""
+        return datetime.now(LOCAL_TZ).date().isoformat()
+
+    @exposed
+    def lesson_quote(self, account_id: str) -> dict | None:
+        """What a lesson recording costs this learner now; None when nothing is counted."""
+        if not self.enabled:
+            return None
+        prices = self.prices
+        done = self.store.lesson_today(account_id, self.today())
+        units = lesson_units(prices, 60.0)
+        b = self.store.balance(account_id)
+        return {
+            "minute_runs": as_runs(units),
+            "minute_idpoint": as_idpoint(prices, units),
+            "free_per_day": prices.lesson_free_per_day,
+            "free_left_today": max(0, prices.lesson_free_per_day - done["free_used"]),
+            "daily_cap": prices.lesson_daily_cap,
+            "left_today": max(0, prices.lesson_daily_cap - done["used"]),
+            "runs_left": as_runs(b["free_left"] + b["wallet"]),
+        }
+
+    @exposed
+    def hold_lesson(self, account_id: str, key: str, max_seconds: float) -> dict | None:
+        """Hold one recording on the lesson path before it is measured (D094).
+
+        A place among the day's recordings, then -- past the free ones -- what
+        `max_seconds` of speech would cost. The refusal as data, `{"status",
+        "message"}`: 429 when the day is full, 402 when the runs fall short; or
+        None for "go on". Settled with `settle_lesson` once measured.
+        """
+        if not self.enabled:
+            return None
+        prices = self.prices
+        try:
+            self.store.hold_lesson(
+                account_id,
+                key,
+                lesson_units(prices, max_seconds),
+                self.today(),
+                prices.lesson_free_per_day,
+                prices.lesson_daily_cap,
+                prices.version,
+            )
+        except DailyCapReached as e:
+            count("metering_lesson_refused_total", reason="cap")
+            return {
+                "status": 429,
+                "message": f"Hôm nay bạn đã nói đủ {e.cap} bản ghi trong lộ trình."
+                " Nghỉ một chút, mai học tiếp nhé",
+            }
+        except InsufficientCredits as e:
+            count("metering_lesson_refused_total", reason="credits")
+            free = prices.lesson_free_per_day
+            spent = f"Đã hết {free} bản ghi miễn phí hôm nay; b" if free else "B"
+            return {
+                "status": 402,
+                "message": f"{spent}ản ghi này cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
+                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để học tiếp",
+            }
+        return None
+
+    @exposed
+    def settle_lesson(
+        self,
+        key: str,
+        result: bool,
+        speaking_seconds: float | None = None,
+        words: int | None = None,
+    ) -> None:
+        """Charge what was said when the recording was measured, release it otherwise.
+
+        `result` is True only when something was measured: a recording the
+        quality check refused (silence, not English, too short) gives its
+        place of the day and its runs back, as a failure does.
+        """
+        if not self.enabled:
+            return
+        seconds = max(0.0, float(speaking_seconds or 0.0))
+        usage = usage_of(seconds, None, words) if result else None
+        charge = lesson_units(self.prices, seconds) if result else None
+        entry = self.store.settle(key, MeteredAction.LESSON, result, charge, usage)
+        if entry is not None:
+            count("metering_units_total", entry["charged"], action="lesson", state=entry["state"])
 
     # ------------------------------------------------------------ upgrades (D072)
 

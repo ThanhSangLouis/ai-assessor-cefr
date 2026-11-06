@@ -860,7 +860,7 @@
                     <mxGeometry height="22" width="300" y="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="MeterAct" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=46;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#eef2f8;strokeColor=#000000;fontSize=13;" value="«enumeration»&lt;br&gt;MeteredAction" vertex="1">
-                    <mxGeometry height="156" width="300" x="1800" y="856" as="geometry"/>
+                    <mxGeometry height="178" width="300" x="1800" y="856" as="geometry"/>
                 </mxCell>
                 <mxCell id="MeterAct-0" parent="MeterAct" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="ASSESSMENT" vertex="1">
                     <mxGeometry height="22" width="300" y="46" as="geometry"/>
@@ -876,6 +876,9 @@
                 </mxCell>
                 <mxCell id="MeterAct-4" parent="MeterAct" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="DRILL_PASSAGE" vertex="1">
                     <mxGeometry height="22" width="300" y="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="MeterAct-5" parent="MeterAct" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="LESSON" vertex="1">
+                    <mxGeometry height="22" width="300" y="156" as="geometry"/>
                 </mxCell>
                 <mxCell id="e0" edge="1" parent="1" source="Audit" style="endArrow=none;html=1;endSize=10;rounded=0;strokeColor=#000000;fontSize=11;jumpStyle=arc;exitX=0.5000;exitY=1.0000;exitPerimeter=0;entryX=0.5000;entryY=0.0000;entryPerimeter=0;startArrow=diamondThin;startFill=0;endFill=0;startSize=14;" target="Account">
                     <mxGeometry relative="1" as="geometry"/>

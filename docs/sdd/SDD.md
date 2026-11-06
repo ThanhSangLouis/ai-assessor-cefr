@@ -2412,6 +2412,8 @@ Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment
 
 Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 
+**Bản ghi trong lộ trình (D094, FR-99).** `PriceList` thêm `lesson_minute_runs` (0,1), `lesson_free_per_day` (5), `lesson_daily_cap` (30), đọc từ `AICEFR_PRICE_LESSON_MINUTE_RUNS`, `AICEFR_LESSON_FREE_PER_DAY`, `AICEFR_LESSON_DAILY_CAP` và đổi được trên dashboard (D078; bảng giá lưu trước D094 lấy giá trị của cấu hình). Năm endpoint ghi âm của `learning` gọi `_metered`: trước khi đo, `MeteringFacade.hold_lesson` lấy một suất của ngày giờ Việt Nam trong `wallet` (`lesson_day`, `lesson_used`, `lesson_free_used`) bằng cập nhật có điều kiện `lesson_used < trần`, rồi một cập nhật có điều kiện nữa cho suất miễn phí; suất trả phí giữ `lesson_units` của thời lượng tối đa của bước qua `_take` (lượt miễn phí tháng rồi ví). Từ chối trả về dạng dữ liệu `{"status", "message"}` (429, 402) và endpoint không đo gì. Đo xong, `settle_lesson` thu theo `StepResult.speaking_s`, mỗi phút đã bắt đầu, ít nhất một phút; `measured = false` hay lỗi thì thả bút toán, trả lượt và suất (`_give_back_slot`, chỉ trong đúng ngày đó). Bút toán `lesson` ghi `day` và `free_slot`. Bản xem thử và audio mẫu của giảng viên không đi qua `_metered`. Tắt tính lượt thì facade trả `None` và không ghi gì.
+
 ## 5. Thiết kế cơ sở dữ liệu
 
 ### 5.1. Bảng, khóa và ràng buộc
@@ -2579,6 +2581,8 @@ Bảng gồm **28 endpoint** thiết kế, vượt yêu cầu tối thiểu 10; 
 | POST | `/api/v1/learn/passage` | Lấy hoặc viết đoạn đọc (`source`: `model` hoặc `phrases`, `fresh`: viết đoạn khác) | 402 thiếu lượt, 409 dưới 3 từ, 429 hết phần trong ngày, 502 mô hình lỗi hay thiếu từ, 503 mô hình tắt | D090 |
 | POST | `/api/v1/learn/passage/{passage_id}/takes` | Gửi một lần đọc đoạn (`audio`); trả từng từ rõ hay chưa, máy nghe thành gì, ngày ôn | 404, 415 | D090 |
 | GET | `/passage` | Trang đọc đoạn văn có từ đang luyện | — | D090 |
+| GET | `/api/v1/me/credits/lesson` | Giá một bản ghi trong lộ trình: lượt và IDPoint mỗi phút nói, số bản miễn phí còn lại hôm nay, trần ngày, lượt còn lại; `metering: false` khi không tính lượt | 401 | D094 |
+| POST | năm endpoint ghi âm của lộ trình (`/api/v1/learn/lessons/{lesson_id}/steps/{step_id}/attempts`, `/api/v1/learn/review/attempts`, `/api/v1/learn/retell/{response_id}/rounds`, `/api/v1/learn/drill/{response_id}/takes`, `/api/v1/learn/passage/{passage_id}/takes`) | Như trước; trên bản tính lượt thêm hai mã từ chối trước khi đo | 402 hết lượt, 429 đủ trần ngày | D094 |
 
 Hai đường dẫn cũ đổi hành vi. `POST /api/v1/auth/login` nay trả thêm `must_change_password`, trả `home = /account?first=1` cho tài khoản dùng mật khẩu tạm, ghi `auth.login` hoặc `auth.login_failed` cho bút danh có thật, và ghi tên thiết bị thô vào phiên mới. Trang `/login` có nút Google khi tính năng được bật.
 

@@ -137,6 +137,9 @@
 
 /* Previous / next. */
 .ls-nav { display: flex; justify-content: space-between; gap: 10px; padding-top: 4px; }
+/* D094: what a recording costs on a metered deployment. */
+.ls-meter { margin: 0; font-size: 0.85rem; color: var(--st-muted); font-variant-numeric: tabular-nums; }
+.ls-meter[hidden] { display: none; }
 .ls-page .ls-nav .st-link-button:disabled { opacity: 0.4; cursor: default; }
 
 /* Words to keep. */

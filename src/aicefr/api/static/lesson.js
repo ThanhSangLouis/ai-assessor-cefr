@@ -24,6 +24,7 @@ const summaryEl = document.getElementById("lesson-summary");
 const sideEl = document.getElementById("ls-side");
 const prevEl = document.getElementById("ls-prev");
 const nextEl = document.getElementById("ls-next");
+const meterEl = document.getElementById("ls-meter");
 
 let data = null;
 let steps = [];
@@ -640,6 +641,26 @@ function celebrate(list) {
   window.toast(head + names + ". Xem ở trang Tiến độ.", "ok");
 }
 
+// D094: on a metered deployment, what a recording costs and what is left
+// today. Nothing on the school deployment, nor in a teacher's preview.
+async function refreshMeter() {
+  if (MODE === "preview" || !meterEl) return;
+  try {
+    const r = await fetch("/api/v1/me/credits/lesson");
+    const q = r.ok ? await r.json() : null;
+    if (!q || !q.metering) return;
+    const price = `${Number(q.minute_runs).toLocaleString("vi-VN")} lượt (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint) mỗi phút nói`;
+    meterEl.textContent = q.left_today <= 0
+      ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`
+      : q.free_left_today > 0
+        ? `Hôm nay còn ${q.free_left_today}/${q.free_per_day} bản ghi miễn phí, sau đó ${price}.`
+        : `Đã hết bản ghi miễn phí hôm nay: ${price}, bạn còn ${Number(q.runs_left).toLocaleString("vi-VN")} lượt.`;
+    meterEl.hidden = false;
+  } catch {
+    meterEl.hidden = true;
+  }
+}
+
 async function submit(audio, name) {
   const step = current();
   const body = new FormData();
@@ -661,6 +682,7 @@ async function submit(audio, name) {
     const r = await fetch(url, { method: "POST", body });
     if (window.redirectToLoginIfExpired(r)) return;
     const d = await r.json().catch(() => ({}));
+    refreshMeter();
     if (!r.ok) {
       window.toast(typeof d.detail === "string" ? d.detail : "Không gửi được bản ghi.", "error", { sticky: true });
       return;
@@ -719,6 +741,7 @@ async function load() {
     window.clearBusy(root);
     const first = steps.findIndex((s) => statusOf(s) !== "passed");
     showStep(first < 0 ? 0 : first);
+    refreshMeter();
   } catch (err) {
     window.clearBusy(root);
     headEl.innerHTML =

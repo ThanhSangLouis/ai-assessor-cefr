@@ -12,6 +12,8 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | Mỗi phút bắt đầu thêm, tối đa 5 phút | +0,7 | +1.400 (5 phút: 7.600) |
 | Luyện tập | 50% của bài đánh giá cùng thời lượng | 1.000 cho bài tới 1 phút |
 | Bản nâng cấp do AI viết (D072) | 0,3 | 600 |
+| Bản ghi trong lộ trình học (D094): 5 bản đầu mỗi ngày | 0 | 0 |
+| Bản ghi trong lộ trình học từ bản thứ 6: mỗi phút nói đã bắt đầu, tối đa 30 bản/ngày | 0,1 | 200 |
 | Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 |
 | Gói bán trực tiếp | 10 / 30 / 100 lượt | 19.000 / 49.000 / 149.000 đồng |
 
@@ -26,6 +28,9 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
 | `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); 0 là miễn phí | 0,3 |
 | `AICEFR_PRICE_PASSAGE_RUNS` | Lượt cho một đoạn đọc do AI viết quanh từ đang luyện dở (D090); đọc lại miễn phí; 0 là miễn phí | 0,1 |
+| `AICEFR_PRICE_LESSON_MINUTE_RUNS` | Lượt cho mỗi phút nói đã bắt đầu của một bản ghi trong lộ trình (D094), ít nhất một phút; 0 là miễn phí | 0,1 |
+| `AICEFR_LESSON_FREE_PER_DAY` | Số bản ghi lộ trình miễn phí mỗi ngày giờ Việt Nam (D094) | 5 |
+| `AICEFR_LESSON_DAILY_CAP` | Số bản ghi lộ trình đo tối đa mỗi ngày cho một người (D094); giữ máy 2 vCPU cho bài đánh giá | 30 |
 | `AICEFR_COACH_GLOBAL_DAILY` | Số yêu cầu gửi nhà cung cấp của cả hệ thống trong một ngày của nhà cung cấp (Google: hết lúc 0 giờ giờ Thái Bình Dương), tính cả lỗi và lần gọi lại, dưới hạn mức miễn phí 500 | 475 |
 | `AICEFR_PASSAGE_GLOBAL_DAILY` | Trong số đó, số đoạn đọc (D090) mô hình viết tối đa mỗi ngày, để bản nâng cấp còn phần | 150 |
 | `AICEFR_PASSAGE_DAILY` | Số đoạn đọc mới mô hình viết cho một học viên trong 24 giờ | 3 |
@@ -35,6 +40,8 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | `AICEFR_CREDIT_PACKS` | Gói bán trực tiếp, `lượt:giá_đồng` | `10:19000,30:49000,100:149000` |
 
 **Bản nâng cấp do AI viết (D072).** Giá tính theo bản, không theo token: giữ 0,3 lượt trước khi gọi mô hình, trừ khi AI viết xong, trả lại nếu mô hình lỗi; bản đã viết xem lại không tốn thêm. Số token vào/ra mà nhà cung cấp báo được ghi kèm bút toán (cột `input_tokens`, `output_tokens`, hành động `upgrade`) để tính giá vốn: một bản khoảng 2.000–3.000 token vào và 500–800 token ra. Ngoài giới hạn mỗi người (`AICEFR_COACH_DAILY`, 5/ngày) còn giới hạn chung để không vượt hạn mức miễn phí của Gemini 3.5 Flash-Lite (500 yêu cầu/ngày). Giới hạn chung đếm **đúng như Google đếm**: mọi yêu cầu gửi đi, kể cả yêu cầu lỗi và lần gọi lại khi máy chủ của Google bận, theo ngày của Google (hết lúc 0 giờ giờ Thái Bình Dương, tức 14 hoặc 15 giờ ở Việt Nam), nên đặt được 475. Khi người dùng thường xuyên chạm giới hạn (trang Quản trị → AI viết lại báo khi có từ 3/14 ngày bị chạm), quản trị viên chuyển sang gói trả phí ngay trên trang đó (D073): chọn **Trả phí**, đặt ngân sách USD mỗi ngày, xác nhận. Hệ thống khi đó gọi bằng khoá trả phí `AICEFR_COACH_PAID_API_KEY` (khoá của một project Google đã bật thanh toán) và giới hạn chung là ngân sách tiền mỗi ngày, tính từ số token nhân giá mỗi triệu token. Không có gì tự chuyển; quay về **Miễn phí** cũng bằng một nút. Gói miễn phí chỉ đếm yêu cầu của gói miễn phí, ngân sách chỉ đếm tiền của gói trả phí, nên chuyển giữa ngày không lẫn số. `AICEFR_COACH_DAILY_BUDGET_USD` chỉ còn là gói khởi đầu của bản triển khai. Tắt tính lượt thì chỉ còn hai giới hạn này.
+
+**Bản ghi trong lộ trình học (D094).** Trước D094 mọi bản ghi của lộ trình (bước bài học, ôn tập, kể lại, luyện từ, đọc đoạn) chạy Whisper miễn phí: không chạy mô hình chấm CEFR nhưng vẫn là phần tốn máy nhất. Đo trên 59 bài mẫu: trung vị 4 bản ghi mỗi bài (tối đa 9), thời lượng tối đa trung vị 330 giây; giá vốn máy khoảng 100–600 đồng một bài (ước tính từ mục "Chi phí hạ tầng trên EC2"). Chủ dự án chọn phương án D ngày 07/11/2026 trong năm phương án (A miễn phí có trần; B theo bản ghi; C theo bài; D miễn phí mỗi ngày rồi theo bản ghi; E gói tháng): khớp cách NetID tính theo bản ghi, người học đều mỗi ngày không mất đồng nào, người dùng nhiều mới trả. Thu theo số giây nói thật (VAD), không theo thời lượng tối đa của bước; bản ghi máy không đo được thì trả lại cả suất trong ngày. Một bài học trung vị ngoài phần miễn phí khoảng 0,4 lượt (800 IDPoint). **[CẦN HỎI] NetID:** khoản thu 200 IDPoint có bị phí cố định ăn hết không; nếu có thì tăng giá mỗi phút hoặc chuyển sang tính theo bài (phương án C).
 
 **Bật trên máy chủ.** Mặc định kênh tính lượt TẮT (bản của trường không tính gì). Trước 31/10/2026, `docker-compose.yml` không chuyển các biến trên vào container, nên đặt trong `.env` cũng không có tác dụng; nay đã chuyển cho core và web. Muốn bật: trong `/srv/aicefr/.env` đặt `AICEFR_METERING=1` (bán gói lượt thì cần thêm `AICEFR_BILLING=1` và một cổng thanh toán), rồi chạy lại `docker compose ... up -d core web`. Khi bật sẽ có menu "Lượt của tôi" (`/credits`), trang Nộp bài báo trước số lượt và IDPoint, và bài chỉ bị trừ lượt khi đã có kết quả.
 
