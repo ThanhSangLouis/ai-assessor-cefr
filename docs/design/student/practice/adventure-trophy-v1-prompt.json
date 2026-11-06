@@ -1,0 +1,14 @@
+{
+  "tool": "image_gen built-in",
+  "prompt": "Use case: stylized-concept. A single premium cute 2.5D GOLDEN ADVENTURE TROPHY, transparent background, standalone game reward asset for the end of a Vietnamese learning roadmap. Big polished rounded golden cup with sculpted wing-like handles, small raised five-point star emblem on the bowl, short stem on a warm ivory stone plinth, two tiny laurel sprigs on base, a few tasteful golden sparkle shapes. Match cozy hand-painted dimensional adventure game art: warm amber gold, creamy highlights, soft ambient occlusion, clear sculptural depth, elegant rounded shapes, front view slightly elevated. Impressive collectible reward, readable silhouette at 120px tall. Entire object fully inside square frame with narrow transparent padding. No text, numbers, UI, ribbon label, scenery, characters or opaque background. Genuinely transparent alpha, not checkerboard.",
+  "native_pixels": [
+    1254,
+    1254
+  ],
+  "export": "src/aicefr/api/static/art/adventure/roadmap-trophy-v1.webp",
+  "export_pixels": [
+    512,
+    512
+  ],
+  "transparent_background": true
+}

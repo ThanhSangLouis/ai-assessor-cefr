@@ -1,0 +1,412 @@
+/* Adventure scenery is separate from the lesson, coin and sidebar components. */
+.rm-roadmap { padding-inline: 0 14px; }
+/* Six worlds have distinct ground, badge and progress colours. */
+.rm-level { --adventure-tint: #dcebc0; --world-accent: #348651; --world-rim: #23663d; --world-road-edge: #c3c6a1; --scene-ratio: .6666666667; }
+.rm-level.band-a2 { --adventure-tint: #f4c2a0; --world-accent: #d95930; --world-rim: #a93c22; --world-road-edge: #bd8c70; }
+.rm-level.band-b1 { --adventure-tint: #e7f1fa; --world-accent: #649ac7; --world-rim: #4377a5; --world-road-edge: #aebfd5; }
+.rm-level.band-b2 { --adventure-tint: #c5e7df; --world-accent: #289f9d; --world-rim: #187b7c; --world-road-edge: #98b8b4; }
+.rm-level.band-c1 { --adventure-tint: #f4dfad; --world-accent: #b78b35; --world-rim: #906922; --world-road-edge: #c4a46f; }
+.rm-level.band-c2 { --adventure-tint: #efd4e9; --world-accent: #b067a6; --world-rim: #8a4b86; --world-road-edge: #ccb3ca; }
+.rm-level .rm-pill { background: linear-gradient(145deg, color-mix(in srgb, var(--world-accent), black 30%), color-mix(in srgb, var(--world-accent), black 40%)); box-shadow: 0 3px 0 var(--world-rim); }
+.rm-level .rm-level-stat .rm-bar > span { background: var(--world-accent); }
+.rm-level + .rm-level { border-top: 0; padding-top: 6px; }
+.rm-level-head { padding: 16px 8px 18px; gap: 12px; }
+.rm-level-name { display: flex; flex-direction: column; gap: 4px; font-size: 18px; line-height: 1.3; font-weight: 650; }
+.rm-band-description { font-size: 12px; font-weight: 400; color: var(--rm-sub); }
+.rm-adventure-path,
+.rm-adventure-path.is-last { --cx: 50%; height: var(--h); min-height: 0; isolation: isolate; }
+/* One painted environment: no competing foreground sprites or isolated props. */
+.rm-adventure-path { container-type: inline-size; background: color-mix(in srgb, var(--adventure-tint) var(--scene-ground-weight, 100%), #101722); border-radius: 28px; }
+/* Opaque first strip; blend only the overlap at subsequent joins. */
+.rm-adventure-path::before, .rm-adventure-path::after { content: none; }
+.rm-adventure-scenery { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: clip; border-radius: inherit; filter: none; }
+.rm-terrain-tile {
+  position: absolute; left: 0; width: 100%;
+  top: calc(var(--tile-index) * 100cqw * (var(--scene-ratio) - .045));
+  height: calc(100cqw * var(--scene-ratio));
+  background-image: var(--terrain-a); background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+.rm-terrain-tile:nth-child(even) { background-image: var(--terrain-b); }
+.rm-terrain-tile + .rm-terrain-tile { mask-image: linear-gradient(to bottom, transparent, #000 4.5cqw); }
+.rm-adventure-path .rm-road { z-index: 1; filter: drop-shadow(0 3px 2px #49634924); }
+.rm-adventure-path .rm-road-shadow { display: none; }
+.rm-adventure-path .rm-road-side { display: none; }
+.rm-adventure-path .rm-road-edge { stroke: var(--world-road-edge); stroke-width: 29px; }
+.rm-adventure-path .rm-road-fill { stroke: var(--scene-road-fill, #fff9e9); stroke-width: 24px; }
+.rm-adventure-path .rm-road-dash { stroke: var(--scene-road-dash, #d4c09a); stroke-width: 2px; stroke-dasharray: 7 10; }
+.rm-adventure-path .rm-mascot { z-index: 2; }
+.rm-adventure-path .rm-mascot-left { left: 0; }
+.rm-adventure-path .rm-mascot-right { right: 0; }
+.rm-adventure-path .rm-node-card { z-index: 10; }
+.rm-chapter-label { position: absolute; left: 8px; z-index: 2; display: inline-flex; align-items: center; gap: 7px; color: var(--rm-sub); font-size: 12px; font-weight: 600; padding: 5px 9px; background: var(--rm-panel); border: 1px solid var(--rm-line); border-radius: 16px; }
+.rm-chapter-label span { font-size: 10px; font-weight: 400; color: var(--rm-sub); }
+/* A central corridor remains free of scenery at every supported width. */
+@media (min-width: 701px) and (max-width: 1200px) {
+  .rm-content { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .rm-side { position: static; grid-row: 1; grid-column: 1; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+  .rm-roadmap { grid-row: 2; grid-column: 1; border-right: 0; padding-inline: 0; }
+}
+@media (max-width: 1250px) and (min-width: 701px) {
+  .rm-adventure-path .rm-mascot:not(.rm-mascot-owl) { width: 150px; }
+}
+@media (max-width: 700px) {
+  .rm-roadmap { padding: 0; }
+  .rm-level-head { padding: 12px 4px 16px; gap: 9px; }
+  .rm-level-name { font-size: 15px; }
+  .rm-band-description { font-size: 11px; }
+  .rm-level-stat { font-size: 10px; }
+  .rm-adventure-path .rm-road-edge { stroke-width: 23px; }
+  .rm-adventure-path .rm-road-fill { stroke-width: 19px; }
+  .rm-adventure-path .rm-road-dash { stroke-width: 1.5px; stroke-dasharray: 5 8; }
+  .rm-chapter-label { left: 4px; font-size: 10px; padding: 4px 7px; }
+  .rm-adventure-path .rm-mascot { max-width: 92px; }
+  .rm-adventure-path::before, .rm-adventure-path::after { background-size: 100% auto; border-radius: 20px; }
+}
+/* Night paintings keep their own light; only the road and fallback ground adapt. */
+:root[data-theme="dark"] body:has(.roadmap-page) {
+  --scene-ground-weight: 16%;
+  --scene-road-fill: #a3b4a5; --scene-road-dash: #455c55;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body:has(.roadmap-page) {
+    --scene-ground-weight: 16%;
+    --scene-road-fill: #a3b4a5; --scene-road-dash: #455c55;
+  }
+}
+.rm-adventure-path .lesson-node.available .rm-coin { color: var(--rm-sub); border-color: var(--rm-coin-border); }
+@media (prefers-reduced-motion: reduce) {
+  .rm-adventure-path .rm-mascot-art, .rm-adventure-path .rm-mascot-art::after { animation: none; }
+}
+
+/* Fill the phone viewport; a column flex container must stretch its children. */
+@media (max-width: 700px) {
+  .rm-content { align-items: stretch; }
+  .rm-roadmap { width: 100%; box-sizing: border-box; min-width: 0; }
+  .rm-side { min-width: 0; }
+  .rm-hero { padding-top: 8px; padding-right: 104px; min-height: 100px; }
+  .rm-hero h1 { font-size: 19px; line-height: 1.35; margin-bottom: 8px; }
+  .rm-hero p { font-size: 13px; line-height: 1.5; }
+  .rm-girl { top: 20px; right: 0; }
+}
+
+/* Unequal content works better as compact rows than stretched half-width cards. */
+@media (max-width: 700px) {
+  .rm-side { grid-template-columns: minmax(0,1fr); gap: 10px; align-items: start; }
+  .rm-side .rm-card { padding: 12px; }
+  .rm-next { display: grid; grid-template-columns: minmax(0,1fr); gap: 8px 10px; align-items: center; }
+  .rm-next .rm-card-head { grid-column: 1 / -1; margin: 0; }
+  .rm-next-info { min-width: 0; margin: 0; gap: 12px; padding-block: 8px; align-items: flex-start; }
+  .rm-next .rm-next-icon { width: 40px; height: 40px; border-radius: 12px; margin-top: 2px; }
+  .rm-next .rm-next-name { margin-bottom: 5px; }
+  .rm-next-text { min-width: 0; }
+  .rm-next-name, .rm-next-name h2 { font-size: 14px; line-height: 1.4; }
+  .rm-next-meta { font-size: 12px; line-height: 1.5; color: var(--rm-sub); }
+  .rm-next .rm-btn-green { width: 100%; min-width: 0; height: 40px; margin: 0; padding: 0 10px; font-size: 13px; gap: 5px; }
+  .today-card { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; }
+  .today-card .rm-card-head { margin: 0; gap: 6px; }
+  .today-card .rm-card-title { font-size: 13px; }
+  .today-card .rm-today-num { margin: 0; font-size: 12px; white-space: nowrap; }
+  .today-card > .rm-bar { grid-column: 1 / -1; width: 100%; margin: 0; }
+}
+
+@media (max-width: 700px) {
+  .today-card .rm-chip { display: none; }
+}
+@media (max-width: 360px) {
+
+
+}
+
+/* Companions stand in the open terrain; placement reserves room for their tip. */
+.rm-adventure-path .rm-mascot-art { aspect-ratio: 1; }
+.rm-adventure-path .rm-mascot .rm-say {
+  left: 50%; right: auto; width: var(--companion-bubble-width, 112px);
+  max-width: none; box-sizing: border-box;
+  transform: translate(-50%, -12px) scale(.92); transform-origin: 50% 100%;
+}
+.rm-adventure-path .rm-mascot:hover .rm-say,
+.rm-adventure-path .rm-mascot.is-saying .rm-say { transform: translate(-50%, -20px) scale(1); }
+.rm-adventure-path .rm-mascot .rm-say::after { left: 50%; right: auto; }
+
+/* Paired day/night terrain. Tile scale depends on width, never lesson count. */
+.rm-level { --terrain-a: var(--scene-a-day); --terrain-b: var(--scene-b-day); }
+:root[data-theme="dark"] .rm-level { --terrain-a: var(--scene-a-night); --terrain-b: var(--scene-b-night); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rm-level { --terrain-a: var(--scene-a-night); --terrain-b: var(--scene-b-night); }
+}
+.rm-level.band-a1 { --scene-a-day: var(--forest-a-day); --scene-a-night: var(--forest-a-night); --scene-b-day: var(--forest-b-day); --scene-b-night: var(--forest-b-night); }
+.rm-level.band-a2 { --scene-a-day: var(--volcano-a-day); --scene-a-night: var(--volcano-a-night); --scene-b-day: var(--volcano-b-day); --scene-b-night: var(--volcano-b-night); }
+.rm-level.band-b1 { --scene-a-day: var(--snow-a-day); --scene-a-night: var(--snow-a-night); --scene-b-day: var(--snow-b-day); --scene-b-night: var(--snow-b-night); }
+.rm-level.band-b2 { --scene-a-day: var(--river-a-day); --scene-a-night: var(--river-a-night); --scene-b-day: var(--river-b-day); --scene-b-night: var(--river-b-night); }
+.rm-level.band-c1 { --scene-a-day: var(--desert-a-day); --scene-a-night: var(--desert-a-night); --scene-b-day: var(--desert-b-day); --scene-b-night: var(--desert-b-night); }
+.rm-level.band-c2 { --scene-a-day: var(--flowers-a-day); --scene-a-night: var(--flowers-a-night); --scene-b-day: var(--flowers-b-day); --scene-b-night: var(--flowers-b-night); }
+.rm-level.band-a1 {
+  --forest-a-day: image-set(url('/static/art/adventure/forest-day-a-v3-1280.webp') 1x, url('/static/art/adventure/forest-day-a-v3-1536.webp') 2x);
+  --forest-a-night: image-set(url('/static/art/adventure/forest-night-a-v3-1280.webp') 1x, url('/static/art/adventure/forest-night-a-v3-1536.webp') 2x);
+  --forest-b-day: image-set(url('/static/art/adventure/forest-day-b-v3-1280.webp') 1x, url('/static/art/adventure/forest-day-b-v3-1536.webp') 2x);
+  --forest-b-night: image-set(url('/static/art/adventure/forest-night-b-v3-1280.webp') 1x, url('/static/art/adventure/forest-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-a2 {
+  --volcano-a-day: image-set(url('/static/art/adventure/volcano-day-a-v3-1280.webp') 1x, url('/static/art/adventure/volcano-day-a-v3-1536.webp') 2x);
+  --volcano-a-night: image-set(url('/static/art/adventure/volcano-night-a-v3-1280.webp') 1x, url('/static/art/adventure/volcano-night-a-v3-1536.webp') 2x);
+  --volcano-b-day: image-set(url('/static/art/adventure/volcano-day-b-v3-1280.webp') 1x, url('/static/art/adventure/volcano-day-b-v3-1536.webp') 2x);
+  --volcano-b-night: image-set(url('/static/art/adventure/volcano-night-b-v3-1280.webp') 1x, url('/static/art/adventure/volcano-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-b1 {
+  --snow-a-day: image-set(url('/static/art/adventure/snow-day-a-v3-1280.webp') 1x, url('/static/art/adventure/snow-day-a-v3-1536.webp') 2x);
+  --snow-a-night: image-set(url('/static/art/adventure/snow-night-a-v3-1280.webp') 1x, url('/static/art/adventure/snow-night-a-v3-1536.webp') 2x);
+  --snow-b-day: image-set(url('/static/art/adventure/snow-day-b-v3-1280.webp') 1x, url('/static/art/adventure/snow-day-b-v3-1536.webp') 2x);
+  --snow-b-night: image-set(url('/static/art/adventure/snow-night-b-v3-1280.webp') 1x, url('/static/art/adventure/snow-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-b2 {
+  --river-a-day: image-set(url('/static/art/adventure/river-day-a-v3-1280.webp') 1x, url('/static/art/adventure/river-day-a-v3-1536.webp') 2x);
+  --river-a-night: image-set(url('/static/art/adventure/river-night-a-v3-1280.webp') 1x, url('/static/art/adventure/river-night-a-v3-1536.webp') 2x);
+  --river-b-day: image-set(url('/static/art/adventure/river-day-b-v3-1280.webp') 1x, url('/static/art/adventure/river-day-b-v3-1536.webp') 2x);
+  --river-b-night: image-set(url('/static/art/adventure/river-night-b-v3-1280.webp') 1x, url('/static/art/adventure/river-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-c1 {
+  --desert-a-day: image-set(url('/static/art/adventure/desert-day-a-v3-1280.webp') 1x, url('/static/art/adventure/desert-day-a-v3-1536.webp') 2x);
+  --desert-a-night: image-set(url('/static/art/adventure/desert-night-a-v3-1280.webp') 1x, url('/static/art/adventure/desert-night-a-v3-1536.webp') 2x);
+  --desert-b-day: image-set(url('/static/art/adventure/desert-day-b-v3-1280.webp') 1x, url('/static/art/adventure/desert-day-b-v3-1536.webp') 2x);
+  --desert-b-night: image-set(url('/static/art/adventure/desert-night-b-v3-1280.webp') 1x, url('/static/art/adventure/desert-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-c2 {
+  --flowers-a-day: image-set(url('/static/art/adventure/flowers-day-a-v3-1280.webp') 1x, url('/static/art/adventure/flowers-day-a-v3-1536.webp') 2x);
+  --flowers-a-night: image-set(url('/static/art/adventure/flowers-night-a-v3-1280.webp') 1x, url('/static/art/adventure/flowers-night-a-v3-1536.webp') 2x);
+  --flowers-b-day: image-set(url('/static/art/adventure/flowers-day-b-v3-1280.webp') 1x, url('/static/art/adventure/flowers-day-b-v3-1536.webp') 2x);
+  --flowers-b-night: image-set(url('/static/art/adventure/flowers-night-b-v3-1280.webp') 1x, url('/static/art/adventure/flowers-night-b-v3-1536.webp') 2x);
+}
+@media (max-width: 700px) {
+.rm-level.band-a1 {
+  --forest-a-day: image-set(url('/static/art/adventure/forest-day-a-v3-768.webp') 1x, url('/static/art/adventure/forest-day-a-v3-1536.webp') 2x);
+  --forest-a-night: image-set(url('/static/art/adventure/forest-night-a-v3-768.webp') 1x, url('/static/art/adventure/forest-night-a-v3-1536.webp') 2x);
+  --forest-b-day: image-set(url('/static/art/adventure/forest-day-b-v3-768.webp') 1x, url('/static/art/adventure/forest-day-b-v3-1536.webp') 2x);
+  --forest-b-night: image-set(url('/static/art/adventure/forest-night-b-v3-768.webp') 1x, url('/static/art/adventure/forest-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-a2 {
+  --volcano-a-day: image-set(url('/static/art/adventure/volcano-day-a-v3-768.webp') 1x, url('/static/art/adventure/volcano-day-a-v3-1536.webp') 2x);
+  --volcano-a-night: image-set(url('/static/art/adventure/volcano-night-a-v3-768.webp') 1x, url('/static/art/adventure/volcano-night-a-v3-1536.webp') 2x);
+  --volcano-b-day: image-set(url('/static/art/adventure/volcano-day-b-v3-768.webp') 1x, url('/static/art/adventure/volcano-day-b-v3-1536.webp') 2x);
+  --volcano-b-night: image-set(url('/static/art/adventure/volcano-night-b-v3-768.webp') 1x, url('/static/art/adventure/volcano-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-b1 {
+  --snow-a-day: image-set(url('/static/art/adventure/snow-day-a-v3-768.webp') 1x, url('/static/art/adventure/snow-day-a-v3-1536.webp') 2x);
+  --snow-a-night: image-set(url('/static/art/adventure/snow-night-a-v3-768.webp') 1x, url('/static/art/adventure/snow-night-a-v3-1536.webp') 2x);
+  --snow-b-day: image-set(url('/static/art/adventure/snow-day-b-v3-768.webp') 1x, url('/static/art/adventure/snow-day-b-v3-1536.webp') 2x);
+  --snow-b-night: image-set(url('/static/art/adventure/snow-night-b-v3-768.webp') 1x, url('/static/art/adventure/snow-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-b2 {
+  --river-a-day: image-set(url('/static/art/adventure/river-day-a-v3-768.webp') 1x, url('/static/art/adventure/river-day-a-v3-1536.webp') 2x);
+  --river-a-night: image-set(url('/static/art/adventure/river-night-a-v3-768.webp') 1x, url('/static/art/adventure/river-night-a-v3-1536.webp') 2x);
+  --river-b-day: image-set(url('/static/art/adventure/river-day-b-v3-768.webp') 1x, url('/static/art/adventure/river-day-b-v3-1536.webp') 2x);
+  --river-b-night: image-set(url('/static/art/adventure/river-night-b-v3-768.webp') 1x, url('/static/art/adventure/river-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-c1 {
+  --desert-a-day: image-set(url('/static/art/adventure/desert-day-a-v3-768.webp') 1x, url('/static/art/adventure/desert-day-a-v3-1536.webp') 2x);
+  --desert-a-night: image-set(url('/static/art/adventure/desert-night-a-v3-768.webp') 1x, url('/static/art/adventure/desert-night-a-v3-1536.webp') 2x);
+  --desert-b-day: image-set(url('/static/art/adventure/desert-day-b-v3-768.webp') 1x, url('/static/art/adventure/desert-day-b-v3-1536.webp') 2x);
+  --desert-b-night: image-set(url('/static/art/adventure/desert-night-b-v3-768.webp') 1x, url('/static/art/adventure/desert-night-b-v3-1536.webp') 2x);
+}
+.rm-level.band-c2 {
+  --flowers-a-day: image-set(url('/static/art/adventure/flowers-day-a-v3-768.webp') 1x, url('/static/art/adventure/flowers-day-a-v3-1536.webp') 2x);
+  --flowers-a-night: image-set(url('/static/art/adventure/flowers-night-a-v3-768.webp') 1x, url('/static/art/adventure/flowers-night-a-v3-1536.webp') 2x);
+  --flowers-b-day: image-set(url('/static/art/adventure/flowers-day-b-v3-768.webp') 1x, url('/static/art/adventure/flowers-day-b-v3-1536.webp') 2x);
+  --flowers-b-night: image-set(url('/static/art/adventure/flowers-night-b-v3-768.webp') 1x, url('/static/art/adventure/flowers-night-b-v3-1536.webp') 2x);
+}
+}
+@media (max-width: 480px) {
+.rm-level.band-a1 {
+  --forest-a-day: image-set(url('/static/art/adventure/forest-day-a-v3-480.webp') 1x, url('/static/art/adventure/forest-day-a-v3-960.webp') 2x);
+  --forest-a-night: image-set(url('/static/art/adventure/forest-night-a-v3-480.webp') 1x, url('/static/art/adventure/forest-night-a-v3-960.webp') 2x);
+  --forest-b-day: image-set(url('/static/art/adventure/forest-day-b-v3-480.webp') 1x, url('/static/art/adventure/forest-day-b-v3-960.webp') 2x);
+  --forest-b-night: image-set(url('/static/art/adventure/forest-night-b-v3-480.webp') 1x, url('/static/art/adventure/forest-night-b-v3-960.webp') 2x);
+}
+.rm-level.band-a2 {
+  --volcano-a-day: image-set(url('/static/art/adventure/volcano-day-a-v3-480.webp') 1x, url('/static/art/adventure/volcano-day-a-v3-960.webp') 2x);
+  --volcano-a-night: image-set(url('/static/art/adventure/volcano-night-a-v3-480.webp') 1x, url('/static/art/adventure/volcano-night-a-v3-960.webp') 2x);
+  --volcano-b-day: image-set(url('/static/art/adventure/volcano-day-b-v3-480.webp') 1x, url('/static/art/adventure/volcano-day-b-v3-960.webp') 2x);
+  --volcano-b-night: image-set(url('/static/art/adventure/volcano-night-b-v3-480.webp') 1x, url('/static/art/adventure/volcano-night-b-v3-960.webp') 2x);
+}
+.rm-level.band-b1 {
+  --snow-a-day: image-set(url('/static/art/adventure/snow-day-a-v3-480.webp') 1x, url('/static/art/adventure/snow-day-a-v3-960.webp') 2x);
+  --snow-a-night: image-set(url('/static/art/adventure/snow-night-a-v3-480.webp') 1x, url('/static/art/adventure/snow-night-a-v3-960.webp') 2x);
+  --snow-b-day: image-set(url('/static/art/adventure/snow-day-b-v3-480.webp') 1x, url('/static/art/adventure/snow-day-b-v3-960.webp') 2x);
+  --snow-b-night: image-set(url('/static/art/adventure/snow-night-b-v3-480.webp') 1x, url('/static/art/adventure/snow-night-b-v3-960.webp') 2x);
+}
+.rm-level.band-b2 {
+  --river-a-day: image-set(url('/static/art/adventure/river-day-a-v3-480.webp') 1x, url('/static/art/adventure/river-day-a-v3-960.webp') 2x);
+  --river-a-night: image-set(url('/static/art/adventure/river-night-a-v3-480.webp') 1x, url('/static/art/adventure/river-night-a-v3-960.webp') 2x);
+  --river-b-day: image-set(url('/static/art/adventure/river-day-b-v3-480.webp') 1x, url('/static/art/adventure/river-day-b-v3-960.webp') 2x);
+  --river-b-night: image-set(url('/static/art/adventure/river-night-b-v3-480.webp') 1x, url('/static/art/adventure/river-night-b-v3-960.webp') 2x);
+}
+.rm-level.band-c1 {
+  --desert-a-day: image-set(url('/static/art/adventure/desert-day-a-v3-480.webp') 1x, url('/static/art/adventure/desert-day-a-v3-960.webp') 2x);
+  --desert-a-night: image-set(url('/static/art/adventure/desert-night-a-v3-480.webp') 1x, url('/static/art/adventure/desert-night-a-v3-960.webp') 2x);
+  --desert-b-day: image-set(url('/static/art/adventure/desert-day-b-v3-480.webp') 1x, url('/static/art/adventure/desert-day-b-v3-960.webp') 2x);
+  --desert-b-night: image-set(url('/static/art/adventure/desert-night-b-v3-480.webp') 1x, url('/static/art/adventure/desert-night-b-v3-960.webp') 2x);
+}
+.rm-level.band-c2 {
+  --flowers-a-day: image-set(url('/static/art/adventure/flowers-day-a-v3-480.webp') 1x, url('/static/art/adventure/flowers-day-a-v3-960.webp') 2x);
+  --flowers-a-night: image-set(url('/static/art/adventure/flowers-night-a-v3-480.webp') 1x, url('/static/art/adventure/flowers-night-a-v3-960.webp') 2x);
+  --flowers-b-day: image-set(url('/static/art/adventure/flowers-day-b-v3-480.webp') 1x, url('/static/art/adventure/flowers-day-b-v3-960.webp') 2x);
+  --flowers-b-night: image-set(url('/static/art/adventure/flowers-night-b-v3-480.webp') 1x, url('/static/art/adventure/flowers-night-b-v3-960.webp') 2x);
+}
+}
+
+/* Use the full native source rather than the 1280px export on wide desktops. */
+@media (min-width: 2000px) {
+.rm-level.band-a1 {
+  --forest-a-day: url('/static/art/adventure/forest-day-a-v3-1536.webp');
+  --forest-a-night: url('/static/art/adventure/forest-night-a-v3-1536.webp');
+  --forest-b-day: url('/static/art/adventure/forest-day-b-v3-1536.webp');
+  --forest-b-night: url('/static/art/adventure/forest-night-b-v3-1536.webp');
+}
+.rm-level.band-a2 {
+  --volcano-a-day: url('/static/art/adventure/volcano-day-a-v3-1536.webp');
+  --volcano-a-night: url('/static/art/adventure/volcano-night-a-v3-1536.webp');
+  --volcano-b-day: url('/static/art/adventure/volcano-day-b-v3-1536.webp');
+  --volcano-b-night: url('/static/art/adventure/volcano-night-b-v3-1536.webp');
+}
+.rm-level.band-b1 {
+  --snow-a-day: url('/static/art/adventure/snow-day-a-v3-1536.webp');
+  --snow-a-night: url('/static/art/adventure/snow-night-a-v3-1536.webp');
+  --snow-b-day: url('/static/art/adventure/snow-day-b-v3-1536.webp');
+  --snow-b-night: url('/static/art/adventure/snow-night-b-v3-1536.webp');
+}
+.rm-level.band-b2 {
+  --river-a-day: url('/static/art/adventure/river-day-a-v3-1536.webp');
+  --river-a-night: url('/static/art/adventure/river-night-a-v3-1536.webp');
+  --river-b-day: url('/static/art/adventure/river-day-b-v3-1536.webp');
+  --river-b-night: url('/static/art/adventure/river-night-b-v3-1536.webp');
+}
+.rm-level.band-c1 {
+  --desert-a-day: url('/static/art/adventure/desert-day-a-v3-1536.webp');
+  --desert-a-night: url('/static/art/adventure/desert-night-a-v3-1536.webp');
+  --desert-b-day: url('/static/art/adventure/desert-day-b-v3-1536.webp');
+  --desert-b-night: url('/static/art/adventure/desert-night-b-v3-1536.webp');
+}
+.rm-level.band-c2 {
+  --flowers-a-day: url('/static/art/adventure/flowers-day-a-v3-1536.webp');
+  --flowers-a-night: url('/static/art/adventure/flowers-night-a-v3-1536.webp');
+  --flowers-b-day: url('/static/art/adventure/flowers-day-b-v3-1536.webp');
+  --flowers-b-night: url('/static/art/adventure/flowers-night-b-v3-1536.webp');
+}
+}
+
+/* The final lesson is the reward marker; it retains its original access state. */
+/* Approved leaf reward: pale locked, orange open, green completed. */
+.rm-adventure-path .rm-victory .rm-coin {
+  --reward-face: linear-gradient(155deg, #ffab39, #ff780b 65%, #f26308);
+  --reward-rim: #ffe39a; --reward-ink: #fff8e5; --reward-edge: #c4520a;
+  --reward-center: #fa8621;
+  background: var(--reward-face); border: 4px solid var(--reward-rim);
+  color: var(--reward-ink);
+  box-shadow: 0 4px 0 var(--reward-edge), 0 7px 10px #182c2326;
+}
+.rm-adventure-path .rm-victory.locked .rm-coin {
+  --reward-face: linear-gradient(150deg, #edf3f7, #cbd8e2); --reward-rim: #f2f7fa;
+  --reward-ink: #6e8496; --reward-edge: #93a6b6; --reward-center: #f2f7fa;
+}
+.rm-adventure-path .rm-victory.complete .rm-coin {
+  --reward-face: linear-gradient(150deg, #73d28b, #35a96c); --reward-rim: #dbf4d7;
+  --reward-ink: #f4fff1; --reward-edge: #25754c; --reward-center: #298959;
+}
+.rm-adventure-path .rm-victory.current .rm-coin { outline: 4px solid #ffe88a88; outline-offset: 4px; }
+.rm-adventure-path .rm-victory .rm-coin::after {
+  display: block; inset: 5px; height: auto; border-radius: 50%;
+  background: none; border: 1px dashed #ffffff77; opacity: 1;
+}
+.rm-reward-emblem { width: 42px; height: 42px; }
+.rm-adventure-path .rm-victory.locked .rm-coin::after {
+  border-style: solid; border-color: #b4c4d1; opacity: .75;
+}
+@media (max-width: 700px) {
+  .rm-level .rm-level-head { display: grid; grid-template-columns: 34px minmax(0,1fr) 90px; gap: 9px; align-items: center; padding: 14px 4px; }
+  .rm-level .rm-pill { width: 34px; height: 38px; font-size: 15px; }
+  .rm-level .rm-level-name { min-width: 0; margin: 0; font-size: 15px; gap: 3px; }
+  .rm-level .rm-band-description { font-size: 12px; line-height: 1.4; }
+  .rm-level .rm-level-stat { min-width: 0; margin: 0; padding: 0; align-self: center; font-size: 12px; gap: 6px; }
+  .rm-level .rm-level-stat .rm-bar { width: 90px; height: 5px; }
+  .rm-adventure-path .rm-victory .rm-reward-emblem { width: 32px; height: 32px; }
+}
+
+/* Selected system C + route 05. Reward silhouette remains unchanged. */
+.rm-adventure-path {
+  --node-lock-face: linear-gradient(145deg, #e5edf3, #c3d0dc);
+  --node-lock-rim: #f1f6fa; --node-lock-edge: #92a5b7; --node-lock-ink: #6e8496;
+  --node-open-face: linear-gradient(155deg, #ffb246, #ff8116 70%);
+  --node-open-rim: #ffe6a7; --node-open-edge: #c95b11; --node-open-ink: #fff9e9;
+  --node-done-face: linear-gradient(145deg, #79d991, #35ac6d);
+  --node-done-rim: #daf3d5; --node-done-edge: #267b4e; --node-done-ink: #f5ffed;
+  --star-road-halo: #81d0b6; --star-road-fill: #d4efce;
+  --star-road-line: #f9ffde; --star-road-star: #fff9cb;
+}
+.rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin {
+  --size: 68px; --node-face: var(--node-open-face); --node-rim: var(--node-open-rim);
+  --node-edge: var(--node-open-edge); --node-ink: var(--node-open-ink);
+  --book-detail: #ee8a22; --glyph-ink: var(--node-face);
+  background: var(--node-face); color: var(--node-ink); border: 3px solid var(--node-rim);
+  box-shadow: 0 4px 0 var(--node-edge), inset 0 0 0 4px #ffffff22, 0 7px 9px #15301d26;
+}
+.rm-adventure-path .lesson-node.locked:not(.rm-victory) .rm-coin {
+  --node-face: var(--node-lock-face); --node-rim: var(--node-lock-rim);
+  --node-edge: var(--node-lock-edge); --node-ink: var(--node-lock-ink);
+  --glyph-ink: var(--node-lock-edge);
+}
+.rm-adventure-path .lesson-node.complete:not(.rm-victory) .rm-coin {
+  --node-face: var(--node-done-face); --node-rim: var(--node-done-rim);
+  --node-edge: var(--node-done-edge); --node-ink: var(--node-done-ink); --book-detail: #41ac6c;
+}
+.rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin::after {
+  inset: 6px; height: auto; background: none; border: 1px dashed #ffffff99; border-radius: 50%; opacity: 1;
+}
+.rm-adventure-path .lesson-node.current:not(.rm-victory) .rm-coin { outline: 3px solid #ffe19099; outline-offset: 4px; }
+.rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin-icon { width: 30px; height: 30px; filter: none; }
+.rm-adventure-path .rm-victory.locked .rm-coin {
+  --reward-face: var(--node-lock-face); --reward-rim: var(--node-lock-rim);
+  --reward-edge: var(--node-lock-edge); --reward-ink: var(--node-lock-ink); --reward-center: var(--node-lock-rim);
+}
+.rm-adventure-path .rm-road { filter: none; }
+.rm-adventure-path .rm-road-edge { stroke: var(--star-road-halo); stroke-width: 30px; opacity: .18; }
+.rm-adventure-path .rm-road-fill { stroke: var(--star-road-fill); stroke-width: 15px; opacity: .55; }
+.rm-adventure-path .rm-road-dash { stroke: var(--star-road-line); stroke-width: 3px; stroke-dasharray: 1 10; stroke-linecap: round; }
+.rm-adventure-path .rm-road-star { fill: var(--star-road-star); stroke: none; }
+.rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin:focus-visible,
+.rm-adventure-path .lesson-node.rm-victory .rm-coin:focus-visible { outline: 3px solid #247fca; outline-offset: 5px; }
+@media (max-width: 700px) {
+  .rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin { --size: 48px; }
+  .rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin-icon { width: 23px; height: 23px; }
+  .rm-adventure-path .lesson-node:not(.rm-victory) .rm-coin::after { inset: 4px; }
+  .rm-adventure-path .rm-road-edge { stroke-width: 24px; }
+  .rm-adventure-path .rm-road-fill { stroke-width: 12px; }
+  .rm-adventure-path .rm-road-dash { stroke-width: 2px; stroke-dasharray: 1 8; }
+}
+:root[data-theme="dark"] .rm-adventure-path {
+  --node-lock-face: linear-gradient(145deg, #66808f, #405c70);
+  --node-lock-rim: #829aa9; --node-lock-edge: #2c4556; --node-lock-ink: #dce9ee;
+  --node-open-face: linear-gradient(145deg, #ef9e39, #de6b12);
+  --node-open-rim: #efc583; --node-open-edge: #9a440c; --node-open-ink: #fff4df;
+  --node-done-face: linear-gradient(145deg, #60bf7b, #28835a);
+  --node-done-rim: #9ed5a8; --node-done-edge: #1c5b40; --node-done-ink: #ecffe9;
+  --star-road-halo: #56cbbb; --star-road-fill: #a4eee1;
+  --star-road-line: #ddfff2; --star-road-star: #e1ffcf;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rm-adventure-path {
+  --node-lock-face: linear-gradient(145deg, #66808f, #405c70);
+  --node-lock-rim: #829aa9; --node-lock-edge: #2c4556; --node-lock-ink: #dce9ee;
+  --node-open-face: linear-gradient(145deg, #ef9e39, #de6b12);
+  --node-open-rim: #efc583; --node-open-edge: #9a440c; --node-open-ink: #fff4df;
+  --node-done-face: linear-gradient(145deg, #60bf7b, #28835a);
+  --node-done-rim: #9ed5a8; --node-done-edge: #1c5b40; --node-done-ink: #ecffe9;
+  --star-road-halo: #56cbbb; --star-road-fill: #a4eee1;
+  --star-road-line: #ddfff2; --star-road-star: #e1ffcf;
+  }
+}
+
+/* Available lesson styling must not tint the reward icon or its rim. */
+.rm-adventure-path .lesson-node.rm-victory .rm-coin { color: var(--reward-ink); border-color: var(--reward-rim); }
+
+/* Keep the pointer target stable when a viewport resize leaves it near an edge. */
+.rm-adventure-path .lesson-node .rm-coin:hover { transform: none; }

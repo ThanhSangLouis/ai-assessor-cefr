@@ -1,0 +1,152 @@
+{
+  "tool": "image_gen built-in",
+  "created": "2026-11-06",
+  "scope": "Forest A1 pilot only; remaining five night worlds not generated in this phase.",
+  "native_pixels": [
+    1536,
+    1024
+  ],
+  "exports": {
+    "widths": [
+      480,
+      768,
+      960,
+      1280,
+      1536
+    ],
+    "format": "WebP",
+    "quality_master": 93,
+    "quality_smaller": 90,
+    "resampling": "Lanczos downsampling only; no upscaled derivatives"
+  },
+  "rendering": {
+    "ratio": 0.6666666666666666,
+    "overlap_width_fraction": 0.045,
+    "segments": [
+      "a",
+      "b"
+    ],
+    "first_segment_mask": "none"
+  },
+  "prompts": [
+    {
+      "key": "forestTileADayPrompt",
+      "prompt": "Use case: stylized-concept. Production HIGH RESOLUTION WIDE LANDSCAPE tile, aspect ratio 3:2 landscape (NOT portrait), request 1920x1280 native pixels. This is segment A of a long VERTICAL scrolling forest map, NOT a horizon landscape. Reference supplied image only for visual style. Elevated orthographic 2.5D hand-painted premium cozy adventure game. Fill frame completely with leafy emerald forest ground. Central 48% of width uninterrupted light sage grass clearing, straight open corridor from top to bottom. Sculptural ancient trees, mossy rock ledges, layered ferns and flowers confined to outer 26% left and right, visible cliff side faces and top surfaces, rich rounded geometry and crisp detailed foliage. Warm upper-left sunlight, soft ambient occlusion, welcoming depth. Top and bottom are cross-sections of continuous terrain, no horizon, sky or endpoint. Clusters along sides must be small enough to show several landscape beats down this tile. Top and bottom 10% grass should match same sage tones for smooth joins. No road, UI, text, mascot, characters, white borders, blur, fog, gradients or faded edges. Landscape orientation 3:2, highly detailed."
+    },
+    {
+      "key": "forestTileBDayPrompt",
+      "prompt": "Use case: stylized-concept. Generate a NEW segment B continuation of supplied forest game terrain. Landscape 3:2 aspect, same dimensions as reference (1536x1024 or higher native). Same camera, scale, 2.5D sculptural hand painted detail, green grass palette and sunlight. Keep the central 48% of width as a quiet open sage grass corridor for lesson UI, no painted path. New landscape beat: mossy stone terraces with delicate ferns along left margin, winding sculptural tree roots and flowering low shrubs along right margin, alternate composition from reference, maintain deep layered forest edges. Top and bottom 10% use compatible sage grass colors, forest continues beyond both ends. NO horizon, sky, endpoint, UI, people, text, characters, borders, blur or fog. Dense crisp edge foliage, calmer center. This is one edge-to-edge background terrain tile for stacking vertically, NOT an image of the game screen."
+    },
+    {
+      "key": "forestTileANightPrompt",
+      "prompt": "Use case: lighting-weather. Edit supplied image into the SAME FOREST AT NIGHT. Preserve exact dimensions, landscape 3:2 framing, exact tree trunks, foliage silhouettes, cliffs, grass corridor and object locations. Change ONLY light, colors and tiny atmospheric firefly points. True moonlit night, silver-blue moonlight from upper left, deep indigo teal tree shadows, midnight emerald foliage with subtle cool rim highlights, quiet muted blue-green center grass, small sparse warm gold fireflies tucked into forest margins. Delicate readable magical night, detailed cliff faces and foliage still visible. No painted moon or sky (camera sees only ground), no heavy fog, no artificial uniform black overlay, no blur. No road, UI, characters, text. Same geography as reference so day/night theme switch never shifts terrain. Maintain crisp texture throughout."
+    },
+    {
+      "key": "forestTileBNightPrompt",
+      "prompt": "Use case: lighting-weather. Image 1 is day forest segment B, the edit target; Image 2 is night segment A, reference only for matching exposure and colors. Convert Image 1 to exactly the same terrain at night. Preserve landscape 3:2 framing, tree silhouettes, cliffs, grass corridor and every object position. Moonlight upper left, midnight emerald, indigo-teal shadows, cool silver-blue rim lighting, quiet blue-green central grass, a few small warm golden fireflies in the margins. Match Image 2's night atmosphere. No black overlay, fog, blur, text, road, UI, characters or sky. Detailed crisp 2.5D game art. Preserve exact dimensions 1536x1024 or higher native."
+    }
+  ],
+  "files": [
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1280.webp",
+      "bytes": 391130,
+      "sha256": "ea2f09d8e7d67b4c30c27f5cf82e7116207dac936231feb64bd8878168230fb7"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "bytes": 664408,
+      "sha256": "a87410172f9c2e18eba7e89c5f62d70ce312615d942f950aa0d004c220607ce2"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-a-v3-480.webp",
+      "bytes": 60584,
+      "sha256": "8c7d139038979485f87afa2f481e96e73f38b7523d053e1b9a6c752ef212ffb9"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-a-v3-768.webp",
+      "bytes": 153996,
+      "sha256": "3b407aa238894b7a571d566e1a031a82e4740a7a0d3e075fab8c7a653bab8dd4"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-a-v3-960.webp",
+      "bytes": 234044,
+      "sha256": "15e99a3291ade1a319d330d198d10c26a2ee078cc69cf481b2c6caa9fe3d22aa"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-b-v3-1280.webp",
+      "bytes": 396624,
+      "sha256": "ae477c27554eac083071700a29db2692b44ddf1b2a0946f45de0095b8cd81a30"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-b-v3-1536.webp",
+      "bytes": 635754,
+      "sha256": "f6f83b4c188c600692749a3440280485db1d4f741e6974d1a57412354d259b46"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-b-v3-480.webp",
+      "bytes": 65458,
+      "sha256": "4c9d36cbdb810519e7aff9171f4c7028d02f8885a63e73b89af15378a1c2cb1f"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-b-v3-768.webp",
+      "bytes": 163248,
+      "sha256": "a1732e49ec1d7f0b5a6673b053bfe73ed1343a7cb7571c4f5acff9837ca497b5"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-day-b-v3-960.webp",
+      "bytes": 243130,
+      "sha256": "ab0f7be43792f1cdc926eb079e0671e82f79edd4bec825a6d73e2f0f9ba1885d"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-a-v3-1280.webp",
+      "bytes": 308854,
+      "sha256": "e55be1c733248551ce2faaea4ae5d4c500e4bf487582a06aaa85364f4a96bf48"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-a-v3-1536.webp",
+      "bytes": 522212,
+      "sha256": "7a41f3b2f81a6fbd714f812ccd93b76d2394ed82e56d7de57baccae604c92ebf"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-a-v3-480.webp",
+      "bytes": 51292,
+      "sha256": "fd48b00e2a781ecbd17a32dd88c22240b7369ef7545afaed89c9da4270cfb2fe"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-a-v3-768.webp",
+      "bytes": 122208,
+      "sha256": "073263ac558a7dfa24906c9aa875af72530603b9dbfbbcb90af645332ebfc20c"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-a-v3-960.webp",
+      "bytes": 188938,
+      "sha256": "73e7eb9bd43d1c038967ae1c91145a1ddc2c72bcf361e260485e3b6468e99dcd"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-b-v3-1280.webp",
+      "bytes": 322880,
+      "sha256": "46d4e635146c2009c815b926ea25a3c37c2804c4a6e51382a83875ab0e72ffe2"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-b-v3-1536.webp",
+      "bytes": 518852,
+      "sha256": "f1c603a194303363fdef878b5a42b08187c0422d398806d5952bb85366e20dca"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-b-v3-480.webp",
+      "bytes": 56920,
+      "sha256": "a3c3bad124554c94c6c627e3168e49c5cf92484d5d68bd07d90d1df34fb875d3"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-b-v3-768.webp",
+      "bytes": 143378,
+      "sha256": "0b7aaba6f8ade6a99228f0a124e638e497476a5810050b97653b9928ffa02030"
+    },
+    {
+      "file": "src/aicefr/api/static/art/adventure/forest-night-b-v3-960.webp",
+      "bytes": 201064,
+      "sha256": "0ce7ddc1743ed24469e90ca18f768b8f132f08725b7d27108e6ab6eb6d3d3eba"
+    }
+  ],
+  "native_resolution_note": "Requested 1920x1280; built-in output is 1536x1024. No claim of native 4K or universal 2x coverage on wide desktops."
+}

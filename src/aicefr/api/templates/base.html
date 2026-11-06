@@ -186,6 +186,15 @@
 {% endif %}
 {% block content %}{% endblock %}
 </main>
+{% block app_navigation %}
+{% if account and role == 'student' %}
+<nav class="app-tabbar rm-tabbar" aria-label="Điều hướng di động">
+{% for url, key, symbol, label in [('/practice', 'practice', 'home', 'Lộ trình học'), ('/', 'submit', 'mic', 'Nộp bài'), ('/my-progress', 'mine', 'trend', 'Kết quả'), ('/account', 'account', 'user', 'Cá nhân')] %}
+<a href="{{ url }}"{% if here == key or (key == 'mine' and here == 'progress') %} class="on" aria-current="page"{% endif %}>{{ icon(symbol) }}<span>{{ label }}</span></a>
+{% endfor %}
+</nav>
+{% endif %}
+{% endblock %}
 
 {% if not account %}
 <footer class="site-footer">
@@ -267,16 +276,6 @@
         </a>
       </div>
     </div>
-  </div>
-</footer>
-{% else %}
-<footer class="site-footer">
-  {#- D068: one line inside the app, where every screen is work. It says the
-      two required phrases word for word (SRS 11.3, tests/test_web.py), as the
-      visitors' footer above does. -#}
-  <div class="footer-inner">
-    <p><b>Không cấp chứng chỉ.</b> Điểm là ước lượng để luyện tập. <b>Giảng viên quyết định cuối cùng.</b>
-      <a href="/bands">Band A1–C2 là gì?</a></p>
   </div>
 </footer>
 {% endif %}

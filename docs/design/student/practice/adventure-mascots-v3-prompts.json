@@ -1,0 +1,56 @@
+{
+  "tool": "built-in imagegen",
+  "transparent_background": true,
+  "prompts": {
+    "forest": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby forest owl, sage and leaf green feathers, cream face, tiny leaf tuft, moss-green headphones, waving one wing. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy.",
+    "volcano": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby friendly dragon, coral orange body, warm cream belly, tiny amber horns and little red wings, smiling and waving. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy.",
+    "snow": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby arctic fox, fluffy white and icy blue fur, powder blue headphones, little blue scarf, big fluffy tail, smiling. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy.",
+    "river": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby river otter, turquoise and warm cream fur, aqua headphones, small teal neckerchief, happily waving. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy.",
+    "desert": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby fennec fox, honey sand and ivory fur, enormous soft ears, terracotta headphones, little explorer scarf, smiling. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy.",
+    "flowers": "Use case: stylized-concept. Create a production mascot cutout for a cute language-learning adventure website. Subject: a baby bunny, pastel pink and lilac fur, lavender headphones, small flower on one ear, happily waving. Single full-body character centered, feet at baseline, occupying 85% of a square canvas. Cohesive premium 2.5D children's adventure game illustration: plump rounded proportions, oversized head, tiny paws, adorable expressive shiny eyes, rosy cheeks, softly painted dimensional volumes, subtle warm upper-left lighting, clean gentle colored outlines, matte finish. Readable at 100px. Transparent background with real alpha. No scenery, no pedestal, no ground, no text, no badges, no watermark, no extra characters. Charming welcoming expression, not realistic or plastic toy."
+  },
+  "assets": {
+    "forest": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-forest-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 209772
+    },
+    "volcano": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-volcano-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 180212
+    },
+    "snow": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-snow-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 222192
+    },
+    "river": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-river-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 207216
+    },
+    "desert": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-desert-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 246852
+    },
+    "flowers": {
+      "file": "src/aicefr/api/static/art/adventure/mascot-flowers-v3.webp",
+      "width": 1254,
+      "height": 1254,
+      "alpha": true,
+      "bytes": 164688
+    }
+  }
+}

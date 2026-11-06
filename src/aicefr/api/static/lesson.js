@@ -653,6 +653,7 @@ async function load() {
           : `/api/v1/learn/lessons/${encodeURIComponent(LESSON_ID)}`;
       const r = await fetch(url);
       if (window.redirectToLoginIfExpired(r)) return;
+      if (r.status === 403) throw new Error("lesson_locked");
       if (!r.ok) throw new Error(String(r.status));
       data = await r.json();
       steps = data.lesson.steps;
@@ -670,8 +671,8 @@ async function load() {
     window.clearBusy(root);
     headEl.innerHTML =
       '<div class="empty-state"><div class="empty-mark" aria-hidden="true">◇</div>' +
-      "<h2>Không mở được bài học này</h2>" +
-      '<p>Bài có thể chưa được xuất bản hoặc đã bị gỡ. <a href="/practice">Quay lại lộ trình</a>.</p></div>';
+      (err.message === "lesson_locked" ? "<h2>Bài học chưa mở khóa</h2><p>Hoàn thành bài trước trong phần này để tiếp tục.</p>" : "<h2>Không mở được bài học này</h2><p>Bài có thể chưa được xuất bản hoặc đã bị gỡ.</p>") +
+      '<p><a href="/practice">Quay lại lộ trình</a></p></div>';
   }
 }
 

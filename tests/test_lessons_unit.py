@@ -834,3 +834,38 @@ def test_sample_lessons_raise_no_linter_warnings():
         for lesson in unit:
             warnings = [i.message for i in lint_lesson(lesson) if i.level == "warn"]
             assert warnings == [], (lesson.lesson_id, warnings)
+
+
+def test_access_gate_spans_units_without_mutating_stored_plan():
+    from copy import deepcopy
+
+    from aicefr.lessons.progress import gate_units
+
+    units = [
+        {
+            "band": "A1",
+            "lessons": [
+                {"lesson_id": "a", "status": "completed"},
+                {"lesson_id": "b", "status": "new"},
+            ],
+        },
+        {
+            "band": "A1",
+            "lessons": [
+                {"lesson_id": "c", "status": "started"},
+                {"lesson_id": "d", "status": "completed"},
+            ],
+        },
+        {
+            "band": "A2",
+            "lessons": [{"lesson_id": "e", "status": "new"}, {"lesson_id": "f", "status": "new"}],
+        },
+    ]
+    original = deepcopy(units)
+    gated = gate_units(units)
+    assert [[i["status"] for i in u["lessons"]] for u in gated] == [
+        ["completed", "new"],
+        ["locked", "completed"],
+        ["new", "locked"],
+    ]
+    assert units == original

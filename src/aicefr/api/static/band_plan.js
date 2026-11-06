@@ -12,10 +12,6 @@
   const BANDS = ["A1", "A2", "B1", "B2", "C1", "C2"];
   const LEVEL = { A1: "Mới bắt đầu", A2: "Sơ cấp", B1: "Trung cấp", B2: "Trung cao cấp", C1: "Cao cấp", C2: "Thành thạo" };
 
-  const PLAY =
-    '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-    '<path d="M7 4.8c0-1 1.1-1.6 2-1.1l11.2 7.2c.8.5.8 1.7 0 2.2L9 20.3c-.9.5-2-.1-2-1.1Z" fill="currentColor"/></svg>';
-
   const options = (chosen) =>
     BANDS.map((b) => `<option value="${b}"${b === chosen ? " selected" : ""}>${b} · ${LEVEL[b]}</option>`).join("");
 
@@ -27,13 +23,14 @@
     const by = goal.assigned_by
       ? ` do giảng viên <b>${escapeHtml(goal.assigned_by)}</b> giao${goal.path_title ? ` (“${escapeHtml(goal.path_title)}”)` : ""}`
       : "";
-    const warnings = (plan.warnings || []).map((w) => `<span class="rm-band-warn">${escapeHtml(w)}</span>`).join("");
-    return (
-      `<p class="rm-band-note">${icon("path")}<span>Lộ trình đang học: <b>${escapeHtml(range)}</b>${by}, ` +
-      `${Number(plan.lessons_completed)}/${Number(plan.lessons_total)} bài.</span>` +
-      '<button type="button" class="rm-link" id="band-close">Bỏ lộ trình này</button>' +
-      `${warnings}</p>`
-    );
+    const done = Number(plan.lessons_completed) || 0;
+    const total = Number(plan.lessons_total) || 0;
+    const pct = total ? Math.min(100, Math.round(done / total * 100)) : 0;
+    return `<div class="bp-current">${icon("path", "icon bp-route-icon")}<div class="bp-current-text">` +
+      `<h3>Lộ trình hiện tại: ${escapeHtml(range)}</h3>${by ? `<p>${by.trim()}</p>` : ""}</div>` +
+      `<div class="bp-progress"><span class="bp-count">${done}/${total} bài</span><div class="bp-meter" role="progressbar" aria-label="Tiến độ lộ trình" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div>` +
+      `<span class="bp-percent">${pct}%</span></div>` +
+      `<button type="button" class="bp-remove" id="band-close" aria-label="Bỏ lộ trình" title="Bỏ lộ trình">${icon("trash")}</button></div>`;
   }
 
   function render(d) {
@@ -44,20 +41,17 @@
     const hint = d.assessed_band ? ` title="Gợi ý từ kết quả đánh giá: ${escapeHtml(d.assessed_band)}"` : "";
     window.clearBusy(box);
     box.innerHTML =
-      '<div class="rm-band-bar">' +
-      `<h2 class="rm-band-title">${icon("target", "icon rm-band-icon")}Học theo band</h2>` +
-      '<form id="band-form" class="rm-band-form">' +
-      `<div class="rm-field"${hint}><label for="band-from"><span class="rm-desk">Trình độ hiện tại</span>` +
-      '<span class="rm-mob">Học theo band</span></label>' +
-      `<select id="band-from">${options(from)}</select></div>` +
-      `<div class="rm-field"><label for="band-to">Mục tiêu</label><select id="band-to">${options(to)}</select></div>` +
-      '<button type="submit" class="rm-btn rm-btn-orange">' +
-      `<span class="rm-mob">${PLAY}</span><span class="rm-desk">Tạo lộ trình</span>` +
-      `<span class="rm-mob">Tạo lộ trình học</span><span class="rm-desk">${icon("arrow-right")}</span></button>` +
-      "</form>" +
-      `<a class="rm-btn rm-btn-outline" href="/">${icon("sparkle")}Kiểm tra trình độ</a>` +
-      "</div>" +
-      planNote(plan);
+      '<details class="rm-plan-settings"><summary>' +
+      `${icon("target", "icon bp-target")}<span class="bp-heading">Lộ trình học</span>` +
+      (plan ? `<span class="bp-status">${icon("check")}Đang học</span><span class="bp-collapsed-progress">${escapeHtml(from === to ? from : `${from} → ${to}`)} · ${Number(plan.lessons_completed) || 0}/${Number(plan.lessons_total) || 0} bài</span>` : '') +
+      `<span class="bp-toggle" aria-label="Mở hoặc thu gọn chỉnh lộ trình" title="Mở hoặc thu gọn">${icon("chevron-down")}</span></summary>` +
+      '<div class="bp-editor"><form id="band-form" class="bp-form"><div class="bp-selection">' +
+      `<div class="bp-field"${hint}><select id="band-from" aria-label="Trình độ hiện tại">${options(from)}</select></div>` +
+      `<span class="bp-range-arrow" aria-hidden="true">${icon("arrow-right")}</span>` +
+      `<div class="bp-field"><select id="band-to" aria-label="Mục tiêu">${options(to)}</select></div>` +
+      `</div><button type="submit" class="bp-submit">${icon("refresh")}<span>${plan ? "Cập nhật lộ trình" : "Tạo lộ trình"}</span></button></form>` +
+      `<div class="bp-assessment"><a href="/" class="bp-assessment-button">${icon("sparkle")}<span>Kiểm tra trình độ</span></a></div></div>` +
+      (plan ? `<div class="bp-plan">${planNote(plan)}</div>` : '') + '</details>';
     wire(d);
     document.dispatchEvent(new CustomEvent("bandplan", { detail: plan || null }));
   }
@@ -65,8 +59,17 @@
   function wire(d) {
     if (window.enhanceSelects) window.enhanceSelects(box);
     const form = document.getElementById("band-form");
+    const button = form.querySelector("button[type=submit]");
+    let saving = false;
+    const unchanged = () => !!d.plan &&
+      document.getElementById("band-from").value === d.plan.goal.band_from &&
+      document.getElementById("band-to").value === d.plan.goal.band_to;
+    const syncButton = () => { button.disabled = saving || unchanged(); };
+    form.addEventListener("change", syncButton);
+    syncButton();
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (saving || unchanged()) return;
       const from = document.getElementById("band-from").value;
       const to = document.getElementById("band-to").value;
       if (BANDS.indexOf(from) > BANDS.indexOf(to)) {
@@ -75,14 +78,15 @@
       }
       if (d.plan && d.plan.goal && d.plan.goal.assigned_by &&
           !window.confirm("Lộ trình hiện tại do giảng viên giao. Tạo lộ trình riêng sẽ thay nó, vẫn tạo?")) return;
-      const button = form.querySelector("button[type=submit]");
-      button.disabled = true;
+      saving = true;
+      syncButton();
       const made = await window.apiJson("/api/v1/learn/bands", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ band_from: from, band_to: to }),
       });
-      button.disabled = false;
+      saving = false;
+      syncButton();
       if (made) {
         window.toast(`Đã tạo lộ trình ${from} → ${to}.`, "ok");
         load();
@@ -91,9 +95,54 @@
     const close = document.getElementById("band-close");
     if (close)
       close.addEventListener("click", async () => {
-        if (!window.confirm("Bỏ lộ trình này? Tiến độ các bài đã học vẫn giữ nguyên.")) return;
-        if (await window.apiJson("/api/v1/learn/plan", { method: "DELETE" })) load();
+        showRemoveDialog(close);
       });
+  }
+
+  function showRemoveDialog(trigger) {
+    if (document.getElementById("bp-remove-dialog")) return;
+    const dialog = document.createElement("dialog");
+    dialog.id = "bp-remove-dialog";
+    dialog.className = "bp-remove-dialog";
+    dialog.setAttribute("aria-labelledby", "bp-remove-title");
+    dialog.setAttribute("aria-describedby", "bp-remove-description");
+    dialog.innerHTML = `<div class="bp-dialog-heading"><span class="bp-dialog-mark">${icon("trash")}</span><h2 id="bp-remove-title">Bỏ lộ trình?</h2></div>` +
+      `<p id="bp-remove-description">Tiến độ học vẫn được giữ lại.</p>` +
+      `<div class="bp-dialog-actions"><button type="button" class="bp-dialog-cancel" autofocus>Hủy</button>` +
+      `<button type="button" class="bp-dialog-confirm">${icon("trash")}<span>Bỏ lộ trình</span></button></div>`;
+    document.body.appendChild(dialog);
+    let removing = false;
+    dialog.addEventListener("close", () => {
+      dialog.remove();
+      if (trigger.isConnected) trigger.focus();
+    });
+    dialog.addEventListener("cancel", (event) => { if (removing) event.preventDefault(); });
+    dialog.querySelector(".bp-dialog-cancel").onclick = () => dialog.close();
+    dialog.addEventListener("click", (event) => {
+      const rect = dialog.getBoundingClientRect();
+      if (!removing && event.target === dialog &&
+          (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
+    });
+    dialog.querySelector(".bp-dialog-confirm").onclick = async () => {
+      if (removing) return;
+      removing = true;
+      const buttons = dialog.querySelectorAll("button");
+      buttons.forEach((button) => { button.disabled = true; });
+      const label = dialog.querySelector(".bp-dialog-confirm span");
+      label.textContent = "Đang bỏ…";
+      try {
+        if (await window.apiJson("/api/v1/learn/plan", { method: "DELETE" })) {
+          dialog.close();
+          window.toast("Đã bỏ lộ trình. Tiến độ học vẫn được giữ lại.", "ok");
+          load();
+        }
+      } finally {
+        removing = false;
+        buttons.forEach((button) => { button.disabled = false; });
+        label.textContent = "Bỏ lộ trình";
+      }
+    };
+    dialog.showModal();
   }
 
   async function load() {
