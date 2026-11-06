@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="vi">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>SpeakUp · Bài học — Sân khấu luyện nói</title>
+  <link rel="stylesheet" href="lesson-mockup.css" />
+  <body>
+    <div class="review-tools">
+      <div>
+        <strong>LESSON / SÂN KHẤU LUYỆN NÓI</strong
+        ><span>Hướng C đã chốt · Mockup bàn giao</span>
+      </div>
+      <div class="controls">
+        <label
+          >Vùng cảnh<select id="world">
+            <option value="forest">A1 · Rừng xanh</option>
+            <option value="volcano">A2 · Miền núi lửa</option>
+            <option value="snow">B1 · Xứ tuyết</option>
+            <option value="river">B2 · Sông ngọc</option>
+            <option value="desert">C1 · Sa mạc vàng</option>
+            <option value="flowers">C2 · Đồng hoa</option>
+          </select></label
+        ><label
+          >Giao diện<select id="theme">
+            <option value="light">Ban ngày</option>
+            <option value="dark">Ban đêm</option>
+          </select></label
+        ><label
+          >Trạng thái<select id="state">
+            <option value="ready">Sẵn sàng</option>
+            <option value="recording">Đang ghi âm</option>
+            <option value="playback">Nghe lại</option>
+            <option value="feedback">Phản hồi</option>
+            <option value="complete">Hoàn thành</option>
+            <option value="error">Lỗi micro</option>
+          </select></label
+        ><button id="mobile" aria-pressed="false">Xem mobile</button>
+      </div>
+      <p>
+        Header cảnh gọn · Tiến trình ngang · Thẻ luyện nói rộng · Ghi chú bên
+        cạnh. Nội dung và thao tác đang được mô phỏng.
+      </p>
+    </div>
+    <div id="preview" data-layout="focus" data-state="ready">
+      <div class="app">
+        <aside class="sidebar">
+          <a class="brand" href="../practice/adventure-worlds-day-night.html"
+            ><span class="brand-icon">♬</span> Speak<span>Up</span></a
+          ><span class="nav-caption">KHÔNG GIAN CỦA BẠN</span
+          ><a class="nav-link selected" href="http://localhost:8000/practice"
+            ><span>⌂</span> Lộ trình học</a
+          ><a class="nav-link" href="http://localhost:8000/"
+            ><span>♩</span> Nộp bài</a
+          ><a class="nav-link" href="http://localhost:8000/my-progress"
+            ><span>↗</span> Kết quả</a
+          >
+          <div class="sidebar-bottom">
+            <div class="avatar">TL</div>
+            <div><b>Thắng Lê</b><small>Nhà thám hiểm ngôn ngữ</small></div>
+          </div>
+        </aside>
+        <div class="workspace">
+          <header class="topbar">
+            <a href="http://localhost:8000/practice"
+              >← <span>Lộ trình học</span></a
+            ><a class="brand mobile-brand" href="http://localhost:8000/practice"
+              >Speak<span>Up</span></a
+            ><span class="saved"><i></i> Tiến độ đã lưu</span>
+          </header>
+          <main>
+            <section class="hero">
+              <div class="hero-scenery"></div>
+              <div class="hero-copy">
+                <div class="eyebrow">
+                  <span id="band">A1</span><span id="world-name">Rừng xanh</span
+                  ><span> / BÀI 01</span>
+                </div>
+                <h1>Một chút về bạn,<br /> một bước tiến mới.</h1>
+                <p>
+                  Luyện giới thiệu bản thân với <b>to be</b> và <b>have</b>.
+                </p>
+                <div class="hero-meta">
+                  <span>◷ Khoảng 2 phút</span><span>✦ Đời sống hằng ngày</span>
+                </div>
+              </div>
+              <div class="companion">
+                <div class="speech">
+                  Cứ nói tự nhiên nhé.<br />Mình ở đây cùng bạn!
+                </div>
+                <img id="mascot" alt="Bạn đồng hành của vùng rừng xanh" />
+              </div>
+            </section>
+            <div class="learning-layout">
+              <nav class="steps" aria-label="Các bước bài học">
+                <div class="steps-heading">
+                  <b>Hành trình bài học</b><span id="step-count">2 / 4</span>
+                </div>
+                <div class="progress-track"><span></span></div>
+                <div class="step-list">
+                  <button class="step done" data-step="0">
+                    <span class="step-number">✓</span
+                    ><span
+                      ><b>Làm quen</b><small>Khám phá từ & câu mẫu</small></span
+                    ></button
+                  ><button
+                    class="step active"
+                    data-step="1"
+                    aria-current="step"
+                  >
+                    <span class="step-number">2</span
+                    ><span
+                      ><b>Nói theo mẫu</b
+                      ><small>Tự tin với câu đầu tiên</small></span
+                    ></button
+                  ><button class="step" data-step="2">
+                    <span class="step-number">3</span
+                    ><span
+                      ><b>Thử sức</b><small>Nói bằng cách của bạn</small></span
+                    ></button
+                  ><button class="step" data-step="3">
+                    <span class="step-number">4</span
+                    ><span
+                      ><b>Về đích</b><small>Nhìn lại điều vừa học</small></span
+                    >
+                  </button>
+                </div>
+                <div class="rail-note">
+                  <span>✧</span> Mỗi câu nói là một bước nhỏ. Bạn đang làm rất
+                  tốt!
+                </div>
+              </nav>
+              <section class="lesson-card" aria-labelledby="activity-title">
+                <div class="card-heading">
+                  <span class="activity-label"
+                    >✦ BƯỚC <span id="activity-index">02</span> ·
+                    <span id="activity-kind">NÓI THEO MẪU</span></span
+                  ><span class="duration">15–30 giây</span>
+                </div>
+                <h2 id="activity-title">Cùng giới thiệu bản thân nhé!</h2>
+                <p id="instruction">
+                  Nghe câu mẫu, rồi thử nói về chính bạn. Không cần giống từng
+                  từ đâu.
+                </p>
+                <div class="example">
+                  <div class="example-top">
+                    <span>GỢI Ý CHO BẠN</span
+                    ><button class="listen" id="listen">▷ Nghe mẫu</button>
+                  </div>
+                  <blockquote id="sample">
+                    “Hi! I <mark>am</mark> Linh. I <mark>am</mark> a student.<br />I
+                    <mark>have</mark> a little dog.”
+                  </blockquote>
+                  <p id="translation">
+                    Chào bạn! Mình là Linh. Mình là sinh viên. Mình có một chú
+                    chó nhỏ.
+                  </p>
+                </div>
+                <div class="tip">
+                  <span>☀</span>
+                  <p>
+                    Thay <b>Linh</b> bằng tên của bạn, và kể một điều bạn có
+                    nhé.
+                  </p>
+                </div>
+                <div class="recorder" aria-label="Khu vực ghi âm">
+                  <div class="recorder-top">
+                    <span id="record-status"
+                      ><i></i> Sẵn sàng khi bạn sẵn sàng</span
+                    ><span id="timer">00:00 / 00:30</span>
+                  </div>
+                  <div class="wave" aria-hidden="true"></div>
+                  <button class="record-button" id="record">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      aria-hidden="true"
+                    >
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M6 10v2a6 6 0 0 0 12 0v-2M12 18v3M8 21h8" /></svg
+                    ><span>Bắt đầu ghi âm</span>
+                  </button>
+                  <p class="record-hint" id="record-hint">
+                    Tìm một chỗ yên tĩnh, hít thở và bắt đầu thôi.
+                  </p>
+                  <div class="playback-actions">
+                    <button id="retry" class="secondary">Ghi lại</button
+                    ><button id="send" class="primary">Gửi lượt nói →</button>
+                  </div>
+                </div>
+                <div class="feedback" hidden aria-live="polite">
+                  <span class="feedback-icon">✦</span>
+                  <div>
+                    <b>Bạn đã hoàn thành lượt nói!</b>
+                    <p>
+                      Bản ghi đã sẵn sàng. Thử nghe lại và chú ý cách bạn dùng
+                      “am” và “have” nhé.
+                    </p>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button id="previous" class="text-button">← Bước trước</button
+                  ><button id="continue" class="secondary">
+                    Bước tiếp theo →
+                  </button>
+                </div>
+              </section>
+              <aside class="support-card">
+                <span class="support-label">BỎ TÚI MỘT CHÚT</span>
+                <h3>Hai từ nhỏ,<br />rất nhiều câu chuyện.</h3>
+                <div>
+                  <b>I am…</b>
+                  <p>Mình là… / Mình cảm thấy…</p>
+                </div>
+                <div>
+                  <b>I have…</b>
+                  <p>Mình có…</p>
+                </div>
+                <p class="support-bottom">
+                  Không cần nói hoàn hảo.<br />Chỉ cần dám bắt đầu ♡
+                </p>
+              </aside>
+            </div>
+            <section class="completion" hidden>
+              <div class="confetti" aria-hidden="true">✧ · ✦ · ✧</div>
+              <div class="reward">
+                <svg viewBox="0 0 48 48" aria-hidden="true">
+                  <path
+                    d="M14 12H8v5c0 5 4 8 9 8M34 12h6v5c0 5-4 8-9 8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3.5"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M14 9h20v10a10 10 0 0 1-8 9.8V34h6v5H16v-5h6v-5.2A10 10 0 0 1 14 19Z"
+                  />
+                </svg>
+              </div>
+              <span class="activity-label">THÊM MỘT CHẶNG ĐƯỜNG ĐÃ QUA</span>
+              <h2>Bạn làm được rồi!</h2>
+              <p>
+                Hôm nay, bạn đã tự giới thiệu bản thân bằng tiếng Anh.<br />Một
+                bước nhỏ, một phiên bản tự tin hơn của bạn.
+              </p>
+              <div class="summary-stats">
+                <div><b>4 / 4</b><span>Bước hoàn thành</span></div>
+                <div><b>to be · have</b><span>Đã luyện hôm nay</span></div>
+              </div>
+              <div class="finish-actions">
+                <a class="primary" href="http://localhost:8000/practice"
+                  >Về lộ trình học →</a
+                ><button class="secondary" id="again">Xem lại bài</button>
+              </div>
+            </section>
+            <p class="prototype-note">
+              Bản thiết kế tương tác · Ghi âm, nghe mẫu và lưu tiến độ được mô
+              phỏng.
+            </p>
+          </main>
+        </div>
+      </div>
+    </div>
+    <script src="lesson-mockup.js"></script>
+  </body>
+</html>
