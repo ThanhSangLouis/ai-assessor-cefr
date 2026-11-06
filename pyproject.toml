@@ -128,6 +128,11 @@ extend-immutable-calls = [
 "tests/e2e/test_lessons_e2e.py" = ["F811"]
 "tests/e2e/test_accounts_e2e.py" = ["F811"]
 "tests/e2e/test_profile_e2e.py" = ["F811"]
+# Thắng's adventure-art tools (f84b377) write SVG and fixture strings whole;
+# breaking them over lines would only make the drawings harder to read.
+"tools/build_adventure_terrain.py" = ["E501"]
+"tools/build_adventure_vectors.py" = ["E501"]
+"tools/check_adventure_browser.py" = ["E501"]
 "tests/e2e/test_pwa_e2e.py" = ["F811"]
 "tests/e2e/test_signup_e2e.py" = ["F811"]
 "tests/e2e/test_ui_depth_e2e.py" = ["F811"]
