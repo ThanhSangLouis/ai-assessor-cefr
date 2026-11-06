@@ -132,14 +132,82 @@
   </div>
 </section>
 
-<section class="hm-section hm-promise-section" id="principles" aria-labelledby="promise-h">
+<section class="hm-section hm-principles-section" id="principles" aria-labelledby="principles-h">
   <div class="hm-wrap">
-    <h2 id="promise-h" class="hm-h2">Ba điều chúng tôi giữ</h2>
-    <dl class="hm-promise">
-      <div><dt>Năm tiêu chí rõ ràng</dt><dd>Vốn từ, độ chính xác, trôi chảy, mạch lạc, phát âm.</dd></div>
-      <div><dt>Giảng viên quyết định</dt><dd>Máy gợi ý, người nghe lại và chốt.</dd></div>
-      <div><dt>Bản ghi là của bạn</dt><dd>Chỉ bạn và giảng viên nghe được. Tải về bất kỳ lúc nào.</dd></div>
-    </dl>
+    <h2 id="principles-h" class="hm-h2">Minh bạch về công nghệ, đặt người học làm trung tâm</h2>
+    <ul class="hm-values" aria-label="Cam kết">
+      <li>{{ icon("check") }} Đánh giá công bằng</li>
+      <li>{{ icon("check") }} Có giảng viên kiểm chứng</li>
+      <li>{{ icon("check") }} Tôn trọng sự đa dạng</li>
+      <li>{{ icon("check") }} Bảo vệ dữ liệu</li>
+    </ul>
+
+    <div class="hm-pillars">
+      {#- Each card shows its promise working; the numbers are an example, said so. -#}
+      <article class="hm-pillar" style="--c: var(--hm-brand); --c-soft: var(--hm-brand-soft)">
+        <p class="hm-pillar-tag">{{ icon("chart") }} Năng lực thực tế</p>
+        <h3>Biết rõ trình độ và kỹ năng cần cải thiện</h3>
+        <div class="hm-pillar-demo">
+          <div class="hm-demo-row"><span>Trình độ CEFR</span><span class="hm-demo-tag">Ví dụ</span></div>
+          <p class="hm-level"><b>B1</b><span>3,48 / 6,0</span></p>
+          <div class="hm-scale" aria-hidden="true">
+            {% for b in ["A1","A2","B1","B2","C1","C2"] %}<span class="{{ 'on' if b == 'B1' }}">{{ b }}</span>{% endfor %}
+          </div>
+          <ul class="hm-skills">
+            {% for name, pct, ic in [("Phát âm", 82, "mic"), ("Trôi chảy", 78, "trend"), ("Từ vựng", 75, "book-open"), ("Ngữ pháp", 72, "layers"), ("Mạch lạc", 80, "path")] %}
+            <li>{{ icon(ic) }}<span class="hm-skill-name">{{ name }}</span><span class="hm-bar" aria-hidden="true"><i style="width: {{ pct }}%"></i></span><b>{{ pct }}%</b></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </article>
+
+      <article class="hm-pillar" style="--c: var(--hm-ok); --c-soft: var(--hm-ok-soft)">
+        <p class="hm-pillar-tag">{{ icon("cap") }} Giảng viên đồng hành</p>
+        <h3>AI hỗ trợ đánh giá, giảng viên kiểm chứng</h3>
+        <div class="hm-pillar-demo">
+          <div class="hm-demo-row"><span>Quy trình đánh giá</span><span class="hm-demo-tag">AI + Giảng viên</span></div>
+          <ol class="hm-flow">
+            <li class="done">{{ icon("chip") }}<span><b>AI đánh giá</b><small>Nhận diện kỹ năng trong bài nói</small></span></li>
+            <li class="done">{{ icon("headphones") }}<span><b>Giảng viên xem xét</b><small>Nghe lại bài nói, giữ hoặc sửa band</small></span></li>
+            <li class="final">{{ icon("shield") }}<span><b>Xác nhận kết quả</b><small>Kết quả được tính sau bước này</small></span><em>B1</em></li>
+          </ol>
+        </div>
+      </article>
+
+      <article class="hm-pillar" style="--c: var(--hm-blue); --c-soft: var(--hm-blue-soft)">
+        <p class="hm-pillar-tag">{{ icon("headphones") }} Công bằng ngôn ngữ</p>
+        <h3>Tôn trọng chất giọng riêng, chú trọng giao tiếp hiệu quả</h3>
+        <div class="hm-pillar-demo">
+          <div class="hm-demo-row"><span>Phân tích bài nói</span><span class="hm-demo-tag">Ví dụ</span></div>
+          <div class="hm-player" aria-hidden="true">
+            <span class="hm-play">{{ icon("play") }}</span>
+            <span class="hm-mini-wave">{% for h in [40,70,55,90,35,65,80,45,60,30,75,50,85,40,62,48,72,38] %}<i style="--h:{{ h }}%"></i>{% endfor %}</span>
+            <span class="hm-player-time">0:14</span>
+          </div>
+          <ul class="hm-skills">
+            <li>{{ icon("chat") }}<span class="hm-skill-name">Độ rõ nghĩa</span><span class="hm-bar" aria-hidden="true"><i style="width: 96%"></i></span><b>96%</b></li>
+            <li>{{ icon("trend") }}<span class="hm-skill-name">Độ trôi chảy</span><span class="hm-bar" aria-hidden="true"><i style="width: 92%"></i></span><b>92%</b></li>
+          </ul>
+          <p class="hm-pillar-note">{{ icon("info") }} Chấm theo khả năng truyền đạt, không bắt bạn nói giống một giọng mẫu.</p>
+        </div>
+      </article>
+
+      <article class="hm-pillar" style="--c: var(--hm-violet); --c-soft: var(--hm-violet-soft)">
+        <p class="hm-pillar-tag">{{ icon("lock") }} Quyền riêng tư</p>
+        <h3>Minh bạch dữ liệu, bạn nắm quyền kiểm soát</h3>
+        <div class="hm-pillar-demo">
+          <ul class="hm-rights">
+            <li>{{ icon("download") }}<span><b>Tải dữ liệu học tập</b><small>Bản ghi và kết quả, bất kỳ lúc nào</small></span></li>
+            <li>{{ icon("users") }}<span><b>Chỉ bạn và giảng viên</b><small>Không ai khác nghe được bản ghi</small></span></li>
+            <li>{{ icon("trash") }}<span><b>Xoá dữ liệu</b><small>Báo quản trị viên trung tâm là xoá</small></span></li>
+          </ul>
+          <p class="hm-chips">
+            <span>{{ icon("check") }} Dữ liệu cá nhân</span>
+            <span>{{ icon("check") }} Không chia sẻ bên thứ ba</span>
+          </p>
+        </div>
+      </article>
+    </div>
   </div>
 </section>
 
