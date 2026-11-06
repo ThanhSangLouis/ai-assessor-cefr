@@ -1,0 +1,988 @@
+{
+  "tool": "image_gen built-in",
+  "created": "2026-11-06",
+  "forest_prompts": "adventure-forest-v3-prompts.json",
+  "assets": [
+    {
+      "band": "A2",
+      "world": "volcano",
+      "title": "Miền núi lửa",
+      "scene": "Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees.",
+      "night": "Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable.",
+      "segment": "a",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees. This is segment A for VERTICAL stacking. Create rich layered scenic ledges and varied clusters along both sides. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-9b9dd11f-3638-4fc8-888e-50d90f11f95a.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-480.webp",
+          "width": 480,
+          "bytes": 54972,
+          "sha256": "070b7cf31153b1ecb4384225105a2a7a80a10c25aeff866eb0f92327ac6e9b1e"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-768.webp",
+          "width": 768,
+          "bytes": 127878,
+          "sha256": "75976b38a3e26a73b672bab4fbc676bf839a878ce66b71d5460cca8e7c908e47"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-960.webp",
+          "width": 960,
+          "bytes": 190154,
+          "sha256": "9075fe8f7e5c661d1ac2ee344a3e183c3ca15316dac446836c5e2135213d712a"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 311690,
+          "sha256": "5b777e435a0d346ab419dcf7bd7765bd37c5ff90feb4436c856eeca2e4ddcd8a"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 529662,
+          "sha256": "bf537ebd0dbcaf9f9da2b6645e4adf696340f30788526553f090ad409d37d0db"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "A2",
+      "world": "volcano",
+      "title": "Miền núi lửa",
+      "scene": "Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees.",
+      "night": "Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable.",
+      "segment": "b",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees. This is segment B for VERTICAL stacking. Create a distinct second landscape beat: change rock formations, arrangement and clusters, keep identical ground palette, object scale, camera and illumination. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-25f77d38-f423-46b8-b211-42313bb0fc10.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-480.webp",
+          "width": 480,
+          "bytes": 53768,
+          "sha256": "762f4d85f5f0c677daf8b43792770381df2f073b93da3478787c9ba4c8fe9aa2"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-768.webp",
+          "width": 768,
+          "bytes": 124194,
+          "sha256": "275d6a381a3f8fc64fac27d6b3c8b54b724e4c7367842b4aa0ca1191386a3982"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-960.webp",
+          "width": 960,
+          "bytes": 183342,
+          "sha256": "24526d45dc5ae192792053e24b03c4a1b607ae557354428b5d5966e75c9e8efc"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 292076,
+          "sha256": "bc369e24800e8a62779491b683121afeb2127ab3454e5b37485d802b98b0efe9"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 507548,
+          "sha256": "d572da54844b309b6bbd3a922c1ac5625f7d5b8dfd54cc64d71ea4917e0898de"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "B1",
+      "world": "snow",
+      "title": "Xứ tuyết",
+      "scene": "SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava.",
+      "night": "Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue.",
+      "segment": "a",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava. This is segment A for VERTICAL stacking. Create rich layered scenic ledges and varied clusters along both sides. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-45dca795-f5bf-4e3e-b5a5-bcebabdbedcb.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-a-v3-480.webp",
+          "width": 480,
+          "bytes": 50316,
+          "sha256": "3a1e7428ca7d585eccfda9b12c2517e2d7b324d8a8502602bdf5ea3241a8fab6"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-a-v3-768.webp",
+          "width": 768,
+          "bytes": 107766,
+          "sha256": "b3c673513e56a650a5d82e4c488e896e4daec949fe64ab74c70c57b47d886dd4"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-a-v3-960.webp",
+          "width": 960,
+          "bytes": 156506,
+          "sha256": "88bbb6a2d871aca5e9f8d7ede79635698c26bb76f0e2a1ebc941d7e3a3f67092"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 246992,
+          "sha256": "95b48898347e5fa5c776d9632e09eb501cf7341cecfe36cfd8e04248895d4cb0"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 407488,
+          "sha256": "926014403d2237047be172aad55bc6a643f09d68f59f0c54126bea4f2595abf6"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "B1",
+      "world": "snow",
+      "title": "Xứ tuyết",
+      "scene": "SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava.",
+      "night": "Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue.",
+      "segment": "b",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava. This is segment B for VERTICAL stacking. Create a distinct second landscape beat: change rock formations, arrangement and clusters, keep identical ground palette, object scale, camera and illumination. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-9d633849-f8f5-4bc9-adc2-33e02987e067.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-b-v3-480.webp",
+          "width": 480,
+          "bytes": 42598,
+          "sha256": "bae95fec58236d41662e68cc8dbe8507c4501a078d9b75ba3feb8bce10e0e0c2"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-b-v3-768.webp",
+          "width": 768,
+          "bytes": 93692,
+          "sha256": "cf542945691fe58db7241342d2259d4af8c8a1f2596969c5e5bd867ce75b432c"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-b-v3-960.webp",
+          "width": 960,
+          "bytes": 138734,
+          "sha256": "e0d3c386e4ddfba594ca449c9f4b152d8ed77e244518875bbdc47f69c323aa2e"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 202178,
+          "sha256": "d68b4f2f1a49402a1659da075e0cea1c1ec7ab08aead0b678090850a0ae0cc58"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-day-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 350120,
+          "sha256": "a84f3e9164e849eb29963330d96abc0f585d7a06adaf29f1e4d2062efe579e7d"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "B2",
+      "world": "river",
+      "title": "Dòng sông ngọc",
+      "scene": "TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest.",
+      "night": "Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk.",
+      "segment": "a",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest. This is segment A for VERTICAL stacking. Create rich layered scenic ledges and varied clusters along both sides. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-10a667f1-69ff-475c-85cd-0b66ca107fca.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-a-v3-480.webp",
+          "width": 480,
+          "bytes": 57344,
+          "sha256": "7a7247b0ce3d83aa9ff48311e998cf6d27b7f82b9ad24e12fc22ddb9e649a267"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-a-v3-768.webp",
+          "width": 768,
+          "bytes": 143516,
+          "sha256": "a32bb687dc674fff5a46e11df0c23ba0e073cb8a3c136c7f91df457430d75bb9"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-a-v3-960.webp",
+          "width": 960,
+          "bytes": 217304,
+          "sha256": "13525ac7033f7cda9c1eab0354c70d62a054cca6ffbbce34c8465f0cce1066ba"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 353286,
+          "sha256": "9b6923a2c232b139e0302260aaef4e793b84f1c026d05d25b07d40eb8c223159"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 569976,
+          "sha256": "b009fe796da9eb3b9696ed25a4d2e8f0214927ccf75bca1513a811593c44badb"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "B2",
+      "world": "river",
+      "title": "Dòng sông ngọc",
+      "scene": "TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest.",
+      "night": "Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk.",
+      "segment": "b",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest. This is segment B for VERTICAL stacking. Create a distinct second landscape beat: change rock formations, arrangement and clusters, keep identical ground palette, object scale, camera and illumination. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-c1973d42-587a-410c-baa7-5d5125a18dfd.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-b-v3-480.webp",
+          "width": 480,
+          "bytes": 58336,
+          "sha256": "3a3ce05ec122b37fb79930d9ee46d0008bc4191496f21ecac9fdc3c4c913d499"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-b-v3-768.webp",
+          "width": 768,
+          "bytes": 145456,
+          "sha256": "7249b97c5d9639b28538f14a5a8c8afb9710d34aef6f6a7a16e360fcee0875d4"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-b-v3-960.webp",
+          "width": 960,
+          "bytes": 219578,
+          "sha256": "5e8e96d608d1814798154f69ba18fe6ddabc753f82a54d62ce1fbf9949ea6a3c"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 356008,
+          "sha256": "6c14fb267cda2d3c72dc9aba9b2df29c1229ef0867a87dd284dc942894a64b00"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-day-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 580254,
+          "sha256": "2c136d28894b570fcd8289a90dc8b264341554b5b7c01d0eb51142d1ad770b74"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "C1",
+      "world": "desert",
+      "title": "Sa mạc vàng",
+      "scene": "GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow.",
+      "night": "Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead.",
+      "segment": "a",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow. This is segment A for VERTICAL stacking. Create rich layered scenic ledges and varied clusters along both sides. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-2caa8d20-dbc1-4274-9c05-8e7f19f3c6dc.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-a-v3-480.webp",
+          "width": 480,
+          "bytes": 46748,
+          "sha256": "07ad7bd375a9897f82e7f3f6d1c075f3ea6008b16a5d2007902ece9e39d45577"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-a-v3-768.webp",
+          "width": 768,
+          "bytes": 105040,
+          "sha256": "a9e14aaf8e700540ef54a876677844f133426c48113f623d7ab5f43965894b10"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-a-v3-960.webp",
+          "width": 960,
+          "bytes": 159710,
+          "sha256": "201abbb4dc2c3b3d3306279016aa8e63e62a19ef688efe8501bd1849dd57a3a8"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 264630,
+          "sha256": "b65a307abdedd535a945b1066b4a09b1e04c72f465c22dc8e43a436c60916755"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 461906,
+          "sha256": "dfb16a6a5c74b028505ef7de665d47db93f7034d005ba443fabe086638e391eb"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "C1",
+      "world": "desert",
+      "title": "Sa mạc vàng",
+      "scene": "GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow.",
+      "night": "Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead.",
+      "segment": "b",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow. This is segment B for VERTICAL stacking. Create a distinct second landscape beat: change rock formations, arrangement and clusters, keep identical ground palette, object scale, camera and illumination. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-fb935f83-7bd8-47d4-b5a8-57e2aba6b731.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-b-v3-480.webp",
+          "width": 480,
+          "bytes": 49022,
+          "sha256": "af4f0280d1ff181cea15ddc3b949aed74ed957948ea0c8d64f702d9a5a0277d1"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-b-v3-768.webp",
+          "width": 768,
+          "bytes": 118556,
+          "sha256": "69988ad42e05de55dcbd00682109c9b396ecfbae4c09dd00dc98f0043786a5b5"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-b-v3-960.webp",
+          "width": 960,
+          "bytes": 169498,
+          "sha256": "b6045507953b9ee0c64c818a96fb95aa893ecde91a70c18f55928376372188e6"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 277472,
+          "sha256": "288ab4d53f0703ac24b695aea40066c39c5ef22e21d55e6e297264dca5e3d59f"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-day-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 458896,
+          "sha256": "f261150d675fcccd3e16909ba22a6c12dfcc94e3c619bf88013b7729c55185d9"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "C2",
+      "world": "flowers",
+      "title": "Đồng hoa",
+      "scene": "PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass.",
+      "night": "Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk.",
+      "segment": "a",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass. This is segment A for VERTICAL stacking. Create rich layered scenic ledges and varied clusters along both sides. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-b603916d-efc9-403d-ad02-2bcd7e8e5c69.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-480.webp",
+          "width": 480,
+          "bytes": 60990,
+          "sha256": "670e489424e4e782cb02175051d8a0a4fe965ee79a9a54bad2a3d2179b430551"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-768.webp",
+          "width": 768,
+          "bytes": 157014,
+          "sha256": "220883ccef58f3f0518187accf0b7c85348ce70a242e0559cdc6efe1817495c6"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-960.webp",
+          "width": 960,
+          "bytes": 240422,
+          "sha256": "019621e1be7dd183de429cb7aec84d11c8b17fdcaf6a1950aff349496d75d349"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 391152,
+          "sha256": "99bbdef86b1200d7c4b8a0e48d304b353037240847387148b23c3dc4b39a5a84"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 649924,
+          "sha256": "8385b1c2b3a02181b617050b85379a44fb9588f7791577cd8dc2fab944ae1649"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "C2",
+      "world": "flowers",
+      "title": "Đồng hoa",
+      "scene": "PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass.",
+      "night": "Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk.",
+      "segment": "b",
+      "mode": "day",
+      "prompt": "Use case: stylized-concept. Production landscape 3:2 game terrain tile, 1536x1024 pixels or higher native. Input forest image is STYLE reference only: match its premium cozy hand-painted 2.5D sculptural geometry, depth, crisp detail, elevated orthographic camera and clear central corridor, but replace ecology and palette completely with this world: PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass. This is segment B for VERTICAL stacking. Create a distinct second landscape beat: change rock formations, arrangement and clusters, keep identical ground palette, object scale, camera and illumination. Edge-to-edge terrain, no horizon or sky. Central 48% stays calm and open from top to bottom for lesson nodes. Several small landscape beats down this tile, visible top surfaces and shaded cliff faces, soft upper-left daylight, rich ambient occlusion. Match compatible central ground tones at top/bottom for vertical continuation. No road or painted trail, bridge across center, people, mascot, buildings, text, UI, borders, faded edges, blur or fog. One uninterrupted environment illustration, not mockup.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-af021e76-d0b7-483e-9bf2-19ead9f5007b.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-480.webp",
+          "width": 480,
+          "bytes": 62040,
+          "sha256": "404118845353e4a9d86b480afee07dc11c88a0a9a54ca7e5645b72ae3ccbec8d"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-768.webp",
+          "width": 768,
+          "bytes": 161226,
+          "sha256": "367392eda7f34aaabd616290afd11042cfd42602e77e9e44a78b5d2286fb88fd"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-960.webp",
+          "width": 960,
+          "bytes": 242484,
+          "sha256": "cb3c77dea7c1c5358cd57980f0a4dbc673deb096c8a743ff4b7394e60c2c4a9b"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 405946,
+          "sha256": "88a81bee22f2de3b6de48630e05bf5ec5bb59d93e5c9163884e9c3ba2587befc"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 675280,
+          "sha256": "9e6e4a411af42e11c2bdb1a3589a253f7a3578fe4810ddff7ce1951b6c0f92a6"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/forest-day-a-v3-1536.webp",
+      "reference_role": "style reference"
+    },
+    {
+      "band": "A2",
+      "world": "volcano",
+      "title": "Miền núi lửa",
+      "scene": "Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees.",
+      "night": "Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable.",
+      "segment": "a",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied volcanic terrain image. Create its matching NIGHT version, preserve exactly all terrain positions, clear central corridor, elevated camera, 3:2 framing and crisp 2.5D painted detail. Change only lighting and palette: Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable. No global black veil, no uniform dimming. Rich readable true nighttime illumination. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-8d46d3aa-92b5-480c-ac5a-fbd9dda7beba.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-a-v3-480.webp",
+          "width": 480,
+          "bytes": 48526,
+          "sha256": "afd3a861340f439b0b88b54e58f4cefada8d77fa5941210061b97ba07b095a9d"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-a-v3-768.webp",
+          "width": 768,
+          "bytes": 119090,
+          "sha256": "d724b18ddd6a38757da7446db17e2451630a3f02e60a3dcdff8922af96c11b19"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-a-v3-960.webp",
+          "width": 960,
+          "bytes": 179116,
+          "sha256": "3f6d84af9fa32a4b1d6b5e39c0f96e0fff7d542e0a04f36e46ec4e2033b32c93"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 280152,
+          "sha256": "a3f84c4f993c2899612e4d3c1680188c65f4a358a3034b003c2ef8cd3fbf493d"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 471958,
+          "sha256": "05ac50b60e967b5057e052f9bfd4aaa3e40f4ceeb3953c32ed504d18aa446b20"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/volcano-day-a-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "A2",
+      "world": "volcano",
+      "title": "Miền núi lửa",
+      "scene": "Burnt red and terracotta VOLCANIC WORLD. Rounded dark basalt ledges, red stone shelves and amber crystals ONLY along side margins, slim glowing orange lava streams at the outer edges. Central 48% is SAFE dry pale peach volcanic stone. No green forest, grass, snow or trees.",
+      "night": "Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable.",
+      "segment": "b",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied volcanic terrain image. Create its matching NIGHT version, preserve exactly all terrain positions, clear central corridor, elevated camera, 3:2 framing and crisp 2.5D painted detail. Change only lighting and palette: Deep burgundy and charcoal basalt, dark red cliffs, glowing orange lava providing warm local light along edges, ember flecks, subtle blue moonlight on stone. Center safe dry muted plum-red stone, calm and readable. No global black veil, no uniform dimming. Rich readable true nighttime illumination. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-df7dec6c-8857-4e28-a298-44b8fc267f3d.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-b-v3-480.webp",
+          "width": 480,
+          "bytes": 45326,
+          "sha256": "97131a9665a80fdc727655c46a5499ce39ba364cb871bb754b372f356373b581"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-b-v3-768.webp",
+          "width": 768,
+          "bytes": 110598,
+          "sha256": "a65fcc2104fcde97407c633246aa7cc982d17720cb951380982a1b40710de0d8"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-b-v3-960.webp",
+          "width": 960,
+          "bytes": 165602,
+          "sha256": "ee38d1df4ed0088238b519dd1d4394e936d1f0222f550c78efcfc1617e2d5ff3"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 258426,
+          "sha256": "15f35177075190e090ae5a3d5bcd8834aed3127c053f5bbad46f561306df3ee0"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/volcano-night-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 430438,
+          "sha256": "1190ec060b53259bdf7eee9aa5bb0d3f5fcca2a0c5f92e61a9892baf88df88ad"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/volcano-day-b-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "B1",
+      "world": "snow",
+      "title": "Xứ tuyết",
+      "scene": "SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava.",
+      "night": "Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue.",
+      "segment": "a",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied snow terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-de4e0bbb-853c-4637-8674-669d16b1ae93.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-a-v3-480.webp",
+          "width": 480,
+          "bytes": 53860,
+          "sha256": "bf3d28f5e7e6ab184e77b0f1207a36e29e1c638b0e65fd6b30978530abef6b75"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-a-v3-768.webp",
+          "width": 768,
+          "bytes": 122248,
+          "sha256": "e16dd4838a59fca848f4b1aa0ff3a121efca3b749eb4cbd634ed960b2aabe1f1"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-a-v3-960.webp",
+          "width": 960,
+          "bytes": 182816,
+          "sha256": "b5af0fcbf25cb24d1fb0fc25ab8358a67641c2bc39c305b87bfd1a384a3cb38b"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 292368,
+          "sha256": "5501687683fdab8f9d3d2389d0e1dd6c2463edbd74808993514d67457a51d299"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 475858,
+          "sha256": "043faa955e227eb17f608a8095bdd2397e2989db5d5749e3bd18ee6fb27309f0"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/snow-day-a-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "B1",
+      "world": "snow",
+      "title": "Xứ tuyết",
+      "scene": "SNOW WORLD, white and icy powder blue. Sculptural ice ledges, blue glaciers, rounded snowy boulders and occasional small frosted firs ONLY at margins. Central 48% is pale blue-white packed snow. No green grass or lava.",
+      "night": "Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue.",
+      "segment": "b",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied snow terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Silver-blue snowy night, indigo-blue ice shadows, cool moonlight rim highlights, subtle aurora-like reflected teal/lilac light on edge ice, a few delicate snow sparkles. No sky or painted aurora overhead; central packed snow is muted silver blue. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-28d36a1d-b9c6-42e6-96af-a33bc785a584.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-b-v3-480.webp",
+          "width": 480,
+          "bytes": 48158,
+          "sha256": "48b0ca332dc7b9ee0296de0168fd7ff3ee18ac7e139c8dd451e16c0e62ee0c09"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-b-v3-768.webp",
+          "width": 768,
+          "bytes": 113340,
+          "sha256": "eb57bd60915e1d13bedab5716288fda3657610e3e5f4ec3795af002372e15da0"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-b-v3-960.webp",
+          "width": 960,
+          "bytes": 167248,
+          "sha256": "c1fd411f74e074179fde876b1afdf83aaa78cdfbbab19e8d140ffb5a26b26159"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 261956,
+          "sha256": "4c08ec3dedb05741bf45bc63520982646f391fe8e8ccd2f9638abb7231453ed9"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/snow-night-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 441100,
+          "sha256": "455f4aa4180393c0dd513e69e0332a2b320990a2abc0c481295d17c27df58c87"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/snow-day-b-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "B2",
+      "world": "river",
+      "title": "Dòng sông ngọc",
+      "scene": "TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest.",
+      "night": "Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk.",
+      "segment": "a",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied river terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-b51c1113-baf7-439d-9209-44b34badb7ed.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-a-v3-480.webp",
+          "width": 480,
+          "bytes": 54434,
+          "sha256": "f79505e75158d0fcd1329746fc78fa738060a9b7a8a862266f9995711a77c283"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-a-v3-768.webp",
+          "width": 768,
+          "bytes": 135586,
+          "sha256": "ac17ea515ee9a6ddea8fc0a26bf7d33da042426789de1997f6c590e4ebb65aa2"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-a-v3-960.webp",
+          "width": 960,
+          "bytes": 203516,
+          "sha256": "366df2a406c5cea05a2db4d80bf4b46be83e1181c765426c54734a0c6dc2f281"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 315716,
+          "sha256": "1ad4210c587fb42cf12e9ac3c42e2b6b793da3fd3f8ed124d644f4b8b0e11490"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 514074,
+          "sha256": "5e867a2f3721c5904a1bafff8f64032fb632afde9ff123235f4a1b1dd3de950d"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/river-day-a-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "B2",
+      "world": "river",
+      "title": "Dòng sông ngọc",
+      "scene": "TURQUOISE RIVER WORLD. Clear aqua river and little cascades ONLY along outer margins, sculpted pale stone banks, smooth rocks, reeds and pale willow fronds. Central 48% is dry quiet pale mint riverbank, never water. Strong turquoise identity, not dense forest.",
+      "night": "Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk.",
+      "segment": "b",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied river terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Deep turquoise river at night with silver moonlight reflections, midnight teal water, soft luminous aqua edge ripples, indigo bank shadows and moonlit pale stone. Central dry bank is quiet muted teal. No sky or moon disk. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-ed8de0b6-6720-40ff-a68c-5bd2d4bac61a.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-b-v3-480.webp",
+          "width": 480,
+          "bytes": 56302,
+          "sha256": "688faf0020e937515fb51af4df0efd6dddbbabb0f94b1a4015376e5fa94ea508"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-b-v3-768.webp",
+          "width": 768,
+          "bytes": 145292,
+          "sha256": "f58e3071c4d75fd95dc1a8516e47096d662b493c9a3d11900854b9735de1cfe5"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-b-v3-960.webp",
+          "width": 960,
+          "bytes": 222840,
+          "sha256": "019f2d6aa882c5695510a0a2045f63d846fcb2edb2095de22d9bc9b9f13ef63b"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 341576,
+          "sha256": "237240f0f75fa442fa85ebc7f8b1fdce8ecba0fd99b996c31da4f5fb1782262c"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/river-night-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 553066,
+          "sha256": "5a2deffed9ca00e9de1cbed326057919d95e935d4375f65854ec9a827995479f"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/river-day-b-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "C1",
+      "world": "desert",
+      "title": "Sa mạc vàng",
+      "scene": "GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow.",
+      "night": "Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead.",
+      "segment": "a",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied desert terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-b9b5c027-4e79-43a7-a695-01fe30b5d3a7.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-a-v3-480.webp",
+          "width": 480,
+          "bytes": 49324,
+          "sha256": "ea52415d7d7ce0ae2b05b04d8c972a913714b1a688ae1bafd4320da1b682966f"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-a-v3-768.webp",
+          "width": 768,
+          "bytes": 110406,
+          "sha256": "6da4b1f8f3819336b49bd803c610e6df2a893748ca21c0f135fe78dfa45a0521"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-a-v3-960.webp",
+          "width": 960,
+          "bytes": 163106,
+          "sha256": "48aa2662178b2bba1a4ee9cadd9b772167892d41e7d6cea70eb9da788994f161"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 265714,
+          "sha256": "382c0a92876f9c9f1ee7851bf5ca50fb3eca57e27e87f50b1961c6f43aa32162"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 449176,
+          "sha256": "77aa4926fc24938d5780a07871fe6d7e5d51add3ed0917b7282eaf634727e3b1"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/desert-day-a-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "C1",
+      "world": "desert",
+      "title": "Sa mạc vàng",
+      "scene": "GOLDEN SAND DESERT. Honey-yellow sculpted dunes, rounded wind carved sandstone canyon terraces, small rock arches and sparse succulents ONLY along margins. Central 48% is quiet pale warm sand. No grass, forest or snow.",
+      "night": "Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead.",
+      "segment": "b",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied desert terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Moonlit desert, dunes in blue-violet and dusty lavender, pale golden moonlight rims on sand, deep cool indigo rock shadows, softly lit wind-rippled sand. Center smooth muted purple-blue sand. No sky, moon disk or stars overhead. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-ad00165d-81e2-456a-a887-58558aaca7ef.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-b-v3-480.webp",
+          "width": 480,
+          "bytes": 49984,
+          "sha256": "4cadba184fd2b7e3572e3415a12510e4373cd585c538a84b24b4d6b2ebdd245e"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-b-v3-768.webp",
+          "width": 768,
+          "bytes": 111460,
+          "sha256": "5d30d9d97e840195fdfeef3e9c3b0e54c450c5472f3896bf5f11438aa4564d20"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-b-v3-960.webp",
+          "width": 960,
+          "bytes": 161006,
+          "sha256": "a3220e8784323ba0bbe43f9c9beb8e88a987dd14a71d21a83d6b1c44678060f3"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 258220,
+          "sha256": "c20197d86787673982f199edf8169a3fa59457e73ee980e67cb5c2b855fe9d93"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/desert-night-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 406878,
+          "sha256": "ca2062a49afa2325f8071f0e2af392bc02e3a5ce710d2db1a194f42d23dbdbdd"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/desert-day-b-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "C2",
+      "world": "flowers",
+      "title": "Đồng hoa",
+      "scene": "PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass.",
+      "night": "Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk.",
+      "segment": "a",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied flowers terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-44f1bc03-6430-4d86-9cd9-d86281f36f8e.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-a-v3-480.webp",
+          "width": 480,
+          "bytes": 58958,
+          "sha256": "977899f6751d602f5db93e1052a17d0e02bb9ddb06fed5a1bb3185e3f2486e63"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-a-v3-768.webp",
+          "width": 768,
+          "bytes": 154562,
+          "sha256": "84e7656a3ee11e39d197758e300e5d562aeba56363c77689dbb351c32df27132"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-a-v3-960.webp",
+          "width": 960,
+          "bytes": 233722,
+          "sha256": "8feb55d4c33601041681ba44796c9dfc6533de05191d704df4a3eb04a018217d"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-a-v3-1280.webp",
+          "width": 1280,
+          "bytes": 377370,
+          "sha256": "bee2ea161e7a9b0eac440b9c8411f572ed82a037eca8d3e16b1031a378fc21aa"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-a-v3-1536.webp",
+          "width": 1536,
+          "bytes": 584992,
+          "sha256": "3ac6b034e0581f9687a9d6a949c58fdd90ab76e5dd6f83f3872f1faf40470851"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/flowers-day-a-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    },
+    {
+      "band": "C2",
+      "world": "flowers",
+      "title": "Đồng hoa",
+      "scene": "PINK LILAC FLOWER MEADOW. Layered banks of lavender, pink cosmos, violet lupins and flowering shrubs, soft mauve rock terraces ONLY along outer margins. Central 48% is quiet pale rosy mauve meadow with tiny sparse petals, NOT green grass.",
+      "night": "Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk.",
+      "segment": "b",
+      "mode": "night",
+      "prompt": "Use case: lighting-weather. Edit target: supplied flowers terrain. Create matching NIGHT version, preserve exact terrain positions, central corridor, elevated camera, 3:2 framing, crisp 2.5D painted detail. Change lighting and palette only: Pink-purple flower meadow under cool silvery moonlight, deep violet mauve flower banks, gentle lilac rim lighting, small warm fireflies along edges, dreamy readable night. Center quiet muted plum-lilac ground. No sky or moon disk. Keep rich readable true nighttime lighting, no black overlay or uniform dimming. No sky, moon disk, road, characters, text, UI, fog or blur.",
+      "native_image": "/home/thanglvc/.codex/generated_images/01a1ae68-a658-74c2-8dbb-c0ad008b92a8/exec-f9d98fbe-3708-483d-86c7-61555195662c.png",
+      "native_size": [
+        1536,
+        1024
+      ],
+      "exports": [
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-b-v3-480.webp",
+          "width": 480,
+          "bytes": 61548,
+          "sha256": "0f8cc9a3a9eaf082ddfebecf947f30d7c5f872937b0ce12fd0dd959d17e4e9d3"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-b-v3-768.webp",
+          "width": 768,
+          "bytes": 159752,
+          "sha256": "735bba78a27e5ae9b13a33e18457865647c4d323da4b1669d92a3f9e0bb28813"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-b-v3-960.webp",
+          "width": 960,
+          "bytes": 239344,
+          "sha256": "887a56d89ab065aff8283f221c1142f2a6e2c0deb6875f5470339b3243a7f339"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-b-v3-1280.webp",
+          "width": 1280,
+          "bytes": 392560,
+          "sha256": "35b98656a9b45b981060115c1a842f6c341518aa6e57722ab53787e6058485af"
+        },
+        {
+          "file": "src/aicefr/api/static/art/adventure/flowers-night-b-v3-1536.webp",
+          "width": 1536,
+          "bytes": 597310,
+          "sha256": "4df3f2150dcc7c32df95b8be53f2cb20c478e549a93f5212fa1ad3d0e410c2c9"
+        }
+      ],
+      "reference_asset": "src/aicefr/api/static/art/adventure/flowers-day-b-v3-1536.webp",
+      "reference_role": "lighting edit target; original generated PNG used"
+    }
+  ],
+  "native_resolution_limit": "Native artwork is 1536x1024; exports are downsampled, never upscaled. Very wide desktop displays at DPR 2 can exceed native source density."
+}

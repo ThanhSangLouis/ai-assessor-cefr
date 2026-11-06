@@ -1,0 +1,530 @@
+[
+  {
+    "name": "arch-vines",
+    "file": "arch-vines.svg",
+    "kind": "vector",
+    "bytes": 596
+  },
+  {
+    "name": "birdhouse",
+    "file": "birdhouse.svg",
+    "kind": "vector",
+    "bytes": 272
+  },
+  {
+    "name": "book-stack",
+    "file": "book-stack.svg",
+    "kind": "vector",
+    "bytes": 447
+  },
+  {
+    "name": "bush-flowering",
+    "file": "bush-flowering.svg",
+    "kind": "vector",
+    "bytes": 750
+  },
+  {
+    "name": "bush-round",
+    "file": "bush-round.svg",
+    "kind": "vector",
+    "bytes": 187
+  },
+  {
+    "name": "butterflies",
+    "file": "butterflies.svg",
+    "kind": "vector",
+    "bytes": 546
+  },
+  {
+    "name": "chest",
+    "file": "chest.svg",
+    "kind": "vector",
+    "bytes": 278
+  },
+  {
+    "name": "cloud-small",
+    "file": "cloud-small.svg",
+    "kind": "vector",
+    "bytes": 171
+  },
+  {
+    "name": "cloud-wide",
+    "file": "cloud-wide.svg",
+    "kind": "vector",
+    "bytes": 206
+  },
+  {
+    "name": "compass",
+    "file": "compass.svg",
+    "kind": "vector",
+    "bytes": 260
+  },
+  {
+    "name": "fence",
+    "file": "fence.svg",
+    "kind": "vector",
+    "bytes": 466
+  },
+  {
+    "name": "fern",
+    "file": "fern.svg",
+    "kind": "vector",
+    "bytes": 1246
+  },
+  {
+    "name": "finish-flag",
+    "file": "finish-flag.svg",
+    "kind": "vector",
+    "bytes": 560
+  },
+  {
+    "name": "flag-rest",
+    "file": "flag-rest.svg",
+    "kind": "vector",
+    "bytes": 261
+  },
+  {
+    "name": "flowers-bells",
+    "file": "flowers-bells.svg",
+    "kind": "vector",
+    "bytes": 468
+  },
+  {
+    "name": "flowers-blue",
+    "file": "flowers-blue.svg",
+    "kind": "vector",
+    "bytes": 390
+  },
+  {
+    "name": "flowers-orange",
+    "file": "flowers-orange.svg",
+    "kind": "vector",
+    "bytes": 390
+  },
+  {
+    "name": "flowers-white",
+    "file": "flowers-white.svg",
+    "kind": "vector",
+    "bytes": 386
+  },
+  {
+    "name": "forest-books",
+    "file": "forest-books.png",
+    "kind": "landmark",
+    "bytes": 800573,
+    "width": 1568,
+    "height": 1003
+  },
+  {
+    "name": "forest-treehouse",
+    "file": "forest-treehouse.png",
+    "kind": "landmark",
+    "bytes": 1205587,
+    "width": 1312,
+    "height": 1199
+  },
+  {
+    "name": "garden-bench",
+    "file": "garden-bench.png",
+    "kind": "landmark",
+    "bytes": 1235584,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "garden-gate",
+    "file": "garden-gate.png",
+    "kind": "landmark",
+    "bytes": 1286679,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "grass-tuft",
+    "file": "grass-tuft.svg",
+    "kind": "vector",
+    "bytes": 491
+  },
+  {
+    "name": "hills-forest",
+    "file": "hills-forest.svg",
+    "kind": "vector",
+    "bytes": 188
+  },
+  {
+    "name": "hills-meadow",
+    "file": "hills-meadow.svg",
+    "kind": "vector",
+    "bytes": 187
+  },
+  {
+    "name": "lake-boathouse",
+    "file": "lake-boathouse.png",
+    "kind": "landmark",
+    "bytes": 1231753,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "lake-pier",
+    "file": "lake-pier.png",
+    "kind": "landmark",
+    "bytes": 1270168,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "lake-ripples",
+    "file": "lake-ripples.svg",
+    "kind": "vector",
+    "bytes": 236
+  },
+  {
+    "name": "lantern",
+    "file": "lantern.svg",
+    "kind": "vector",
+    "bytes": 273
+  },
+  {
+    "name": "lily-pads",
+    "file": "lily-pads.svg",
+    "kind": "vector",
+    "bytes": 277
+  },
+  {
+    "name": "log",
+    "file": "log.svg",
+    "kind": "vector",
+    "bytes": 279
+  },
+  {
+    "name": "milestone",
+    "file": "milestone.svg",
+    "kind": "vector",
+    "bytes": 189
+  },
+  {
+    "name": "mountains",
+    "file": "mountains.svg",
+    "kind": "vector",
+    "bytes": 200
+  },
+  {
+    "name": "mushrooms",
+    "file": "mushrooms.svg",
+    "kind": "vector",
+    "bytes": 475
+  },
+  {
+    "name": "music-bells",
+    "file": "music-bells.png",
+    "kind": "landmark",
+    "bytes": 1148371,
+    "width": 1402,
+    "height": 1122
+  },
+  {
+    "name": "music-notes",
+    "file": "music-notes.svg",
+    "kind": "vector",
+    "bytes": 284
+  },
+  {
+    "name": "music-stage",
+    "file": "music-stage.png",
+    "kind": "landmark",
+    "bytes": 1286865,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "reeds",
+    "file": "reeds.svg",
+    "kind": "vector",
+    "bytes": 629
+  },
+  {
+    "name": "rocks-small",
+    "file": "rocks-small.svg",
+    "kind": "vector",
+    "bytes": 277
+  },
+  {
+    "name": "rocks-tall",
+    "file": "rocks-tall.svg",
+    "kind": "vector",
+    "bytes": 188
+  },
+  {
+    "name": "signpost",
+    "file": "signpost.svg",
+    "kind": "vector",
+    "bytes": 188
+  },
+  {
+    "name": "stepping-stones",
+    "file": "stepping-stones.svg",
+    "kind": "vector",
+    "bytes": 255
+  },
+  {
+    "name": "stump",
+    "file": "stump.svg",
+    "kind": "vector",
+    "bytes": 258
+  },
+  {
+    "name": "summit-camp",
+    "file": "summit-camp.png",
+    "kind": "landmark",
+    "bytes": 1137130,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "summit-finish",
+    "file": "summit-finish.png",
+    "kind": "landmark",
+    "bytes": 750140,
+    "width": 1362,
+    "height": 1155
+  },
+  {
+    "name": "tree-orchard",
+    "file": "tree-orchard.svg",
+    "kind": "vector",
+    "bytes": 440
+  },
+  {
+    "name": "tree-pair",
+    "file": "tree-pair.svg",
+    "kind": "vector",
+    "bytes": 473
+  },
+  {
+    "name": "tree-pine",
+    "file": "tree-pine.svg",
+    "kind": "vector",
+    "bytes": 257
+  },
+  {
+    "name": "tree-round",
+    "file": "tree-round.svg",
+    "kind": "vector",
+    "bytes": 300
+  },
+  {
+    "name": "tree-tall",
+    "file": "tree-tall.svg",
+    "kind": "vector",
+    "bytes": 251
+  },
+  {
+    "name": "tree-willow",
+    "file": "tree-willow.svg",
+    "kind": "vector",
+    "bytes": 748
+  },
+  {
+    "name": "trophy",
+    "file": "trophy.svg",
+    "kind": "vector",
+    "bytes": 297
+  },
+  {
+    "name": "valley-bridge",
+    "file": "valley-bridge.png",
+    "kind": "landmark",
+    "bytes": 707287,
+    "width": 1774,
+    "height": 887
+  },
+  {
+    "name": "valley-workshop",
+    "file": "valley-workshop.png",
+    "kind": "landmark",
+    "bytes": 1282001,
+    "width": 1536,
+    "height": 1024
+  },
+  {
+    "name": "waterfall",
+    "file": "waterfall.svg",
+    "kind": "vector",
+    "bytes": 290
+  },
+  {
+    "name": "well",
+    "file": "well.svg",
+    "kind": "vector",
+    "bytes": 289
+  },
+  {
+    "name": "terrain-forest",
+    "file": "terrain-forest.svg",
+    "kind": "vector-terrain",
+    "bytes": 16019
+  },
+  {
+    "name": "terrain-garden",
+    "file": "terrain-garden.svg",
+    "kind": "vector-terrain",
+    "bytes": 16324
+  },
+  {
+    "name": "terrain-lake",
+    "file": "terrain-lake.svg",
+    "kind": "vector-terrain",
+    "bytes": 10273
+  },
+  {
+    "name": "terrain-music",
+    "file": "terrain-music.svg",
+    "kind": "vector-terrain",
+    "bytes": 14861
+  },
+  {
+    "name": "terrain-summit",
+    "file": "terrain-summit.svg",
+    "kind": "vector-terrain",
+    "bytes": 12262
+  },
+  {
+    "name": "terrain-valley",
+    "file": "terrain-valley.svg",
+    "kind": "vector-terrain",
+    "bytes": 11439
+  },
+  {
+    "name": "foreground-forest",
+    "file": "foreground-forest.svg",
+    "kind": "vector-terrain",
+    "bytes": 1576
+  },
+  {
+    "name": "foreground-garden",
+    "file": "foreground-garden.svg",
+    "kind": "vector-terrain",
+    "bytes": 1193
+  },
+  {
+    "name": "foreground-lake",
+    "file": "foreground-lake.svg",
+    "kind": "vector-terrain",
+    "bytes": 1193
+  },
+  {
+    "name": "foreground-music",
+    "file": "foreground-music.svg",
+    "kind": "vector-terrain",
+    "bytes": 1193
+  },
+  {
+    "name": "foreground-summit",
+    "file": "foreground-summit.svg",
+    "kind": "vector-terrain",
+    "bytes": 949
+  },
+  {
+    "name": "foreground-valley",
+    "file": "foreground-valley.svg",
+    "kind": "vector-terrain",
+    "bytes": 1193
+  },
+  {
+    "name": "landscape-forest-v1",
+    "file": "landscape-forest-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 325576,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-garden-v1",
+    "file": "landscape-garden-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 279318,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-lake-v1",
+    "file": "landscape-lake-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 311402,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-music-v1",
+    "file": "landscape-music-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 331696,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-summit-v1",
+    "file": "landscape-summit-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 248106,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-valley-v1",
+    "file": "landscape-valley-v1.webp",
+    "kind": "generated-landscape-2.5d",
+    "bytes": 335334,
+    "width": 1024,
+    "height": 1536
+  },
+  {
+    "name": "landscape-desert-v2",
+    "file": "landscape-desert-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 158120,
+    "width": 724,
+    "height": 2172
+  },
+  {
+    "name": "landscape-flowers-v2",
+    "file": "landscape-flowers-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 322028,
+    "width": 724,
+    "height": 2172
+  },
+  {
+    "name": "landscape-forest-v2",
+    "file": "landscape-forest-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 420220,
+    "width": 724,
+    "height": 2172
+  },
+  {
+    "name": "landscape-river-v2",
+    "file": "landscape-river-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 277284,
+    "width": 724,
+    "height": 2172
+  },
+  {
+    "name": "landscape-snow-v2",
+    "file": "landscape-snow-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 140334,
+    "width": 724,
+    "height": 2172
+  },
+  {
+    "name": "landscape-volcano-v2",
+    "file": "landscape-volcano-v2.webp",
+    "kind": "generated-world-strip-2.5d",
+    "bytes": 158214,
+    "width": 724,
+    "height": 2172
+  }
+]

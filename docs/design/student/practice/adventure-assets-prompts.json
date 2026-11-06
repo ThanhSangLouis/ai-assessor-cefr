@@ -1,0 +1,55 @@
+{
+  "tool": "built-in imagegen",
+  "transparent_background": true,
+  "prompt": "Production game scenery asset for SpeakUp educational website, ONE isolated landscape prop only: [subject]. Strictly FLAT 2D vector-like storybook illustration matching an elegant website roadmap mockup: simple geometric silhouettes, clean smooth edges, restrained fine outlines only where necessary, matte solid fills, no gradients, no glossy lighting, no rendered 3D, no realistic textures, no perspective-heavy isometric scene. Consistent palette sage #94B889, warm wood #C59B68, pale cream #FFF7E5, orange #F6A14B, teal #A9D5D9. Delicate organic detail, readable at 150-200px. Compact composition centered with generous safe margin. Truly transparent background outside the prop; minimal small flat grounding grass or water patch allowed, no rectangular background, no text, no labels, no mascot, no lesson nodes, no UI, no ground shadow blur. This will be placed BESIDE a learning path, not across it. Asset should feel like a friendly sophisticated 2D adventure garden world.",
+  "subjects": [
+    {
+      "name": "garden-gate",
+      "subject": "a low charming wooden garden entrance arch with small climbing leaves and three white flowers, no lettering, front elevation"
+    },
+    {
+      "name": "garden-bench",
+      "subject": "a little pale wood garden bench with a terracotta pot of orange flowers beside it, front elevation"
+    },
+    {
+      "name": "valley-bridge",
+      "subject": "a small curved wooden footbridge with short railing over a tiny patch of light teal creek, simple front elevation"
+    },
+    {
+      "name": "valley-workshop",
+      "subject": "a small cheerful open-air maker kiosk with sage green canopy, orange gear emblem, tiny workbench, no text, front elevation"
+    },
+    {
+      "name": "forest-treehouse",
+      "subject": "a charming tiny wooden treehouse on a stout tree trunk, rounded sage foliage, short ladder, no lettering, front elevation"
+    },
+    {
+      "name": "forest-books",
+      "subject": "a small forest reading nook: low wooden bench, three teal and orange books, two orange mushrooms and a fern, front elevation"
+    },
+    {
+      "name": "music-stage",
+      "subject": "a small empty open air wooden music stage with sage green triangular roof and three golden hanging lights, small microphone stand, front elevation"
+    },
+    {
+      "name": "music-bells",
+      "subject": "a cluster of five cream bell-shaped flowers and two small musical-note shaped wooden ornaments on leafy stems, decorative garden patch"
+    },
+    {
+      "name": "lake-pier",
+      "subject": "a small wooden lakeside pier projecting diagonally a little into a compact light teal water patch with gentle white ripples, flat illustrated elevation"
+    },
+    {
+      "name": "lake-boathouse",
+      "subject": "a tiny sage blue lakeside hut with a small orange lifebuoy and short wooden jetty, front elevation"
+    },
+    {
+      "name": "summit-finish",
+      "subject": "a small wooden finish arch decorated with leaves, below it a modest golden trophy on two stone steps, no text or lettering, front elevation"
+    },
+    {
+      "name": "summit-camp",
+      "subject": "a compact mountain rest camp with one small cream and orange triangular tent, two grey stones and a tiny pine tree, front elevation"
+    }
+  ]
+}

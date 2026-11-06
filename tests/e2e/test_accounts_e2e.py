@@ -107,6 +107,7 @@ def test_a_teacher_decision_is_a_count_until_the_student_opens_their_list(
     login(student, live_server, learner, "/")
     student.goto("/")
     expect(student.locator(".task")).not_to_have_count(0)
+    student.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     student.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
     student.get_by_role("button", name="Nộp bài và chấm").click()
     student.wait_for_url(re.compile(r"/report/[0-9a-f]+$"), timeout=30_000)
@@ -139,17 +140,19 @@ def test_thirty_seconds_of_preparation_then_the_answer_is_recorded(context, live
     page = context.new_page()
     login(page, live_server, live_server.account(), "/")
     page.goto("/")
+    # D093: choose the task first, then prepare and speak.
+    page.get_by_role("button", name="Nói về đề này").click()
     prep = page.locator("#prep")
     expect(prep).to_be_visible()
     expect(page.locator("#prep-left")).to_have_text("30")
 
-    page.get_by_role("button", name="Bắt đầu chuẩn bị").click()
+    page.get_by_role("button", name="Chuẩn bị", exact=True).click()
     wait_until(page, "Number(document.getElementById('prep-left').textContent) < 30")
     expect(prep).to_have_attribute("data-state", "running")
     page.get_by_role("button", name="Huỷ").click()
     expect(page.locator("#prep-left")).to_have_text("30")
 
-    page.get_by_role("button", name="Bắt đầu chuẩn bị").click()
+    page.get_by_role("button", name="Chuẩn bị", exact=True).click()
     page.get_by_role("button", name="Nói ngay").click()
     expect(page.locator("#rec")).to_have_attribute("data-state", "recording")
     expect(prep).to_have_attribute("data-state", "ready")

@@ -1,0 +1,55 @@
+{
+  "tool": "image_gen built-in",
+  "prompt": "Create a SINGLE VERY LONG VERTICAL 2.5D GAME ENVIRONMENT BACKGROUND STRIP, aspect ratio 1:4, ideally 1024 wide by 4096 tall. NOT a mockup, not a collage. One uninterrupted landscape viewed with an elevated orthographic camera, premium polished hand-painted casual adventure game art, sculpted rounded geometry, visible top surfaces AND shaded cliff side faces, rich ambient occlusion, soft upper-left sunlight, atmospheric perspective. Fill the entire image edge to edge, NO horizon and NO sky, no framing or white canvas. The vertical center 46 percent must stay CLEAR and calm from top to bottom for lesson UI overlays: no path line, no stepping stones, no road, no buildings or water in central lane. Put scenery along outer left/right 27 percent margins. Show many evolving landscape beats down the very long strip: different elevations, different clusters, small scale far details and larger close forms, consistent single world. Keep art detail elegant and not noisy. The same world continues beyond both ends; compatible top/bottom central ground color for further vertical repetition. No text, no typography, no HUD, no UI, no people, no mascot. Match this shared polished 2.5D illustration style across all worlds, but commit to the following world's palette, materials and ecology. ",
+  "export": "WebP quality 88, original pixel dimensions, no crop or resize",
+  "regions": [
+    {
+      "band": "A1",
+      "name": "forest",
+      "title": "Rừng xanh",
+      "color": "#dcebc0",
+      "scene": "FOREST WORLD. Dominant rich emerald and fresh leaf GREEN. Ancient sculptural trees, lush layered foliage, moss-covered sandstone shelves, ferns, tiny mushrooms, sunlit grassy clearings. Cool distant canopy, warm sunlight. The ground in the central lane is pale sage grass. No lava, no snow, no desert.",
+      "file": "landscape-forest-v2.webp"
+    },
+    {
+      "band": "A2",
+      "name": "volcano",
+      "title": "Miền núi lửa",
+      "color": "#f4c2a0",
+      "scene": "VOLCANIC WORLD. Dominant burnt RED, glowing ORANGE and warm terracotta, absolutely NO green forest. Rounded dark basalt cliffs with warm red rock faces, thin glowing orange lava streams along outer margins, distant small volcanic cones along sides, amber mineral crystals, warm hazy light. The central clear lane is SAFE dry pale peach volcanic stone, NOT lava. Beautiful inviting magical adventure, not scary, no characters.",
+      "file": "landscape-volcano-v2.webp"
+    },
+    {
+      "band": "B1",
+      "name": "snow",
+      "title": "Xứ tuyết",
+      "color": "#e7f1fa",
+      "scene": "SNOW WORLD. Dominant snowy WHITE, icy powder BLUE and soft periwinkle shadows. Layered snowy ledges, sculptural icy cliffs, blue glaciers, small snow-covered fir trees confined to margins, icy crystals and soft powder snow. The central empty lane is softly textured pale blue-white packed snow. Bright winter light, no green grass, no volcano.",
+      "file": "landscape-snow-v2.webp"
+    },
+    {
+      "band": "B2",
+      "name": "river",
+      "title": "Dòng sông ngọc",
+      "color": "#c5e7df",
+      "scene": "RIVER WORLD. Dominant luminous TURQUOISE and AQUA with pale mint riverbanks. A winding clear turquoise river occupying the right outer margin and occasional small pools in left margin, smooth layered pale stone banks, small waterfalls, river reeds, pale willow foliage, water ripples and reflections. The empty central lane is pale mint dry riverbank. NOT dense green forest; emphasize WATER and turquoise throughout.",
+      "file": "landscape-river-v2.webp"
+    },
+    {
+      "band": "C1",
+      "name": "desert",
+      "title": "Sa mạc vàng",
+      "color": "#f4dfad",
+      "scene": "DESERT WORLD. Dominant golden SAND YELLOW, honey ochre and soft apricot shadows. Vast sculpted sand dunes, layered wind-carved sandstone canyons, little desert rock arches near edges, sparse small cactus and succulents, subtle wind-ripple texture, glowing desert sunlight. Central empty lane is pale smooth sand. No green grass, no trees, no snow. Elegant warm desert depth.",
+      "file": "landscape-desert-v2.webp"
+    },
+    {
+      "band": "C2",
+      "name": "flowers",
+      "title": "Đồng hoa",
+      "color": "#efd4e9",
+      "scene": "FLOWER MEADOW WORLD. Dominant dreamy PINK, LILAC and PURPLE. Thick banks of lavender, pink cosmos, violet lupins, pink flowering shrubs, soft mauve rock terraces and gentle rolling pink-purple meadows. Rare pastel flowering trees only at outer edges, flower petals, warm pearly light and soft violet shadows. Central clear lane is very pale rosy mauve meadow with sparse tiny petals, NOT bright green. Visually distinctly PINK PURPLE.",
+      "file": "landscape-flowers-v2.webp"
+    }
+  ]
+}

@@ -1,21 +1,31 @@
 {% extends "base.html" %}
+{% from "_icons.html" import icon %}
 {% block title %}{% if mode == "review" %}Ôn tập hôm nay{% else %}Bài học{% endif %} · SpeakUp{% endblock %}
 {% block content %}
 {#- One lesson, one step at a time (D025, M14). The same page runs today's review
     (M15, mode "review") and a teacher's look at a draft (mode "preview"), so a
-    teacher previews exactly what a learner will get. -#}
-<div id="lesson" class="lesson-page" data-lesson-id="{{ lesson_id }}" data-mode="{{ mode }}" aria-busy="true">
-  <p class="crumb">
+    teacher previews exactly what a learner will get.
+
+    D093: drawn after Thắng's mockup C "Sân khấu luyện nói"
+    (docs/design/student/lesson): a scenic header in the world of the band with
+    its companion, the steps in one row, the step on a wide card, and a side
+    card of words to keep when the screen has room. lesson.js fills it. -#}
+<link rel="stylesheet" href="{{ asset('student_stage.css') }}">
+<link rel="stylesheet" href="{{ asset('lesson_stage.css') }}">
+<div id="lesson" class="st-page ls-page lesson-page" data-world="forest" data-lesson-id="{{ lesson_id }}" data-mode="{{ mode }}" aria-busy="true">
+  <p class="crumb ls-crumb">
     {% if mode == "preview" %}
-      <a href="/teach/lessons/{{ lesson_id }}">← Quay lại soạn bài</a>
+      <a href="/teach/lessons/{{ lesson_id }}">{{ icon("arrow-right", "icon flip") }} Quay lại soạn bài</a>
     {% else %}
-      <a href="/practice">← Lộ trình của tôi</a>
+      <a href="/practice">{{ icon("arrow-right", "icon flip") }} Lộ trình học</a>
     {% endif %}
   </p>
 
-  <header class="lesson-head" id="lesson-head">
-    <div class="skeleton skeleton-title"></div>
-    <div class="skeleton skeleton-line"></div>
+  <header class="st-hero lesson-head" id="lesson-head">
+    <div class="st-hero-copy">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-line"></div>
+    </div>
   </header>
 
   {% if mode == "preview" %}
@@ -25,26 +35,34 @@
   </div>
   {% endif %}
 
-  <div class="lesson-layout" id="lesson-layout" hidden>
-    <nav class="step-rail" id="step-rail" aria-label="Các bước của bài học"></nav>
+  <div class="ls-layout lesson-layout" id="lesson-layout" hidden>
+    <nav class="ls-rail step-rail" id="step-rail" aria-label="Các bước của bài học"></nav>
 
-    <section class="card step-card" id="step-card" aria-labelledby="step-h">
-      <div id="step-body"></div>
-      <form id="step-form" class="step-recorder">
-        {% with submit_label="Nộp lượt này",
-                 floor_seconds=1,
-                 upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ (max_size_mib or 25) ~ " MiB." %}
-          {% include "_recorder.html" %}
-        {% endwith %}
-      </form>
-      <div class="step-feedback" id="step-feedback" hidden tabindex="-1" aria-live="polite"></div>
-    </section>
+    <div class="ls-main">
+      <section class="st-card step-card" id="step-card" aria-labelledby="step-h">
+        <div id="step-body"></div>
+        <form id="step-form" class="step-recorder">
+          {% with submit_label="Nộp lượt này",
+                   floor_seconds=1,
+                   upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, tối đa " ~ (max_size_mib or 25) ~ " MiB." %}
+            {% include "_recorder.html" %}
+          {% endwith %}
+        </form>
+        <div class="step-feedback" id="step-feedback" hidden tabindex="-1" aria-live="polite"></div>
+        <div class="ls-nav" id="ls-nav">
+          <button type="button" class="st-link-button" id="ls-prev">{{ icon("arrow-right", "icon flip") }} Bước trước</button>
+          <button type="button" class="st-link-button" id="ls-next">Bước sau {{ icon("arrow-right") }}</button>
+        </div>
+      </section>
+      <aside class="ls-side" id="ls-side" aria-label="Bỏ túi" hidden></aside>
+    </div>
   </div>
 
-  <section class="card lesson-summary" id="lesson-summary" hidden tabindex="-1" aria-live="polite"></section>
+  <section class="st-card lesson-summary" id="lesson-summary" hidden tabindex="-1" aria-live="polite"></section>
 </div>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset('student_stage.js') }}"></script>
 <script src="{{ asset('recorder.js') }}"></script>
 <script src="{{ asset('lesson.js') }}"></script>
 {% endblock %}

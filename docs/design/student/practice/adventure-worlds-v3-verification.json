@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-06",
+  "revision": "working tree based on 1d03967; no commit",
+  "worlds": 6,
+  "terrain_paintings": 24,
+  "responsive_exports": 120,
+  "checks": {
+    "terrain_main": 360,
+    "terrain_2560": 48,
+    "display_audit": 135,
+    "adaptive_0_to_100_lessons": 40,
+    "offline_gallery": 12,
+    "node_tests": 25,
+    "pytest_practice_ui": 16
+  },
+  "findings": [],
+  "javascript_errors": [],
+  "learner_data_writes": false,
+  "limits": [
+    "Chromium only; Safari, Firefox and physical devices not evaluated",
+    "Native source 1536x1024; very wide desktop at DPR 2 exceeds source density",
+    "Two alternating scenic segments; no infinite unique terrain or node virtualization"
+  ],
+  "evidence": "evidence/worlds-v3-2026-11-06/"
+}

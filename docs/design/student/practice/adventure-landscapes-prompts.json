@@ -1,0 +1,38 @@
+{
+  "tool": "image_gen built-in",
+  "style": "unified 2.5D landscape",
+  "export": "WebP quality 88, original dimensions; PNG originals retained at tool output",
+  "prompt": "Create a premium 2.5D illustrated landscape BACKGROUND TILE for a language learning adventure web app. Portrait 2:3 composition, orthographic elevated camera, stylized polished hand-painted mobile game environment, rounded sculpted terrain, visible cliff side faces and illuminated top surfaces, rich ambient occlusion, soft directional upper-left sunlight, subtle atmospheric perspective, cohesive sage greens and warm cream, inviting and sophisticated. Full bleed environment, NO floating island, no white backdrop. The CENTER VERTICAL 45% must stay completely clear, a continuous pale softly textured grassy clearing from top edge to bottom edge for UI lesson buttons, no road, no stepping stones, no structures in this central corridor. All rich terrain features arranged along the outer left and right 27% margins, distant smaller forms and foreground larger forms, strong depth and believable layered scenery. Top and bottom terrain should visually continue for vertical tiling, avoid a horizon line or sky. NO text, no UI, no symbols, no characters, no mascot, no frames. Scene: ",
+  "regions": [
+    {
+      "name": "garden",
+      "subject": "a lush sunlit orchard garden, sculpted grassy terraces, rounded fruit trees, flower beds and warm sandstone ledges",
+      "file": "landscape-garden-v1.webp"
+    },
+    {
+      "name": "valley",
+      "subject": "a lush green river valley, a narrow turquoise stream along the right edge, layered grassy cliffs, tiny waterfalls and rounded trees",
+      "file": "landscape-valley-v1.webp"
+    },
+    {
+      "name": "forest",
+      "subject": "an enchanted woodland with dense sculptural emerald trees, mossy stone ledges, ferns, mushrooms, soft shafts of light",
+      "file": "landscape-forest-v1.webp"
+    },
+    {
+      "name": "music",
+      "subject": "golden meadow hills, warm ochre rock terraces, flowering trees, an intimate grassy amphitheater embedded in the left landscape",
+      "file": "landscape-music-v1.webp"
+    },
+    {
+      "name": "lake",
+      "subject": "a serene turquoise lakeshore along the right side, clear shallow water, sandy banks, lily pads, curved grassy terraces and willow trees",
+      "file": "landscape-lake-v1.webp"
+    },
+    {
+      "name": "summit",
+      "subject": "a serene alpine landscape with layered blue stone cliffs, snow capped mountains at the edges, small pine forests and pale sage grassy terraces",
+      "file": "landscape-summit-v1.webp"
+    }
+  ]
+}

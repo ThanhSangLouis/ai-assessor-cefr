@@ -20,6 +20,9 @@
 
   <div id="rec-live" class="rec-live" hidden>
     <div class="rec-stage">
+      {#- A waveform drawn from the microphone level (--level, set by recorder.js);
+          only the screens that style it show it. -#}
+      <span class="rec-wave" aria-hidden="true">{% for h in [34,58,42,76,50,88,62,40,70,96,54,80,46,66,92,58,74,44,84,60,38,72,52,90,64,48,78,56,36,68] %}<i style="--h:{{ h }}%"></i>{% endfor %}</span>
       <div class="rec-hero-mic-wrap">
         <div class="rec-action-group">
           <button type="button" class="rec-button rec-circle-hero" id="rec-button" aria-describedby="rec-hint">

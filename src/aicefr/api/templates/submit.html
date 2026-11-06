@@ -2,80 +2,92 @@
 {% from "_icons.html" import icon %}
 {% block title %}Nộp bài nói · SpeakUp{% endblock %}
 {% block content %}
-<div class="page-head submit-head">
-  <div class="submit-head-title-row">
-    <div class="submit-head-left">
-      <h1><span class="head-icon">{{ icon("mic") }}</span>Nộp bài đánh giá</h1>
-      <p class="lede">Chọn đề, chuẩn bị và ghi âm câu trả lời.</p>
+{#- The submission screen (D093), after Thắng's mockup B "Từng bước tự tin"
+    (docs/design/student/submit): one thing at a time -- choose a task, then
+    prepare and speak, then listen back and send. The header shows the world of
+    the task's band, as the roadmap does. The ids are the contract with
+    submit.js and recorder.js; submit.js sets the step classes. -#}
+<link rel="stylesheet" href="{{ asset('student_stage.css') }}">
+<link rel="stylesheet" href="{{ asset('submit.css') }}">
+<div class="st-page sb-page" id="sb-page" data-world="forest" data-phase="choose">
+  <header class="st-hero" aria-labelledby="sb-h">
+    <div class="st-hero-copy">
+      <p class="st-place"><b id="sb-band">A1</b><span id="sb-world">Rừng xanh</span></p>
+      <h1 id="sb-h">Mỗi lần cất lời, thêm một lần tự tin.</h1>
+      <p class="st-hero-lede">Chọn một đề, kể câu chuyện của bạn.</p>
+      <p class="st-meta">
+        <span>{{ icon("hourglass") }} Chuẩn bị {{ prep_seconds }} giây</span>
+        <span>{{ icon("mic") }} <span id="sb-window-text">Nói theo thời lượng của đề</span></span>
+      </p>
     </div>
-    <span class="live-status-pill"><span class="live-dot" aria-hidden="true"></span>Luyện nói · AI Assessor</span>
-  </div>
+    <div class="st-companion" aria-hidden="true">
+      <p class="st-say" id="sb-say">Không cần hoàn hảo. Cứ bắt đầu bằng một câu!</p>
+      <img id="sb-mascot" src="/static/art/adventure/mascot-forest-v3.webp" alt="" width="210" height="210">
+    </div>
+  </header>
 
-  <nav class="submit-stepper-bar" aria-label="Các bước thực hiện">
-    <div class="stepper-step is-done" id="step-nav-1">
-      <span class="stepper-badge" id="step-badge-1" aria-hidden="true">
-        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/></svg>
-      </span>
-      <span class="stepper-label">Chọn đề</span>
+  <nav class="st-steps sb-steps" aria-label="Các bước nộp bài">
+    <button type="button" class="st-step stepper-step is-active" id="step-nav-1" data-phase-go="choose">
+      <span class="st-step-num stepper-badge" id="step-badge-1">1</span><span>Chọn đề</span>
+    </button>
+    <span id="step-div-1" hidden></span>
+    <div class="st-step stepper-step" id="step-nav-2">
+      <span class="st-step-num stepper-badge" id="step-badge-2">2</span><span>Chuẩn bị &amp; nói</span>
     </div>
-    <span class="stepper-chevron is-active" id="step-div-1" aria-hidden="true">›</span>
-    <div class="stepper-step is-active" id="step-nav-2">
-      <span class="stepper-badge" id="step-badge-2">02</span>
-      <span class="stepper-label">Ghi âm câu trả lời</span>
-    </div>
-    <span class="stepper-chevron" id="step-div-2" aria-hidden="true">›</span>
-    <div class="stepper-step" id="step-nav-3">
-      <span class="stepper-badge" id="step-badge-3">03</span>
-      <span class="stepper-label">Kiểm tra & nộp</span>
+    <span id="step-div-2" hidden></span>
+    <div class="st-step stepper-step" id="step-nav-3">
+      <span class="st-step-num stepper-badge" id="step-badge-3">3</span><span>Nghe lại &amp; nộp</span>
     </div>
   </nav>
+
+  <form id="f" class="sb-stage" data-prep-seconds="{{ prep_seconds }}">
+    <section class="st-card sb-choose" id="sb-choose" aria-labelledby="task-h">
+      <div class="st-card-top">
+        <h2 id="task-h">Bạn muốn kể điều gì?</h2>
+        <button type="button" class="st-link-button" id="task-shuffle" aria-label="Đổi sang bộ 3 đề khác cùng band">{{ icon("refresh") }} Đổi bộ đề</button>
+      </div>
+      <div id="task-list" aria-busy="true" aria-live="polite">
+        <div class="skeleton skeleton-block"></div>
+      </div>
+      <div class="sb-go-row">
+        <button type="button" class="sb-go" id="sb-go" disabled>Nói về đề này {{ icon("arrow-right") }}</button>
+      </div>
+    </section>
+
+    <section class="st-card sb-speak" id="sb-speak" aria-labelledby="rec-h" hidden>
+      <div class="st-card-top">
+        <span class="st-kind">{{ icon("target") }} Đề của bạn</span>
+        <button type="button" class="st-link-button" id="sb-change" data-phase-go="choose">{{ icon("list") }} Đổi đề</button>
+      </div>
+      <h2 id="rec-h" class="visually-hidden">Ghi âm, nghe lại, nộp</h2>
+      <div class="sb-prompt" id="chosen-prompt" aria-live="polite"></div>
+
+      <div class="prep sb-prep" id="prep" data-state="ready" hidden>
+        <div class="sb-prep-ring" id="prep-ring" aria-hidden="true"><span id="prep-left">{{ prep_seconds }}</span></div>
+        <div class="sb-prep-text">
+          <p class="sb-prep-title" id="prep-title">Một chút thời gian suy nghĩ</p>
+          <p class="sb-prep-sub" id="prep-hint">{{ prep_seconds }} giây chuẩn bị, hoặc nói ngay khi bạn sẵn sàng.</p>
+        </div>
+        <div class="sb-prep-actions">
+          <button type="button" class="st-link-button" id="prep-start">{{ icon("hourglass") }} Chuẩn bị</button>
+          <button type="button" class="st-link-button" id="prep-skip" hidden>{{ icon("mic") }} Nói ngay</button>
+          <button type="button" class="link-button" id="prep-cancel" hidden>Huỷ</button>
+        </div>
+        <p class="visually-hidden" id="prep-status" role="status" aria-live="polite"></p>
+      </div>
+
+      {% with submit_label="Nộp bài và chấm",
+               floor_seconds=min_duration_s,
+               upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, dài từ " ~ (min_duration_s | int) ~ " đến " ~ (max_duration_s | int) ~ " giây, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
+        {% include "_recorder.html" %}
+      {% endwith %}
+    </section>
+    <input type="hidden" id="task_id" name="task_id">
+  </form>
 </div>
-
-<form id="f" class="work-split" data-prep-seconds="{{ prep_seconds }}">
-  <section class="card task-select-panel" aria-labelledby="task-h">
-    <div class="card-head-row">
-      <h2 id="task-h"><span class="panel-step-icon">1</span>Chọn đề bài</h2>
-      <button type="button" class="btn-shuffle" id="task-shuffle" aria-label="Đổi sang bộ 3 đề khác cùng band"><span class="shuffle-icon" aria-hidden="true">↻</span> Đổi bộ đề</button>
-    </div>
-    <div id="task-list" aria-busy="true" aria-live="polite">
-      <div class="skeleton skeleton-block"></div>
-    </div>
-  </section>
-
-  <section class="card recorder-card" aria-labelledby="rec-h">
-    <h2 id="rec-h" class="visually-hidden">Ghi âm, nghe lại, nộp</h2>
-    <div class="prompt-card" id="chosen-prompt" aria-live="polite"></div>
-    {#- Streamlined prep row matching mockup -#}
-    <div class="prep" id="prep" data-state="ready" hidden>
-      <div class="prep-cluster">
-        <div class="prep-ring" id="prep-ring" aria-hidden="true">
-          <svg class="prep-glass-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>
-          </svg>
-          <span id="prep-left">{{ prep_seconds }}</span>
-        </div>
-        <div class="prep-text">
-          <p class="prep-title" id="prep-title">Chuẩn bị câu trả lời (tùy chọn)</p>
-          <p class="prep-sub muted" id="prep-hint">{{ prep_seconds }} giây suy nghĩ trước khi nói.</p>
-        </div>
-      </div>
-      <div class="prep-actions">
-        <button type="button" class="btn-prep-start" id="prep-start">Bắt đầu</button>
-        <button type="button" class="secondary" id="prep-skip" hidden>{{ icon("mic") }} Nói ngay</button>
-        <button type="button" class="link-button" id="prep-cancel" hidden>Huỷ</button>
-      </div>
-      <p class="visually-hidden" id="prep-status" role="status" aria-live="polite"></p>
-    </div>
-    {% with submit_label="Nộp bài và chấm",
-             floor_seconds=min_duration_s,
-             upload_hint="Định dạng wav, flac, mp3, m4a hoặc webm, dài từ " ~ (min_duration_s | int) ~ " đến " ~ (max_duration_s | int) ~ " giây, tối đa " ~ max_size_mib ~ " MiB. Máy chủ chuyển về " ~ (sample_rate_hz // 1000) ~ " kHz một kênh." %}
-      {% include "_recorder.html" %}
-    {% endwith %}
-  </section>
-  <input type="hidden" id="task_id" name="task_id">
-</form>
 {% endblock %}
 {% block scripts %}
+<script src="{{ asset('student_stage.js') }}"></script>
 <script src="{{ asset('recorder.js') }}"></script>
 <script src="{{ asset('submit.js') }}"></script>
 {% endblock %}

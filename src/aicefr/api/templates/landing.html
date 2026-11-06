@@ -1,1055 +1,172 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon, logo %}
-{% from "_art.html" import terraces %}
+{% from "_icons.html" import icon %}
 {% block title %}SpeakUp · Luyện nói có lộ trình, tiến bộ có bằng chứng{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
-{#- The product page for a visitor who is not signed in (D026), redrawn in D031:
-    few words, and a picture of what the product does in place of paragraphs.
-    Every claim is something the system does today; the thresholds in the FAQ
-    are the ones in force, read from active_qc() like on the submission page.
+{#- The product page for a visitor who is not signed in (D026), redrawn in D093:
+    few words, and the product itself in place of paragraphs. Every claim is
+    something the system does today; the thresholds quoted are the ones in force,
+    read from the active configuration like on the submission page.
 
-    The 3D scene and the mock-up are decorative and hidden from screen readers:
-    nothing in them is said only there. landing.js tilts them toward the pointer;
-    without it, or with reduced motion, they hold their resting angle. -#}
-<div class="lp">
+    The report in the hero is an example, labelled as one; its words are real
+    buttons so a visitor can try the one thing the report does, and landing.js
+    plays it once. Without the script, or with reduced motion, it is simply
+    there with every mark showing. -#}
+<link rel="stylesheet" href="{{ asset('landing.css') }}">
+<div class="hm">
 
-<section class="lp-hero" aria-labelledby="hero-h">
-  {#- D037: the terraces of speech under the scene; the ridges draw themselves in. -#}
-  <div class="lp-terraces" aria-hidden="true">{{ terraces() }}</div>
-  <div class="lp-hero-center">
-    <p class="lp-kicker">
-      <span class="lp-kicker-badge">{{ icon("sparkle") }} CEFR A1–C2</span>
-      <span>AI đánh giá bài nói</span>
-    </p>
-    <h1 id="hero-h" class="lp-title">
-      <span class="lp-line">Luyện nói có lộ trình.</span>
-      <span class="lp-line lp-grad">Tiến bộ có bằng chứng.</span>
-    </h1>
-    <p class="lp-lede">
-      <span class="lp-lede-line">Luyện nói tiếng Anh từ A1 đến C2 theo lộ trình rõ ràng.</span>
-      <span class="lp-lede-line">AI phân tích bài nói, chỉ ra điểm cần cải thiện và giúp bạn theo dõi tiến bộ qua từng bài tập.</span>
-    </p>
-    <div class="button-row lp-actions">
-      <a class="button lp-btn-primary" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
-    </div>
-    <ul class="lp-facts">
-      <li>{{ icon("clock") }} <span>10–15 phút mỗi bài</span></li>
-      <li class="lp-fact-dot" aria-hidden="true">•</li>
-      <li>{{ icon("headphones") }} <span>Luyện nói trực tiếp trên web</span></li>
-      <li class="lp-fact-dot" aria-hidden="true">•</li>
-      <li>{{ icon("sparkle") }} <span>AI phân tích bài nói</span></li>
-    </ul>
-  </div>
-
-  <div class="lp-stage" aria-hidden="true">
-    <div class="lp-sway">
-      <div class="lp-scene" data-scene>
-        <div class="lp-floor"></div>
-        <div class="lp-pillars">
-          <span class="cube p-a1" data-level="A1"><span class="f-front">A1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-a2" data-level="A2"><span class="f-front">A2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b1 is-target" data-level="B1"><span class="f-front">B1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-b2" data-level="B2"><span class="f-front">B2</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-c1" data-level="C1"><span class="f-front">C1</span><span class="f-side"></span><span class="f-top"></span></span>
-          <span class="cube p-c2" data-level="C2"><span class="f-front">C2</span><span class="f-side"></span><span class="f-top"></span></span>
-        </div>
-
-        <div class="lp-card lp-card-read">
-          <span class="lp-card-head"><span class="lp-live"></span>Bước 1 / 7 · Đọc to</span>
-          <p class="lp-specimen" lang="en">
-            <span class="w heard" data-tip="/aɪ/ · 98% chuẩn">I</span>
-            <span class="w heard" data-tip="/laɪk/ · 95% âm đuôi">like</span>
-            <span class="w heard" data-tip="/maɪ/ · 99% chuẩn">my</span>
-            <span class="w heard hint" data-tip="/ˈneɪ.bə.hʊd/ · 94% trọng âm">neighborhood</span>
-            <span class="w heard" data-tip="/bɪˈkɒz/ · 92% nối âm">because</span>
-            <span class="w heard" data-tip="/ðə/ · 90% chuẩn">the</span>
-            <span class="w heard" data-tip="/ˈpiː.pəl/ · 96% chuẩn">people</span>
-            <span class="w missed" data-tip="/ɑːr/ · Nuốt âm">are</span>
-            <span class="w unsure hint" data-tip="/ˈfrend.li/ · 68% cần rèn">friendly.</span>
-          </p>
-          <span class="lp-legend"><span class="dot heard"></span>Nghe ra<span class="dot unsure"></span>Chưa chắc<span class="dot missed"></span>Chưa nghe ra</span>
-        </div>
-
-        <div class="lp-card lp-card-wave">
-          <span class="lp-rec">{{ icon("mic") }}</span>
-          <span class="lp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          <b>0:12</b>
-        </div>
-
-        <div class="lp-card lp-card-band">
-          <span class="lp-card-head">Ước lượng năng lực</span>
-          <div class="lp-band-row">
-            <b class="lp-band" id="lp-hero-band-val">B1+</b>
-            <span class="lp-band-desc" id="lp-hero-band-desc">Độc lập · Chuẩn đầu ra</span>
-          </div>
-          <span class="lp-range"><span id="lp-hero-range-fill" style="left: 33%; width: 22%;"></span></span>
-          <span class="lp-range-scale" id="lp-hero-scale">
-            <span class="scale-item" data-level="A1" data-val="A1" data-desc="Khởi đầu · Giao tiếp cơ bản" data-left="0%" data-width="16%">A1</span>
-            <span class="scale-item" data-level="A2" data-val="A2" data-desc="Sơ cấp · Đời sống thường ngày" data-left="16%" data-width="18%">A2</span>
-            <span class="scale-item is-active" data-level="B1" data-val="B1+" data-desc="Độc lập · Chuẩn đầu ra" data-left="33%" data-width="22%">B1</span>
-            <span class="scale-item" data-level="B2" data-val="B2+" data-desc="Nâng cao · Học thuật &amp; việc làm" data-left="54%" data-width="20%">B2</span>
-            <span class="scale-item" data-level="C1" data-val="C1" data-desc="Thành thạo · Chuyên nghiệp" data-left="72%" data-width="16%">C1</span>
-            <span class="scale-item" data-level="C2" data-val="C2" data-desc="Bậc thầy · Bản ngữ" data-left="86%" data-width="14%">C2</span>
-          </span>
-        </div>
-
-        <div class="lp-card lp-card-check">
-          <span class="lp-tick">{{ icon("check") }}</span>
-          <span><b>Giảng viên đã duyệt</b><small>Giữ nguyên kết quả · Đạt B1</small></span>
-        </div>
+<section class="hm-hero" aria-labelledby="hero-h">
+  <div class="hm-wrap hm-hero-grid">
+    <div class="hm-hero-copy">
+      <h1 id="hero-h" class="hm-title"><span>Luyện nói có lộ trình.</span> <span>Tiến bộ có bằng chứng.</span></h1>
+      <p class="hm-lede">Nói một câu trả lời, xem từng chỗ cần sửa ngay trên bản ghi. Giảng viên xác nhận kết quả cuối cùng.</p>
+      <div class="hm-actions">
+        <a class="hm-btn hm-btn-primary" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
+        <a class="hm-btn hm-btn-ghost" href="#how-it-works">Xem cách hoạt động</a>
       </div>
+      <ul class="hm-facts">
+        <li>{{ icon("check") }} Không cần cài đặt</li>
+        <li>{{ icon("check") }} Đề từ A1 đến C2</li>
+        <li>{{ icon("check") }} Máy tính hay điện thoại đều được</li>
+      </ul>
+    </div>
+
+    <figure class="hm-demo" data-demo aria-labelledby="demo-cap">
+      <figcaption id="demo-cap" class="visually-hidden">Ví dụ một báo cáo bài nói: từ chưa nghe rõ được đánh dấu, band ước lượng B1, giảng viên đã xác nhận.</figcaption>
+      <div class="hm-demo-head">
+        <span class="hm-demo-title">{{ icon("file-check") }} Báo cáo bài nói</span>
+        <span class="hm-demo-tag">Ví dụ</span>
+      </div>
+      <p class="hm-demo-task"><b>A2</b> Kể về khu phố nơi bạn sống</p>
+
+      <div class="hm-wave" aria-hidden="true">
+        <span class="hm-wave-bars">{% for h in [30,52,44,70,38,62,80,46,58,34,20,12,10,26,64,74,50,42,68,56,36,48,72,40,30,54,22,16] %}<i style="--h:{{ h }}%"></i>{% endfor %}</span>
+        <span class="hm-pause" style="--at:38%;--w:12%"></span>
+        <span class="hm-head" data-head></span>
+        <span class="hm-time"><b data-clock>0:14</b> / 0:14</span>
+      </div>
+
+      <p class="hm-words" lang="en" data-words>
+        <button type="button" class="hm-w ok" data-note="I · rõ">I</button>
+        <button type="button" class="hm-w ok" data-note="like · rõ">like</button>
+        <button type="button" class="hm-w ok" data-note="my · rõ">my</button>
+        <button type="button" class="hm-w ok" data-note="neighborhood · trọng âm đúng">neighborhood</button>
+        <button type="button" class="hm-w ok" data-note="because · ngập ngừng 1,2 giây ngay sau từ này">because</button>
+        <button type="button" class="hm-w ok" data-note="the · rõ">the</button>
+        <button type="button" class="hm-w ok" data-note="people · rõ">people</button>
+        <button type="button" class="hm-w miss" data-note="are · chưa nghe ra, nghe lại ở 0:09">are</button>
+        <button type="button" class="hm-w unsure" data-note="friendly · chưa chắc, âm cuối /li/ nhẹ">friendly.</button>
+      </p>
+      <p class="hm-note" data-note-out aria-live="polite">Bấm vào một từ để xem nhận xét.</p>
+
+      <div class="hm-band" aria-hidden="true">
+        {% for b in ["A1","A2","B1","B2","C1","C2"] %}<span class="{{ 'on' if b == 'B1' }}">{{ b }}</span>{% endfor %}
+      </div>
+      <p class="hm-verify">{{ icon("check-circle") }} <span><b>Giảng viên đã xác nhận</b> · giữ nguyên B1</span></p>
+    </figure>
+  </div>
+</section>
+
+<section class="hm-section" id="how-it-works" aria-labelledby="how-h">
+  <div class="hm-wrap">
+    <h2 id="how-h" class="hm-h2">Ba bước cho mỗi lượt nói</h2>
+    <ol class="hm-steps">
+      <li>
+        <h3>Chọn đề và nói</h3>
+        <p>Đề theo band A1–C2. Ghi âm ngay trên trình duyệt, hoặc tải tệp lên.</p>
+      </li>
+      <li>
+        <h3>Xem báo cáo</h3>
+        <p>Năm tiêu chí CEFR, từng từ chưa rõ. Bấm vào là nghe lại đúng giây đó.</p>
+      </li>
+      <li>
+        <h3>Giảng viên xác nhận</h3>
+        <p>Kết quả chỉ được tính khi giảng viên nghe lại và đồng ý.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="hm-section hm-fade-section" id="scaffolding-method" aria-labelledby="fade-h">
+  <div class="hm-wrap">
+    <h2 id="fade-h" class="hm-h2">Gợi ý ít dần, đến khi bạn tự nói được</h2>
+    <ol class="hm-fade" lang="en">
+      <li style="--hint:100%">
+        <p class="hm-fade-label" lang="vi"><b>Câu mẫu</b><span>Nghe và nhắc lại</span></p>
+        <p class="hm-fade-line">I like my neighborhood because the people are friendly.</p>
+      </li>
+      <li style="--hint:60%">
+        <p class="hm-fade-label" lang="vi"><b>Khung câu</b><span>Điền phần còn trống</span></p>
+        <p class="hm-fade-line">I like my <i></i> because <i></i> are <i></i>.</p>
+      </li>
+      <li style="--hint:25%">
+        <p class="hm-fade-label" lang="vi"><b>Từ khoá</b><span>Tự ghép thành câu</span></p>
+        <p class="hm-fade-line hm-fade-keys"><span>neighborhood</span><span>people</span><span>friendly</span></p>
+      </li>
+      <li style="--hint:0%">
+        <p class="hm-fade-label" lang="vi"><b>Tự do</b><span>Không còn gợi ý</span></p>
+        <p class="hm-fade-line hm-fade-free" lang="vi">{{ icon("mic") }} Bạn tự nói</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="hm-section" id="for-teachers" aria-labelledby="teach-h">
+  <div class="hm-wrap hm-teach">
+    <div class="hm-teach-copy">
+      <h2 id="teach-h" class="hm-h2">Giảng viên giữ quyết định cuối</h2>
+      <ul class="hm-ticks">
+        <li>{{ icon("headphones") }} <span><b>Hàng đợi duyệt bài.</b> Nghe lại, giữ hoặc sửa band.</span></li>
+        <li>{{ icon("pencil") }} <span><b>Soạn bài nhanh.</b> Một đoạn văn mẫu thành bài học 5–7 bước.</span></li>
+        <li>{{ icon("users") }} <span><b>Theo dõi cả lớp.</b> Thấy ai tiến bộ, không xếp hạng.</span></li>
+      </ul>
+      <a class="hm-link" href="/login">Đăng nhập cho giảng viên {{ icon("arrow-right") }}</a>
+    </div>
+    <div class="hm-queue" aria-hidden="true">
+      <div class="hm-queue-head"><b>Hàng đợi duyệt</b><span class="hm-demo-tag">Ví dụ</span></div>
+      <div class="hm-queue-row"><span class="hm-q-id">SV-014</span><span class="hm-q-topic">Khu phố nơi tôi sống</span><span class="hm-q-band">A2</span><span class="hm-q-state wait">Chờ duyệt</span></div>
+      <div class="hm-queue-row"><span class="hm-q-id">SV-027</span><span class="hm-q-topic">Kỳ nghỉ cuối tuần</span><span class="hm-q-band">B1</span><span class="hm-q-state wait">Chờ duyệt</span></div>
+      <div class="hm-queue-row"><span class="hm-q-id">SV-003</span><span class="hm-q-topic">Công việc mơ ước</span><span class="hm-q-band">B2</span><span class="hm-q-state ok">Đã duyệt</span></div>
+      <div class="hm-queue-row"><span class="hm-q-id">SV-031</span><span class="hm-q-topic">Gia đình tôi</span><span class="hm-q-band">A1</span><span class="hm-q-state ok">Đã duyệt</span></div>
     </div>
   </div>
 </section>
 
-<!-- Impact Stats Ribbon -->
-<div class="lp-stats-ribbon lp-rise" aria-label="Các thông số cốt lõi">
-  <div class="lp-stat-item">
-    <span class="lp-stat-number">A1–C2</span>
-    <span class="lp-stat-desc">Lộ trình CEFR toàn diện</span>
-  </div>
-  <div class="lp-stat-divider" aria-hidden="true"></div>
-  <div class="lp-stat-item">
-    <span class="lp-stat-number">5 tiêu chí</span>
-    <span class="lp-stat-desc">Đánh giá bài nói chuyên sâu</span>
-  </div>
-  <div class="lp-stat-divider" aria-hidden="true"></div>
-  <div class="lp-stat-item">
-    <span class="lp-stat-number">AI</span>
-    <span class="lp-stat-desc">Phản hồi chi tiết tức thì</span>
-  </div>
-</div>
-
-<!-- Interactive Live Speech Studio (Breakthrough Feature) -->
-<section class="lp-section" id="how-it-works" aria-labelledby="how-h">
-  <div class="lp-head center">
-    <span class="lp-eyebrow-text">{{ icon("path") }} Quy trình học tập</span>
-    <h2 id="how-h">Từ lượt nói đến kết quả được xác nhận</h2>
-    <p class="lp-subhead">Quy trình 3 bước khép kín kết hợp giữa trí tuệ nhân tạo và chuyên môn sư phạm của giảng viên.</p>
-  </div>
-  <ol class="lp-steps">
-    <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <div class="lp-step-top">
-        <span class="lp-orb">{{ icon("path") }}</span>
-        <span class="lp-step-tag">01 · LỘ TRÌNH</span>
-      </div>
-      <h3>Học theo lộ trình</h3>
-      <p>Bài học ngắn, gợi ý giảm dần theo giàn giáo sư phạm, luôn kết thúc bằng một lượt nói tự do của chính bạn.</p>
-      <div class="lp-step-demo">
-        <div class="lp-demo-route">
-          <span class="lp-node done">1. Mẫu</span>
-          <span class="lp-arrow">→</span>
-          <span class="lp-node active">2. Khung gợi ý</span>
-          <span class="lp-arrow">→</span>
-          <span class="lp-node">3. Tự do</span>
-        </div>
-      </div>
-    </li>
-    <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <div class="lp-step-top">
-        <span class="lp-orb">{{ icon("mic") }}</span>
-        <span class="lp-step-tag">02 · PHÂN TÍCH</span>
-      </div>
-      <h3>Nộp bài &amp; Bóc tách</h3>
-      <p>Báo cáo chỉ ra quãng ngập ngừng và từ chưa rõ trong bản ghi; bạn có thể bấm vào để nghe lại đúng giây đó.</p>
-      <div class="lp-step-demo">
-        <div class="lp-demo-player" aria-hidden="true">
-          <span class="lp-demo-rec">{{ icon("play") }}</span>
-          <div class="lp-demo-waveform">
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
-          <span class="lp-demo-badge">Nghe lại từng từ</span>
-        </div>
-      </div>
-    </li>
-    <li class="lp-step lp-tilt lp-rise" data-tilt>
-      <div class="lp-step-top">
-        <span class="lp-orb">{{ icon("check-circle") }}</span>
-        <span class="lp-step-tag">03 · THẨM ĐỊNH</span>
-      </div>
-      <h3>Giảng viên xác nhận</h3>
-      <p>Kết quả máy ước lượng được giảng viên bộ môn nghe lại, đánh giá và xác nhận cuối cùng trước khi vào sổ điểm.</p>
-      <div class="lp-step-demo">
-        <div class="lp-demo-verify">
-          <span class="lp-verify-icon">{{ icon("check") }}</span>
-          <div class="lp-verify-info">
-            <b>Đã duyệt chính thức</b>
-            <small>CEFR Level: B2 · 5.14 / 6.0</small>
-          </div>
-        </div>
-      </div>
-    </li>
-  </ol>
-</section>
-
-<section class="lp-section lp-scaffold-section" id="scaffolding-method" aria-labelledby="method-h">
-  <div class="lp-head center">
-    <span class="lp-eyebrow-text">{{ icon("layers") }} Phương pháp giàn giáo sư phạm</span>
-    <h2 id="method-h">Gợi ý ít dần, đến khi bạn tự nói được</h2>
-    <p class="lp-subhead">Mô hình 4 bậc rèn luyện kỹ năng nói độc lập: từ bắt chước câu mẫu chuẩn đến tự do giao tiếp theo phản xạ.</p>
-  </div>
-
-  <div class="lp-scaffold-grid">
-    <!-- Bậc 1 -->
-    <article class="lp-scaffold-card">
-      <div class="lp-scaffold-header">
-        <span class="lp-scaffold-num">01</span>
-        <span class="lp-scaffold-pill">Gợi ý 100%</span>
-      </div>
-
-      <div class="lp-scaffold-body">
-        <h3 class="lp-scaffold-title">Mẫu (Imitation)</h3>
-        <p class="lp-scaffold-desc">Nghe câu mẫu và nhại lại cách phát âm, nhịp điệu và ngữ điệu.</p>
-      </div>
-
-      <div class="lp-scaffold-art" aria-hidden="true">
-        <svg viewBox="0 0 240 120" fill="none" class="scaffold-svg">
-          <defs>
-            <linearGradient id="art-bg-1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(255, 87, 34, 0.16)"/>
-              <stop offset="100%" stop-color="rgba(255, 112, 67, 0.06)"/>
-            </linearGradient>
-            <linearGradient id="wave-grad-1" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#ff7043"/>
-              <stop offset="100%" stop-color="#ff5722"/>
-            </linearGradient>
-            <linearGradient id="wave-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stop-color="#c084fc"/>
-              <stop offset="100%" stop-color="#f472b6"/>
-            </linearGradient>
-          </defs>
-          <!-- Full Bleed Background -->
-          <rect width="100%" height="100%" fill="url(#art-bg-1)"/>
-
-          <!-- Cute Ears -->
-          <ellipse cx="23.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="24" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-          <ellipse cx="72.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="72" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-
-          <!-- Back hair -->
-          <path d="M 20 62 C 18 34, 32 18, 48 18 C 64 18, 78 34, 76 62 C 78 74, 70 78, 68 78 L 28 78 C 26 78, 18 74, 20 62 Z" fill="#1e293b"/>
-
-          <!-- Body / Hoodie with cute strings -->
-          <path d="M 18 120 C 18 80, 78 80, 78 120 Z" fill="#ff7043"/>
-          <path d="M 40 84 L 48 93 L 56 84" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <line x1="44" y1="92" x2="43" y2="103" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="43" cy="104" r="1.5" fill="#ffedd5"/>
-          <line x1="52" y1="92" x2="53" y2="103" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round"/>
-          <circle cx="53" cy="104" r="1.5" fill="#ffedd5"/>
-
-          <!-- Neck -->
-          <rect x="42" y="72" width="12" height="10" rx="4" fill="#fed7aa"/>
-
-          <!-- Head (Chubby Cute Silhouette CX=48) -->
-          <ellipse cx="48" cy="56" rx="22" ry="21" fill="#fed7aa"/>
-
-          <!-- Hair Crown & Bangs (Full volume, no bald spot) -->
-          <path d="M 21 58 C 19 34, 32 18, 48 18 C 64 18, 77 34, 75 58 L 73 51 C 67 45, 59 47, 53 43 C 47 47, 39 45, 31 49 L 21 58 Z" fill="#1e293b"/>
-          <path d="M 36 27 C 42 24, 54 24, 60 27" stroke="#475569" stroke-width="2" fill="none" stroke-linecap="round"/>
-
-          <!-- Cozy Rounded Headphones -->
-          <path d="M 22 55 C 22 15, 74 15, 74 55" fill="none" stroke="#ff5722" stroke-width="3.8" stroke-linecap="round"/>
-          <path d="M 36 20 C 42 18, 54 18, 60 20" fill="none" stroke="#ff8a65" stroke-width="5" stroke-linecap="round"/>
-          <rect x="16" y="44" width="10" height="25" rx="5" fill="#ff7043" stroke="#ff5722" stroke-width="1.4"/>
-          <rect x="18" y="48" width="6" height="17" rx="3" fill="#ffab91"/>
-          <rect x="70" y="44" width="10" height="25" rx="5" fill="#ff7043" stroke="#ff5722" stroke-width="1.4"/>
-          <rect x="72" y="48" width="6" height="17" rx="3" fill="#ffab91"/>
-
-          <!-- Mic Boom -->
-          <path d="M 72 62 Q 64 74 55 72" stroke="#ff5722" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-          <circle cx="53" cy="72" r="3" fill="#ff7043" stroke="#ffffff" stroke-width="1"/>
-
-          <!-- Eyebrows -->
-          <path d="M 36 48 Q 40 45 44 48" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M 52 48 Q 56 45 60 48" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-
-          <!-- Blissful Listening Eyes ( ^ ‿ ^ ) -->
-          <path d="M 35 56 Q 40 49 45 56" stroke="#1e293b" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-          <path d="M 51 56 Q 56 49 61 56" stroke="#1e293b" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-
-          <!-- Soft Cheeks with Cute Blush Stripes -->
-          <ellipse cx="33" cy="62" rx="4" ry="2.6" fill="#fb7185" opacity="0.75"/>
-          <ellipse cx="63" cy="62" rx="4" ry="2.6" fill="#fb7185" opacity="0.75"/>
-          <line x1="31" y1="61" x2="34" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-          <line x1="62" y1="61" x2="65" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-
-          <!-- Cute Smile -->
-          <path d="M 44 65 Q 48 70 52 65" stroke="#e11d48" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-
-          <!-- Floating Music Note -->
-          <path d="M 28 28 L 28 20 L 35 18 L 35 26" stroke="#fbbf24" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-          <circle cx="26.5" cy="28" r="2.2" fill="#fbbf24"/>
-          <circle cx="33.5" cy="26" r="2.2" fill="#fbbf24"/>
-
-          <!-- Right Side: Step 1 (Top) Mẫu bản ngữ -->
-          <g transform="translate(90, 14)">
-            <rect x="0" y="0" width="138" height="40" rx="9" fill="rgba(255, 87, 34, 0.16)" stroke="#ff7043" stroke-width="1.2"/>
-            <path d="M 10 20 L 15 20 L 20 15 L 20 25 L 15 20 L 10 20 Z" fill="#ff7043"/>
-            <path d="M 23 17 Q 26 20 23 23" stroke="#ff7043" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-            <path d="M 26 14 Q 31 20 26 26" stroke="#ff7043" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-            <path d="M 36 20 Q 45 10 54 20 T 72 20 T 90 20 T 108 20 T 124 20" stroke="url(#wave-grad-1)" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </g>
-
-          <!-- Echo Loop Connecting Arrow -->
-          <path d="M 164 54 C 164 64, 158 66, 148 66" stroke="#10b981" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-          <polygon points="144,66 150,63 150,69" fill="#10b981"/>
-          <path d="M 120 59 L 120 52 L 128 49 L 128 56" stroke="#fbbf24" stroke-width="1.6" fill="none" stroke-linecap="round"/>
-          <circle cx="118.5" cy="59" r="2.2" fill="#fbbf24"/>
-          <circle cx="126.5" cy="56" r="2.2" fill="#fbbf24"/>
-
-          <!-- Right Side: Step 2 (Bottom) Nhại lại -->
-          <g transform="translate(90, 66)">
-            <rect x="0" y="0" width="138" height="40" rx="9" fill="rgba(168, 85, 247, 0.16)" stroke="#c084fc" stroke-width="1.2"/>
-            <rect x="11" y="15" width="7" height="10" rx="3.5" fill="#c084fc"/>
-            <path d="M 9 19 C 9 24, 20 24, 20 19" stroke="#c084fc" stroke-width="1.6" fill="none"/>
-            <line x1="14.5" y1="24" x2="14.5" y2="28" stroke="#c084fc" stroke-width="1.6"/>
-            <path d="M 36 20 Q 45 10 54 20 T 72 20 T 90 20 T 108 20 T 124 20" stroke="url(#wave-grad-2)" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </g>
-        </svg>
-      </div>
-
-      <div class="lp-scaffold-foot">
-        <span class="foot-stage">Bậc 1 / 4</span>
-        <span class="foot-tag">Bắt chước mẫu</span>
-      </div>
-    </article>
-
-    <!-- Bậc 2 -->
-    <article class="lp-scaffold-card">
-      <div class="lp-scaffold-header">
-        <span class="lp-scaffold-num">02</span>
-        <span class="lp-scaffold-pill">Gợi ý 60%</span>
-      </div>
-
-      <div class="lp-scaffold-body">
-        <h3 class="lp-scaffold-title">Có kiểm soát (Controlled)</h3>
-        <p class="lp-scaffold-desc">Ghi nhớ và tái tạo câu mẫu khi các gợi ý dần được ẩn đi.</p>
-      </div>
-
-      <div class="lp-scaffold-art" aria-hidden="true">
-        <svg viewBox="0 0 240 120" fill="none" class="scaffold-svg">
-          <defs>
-            <linearGradient id="art-bg-2" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(16, 185, 129, 0.16)"/>
-              <stop offset="100%" stop-color="rgba(56, 189, 248, 0.06)"/>
-            </linearGradient>
-            <linearGradient id="puzzle-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#34d399"/>
-              <stop offset="100%" stop-color="#059669"/>
-            </linearGradient>
-          </defs>
-          <!-- Full Bleed Background -->
-          <rect width="100%" height="100%" fill="url(#art-bg-2)"/>
-
-          <!-- Cute Ears -->
-          <ellipse cx="23.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="24" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-          <ellipse cx="72.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="72" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-
-          <!-- Back hair -->
-          <path d="M 20 62 C 18 34, 32 18, 48 18 C 64 18, 78 34, 76 62 C 78 74, 70 78, 68 78 L 28 78 C 26 78, 18 74, 20 62 Z" fill="#1e293b"/>
-
-          <!-- Body: Mint Sweater with golden button -->
-          <path d="M 18 120 C 18 80, 78 80, 78 120 Z" fill="#10b981"/>
-          <path d="M 40 84 L 48 93 L 56 84" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="48" cy="100" r="2.8" fill="#fef08a"/>
-
-          <!-- Neck -->
-          <rect x="42" y="72" width="12" height="10" rx="4" fill="#fed7aa"/>
-
-          <!-- Head (Chubby Cute Silhouette CX=48) -->
-          <ellipse cx="48" cy="56" rx="22" ry="21" fill="#fed7aa"/>
-
-          <!-- Front Hair with side part & Ahoge -->
-          <path d="M 21 58 C 19 34, 32 18, 48 18 C 64 18, 77 34, 75 58 L 73 50 C 65 44, 57 44, 49 46 C 43 43, 35 45, 27 50 L 21 58 Z" fill="#1e293b"/>
-          <path d="M 48 18 C 47 9, 56 7, 58 13 C 56 16, 52 16, 49 18 Z" fill="#1e293b"/>
-          <path d="M 36 26 C 42 23, 54 23, 60 26" stroke="#475569" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-
-          <!-- Big Round Cute Glasses -->
-          <circle cx="38" cy="56" r="9" stroke="#10b981" stroke-width="2.2" fill="rgba(255,255,255,0.55)"/>
-          <circle cx="58" cy="56" r="9" stroke="#10b981" stroke-width="2.2" fill="rgba(255,255,255,0.55)"/>
-          <path d="M 47 55 Q 48 53 49 55" stroke="#10b981" stroke-width="2.2" fill="none"/>
-
-          <!-- Big Sparkly Eyes -->
-          <ellipse cx="38" cy="56" rx="3.5" ry="4.2" fill="#1e293b"/>
-          <circle cx="36.5" cy="54" r="1.6" fill="#ffffff"/>
-          <circle cx="39.5" cy="58" r="0.9" fill="#ffffff"/>
-          <ellipse cx="58" cy="56" rx="3.5" ry="4.2" fill="#1e293b"/>
-          <circle cx="56.5" cy="54" r="1.6" fill="#ffffff"/>
-          <circle cx="59.5" cy="58" r="0.9" fill="#ffffff"/>
-
-          <!-- Tiny Button Nose -->
-          <circle cx="48" cy="62" r="1.2" fill="#fb923c" opacity="0.6"/>
-
-          <!-- Cheeks -->
-          <ellipse cx="32" cy="63" rx="3.8" ry="2.4" fill="#fb7185" opacity="0.7"/>
-          <ellipse cx="64" cy="63" rx="3.8" ry="2.4" fill="#fb7185" opacity="0.7"/>
-
-          <!-- Sweet Open Smile -->
-          <path d="M 44 65 Q 48 70 52 65" stroke="#059669" stroke-width="2.2" stroke-linecap="round" fill="none"/>
-
-          <!-- Idea Lightbulb -->
-          <g transform="translate(42, 0)">
-            <line x1="6" y1="1" x2="6" y2="-1" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
-            <line x1="1" y1="3" x2="-2" y2="1" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
-            <line x1="11" y1="3" x2="14" y2="1" stroke="#fbbf24" stroke-width="2" stroke-linecap="round"/>
-            <path d="M 3 7 C 1 2, 11 2, 9 7 C 8 9, 7 10, 7 12 H 5 C 5 10, 4 9, 3 7 Z" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.3"/>
-            <rect x="4.5" y="12" width="3" height="2" fill="#94a3b8"/>
-          </g>
-
-          <!-- Right Side: Sentence Container with blanks and snapping piece -->
-          <g transform="translate(90, 20)">
-            <rect x="0" y="0" width="138" height="76" rx="11" fill="rgba(15, 23, 42, 0.65)" stroke="rgba(16, 185, 129, 0.35)" stroke-width="1.2"/>
-
-            <!-- Word 1 (Clear): Solid pill -->
-            <rect x="8" y="28" width="28" height="26" rx="6" fill="rgba(255, 87, 34, 0.25)" stroke="#ff7043" stroke-width="1.4"/>
-            <line x1="13" y1="41" x2="31" y2="41" stroke="#ffab91" stroke-width="2.8" stroke-linecap="round"/>
-
-            <line x1="40" y1="41" x2="44" y2="41" stroke="#64748b" stroke-width="1.6" stroke-linecap="round"/>
-
-            <!-- Word 2 (Faded): Dashed border -->
-            <rect x="48" y="28" width="28" height="26" rx="6" fill="rgba(255, 255, 255, 0.05)" stroke="rgba(148, 163, 184, 0.55)" stroke-width="1.4" stroke-dasharray="3 2"/>
-            <line x1="53" y1="41" x2="71" y2="41" stroke="rgba(148, 163, 184, 0.5)" stroke-width="2.6" stroke-linecap="round"/>
-
-            <line x1="80" y1="41" x2="84" y2="41" stroke="#64748b" stroke-width="1.6" stroke-linecap="round"/>
-
-            <!-- Word 3 (Missing slot): Green dashed target -->
-            <rect x="88" y="23" width="42" height="36" rx="8" fill="rgba(16, 185, 129, 0.14)" stroke="#10b981" stroke-width="2" stroke-dasharray="4 3"/>
-            <circle cx="100" cy="41" r="2.2" fill="#34d399"/>
-            <circle cx="109" cy="41" r="2.2" fill="#34d399"/>
-            <circle cx="118" cy="41" r="2.2" fill="#34d399"/>
-
-            <!-- Snapping Puzzle Piece from Top -->
-            <g transform="translate(90, -15)">
-              <rect x="0" y="0" width="38" height="24" rx="6" fill="url(#puzzle-grad)" stroke="#10b981" stroke-width="1.4"/>
-              <path d="M 12 12 L 17 16 L 25 8" stroke="#ffffff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M 19 25 L 19 30" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>
-              <polygon points="16,30 22,30 19,34" fill="#34d399"/>
-            </g>
-          </g>
-        </svg>
-      </div>
-
-      <div class="lp-scaffold-foot">
-        <span class="foot-stage">Bậc 2 / 4</span>
-        <span class="foot-tag">Tái tạo câu mẫu</span>
-      </div>
-    </article>
-
-    <!-- Bậc 3 -->
-    <article class="lp-scaffold-card">
-      <div class="lp-scaffold-header">
-        <span class="lp-scaffold-num">03</span>
-        <span class="lp-scaffold-pill">Gợi ý 25%</span>
-      </div>
-
-      <div class="lp-scaffold-body">
-        <h3 class="lp-scaffold-title">Có hướng dẫn (Guided)</h3>
-        <p class="lp-scaffold-desc">Dựa vào dàn ý và từ khóa để tự phát triển, kết nối các ý thành đoạn nói.</p>
-      </div>
-
-      <div class="lp-scaffold-art" aria-hidden="true">
-        <svg viewBox="0 0 240 120" fill="none" class="scaffold-svg">
-          <defs>
-            <linearGradient id="art-bg-3" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(129, 140, 248, 0.16)"/>
-              <stop offset="100%" stop-color="rgba(236, 72, 153, 0.06)"/>
-            </linearGradient>
-          </defs>
-          <!-- Full Bleed Background -->
-          <rect width="100%" height="100%" fill="url(#art-bg-3)"/>
-
-          <!-- Cute Ears -->
-          <ellipse cx="23.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="24" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-          <ellipse cx="72.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="72" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-
-          <!-- Back hair (Voluminous bob) -->
-          <path d="M 19 62 C 17 34, 32 18, 48 18 C 64 18, 79 34, 77 62 C 80 78, 76 88, 72 90 C 68 90, 69 80, 69 74 L 27 74 C 27 80, 28 90, 24 90 C 20 88, 16 78, 19 62 Z" fill="#1e293b"/>
-
-          <!-- Body: Lavender sweater with golden star medallion -->
-          <path d="M 18 120 C 18 80, 78 80, 78 120 Z" fill="#818cf8"/>
-          <path d="M 40 84 L 48 93 L 56 84" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <polygon points="48,87 45,94 51,94" fill="#fbbf24"/>
-
-          <!-- Neck -->
-          <rect x="42" y="72" width="12" height="10" rx="4" fill="#fed7aa"/>
-
-          <!-- Head (Chubby Cute Silhouette CX=48) -->
-          <ellipse cx="48" cy="56" rx="22" ry="21" fill="#fed7aa"/>
-
-          <!-- Front Bob Hair & Bangs -->
-          <path d="M 21 58 C 19 34, 32 18, 48 18 C 64 18, 77 34, 75 58 C 75 68, 71 74, 68 70 C 67 62, 67 52, 63 46 C 59 50, 54 48, 50 43 C 46 48, 41 50, 35 46 C 31 52, 31 62, 30 70 C 27 74, 23 68, 21 58 Z" fill="#1e293b"/>
-          <path d="M 38 27 C 43 24, 53 24, 58 27" stroke="#475569" stroke-width="2" fill="none" stroke-linecap="round"/>
-
-          <!-- Gold Star Hair Clip ON HAIR with sparkle glint -->
-          <polygon points="64,33 66,28 70,30 67,34 69,38 65,36 61,38 63,34 60,30 64,28" fill="#fbbf24"/>
-          <circle cx="68" cy="27" r="1.2" fill="#fef08a"/>
-
-          <!-- Eyebrows -->
-          <path d="M 36 47 Q 40 44 44 47" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-          <path d="M 52 47 Q 56 44 60 47" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-
-          <!-- Big Charming Dazzling Anime Eyes -->
-          <ellipse cx="40" cy="56" rx="3.6" ry="4.8" fill="#1e293b"/>
-          <circle cx="38.5" cy="53.8" r="1.8" fill="#ffffff"/>
-          <circle cx="41.8" cy="58.2" r="1" fill="#ffffff"/>
-          <path d="M 37 51 Q 41 49 44 52" stroke="#1e293b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-
-          <ellipse cx="56" cy="56" rx="3.6" ry="4.8" fill="#1e293b"/>
-          <circle cx="54.5" cy="53.8" r="1.8" fill="#ffffff"/>
-          <circle cx="57.8" cy="58.2" r="1" fill="#ffffff"/>
-          <path d="M 53 52 Q 56 49 60 51" stroke="#1e293b" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-
-          <!-- Soft Rosy Cheeks with blush lines -->
-          <ellipse cx="33" cy="62" rx="4.2" ry="2.8" fill="#fb7185" opacity="0.75"/>
-          <ellipse cx="63" cy="62" rx="4.2" ry="2.8" fill="#fb7185" opacity="0.75"/>
-          <line x1="31" y1="61" x2="34" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-          <line x1="62" y1="61" x2="65" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-
-          <!-- Sweet Open Smile -->
-          <path d="M 44 65 Q 48 71 52 65 Z" fill="#e11d48"/>
-          <path d="M 45 66 Q 48 68.5 51 66" stroke="#ffffff" stroke-width="1" stroke-linecap="round" fill="none"/>
-
-          <!-- Right: Outline -> Speech Bubble Flow -->
-          <g transform="translate(90, 14)">
-            <rect x="0" y="0" width="46" height="92" rx="8" fill="rgba(129, 140, 248, 0.2)" stroke="#818cf8" stroke-width="1.3"/>
-            <rect x="13" y="-3" width="20" height="5" rx="2.5" fill="#818cf8"/>
-            <circle cx="9" cy="20" r="3" fill="#fbbf24"/>
-            <line x1="16" y1="20" x2="38" y2="20" stroke="#fbbf24" stroke-width="2.2" stroke-linecap="round"/>
-            <circle cx="9" cy="44" r="3" fill="#c084fc"/>
-            <line x1="16" y1="44" x2="35" y2="44" stroke="#c084fc" stroke-width="2.2" stroke-linecap="round"/>
-            <circle cx="9" cy="68" r="3" fill="#f472b6"/>
-            <line x1="16" y1="68" x2="37" y2="68" stroke="#f472b6" stroke-width="2.2" stroke-linecap="round"/>
-          </g>
-
-          <!-- Expansion Bridges -->
-          <path d="M 136 34 C 143 34, 145 42, 150 44" stroke="#fbbf24" stroke-width="1.8" stroke-dasharray="3 2" fill="none"/>
-          <path d="M 136 58 C 143 58, 145 58, 150 58" stroke="#c084fc" stroke-width="1.8" stroke-dasharray="3 2" fill="none"/>
-          <path d="M 136 82 C 143 82, 145 74, 150 72" stroke="#f472b6" stroke-width="1.8" stroke-dasharray="3 2" fill="none"/>
-
-          <!-- Structured Speech Output -->
-          <g transform="translate(150, 14)">
-            <rect x="0" y="0" width="78" height="92" rx="10" fill="rgba(52, 211, 153, 0.18)" stroke="#34d399" stroke-width="1.4"/>
-            <polygon points="-6,50 0,44 0,56" fill="#34d399"/>
-            <line x1="10" y1="18" x2="66" y2="18" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="10" y1="31" x2="60" y2="31" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="10" y1="44" x2="66" y2="44" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"/>
-            <line x1="10" y1="57" x2="52" y2="57" stroke="#93c5fd" stroke-width="2.5" stroke-linecap="round"/>
-            <circle cx="56" cy="74" r="9" fill="rgba(52, 211, 153, 0.3)" stroke="#34d399" stroke-width="1.3"/>
-            <path d="M 52 74 L 55 77 L 60 71" stroke="#34d399" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          </g>
-        </svg>
-      </div>
-
-      <div class="lp-scaffold-foot">
-        <span class="foot-stage">Bậc 3 / 4</span>
-        <span class="foot-tag">Tự tổ chức ý</span>
-      </div>
-    </article>
-
-    <!-- Bậc 4: Đích đến cuối cùng (Milestone Goal) -->
-    <article class="lp-scaffold-card is-goal">
-      <div class="lp-scaffold-header">
-        <span class="lp-scaffold-num is-goal">04</span>
-        <span class="lp-scaffold-pill is-goal">{{ icon("sparkle") }} Gợi ý 0% · Tự chủ</span>
-      </div>
-
-      <div class="lp-scaffold-body">
-        <h3 class="lp-scaffold-title">Tự do (Free Speech)</h3>
-        <p class="lp-scaffold-desc">Tự diễn đạt về chủ đề bằng lời của mình mà không cần gợi ý.</p>
-      </div>
-
-      <div class="lp-scaffold-art" aria-hidden="true">
-        <svg viewBox="0 0 240 120" fill="none" class="scaffold-svg">
-          <defs>
-            <linearGradient id="art-bg-4" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="rgba(245, 158, 11, 0.16)"/>
-              <stop offset="100%" stop-color="rgba(255, 87, 34, 0.06)"/>
-            </linearGradient>
-          </defs>
-          <!-- Full Bleed Background -->
-          <rect width="100%" height="100%" fill="url(#art-bg-4)"/>
-
-          <!-- Cute Ears -->
-          <ellipse cx="23.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="24" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-          <ellipse cx="72.5" cy="58" rx="3.5" ry="5.5" fill="#fed7aa"/>
-          <ellipse cx="72" cy="58" rx="1.8" ry="3" fill="#fbcfe8"/>
-
-          <!-- Back hair -->
-          <path d="M 20 62 C 18 34, 32 18, 48 18 C 64 18, 78 34, 76 62 C 78 74, 70 78, 68 78 L 28 78 C 26 78, 18 74, 20 62 Z" fill="#1e293b"/>
-
-          <!-- Body: Coral Red Shirt with Golden Trim -->
-          <path d="M 18 120 C 18 80, 78 80, 78 120 Z" fill="#ff5722"/>
-          <path d="M 40 84 L 48 93 L 56 84" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <rect x="25" y="112" width="30" height="4" rx="2" fill="#fbbf24"/>
-
-          <!-- Neck -->
-          <rect x="42" y="72" width="12" height="10" rx="4" fill="#fed7aa"/>
-
-          <!-- Head (Chubby Cute Silhouette CX=48) -->
-          <ellipse cx="48" cy="56" rx="22" ry="21" fill="#fed7aa"/>
-
-          <!-- Front Hair: Voluminous Stylish Swept Crop -->
-          <path d="M 21 58 C 19 32, 32 16, 48 16 C 64 16, 77 32, 75 58 L 73 50 C 67 44, 59 46, 53 42 C 47 45, 39 43, 31 48 L 21 58 Z" fill="#1e293b"/>
-          <path d="M 34 24 C 40 21, 46 21, 50 23" stroke="#475569" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-          <path d="M 48 25 C 54 22, 60 23, 64 26" stroke="#475569" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-
-          <!-- Enthusiastic Eyebrows -->
-          <path d="M 35 46 Q 39 42 44 46" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" fill="none"/>
-          <path d="M 52 46 Q 57 42 61 46" stroke="#64748b" stroke-width="1.6" stroke-linecap="round" fill="none"/>
-
-          <!-- Radiantly Joyful Anime Smiling Eyes ( ≧ ▽ ≦ ) -->
-          <path d="M 34 56 Q 39 49 44 56" stroke="#1e293b" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-          <path d="M 52 56 Q 57 49 62 56" stroke="#1e293b" stroke-width="2.8" stroke-linecap="round" fill="none"/>
-
-          <!-- Rosy Glowing Cheeks -->
-          <ellipse cx="33" cy="62" rx="4.2" ry="2.8" fill="#fb7185" opacity="0.8"/>
-          <ellipse cx="63" cy="62" rx="4.2" ry="2.8" fill="#fb7185" opacity="0.8"/>
-          <line x1="31" y1="61" x2="34" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-          <line x1="62" y1="61" x2="65" y2="63" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" opacity="0.8"/>
-
-          <!-- Joyful Big Open Smile with Tongue & Teeth -->
-          <path d="M 42 64 Q 48 73 54 64 Z" fill="#e11d48"/>
-          <path d="M 44 69 Q 48 67 52 69 Q 48 73 44 70 Z" fill="#fb7185"/>
-          <path d="M 44 65.5 Q 48 67.5 52 65.5" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-
-          <!-- Speech sound waves + Sparkle -->
-          <path d="M 72 56 Q 76 58 72 62" stroke="#ff7043" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <path d="M 76 52 Q 82 58 76 66" stroke="#ff7043" stroke-width="2" fill="none" stroke-linecap="round"/>
-          <path d="M 74 38 L 76 34 L 78 38 L 82 40 L 78 42 L 76 46 L 74 42 L 70 40 Z" fill="#fbbf24"/>
-
-          <!-- Right: Fluent Dialogue -->
-          <g transform="translate(90, 16)">
-            <rect x="0" y="0" width="138" height="40" rx="10" fill="rgba(245, 158, 11, 0.2)" stroke="#f59e0b" stroke-width="1.3"/>
-            <polygon points="-6,22 0,16 0,28" fill="#f59e0b"/>
-            <path d="M 14 20 Q 24 10 34 20 T 54 20 T 74 20 T 94 20 T 110 20" stroke="#f59e0b" stroke-width="2.6" fill="none" stroke-linecap="round"/>
-            <path d="M 124 14 L 126 10 L 128 14 L 132 16 L 128 18 L 126 22 L 124 18 L 120 16 Z" fill="#fbbf24"/>
-          </g>
-
-          <g transform="translate(90, 66)">
-            <rect x="0" y="0" width="138" height="40" rx="10" fill="rgba(56, 189, 248, 0.18)" stroke="#38bdf8" stroke-width="1.3"/>
-            <polygon points="144,22 138,16 138,28" fill="#38bdf8"/>
-            <line x1="14" y1="20" x2="88" y2="20" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
-            <circle cx="114" cy="20" r="10" fill="rgba(52, 211, 153, 0.25)" stroke="#10b981" stroke-width="1.4"/>
-            <path d="M 110 20 L 113 23 L 118 17" stroke="#10b981" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          </g>
-        </svg>
-      </div>
-
-      <div class="lp-scaffold-foot">
-        <span class="foot-stage is-goal">Bậc 4 / 4</span>
-        <span class="foot-tag is-goal">Nói độc lập</span>
-      </div>
-    </article>
+<section class="hm-section hm-promise-section" id="principles" aria-labelledby="promise-h">
+  <div class="hm-wrap">
+    <h2 id="promise-h" class="hm-h2">Ba điều chúng tôi giữ</h2>
+    <dl class="hm-promise">
+      <div><dt>Năm tiêu chí rõ ràng</dt><dd>Vốn từ, độ chính xác, trôi chảy, mạch lạc, phát âm.</dd></div>
+      <div><dt>Giảng viên quyết định</dt><dd>Máy gợi ý, người nghe lại và chốt.</dd></div>
+      <div><dt>Bản ghi là của bạn</dt><dd>Chỉ bạn và giảng viên nghe được. Tải về bất kỳ lúc nào.</dd></div>
+    </dl>
   </div>
 </section>
 
-<section class="lp-section lp-teach-section" id="for-teachers" aria-labelledby="teach-h">
-  <div class="lp-head center">
-    <span class="lp-eyebrow-text">{{ icon("inbox") }} Dành cho giảng viên bộ môn</span>
-    <h2 id="teach-h">Công cụ trợ giảng đắc lực &amp; Minh bạch</h2>
-    <p class="lp-subhead">Viết một đoạn văn mẫu và chọn từ khóa: hệ thống tự động dựng sẵn bài học 5 đến 7 bước để giảng viên tinh chỉnh và xuất bản cho lớp trong vài phút.</p>
-  </div>
-
-  <div class="lp-teach-layout">
-    <div class="lp-feature-grid">
-      <div class="lp-feat-item">
-        <span class="lp-feat-icon">{{ icon("pencil") }}</span>
-        <div>
-          <b>Soát lỗi tức thì</b>
-          <p>Kiểm tra từ vựng, độ dài và CEFR dự kiến ngay khi soạn bài.</p>
-        </div>
-      </div>
-      <div class="lp-feat-item">
-        <span class="lp-feat-icon">{{ icon("volume") }}</span>
-        <div>
-          <b>Giọng mẫu chính thầy cô</b>
-          <p>Thu âm trực tiếp giọng của giảng viên để làm mẫu cho cả lớp.</p>
-        </div>
-      </div>
-      <div class="lp-feat-item">
-        <span class="lp-feat-icon">{{ icon("chart") }}</span>
-        <div>
-          <b>Theo dõi tiến độ toàn lớp</b>
-          <p>Xem phân bố phổ điểm và tỷ lệ cải thiện mà không gây áp lực xếp hạng.</p>
-        </div>
-      </div>
-      <div class="lp-feat-item">
-        <span class="lp-feat-icon">{{ icon("shield") }}</span>
-        <div>
-          <b>Hàng đợi duyệt tập trung</b>
-          <p>Nghe lại bài nộp, đối chiếu điểm AI và ra quyết định chuẩn xác.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="lp-mock-wrap lp-rise" aria-hidden="true">
-      <div class="lp-mock lp-tilt" data-tilt>
-        <div class="lp-mock-bar">
-          <div class="lp-mock-dots"><i></i><i></i><i></i></div>
-          <span class="lp-mock-title">Hàng đợi duyệt bài nộp · Lớp CEFR A1–C2</span>
-        </div>
-        <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">1</span><b>Học viên 1</b></div>
-          <span class="lp-mock-topic">Giới thiệu bản thân &amp; gia đình</span>
-          <span class="lp-pill">A1</span>
-          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
-        </div>
-        <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">2</span><b>Học viên 2</b></div>
-          <span class="lp-mock-topic">Khu phố nơi tôi sống</span>
-          <span class="lp-pill">A2</span>
-          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
-        </div>
-        <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">3</span><b>Học viên 3</b></div>
-          <span class="lp-mock-topic">Kể về kỳ nghỉ cuối tuần</span>
-          <span class="lp-pill">B1</span>
-          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
-        </div>
-        <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">4</span><b>Học viên 4</b></div>
-          <span class="lp-mock-topic">Công việc mơ ước tương lai</span>
-          <span class="lp-pill">B2</span>
-          <span class="lp-pill warn"><i class="dot-pulse"></i>Cần duyệt</span>
-        </div>
-        <div class="lp-mock-row">
-          <div class="lp-mock-sv"><span class="lp-avatar-chip">5</span><b>Học viên 5</b></div>
-          <span class="lp-mock-topic">Tác động của công nghệ AI</span>
-          <span class="lp-pill">C1</span>
-          <span class="lp-pill ok"><i class="dot-pulse ok"></i>Đã duyệt</span>
-        </div>
-        <div class="lp-mock-float">
-          <span class="lp-rec small">{{ icon("play") }}</span>
-          <span class="lp-eq"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
-          <b>0:18</b>
-        </div>
-      </div>
+<section class="hm-section hm-faq-section" id="faq" aria-labelledby="faq-h">
+  <div class="hm-wrap hm-faq">
+    <h2 id="faq-h" class="hm-h2">Câu hỏi thường gặp</h2>
+    <div class="hm-faq-list">
+      <details>
+        <summary>Bài nói dài bao lâu, chấm những gì? {{ icon("chevron-down") }}</summary>
+        <p>Từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối đa {{ max_size_mib }} MiB. Máy ước lượng một band tổng và bằng chứng theo năm tiêu chí: vốn từ, độ chính xác, độ trôi chảy, mạch lạc và phát âm.</p>
+      </details>
+      <details>
+        <summary>Có cần cài phần mềm không? {{ icon("chevron-down") }}</summary>
+        <p>Không. Chrome, Edge, Firefox hay Safari trên máy tính hoặc điện thoại đều dùng được. Ghi âm trực tiếp hoặc tải tệp có sẵn.</p>
+      </details>
+      <details>
+        <summary>Ai nghe được bản ghi của tôi? {{ icon("chevron-down") }}</summary>
+        <p>Chỉ bạn và giảng viên của trung tâm. Bạn tải về được bất kỳ lúc nào; muốn xoá thì báo quản trị viên trung tâm.</p>
+      </details>
     </div>
   </div>
 </section>
 
-<!-- Bento Grid: Triết lý & Nguyên tắc hệ thống -->
-<section class="lp-section lp-bento-section" id="principles" aria-labelledby="principles-h">
-  <div class="lp-head center">
-    <span class="lp-eyebrow-text">◇ Triết lý phát triển &amp; Đạo đức AI</span>
-    <h2 id="principles-h">Minh bạch về công nghệ. Đặt<br class="lp-hide-mobile"> <span class="lp-grad-center">người học làm trung tâm.</span></h2>
-    <div class="lp-head-bullets">
-      <span class="lp-bullet-chip">{{ icon("check") }} Đánh giá công bằng</span>
-      <span class="lp-bullet-chip">{{ icon("check") }} Có giảng viên kiểm chứng</span>
-      <span class="lp-bullet-chip">{{ icon("check") }} Tôn trọng sự đa dạng</span>
-      <span class="lp-bullet-chip">{{ icon("check") }} Bảo vệ dữ liệu</span>
-    </div>
-  </div>
-
-  <div class="lp-bento-grid">
-    <!-- Card 1: Biết rõ trình độ và kỹ năng cần cải thiện -->
-    <div class="lp-bento-card card-confidence lp-rise">
-      <div class="lp-bento-header">
-        <div class="lp-bento-icon-badge">
-          <span class="lp-bento-icon icon-coral">{{ icon("chart") }}</span>
-          <span class="lp-bento-pill pill-coral">01 · Năng lực thực tế</span>
-        </div>
-      </div>
-      <div class="lp-bento-copy">
-        <h3>Biết rõ trình độ và kỹ năng cần cải thiện</h3>
-      </div>
-
-      <!-- Mock UI: CEFR Level & 5 Speaking Skills -->
-      <div class="lp-bento-showcase showcase-confidence">
-        <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag">{{ icon("chart") }} Trình độ CEFR</span>
-          <span class="lp-confidence-badge">{{ icon("layers") }} 5 kỹ năng nói</span>
-        </div>
-        
-        <!-- CEFR Scale Range Track -->
-        <div class="lp-bracket-scale">
-          <div class="lp-scale-track">
-            <div class="lp-scale-pointer" style="left: 45%;">
-              <span class="pointer-label">B1 · 3.48/6.0</span>
-              <span class="pointer-dot"></span>
-            </div>
-            <div class="lp-scale-node" style="left: 8%;"></div>
-            <div class="lp-scale-node" style="left: 26%;"></div>
-            <div class="lp-scale-node active" style="left: 45%;"></div>
-            <div class="lp-scale-node" style="left: 64%;"></div>
-            <div class="lp-scale-node" style="left: 82%;"></div>
-            <div class="lp-scale-node" style="left: 95%;"></div>
-          </div>
-          <div class="lp-scale-ticks">
-            <span>A1</span>
-            <span>A2</span>
-            <span class="tick-active">B1</span>
-            <span>B2</span>
-            <span>C1</span>
-            <span>C2</span>
-          </div>
-        </div>
-
-        <!-- 5 Speaking Skills Progress Meters -->
-        <div class="lp-skills-grid">
-          <div class="skill-tile">
-            <span class="sc-icon icon-coral">{{ icon("mic") }}</span>
-            <div class="sc-body">
-              <span class="sc-name">Phát âm</span>
-              <div class="sc-bar"><i style="width: 82%;" class="bar-coral"></i></div>
-            </div>
-            <span class="sc-val">82%</span>
-          </div>
-          <div class="skill-tile">
-            <span class="sc-icon icon-cyan"><svg class="icon icon-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0"/></svg></span>
-            <div class="sc-body">
-              <span class="sc-name">Trôi chảy</span>
-              <div class="sc-bar"><i style="width: 78%;" class="bar-cyan"></i></div>
-            </div>
-            <span class="sc-val">78%</span>
-          </div>
-          <div class="skill-tile">
-            <span class="sc-icon icon-amber">{{ icon("book-open") }}</span>
-            <div class="sc-body">
-              <span class="sc-name">Từ vựng</span>
-              <div class="sc-bar"><i style="width: 75%;" class="bar-amber"></i></div>
-            </div>
-            <span class="sc-val">75%</span>
-          </div>
-          <div class="skill-tile">
-            <span class="sc-icon icon-purple">{{ icon("layers") }}</span>
-            <div class="sc-body">
-              <span class="sc-name">Ngữ pháp</span>
-              <div class="sc-bar"><i style="width: 72%;" class="bar-purple"></i></div>
-            </div>
-            <span class="sc-val">72%</span>
-          </div>
-          <div class="skill-tile">
-            <span class="sc-icon icon-emerald"><svg class="icon icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
-            <div class="sc-body">
-              <span class="sc-name">Mạch lạc</span>
-              <div class="sc-bar"><i style="width: 80%;" class="bar-emerald"></i></div>
-            </div>
-            <span class="sc-val">80%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 2: AI hỗ trợ đánh giá, giảng viên kiểm chứng -->
-    <div class="lp-bento-card card-human lp-rise">
-      <div class="lp-bento-header">
-        <div class="lp-bento-icon-badge">
-          <span class="lp-bento-icon icon-emerald">{{ icon("cap") }}</span>
-          <span class="lp-bento-pill pill-emerald">02 · Giảng viên đồng hành</span>
-        </div>
-      </div>
-      <div class="lp-bento-copy">
-        <h3>AI hỗ trợ đánh giá, giảng viên kiểm chứng</h3>
-      </div>
-
-      <!-- Mock UI: Vertical Timeline Flow -->
-      <div class="lp-bento-showcase showcase-human">
-        <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag"><svg class="icon icon-flow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 12h-8"/><circle cx="18" cy="12" r="3"/><path d="M6 9v6"/></svg> Quy trình đánh giá</span>
-          <span class="lp-flow-status pill-flow-emerald">AI + Giảng viên</span>
-        </div>
-
-        <div class="lp-timeline-container">
-          <div class="lp-timeline-track">
-            <span class="track-dot dot-1"></span>
-            <span class="track-dot dot-2"></span>
-            <span class="track-dot dot-3"></span>
-          </div>
-          <div class="lp-timeline-list">
-            <div class="lp-t-item">
-              <div class="t-item-icon icon-robot">
-                <svg class="icon icon-bot" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
-              </div>
-              <div class="t-item-info">
-                <b>1. AI đánh giá</b>
-                <span>Nhận diện kỹ năng</span>
-              </div>
-              <div class="t-item-check">{{ icon("check") }}</div>
-            </div>
-
-            <div class="lp-t-item">
-              <div class="t-item-icon icon-teacher">
-                {{ icon("user") }}
-              </div>
-              <div class="t-item-info">
-                <b>2. Giảng viên xem xét</b>
-                <span>Nghe lại bài nói</span>
-              </div>
-              <div class="t-item-check">{{ icon("check") }}</div>
-            </div>
-
-            <div class="lp-t-item item-seal">
-              <div class="t-item-icon icon-shield-seal">
-                {{ icon("shield") }}
-              </div>
-              <div class="t-item-info">
-                <b>3. Xác nhận kết quả</b>
-                <span>B1</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 3: Tôn trọng chất giọng riêng, chú trọng giao tiếp hiệu quả -->
-    <div class="lp-bento-card card-accent lp-rise">
-      <div class="lp-bento-header">
-        <div class="lp-bento-icon-badge">
-          <span class="lp-bento-icon icon-cyan">{{ icon("headphones") }}</span>
-          <span class="lp-bento-pill pill-cyan">03 · Công bằng ngôn ngữ</span>
-        </div>
-      </div>
-      <div class="lp-bento-copy">
-        <h3>Tôn trọng chất giọng riêng,<br>chú trọng giao tiếp hiệu quả</h3>
-      </div>
-
-      <!-- Mock UI: Natural Rhythm & Communication Delivery -->
-      <div class="lp-bento-showcase showcase-accent">
-        <div class="lp-showcase-topbar">
-          <span class="lp-showcase-tag"><svg class="icon icon-wave" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12v0M8 8v8M12 4v16M16 8v8M20 12v0"/></svg> Phân tích bài nói</span>
-          <span class="lp-live-wave-tag"><i class="wave-dot"></i> Minh họa</span>
-        </div>
-
-        <!-- Symmetrical Waveform + Audio Player -->
-        <div class="lp-audio-player-box">
-          <div class="lp-waveform-bars">
-            <span style="height: 18%;"></span><span style="height: 32%;"></span><span style="height: 48%;"></span>
-            <span style="height: 72%;"></span><span style="height: 94%;"></span><span style="height: 72%;"></span>
-            <span style="height: 48%;"></span><span style="height: 28%;"></span><span style="height: 38%;"></span>
-            <span style="height: 62%;"></span><span style="height: 88%;"></span><span style="height: 100%;"></span>
-            <span style="height: 88%;"></span><span style="height: 62%;"></span><span style="height: 38%;"></span>
-            <span style="height: 28%;"></span><span style="height: 48%;"></span><span style="height: 72%;"></span>
-            <span style="height: 94%;"></span><span style="height: 72%;"></span><span style="height: 48%;"></span>
-            <span style="height: 32%;"></span><span style="height: 18%;"></span>
-          </div>
-          <div class="lp-player-controls">
-            <button type="button" class="lp-play-btn" aria-label="Phát âm thanh">{{ icon("play") }}</button>
-            <span class="lp-play-time">0:00 / 0:14</span>
-            <div class="lp-play-track"><i style="width: 32%;"></i></div>
-          </div>
-        </div>
-
-        <!-- 2 Metric Cards -->
-        <div class="lp-metrics-dual">
-          <div class="lp-metric-card">
-            <div class="m-card-top">
-              <span class="m-card-icon val-cyan">{{ icon("chat") }}</span>
-              <span class="m-card-label">Độ rõ nghĩa</span>
-            </div>
-            <div class="m-card-num val-cyan">96%</div>
-            <div class="m-card-bar"><i style="width: 96%;" class="bar-cyan"></i></div>
-          </div>
-          <div class="lp-metric-card">
-            <div class="m-card-top">
-              <span class="m-card-icon val-emerald">{{ icon("chart") }}</span>
-              <span class="m-card-label">Độ trôi chảy</span>
-            </div>
-            <div class="m-card-num val-emerald">92%</div>
-            <div class="m-card-bar"><i style="width: 92%;" class="bar-emerald"></i></div>
-          </div>
-        </div>
-
-        <div class="lp-accent-banner">
-          {{ icon("info") }} <span>Đánh giá dựa trên khả năng truyền đạt.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card 4: Minh bạch dữ liệu, bạn nắm quyền kiểm soát -->
-    <div class="lp-bento-card card-privacy lp-rise">
-      <div class="lp-bento-header">
-        <div class="lp-bento-icon-badge">
-          <span class="lp-bento-icon icon-purple">{{ icon("lock") }}</span>
-          <span class="lp-bento-pill pill-purple">04 · Quyền riêng tư</span>
-        </div>
-      </div>
-      <div class="lp-bento-copy">
-        <h3>Minh bạch dữ liệu, bạn nắm quyền kiểm soát</h3>
-      </div>
-
-      <!-- Mock UI: Clean Product Action Rows -->
-      <div class="lp-bento-showcase showcase-privacy">
-        <div class="lp-action-list">
-          <div class="action-row">
-            <div class="action-icon icon-blue">{{ icon("download") }}</div>
-            <span class="action-text">Xuất dữ liệu học tập</span>
-            <span class="action-arrow">{{ icon("chevron-right") }}</span>
-          </div>
-
-          <div class="action-row">
-            <div class="action-icon icon-purple">{{ icon("users") }}</div>
-            <span class="action-text">Kiểm soát quyền truy cập</span>
-            <span class="action-arrow">{{ icon("chevron-right") }}</span>
-          </div>
-
-          <div class="action-row">
-            <div class="action-icon icon-red">{{ icon("trash") }}</div>
-            <span class="action-text">Xóa dữ liệu</span>
-            <span class="action-arrow">{{ icon("chevron-right") }}</span>
-          </div>
-        </div>
-
-        <!-- Footer Guarantees (3 columns matching mockup) -->
-        <div class="lp-vault-guarantee">
-          <div class="g-col">
-            <span class="g-check">{{ icon("check") }}</span>
-            <span class="g-label">Dữ liệu cá nhân</span>
-          </div>
-          <div class="g-col">
-            <span class="g-check">{{ icon("check") }}</span>
-            <span class="g-label">Không chia sẻ<br>bên thứ ba</span>
-          </div>
-          <div class="g-col">
-            <span class="g-check">{{ icon("check") }}</span>
-            <span class="g-label">Bạn toàn quyền<br>kiểm soát</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="lp-section lp-faq" id="faq" aria-labelledby="faq-h">
-  <div class="lp-head center">
-    <span class="lp-eyebrow-text">{{ icon("chat") }} Câu hỏi thường gặp</span>
-    <h2 id="faq-h">Những điều bạn cần biết trước khi bắt đầu</h2>
-    <p class="lp-subhead">Giải đáp chi tiết về quy cách bài kiểm tra, cách đánh giá và quyền bảo mật dữ liệu học tập.</p>
-  </div>
-  <div class="lp-faq-list">
-    <details>
-      <summary>Bài nói dài bao lâu và kiểm tra những yếu tố gì?</summary>
-      <p>Bài đánh giá chuẩn dài từ {{ min_duration_s | int }} đến {{ max_duration_s | int }} giây, tệp tối đa {{ max_size_mib }} MiB. Máy đưa ra một điểm tổng ước lượng và bằng chứng theo 5 khía cạnh CEFR: vốn từ, độ chính xác, độ trôi chảy, mạch lạc (qua từ nối) và độ dễ nghe; xem trang <a href="/bands">Band A1–C2</a> để biết máy đo được phần nào.</p>
-    </details>
-    <details>
-      <summary>Tôi có cần cài đặt phần mềm chuyên dụng không?</summary>
-      <p>Không cần bất kỳ cài đặt nào. Mọi trình duyệt hiện đại (Chrome, Edge, Firefox, Safari) trên máy tính hoặc điện thoại đều hoạt động mượt mà. Bạn có thể thu âm trực tiếp qua micro hoặc tải lên tệp ghi âm sẵn.</p>
-    </details>
-    <details>
-      <summary>Ai là người có thể nghe được bản ghi âm của tôi?</summary>
-      <p>Chỉ bạn và giảng viên của trung tâm nghe được bản ghi. Bạn tải về được bất kỳ lúc nào; muốn xoá thì báo quản trị viên trung tâm.</p>
-    </details>
-  </div>
-</section>
-
-<section class="lp-cta lp-rise" aria-labelledby="cta-h">
-  <div class="lp-cta-copy">
-    <h2 id="cta-h">Luyện nói tiếng Anh, bắt đầu từ hôm nay.</h2>
-    <p>Luyện phát âm, cải thiện độ trôi chảy và theo dõi tiến bộ qua từng bài nói.</p>
-    <div class="lp-cta-trust">
-      <span>{{ icon("headphones") }} Không cần cài đặt</span>
-    </div>
-  </div>
-  <div class="lp-cta-action">
-    <a class="button lp-cta-btn" href="/signup">Tạo tài khoản miễn phí {{ icon("arrow-right") }}</a>
+<section class="hm-cta" aria-labelledby="cta-h">
+  <div class="hm-wrap hm-cta-inner">
+    <h2 id="cta-h">Bắt đầu lượt nói đầu tiên của bạn.</h2>
+    <a class="hm-btn hm-btn-light" href="/signup">Đăng ký miễn phí {{ icon("arrow-right") }}</a>
   </div>
 </section>
 

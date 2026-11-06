@@ -523,6 +523,20 @@ def test_keywords_without_a_text_build_a_word_lesson(m):
     [a2] = [u for u in units if u["unit_id"] == "unit-sample-a2"]
     assert a2["lessons"][-1]["lesson_id"] == words  # the two drafts stay hidden
     assert a2["lessons"][-1]["kinds"] == ["keywords", "keywords", "free"]
+    # This authoring/runner test opens the new lesson only after its prerequisites.
+    for unit in units:
+        for item in unit["lessons"]:
+            if item["band"] == "A2" and item["lesson_id"] != words:
+                previous, version = m.lessons.published(item["lesson_id"])
+                for step in previous.steps:
+                    m.lessons.add_attempt(
+                        account_id(m, "SV-001"),
+                        previous.lesson_id,
+                        version,
+                        StepResult(
+                            step_id=step.step_id, kind=step.kind, passed=True, speaking_s=10
+                        ),
+                    )
     say(m, "the traffic near my home is bad but the park nearby is quiet")
     result = record(student, words, steps[0]["step_id"])["result"]
     assert [h["text"] for h in result["found"]] == ["traffic", "nearby", "quiet"]
@@ -1183,6 +1197,52 @@ def test_next_lesson_follows_the_weakest_criterion(m):
     m.repo.save(scored("as-1", Band.B1, [Criterion.RANGE]), "SV-001", "P3", account_id=acc)
     after = student.get(f"/api/v1/learn?path_id={path_id}").json()["next"]
 
+    # A weak criterion must not skip the unfinished prerequisite in this band.
+    assert after["lesson_id"] == first_fluency
+    prerequisite, version = m.lessons.published(first_fluency)
+    for step in prerequisite.steps:
+        m.lessons.add_attempt(
+            acc,
+            first_fluency,
+            version,
+            StepResult(step_id=step.step_id, kind=step.kind, passed=True, speaking_s=10),
+        )
+    after = student.get(f"/api/v1/learn?path_id={path_id}").json()["next"]
     assert after["lesson_id"] == second_range and after["basis"] == "weakest_criterion"
     assert after["title"] == "Từ về thành phố"
     assert "vốn từ" in after["reason"] and "B1" in after["reason"]
+
+
+def test_band_entry_open_but_later_lessons_require_completion(m):
+    student = login_as(m, "SV-GATE")
+    home = student.get("/api/v1/learn").json()
+    bands = {}
+    for unit in home["path"]["units"]:
+        for item in unit["lessons"]:
+            bands.setdefault(item["band"], []).append(item)
+    assert len(bands) == 6
+    for items in bands.values():
+        assert items[0]["status"] == "new"
+        assert student.get(f"/api/v1/learn/lessons/{items[0]['lesson_id']}").status_code == 200
+        assert all(i["status"] == "locked" for i in items[1:])
+    items = next(items for items in bands.values() if len(items) >= 3)
+    first, second, third = [i["lesson_id"] for i in items[:3]]
+    lesson, _ = m.lessons.published(second)
+    assert student.get(f"/api/v1/learn/lessons/{second}").status_code == 403
+    attempt = student.post(
+        f"/api/v1/learn/lessons/{second}/steps/{lesson.steps[0].step_id}/attempts",
+        files={"audio": ("clip.wav", b"invalid", "audio/wav")},
+    )
+    assert attempt.status_code == 403  # Gate before decoding/scoring/storing any audio.
+    assert not m.lessons.attempts(account_id=account_id(m, "SV-GATE"))
+    lesson, version = m.lessons.published(first)
+    for step in lesson.steps:
+        m.lessons.add_attempt(
+            account_id(m, "SV-GATE"),
+            first,
+            version,
+            StepResult(step_id=step.step_id, kind=step.kind, passed=True, speaking_s=10),
+        )
+    assert student.get(f"/api/v1/learn/lessons/{first}").status_code == 200
+    assert student.get(f"/api/v1/learn/lessons/{second}").status_code == 200
+    assert student.get(f"/api/v1/learn/lessons/{third}").status_code == 403

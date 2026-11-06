@@ -31,8 +31,8 @@ from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
 
 pytestmark = pytest.mark.e2e
 
-ART = ".ground, .lp-terraces, .auth-terraces"
-NEAR_RIDGE = "document.querySelector('.lp-terraces .b3 .art-wave')"
+ART = ".ground, .auth-terraces"
+NEAR_RIDGE = "document.querySelector('.auth-terraces .b3 .art-wave')"
 ART_ANIMATIONS = (
     "document.getAnimations().map(a => a.animationName || '').filter(n => n.startsWith('art-'))"
 )
@@ -89,50 +89,28 @@ def test_the_ground_is_drawn_in_both_themes(browser, live_server):
     assert colours["light"] != colours["dark"]
 
 
-def test_the_ridges_draw_themselves_in_when_motion_is_welcome(browser, live_server):
-    ctx = new_context(browser, live_server, reduced_motion="no-preference")
-    try:
-        page = ctx.new_page()
-        page.goto("/")
-        names = page.evaluate(ART_ANIMATIONS)
-        # Four bands rise, four ridges draw in, the sun comes up, the nearest band breathes.
-        assert names.count("art-rise") == 4 and names.count("art-draw") == 4, names
-        assert names.count("art-sunrise") == 1 and names.count("art-breathe") == 1, names
-        wait_until(
-            page,
-            "document.getAnimations().filter(a => a.animationName === 'art-draw'"
-            " && a.playState !== 'finished').length === 0",
-        )
-        # Drawn in, a ridge stays drawn; the breathing goes on.
-        offset = page.evaluate(f"getComputedStyle({NEAR_RIDGE}).strokeDashoffset")
-        assert float(offset.removesuffix("px")) == 0
-        assert page.evaluate(
-            "document.getAnimations().some(a => a.animationName === 'art-breathe'"
-            " && a.playState === 'running' && a.effect.getComputedTiming().iterations === Infinity)"
-        )
-    finally:
-        ctx.close()
-
-
 def test_with_reduced_motion_the_scene_is_simply_there(browser, live_server):
     ctx = new_context(browser, live_server, reduced_motion="reduce")
     try:
         page = ctx.new_page()
-        page.goto("/")
+        page.goto("/login")
         state = page.evaluate(
             f"""() => ({{
               running: {ART_ANIMATIONS}.length,
               dashes: getComputedStyle({NEAR_RIDGE}).strokeDasharray,
-              band: getComputedStyle(document.querySelector('.lp-terraces .b3')).animationName,
-              sun: getComputedStyle(document.querySelector('.lp-terraces .art-sun')).animationName,
+              band: getComputedStyle(document.querySelector('.auth-terraces .b3')).animationName,
+              sun: getComputedStyle(document.querySelector('.auth-terraces .art-sun'))
+                .animationName,
             }})"""
         )
         assert state == {"running": 0, "dashes": "none", "band": "none", "sun": "none"}
         # Nor does the pointer move the hills.
-        hero = page.locator(".lp-hero").bounding_box()
+        hero = page.locator(".auth-split").bounding_box()
         page.mouse.move(hero["x"] + hero["width"] * 0.95, hero["y"] + hero["height"] * 0.2, steps=6)
         page.wait_for_timeout(400)
-        drift = page.evaluate("getComputedStyle(document.querySelector('.lp-terraces')).translate")
+        drift = page.evaluate(
+            "getComputedStyle(document.querySelector('.auth-terraces')).translate"
+        )
         assert drift in ("none", "0px", "0px 0px"), drift
     finally:
         ctx.close()
@@ -152,18 +130,14 @@ def test_any_width_gets_the_whole_far_hill_and_a_round_sun(browser, live_server)
         ctx = new_context(browser, live_server, width=width, height=900, reduced_motion="reduce")
         try:
             page = ctx.new_page()
-            for url, cls in (("/", ".lp-terraces"), ("/login", ".auth-terraces")):
+            # Since D093 the scene is drawn on the sign-in page only.
+            for url, cls in (("/login", ".auth-terraces"),):
                 page.goto(url)
                 got = page.evaluate(measure, cls)
                 # No band is cut along the top of its box, however wide the screen.
                 assert len(got["fills"]) == 4 and min(got["fills"]) >= -0.5, (width, url, got)
-                if url == "/":
-                    w, h, top, right = got["sun"]
-                    assert got["shown"] and w > 20 and abs(w - h) < 0.5, (width, got)
-                    assert top >= 0 and right >= 0, (width, got)
-                else:
-                    # The form stands where the sun would peek out: no sun there.
-                    assert not got["shown"], width
+                # The form stands where the sun would peek out: no sun there.
+                assert not got["shown"], width
         finally:
             ctx.close()
 
@@ -223,7 +197,7 @@ def test_printing_leaves_the_art_out(browser, live_server):
         )
         page.context.clear_cookies()
         for url, pieces in (
-            ("/", (".ground", ".lp-terraces")),
+            ("/", (".ground",)),
             ("/login", (".ground", ".auth-terraces")),
         ):
             page.goto(url)
@@ -358,7 +332,7 @@ def shoot(page, css: str) -> str:
 def test_the_words_on_the_art_keep_their_contrast(browser, live_server):
     student = live_server.account()
     pages = (
-        ("/", ".lp-hero-center"),
+        ("/", ".hm-hero-copy"),
         ("/login", ".auth-intro, .auth-card"),
         ("/bands", "main"),
         ("/my-progress", "main"),

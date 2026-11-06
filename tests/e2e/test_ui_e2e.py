@@ -61,13 +61,15 @@ def recorder_ready(page) -> bool:
         "!document.getElementById('rec-live').hidden"
         " || !document.getElementById('recorder-off').hidden",
     )
-    return page.locator("#rec-live").is_visible()
+    # Hidden by the page's own step (D093) is still switched on.
+    return page.evaluate("!document.getElementById('rec-live').hidden")
 
 
 def submit_assessment(page, live_server) -> str:
     """Upload a file on the submit page, listen-back step, submit; return the id."""
     page.goto("/")
     expect(page.locator(".task")).not_to_have_count(0)
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
     expect(page.locator("#rec-take")).to_contain_text("full-35s.wav")
     page.get_by_role("button", name="Nộp bài và chấm").click()
@@ -130,6 +132,7 @@ def test_recording_waits_for_listen_back_before_anything_is_sent(context, live_s
     sent = []
     page.on("request", lambda r: sent.append(r.url) if "/api/v1/responses" in r.url else None)
 
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.get_by_role("button", name="Bắt đầu ghi âm").click()
     page.wait_for_timeout(1_500)
     page.get_by_role("button", name="Dừng ghi âm").click()
@@ -153,6 +156,7 @@ def test_recording_waits_for_listen_back_before_anything_is_sent(context, live_s
 
 def test_uploaded_file_is_heard_back_then_submitted_to_a_report(context, live_server):
     page = student_page(context, live_server, "/")
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
     expect(page.locator("#rec-take")).to_contain_text("full-35s.wav")
     expect(page.locator("#rec-take")).to_contain_text("0:35")
@@ -175,7 +179,9 @@ def test_chosen_prompt_sits_above_the_record_button(context, live_server):
     second = tasks.nth(1)
     prompt = second.locator(".task-prompt").text_content().strip()
     second.click()
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     expect(page.locator("#chosen-prompt .prompt-text")).to_have_text(prompt)
+    expect(page.get_by_role("button", name="Bắt đầu ghi âm")).to_be_visible()
     expect(page.locator("#task_id")).to_have_value(second.locator("input").get_attribute("value"))
 
 
@@ -290,7 +296,8 @@ def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     login(page, live_server, live_server.account(), "/practice")
     page.goto(path)
     page.wait_for_load_state("networkidle")
-    nav = page.locator(".site-nav")
+    # Since Thắng's student navigation (f84b377) the bar is its own element.
+    nav = page.locator(".app-tabbar")
     assert nav.evaluate("n => getComputedStyle(n).position") == "fixed"
     box = nav.bounding_box()
     assert box and abs(box["y"] + box["height"] - 812) < 2

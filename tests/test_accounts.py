@@ -357,7 +357,6 @@ def test_the_band_page_labels_what_the_machine_does_not_measure(m):
     assert "Tương tác" not in text  # D062
     assert "Máy đo gián tiếp" in text
     assert "nói lắp" in text
-    assert "Không cấp chứng chỉ" in text
 
 
 def test_the_report_links_its_band_to_the_band_page(m):

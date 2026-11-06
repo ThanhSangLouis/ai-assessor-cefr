@@ -1,0 +1,357 @@
+/* Plan editor follows the supplied November mockup; scoped to this screen. */
+#band-plan { container-type: inline-size; padding: clamp(18px, 2cqw, 38px); border-radius: 24px; background: var(--rm-panel); border: 1px solid var(--rm-line); box-shadow: 0 3px 2px rgba(24,32,52,.08), 0 10px 22px rgba(24,32,52,.06); }
+#band-plan .rm-plan-settings > summary { display: flex; align-items: center; gap: clamp(12px,1.5cqw,28px); margin: 0; color: var(--rm-text); list-style: none; }
+#band-plan .rm-plan-settings > summary::-webkit-details-marker { display: none; }
+#band-plan .rm-plan-settings > summary::after { display: none; }
+#band-plan .bp-heading { font-size: clamp(18px,1.6cqw,30px); font-weight: 700; }
+#band-plan .bp-target { width: 32px; height: 32px; color: #ff7900; }
+#band-plan .bp-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 13px; border-radius: 30px; color: #14962e; background: #dcf7df; font-size: clamp(13px,1.1cqw,22px); font-weight: 650; }
+#band-plan .bp-toggle { margin-left: auto; display: flex; align-items: center; gap: 16px; font-size: clamp(14px,1.3cqw,25px); font-weight: 400; }
+#band-plan .bp-toggle .icon { width: 22px; height: 22px; }
+#band-plan details[open] > summary .bp-toggle .icon { transform: rotate(180deg); }
+#band-plan details[open] .bp-closed-label, #band-plan details:not([open]) .bp-open-label { display: none; }
+#band-plan .bp-editor { display: grid; grid-template-columns: minmax(0, 2.12fr) minmax(0, .88fr); gap: clamp(20px,1.7cqw,34px); align-items: end; margin-top: clamp(24px,2.4cqw,44px); }
+#band-plan .bp-form { display: grid; grid-template-columns: minmax(0,1fr) 44px minmax(0,1fr) minmax(170px,.84fr); gap: clamp(14px,1.5cqw,28px); align-items: end; }
+#band-plan .bp-field { min-width: 0; }
+#band-plan .bp-field label { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; font-size: clamp(14px,1.25cqw,24px); color: var(--rm-sub); font-weight: 400; }
+#band-plan .bp-field label .icon { width: 19px; height: 19px; }
+#band-plan .bp-field select, #band-plan .bp-field .c-dropdown-trigger { height: clamp(48px,4cqw,78px); font-size: clamp(15px,1.4cqw,27px); border: 1.5px solid var(--rm-field-line); border-radius: 14px; padding-inline: clamp(14px,1.5cqw,28px); font-weight: 600; }
+#band-plan .bp-range-arrow { display: grid; place-items: center; height: 44px; margin-bottom: 4px; border-radius: 12px; background: var(--rm-orange-soft); color: #ff7900; }
+#band-plan .bp-range-arrow .icon { width: 27px; height: 27px; }
+#band-plan .bp-submit { display: flex; align-items: center; justify-content: center; gap: 10px; height: clamp(48px,4cqw,78px); padding: 0 14px; border: 1px solid #ff8d31; border-radius: 14px; background: linear-gradient(#ff942e,#ff7105); color: white; font-family: inherit; font-size: clamp(15px,1.4cqw,27px); font-weight: 650; white-space: nowrap; cursor: pointer; box-shadow: inset 0 1px 0 #ffffff30; }
+#band-plan .bp-submit .icon { width: 27px; height: 27px; }
+#band-plan .bp-submit:hover { filter: brightness(1.04); }
+#band-plan .bp-submit:disabled { opacity: .6; cursor: wait; }
+#band-plan .bp-submit:focus-visible { outline: 2px solid #fb8b32; outline-offset: 3px; }
+#band-plan .bp-assessment { border-left: 1.5px solid var(--rm-line); padding: 14px 0 14px clamp(20px,2cqw,40px); min-height: 90px; display: flex; flex-direction: column; justify-content: center; }
+#band-plan .bp-assessment a { display: flex; align-items: center; gap: 13px; font-size: clamp(16px,1.45cqw,28px); color: var(--rm-text); text-underline-offset: 4px; }
+#band-plan .bp-assessment a .icon { color: #ff7900; width: 29px; height: 29px; }
+#band-plan .bp-assessment p { margin: 10px 0 0; font-size: clamp(13px,1.12cqw,22px); line-height: 1.5; color: var(--rm-sub); }
+#band-plan .bp-plan { margin-top: clamp(24px,2.5cqw,46px); padding-top: clamp(20px,1.6cqw,30px); border-top: 1px solid var(--rm-line); }
+#band-plan .bp-current { display: grid; grid-template-columns: 40px minmax(220px, .8fr) minmax(80px,1.6fr) 52px minmax(24px,.6fr) 52px; gap: 18px; align-items: center; }
+#band-plan .bp-route-icon { color: #ff7900; width: 38px; height: 38px; }
+#band-plan .bp-current-text h3 { margin: 0; font-size: clamp(17px,1.45cqw,28px); font-weight: 650; line-height: 1.4; }
+#band-plan .bp-current-text p { margin: 8px 0 0; font-size: clamp(14px,1.2cqw,23px); line-height: 1.5; color: var(--rm-sub); }
+#band-plan .bp-meter { height: clamp(10px,.85cqw,17px); border-radius: 30px; background: var(--rm-track); box-shadow: inset 0 2px 3px #1e293b0e; overflow: hidden; }
+#band-plan .bp-meter span { display: block; height: 100%; background: var(--rm-green); border-radius: inherit; }
+#band-plan .bp-percent { font-size: clamp(15px,1.25cqw,24px); }
+#band-plan .rm-plan-menu { grid-column: 6; }
+#band-plan .rm-plan-menu > summary { display: grid; place-items: center; height: 48px; width: 52px; border: 1px solid var(--rm-line); border-radius: 13px; color: var(--rm-text); font-size: 26px; }
+#band-plan .bp-warning { display: flex; align-items: center; gap: 14px; padding: 13px 20px; margin-top: 24px; background: var(--rm-orange-soft); border-radius: 14px; color: var(--rm-text); font-size: clamp(14px,1.2cqw,23px); line-height: 1.5; }
+#band-plan .bp-warning .icon { width: 24px; height: 24px; color: #ff7900; flex: none; }
+@container (max-width: 1100px) {
+  #band-plan .bp-editor { grid-template-columns: 1fr; }
+  #band-plan .bp-assessment { min-height: 0; padding: 14px 0 0; border-left: 0; border-top: 1px solid var(--rm-line); }
+  #band-plan .bp-assessment p { margin-top: 6px; }
+  #band-plan .bp-current { grid-template-columns: 32px minmax(180px,1fr) minmax(70px,1fr) 35px 42px; gap: 12px; }
+  #band-plan .rm-plan-menu { grid-column: 5; }
+  #band-plan .rm-plan-menu > summary { width: 40px; height: 40px; }
+}
+@container (max-width: 580px) {
+  #band-plan .rm-plan-settings > summary { flex-wrap: wrap; gap: 8px; }
+  #band-plan .bp-target { width: 23px; height: 23px; }
+  #band-plan .bp-heading { font-size: 16px; }
+  #band-plan .bp-status { font-size: 11px; padding: 4px 7px; }
+  #band-plan .bp-toggle { font-size: 12px; gap: 4px; }
+  #band-plan .bp-toggle .icon { width: 16px; }
+  #band-plan .bp-form { grid-template-columns: minmax(0,1fr) 25px minmax(0,1fr); gap: 9px; }
+  #band-plan .bp-field label { font-size: 12px; min-height: 30px; margin-bottom: 6px; gap: 4px; }
+  #band-plan .bp-field label .icon { width: 14px; height: 14px; }
+  #band-plan .bp-field .c-dropdown-trigger { font-size: 12px; padding-inline: 9px; border-radius: 10px; }
+  #band-plan .bp-range-arrow { height: 32px; margin-bottom: 8px; }
+  #band-plan .bp-range-arrow .icon { width: 20px; }
+  #band-plan .bp-submit { grid-column: 1/-1; font-size: 15px; margin-top: 5px; }
+  #band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) 40px; gap: 10px; }
+  #band-plan .bp-current-text h3 { font-size: 15px; }
+  #band-plan .bp-route-icon { width: 28px; height: 28px; }
+  #band-plan .rm-plan-menu { grid-column: 3; grid-row: 1; }
+  #band-plan .bp-meter { grid-column: 2; }
+  #band-plan .bp-percent { grid-column: 3; font-size: 13px; }
+  #band-plan .bp-warning { padding: 10px 12px; gap: 9px; margin-top: 16px; font-size: 13px; }
+}
+/* Fine alignment against the supplied wide desktop reference. */
+@container (min-width: 1400px) {
+  #band-plan .bp-editor { margin-top: 32px; }
+  #band-plan .bp-assessment p { font-size: 20px; }
+  #band-plan .bp-current { grid-template-columns: 40px minmax(220px,.8fr) minmax(80px,1.6fr) 52px minmax(24px,.6fr) 66px; }
+  #band-plan .rm-plan-menu > summary { width: 66px; height: 62px; }
+}
+/* The editor owns its card border on narrow screens too. */
+#band-plan .rm-plan-settings { border: 0; padding: 0; }
+/* Production scale: match the surrounding dashboard rather than the reference image size. */
+#band-plan { padding: 20px 24px; border-radius: 18px; }
+#band-plan .bp-heading { font-size: 19px; }
+#band-plan .bp-target { width: 25px; height: 25px; }
+#band-plan .rm-plan-settings > summary { gap: 14px; }
+#band-plan .bp-status { font-size: 12px; padding: 5px 10px; }
+#band-plan .bp-toggle { font-size: 14px; gap: 10px; }
+#band-plan .bp-toggle .icon { width: 18px; height: 18px; }
+#band-plan .bp-editor { margin-top: 20px; gap: 24px; }
+#band-plan .bp-form { grid-template-columns: minmax(0,1fr) 32px minmax(0,1fr) 185px; gap: 14px; }
+#band-plan .bp-field label { font-size: 13px; gap: 7px; margin-bottom: 8px; }
+#band-plan .bp-field label .icon { width: 16px; height: 16px; }
+#band-plan .bp-field select, #band-plan .bp-field .c-dropdown-trigger { height: 44px; padding-inline: 14px; font-size: 14px; border-radius: 10px; }
+#band-plan .bp-range-arrow { height: 32px; border-radius: 9px; margin-bottom: 6px; }
+#band-plan .bp-range-arrow .icon { width: 22px; height: 22px; }
+#band-plan .bp-submit { height: 44px; font-size: 14px; border-radius: 10px; gap: 8px; padding-inline: 14px; }
+#band-plan .bp-submit .icon { width: 21px; height: 21px; }
+#band-plan .bp-assessment { min-height: 66px; padding: 6px 0 6px 24px; }
+#band-plan .bp-assessment a { font-size: 16px; gap: 10px; }
+#band-plan .bp-assessment a .icon { width: 23px; height: 23px; }
+#band-plan .bp-assessment p { font-size: 13px; line-height: 1.5; margin-top: 6px; }
+#band-plan .bp-plan { margin-top: 20px; padding-top: 18px; }
+#band-plan .bp-current { grid-template-columns: 30px minmax(200px,1fr) minmax(80px,1.4fr) 36px minmax(0,.3fr) 38px; gap: 12px; }
+#band-plan .bp-route-icon { width: 28px; height: 28px; }
+#band-plan .bp-current-text h3 { font-size: 16px; }
+#band-plan .bp-current-text p { font-size: 13px; margin-top: 4px; }
+#band-plan .bp-meter { height: 9px; }
+#band-plan .bp-percent { font-size: 14px; }
+#band-plan .rm-plan-menu > summary { width: 38px; height: 36px; border-radius: 10px; font-size: 22px; }
+#band-plan .bp-warning { margin-top: 16px; padding: 10px 14px; font-size: 13px; border-radius: 10px; gap: 10px; }
+#band-plan .bp-warning .icon { width: 19px; height: 19px; }
+@container (max-width: 1100px) {
+  #band-plan .bp-editor { grid-template-columns: minmax(0,1fr) 260px; gap: 18px; }
+  #band-plan .bp-form { grid-template-columns: minmax(0,1fr) 24px minmax(0,1fr); gap: 10px; }
+  #band-plan .bp-submit { grid-column: 1/-1; justify-self: end; }
+  #band-plan .bp-assessment { border-top: 0; border-left: 1px solid var(--rm-line); padding-left: 18px; }
+}
+@container (max-width: 760px) {
+  #band-plan .bp-editor { grid-template-columns: 1fr; gap: 16px; }
+  #band-plan .bp-assessment { border-left: 0; border-top: 1px solid var(--rm-line); padding: 12px 0 0; min-height: 0; }
+  #band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) 38px; gap: 10px; }
+  #band-plan .rm-plan-menu { grid-column: 3; grid-row: 1; }
+  #band-plan .bp-meter { grid-column: 2; }
+  #band-plan .bp-percent { grid-column: 3; }
+}
+@media (max-width: 700px) {
+  #band-plan { padding: 16px; border-radius: 14px; }
+  #band-plan .bp-heading { font-size: 16px; }
+  #band-plan .rm-plan-settings > summary { gap: 8px; }
+  #band-plan .bp-toggle { font-size: 12px; }
+  #band-plan .bp-status { font-size: 11px; padding: 4px 7px; }
+  #band-plan .bp-field label { font-size: 12px; min-height: 18px; }
+  #band-plan .bp-field .c-dropdown-trigger { font-size: 12px; padding-inline: 8px; }
+  #band-plan .bp-submit { justify-self: stretch; }
+  #band-plan .bp-current-text h3 { font-size: 15px; }
+}
+@container (min-width: 900px) {
+  #band-plan .bp-editor { grid-template-columns: minmax(0, 2.3fr) minmax(230px, 1fr); align-items: center; }
+  #band-plan .bp-form { grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr) 185px; gap: 12px; }
+  #band-plan .bp-submit { grid-column: auto; justify-self: stretch; }
+}
+/* Compact summary and secondary progress, with detail retained in the sidebar. */
+#band-plan { padding-block: 17px; }
+#band-plan .bp-editor { margin-top: 17px; }
+#band-plan .bp-plan { margin-top: 17px; padding-top: 15px; }
+#band-plan .bp-status { background: #eef8ef; color: #378348; font-size: 11px; font-weight: 500; padding: 4px 8px; }
+#band-plan .bp-collapsed-progress { display: none; color: var(--rm-sub); font-size: 13px; }
+#band-plan .rm-plan-settings:not([open]) .bp-collapsed-progress { display: inline; }
+#band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) auto 38px; gap: 12px; }
+#band-plan .bp-current-text h3 { font-size: 15px; font-weight: 600; }
+#band-plan .bp-progress { display: flex; align-items: center; gap: 10px; width: 280px; max-width: 100%; font-size: 13px; color: var(--rm-sub); }
+#band-plan .bp-count, #band-plan .bp-percent { white-space: nowrap; font-size: 13px; }
+#band-plan .bp-meter { flex: 1; height: 7px; grid-column: auto; }
+#band-plan .rm-plan-menu { grid-column: 4; grid-row: 1; }
+#band-plan .bp-submit:disabled { opacity: 1; background: var(--rm-track); color: var(--rm-sub); border-color: var(--rm-line); box-shadow: none; cursor: default; filter: none; }
+#band-plan .bp-assessment a { min-height: 40px; width: fit-content; padding: 4px 6px; margin-left: -6px; border-radius: 8px; font-weight: 500; }
+#band-plan .bp-assessment a:hover { background: var(--rm-orange-soft); }
+#band-plan .bp-assessment a:focus-visible { outline: 2px solid #fb8b32; outline-offset: 2px; }
+#band-plan .bp-warning { margin-top: 12px; padding-block: 8px; }
+@container (max-width: 760px) {
+  #band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) 38px; gap: 8px 10px; }
+  #band-plan .rm-plan-menu { grid-column: 3; }
+  #band-plan .bp-progress { grid-column: 2 / -1; width: min(100%, 280px); }
+}
+@container (max-width: 580px) {
+  #band-plan .bp-collapsed-progress { order: 5; flex-basis: 100%; padding-left: 31px; }
+}
+/* Direct secondary actions: one removal button and one assessment link. */
+#band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) auto auto; }
+#band-plan .bp-remove { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 7px 10px; border: 1px solid var(--rm-line); border-radius: 9px; background: var(--rm-panel); color: var(--rm-sub); font: inherit; font-size: 12px; font-weight: 500; white-space: nowrap; box-shadow: none; cursor: pointer; }
+#band-plan .bp-remove .icon { width: 15px; height: 15px; }
+#band-plan .bp-remove:hover { color: #b93838; background: #fff5f5; border-color: #efcccc; }
+#band-plan .bp-remove:focus-visible { outline: 2px solid #fb8b32; outline-offset: 3px; }
+#band-plan .bp-assessment { padding-block: 0; }
+#band-plan .bp-assessment .bp-assessment-link { display: flex; align-items: center; gap: 11px; width: 100%; min-height: 72px; margin: 0; padding: 10px; border-radius: 11px; text-decoration: none; background: transparent; color: var(--rm-text); }
+#band-plan .bp-assessment .bp-assessment-link:hover { background: var(--rm-orange-soft); }
+#band-plan .bp-assessment-copy { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 5px; }
+#band-plan .bp-assessment-title { font-size: 15px; font-weight: 600; line-height: 1.4; }
+#band-plan .bp-assessment-description { color: var(--rm-sub); font-size: 13px; font-weight: 400; line-height: 1.5; }
+#band-plan .bp-assessment .bp-assessment-icon { width: 23px; height: 23px; flex: none; align-self: flex-start; margin-top: 2px; }
+#band-plan .bp-assessment .bp-assessment-arrow { width: 18px; height: 18px; flex: none; color: var(--rm-sub); }
+@container (max-width: 760px) {
+  #band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) auto; }
+  #band-plan .bp-progress { grid-row: 2; }
+  #band-plan .bp-remove { grid-column: 3; grid-row: 1; }
+  #band-plan .bp-assessment { padding-top: 8px; }
+}
+/* Compact assessment button and icon-only plan removal. */
+#band-plan .bp-assessment { align-items: center; min-height: 66px; }
+#band-plan .bp-assessment .bp-assessment-button { display: inline-flex; justify-content: center; align-items: center; gap: 8px; width: min(100%, 230px); min-height: 38px; margin: 0; padding: 8px 16px; border: 1px solid #ffd1b0; border-radius: 9px; background: #fff4eb; color: #d85c00; text-decoration: none; font-size: 13px; font-weight: 600; line-height: 1.4; }
+#band-plan .bp-assessment .bp-assessment-button:hover { background: #ffe9d8; border-color: #ffb982; }
+#band-plan .bp-assessment .bp-assessment-button .icon { width: 17px; height: 17px; color: inherit; }
+#band-plan .bp-remove { width: 36px; height: 36px; min-height: 36px; padding: 8px; border-color: transparent; background: transparent; text-decoration: none; }
+#band-plan .bp-remove .icon { width: 18px; height: 18px; }
+#band-plan .bp-remove:hover { border-color: #efcccc; }
+@container (max-width: 760px) {
+  #band-plan .bp-assessment { min-height: 0; align-items: flex-start; }
+}
+/* Keep the assessment action on the same baseline as the editor controls. */
+#band-plan .bp-editor { align-items: end; gap: 16px; }
+#band-plan .bp-assessment { border: 0; padding: 0; min-height: 0; align-items: stretch; justify-content: flex-end; }
+#band-plan .bp-assessment .bp-assessment-button { width: 100%; min-height: 44px; height: 44px; box-sizing: border-box; }
+@container (min-width: 900px) {
+  #band-plan .bp-editor { grid-template-columns: minmax(0,1fr) 205px; align-items: end; }
+}
+@container (min-width: 761px) and (max-width: 899px) {
+  #band-plan .bp-editor { grid-template-columns: minmax(0,1fr) 185px; align-items: end; gap: 14px; }
+  #band-plan .bp-submit { width: 100%; justify-self: stretch; }
+}
+@container (max-width: 760px) {
+  #band-plan .bp-editor { grid-template-columns: 1fr; gap: 10px; }
+  #band-plan .bp-assessment { border: 0; padding: 0; }
+  #band-plan .bp-submit { width: 100%; justify-self: stretch; margin-top: 0; }
+}
+/* Reset the shared button margin so every control shares its row's center. */
+#band-plan .bp-remove, #band-plan .bp-submit { margin: 0; align-self: center; }
+#band-plan .bp-submit { align-self: end; }
+#band-plan .bp-progress { align-self: center; }
+/* Refined density and a compact progress group next to the route name. */
+#band-plan .bp-editor { margin-top: 12px; }
+#band-plan .bp-plan { margin-top: 13px; padding-top: 12px; }
+#band-plan .bp-submit:disabled { background: #f4f5f7; color: #a0a7b2; border-color: #edf0f3; font-weight: 500; }
+#band-plan .bp-submit:not(:disabled) { background: linear-gradient(#ff942e,#ff7105); border-color: #ff8d31; color: #fff; }
+#band-plan .bp-assessment .bp-assessment-button { width: auto; padding-inline: 12px; }
+#band-plan .bp-current { grid-template-columns: 28px auto minmax(0,1fr) 36px; gap: 12px; }
+#band-plan .bp-progress { width: min(100%, 330px); gap: 14px; margin-left: 8px; padding-left: 16px; border-left: 1px solid var(--rm-line); box-sizing: border-box; }
+#band-plan .bp-count b { font-weight: 600; }
+#band-plan .bp-meter { min-width: 40px; }
+#band-plan .bp-actions { position: relative; grid-column: 4; grid-row: 1; margin: 0; padding: 0; border: 0; overflow: visible; }
+#band-plan .bp-actions > summary { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rm-line); border-radius: 10px; background: var(--rm-panel); color: var(--rm-sub); font-size: 22px; line-height: 1; cursor: pointer; list-style: none; }
+#band-plan .bp-actions > summary::after { display: none; }
+#band-plan .bp-actions > summary::-webkit-details-marker { display: none; }
+#band-plan .bp-actions > summary:hover { background: var(--rm-track); }
+#band-plan .bp-actions > summary:focus-visible { outline: 2px solid #fb8b32; outline-offset: 3px; }
+#band-plan .bp-actions #band-close { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; display: flex; align-items: center; justify-content: center; gap: 8px; width: 150px; min-height: 40px; margin: 0; padding: 9px 12px; border: 1px solid var(--rm-line); border-radius: 9px; background: var(--rm-panel); color: var(--rm-sub); font: inherit; font-size: 13px; text-decoration: none; box-shadow: 0 4px 12px #18223512; cursor: pointer; }
+#band-plan .bp-actions #band-close:hover { color: #b93838; background: #fff5f5; }
+#band-plan .bp-actions #band-close .icon { width: 16px; height: 16px; }
+@container (min-width: 900px) {
+  #band-plan .bp-editor { grid-template-columns: minmax(0,1fr) 175px; }
+}
+@container (max-width: 760px) {
+  #band-plan .bp-current { grid-template-columns: 28px minmax(0,1fr) 36px; }
+  #band-plan .bp-actions { grid-column: 3; }
+  #band-plan .bp-progress { grid-column: 2 / -1; grid-row: 2; margin: 0; padding: 0; border: 0; }
+  #band-plan .bp-assessment { align-items: flex-start; }
+}
+#band-plan .bp-actions:not([open]) #band-close { display: none; }
+/* Direct removal control, with its label available on hover and to screen readers. */
+#band-plan .bp-remove { grid-column: 4; grid-row: 1; margin: 0; width: 36px; height: 36px; border: 1px solid var(--rm-line); border-radius: 10px; background: var(--rm-panel); color: var(--rm-sub); }
+#band-plan .bp-remove:hover { color: #b93838; background: #fff5f5; border-color: #efcccc; }
+@container (max-width: 760px) {
+  #band-plan .bp-remove { grid-column: 3; }
+}
+#band-plan .bp-remove,
+#band-plan .bp-remove:hover { border-color: transparent; background: transparent; box-shadow: none; }
+/* Native dialog provides focus trapping and Escape handling with a custom UI. */
+.bp-remove-dialog { box-sizing: border-box; width: min(420px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); margin: auto; padding: 28px; border: 1px solid var(--rm-line, #e5e7eb); border-radius: 20px; background: var(--rm-panel, #fff); color: var(--rm-text, #192033); box-shadow: 0 20px 70px #17203326; }
+.bp-remove-dialog::backdrop { background: #18223566; backdrop-filter: blur(3px); }
+.bp-dialog-mark { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 18px; border-radius: 14px; background: #fff0ed; color: #d9553d; }
+.bp-dialog-mark .icon { width: 24px; height: 24px; }
+.bp-remove-dialog h2 { margin: 0 0 10px; font-size: 21px; font-weight: 650; line-height: 1.4; }
+.bp-remove-dialog p { margin: 0; color: var(--rm-sub, #626d80); font-size: 14px; line-height: 1.7; }
+.bp-dialog-actions { display: flex; gap: 10px; margin-top: 24px; }
+.bp-dialog-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; flex: 1; min-height: 42px; margin: 0; padding: 10px 12px; border-radius: 10px; font: inherit; font-size: 14px; font-weight: 600; box-shadow: none; cursor: pointer; }
+.bp-dialog-actions .bp-dialog-cancel { border: 1px solid var(--rm-line, #e5e7eb); background: var(--rm-panel, #fff); color: var(--rm-text, #192033); }
+.bp-dialog-actions .bp-dialog-cancel:hover { background: var(--rm-track, #f3f4f6); }
+.bp-dialog-actions .bp-dialog-confirm { border: 1px solid #cf4c35; background: #d9553d; color: white; }
+.bp-dialog-actions .bp-dialog-confirm:hover { background: #c64732; }
+.bp-dialog-actions .icon { width: 16px; height: 16px; }
+.bp-dialog-actions button:focus-visible { outline: 2px solid #f99143; outline-offset: 3px; }
+.bp-dialog-actions button:disabled { opacity: .55; cursor: wait; }
+/* Give the meter the remaining room, with percentage at its trailing edge. */
+#band-plan .bp-progress { width: 100%; max-width: 620px; gap: 12px; }
+#band-plan .bp-percent { flex: none; }
+@container (max-width: 760px) {
+  #band-plan .bp-progress { max-width: none; }
+}
+/* Center the progress group in the space between the route and removal action. */
+#band-plan .bp-progress { justify-self: center; margin-left: 0; }
+@container (max-width: 760px) {
+  #band-plan .bp-progress { justify-self: stretch; }
+}
+#band-plan .bp-progress { border-left: 0; padding-left: 0; }
+#band-plan .bp-progress { max-width: none; justify-self: stretch; }
+/* Keep the meter balanced on wide layouts without stretching across the card. */
+#band-plan .bp-progress { width: 100%; max-width: 520px; justify-self: center; }
+@container (max-width: 760px) {
+  #band-plan .bp-progress { max-width: 100%; justify-self: stretch; }
+}
+#band-plan .bp-progress { max-width: 800px; }
+/* A short confirmation with a single compact heading and two clear actions. */
+.bp-remove-dialog { width: min(360px, calc(100vw - 32px)); padding: 22px; border-radius: 16px; }
+.bp-dialog-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.bp-dialog-heading .bp-dialog-mark { flex: none; width: 34px; height: 34px; margin: 0; border-radius: 10px; background: #fff2e6; color: #e96d16; }
+.bp-dialog-heading .bp-dialog-mark .icon { width: 19px; height: 19px; }
+.bp-dialog-heading h2 { margin: 0; font-size: 19px; font-weight: 600; }
+.bp-remove-dialog p { font-size: 14px; line-height: 1.5; }
+.bp-dialog-actions { margin-top: 20px; gap: 10px; }
+.bp-dialog-actions button { width: auto; min-width: 0; min-height: 40px; padding: 9px 14px; font-weight: 500; }
+.bp-dialog-actions .bp-dialog-cancel { flex: 0 0 auto; min-width: 80px; background: var(--rm-track, #f5f6f8); border-color: var(--rm-track, #f5f6f8); }
+.bp-dialog-actions .bp-dialog-confirm { border-color: #f47b20; background: #f47b20; color: #fff; }
+.bp-dialog-actions .bp-dialog-confirm:hover { background: #df6a15; border-color: #df6a15; }
+/* Theme-aware supporting controls, including the dialog in the top layer. */
+#band-plan .bp-submit:disabled { background: color-mix(in srgb, var(--rm-panel) 85%, var(--rm-track)); color: var(--rm-muted); border-color: var(--rm-line); }
+#band-plan .bp-status { background: var(--rm-green-chip); color: color-mix(in srgb, var(--rm-green-ink) 85%, var(--rm-text)); }
+#band-plan .bp-assessment .bp-assessment-button { background: var(--rm-orange-soft); border-color: color-mix(in srgb, var(--rm-orange-ink) 35%, var(--rm-line)); color: color-mix(in srgb, var(--rm-orange-ink) 70%, var(--rm-text)); }
+#band-plan .bp-assessment .bp-assessment-button:hover { background: color-mix(in srgb, var(--rm-orange-soft) 85%, var(--rm-orange-ink)); }
+.bp-dialog-heading .bp-dialog-mark { background: var(--rm-orange-soft, #fff2e6); color: var(--rm-orange-ink, #e96d16); }
+
+/* Keep the mobile editor on two deliberate rows: selection, then actions. */
+#band-plan .bp-selection { display: contents; }
+@media (max-width: 700px) {
+  #band-plan { padding: 14px; border-radius: 16px; }
+  #band-plan .rm-plan-settings > summary { gap: 8px; }
+  #band-plan .bp-heading { font-size: 15px; }
+  #band-plan .bp-target { width: 22px; height: 22px; flex: none; }
+  #band-plan .bp-status { font-size: 10px; padding: 4px 7px; gap: 4px; white-space: nowrap; }
+  #band-plan .bp-toggle .icon { width: 18px; height: 18px; }
+  #band-plan .bp-editor { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+  #band-plan .bp-form { display: contents; }
+  #band-plan .bp-selection { display: grid; grid-column: 1 / -1; grid-template-columns: minmax(0,1fr) 20px minmax(0,1fr); gap: 6px; align-items: center; }
+  #band-plan .bp-range-arrow { height: 30px; margin: 0; background: transparent; }
+  #band-plan .bp-range-arrow .icon { width: 18px; height: 18px; }
+  #band-plan .bp-field .c-dropdown-trigger { height: 40px; padding-inline: 9px; font-size: 12px; border-radius: 10px; }
+  #band-plan .bp-submit { grid-column: 1; grid-row: 2; width: 100%; min-width: 0; height: 40px; padding: 0 8px; font-size: 11px; gap: 5px; border-radius: 10px; }
+  #band-plan .bp-submit .icon { width: 15px; height: 15px; }
+  #band-plan .bp-assessment { grid-column: 2; grid-row: 2; min-width: 0; }
+  #band-plan .bp-assessment .bp-assessment-button { width: 100%; height: 40px; min-height: 40px; padding: 0 6px; font-size: 11px; gap: 5px; border-radius: 10px; }
+  #band-plan .bp-plan { margin-top: 12px; padding-top: 10px; }
+  #band-plan .bp-current { grid-template-columns: 20px minmax(0,1fr) 28px; gap: 6px 8px; }
+  #band-plan .bp-route-icon { width: 20px; height: 20px; }
+  #band-plan .bp-current-text h3 { font-size: 12px; line-height: 1.4; }
+  #band-plan .bp-remove { width: 28px; height: 28px; }
+  #band-plan .bp-progress { grid-column: 1 / -1; gap: 8px; font-size: 11px; }
+}
+
+@media (max-width: 700px) {
+  #band-plan .rm-plan-settings > summary { flex-wrap: nowrap; }
+  #band-plan .bp-heading { min-width: 0; white-space: nowrap; }
+  #band-plan .bp-toggle { flex: none; }
+  #band-plan .bp-assessment-button span { white-space: nowrap; }
+}
+@media (max-width: 360px) {
+  #band-plan .bp-heading { font-size: 13px; }
+  #band-plan .bp-status { font-size: 9px; padding: 3px 5px; }
+  #band-plan .bp-status .icon { display: none; }
+  #band-plan .bp-submit, #band-plan .bp-assessment .bp-assessment-button { font-size: 10px; padding-inline: 5px; gap: 4px; }
+}
+
+/* A stable two-row summary keeps the route away from title and status. */
+@media (max-width: 700px) {
+  #band-plan .rm-plan-settings > summary { display: grid; grid-template-columns: 20px minmax(0,1fr) auto 20px; gap: 6px 8px; align-items: center; }
+  #band-plan .bp-heading { grid-column: 2; grid-row: 1; font-size: 14px; line-height: 1.4; }
+  #band-plan .bp-status { grid-column: 3; grid-row: 1; font-size: 10px; padding: 4px 7px; }
+  #band-plan .bp-collapsed-progress { grid-column: 2 / 4; grid-row: 2; white-space: nowrap; font-size: 12px; margin: 0; padding-left: 0; }
+  #band-plan .bp-toggle { grid-column: 4; grid-row: 1 / 3; margin: 0; }
+}

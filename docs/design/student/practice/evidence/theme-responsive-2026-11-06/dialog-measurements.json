@@ -1,0 +1,370 @@
+[
+  {
+    "viewport": 320,
+    "theme": "light",
+    "width": 282,
+    "clientWidth": 280,
+    "scrollWidth": 351,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 259,
+        "width": 236,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 269,
+        "right": 352,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 320,
+    "theme": "dark",
+    "width": 282,
+    "clientWidth": 280,
+    "scrollWidth": 351,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 259,
+        "width": 236,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 269,
+        "right": 352,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 390,
+    "theme": "light",
+    "width": 352,
+    "clientWidth": 350,
+    "scrollWidth": 421,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 329,
+        "width": 306,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 339,
+        "right": 422,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 390,
+    "theme": "dark",
+    "width": 352,
+    "clientWidth": 350,
+    "scrollWidth": 421,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 329,
+        "width": 306,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 339,
+        "right": 422,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 600,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 429,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 337,
+        "width": 314,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 347,
+        "right": 430,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 600,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 429,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 337,
+        "width": 314,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 347,
+        "right": 430,
+        "width": 83,
+        "outside": true
+      }
+    ]
+  },
+  {
+    "viewport": 700,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 700,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 701,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 701,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 768,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 768,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 1024,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 1024,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 1440,
+    "theme": "light",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  },
+  {
+    "viewport": 1440,
+    "theme": "dark",
+    "width": 360,
+    "clientWidth": 358,
+    "scrollWidth": 358,
+    "buttons": [
+      {
+        "text": "Hủy",
+        "left": 23,
+        "right": 103,
+        "width": 80,
+        "outside": false
+      },
+      {
+        "text": "Bỏ lộ trình",
+        "left": 113,
+        "right": 337,
+        "width": 224,
+        "outside": false
+      }
+    ]
+  }
+]

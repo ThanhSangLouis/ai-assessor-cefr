@@ -6,6 +6,51 @@ const taskListEl = document.getElementById("task-list");
 const taskIdEl = document.getElementById("task_id");
 const promptEl = document.getElementById("chosen-prompt");
 
+// ---------------------------------------------------------------- phases
+// D093 (Thắng's mockup B): one card at a time. "choose" shows the tasks;
+// "speak" shows the chosen prompt, the preparation and the recorder, and the
+// listen-back step happens inside it. The page starts on "choose" unless a link
+// named the task (?task=).
+const pageEl = document.getElementById("sb-page");
+const chooseEl = document.getElementById("sb-choose");
+const speakEl = document.getElementById("sb-speak");
+const goEl = document.getElementById("sb-go");
+const stage = {
+  band: document.getElementById("sb-band"),
+  name: document.getElementById("sb-world"),
+  mascot: document.getElementById("sb-mascot"),
+  say: document.getElementById("sb-say"),
+};
+
+function setPhase(phase) {
+  pageEl.dataset.phase = phase;
+  chooseEl.hidden = phase !== "choose";
+  speakEl.hidden = phase !== "speak";
+  const s1 = document.getElementById("step-nav-1");
+  const s2 = document.getElementById("step-nav-2");
+  const b1 = document.getElementById("step-badge-1");
+  s1.classList.toggle("is-active", phase === "choose");
+  s1.classList.toggle("is-done", phase !== "choose");
+  b1.innerHTML = phase === "choose" ? "1" : window.ui.icon("check");
+  if (phase === "choose") s2.classList.remove("is-active", "is-done");
+  else updateStepper(document.getElementById("rec").getAttribute("data-state"));
+  (phase === "choose" ? document.getElementById("task-h") : document.getElementById("chosen-prompt")).focus?.();
+}
+
+// Leaving a recording behind is never silent.
+function backToTasks() {
+  const st = document.getElementById("rec").getAttribute("data-state");
+  if (st === "recording") return;
+  if (st === "review" && !window.confirm("Bỏ bản ghi này để chọn đề khác?")) return;
+  if (prepTimer) stopPrep("Đã quay lại chọn đề.");
+  setPhase("choose");
+}
+document.querySelectorAll("[data-phase-go='choose']").forEach((b) => b.addEventListener("click", backToTasks));
+goEl.addEventListener("click", () => {
+  if (!chosenTask) return;
+  setPhase("speak");
+});
+
 let chosenTask = null;
 // How long a recording the scoring model can take in one pass. Read from the
 // server, which reads it from the model artifact, so this number cannot drift
@@ -44,6 +89,8 @@ recorder = window.setUpRecorder({
   // Recording started by hand, or a file chosen: the countdown has no job left.
   onChange: (state) => {
     if (state !== "idle" && prepTimer) stopPrep();
+    // A take always shows on the speaking card, however it arrived.
+    if (state !== "idle" && pageEl.dataset.phase === "choose" && chosenTask) setPhase("speak");
     updateStepper(state);
     if (prepEl) {
       if (state === "recording" || state === "review" || state === "submitting" || state === "submitted") {
@@ -146,7 +193,7 @@ function updateStepper(state) {
   const s3 = document.getElementById("step-nav-3");
   const d2 = document.getElementById("step-div-2");
   const b2 = document.getElementById("step-badge-2");
-  if (!s2 || !d1) return;
+  if (!s2 || !d1 || pageEl.dataset.phase === "choose") return;
   if (state === "review" || state === "submitting" || state === "submitted") {
     s2.classList.add("is-done");
     s2.classList.remove("is-active");
@@ -156,7 +203,7 @@ function updateStepper(state) {
   } else {
     s2.classList.remove("is-done");
     s2.classList.add("is-active");
-    if (b2) b2.textContent = "02";
+    if (b2) b2.textContent = "2";
     if (d2) d2.classList.remove("is-active");
     if (s3) s3.classList.remove("is-active");
   }
@@ -196,12 +243,17 @@ function chooseTask(task) {
   if (prepTimer) stopPrep("Đã đổi đề, thời gian chuẩn bị bắt đầu lại từ đầu khi bạn bấm.");
   chosenTask = task;
   taskIdEl.value = task.task_id;
-  const bandBadge = task.band ? `ĐỀ ${task.band} · SPEAKING` : (task.title || "ĐỀ BÀI · SPEAKING");
+  window.studentStage.setWorld(pageEl, task.band, stage);
+  document.getElementById("sb-window-text").textContent =
+    `Nói ${Number(task.min_seconds)}–${Number(task.max_seconds)} giây`;
+  goEl.disabled = false;
+  const bandBadge = task.band ? `Đề ${task.band}` : (task.title || "Đề bài");
   promptEl.innerHTML =
     `<div class="prompt-header-row">` +
     `<span class="prompt-band-badge">${escapeHtml(bandBadge)}</span>` +
+    `<span class="prompt-time">${Number(task.min_seconds)}–${Number(task.max_seconds)} giây</span>` +
     `</div>` +
-    `<h3 class="prompt-question">${escapeHtml(task.prompt_text)}</h3>` +
+    `<h3 class="prompt-question prompt-text" tabindex="-1">${escapeHtml(task.prompt_text)}</h3>` +
     '<p class="muted small" id="price-note" hidden></p>';
   recorder.repaint();
   showPrice(task);
@@ -311,6 +363,7 @@ Promise.all([
     const wanted = allTasks.find((t) => t.task_id === new URLSearchParams(window.location.search).get("task"));
     band = (wanted && wanted.band) || (BANDS.includes(from) && allTasks.some((t) => t.band === from) ? from : null) || allTasks[0].band;
     draw(wanted);
+    if (wanted) setPhase("speak");
   })
   .catch(() => {
     window.clearBusy(taskListEl);

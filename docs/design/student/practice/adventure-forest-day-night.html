@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rừng · Ngày và đêm</title>
+<link rel="stylesheet" href="../../../../src/aicefr/api/static/practice_adventure.css">
+<style>
+  *{box-sizing:border-box}body{margin:0;padding:24px;background:#f2f5f3;color:#182b25;font:15px/1.5 system-ui,sans-serif}
+  main{max-width:1500px;margin:auto}h1{font-size:25px;margin:0 0 8px}p{margin:0 0 16px;color:#566960}
+  nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}button{font:inherit;border:1px solid #cddbd2;background:white;border-radius:10px;padding:8px 14px;cursor:pointer}button[aria-pressed=true]{background:#287a50;color:white;border-color:#287a50}
+  .gallery{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}.gallery .rm-level{margin:0;min-width:0;padding:12px;background:white;border-radius:22px}.gallery h2{font-size:17px;margin:0 0 12px;padding:0 6px}.gallery .night{background:#101e2a;color:#e0eee9}
+  .gallery .rm-adventure-path{position:relative;overflow:hidden;min-height:220px;border-radius:16px}.gallery .rm-adventure-scenery{filter:none}
+  .preview-node{position:absolute;translate:-50% -50%;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(#fafcfe,#b9c6d1);border:4px solid #f7fafc;box-shadow:0 3px 0 #8394a7,0 4px 10px #172b3a26;color:#506071;font-weight:700}.preview-node:first-of-type{background:linear-gradient(#ffc85a,#ff8000);color:white;border-color:#ffde69;box-shadow:0 3px 0 #d9970c}
+  .preview-road{position:absolute;inset:0;overflow:visible;width:100%;height:100%;z-index:0}.preview-road path{stroke:#fff4d8;stroke-width:21;fill:none;stroke-linecap:round}.night .preview-road path{stroke:#a3b4a5}
+  @media(max-width:700px){body{padding:12px}.gallery{grid-template-columns:1fr;gap:16px}h1{font-size:22px}}
+</style>
+<main>
+  <h1>Rừng dưới nắng, rừng dưới trăng</h1>
+  <p>Cùng một địa hình, hai bầu không khí.</p>
+  <nav aria-label="Số bài xem thử">
+    <button type="button" data-count="1">1 bài</button><button type="button" data-count="3">3 bài</button><button type="button" data-count="5" aria-pressed="true">5 bài</button><button type="button" data-count="15">15 bài</button><button type="button" data-count="50">50 bài</button>
+  </nav>
+  <div class="gallery">
+    <article class="rm-level band-a1" style="--terrain-a:var(--forest-a-day);--terrain-b:var(--forest-b-day)"><h2>Rừng ban ngày</h2><div class="rm-adventure-path"><div class="rm-adventure-scenery" aria-hidden="true"></div></div></article>
+    <article class="rm-level band-a1 night" style="--terrain-a:var(--forest-a-night);--terrain-b:var(--forest-b-night)"><h2>Rừng ban đêm</h2><div class="rm-adventure-path"><div class="rm-adventure-scenery" aria-hidden="true"></div></div></article>
+  </div>
+</main>
+<script src="../../../../src/aicefr/api/static/practice_adventure.js"></script>
+<script>
+  let count=5;
+  const assetRoot=new URL('../../../../src/aicefr/api/static/art/adventure/',location.href);
+  document.querySelectorAll('.gallery .rm-level').forEach(region=>{
+    for(const segment of ['a','b']) for(const mode of ['day','night'])
+      region.style.setProperty(`--forest-${segment}-${mode}`,`url("${new URL(`forest-${mode}-${segment}-v3-1536.webp`,assetRoot)}")`);
+  });
+  const draw=()=>document.querySelectorAll('.rm-adventure-path').forEach(path=>{
+    const width=path.clientWidth,g=rmAdventure.geometry(width<=700);
+    const points=rmAdventure.layout(Array.from({length:count},(_,i)=>({lesson_id:String(i)})),'0',g);
+    const h=rmAdventure.height(points,g);path.style.setProperty('--h',`${h}px`);
+    const scenery=path.querySelector('.rm-adventure-scenery');
+    scenery.innerHTML=rmAdventure.terrainTiles(h,width,2/3).map(t=>`<span class="rm-terrain-tile" style="--tile-index:${t.index}"></span>`).join('');
+    path.querySelectorAll('.preview-road,.preview-node').forEach(n=>n.remove());
+    const route=points.map((p,i)=>i?`C ${points[i-1].x+width/2} ${(points[i-1].y+p.y)/2}, ${p.x+width/2} ${(points[i-1].y+p.y)/2}, ${p.x+width/2} ${p.y}`:`M ${p.x+width/2} ${p.y}`).join(' ');
+    path.insertAdjacentHTML('beforeend',`<svg class="preview-road" aria-hidden="true"><path d="${route}"/></svg>`+points.map((p,i)=>`<span class="preview-node" style="left:calc(50% + ${p.x}px);top:${p.y}px">${i+1}</span>`).join(''));
+  });
+  document.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{count=Number(button.dataset.count);document.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));draw()}));
+  new ResizeObserver(draw).observe(document.querySelector('.gallery'));draw();
+</script>
+</html>
