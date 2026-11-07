@@ -2294,11 +2294,17 @@ sequenceDiagram
 
 ![Hình 9. Lớp của phân hệ thanh toán](images/09_class_thanh_toan.png)
 
-*Hình 9. Lớp của phân hệ thanh toán sau D097 và các mẫu thiết kế: Adapter và Strategy (`PaymentGateway`), Template Method (`SignedRedirect`), Factory (`build_gateways`), Repository, Value Object, Observer (`billing.order_settled`). File nguồn: `diagrams/09_class_thanh_toan.mmd`*
+*Hình 9. Lớp của phân hệ thanh toán sau D097 và D099, và các mẫu thiết kế: Adapter và Strategy (`PaymentGateway`), Template Method (`SignedRedirect`), Factory (`build_gateways`), Repository, Value Object, Observer (`billing.order_settled`), State (`OrderState`). File nguồn: `diagrams/09_class_thanh_toan.mmd`*
+
+**Cách đọc hình 9.** Đọc từ giữa ra. `BillingService` là nơi duy nhất đổi trạng thái đơn; nó không biết cổng nào đang chạy, chỉ giữ một danh sách `PaymentGateway` (Strategy) do `build_gateways` dựng từ cấu hình (Factory). Mỗi cổng là một bộ chuyển đổi (Adapter) đưa API riêng của nhà cung cấp về cùng năm thao tác; cổng thử và payOS khác nhau hoàn toàn bên trong (chữ ký trong địa chỉ so với gọi API đọc lại) nhưng dịch vụ gọi y như nhau. `PayosGateway` nhận `Transport` từ ngoài (tiêm phụ thuộc), nên test thay payOS bằng bản giả mà không đổi một dòng mã. Mọi kết quả đi về dịch vụ dưới dạng `PaymentResult` (Value Object, bất biến); trước khi chốt, dịch vụ hỏi `OrderState` của đơn (State, hình 10). Chốt xong, dịch vụ phát `billing.order_settled` lên bus và không biết ai nghe (Observer): dịch vụ định danh nghe để gửi email. D099 thêm hai đường: `reconcile()` mỗi hai phút hỏi lại payOS bằng `look_up` về các đơn còn mở trong một giờ (webhook lạc và người mua đóng tab vẫn được cộng lượt), và `pending_count` chặn quá năm đơn chờ trong mười phút cho một tài khoản.
 
 ![Hình 10. Vòng đời đơn gói lượt](images/10_state_don_hang.png)
 
 *Hình 10. Vòng đời đơn gói lượt theo mẫu State (D098): mỗi trạng thái là một lớp trong `billing/order_state.py`; đơn hết hạn vẫn nhận tiền đến muộn, ba trạng thái cuối không chuyển được nữa. Test giữ sơ đồ khớp với `transitions()`. File nguồn: `diagrams/10_state_don_hang.mmd`*
+
+**Cách đọc hình 10.** Hai trạng thái mở (`Chờ thanh toán`, `Hết hạn chờ`) và ba trạng thái cuối. Mũi tên nào có trên hình thì có một phương thức trả về đích đó trong lớp trạng thái nguồn; không có mũi tên nghĩa là phương thức ném `TransitionRefused`. Đơn hết hạn vẫn đi được sang `Đã thanh toán`: tiền đã chuyển thì phải ghi nhận, dù trễ. Cùng một bảng chuyển trạng thái được dùng hai lần: dịch vụ hỏi trạng thái trước khi chốt, và kho dữ liệu đặt điều kiện `status ∈ sources(đích)` vào **một** lệnh cập nhật nguyên tử, nên trình duyệt quay về, webhook và vòng đối soát (D099) có chạy cùng lúc thì đơn vẫn chỉ đổi một lần.
+
+**Sơ đồ không thể lệch khỏi mã.** `tests/test_d098_order_state.py` đọc tệp `10_state_don_hang.mmd`, lấy mọi mũi tên `A --> B`, rồi so với `transitions()` tính từ các lớp trạng thái. Thêm một trạng thái hay một bước chuyển vào mã mà không vẽ (hoặc vẽ mà không làm) thì test đỏ và CI chặn merge. Đây là cách nhóm giữ cam kết "sơ đồ là nguồn chuẩn" mà không phải đối chiếu bằng mắt.
 
 ### 4.17. Bằng chứng học tập — hiện thực FR-75…FR-80 (D039–D042)
 
@@ -2977,8 +2983,8 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/06_deployment.mmd` | Component/Deployment | Mermaid `flowchart TB` |
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/08_sequence_payos.mmd` | Sequence: mua gói lượt qua payOS và email biên nhận (D095–D097) | Mermaid `sequenceDiagram` |
-| `docs/sdd/diagrams/09_class_thanh_toan.mmd` | Lớp: phân hệ thanh toán và các mẫu thiết kế (D097) | Mermaid `sequenceDiagram` |
-| `docs/sdd/diagrams/10_state_don_hang.mmd` | Trạng thái: vòng đời đơn gói lượt, mẫu State (D098) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/09_class_thanh_toan.mmd` | Lớp: phân hệ thanh toán và các mẫu thiết kế (D097, D099) | Mermaid `classDiagram` |
+| `docs/sdd/diagrams/10_state_don_hang.mmd` | Trạng thái: vòng đời đơn gói lượt, mẫu State (D098) | Mermaid `stateDiagram-v2` |
 
 Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 

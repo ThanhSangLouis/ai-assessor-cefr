@@ -21,6 +21,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from aicefr.billing.gateways import SandboxGateway
+from aicefr.billing.payos_gateway import API as PAYOS_API
 from aicefr.billing.payos_gateway import PayosGateway
 from aicefr.ports import PaymentGateway
 
@@ -74,6 +75,9 @@ def _build(name: str, settings, sandbox_secret: Callable[[], bytes]) -> PaymentG
         return SandboxGateway(sandbox_secret())
     if name == "payos":
         return PayosGateway(
-            settings.payos_client_id, settings.payos_api_key, settings.payos_checksum_key
+            settings.payos_client_id,
+            settings.payos_api_key,
+            settings.payos_checksum_key,
+            api=settings.payos_api_url or PAYOS_API,
         )
     raise ValueError(f"không có cổng thanh toán tên {name}")  # pragma: no cover - KNOWN

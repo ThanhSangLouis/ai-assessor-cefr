@@ -4,10 +4,7 @@
 {% block content %}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
-  <p class="lede">
-    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, mô hình
-    ngôn ngữ và tình trạng vận hành.
-  </p>
+  <p class="lede">Tài khoản, mô hình, giá, đơn hàng, dữ liệu và vận hành.</p>
 </div>
 
 <div class="tabs" role="tablist" aria-label="Khu vực quản trị">
@@ -17,6 +14,8 @@
           aria-selected="false" aria-controls="panel-models">Mô hình</button>
   <button id="tab-config" data-panel="panel-config" role="tab"
           aria-selected="false" aria-controls="panel-config">Cấu hình</button>
+  <button id="tab-orders" data-panel="panel-orders" role="tab"
+          aria-selected="false" aria-controls="panel-orders">Đơn hàng</button>
   <button id="tab-erase" data-panel="panel-erase" role="tab"
           aria-selected="false" aria-controls="panel-erase">Dữ liệu</button>
   <button id="tab-coach" data-panel="panel-coach" role="tab"
@@ -152,6 +151,17 @@
   <section class="card" id="google-setup" aria-labelledby="google-setup-h" hidden></section>
 </section>
 
+{#- D099. Run-pack orders: the money of each day, every order, what the gateway said. -#}
+<section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders" tabindex="0" hidden>
+  <div id="orders-body" aria-busy="true" aria-live="polite">
+    <div class="card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>
+  </div>
+</section>
+
 <section id="panel-erase" role="tabpanel" aria-labelledby="tab-erase" tabindex="0" hidden>
   <div class="notice notice-danger">
     Thao tác xoá dữ liệu cá nhân <b>không hoàn tác được</b>. Bản ghi âm, kết quả
@@ -214,5 +224,6 @@
 {% block scripts %}
 <script src="{{ asset('admin_coach.js') }}"></script>
 <script src="{{ asset('admin_prices.js') }}"></script>
+<script src="{{ asset('admin_orders.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

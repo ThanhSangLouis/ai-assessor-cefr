@@ -186,6 +186,56 @@ class BillingRepository(MongoStore):
         )
         return self._views(rows)
 
+    def open_since(self, since: str) -> list[dict]:
+        """Pending or expired orders created since `since`: the ones a gateway may still settle."""
+        may_settle = [s.value for s in sources(OrderStatus.PAID)]
+        rows = list(
+            self.col("order").find(
+                {"kind": CREDITS, "status": {"$in": may_settle}, "created_at": {"$gte": since}}
+            )
+        )
+        return self._views(rows)
+
+    def pending_count(self, account_id: str, since: str) -> int:
+        """How many orders this account opened since `since` that are still waiting (D099)."""
+        return self.col("order").count_documents(
+            {
+                "created_by": account_id,
+                "kind": CREDITS,
+                "status": OrderStatus.PENDING.value,
+                "created_at": {"$gte": since},
+            }
+        )
+
+    def recent(self, limit: int = 200, status: str | None = None) -> list[dict]:
+        """Every account's run packs, newest first: the administrator's order list (D099)."""
+        query: dict = {"kind": CREDITS}
+        if status:
+            query["status"] = status
+        rows = list(
+            self.col("order")
+            .find(query)
+            .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
+            .limit(limit)
+        )
+        return self._views(rows)
+
+    def count_by_status(self) -> dict[str, int]:
+        """How many run packs are in each status, all time (D099)."""
+        rows = self.col("order").aggregate(
+            [{"$match": {"kind": CREDITS}}, {"$group": {"_id": "$status", "n": {"$sum": 1}}}]
+        )
+        return {r["_id"]: r["n"] for r in rows}
+
+    def paid_since(self, since: str) -> list[dict]:
+        """Paid run packs ordered since `since`: what the daily totals add up (D099)."""
+        rows = list(
+            self.col("order").find(
+                {"kind": CREDITS, "status": OrderStatus.PAID.value, "created_at": {"$gte": since}}
+            )
+        )
+        return self._views(rows)
+
     def uncredited(self) -> list[dict]:
         """Paid run packs whose runs have not reached the wallet yet (D053)."""
         rows = list(

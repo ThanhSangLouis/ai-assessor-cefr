@@ -257,3 +257,31 @@
   .receipt-sheet { border: 0; box-shadow: none; padding: 0; }
   .receipt-stamp { transform: none; }
 }
+
+/* ------------------------------------------------------------------ D099: the terms of a run pack */
+.terms-page { max-width: 760px; display: grid; gap: var(--sp-4); }
+.terms-page .page-head { margin-bottom: 0; }
+.terms-tiles {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--sp-3);
+}
+.terms-tiles li {
+  display: grid; gap: 6px; align-content: start;
+  padding: var(--sp-4); border: 1px solid var(--border); border-radius: 14px;
+  background: var(--bg-elevated);
+}
+.terms-tiles b { font-size: 1.02rem; line-height: 1.3; }
+.terms-tiles span:not(.terms-mark) { color: var(--fg-muted); font-size: var(--t-sm); line-height: 1.45; }
+.terms-mark {
+  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
+  background: var(--brand-soft); color: var(--brand-strong);
+}
+.terms-mark .icon { width: 22px; height: 22px; }
+.terms-card h2 { display: flex; align-items: center; gap: var(--sp-2); font-size: 1.05rem; margin: 0 0 var(--sp-3); }
+.terms-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.terms-list li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+.terms-list .icon { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--fg-muted); }
+.terms-list .yes .icon { color: var(--ok); }
+.terms-list .no .icon { color: var(--danger); }
+.terms-how { margin: var(--sp-3) 0 0; padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+.terms-back { margin: 0; }

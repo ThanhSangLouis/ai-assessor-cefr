@@ -4,12 +4,10 @@
 {% block content %}
 {#- D049, D053. A learner's runs on the metered channel: what is left this
     cycle, what each recording cost, and the packs on sale. -#}
+{#- Owner, 07/11/2026: numbers and icon tiles, not paragraphs (D099). -#}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("star") }}</span>Lượt của tôi</h1>
-  <p class="lede">
-    Mỗi bài được tính theo <b>thời lượng thật đã ghi</b>, không theo thời lượng tối đa của đề.
-    Lượt bị giữ khi bạn nộp, phần thừa được trả lại ngay khi có kết quả, và trả lại hết nếu bài không ra kết quả.
-  </p>
+  <p class="lede">Tính theo thời lượng thật. Bài lỗi được trả lượt.</p>
 </div>
 
 <div class="card" id="balance" aria-busy="true" aria-live="polite">
@@ -17,14 +15,19 @@
   <div class="skeleton skeleton-line"></div>
 </div>
 
+<section class="card" id="price-card" aria-labelledby="price-h" hidden>
+  <div class="card-head"><h2 id="price-h">Mỗi bài tốn bao nhiêu</h2></div>
+  <ul class="cost-tiles" id="price-tiles"></ul>
+</section>
+
 <section class="card" id="packs-card" aria-labelledby="packs-h" hidden>
-  <div class="card-head"><h2 id="packs-h">Mua thêm lượt</h2></div>
-  <p class="muted" id="packs-note"></p>
+  <div class="card-head"><h2 id="packs-h">Mua thêm lượt</h2><span class="badge" id="packs-note"></span></div>
   <div class="pack-grid" id="packs"></div>
   <label class="field" id="gateway-field" hidden>
     <span>Cổng thanh toán</span>
     <select id="gateway"></select>
   </label>
+  <p class="pack-terms">{{ icon("scale") }}<span>Bấm mua là đồng ý <a href="/payment-terms">điều khoản và hoàn tiền</a>.</span></p>
 </section>
 
 <section class="card" aria-labelledby="history-h">

@@ -1,4 +1,4 @@
-%% SDD - So do 09: lop cua phan he thanh toan va cac mau thiet ke (D035, D095, D096, D097)
+%% SDD - So do 09: lop cua phan he thanh toan va cac mau thiet ke (D035, D095-D099)
 %% Adapter + Strategy: PaymentGateway; Template Method: SignedRedirect;
 %% Factory: build_gateways; Observer: billing.order_settled; State: OrderState (D098);
 %% Repository; DI: Transport.
@@ -35,6 +35,7 @@ classDiagram
         +checkout(...) Checkout
         +verify_return(query) PaymentResult
         +verify_notification(message, now) PaymentResult
+        +look_up(reference) PaymentResult
     }
     class Transport {
         <<interface>>
@@ -50,6 +51,7 @@ classDiagram
         -publish: Callable
         +place_credit_order(runs, by_account, ...) Order
         +settle(result, via, gateway) str
+        +reconcile() list
         +credit_order(order) bool
     }
     class BillingRepository {
@@ -58,6 +60,8 @@ classDiagram
         +order(order_id) Order
         +order_by_checkout(gateway, reference) Order
         +settle(order_id, outcome, reference, code) bool
+        +open_since(since) list
+        +pending_count(account_id, since) int
         +add_event(order_id, kind, data)
     }
     class Order {

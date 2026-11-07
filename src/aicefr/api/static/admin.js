@@ -18,6 +18,8 @@ const TABS = [
       window.adminPrices.load();
     },
   },
+  // D099. The run-pack orders live in admin_orders.js, loaded first.
+  { button: "tab-orders", panel: "panel-orders", load: () => window.adminOrders.load() },
   { button: "tab-erase", panel: "panel-erase", load: null },
   // D072. The language model's use lives in admin_coach.js, loaded first.
   { button: "tab-coach", panel: "panel-coach", load: () => window.adminCoach.load() },

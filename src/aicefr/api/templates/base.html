@@ -188,6 +188,15 @@
   bằng email hoặc Google{% if account.role.value == "student" %}, và để giảng viên lớp bạn biết bài nào của bạn{% endif %}.
 </div>
 {% endif %}
+{#- D099: once per browser, a word that runs are counted and how many are free; common.js shows it. -#}
+{% if account and role != "admin" and metered() %}
+<div class="metering-notice" id="metering-notice" role="status" hidden>
+  {{ icon("star") }}
+  <p>Mỗi tháng có lượt miễn phí để chấm bài nói. <b id="metering-free"></b></p>
+  <a class="button small secondary" href="/credits">Xem lượt</a>
+  <button type="button" class="small" id="metering-ok">Đã hiểu</button>
+</div>
+{% endif %}
 {% block content %}{% endblock %}
 </main>
 {% block app_navigation %}
