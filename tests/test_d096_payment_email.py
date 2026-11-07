@@ -11,7 +11,11 @@ tests named after an acceptance criterion carry the name given in SRS FR-101.
 
 from __future__ import annotations
 
+import os
 import re
+import threading
+import time
+import uuid
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -168,3 +172,53 @@ def test_with_email_off_a_payment_still_settles(tmp_path, monkeypatch):
     assert m.billing_store.order(order_id)["status"] == "paid"
     assert buyer.get("/api/v1/me/credits").json()["wallet_runs"] == 10
     assert outbox().sent == []
+
+
+@pytest.mark.skipif(not os.getenv("AICEFR_TEST_REDIS"), reason="AICEFR_TEST_REDIS is not set")
+def test_the_order_event_crosses_redis_and_one_email_goes_out():
+    """The production path: Redis Streams with a consumer group, which delivers
+    at least once. The same event sent twice still makes one email."""
+    from aicefr.platform.redis_bus import RedisBus
+    from aicefr.storage.auth_repository import AuthRepository, Role
+
+    url = os.environ["AICEFR_TEST_REDIS"]
+    auth = AuthRepository(f"mongomock://redis-email-{uuid.uuid4().hex[:8]}")
+    account_id = auth.create_account("SV-R01", PASSWORD, Role.STUDENT)
+    auth.col("account").update_one(
+        {"account_id": account_id}, {"$set": {"email": EMAIL, "email_verified": 1}}
+    )
+    outbox().sent.clear()
+    handled, both = [], threading.Event()
+
+    def on_event(payload: dict) -> None:
+        handled.append(payments.on_order_settled(payload, auth, outbox(), SITE))
+        if len(handled) == 2:
+            both.set()
+
+    subscriber = RedisBus(url)
+    subscriber.subscribe(ORDER_SETTLED, f"test-{uuid.uuid4().hex[:8]}-payment-email", on_event)
+    subscriber.start()
+    try:
+        time.sleep(1.0)  # the consumer group exists once its reader has declared it
+        order_id = "DL261107" + uuid.uuid4().hex[:6].upper()
+        payload = {
+            "order_id": order_id,
+            "account_id": account_id,
+            "status": "paid",
+            "runs": 10,
+            "amount_vnd": 49_000,
+            "gateway_title": "payOS",
+            "reference": "FT2611070001",
+            "live": True,
+            "settled_at": "2026-11-07T10:05:00+00:00",
+        }
+        publisher = RedisBus(url)
+        publisher.publish(ORDER_SETTLED, payload)
+        publisher.publish(ORDER_SETTLED, payload)  # a second delivery of the same event
+
+        assert both.wait(15), "the events did not come back through Redis"
+        assert sorted(handled) == [False, True]
+        [email] = outbox().sent
+        assert email.to == EMAIL and order_id in email.subject
+    finally:
+        subscriber.close()

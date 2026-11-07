@@ -64,7 +64,7 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-CT-I04 | `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason` | FR-71 | payOS từ chối mở link (mã 231), rồi không kết nối được: 502 với câu bắt đầu bằng "payOS: ", đơn thành không thành công với mã của cổng, không đơn nào còn chờ |
+| TC-CT-I04 | `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason` | FR-71 | payOS từ chối mở link (mã 231), rồi không kết nối được: 502 với câu nêu tên cổng đúng một lần, đơn thành không thành công với mã của cổng, không đơn nào còn chờ |
 | TC-CT-I05 | `test_a_return_the_gateway_cannot_confirm_says_so` | FR-71 | Trình duyệt quay về lúc không hỏi được payOS: "Chưa xác nhận được với payOS", đơn vẫn chờ; hỏi lại được thì thành công |
 | TC-CT-I07 | `test_one_gateway_cannot_settle_another_gateways_order` | AC-71.5 | Kết quả có chữ ký của cổng thử cho một đơn payOS: không có địa chỉ thông báo của cổng thử cạnh tiền thật, `settle` trả `not_found`, đơn vẫn chờ và có sự kiện `rejected`; cùng payOS nhưng khác chế độ tiền cũng không chốt |
 | TC-CT-I09 | `test_the_problems_of_the_gateways_are_logged` | FR-71 | Cấu hình `stripe, momo, payos, sandbox` không có khoá: chỉ còn cổng thử; nhật ký nêu `stripe`, `momo` là tên lạ và payOS thiếu `AICEFR_PAYOS_CLIENT_ID`; đặt qua `stripe` bị từ chối (422); đơn không nêu cổng đi cổng đầu tiên |

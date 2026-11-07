@@ -154,7 +154,10 @@ class BillingService:
             # Nothing was opened, so nothing can be paid: the order ends here.
             refused = PaymentResult(order_id, OrderStatus.FAILED, amount, "", e.code, str(e))
             self.settle(refused, "checkout", gateway.name)
-            raise PaymentUnavailable(f"{gateway.title}: {e}") from e
+            # Named once: "payOS không mở được…", not "payOS: payOS không mở được…".
+            reason = str(e)
+            said = reason if reason.startswith(gateway.title) else f"{gateway.title}: {reason}"
+            raise PaymentUnavailable(said) from e
         if checkout.reference:
             self.store.set_checkout_ref(order_id, checkout.reference)
         return checkout.url

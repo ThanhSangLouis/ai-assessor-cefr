@@ -51,9 +51,9 @@ def test_a_gateway_that_will_not_open_fails_the_order_with_a_reason(payos):
     refused = buyer.post("/api/v1/me/credit-orders", json=BODY)
 
     assert refused.status_code == 502
-    assert (
-        refused.json()["detail"].startswith("payOS: ") and "đã tồn tại" in refused.json()["detail"]
-    )
+    detail = refused.json()["detail"]
+    assert detail.startswith("payOS không mở được") and "đã tồn tại" in detail
+    assert "payOS: payOS" not in detail  # the gateway is named once
     [failed] = buyer.get("/api/v1/me/credit-packs").json()["orders"]
     assert (failed["status"], failed["result_code"]) == ("failed", "231")
 

@@ -27,7 +27,7 @@
 | AC-101.1 | TC-PE-I01 |
 | AC-101.2 | TC-PE-I02 |
 | AC-101.3 | TC-PE-I03 |
-| AC-101.4 | TC-PE-I04 |
+| AC-101.4 | TC-PE-I04, TC-PE-I07 |
 | AC-101.5 | TC-PE-I05 |
 | AC-101.6 | TC-PE-I06 |
 
@@ -41,6 +41,7 @@
 | TC-PE-I04 | `test_a_second_delivery_of_the_event_sends_no_second_email` | AC-101.4 | Gọi lại bộ xử lý với cùng sự kiện: trả False, hộp thư vẫn một email |
 | TC-PE-I05 | `test_the_payment_email_says_what_was_bought_and_nothing_secret` | AC-101.5 | Có số tiền, cổng, mã giao dịch, lời dặn báo quản trị viên; tiền thật thì không có lưu ý thử; không chữ "mật khẩu", "số thẻ", khoá; không có địa chỉ công khai thì không có liên kết |
 | TC-PE-I06 | `test_with_email_off_a_payment_still_settles` | AC-101.6 | Email tắt: đơn đã thanh toán, ví +10, hộp thư trống |
+| TC-PE-I07 | `test_the_order_event_crosses_redis_and_one_email_goes_out` | AC-101.4 | Chỉ chạy khi có `AICEFR_TEST_REDIS` (CI có): sự kiện đi qua Redis Streams thật với consumer group; gửi cùng sự kiện hai lần, bộ xử lý chạy hai lần, chỉ một email đi |
 
 ## 5. Kết quả
 
