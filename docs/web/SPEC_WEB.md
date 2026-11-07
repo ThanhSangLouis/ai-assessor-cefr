@@ -292,6 +292,8 @@ bằng chứng cùng bản chép, trình phát ghim đầu thẻ → các khía 
 thu gọn) → chất lượng bản ghi và nguồn gốc (thu gọn; mở sẵn khi bài bị từ chối).
 Lý do từ chối trích ngưỡng QC đang áp dụng, không chép số cứng vào mã.
 
+D100 (07/11/2026): ít chữ hơn, cùng các ràng buộc trên. Thẻ Kết quả có điểm, band, nhãn khoảng tin cậy, một dòng "ước lượng" và bốn ô số đo (thời lượng, số từ, từ mỗi phút, từ máy nghe chưa rõ); nhận xét dẫn bằng chứng bằng nhãn bấm để nghe đúng mốc; bằng chứng mở sẵn dưới bản chép lời; phần kỹ thuật là "Chi tiết kỹ thuật".
+
 ### M5 — Hàng đợi duyệt  ·  `/review`  · FR-29
 
 Sắp theo **độ tin cậy tăng dần** — bài máy ít chắc chắn nhất lên đầu. Lọc theo mã
