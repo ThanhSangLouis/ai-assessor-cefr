@@ -26,7 +26,7 @@
 
 | Tiêu chí chấp nhận | Test case |
 | --- | --- |
-| AC-100.1 | TC-PO-U01, TC-PO-U02 |
+| AC-100.1 | TC-PO-U01, TC-PO-U02, TC-PO-U07 |
 | AC-100.2 | TC-PO-U04, TC-PO-I01 |
 | AC-100.3 | TC-PO-U05, TC-PO-I02 |
 | AC-100.4 | TC-PO-U04, TC-PO-I03 |
@@ -45,6 +45,7 @@
 | TC-PO-U04 | `test_the_return_is_read_back_from_payos_and_its_address_is_not_believed` | AC-100.2 | Địa chỉ ghi PAID nhưng payOS ghi PENDING, trả thiếu tiền hay CANCELLED thì theo payOS; id không phải link payOS thì không gọi API |
 | TC-PO-U05 | `test_a_webhook_counts_only_when_its_data_is_signed_with_the_checksum_key` | AC-100.3 | Chữ ký đúng thì là PAID đúng đơn, số tiền, link; khoá khác, sửa số tiền, thân rác đều bị loại; mã khác "00" không thuộc đơn nào; mẫu đơn 123 không trùng đơn thật; webhook không gọi API |
 | TC-PO-U06 | `test_payos_moves_real_money_so_it_runs_only_when_switched_on` | AC-100.5 | Chưa bật tiền thật: chỉ còn cổng thử, có câu nhắc `AICEFR_PAYMENTS_LIVE`; bật: chỉ payOS, cổng thử tắt; thiếu checksum key thì có câu nhắc tên biến |
+| TC-PO-U07 | `test_every_call_names_this_system_so_cloudflare_lets_it_through` | AC-100.1 | Mọi lời gọi HTTPS mang `User-Agent: SpeakUp/1.0`, không phải `Python-urllib` (Cloudflare của payOS trả 403, lỗi 1010); 403 đọc thành câu có chữ Cloudflare |
 
 ### 4.2. Integration — `tests/test_d095_payos.py`
 
@@ -59,7 +60,7 @@
 
 | Lệnh | Kết quả |
 | --- | --- |
-| `pytest tests/test_d095_payos_unit.py` | 6 passed |
+| `pytest tests/test_d095_payos_unit.py` | 7 passed |
 | `pytest tests/test_d095_payos.py` | 4 passed |
 
 **Giới hạn (`NOT_RUN`):** chưa thử với payOS thật. payOS không có môi trường thử; muốn thử thật phải bật `AICEFR_PAYMENTS_LIVE`, điền ba khoá của kênh thanh toán và chuyển một khoản nhỏ bằng tiền thật. Công thức chữ ký webhook theo trang "Kiểm tra dữ liệu với signature" của payOS ngày 07/11/2026; đối chiếu lại nếu payOS đổi tài liệu.

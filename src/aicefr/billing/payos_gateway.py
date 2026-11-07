@@ -73,6 +73,7 @@ MESSAGES = {
 UNREACHABLE = "Không kết nối được payOS; thử lại sau ít phút."
 STATUS_ERRORS = {
     401: "Client ID hoặc API Key của payOS không đúng.",
+    403: "payOS (Cloudflare) từ chối yêu cầu từ máy chủ này; thử lại sau hoặc báo quản trị viên.",
     429: "payOS đang giới hạn số yêu cầu; thử lại sau ít phút.",
 }
 

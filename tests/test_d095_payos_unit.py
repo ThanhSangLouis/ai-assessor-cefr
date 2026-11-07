@@ -21,7 +21,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from aicefr.billing import registry
+from aicefr.billing import registry, transport
 from aicefr.billing.payments import GatewayError, Incoming, OrderStatus
 from aicefr.billing.payos_gateway import PayosGateway, order_code, order_id_of
 from aicefr.billing.transport import Reply, Unreachable
@@ -210,6 +210,39 @@ def test_a_webhook_counts_only_when_its_data_is_signed_with_the_checksum_key():
     assert fake.calls == []  # a webhook never makes this system call payOS
     assert gw.acknowledge("ok").status == 200 and gw.acknowledge("signature").status == 400
     assert gw.acknowledge("error").status == 500
+
+
+def test_every_call_names_this_system_so_cloudflare_lets_it_through(monkeypatch):
+    """payOS's Cloudflare answers urllib's default User-Agent with 403 (error 1010)."""
+    sent = {}
+
+    class Opened:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self):
+            return b"{}"
+
+    def fake_open(request, timeout):
+        sent.update(request.header_items())
+        return Opened()
+
+    monkeypatch.setattr(transport._OPENER, "open", fake_open)
+    transport.https(
+        "POST", "https://api-merchant.payos.vn/v2/payment-requests", {"x-api-key": "k"}, b"{}"
+    )
+
+    assert sent["User-agent"] == transport.USER_AGENT and "urllib" not in sent["User-agent"]
+    assert sent["X-api-key"] == "k"
+    gw, _ = gateway(Reply(403, b"error code: 1010"))
+    with pytest.raises(GatewayError) as e:
+        gw.checkout(ORDER, 49000, "", RETURN, "", "", NOW)
+    assert "Cloudflare" in str(e.value)
 
 
 def settings(**changes) -> Settings:
