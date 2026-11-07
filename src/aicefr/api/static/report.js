@@ -159,13 +159,34 @@ function buildReport(d) {
 
   // D068: four parts. What the learner came for -- the result, what to work
   // on, the recording -- stays open; everything about how the machine got
-  // there is one fold at the foot.
+  // there is one fold at the foot. Owner, 07/11/2026: numbers and tiles first,
+  // one short line where a paragraph was (D100).
   return (
-    section("report-summary", "result-h", head + scoreBlock(d, a) + nextStepBlock(a, d)) +
+    section("report-summary", "result-h", head + scoreBlock(d, a) + factsBlock(d) + nextStepBlock(a, d)) +
     '<section class="card anchor-target" id="report-coach" aria-labelledby="coach-h" hidden></section>' +
     commentsCard(a) +
     evidenceCard(d, a) +
     detailCard(d, a, false)
+  );
+}
+
+// D100: the recording in four numbers a learner can compare from one answer to
+// the next. Read off the recording and the transcript, not off the model.
+function factsBlock(d) {
+  const seconds = d.qc && d.qc.duration_ms ? d.qc.duration_ms / 1000 : null;
+  const words = (d.asr && d.asr.words) || [];
+  if (!seconds && !words.length) return "";
+  const unclear = words.filter((w) => w.is_uncertain).length;
+  const perMinute = seconds && words.length ? Math.round(words.length / (seconds / 60)) : null;
+  const tile = (mark, value, label) =>
+    `<li><span class="fact-mark">${window.ui.icon(mark)}</span><b>${value}</b><span>${label}</span></li>`;
+  return (
+    '<ul class="report-facts" aria-label="Số đo bản ghi">' +
+    (seconds ? tile("clock", mmss(seconds), "thời lượng") : "") +
+    (words.length ? tile("message", words.length, "từ") : "") +
+    (perMinute ? tile("trend", perMinute, "từ / phút") : "") +
+    (words.length ? tile("headphones", unclear, "từ máy nghe chưa rõ") : "") +
+    "</ul>"
   );
 }
 
@@ -178,28 +199,27 @@ function section(id, labelledBy, inner) {
 // button that opens the practice task for that aspect at this band.
 function nextStepBlock(a, d) {
   const weak = a.weakest_criteria || [];
-  let h = "";
-  if (weak.length) {
-    h +=
-      '<p class="next-step-line"><b>Khía cạnh nên luyện trước:</b> ' +
-      weak.map((c) => escapeHtml(CRITERION_NAMES[c] || c)).join(", ") +
-      ". <span class=\"muted\">Xác định bằng vị trí các phép đo so với bài nói tham chiếu, " +
-      "không phải điểm riêng của từng khía cạnh.</span></p>";
-  }
+  // Picked from where the measurements stand against the reference answers,
+  // not from a per-aspect score (there is none).
+  const h = weak.length
+    ? '<p class="next-step-line"><span class="next-step-label">Nên luyện trước</span>' +
+      weak.map((c) => `<span class="aspect-chip">${escapeHtml(CRITERION_NAMES[c] || c)}</span>`).join("") +
+      "</p>"
+    : "";
   if (!isStudent) return h ? `<div class="next-step">${h}</div>` : "";
   // The lesson path picks its next lesson from this same weakest aspect (D068).
   const practise = weak.length
-    ? `<a class="button" href="/practice">Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())} theo lộ trình</a>`
-    : '<a class="button" href="/practice">Mở trang luyện tập</a>';
+    ? `<a class="button" href="/practice">${window.ui.icon("target")}<span>Luyện ${escapeHtml((CRITERION_NAMES[weak[0]] || "").toLowerCase())}</span></a>`
+    : `<a class="button" href="/practice">${window.ui.icon("target")}<span>Luyện tập</span></a>`;
   // D069: the same task again, three times, shorter each time.
   const scored = d && (d.status === "COMPLETED" || d.status === "REVIEW_REQUIRED");
   const retell = scored
-    ? `<a class="button secondary" href="/retell/${encodeURIComponent(ID)}">Nói lại đề này</a>`
+    ? `<a class="button secondary" href="/retell/${encodeURIComponent(ID)}">${window.ui.icon("refresh")}<span>Nói lại đề này</span></a>`
     : "";
   return (
     `<div class="next-step">${h}<div class="button-row">${practise}${retell}` +
-    '<a class="button secondary" href="/">Nộp bài mới</a>' +
-    '<a class="button secondary" href="/my-progress">Xem tiến độ</a></div></div>'
+    `<a class="button secondary" href="/">${window.ui.icon("mic")}<span>Bài mới</span></a>` +
+    `<a class="button secondary" href="/my-progress">${window.ui.icon("chart")}<span>Tiến độ</span></a></div></div>`
   );
 }
 
@@ -209,7 +229,7 @@ function commentsCard(a) {
   return section(
     "report-comments",
     "comments-h",
-    '<h2 id="comments-h">Nhận xét và gợi ý luyện tập</h2>' + body
+    '<h2 id="comments-h">Nhận xét</h2>' + body
   );
 }
 
@@ -231,10 +251,10 @@ function evidenceCard(d, a) {
 // The evidence cards seek the player above, so they stay in this card, folded:
 // the transcript already marks the same moments.
 function foldedEvidence(a) {
-  // The fold's summary is the heading; drop the block's own.
-  const body = evidenceBlock(a).replace(/^<h3[^>]*>[^<]*<\/h3>/, "");
+  // D100: the moments are the useful part; they stay open, as a compact list.
   const n = (a.evidence || []).length;
-  return `<details class="fold" id="report-evidence-list"><summary>Bằng chứng trên bản ghi${n ? ` (${n})` : ""}</summary>${body}</details>`;
+  const body = evidenceBlock(a).replace(/^<h3[^>]*>[^<]*<\/h3>/, "");
+  return `<div id="report-evidence-list"><h3 class="block-title">Khoảnh khắc nên nghe lại${n ? ` <span class="count">${Math.min(n, 6)}</span>` : ""}</h3>${body}</div>`;
 }
 
 // FR-27: the provenance fields appear at the foot of every report. Folded,
@@ -244,7 +264,7 @@ function foldedEvidence(a) {
 function detailCard(d, a, open) {
   return (
     `<details class="card anchor-target detail-card" id="report-detail"${open ? " open" : ""}>` +
-    "<summary>Chi tiết: các khía cạnh được đo, chất lượng bản ghi, nguồn gốc kết quả</summary>" +
+    "<summary>Chi tiết kỹ thuật</summary>" +
     (open ? "" : `<div id="report-aspects">${aspectBlock(a)}${indicatorBlock(a)}</div>` + windowBlock(a)) +
     qualityBlock(d) +
     provenanceBlock(d, a) +
@@ -358,14 +378,15 @@ function intervalBlock(a) {
   const iv = a.interval;
   if (!iv) return "";
   const pct = Math.round(iv.coverage * 100);
-  const bands = (iv.band_set || []).map((b) => escapeHtml(b)).join(", ");
-  let h =
-    '<p class="interval-line">Khoảng tin cậy ' + pct + "%: <b>" +
-    iv.low.toFixed(2) + " – " + iv.high.toFixed(2) + "</b> (band có thể: " + bands + ").";
-  if ((iv.band_set || []).length > 1) {
-    h += " Khoảng này chạm hơn một band, nên band cuối cùng do giảng viên quyết định.";
-  }
-  return h + "</p>";
+  const bands = (iv.band_set || []).map((b) => escapeHtml(b)).join("–");
+  const num = (x) => x.toFixed(2).replace(".", ",");
+  const many = (iv.band_set || []).length > 1;
+  return (
+    `<p class="interval-line"><span class="interval-chip" title="Khoảng tin cậy ${pct}%">` +
+    `Khoảng ${pct}%: <b>${num(iv.low)} – ${num(iv.high)}</b> · ${bands}</span>` +
+    (many ? '<span class="muted">chạm hơn một band, giảng viên chốt</span>' : "") +
+    "</p>"
+  );
 }
 
 // Cờ lạc đề / đọc lại đề: điểm vẫn giữ nguyên, chỉ báo để giảng viên nghe lại.
@@ -444,15 +465,14 @@ function scoreBlock(d, a) {
   if (a.band_position) {
     h += `<p class="band-place">${bandPlace(a.band_position)}</p>${bandTrack(a.band_position)}`;
   }
-  // FR-21: the "estimate" label goes with every report, it must never be missing.
-  h += `<p class="score-caption">
-      Đây là <b>một ước lượng tổng thể</b> cho cả bài nói, do mô hình đưa ra từ các phép đo
-      trên bản ghi. Kết quả ước lượng — không phải chứng chỉ CEFR.
-    </p>`;
-  // D028: what the band describes, and what the machine measured of it.
-  h += '<a class="band-help" href="/bands">Band này nghĩa là gì, máy đo được những gì?</a>';
-  h += "</div></div>";
   h += intervalBlock(a);
+  // FR-21: the "estimate" label goes with every report, it must never be missing.
+  h +=
+    '<p class="score-caption">Ước lượng tổng thể của máy · không phải chứng chỉ CEFR' +
+    (a.teacher_verified ? "" : " · <b>giảng viên sẽ xác nhận</b>") +
+    // D028: what the band describes, and what the machine measured of it.
+    ' · <a class="band-help" href="/bands">Band nghĩa là gì?</a></p>';
+  h += "</div></div>";
   h += flagBlock(d);
 
   // Cảnh báo chưa hiệu chuẩn. Việc ĐỌC `calibration_version` để quyết định
@@ -461,15 +481,8 @@ function scoreBlock(d, a) {
   const cal = a.calibration_version || "";
   if (!a.is_calibrated && !a.interval) {
     h +=
-      '<p class="muted" style="margin-top:var(--sp-3)">Mô hình <b>chưa được hiệu chuẩn</b> ' +
-      "(<code>" + escapeHtml(cal || "chưa có") + "</code>), nên sai số quanh con số này chưa " +
-      "được định lượng. Hãy đọc kết quả như một chỉ dấu về mức độ, không phải một phép đo chính xác.</p>";
-  }
-
-  if (!a.teacher_verified) {
-    h +=
-      '<div class="notice" style="margin-top:var(--sp-4)">Đây <b>chưa phải kết quả cuối</b>. ' +
-      "Giảng viên là người xác nhận.</div>";
+      `<p class="muted small-note" title="${escapeHtml(cal || "chưa có")}">Mô hình chưa hiệu chuẩn: ` +
+      "đọc như chỉ dấu mức độ, chưa phải phép đo chính xác.</p>";
   }
   return h;
 }
@@ -589,11 +602,8 @@ function aspectBlock(a) {
   const rows = a.criteria || [];
   let h = '<h2 id="aspects-h">Các khía cạnh được đo</h2>';
   h +=
-    '<div class="notice notice-info"><b>Không có điểm riêng cho từng tiêu chí.</b> ' +
-    "Mô hình được huấn luyện trên <b>một điểm tổng thể mỗi bài</b>; kho ngữ liệu không có " +
-    "nhãn riêng cho phạm vi ngôn ngữ, độ chính xác, độ trôi chảy, độ mạch lạc hay phát âm. " +
-    "Bảng dưới đây cho biết hệ thống <b>đo được những gì</b> ở mỗi khía cạnh, " +
-    "không phải năm đánh giá độc lập.</div>";
+    '<p class="muted">Không có điểm riêng cho từng khía cạnh: mô hình chỉ cho <b>một điểm tổng thể</b>. ' +
+    "Bảng nói máy đo gì ở mỗi khía cạnh.</p>";
 
   if (!rows.length) {
     h += '<p class="muted">Không có phép đo nào cho bài này.</p>';
@@ -629,9 +639,8 @@ function aspectBlock(a) {
   // The one-line explanation the column header alone cannot carry. This used to
   // be labelled "Do tin cay", which it never was.
   h +=
-    '<p class="muted"><b>“Đầy đủ dữ liệu”</b> chỉ cho biết hệ thống tính được bao nhiêu phần ' +
-    "trăm số phép đo cần thiết trên bản ghi này. Nó <b>không</b> cho biết điểm đúng hay sai: " +
-    "đủ 100% phép đo vẫn có thể ra một ước lượng lệch.</p>";
+    '<p class="muted"><b>Đầy đủ dữ liệu</b>: phần phép đo tính được trên bản ghi, ' +
+    "không phải độ đúng của điểm.</p>";
   return h;
 }
 
@@ -641,16 +650,29 @@ function aspectBlock(a) {
 function commentBlock(a) {
   const cs = a.comments || [];
   if (!cs.length) return "";
+  // D100: a citation is a chip that plays the moment it cites, not an id to look up.
+  const byId = new Map((a.evidence || []).map((e) => [e.evidence_id, e]));
   let h = '<ul class="comment-list">';
   for (const c of cs) {
-    const refs = (c.evidence_refs || []).join(", ");
-    h += '<li class="comment">';
-    h += `<p>${escapeHtml(c.text)}</p>`;
-    if (refs) h += `<p class="muted comment-refs">Dựa trên bằng chứng: ${escapeHtml(refs)}</p>`;
-    h += "</li>";
+    const refs = (c.evidence_refs || [])
+      .map((id) => {
+        const e = byId.get(id);
+        if (e && e.start_s != null) {
+          return `<button type="button" class="ref-chip" data-seconds="${e.start_s}" title="Bằng chứng ${escapeHtml(id)}">${window.ui.icon("play")}${mmss(e.start_s)}</button>`;
+        }
+        const what = e ? EVIDENCE_KIND_NAMES[e.kind] || e.kind : id;
+        return `<span class="ref-chip" title="Bằng chứng ${escapeHtml(id)}">${escapeHtml(what)}</span>`;
+      })
+      .join("");
+    const mark = window.ui.icon(COMMENT_MARKS[c.criterion] || "message");
+    h += `<li class="comment"><span class="comment-mark">${mark}</span><div><p>${escapeHtml(c.text)}</p>`;
+    if (refs) h += `<p class="comment-refs"><span class="visually-hidden">Dựa trên bằng chứng: </span>${refs}</p>`;
+    h += "</div></li>";
   }
   return h + "</ul>";
 }
+
+const COMMENT_MARKS = { fluency: "clock", range: "book-open", coherence: "layers", accuracy: "headphones", phonology: "volume" };
 
 // FR-26. At most two, and none at all when confidence is low: advice built on a
 // measurement the system does not trust is worse than saying nothing, because
@@ -658,13 +680,12 @@ function commentBlock(a) {
 function priorityBlock(a) {
   const ps = a.priorities || [];
   if (!ps.length) return "";
-  let h = '<h3 class="block-title">Nên luyện gì tiếp theo</h3>';
-  h += '<ol class="priority-list">';
+  let h = '<h3 class="block-title">Luyện tiếp</h3><ol class="priority-list">';
   for (const p of ps) {
-    h += '<li class="priority">';
-    h += `<p>${escapeHtml(p.text)}</p>`;
-    h += `<p class="muted">Ước tính đang làm giảm khoảng ${Number(p.impact).toFixed(2)} điểm.</p>`;
-    h += "</li>";
+    const impact = Number(p.impact).toFixed(2).replace(".", ",");
+    h +=
+      `<li class="priority"><span class="comment-mark">${window.ui.icon("target")}</span><p>${escapeHtml(p.text)}</p>` +
+      `<span class="impact-chip" title="Ước tính phép đo này đang kéo điểm xuống">−${impact} điểm</span></li>`;
   }
   return h + "</ol>";
 }
@@ -674,29 +695,23 @@ function evidenceBlock(a) {
   const ev = a.evidence || [];
   let h = '<h3 class="block-title">Bằng chứng trên bản ghi</h3>';
   if (!ev.length) {
-    return (
-      h +
-      '<p class="muted">Chưa đủ bằng chứng để đưa nhận xét: hệ thống không tìm thấy quãng ' +
-      "ngừng dài, từ ngập ngừng hay từ nghe không rõ nào đáng nêu. Bài nói dài hơn thường " +
-      "cho nhiều bằng chứng hơn.</p>"
-    );
+    return h + '<p class="muted">Chưa đủ bằng chứng để đưa nhận xét.</p>';
   }
-  h += '<p class="muted">Những chỗ cụ thể hệ thống đo được. Bấm một thẻ để nghe lại đúng đoạn đó.</p>';
   h += '<div class="evidence-grid">';
   // FR-24: at most 6 items.
   ev.slice(0, 6).forEach((e) => {
     const seekable = e.start_s != null;
     const tag = seekable ? "button" : "div";
     const attrs = seekable ? ` type="button" data-seconds="${e.start_s}"` : "";
-    h += `<${tag} class="evidence"${attrs}>`;
+    h += `<${tag} class="evidence kind-${escapeHtml(e.kind)}"${attrs}>`;
     h += '<span class="evidence-head">';
+    if (seekable) h += `<span class="evidence-time">${window.ui.icon("play")}${mmss(e.start_s)}</span>`;
     h += `<span class="evidence-kind">${escapeHtml(EVIDENCE_KIND_NAMES[e.kind] || e.kind)}</span>`;
-    if (seekable) h += `<span class="evidence-time">${mmss(e.start_s)}</span>`;
+    h += `<span class="evidence-aspect">${escapeHtml(CRITERION_NAMES[e.criterion] || e.criterion)}</span>`;
     h += "</span>";
-    h += `<p class="evidence-note">${escapeHtml(e.note)}</p>`;
-    if (e.snippet) h += `<p class="evidence-snippet">…${escapeHtml(e.snippet)}…</p>`;
-    h += `<span class="muted">Khía cạnh: ${escapeHtml(CRITERION_NAMES[e.criterion] || e.criterion)}</span>`;
-    if (seekable) h += '<span class="evidence-action">▶ Nghe đoạn này</span>';
+    h += `<span class="evidence-note">${escapeHtml(e.note)}</span>`;
+    if (e.snippet) h += `<span class="evidence-snippet" lang="en">…${escapeHtml(e.snippet)}…</span>`;
+    if (seekable) h += '<span class="visually-hidden">Nghe đoạn này</span>';
     h += `</${tag}>`;
   });
   return h + "</div>";
@@ -705,19 +720,16 @@ function evidenceBlock(a) {
 function transcriptBlock(d) {
   const asr = d.asr;
   if (!asr || !asr.text) return "";
-  let h = '<h3 class="block-title">Bản chép lời</h3>';
-  h += '<div class="transcript-toolbar">';
-  h +=
-    '<span>Từ đang phát được tô sáng theo tiếng. Bấm vào một từ để tua tới đó.</span>';
+  let h = '<div class="transcript-toolbar"><h3 class="block-title">Bản chép lời</h3>';
   h +=
     '<span class="legend"><span class="swatch" aria-hidden="true"></span>' +
-    "Máy nghe không rõ</span>";
+    "Máy nghe chưa rõ · bấm từ để nghe</span>";
   h += "</div>";
   // D089: the orange words, said again one by one on their own page.
   const scored = d.assessment && d.assessment.overall_0_6 != null;
   if (isStudent && scored && (asr.words || []).some((w) => w.is_uncertain)) {
     h +=
-      '<p class="drill-callout">Từ tô cam là từ máy nghe chưa rõ. Nghe lại, nghe mẫu rồi nói lại từng từ ' +
+      '<p class="drill-callout">Nói lại từng từ tô cam cho máy nghe rõ ' +
       `<a class="button small" href="/drill/${encodeURIComponent(ID)}">Luyện lại các từ này</a></p>`;
   }
   h += '<div class="transcript" id="transcript-body">';
@@ -880,22 +892,19 @@ if (printButton) {
 const COACH_DIR = { up: "tăng", down: "giảm" };
 
 function coachTargets(nb) {
-  const rows = nb.targets
-    .map((t) => {
-      const to = t.direction === "up" ? "lên" : "xuống";
-      return (
-        `<li><b>${escapeHtml(t.label)}</b>: ${COACH_DIR[t.direction]} từ ${escapeHtml(String(t.now))} ` +
-        `${to} ${escapeHtml(String(t.target))} ${escapeHtml(t.unit)}</li>`
-      );
-    })
+  const num = (x) => escapeHtml(String(x).replace(".", ","));
+  const tiles = nb.targets
+    .map(
+      (t) =>
+        `<li><span class="coach-label">${escapeHtml(t.label)}</span>` +
+        `<span class="coach-move"><s>${num(t.now)}</s>${window.ui.icon(t.direction === "up" ? "arrow-up" : "arrow-down")}<b>${num(t.target)}</b></span>` +
+        `<span class="coach-unit">${escapeHtml(t.unit)}</span></li>`
+    )
     .join("");
   return (
-    `<p>Bài này ở <b>${escapeHtml(nb.from_band)}</b>, còn cách ngưỡng <b>${escapeHtml(nb.to_band)}</b> ` +
-    `khoảng ${escapeHtml(String(nb.gap).replace(".", ","))} điểm. Lần nói tới, nhắm vào:</p>` +
-    `<ul class="coach-targets">${rows}</ul>` +
-    `<p class="muted small-note">${
-      nb.enough ? "Đạt cả ba thì ước lượng của máy đủ để qua ngưỡng." : "Chưa đủ trong một lần: đây là hướng đi cho vài bài tới."
-    } Tính từ chính các phép đo của mô hình trên bài này; giảng viên quyết định band.</p>`
+    `<p class="coach-gap"><b>${escapeHtml(nb.from_band)}</b> → <b>${escapeHtml(nb.to_band)}</b>: còn ${num(nb.gap)} điểm. Lần tới, nhắm vào:</p>` +
+    `<ul class="coach-targets">${tiles}</ul>` +
+    `<p class="muted small-note">${nb.enough ? `Đạt cả ${nb.targets.length} thì đủ lên ${escapeHtml(nb.to_band)}.` : "Hướng đi cho vài bài tới."} Giảng viên quyết định band.</p>`
   );
 }
 
@@ -928,18 +937,20 @@ function coachUpgrade(u) {
 }
 
 function paintCoach(card, c) {
-  let h = '<h2 id="coach-h">Để lên band tiếp theo</h2>';
+  let h = `<h2 id="coach-h">${window.ui.icon("arrow-up")} Lên band tiếp theo</h2>`;
   if (c.next_band) h += coachTargets(c.next_band);
   if (c.upgrade) h += coachUpgrade(c.upgrade);
   else if (c.can_upgrade)
     h +=
-      '<div class="button-row"><button type="button" id="coach-upgrade">Xem bài của tôi ở band cao hơn</button></div>' +
+      '<div class="coach-upgrade-row"><button type="button" id="coach-upgrade">' +
+      `${window.ui.icon("sparkle")}<span>Xem bài của tôi ở band cao hơn</span></button>` +
       // D072: the price is said before the button is pressed, on the metered channel.
       (c.price && c.price.runs
-        ? `<p class="small-note"><b>Tốn ${escapeHtml(String(c.price.runs).replace(".", ","))} lượt` +
-          ` (${escapeHtml(Number(c.price.idpoint).toLocaleString("vi-VN"))} IDPoint)</b>, chỉ trừ khi AI viết xong.</p>`
+        ? `<span class="small-note"><b>${escapeHtml(String(c.price.runs).replace(".", ","))} lượt</b>` +
+          ` (${escapeHtml(Number(c.price.idpoint).toLocaleString("vi-VN"))} IDPoint), trừ khi AI viết xong</span>`
         : "") +
-      '<p class="muted small-note">AI viết lại chính câu trả lời của bạn ở band kế tiếp, giữ ý của bạn. Chỉ bản chép lời được gửi đi, không gửi ghi âm.</p>';
+      "</div>" +
+      '<p class="muted small-note">AI viết lại bài của bạn, giữ ý của bạn. Chỉ gửi bản chép lời, không gửi ghi âm.</p>';
   card.innerHTML = h;
   card.hidden = !(c.next_band || c.upgrade || c.can_upgrade);
   if (c.upgrade && window.setUpShadowing) window.setUpShadowing(card.querySelector(".shadow-host"), c.upgrade.upgraded);
