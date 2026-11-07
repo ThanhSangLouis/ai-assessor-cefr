@@ -1,4 +1,4 @@
-# Cài khoá cho dịch vụ bên ngoài: Google, Stripe
+# Cài khoá cho dịch vụ bên ngoài: Google, Stripe, payOS
 
 > **D075 (01/11/2026):** hệ thống phục vụ một trung tâm, học viên (và giảng viên, cho bản soạn bài bằng AI) mua **gói lượt** qua **Stripe**; không còn gói dịch vụ của trường. VNPay và MoMo đã gỡ khỏi mã: mục 3 và 4 chỉ còn làm lịch sử.
 
@@ -92,6 +92,39 @@ Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (develo
 **Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên gói lượt quá rẻ có thể bị từ chối; khi đó trang báo lý do.
 
 Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com/webhooks (mục "Verify webhook signatures manually"), docs.stripe.com/currencies.
+
+## 2a. payOS — chuyển khoản VietQR (D095)
+
+**Đã làm sẵn.** Mở link thanh toán bằng API payOS (VND, mã đơn đổi sang số nguyên, nội dung chuyển khoản `SU` + 6 ký tự của đơn); trang trả về đọc lại link từ API payOS, không tin trạng thái ghi trong địa chỉ; webhook chỉ được tin khi chữ ký HMAC-SHA256 trên phần `data` đúng với checksum key. Người mua quét mã VietQR bằng ứng dụng ngân hàng bất kỳ.
+
+**Giới hạn cần biết.**
+
+- **payOS không có môi trường thử.** Mọi link là tiền thật chuyển vào tài khoản ngân hàng gắn với kênh thanh toán. Vì vậy cổng chỉ chạy khi `AICEFR_PAYMENTS_LIVE=on`, và khi đó cổng thử tự tắt.
+- **Bán thật vẫn vướng giấy phép.** Mô hình chấm học từ dữ liệu Speak & Improve chỉ được dùng phi thương mại. Chủ dự án chốt ngày 07/11/2026 giữ chế độ thử trên production, nên **không bật payOS trên speakup.fit** khi chưa giải quyết giấy phép. Muốn thử luồng thì chạy trên máy mình và chuyển khoản số tiền nhỏ cho chính mình.
+
+**Lấy khoá:**
+
+1. **Tạo tài khoản:** vào <https://my.payos.vn>, bấm **Đăng ký**, điền thông tin rồi bấm **Tạo tài khoản**, sau đó mở email payOS gửi và bấm **Xác thực**.
+2. **Xác thực tổ chức:** chọn **Tài khoản cá nhân/Hộ kinh doanh** (cá nhân được, không cần giấy phép kinh doanh), nhập số CCCD và họ tên, bấm **Kiểm tra**. Sau đó quét mã QR để chuyển đúng số tiền và nội dung payOS yêu cầu, **từ tài khoản ngân hàng đứng tên bạn** (không dùng ví điện tử). Không tra được CCCD thì gửi email tới verify@payos.vn để xác thực tay.
+3. **Kết nối tài khoản ngân hàng nhận tiền:** mục **Kênh thu** → chọn ngân hàng của bạn → làm theo hướng dẫn của ngân hàng đó.
+4. **Tạo kênh thanh toán:** mục **Kênh thanh toán** → **Tạo kênh thanh toán** → chọn tài khoản ngân hàng vừa kết nối, đặt tên (ví dụ `SpeakUp`) → **Tạo**. Mở kênh vừa tạo, chép ba khoá: **Client ID**, **API Key**, **Checksum Key**. Ba khoá này giữ kín như mật khẩu: không gửi qua chat, không commit.
+5. **Webhook** (cần địa chỉ `https` công khai): trong kênh thanh toán, ô **Webhook URL**, điền `https://<tên-miền-của-bạn>/api/v1/billing/notify/payos` rồi lưu. payOS gửi thử một thông báo mẫu có chữ ký; hệ thống trả 200 thì payOS nhận địa chỉ. Chạy trên máy mình không có `https` thì bỏ qua bước này: đơn vẫn được ghi nhận khi trình duyệt quay về, nhưng người trả đóng trang sớm thì phải đối soát tay.
+6. **Điền `.env`:**
+
+   ```bash
+   AICEFR_BILLING=on
+   AICEFR_METERING=1
+   AICEFR_PAYMENT_GATEWAYS=payos
+   AICEFR_PAYMENTS_LIVE=on
+   AICEFR_PAYOS_CLIENT_ID=...
+   AICEFR_PAYOS_API_KEY=...
+   AICEFR_PAYOS_CHECKSUM_KEY=...
+   ```
+
+   Thiếu `AICEFR_PAYMENTS_LIVE=on` thì payOS không hiện, và nhật ký ghi rõ lý do. Thiếu khoá nào thì nhật ký ghi tên biến còn thiếu.
+7. **Thử:** đăng nhập học viên → **Lượt của tôi** → **Mua gói này** → trang payOS → quét QR bằng app ngân hàng → về trang kết quả "Thanh toán thành công", ví được cộng lượt. Muốn tốn ít tiền khi thử, quản trị viên tạm đặt một gói rẻ trên trang Giá (ví dụ `1` lượt giá `2.000` đồng) rồi đặt lại sau.
+
+Tài liệu gốc: payos.vn/docs/api (tạo và đọc link thanh toán), payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature, payos.vn/docs/huong-dan-su-dung/xac-thuc-to-chuc, payos.vn/docs/moi-truong-test (truy cập 07/11/2026).
 
 ## 2b. Email qua Resend (D079)
 

@@ -37,6 +37,7 @@ GATEWAY_TITLES = {
     "vnpay": "VNPay",
     "stripe": "Stripe",
     "momo": "MoMo",
+    "payos": "payOS",
 }
 
 

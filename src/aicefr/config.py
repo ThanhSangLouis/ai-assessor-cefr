@@ -201,9 +201,9 @@ class Settings:
     # The payment gateways that sell run packs. Off by default: nothing is
     # sold until a deployment opts in. No service plans any more (D075).
     billing_enabled: bool = field(default_factory=lambda: _flag("AICEFR_BILLING"))
-    # The gateways offered, in the order the buyer sees them (D035, D075):
-    # "stripe" with the keys below, and "sandbox", a payment page inside the
-    # app where no money moves. See aicefr.billing.registry for the rules.
+    # The gateways offered, in the order the buyer sees them (D035, D075, D095):
+    # "stripe" and "payos" with the keys below, and "sandbox", a payment page
+    # inside the app where no money moves. See aicefr.billing.registry for the rules.
     payment_gateways: tuple[str, ...] = field(
         default_factory=lambda: _names("AICEFR_PAYMENT_GATEWAYS", "sandbox")
     )
@@ -217,6 +217,17 @@ class Settings:
     )
     stripe_webhook_secret: str = field(
         default_factory=lambda: os.getenv("AICEFR_STRIPE_WEBHOOK_SECRET", "").strip()
+    )
+    # payOS (D095): the three keys of a payment channel at my.payos.vn. payOS
+    # has no test environment, so it runs only with AICEFR_PAYMENTS_LIVE on.
+    payos_client_id: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_CLIENT_ID", "").strip()
+    )
+    payos_api_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_API_KEY", "").strip()
+    )
+    payos_checksum_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_CHECKSUM_KEY", "").strip()
     )
 
     # --- services (D043, D044) ---

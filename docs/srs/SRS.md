@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.25** | **07/11/2026** | **D095.** +1 FR: FR-100 bán gói lượt qua payOS (chuyển khoản VietQR, Napas 24/7): link thanh toán ký bằng checksum key, trả về được đọc lại từ API payOS, webhook chỉ tin khi chữ ký đúng; payOS không có môi trường thử nên chỉ chạy khi bật tiền thật (`AICEFR_PAYMENTS_LIVE`), khi đó cổng thử tắt. Đơn, gói lượt và luật chốt kết quả không đổi | D095 |
 | **1.24** | **07/11/2026** | **Không thêm FR.** AC-65.10 và AC-66.2 theo trang Lộ trình D092: thành tựu xem ở trang Kết quả; thẻ Mục tiêu hôm nay giữ chuỗi ngày và ngày nghỉ, không hiện kỷ lục và tổng 7 ngày (chủ dự án chốt giữ như giao diện mới). Dữ liệu `today_summary` không đổi | D092 |
 | **1.23** | **07/11/2026** | **D094.** +1 FR: FR-99 tính lượt cho bản ghi trong lộ trình học trên kênh NetID: 5 bản ghi đầu mỗi ngày (giờ Việt Nam) miễn phí, sau đó 0,1 lượt mỗi phút nói đã bắt đầu, tối đa 30 bản ghi mỗi ngày; bản ghi không đo được thì trả lại. `MeteredAction` thêm `LESSON`; `Wallet` thêm số bản ghi trong ngày; `LedgerEntry` thêm ngày và cờ miễn phí; `PriceList` thêm ba con số của bài học. Bản của trường và nghiên cứu không đổi (BR-29, BR-30) | D094 (APPROVED) |
 
@@ -1650,6 +1651,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-99.6** — *Given* năm đường nộp bản ghi của lộ trình, *When* rà mã, *Then* đường nào cũng đi qua tính lượt, còn bản xem thử và audio mẫu của giảng viên thì không (`test_every_recording_endpoint_of_the_lesson_path_is_metered`). |
 | **AC-99.7** — *Given* hệ thống tính lượt, *When* học viên mở bài học hay trang Lượt của tôi, *Then* thấy giá mỗi phút nói, số bản miễn phí còn lại hôm nay và trần ngày (`test_the_quote_says_what_is_left_today`). |
 | **AC-99.8** — *Given* bản triển khai không tính lượt, *When* học viên nộp bản ghi vượt mọi con số trên, *Then* không có gì bị giữ, đếm hay từ chối (`test_with_metering_off_lessons_are_never_held_counted_or_refused`). |
+
+### FR-100 — Bán gói lượt qua payOS (D095)
+
+**Mô tả:** Ngoài Stripe và cổng thử (FR về gói lượt, D053/D075), bản triển khai có thể bán gói lượt qua payOS: người mua quét mã VietQR bằng ứng dụng ngân hàng bất kỳ (Napas 24/7). Hệ thống mở link thanh toán bằng API payOS, ký bằng checksum key của kênh thanh toán, không gửi thông tin người trả (BR-32). Trình duyệt quay về chỉ là lời khai: kết quả được đọc lại từ API payOS. Webhook của payOS chỉ được tin khi chữ ký trên phần `data` đúng. Đơn, số tiền, gói lượt và luật chốt kết quả giữ nguyên như các cổng khác: một đơn chỉ cộng lượt một lần, sai số tiền hay link khác thì không cộng. payOS không có môi trường thử, mọi link là tiền thật, nên cổng chỉ chạy khi `AICEFR_PAYMENTS_LIVE` bật và khi đó cổng thử tự tắt.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-100.1** — *Given* payOS được bật, *When* học viên đặt một gói lượt, *Then* hệ thống gửi payOS số tiền, mã đơn dạng số, nội dung chuyển khoản không quá 9 ký tự và chữ ký HMAC-SHA256 đúng công thức payOS, không gửi tên hay liên lạc của người trả (`test_the_payment_link_is_signed_the_way_payos_documents`). |
+| **AC-100.2** — *Given* học viên đã chuyển khoản, *When* payOS đưa trình duyệt quay về, *Then* hệ thống hỏi lại payOS, thấy trang "Thanh toán thành công" và ví được cộng đúng một lần, kể cả khi mở lại địa chỉ đó (`test_paying_through_payos_is_read_back_and_credited_once`). |
+| **AC-100.3** — *Given* học viên trả xong rồi đóng trang, *When* payOS gửi webhook, *Then* chỉ webhook có chữ ký đúng, đúng số tiền và đúng link của đơn mới cộng lượt, và chỉ một lần (`test_the_payos_webhook_alone_credits_the_runs_once`). |
+| **AC-100.4** — *Given* một địa chỉ trả về ghi "PAID" mà payOS chưa nhận tiền, *When* mở địa chỉ đó, *Then* không cộng lượt; link không thuộc đơn nào thì không hỏi payOS; rời trang payOS thì đơn vẫn chờ (`test_a_return_address_alone_proves_nothing`). |
+| **AC-100.5** — *Given* khoá payOS đã điền, *When* `AICEFR_PAYMENTS_LIVE` chưa bật, *Then* payOS không được mời và không đặt được đơn qua payOS; bật lên thì payOS chạy và cổng thử tắt (`test_payos_is_offered_only_when_real_money_is_switched_on`). |
+| **AC-100.6** — *Given* payOS từ chối mở link hoặc không kết nối được, *When* học viên đặt gói, *Then* nhận một câu nói rõ lý do bằng tiếng Việt (`test_payos_refusals_read_as_sentences`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

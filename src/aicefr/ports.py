@@ -202,10 +202,11 @@ class ResponseStore(Protocol):
 class PaymentGateway(Protocol):
     """Where a run pack is paid for (D035, D075).
 
-    Two adapters: `SandboxGateway`, a page inside the app where no money
-    moves and whose result is signed into an address; `StripeGateway`, whose
-    page is opened through its API and whose events come signed to a webhook
-    (VNPay and MoMo were removed in D075). A deployment may
+    Three adapters: `SandboxGateway`, a page inside the app where no money
+    moves and whose result is signed into an address; `StripeGateway` and
+    `PayosGateway` (D095), whose page is opened through their API, read back
+    on return and whose events come signed to a webhook (VNPay and MoMo were
+    removed in D075). A deployment may
     offer several at once and the buyer picks one per order. Another gateway
     is one more adapter: the order, the runs it buys and the checks on the
     result do not change.
