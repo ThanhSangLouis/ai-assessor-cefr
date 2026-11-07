@@ -325,6 +325,27 @@ def test_the_band_blocks_fit_a_narrow_phone(context, live_server):
     assert right <= 340
 
 
+def test_a_header_tab_marks_its_section_and_leaves_its_heading_in_view(context):
+    """The guest bar's tabs used to keep the first one underlined wherever they
+    led, and the sticky header covered the top of the section they jumped to."""
+    page = context.new_page()
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto("/")
+    for name, section in (("Phương pháp", "scaffolding-method"), ("Giảng viên", "for-teachers")):
+        page.locator(".site-nav").get_by_role("link", name=name).click()
+        page.wait_for_url(f"**/#{section}")
+        tab = page.locator(".site-nav a[aria-current]")
+        expect(tab).to_have_count(1)
+        expect(tab).to_have_text(name)
+        header = page.locator(".site-header").bounding_box()
+        heading = page.locator(f"#{section} h2")
+        wait_until(
+            page,
+            f"Math.abs(document.getElementById('{section}').getBoundingClientRect().top - 64) < 4",
+        )
+        assert heading.bounding_box()["y"] >= header["y"] + header["height"]
+
+
 def test_the_progress_page_prints_as_a_report_not_as_the_screen(context, live_server):
     """ "In báo cáo" (or Ctrl+P) prints one summary page, not the screen's cards."""
     page = student_page(context, live_server, "/my-progress")

@@ -4,89 +4,91 @@
 {% block content %}
 {#- D028. What each band describes, and -- for every aspect -- whether the
     machine measures any of it. Content: report/bands.py; thresholds: the
-    scoring model in force, so the page and the scorer cannot disagree. -#}
-<div class="page-head">
-  <p class="eyebrow">Đọc kết quả</p>
-  <h1><span class="head-icon">{{ icon("target") }}</span>Band A1 đến C2 nghĩa là gì</h1>
-  <p class="lede">Mỗi band nghĩa là gì, và máy đo được phần nào của kỹ năng nói.</p>
+    scoring model in force, so the page and the scorer cannot disagree.
+    Owner, 07/11/2026: fewer words, pictures first, no model names. The long
+    explanations stay one click away (details), not on the first screen. -#}
+<link rel="stylesheet" href="{{ asset('bands.css') }}">
+{%- set level = {"A1": "Mới bắt đầu", "A2": "Sơ cấp", "B1": "Trung cấp", "B2": "Trung cao", "C1": "Cao cấp", "C2": "Thành thạo"} -%}
+<div class="bands-page">
+  <header class="bands-head">
+    <h1><span class="head-icon">{{ icon("target") }}</span>Band A1 đến C2 nghĩa là gì</h1>
+    <p class="bands-lede">Máy cho một điểm 0–6, rồi xếp vào một band. Giảng viên là người chốt.</p>
+  </header>
+
+  <section class="bands-scale" aria-labelledby="scale-h">
+    <h2 id="scale-h" class="visually-hidden">Từ điểm sang band</h2>
+    {#- D031: the bands as the blocks of the product's mark, growing with the level. -#}
+    <div class="cube-stage" aria-hidden="true"><div class="cube-row">
+      {%- for s in spans %}{{ cube(s.band, "is-solid" if loop.index > 4 else ("tone-2" if loop.index > 2 else "tone-1"), 40 + 16 * loop.index0) }}{% endfor -%}
+    </div></div>
+    <ol class="band-ladder">
+      {%- for s in spans %}
+      <li>
+        <span class="band-name">{{ s.band }}</span>
+        <span class="band-level">{{ level[s.band] }}</span>
+        <span class="band-range">
+          {%- if s.low is none %}dưới {{ "%.2f" | format(s.high) }}
+          {%- elif s.high is none %}từ {{ "%.2f" | format(s.low) }}
+          {%- else %}{{ "%.2f" | format(s.low) }} – {{ "%.2f" | format(s.high) }}{% endif -%}
+        </span>
+      </li>
+      {%- endfor %}
+    </ol>
+    <p class="bands-note">{{ icon("headphones") }}Bài sát ranh giới hai band luôn được giảng viên nghe lại.</p>
+  </section>
+
+  <section class="bands-aspects" aria-labelledby="aspects-h">
+    <div class="bands-section-head">
+      <h2 id="aspects-h">Máy đo được gì</h2>
+      <div class="prov-legend" aria-label="Chú thích nhãn">
+        <span class="prov prov-indirect">{{ icon("eye") }} Máy đo gián tiếp</span>
+        <span class="prov prov-not_measured">{{ icon("eye-off") }} Máy không đo</span>
+      </div>
+    </div>
+    <div class="aspect-grid">
+      {% for row in rows %}
+      <article class="aspect-card" aria-labelledby="aspect-{{ row.key }}" data-provenance="{{ row.provenance }}">
+        <div class="aspect-head">
+          <h3 id="aspect-{{ row.key }}">{{ row.name }}</h3>
+          <span class="prov prov-{{ row.provenance }}">{{ icon("eye" if row.provenance == "indirect" else "eye-off") }}{{ row.provenance_name }}</span>
+        </div>
+        {% if row.measured_by %}
+        <ul class="aspect-chips" aria-label="Máy dùng">
+          {#- A list of measures becomes chips; one that carries its own examples
+              in brackets (coherence) stays whole. -#}
+          {%- for part in ([row.measured_by] if "(" in row.measured_by else row.measured_by.split(", ")) %}<li>{{ part }}</li>{% endfor -%}
+        </ul>
+        {% else %}
+        <p class="aspect-teacher">{{ icon("user") }}Giảng viên đánh giá</p>
+        {% endif %}
+        <details class="aspect-more">
+          <summary>Máy không thấy gì</summary>
+          <p>{{ row.blind_to }}</p>
+        </details>
+        {% if row.bands["A2"] %}
+        <details class="aspect-more">
+          <summary>Mô tả A1 → C2</summary>
+          <div class="band-columns">
+            {% for band, text in row.bands.items() %}
+            <div class="band-col"><p class="band-label">{{ band }}</p><p>{{ text }}</p></div>
+            {% endfor %}
+          </div>
+        </details>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="bands-limits" aria-labelledby="limits-h">
+    <h2 id="limits-h">Giới hạn cần biết</h2>
+    <ul class="limit-grid">
+      <li>{{ icon("info") }}<b>Là ước lượng</b><span>Chưa hiệu chuẩn trên giọng sinh viên Việt Nam.</span></li>
+      <li>{{ icon("chart") }}<b>Một điểm tổng</b><span>Không có điểm riêng cho từng tiêu chí.</span></li>
+      <li>{{ icon("heart") }}<b>Người nói lắp</b><span>Có thể bị ước lượng trôi chảy thấp; báo giảng viên nghe lại.</span></li>
+      <li>{{ icon("volume") }}<b>Không chấm giọng</b><span>Máy nghe không rõ có thể do micro hay tiếng ồn.</span></li>
+    </ul>
+    <p class="bands-source">Mô tả band diễn đạt lại theo Khung CEFR (bản bổ sung 2020), chờ giảng viên Ngoại ngữ duyệt.</p>
+  </section>
 </div>
-
-<section class="card band-scale" aria-labelledby="scale-h">
-  <h2 id="scale-h">Từ điểm sang band</h2>
-  <p>
-    Máy đưa ra <b>một điểm tổng ước lượng</b> trên thang 0–6, rồi quy ra một trong sáu band
-    theo năm ngưỡng của mô hình đang dùng (<code>{{ model_version }}</code>):
-  </p>
-  {#- D031: the bands as the blocks of the product's mark, growing with the level. -#}
-  <div class="cube-stage" aria-hidden="true"><div class="cube-row">
-    {%- for s in spans %}{{ cube(s.band, "is-solid" if loop.index > 4 else ("tone-2" if loop.index > 2 else "tone-1"), 40 + 16 * loop.index0) }}{% endfor -%}
-  </div></div>
-  <ol class="band-ladder">
-    {%- for s in spans %}
-    <li><span class="band-name">{{ s.band }}</span><span>
-      {%- if s.low is none %}điểm dưới {{ "%.2f" | format(s.high) }}
-      {%- elif s.high is none %}từ {{ "%.2f" | format(s.low) }} trở lên
-      {%- else %}từ {{ "%.2f" | format(s.low) }} đến dưới {{ "%.2f" | format(s.high) }}{% endif -%}
-    </span></li>
-    {%- endfor %}
-  </ol>
-  <p class="muted">
-    Ngưỡng A1/A2, B2/C1 và C1/C2 chưa được hiệu chuẩn. Bài sát ranh giới hai band luôn được chuyển
-    giảng viên nghe lại. Máy <b>không chấm riêng năm tiêu chí</b>: các mục dưới chỉ cho biết phép
-    đo của máy chạm tới đâu.
-  </p>
-</section>
-
-<div class="prov-legend" aria-label="Chú thích nhãn">
-  <span class="prov prov-indirect">{{ icon("eye") }} Máy đo gián tiếp</span>
-  <span class="prov prov-not_measured">{{ icon("eye-off") }} Máy không đo</span>
-</div>
-
-{% for row in rows %}
-<section class="card aspect-card" aria-labelledby="aspect-{{ row.key }}" data-provenance="{{ row.provenance }}">
-  <div class="aspect-head">
-    <h2 id="aspect-{{ row.key }}">{{ row.name }}</h2>
-    <span class="prov prov-{{ row.provenance }}">{{ row.provenance_name }}</span>
-  </div>
-  <dl class="aspect-machine">
-    {% if row.measured_by %}<div><dt>Máy dùng</dt><dd>{{ row.measured_by }}</dd></div>{% endif %}
-    <div><dt>Máy không thấy</dt><dd>{{ row.blind_to }}</dd></div>
-  </dl>
-  {% if row.bands["A2"] %}
-  <div class="band-columns">
-    {% for band, text in row.bands.items() %}
-    <div class="band-col"><p class="band-label">{{ band }}</p><p>{{ text }}</p></div>
-    {% endfor %}
-  </div>
-  {% endif %}
-</section>
-{% endfor %}
-
-<section class="card" aria-labelledby="limits-h">
-  <h2 id="limits-h">Giới hạn cần biết</h2>
-  <ul class="limit-list">
-    <li>
-      <b>Chưa hiệu chuẩn trên giọng sinh viên Việt Nam.</b> Mô hình học từ người học tiếng Anh
-      nhiều quốc tịch; mức sai trên giọng Việt chưa đo được. Vì vậy mọi band là ước lượng.
-    </li>
-    <li>
-      <b>Một điểm tổng, không phải năm điểm.</b> Máy không cho điểm riêng từng tiêu chí; những mặt
-      "máy không đo" chỉ giảng viên đánh giá được.
-    </li>
-    <li>
-      <b>Nói lắp hay khó khăn về giọng nói.</b> Mô hình dựa nhiều vào chỗ ngừng, nên người nói lắp
-      hoặc có vấn đề về giọng vì lý do sức khoẻ có thể nhận ước lượng độ trôi chảy thấp hơn thực tế.
-      Hãy báo giảng viên: giảng viên nghe lại bài và quyết định.
-    </li>
-    <li>
-      <b>Giọng không bị trừ điểm.</b> Hệ thống không chấm giọng; khi máy "nghe không rõ" một từ,
-      điều đó nói về micro, tiếng ồn hay bộ nhận dạng nhiều không kém gì về cách bạn phát âm.
-    </li>
-  </ul>
-  <p class="muted small-note">
-    Mô tả band được diễn đạt lại bằng tiếng Việt theo tinh thần các thang mô tả định tính về ngôn
-    ngữ nói trong Khung tham chiếu CEFR, bản bổ sung 2020 của Hội đồng châu Âu; đây không phải
-    bản dịch chính thức và đang chờ giảng viên Ngoại ngữ duyệt nội dung.
-  </p>
-</section>
 {% endblock %}

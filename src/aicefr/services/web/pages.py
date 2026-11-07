@@ -266,7 +266,6 @@ def page_bands(request: Request, account: Account | None = Depends(optional_acco
         "bands",
         rows=page_rows(),
         spans=spans,
-        model_version=lim["model_version"],
     )
 
 
