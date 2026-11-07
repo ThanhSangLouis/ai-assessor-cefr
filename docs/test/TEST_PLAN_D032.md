@@ -96,8 +96,8 @@ Tiêu chí chấp nhận AC-65.1..AC-66.4 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_new_once` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; thẻ "1 mới"; "Xem tất cả" mở đúng mục; ô mới có nhãn "Mới", ô chưa đạt có thanh tiến độ; tải lại thì hết "Mới"; không có chữ "band" |
-| TC-TT-E02 | `test_the_week_shows_the_record_and_the_rest_day` | AC-66.2 | "3 ngày liên tiếp", "Kỷ lục của bạn: 5 ngày", một ô ngày nghỉ có chú thích, "7 ngày qua: 2 phút", thẻ "Sắp đạt: Tròn một tuần"; cột bên cao hơn cửa sổ thì thôi dính và thẻ cuối cuộn tới được |
+| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_new_once` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; mục Thành tựu của trang Kết quả (D092): ô mới có nhãn "Mới", ô chưa đạt có thanh tiến độ; tải lại thì hết "Mới"; không có chữ "band" |
+| TC-TT-E02 | `test_the_week_shows_the_streak_and_the_rest_day` | AC-66.2 | "3 ngày liên tiếp", một ô ngày nghỉ có chú thích; cột bên cao hơn cửa sổ thì thôi dính (D092 bỏ kỷ lục, tổng 7 ngày và thẻ "Sắp đạt" khỏi trang Lộ trình) |
 
 ## 7. Kết quả chạy
 

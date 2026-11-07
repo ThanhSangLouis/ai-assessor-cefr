@@ -36,12 +36,9 @@ def test_a_first_recording_is_congratulated_then_listed_as_new_once(student, liv
     answer(student, live_server)
     expect(student.locator(".toast").last).to_contain_text("Thành tựu mới: Lượt nói đầu tiên")
 
-    student.goto("/practice")
-    card = student.locator(".ach-card")
-    expect(card.locator(".ach-tally")).to_contain_text("/17")
-    expect(card.locator(".ach-fresh")).to_have_text("1 mới")
-    card.get_by_role("link", name="Xem tất cả").click()
-    student.wait_for_url(re.compile(r"/my-progress#achievements$"))
+    # D092: the roadmap lists achievements only beside reviews that are due;
+    # the full list stays on the results page.
+    student.goto("/my-progress#achievements")
 
     tile = student.locator(".ach", has_text="Lượt nói đầu tiên")
     expect(tile).to_have_class(re.compile(r"\bis-unlocked\b.*\bis-new\b"))
@@ -56,7 +53,7 @@ def test_a_first_recording_is_congratulated_then_listed_as_new_once(student, liv
     assert "band" not in student.locator("#achievements").inner_text().lower()
 
 
-def test_the_week_shows_the_record_and_the_rest_day(student, live_server):
+def test_the_week_shows_the_streak_and_the_rest_day(student, live_server):
     from aicefr.lessons.model import StepKind, StepResult
     from aicefr.storage.lesson_repository import LessonRepository
 
@@ -74,16 +71,12 @@ def test_the_week_shows_the_record_and_the_rest_day(student, live_server):
     student.goto("/practice")
 
     today = student.locator(".today-card")
-    expect(today.locator(".streak")).to_contain_text("3 ngày liên tiếp")
-    expect(today.locator(".streak-best")).to_contain_text("Kỷ lục của bạn: 5 ngày")
+    expect(today.locator(".rm-streak")).to_contain_text("3 ngày liên tiếp")
     expect(today.locator(".week-dots li.rest")).to_have_count(1)
     expect(today.locator(".week-dots li.rest")).to_have_attribute(
         "title", re.compile("nghỉ, chuỗi vẫn giữ")
     )
-    expect(today.locator(".week-sum")).to_contain_text("7 ngày qua: 2 phút")
-    expect(student.locator(".ach-card .ach-next")).to_contain_text("Tròn một tuần")
-    # Four cards are taller than this window: the column scrolls with the page
-    # instead of sticking and hiding the last card until the end of the trail.
+    # D092 dropped the best streak, the 7-day total and the next achievement
+    # from this card (owner, 07/11/2026). The column still scrolls with the page
+    # when its cards are taller than the window.
     expect(student.locator("#path-side")).to_have_class(re.compile(r"\bis-tall\b"))
-    student.locator(".ach-card").scroll_into_view_if_needed()
-    expect(student.locator(".ach-card")).to_be_in_viewport()
