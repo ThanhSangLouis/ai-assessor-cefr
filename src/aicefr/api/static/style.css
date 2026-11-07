@@ -596,8 +596,10 @@ h3 { margin: 0 0 var(--sp-1); font-size: var(--t-base); font-weight: 650; }
 p { margin: 0 0 var(--sp-3); }
 p:last-child { margin-bottom: 0; }
 
-a { color: var(--brand); text-underline-offset: 2px; }
-a:hover { color: var(--brand-strong); }
+/* Links are text: --brand is about 3.75:1 on the light page, under WCAG AA;
+   the darker coral of each theme keeps 4.5:1. Hover thickens the underline. */
+a { color: var(--brand-strong); text-underline-offset: 2px; }
+a:hover { color: var(--brand-strong); text-decoration-thickness: 2px; }
 
 /* One visible focus ring everywhere. :focus-visible keeps it off mouse clicks
    but always on for keyboard users. */
@@ -3103,22 +3105,16 @@ button.evidence:hover {
   font-weight: 750;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #ff7043;
+  /* Small type: the darker coral of each theme keeps 4.5:1 on the page
+     (#bf360c on light, #ff7043 on dark; plain --brand is about 3.9:1 on light). */
+  color: var(--brand-strong);
   margin-bottom: var(--sp-2);
 }
 
 .eyebrow .icon {
   width: 15px;
   height: 15px;
-  color: #ff7043;
-}
-
-:root[data-theme="light"] .eyebrow {
-  color: var(--brand);
-}
-
-:root[data-theme="light"] .eyebrow .icon {
-  color: var(--brand);
+  color: var(--brand-strong);
 }
 
 .criteria-chip {
@@ -6647,6 +6643,13 @@ dialog.sheet::backdrop {
 .auth-cubes .cube .f-front { font-size: 0.8rem; font-weight: 800; padding-top: 6px; }
 .band-columns { margin-bottom: var(--sp-2); }
 .band-columns .cube-row { --cube-gap: 30px; }
+/* On a phone six blocks at their desktop size are wider than the card and
+   push the whole page sideways: they shrink with the screen instead. */
+@media (max-width: 640px) {
+  .cube-stage .cube-row { --cube-gap: clamp(5px, 2vw, 12px); }
+  .cube-stage .cube-row .cube { --w: clamp(24px, 8.2vw, 40px); --d: clamp(24px, 8.2vw, 40px); }
+  .cube-stage .cube-row .cube .f-front { font-size: 0.72rem; padding-top: 4px; }
+}
 
 /* --- a status says itself with a dot, and a running one breathes */
 .badge:is(.COMPLETED, .REVIEW_REQUIRED, .REJECTED, .FAILED, .QUEUED, .RUNNING)::before {

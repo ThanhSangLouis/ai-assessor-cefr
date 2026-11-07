@@ -32,7 +32,7 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | TC-UI-I01 | `test_signed_in_pages_mark_the_current_nav_item_for_each_role` | UX-01 | Thuận | Mỗi trang của sinh viên và giảng viên có đúng một mục `aria-current`; giảng viên không thấy mục của sinh viên |
 | TC-UI-E01 | `test_each_role_sees_only_its_own_navigation_and_lands_on_its_home` | UX-01 | Thuận | Đăng nhập không `next`: sinh viên về Luyện tập với bốn mục, giảng viên về Hàng đợi với ba mục (thêm Lộ trình luyện từ D025); logo về trang chính của vai trò |
 | TC-UI-E02 | `test_account_menu_holds_theme_and_sign_out` | UX-01 | Thuận | Menu tài khoản có Đồng thuận, Đăng xuất; đổi giao diện sáng/tối; Esc đóng menu |
-| TC-UI-E03 | `test_recording_waits_for_listen_back_before_anything_is_sent` | UX-03 | Âm | Ghi bằng micro giả, dừng: hiện bước nghe lại; phím cách và chờ đợi không gửi gì; "Ghi lại" ghi tiếp |
+| TC-UI-E03 | `test_recording_waits_for_listen_back_before_anything_is_sent` | UX-03 | Âm | Ghi bằng micro giả, dừng: hiện bước nghe lại; bản quá ngắn không nộp được (D092); phím cách và chờ đợi không gửi gì; "Ghi lại" xoá bản ghi, bấm mic ghi tiếp (D093) |
 | TC-UI-E04 | `test_uploaded_file_is_heard_back_then_submitted_to_a_report` | UX-04 | Thuận | Chọn file: hiện tên và độ dài 0:35, nút "Chọn file khác"; nộp xong tới báo cáo có bước tiếp và liên kết từng phần |
 | TC-UI-E05 | `test_chosen_prompt_sits_above_the_record_button` | UX-05 | Thuận | Chọn đề thứ hai: đề hiện đầy đủ trên nút ghi âm, mã đề gửi đi đổi theo |
 | TC-UI-E06 | `test_my_responses_lists_assessments_without_a_kind_filter` | UX-07 | Âm | Một bài đánh giá; đề luyện tập bị từ chối (422) và không còn bộ lọc Đánh giá/Luyện tập (D083) |
@@ -41,13 +41,14 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | TC-UI-E10 | `test_admin_activation_asks_first_and_only_compatible_models_offer_it` | UX-10 | Âm | Mô hình không tương thích hoặc hỏng không có nút kích hoạt; bấm kích hoạt rồi Huỷ thì mô hình đang chấm không đổi |
 | TC-UI-E11 | `test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll` | UX-02 | Biên | Ở 375 px, bốn trang của sinh viên: điều hướng cố định sát đáy, không cuộn ngang |
 | TC-UI-E12 | `test_the_progress_page_prints_as_a_report_not_as_the_screen` | UX-06 | Thuận | Trang Tiến độ: hai nút mỗi nút một dòng; khi in chỉ còn báo cáo một trang (Kết quả, Cần luyện tiếp, Thành tựu, lưu ý không phải chứng chỉ), không còn thẻ, đầu trang hay nút của màn hình, và báo cáo không bị in mờ |
+| TC-UI-E13 | `test_the_band_blocks_fit_a_narrow_phone` | UX-02 | Biên | Ở 340 px, sáu khối band 3D của trang Band (cùng quy tắc với khối trên báo cáo) nằm gọn trong màn hình, trang không cuộn ngang |
 
 ## 3. Ma trận phủ tiêu chí
 
 | Tiêu chí | Ca kiểm thử |
 | --- | --- |
 | UX-01 | TC-UI-I01, TC-UI-E01, TC-UI-E02 |
-| UX-02 | TC-UI-E11 |
+| UX-02 | TC-UI-E11, TC-UI-E13 |
 | UX-03 | TC-UI-E03 |
 | UX-04 | TC-UI-E04 |
 | UX-05 | TC-UI-E05 |

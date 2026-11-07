@@ -138,16 +138,20 @@ def test_recording_waits_for_listen_back_before_anything_is_sent(context, live_s
     page.get_by_role("button", name="Dừng ghi âm").click()
 
     expect(page.locator("#rec-preview")).to_be_visible()
-    expect(page.get_by_role("button", name="Nộp bài và chấm")).to_be_enabled()
+    # Since D092 a take under the shortest length cannot be sent at all.
+    expect(page.get_by_role("button", name="Nộp bài và chấm")).to_be_disabled()
     expect(page.get_by_role("button", name="Ghi lại")).to_be_visible()
-    expect(page.locator("#rec-verdict")).to_contain_text("sẽ bị từ chối vì quá ngắn")
+    expect(page.locator("#rec-verdict")).to_contain_text("Bản ghi quá ngắn")
     # A second press of the space bar must neither discard nor send the take.
     page.mouse.click(5, 400)
     page.keyboard.press("Space")
     expect(page.locator("#rec")).to_have_attribute("data-state", "review")
     assert sent == []
 
+    # Since D093 "Ghi lại" drops the take and waits; the mic starts the next one.
     page.get_by_role("button", name="Ghi lại").click()
+    expect(page.locator("#rec")).to_have_attribute("data-state", "idle")
+    page.get_by_role("button", name="Bắt đầu ghi âm").click()
     expect(page.locator("#rec")).to_have_attribute("data-state", "recording")
     page.get_by_role("button", name="Dừng ghi âm").click()
     expect(page.locator("#rec")).to_have_attribute("data-state", "review")
@@ -302,6 +306,23 @@ def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     box = nav.bounding_box()
     assert box and abs(box["y"] + box["height"] - 812) < 2
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
+
+
+def test_the_band_blocks_fit_a_narrow_phone(context, live_server):
+    """The six 3D band blocks used to be wider than a phone and push the whole
+    page sideways. The band page draws them with the same rules as the
+    report's podium, which a fake-ASR answer (no score) does not reach."""
+    page = context.new_page()
+    page.set_viewport_size({"width": 340, "height": 740})
+    login(page, live_server, live_server.account(), "/practice")
+    page.goto("/bands")
+    expect(page.locator(".cube-stage .cube").first).to_be_visible()
+    assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
+    right = page.evaluate(
+        "Math.max(...[...document.querySelectorAll('.cube-stage .cube')]"
+        ".map(c => c.getBoundingClientRect().right))"
+    )
+    assert right <= 340
 
 
 def test_the_progress_page_prints_as_a_report_not_as_the_screen(context, live_server):
