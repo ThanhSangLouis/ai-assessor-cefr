@@ -652,6 +652,8 @@ async function refreshMeter() {
     const price = `${Number(q.minute_runs).toLocaleString("vi-VN")} lượt (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint) mỗi phút nói`;
     meterEl.textContent = q.left_today <= 0
       ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`
+      : q.free_locked
+        ? `Xác minh email ở trang Tài khoản để có ${q.free_per_day} bản ghi miễn phí mỗi ngày. Hiện tính ${price}.`
       : q.free_left_today > 0
         ? `Hôm nay còn ${q.free_left_today}/${q.free_per_day} bản ghi miễn phí, sau đó ${price}.`
         : `Đã hết bản ghi miễn phí hôm nay: ${price}, bạn còn ${Number(q.runs_left).toLocaleString("vi-VN")} lượt.`;

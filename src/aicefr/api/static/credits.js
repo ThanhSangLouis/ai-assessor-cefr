@@ -37,7 +37,7 @@ async function load() {
         <div><span class="wallet-dot free"></span><b>${num(credits.free_runs_left)}</b><span>miễn phí · làm mới ngày 16</span></div>
         <div><span class="wallet-dot paid"></span><b>${num(credits.wallet_runs)}</b><span>đã mua · không hết hạn</span></div>
       </div>
-    </div>`;
+    </div>${credits.free_locked ? verifyNudge(credits.free_runs_per_cycle) : ""}`;
   showPrices(credits.prices, credits.one_minute, credits.lesson);
   historyEl.innerHTML = credits.history.length
     ? `<ul class="ledger">${credits.history.map(ledgerRow).join("")}</ul>`
@@ -46,6 +46,12 @@ async function load() {
 }
 
 const num = (n) => Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 3 });
+
+// D101: the free runs wait for a verified email.
+function verifyNudge(perCycle) {
+  return `<a class="verify-nudge" href="/account#email-card">${window.ui.icon("message")}
+    <span>Xác minh email để nhận <b>${num(perCycle)} lượt miễn phí</b> mỗi tháng</span></a>`;
+}
 const icon = (name) => window.ui.icon(name);
 const ACTION_ICON = { assessment: "mic", practice: "target", upgrade: "sparkle", lesson_draft: "pencil", drill_passage: "book-open", lesson: "path" };
 

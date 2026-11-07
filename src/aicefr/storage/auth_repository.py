@@ -657,6 +657,16 @@ class AuthRepository(MongoStore):
             .deleted_count
         )
 
+    def delete_account(self, account_id: str) -> bool:
+        """Remove the account and every session of it, for good (D101).
+
+        The email, the name, the password hash, the linked Google identity, the
+        email codes and the recovery code all live on the account document, so
+        nothing of the person is left here. The audit log keeps the pseudonym.
+        """
+        self.col("session").delete_many({"account_id": account_id})
+        return bool(self.col("account").delete_one({"account_id": account_id}).deleted_count)
+
     # ---------- passwords and account state (D028) ----------
 
     def change_password(

@@ -12,10 +12,12 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
 from aicefr.api.schemas import EraseRequest, QueueItem
+from aicefr.auth.sessions import COOKIE_NAME
 from aicefr.observability import count
 from aicefr.platform.bus import BusTimeout
 from aicefr.platform.rpc import RemoteError
@@ -30,7 +32,7 @@ from aicefr.services.core.assessment.context import (
     scorable_duration,
     svc,
 )
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -237,8 +239,25 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
     if body.speaker_id != body.confirm_speaker_id:
         raise HTTPException(422, "hai lần nhập mã không khớp")
     s = svc()
-    result = s.repo.erase_speaker(body.speaker_id, account.account_id)
     who = s.peers.identity.by_pseudonym(pseudonym=body.speaker_id)
+    result = erase_everywhere(body.speaker_id, who, account.account_id)
+    result["cutoff_note"] = (
+        "Đã xóa bản ghi và báo cáo. Dữ liệu đã dùng để huấn luyện các mô hình phát hành "
+        "trước thời điểm này KHÔNG bị gỡ khỏi mô hình đó; việc gỡ chỉ áp dụng cho các "
+        "lần huấn luyện sau."
+    )
+    return result
+
+
+def erase_everywhere(pseudonym: str, who: dict | None, actor_id: str) -> dict:
+    """Erase one person's recordings, reports and lessons wherever they are (FR-35).
+
+    Shared by the administrator's erasure and the learner's own account
+    deletion (D101). Raises a 502 when the learning service cannot be reached,
+    so nothing is reported erased that is not.
+    """
+    s = svc()
+    result = s.repo.erase_speaker(pseudonym, actor_id)
     result["lesson_attempts"] = 0
     if who:
         # Lesson attempts (D025) live in the learning service; erase them there,
@@ -258,12 +277,42 @@ def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict
             s.replays.forget_account(who["account_id"])
         if s.push is not None:  # D088: the browsers that took their notifications
             s.push.store.forget_account(who["account_id"])
-    result["cutoff_note"] = (
-        "Đã xóa bản ghi và báo cáo. Dữ liệu đã dùng để huấn luyện các mô hình phát hành "
-        "trước thời điểm này KHÔNG bị gỡ khỏi mô hình đó; việc gỡ chỉ áp dụng cho các "
-        "lần huấn luyện sau."
-    )
     return result
+
+
+class DeleteMeRequest(BaseModel):
+    # The sign-in email (or, with none, the pseudonym), typed again.
+    confirm: str = Field(min_length=1, max_length=254)
+
+
+@router.post("/api/v1/me/delete-account", tags=["student"])
+def delete_my_account(
+    body: DeleteMeRequest, response: Response, account: Account = Depends(require_login)
+) -> dict:
+    """Delete my account and everything of mine, for good (D101, FR-103).
+
+    Students only: a teacher's lessons and reviews are other people's work too,
+    so an administrator removes those accounts. The person types their email
+    (or pseudonym) again. The data goes first, then the account, so a failure
+    half way leaves an account that can try again. Payments and the run ledger
+    stay, as accounts must; they keep only the random account id.
+    """
+    if account.role is not Role.STUDENT:
+        raise HTTPException(403, "tài khoản giảng viên hoặc quản trị viên do quản trị viên xoá")
+    s = svc()
+    who = s.peers.identity.account(account_id=account.account_id)
+    if who is None:
+        raise HTTPException(404, "không còn tài khoản này")
+    expected = (who.get("email") or who["pseudonym"]).strip().lower()
+    if body.confirm.strip().lower() != expected:
+        what = "email đăng nhập" if who.get("email") else "mã tài khoản"
+        raise HTTPException(422, f"gõ lại đúng {what} của bạn để xác nhận")
+    result = erase_everywhere(who["pseudonym"], who, account.account_id)
+    s.peers.identity.delete_account(account_id=account.account_id)
+    count("accounts_self_deleted_total")
+    response.delete_cookie(COOKIE_NAME, path="/")
+    return {"deleted": True, "responses": result.get("responses", 0),
+            "lesson_attempts": result.get("lesson_attempts", 0)}  # fmt: skip
 
 
 # ================================================================= health

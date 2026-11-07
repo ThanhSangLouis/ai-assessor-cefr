@@ -521,6 +521,44 @@ if (exportAll) {
   });
 }
 
+// D101: delete my account. The button wakes only when the email (or, without
+// one, the pseudonym) is typed again exactly.
+const deleteForm = document.getElementById("delete-form");
+if (deleteForm) {
+  const input = document.getElementById("delete-confirm");
+  const button = document.getElementById("delete-button");
+  const message = document.getElementById("delete-message");
+  const expected = () => ((me && (me.email || me.pseudonym)) || "").trim().toLowerCase();
+  const paintLabel = () => {
+    if (me && !me.email) document.getElementById("delete-label").textContent = "Gõ lại mã tài khoản để xác nhận";
+  };
+  input.addEventListener("focus", paintLabel);
+  input.addEventListener("input", () => {
+    paintLabel();
+    button.disabled = !expected() || input.value.trim().toLowerCase() !== expected();
+  });
+  deleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    message.textContent = "";
+    try {
+      const r = await fetch("/api/v1/me/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: input.value }),
+      });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || "Không xoá được tài khoản. Hãy thử lại sau.");
+      location.replace("/?deleted=1");
+    } catch (err) {
+      message.innerHTML = `<p class="notice notice-danger">${escapeHtml(err.message)}</p>`;
+      button.disabled = false;
+    }
+  });
+}
+
 loadMe();
 
 // ---------------------------------------------------------------- email (D079)

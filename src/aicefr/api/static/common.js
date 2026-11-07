@@ -917,7 +917,9 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((d) => {
         if (!d || !d.metering) return;
         const free = Number(d.free_runs_left).toLocaleString("vi-VN", { maximumFractionDigits: 1 });
-        document.getElementById("metering-free").textContent = `Tháng này bạn còn ${free} lượt.`;
+        document.getElementById("metering-free").textContent = d.free_locked
+          ? "Xác minh email ở trang Tài khoản để nhận lượt miễn phí mỗi tháng."
+          : `Tháng này bạn còn ${free} lượt.`;
         box.hidden = false;
       })
       .catch(() => {});
@@ -930,4 +932,10 @@ document.addEventListener("DOMContentLoaded", () => {
       box.remove();
     });
   }
+}
+
+// D101: back home after deleting the account.
+if (new URLSearchParams(location.search).get("deleted") === "1" && window.toast) {
+  window.toast("Đã xoá tài khoản và dữ liệu của bạn.", "ok");
+  history.replaceState(null, "", location.pathname);
 }

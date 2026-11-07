@@ -271,7 +271,8 @@ async function showPrice(task) {
   const n = (x) => Number(x).toLocaleString("vi-VN", { maximumFractionDigits: 3 });
   note.innerHTML =
     `Bài này tối đa <b>${n(q.runs)} lượt</b> (${n(q.idpoint)} IDPoint), tính theo thời lượng thật; ` +
-    `bạn còn ${n(left)} lượt. <a href="/credits">Lượt của tôi</a>`;
+    `bạn còn ${n(left)} lượt. <a href="/credits">Lượt của tôi</a>` +
+    (q.free_locked ? ` · <a href="/account#email-card">Xác minh email để nhận lượt miễn phí</a>` : "");
   note.hidden = false;
 }
 
