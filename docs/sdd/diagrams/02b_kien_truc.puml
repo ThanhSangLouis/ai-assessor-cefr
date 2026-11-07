@@ -45,7 +45,7 @@ database "MongoDB\naicefr" as DbCore
 database "MongoDB\naicefr_learning" as DbLearning
 database "MongoDB\naicefr_metering" as DbMetering
 storage "Bản ghi âm\nthư mục hoặc S3\n(BlobStore)" as Blobs
-cloud "Cổng thanh toán\nStripe, MoMo, VNPay\n(chế độ thử)" as PayExt
+cloud "Cổng thanh toán\npayOS (VietQR)" as PayExt
 node "Prometheus + Grafana\nđọc /metrics" as Mon
 
 User --> GW : HTTPS

@@ -27,7 +27,8 @@ from pathlib import Path
 
 from pymongo import DESCENDING, ReturnDocument
 
-from aicefr.billing.payments import SETTLEABLE, OrderStatus
+from aicefr.billing.order_state import sources
+from aicefr.billing.payments import OrderStatus
 from aicefr.storage.db import (
     MongoStore,
     ensure_indexes,
@@ -40,7 +41,7 @@ from aicefr.storage.db import now_iso as _now
 
 # order: runs of the pack (`seats` before D075), amount_vnd what was paid (the
 # plan fields of D033 orders stay on old documents). payment (D084): gateway
-# none | sandbox | stripe (vnpay | momo on orders from before D075); live 1 for
+# none | sandbox | payos (vnpay | momo | stripe on older orders); live 1 for
 # real money (D035); checkout_ref the gateway's id for the checkout. An event's
 # fingerprint is its detail without "applied" (D035): repeats of an identical
 # message are counted on the first.
@@ -164,7 +165,7 @@ class BillingRepository(MongoStore):
         return [_view(r, payments.get(r["order_id"])) for r in rows]  # type: ignore[misc]
 
     def order_by_checkout(self, gateway: str, reference: str) -> dict | None:
-        """The order whose checkout the gateway knows by `reference` (a Stripe session id)."""
+        """The order whose checkout the gateway knows by `reference` (a payOS payment link id)."""
         paid = self.col("payment").find_one(
             {"gateway": gateway, "checkout_ref": reference}, {"events": 0}
         )
@@ -203,14 +204,16 @@ class BillingRepository(MongoStore):
     def expire_pending(self, now: str) -> list[str]:
         """Pending orders past their time: expired. Returns their ids."""
         orders = self.col("order")
+        # D098: only the states that may expire (pending) are looked at.
+        may_expire = [s.value for s in sources(OrderStatus.EXPIRED)]
         rows = orders.find(
-            {"status": OrderStatus.PENDING.value, "expires_at": {"$lte": now}}, {"order_id": 1}
+            {"status": {"$in": may_expire}, "expires_at": {"$lte": now}}, {"order_id": 1}
         )
         ids = []
         for r in rows:
             # Each one guarded by its status: one paid meanwhile stays paid.
             done = orders.update_one(
-                {"order_id": r["order_id"], "status": OrderStatus.PENDING.value},
+                {"order_id": r["order_id"], "status": {"$in": may_expire}},
                 {"$set": {"status": OrderStatus.EXPIRED.value}},
             )
             if done.modified_count:
@@ -219,8 +222,9 @@ class BillingRepository(MongoStore):
 
     def retire(self, order_id: str) -> None:
         """A pending order replaced by a newer one: expired, so a late payment still counts."""
+        may_expire = [s.value for s in sources(OrderStatus.EXPIRED)]
         self.col("order").update_one(
-            {"order_id": order_id, "status": OrderStatus.PENDING.value},
+            {"order_id": order_id, "status": {"$in": may_expire}},
             {"$set": {"status": OrderStatus.EXPIRED.value}},
         )
 
@@ -231,15 +235,16 @@ class BillingRepository(MongoStore):
         reference: str,
         code: str,
     ) -> bool:
-        """Move an order from pending or expired to `status`.
+        """Move an order to `status`, from a state that allows the move (D098).
 
-        Guarded by the status the order is in: returns False, and changes
-        nothing, when another message settled the order first. Only the
-        message that moved the order writes the payment's result (D084).
+        Guarded by the status the order is in, in one atomic update: returns
+        False, and changes nothing, when another message settled the order
+        first. Only the message that moved the order writes the payment's
+        result (D084).
         """
-        settleable = [s.value for s in SETTLEABLE]
+        allowed = [s.value for s in sources(status)]
         taken = self.col("order").find_one_and_update(
-            {"order_id": order_id, "status": {"$in": settleable}},
+            {"order_id": order_id, "status": {"$in": allowed}},
             {"$set": {"status": status.value}},
             return_document=ReturnDocument.AFTER,
         )

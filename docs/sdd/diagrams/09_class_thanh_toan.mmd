@@ -1,0 +1,126 @@
+%% SDD - So do 09: lop cua phan he thanh toan va cac mau thiet ke (D035, D095, D096, D097)
+%% Adapter + Strategy: PaymentGateway; Template Method: SignedRedirect;
+%% Factory: build_gateways; Observer: billing.order_settled; State: OrderState (D098);
+%% Repository; DI: Transport.
+classDiagram
+    direction LR
+    class PaymentGateway {
+        <<interface>>
+        +name: str
+        +title: str
+        +live: bool
+        +checkout(order_id, amount_vnd, description, return_url, notify_url, client_ip, now) Checkout
+        +return_reference(query) str
+        +verify_return(query) PaymentResult
+        +verify_notification(message, now) PaymentResult
+        +acknowledge(what) Ack
+    }
+    class SignedRedirect {
+        <<abstract>>
+        +verify(params)* PaymentResult
+        +verify_return(query) PaymentResult
+        +verify_notification(message, now) PaymentResult
+    }
+    class SandboxGateway {
+        -secret: bytes
+        +token(order_id, amount_vnd) str
+        +result(order_id, amount_vnd, outcome, now) dict
+        +verify(params) PaymentResult
+    }
+    class PayosGateway {
+        -headers: dict
+        -key: bytes
+        -send: Transport
+        +live = True
+        +checkout(...) Checkout
+        +verify_return(query) PaymentResult
+        +verify_notification(message, now) PaymentResult
+    }
+    class Transport {
+        <<interface>>
+        +call(method, url, headers, body) Reply
+    }
+    class GatewayRegistry {
+        <<factory>>
+        +build_gateways(settings, sandbox_secret) dict
+    }
+    class BillingService {
+        -gateways: Map~str, PaymentGateway~
+        -store: BillingRepository
+        -publish: Callable
+        +place_credit_order(runs, by_account, ...) Order
+        +settle(result, via, gateway) str
+        +credit_order(order) bool
+    }
+    class BillingRepository {
+        <<repository>>
+        +create_order(order)
+        +order(order_id) Order
+        +order_by_checkout(gateway, reference) Order
+        +settle(order_id, outcome, reference, code) bool
+        +add_event(order_id, kind, data)
+    }
+    class Order {
+        <<entity>>
+        +order_id: str
+        +runs: int
+        +amount_vnd: int
+        +status: str
+        +gateway: str
+        +live: bool
+        +checkout_ref: str
+    }
+    class OrderState {
+        <<abstract>>
+        +status: OrderStatus
+        +name: str
+        +settleable: bool
+        +settle(outcome) OrderStatus
+        +expire() OrderStatus
+    }
+    class Pending
+    class Expired
+    class Paid
+    class Failed
+    class Cancelled
+    class PaymentResult {
+        <<value object>>
+        +order_id: str
+        +outcome: str
+        +amount_vnd: int
+        +reference: str
+        +checkout: str
+    }
+    class MessageBus {
+        <<interface>>
+        +publish(topic, payload)
+        +subscribe(topic, group, handler)
+    }
+    class PaymentEmailHandler {
+        <<observer>>
+        +on_order_settled(payload, auth, sender, site) bool
+    }
+    class EmailSender {
+        <<interface>>
+        +send(email)
+    }
+
+    PaymentGateway <|.. SignedRedirect
+    SignedRedirect <|-- SandboxGateway
+    PaymentGateway <|.. PayosGateway
+    PayosGateway o-- Transport : send
+    GatewayRegistry ..> PaymentGateway : tạo
+    BillingService o-- "1..*" PaymentGateway : gateways
+    BillingService --> BillingRepository : store
+    BillingRepository ..> Order
+    Order --> OrderState : state_of(status)
+    OrderState <|-- Pending
+    OrderState <|-- Expired
+    OrderState <|-- Paid
+    OrderState <|-- Failed
+    OrderState <|-- Cancelled
+    BillingService ..> OrderState : hỏi trước khi chốt
+    PaymentGateway ..> PaymentResult : trả về
+    BillingService --> MessageBus : publish billing.order_settled
+    MessageBus --> PaymentEmailHandler : giao sự kiện
+    PaymentEmailHandler --> EmailSender : gửi biên nhận

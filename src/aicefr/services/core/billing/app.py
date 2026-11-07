@@ -50,6 +50,8 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             (lambda: tuple(tuple(p) for p in peers.metering.run_packs()))
             if settings.metering_enabled else None
         ),
+        # D096: a settled order is an event; the identity service emails the buyer.
+        publish=bus.publish,
     )  # fmt: skip
     facade = BillingFacade(service, audit_log)
     billing_api.configure(billing_api.Services(billing=service))

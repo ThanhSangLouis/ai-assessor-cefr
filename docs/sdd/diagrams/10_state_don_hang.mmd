@@ -1,0 +1,21 @@
+%% SDD - So do 10: vong doi don goi luot theo mau State (D098)
+%% Moi trang thai la mot lop trong src/aicefr/billing/order_state.py.
+%% tests/test_d098_order_state.py giu so do nay khop voi transitions().
+stateDiagram-v2
+    state "Chờ thanh toán (Pending)" as pending
+    state "Hết hạn chờ (Expired)" as expired
+    state "Đã thanh toán (Paid)" as paid
+    state "Không thành công (Failed)" as failed
+    state "Đã huỷ (Cancelled)" as cancelled
+
+    [*] --> pending : đặt gói
+    pending --> paid : cổng báo đã trả
+    pending --> failed : cổng báo thất bại
+    pending --> cancelled : cổng báo huỷ
+    pending --> expired : quá 15 phút chưa trả
+    expired --> paid : tiền đến muộn vẫn nhận
+    expired --> failed : cổng báo thất bại
+    expired --> cancelled : cổng báo huỷ
+    paid --> [*]
+    failed --> [*]
+    cancelled --> [*]

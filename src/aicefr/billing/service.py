@@ -17,14 +17,14 @@ import secrets
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
+from aicefr.billing.order_state import TransitionRefused, state_of
 from aicefr.billing.payments import (
-    ORDER_STATUS_NAMES,
     PENDING_MINUTES,
-    SETTLEABLE,
     GatewayError,
     OrderStatus,
     PaymentResult,
 )
+from aicefr.contracts import ORDER_SETTLED
 from aicefr.practice.streak import LOCAL_TZ
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,14 @@ GATEWAY_TITLES = {
     "vnpay": "VNPay",
     "stripe": "Stripe",
     "momo": "MoMo",
+    "payos": "payOS",
 }
+
+
+# D096: the outcomes announced on the bus as `ORDER_SETTLED`, for whoever tells
+# the buyer (the identity service emails them). The publisher does not know who
+# listens; a payload names the order, never the payer's email.
+ANNOUNCED = frozenset({OrderStatus.PAID, OrderStatus.FAILED})
 
 
 class BillingOff(Exception):
@@ -67,6 +74,8 @@ class BillingService:
         # D078: the run packs on sale, as an administrator set them; the
         # settings' packs where nothing is metered.
         packs: Callable[[], tuple[tuple[int, int], ...]] | None = None,
+        # D096: where a settled order is announced (the message bus); None: nowhere.
+        publish: Callable[[str, dict], None] | None = None,
     ) -> None:
         self.store = store
         self.settings = settings
@@ -77,6 +86,7 @@ class BillingService:
         self._clock = clock
         self._credit = credit
         self._packs = packs or (lambda: tuple(self.settings.credit_packs))
+        self._publish = publish
 
     # ------------------------------------------------------------ basics
 
@@ -144,7 +154,10 @@ class BillingService:
             # Nothing was opened, so nothing can be paid: the order ends here.
             refused = PaymentResult(order_id, OrderStatus.FAILED, amount, "", e.code, str(e))
             self.settle(refused, "checkout", gateway.name)
-            raise PaymentUnavailable(f"{gateway.title}: {e}") from e
+            # Named once: "payOS không mở được…", not "payOS: payOS không mở được…".
+            reason = str(e)
+            said = reason if reason.startswith(gateway.title) else f"{gateway.title}: {reason}"
+            raise PaymentUnavailable(said) from e
         if checkout.reference:
             self.store.set_checkout_ref(order_id, checkout.reference)
         return checkout.url
@@ -276,11 +289,17 @@ class BillingService:
                 order["order_id"], "rejected", said | {"via": via, "amount": result.amount_vnd}
             )
             return "amount"
+        # D098: the order's state says whether the gateway's word may still move
+        # it, and where to; the store's update is guarded by the same table.
         changed = False
-        if OrderStatus(order["status"]) in SETTLEABLE:
-            changed = self.store.settle(
-                order["order_id"], result.outcome, result.reference, result.code
-            )
+        state = state_of(order["status"])
+        if state.settleable:
+            try:
+                target = state.settle(result.outcome)
+            except TransitionRefused:
+                self.store.add_event(order["order_id"], "rejected", said | {"via": via})
+                return "already"
+            changed = self.store.settle(order["order_id"], target, result.reference, result.code)
         self.store.add_event(
             order["order_id"], via, said | dict(result.details) | {"applied": changed}
         )
@@ -294,20 +313,44 @@ class BillingService:
         )
         if result.outcome is OrderStatus.PAID:
             self.credit_order(self.store.order(order["order_id"]))
+        # A gateway that would not even open its page ("checkout") failed in
+        # front of the buyer, who reads why on the screen: no email for that.
+        if result.outcome in ANNOUNCED and via != "checkout":
+            self._announce(self.store.order(order["order_id"]))
         return "ok"
+
+    def _announce(self, order: dict) -> None:
+        """Tell whoever listens that this order was settled; never fails the settlement."""
+        if self._publish is None:
+            return
+        payload = {
+            "order_id": order["order_id"],
+            "account_id": order["created_by"],
+            "status": order["status"],
+            "runs": int(order["runs"]),
+            "amount_vnd": int(order["amount_vnd"]),
+            "gateway_title": self._gateway_title(order["gateway"]),
+            "reference": order["reference"] or "",
+            "live": bool(order["live"]),
+            "settled_at": order["settled_at"] or self._stamp(),
+        }
+        try:
+            self._publish(ORDER_SETTLED, payload)
+        except Exception:  # noqa: BLE001 - the money moved; an email must not undo that
+            logger.exception("billing: could not announce order %s", order["order_id"])
 
     # ------------------------------------------------------------ what the screens read
 
     def order_view(self, order: dict) -> dict:
-        status = OrderStatus(order["status"])
+        state = state_of(order["status"])
         return {
             "order_id": order["order_id"],
             "plan_name": f"Gói {order['runs']} lượt",
             "runs": order["runs"],
             "credited": bool(order.get("credited_at")),
             "amount_vnd": order["amount_vnd"],
-            "status": status.value,
-            "status_name": ORDER_STATUS_NAMES[status],
+            "status": state.status.value,
+            "status_name": state.name,
             "gateway": order["gateway"],
             "gateway_title": self._gateway_title(order["gateway"]),
             "live": bool(order["live"]),
