@@ -40,7 +40,7 @@ from aicefr.storage.db import now_iso as _now
 
 # order: runs of the pack (`seats` before D075), amount_vnd what was paid (the
 # plan fields of D033 orders stay on old documents). payment (D084): gateway
-# none | sandbox | stripe (vnpay | momo on orders from before D075); live 1 for
+# none | sandbox | payos (vnpay | momo | stripe on older orders); live 1 for
 # real money (D035); checkout_ref the gateway's id for the checkout. An event's
 # fingerprint is its detail without "applied" (D035): repeats of an identical
 # message are counted on the first.
@@ -164,7 +164,7 @@ class BillingRepository(MongoStore):
         return [_view(r, payments.get(r["order_id"])) for r in rows]  # type: ignore[misc]
 
     def order_by_checkout(self, gateway: str, reference: str) -> dict | None:
-        """The order whose checkout the gateway knows by `reference` (a Stripe session id)."""
+        """The order whose checkout the gateway knows by `reference` (a payOS payment link id)."""
         paid = self.col("payment").find_one(
             {"gateway": gateway, "checkout_ref": reference}, {"events": 0}
         )

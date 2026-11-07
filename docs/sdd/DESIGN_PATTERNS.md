@@ -11,7 +11,7 @@ Tài liệu này liệt kê các mẫu thiết kế **đang có trong mã**, m�
 | Kiến trúc | Database per Service | `aicefr`, `aicefr_learning`, `aicefr_metering` (D051) |
 | Kiến trúc | Pipes and Filters | `src/aicefr/pipeline.py` (`ResponseProcessor`) |
 | Kiến trúc | Producer–Consumer qua hàng đợi | `JobQueue` trong `ports.py`, `platform/redis_bus.py` (BullMQ, Redis Streams) |
-| Cấu trúc (GoF) | Adapter | `billing/stripe_gateway.py`, `billing/payos_gateway.py`, `asr/whisper_adapter.py`, `asr/vad.py` |
+| Cấu trúc (GoF) | Adapter | `billing/payos_gateway.py`, `billing/gateways.py`, `asr/whisper_adapter.py`, `asr/vad.py` |
 | Cấu trúc (GoF) | Facade | `services/core/*/facade.py` |
 | Cấu trúc (GoF) | Proxy (Remote Proxy) | `platform/rpc.py` (`RemoteFacade`) |
 | Hành vi (GoF) | Strategy | cổng thanh toán chọn theo đơn; VAD `EnergyVad`/`SileroVad` |
@@ -30,11 +30,10 @@ Tài liệu này liệt kê các mẫu thiết kế **đang có trong mã**, m�
 
 `PaymentGateway` (`ports.py`) là cổng chung. Mỗi nhà cung cấp là một **Adapter** dịch giao thức riêng của họ sang cùng một giao diện: `checkout`, `verify_return`, `verify_notification`, `acknowledge`.
 
-- `StripeGateway`: Checkout Session, chữ ký `Stripe-Signature`.
 - `PayosGateway` (D095): link VietQR, chữ ký HMAC trên `data` xếp theo tên.
 - `SandboxGateway`: trang thử trong ứng dụng.
 
-Người mua chọn cổng cho từng đơn: đó là **Strategy**. `BillingService` không biết mình đang nói chuyện với Stripe hay payOS; luật chốt đơn (`settle`) viết một lần cho mọi cổng.
+Người mua chọn cổng cho từng đơn: đó là **Strategy**. `BillingService` không biết mình đang nói chuyện với payOS hay cổng thử; luật chốt đơn (`settle`) viết một lần cho mọi cổng.
 
 `registry.build_gateways` là **Factory** dựng các cổng từ cấu hình. Nó cũng là nơi duy nhất giữ hai luật an toàn: cổng tiền thật chỉ chạy khi `AICEFR_PAYMENTS_LIVE` bật, và cổng thử không chạy cạnh cổng tiền thật.
 
@@ -57,7 +56,6 @@ classDiagram
         +verify_return(query) PaymentResult
     }
     class SandboxGateway
-    class StripeGateway
     class PayosGateway
     class BillingService {
         +gateways: dict
@@ -69,7 +67,6 @@ classDiagram
     }
     PaymentGateway <|.. SignedRedirect
     SignedRedirect <|-- SandboxGateway
-    PaymentGateway <|.. StripeGateway
     PaymentGateway <|.. PayosGateway
     BillingService o-- PaymentGateway : gateways
     Registry ..> PaymentGateway : tạo
@@ -128,7 +125,7 @@ sequenceDiagram
 | Mẫu | Đặt ở đâu | Được gì | Công sức |
 | --- | --- | --- | --- |
 | **State** | Đơn thanh toán (`OrderStatus`): bảng chuyển trạng thái tường minh thay cho tập `SETTLEABLE` | Sơ đồ trạng thái trong báo cáo khớp 1:1 với mã; chuyển sai bị chặn tại một chỗ | Nhỏ |
-| **Circuit Breaker** | Bọc `Transport` của Stripe và payOS | Cổng sập thì ngừng gọi một lúc, báo ngay cho người mua thay vì chờ hết 15 giây mỗi lần | Vừa |
+| **Circuit Breaker** | Bọc `Transport` của payOS | Cổng sập thì ngừng gọi một lúc, báo ngay cho người mua thay vì chờ hết 15 giây mỗi lần | Vừa |
 | **Observer / Domain Event** (mở rộng) | Sự kiện "bài đã duyệt" cho thông báo đẩy và thành tựu, như D096 đã làm cho thanh toán | Bỏ các lời gọi chéo giữa phần chấm, thông báo và thành tựu | Vừa |
 | **Decorator** | Bọc `Scorer` để ghi thời gian chạy và số liệu Prometheus | Đo hiệu năng mà không sửa mô hình chấm | Nhỏ |
 | **Specification** | Điều kiện mở khoá bài học, thành tựu | Luật đọc như câu, ghép được, test riêng từng luật | Vừa |

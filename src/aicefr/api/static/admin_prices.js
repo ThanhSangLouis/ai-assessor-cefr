@@ -52,7 +52,7 @@
       ${d.metering ? "" : '<p class="notice">Bản triển khai này chưa tính lượt (<code>AICEFR_METERING</code> tắt): giá lưu ở đây chỉ áp dụng khi bật.</p>'}
       <form id="price-form" class="stack" novalidate>
         <div class="price-grid">${fields}</div>
-        <h3>Gói lượt bán qua Stripe</h3>
+        <h3>Gói lượt đang bán</h3>
         <table class="price-packs"><thead><tr><th>Số lượt</th><th>Giá (đồng)</th><th></th><th></th></tr></thead>
           <tbody id="price-packs">${(d.packs || []).map(packRow).join("")}</tbody></table>
         <div class="button-row">

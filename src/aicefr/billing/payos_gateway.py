@@ -1,6 +1,7 @@
 """payOS as a payment gateway (D095): a bank transfer by VietQR, Napas 24/7.
 
-payOS works like Stripe, not like the sandbox. This system asks payOS's API for
+payOS does not sign its result into the address as the sandbox does. This
+system asks payOS's API for
 a payment link (the amount in dong, an integer order code, a short transfer
 note) signed with the channel's checksum key, and sends the browser to the page
 payOS answers with; the payer scans its QR code in any Vietnamese banking app.

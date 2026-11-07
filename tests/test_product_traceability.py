@@ -95,10 +95,11 @@ PLANS = [
         {
             "TC-CT-U": ROOT / "tests" / "test_gateways_unit.py",
             "TC-CT-I": ROOT / "tests" / "test_gateways.py",
-            "TC-CT-E": ROOT / "tests" / "e2e" / "test_gateways_e2e.py",
         },
         "7[1-3]",
-        18,  # AC-73.1..AC-73.3 (MoMo) removed with D075
+        # MoMo's AC-73.x went with D075; Stripe's AC-72.x and the gateway
+        # choice (AC-71.1, 71.3, 71.6, 71.7) with D097.
+        3,
     ),
     Plan(
         "D036",

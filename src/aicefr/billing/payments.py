@@ -47,8 +47,8 @@ class PaymentResult:
 
     order_id: str
     # PAID, FAILED or CANCELLED; PENDING when the gateway has no final word yet
-    # (Stripe before an asynchronous payment clears, MoMo while the payer
-    # confirms in the app). A pending word is kept, and changes nothing.
+    # (payOS before the whole transfer has arrived). A pending word is kept,
+    # and changes nothing.
     outcome: OrderStatus
     amount_vnd: int
     reference: str  # the gateway's transaction number
@@ -58,7 +58,7 @@ class PaymentResult:
     # number or a name (BR-32).
     details: Mapping[str, str] = field(default_factory=dict)
     # The gateway's id of the checkout this result is about, when it has one
-    # (Stripe's session, MoMo's request); must be the one the order opened.
+    # (payOS's payment link); must be the one the order opened.
     checkout: str = ""
 
 
@@ -79,7 +79,7 @@ class Checkout:
     """Where to send the payer's browser, and the gateway's own id for the payment, if any."""
 
     url: str
-    reference: str = ""  # Stripe's Checkout Session id; empty for VNPay and the sandbox
+    reference: str = ""  # payOS's payment link id; empty for the sandbox
 
 
 @dataclass(frozen=True)

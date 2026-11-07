@@ -1,8 +1,8 @@
 """How billing code calls a gateway's server: HTTPS through the standard library (D035).
 
-Two gateways must call out. Stripe opens a Checkout Session and reads it back;
-MoMo opens a payment. Each takes a `Transport`, and the tests hand it a fake,
-so no test ever reaches the network. There is no new dependency: a few JSON or
+A real gateway must call out: payOS opens a payment link and reads it back.
+It takes a `Transport`, and the tests hand it a fake, so no test ever reaches
+the network. There is no new dependency: a few JSON or
 form requests a day need nothing more than `urllib.request`.
 """
 

@@ -6,9 +6,9 @@ Three audiences, three kinds of route:
   gateway picked (`/api/v1/me/credit-...`);
 * the buyer's browser coming back from the gateway: the return page, which
   applies the result it stands for -- signed into the address (the sandbox)
-  or read back from the gateway (Stripe) -- and says what happened, and the
+  or read back from the gateway (payOS) -- and says what happened, and the
   receipt;
-* the gateway's own server: the notification address, POST for Stripe's
+* the gateway's own server: the notification address, POST for payOS's
   webhook and GET for the sandbox. No session there: the signature is the
   only credential, and the answer is in the shape each gateway expects;
 
@@ -198,7 +198,7 @@ def _notified(gw, message: Incoming) -> Response:
 async def billing_notify(gateway: str, request: Request) -> Response:
     """The gateway's server reports a result. The signature is the only credential.
 
-    POST for Stripe's webhook, GET for the sandbox (D075: one real gateway); each
+    POST for payOS's webhook, GET for the sandbox (D097: one real gateway); each
     adapter reads the part its gateway signs, and answers the way it expects.
     """
     gw = _gateway_or_404(gateway)
@@ -233,7 +233,7 @@ def billing_return(
     person was paying must not lose the payment. The page shows only what the
     gateway vouched for, and the plan it bought. `left=1` is this system's own
     mark on the address of a payer who left the gateway's page without paying
-    (Stripe's cancel address): nothing is settled, the payment simply expires.
+    (payOS's cancel address): nothing is settled, the payment simply expires.
     """
     gw = _gateway_or_404(gateway)
     billing = _billing()
@@ -254,7 +254,7 @@ def billing_return(
         known = billing.store.order_by_checkout(gw.name, reference)
         if known is None:
             # Not a checkout of ours: the gateway is not asked about it, so a
-            # stranger cannot spend this system's allowance of calls to Stripe.
+            # stranger cannot spend this system's allowance of calls to payOS.
             context["state"] = "invalid"
             return templates.TemplateResponse(request, "billing_result.html", context)
         if OrderStatus(known["status"]) not in SETTLEABLE:

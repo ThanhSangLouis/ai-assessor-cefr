@@ -37,7 +37,7 @@ def _temperature(name: str) -> float | None:
 
 
 def _names(name: str, default: str) -> tuple[str, ...]:
-    """A comma-separated list, lower-cased, blanks dropped: "Stripe, x" -> (stripe, x)."""
+    """A comma-separated list, lower-cased, blanks dropped: "payOS, x" -> (payos, x)."""
     # Set but empty (a blank line in .env) means the same as not set.
     raw = (os.getenv(name) or "").strip() or default
     return tuple(n.strip().lower() for n in raw.split(",") if n.strip())
@@ -201,23 +201,15 @@ class Settings:
     # The payment gateways that sell run packs. Off by default: nothing is
     # sold until a deployment opts in. No service plans any more (D075).
     billing_enabled: bool = field(default_factory=lambda: _flag("AICEFR_BILLING"))
-    # The gateways offered, in the order the buyer sees them (D035, D075, D095):
-    # "stripe" and "payos" with the keys below, and "sandbox", a payment page
-    # inside the app where no money moves. See aicefr.billing.registry for the rules.
+    # The gateways offered, in the order the buyer sees them (D035, D095, D097):
+    # "payos" with the keys below, and "sandbox", a payment page inside the
+    # app where no money moves. Stripe was removed in D097. See
+    # aicefr.billing.registry for the rules.
     payment_gateways: tuple[str, ...] = field(
         default_factory=lambda: _names("AICEFR_PAYMENT_GATEWAYS", "sandbox")
     )
     # A gateway that moves real money runs only with this on.
     payments_live: bool = field(default_factory=lambda: _flag("AICEFR_PAYMENTS_LIVE"))
-    # Stripe: the secret key (sk_test_... for test mode) and the signing secret
-    # of the webhook endpoint (whsec_...), from Stripe's dashboard or
-    # `stripe listen`.
-    stripe_secret_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_STRIPE_SECRET_KEY", "").strip()
-    )
-    stripe_webhook_secret: str = field(
-        default_factory=lambda: os.getenv("AICEFR_STRIPE_WEBHOOK_SECRET", "").strip()
-    )
     # payOS (D095): the three keys of a payment channel at my.payos.vn. payOS
     # has no test environment, so it runs only with AICEFR_PAYMENTS_LIVE on.
     payos_client_id: str = field(

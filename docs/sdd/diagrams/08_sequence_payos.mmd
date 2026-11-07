@@ -1,0 +1,47 @@
+%% SDD - So do 08: mua goi luot qua payOS, chuyen khoan VietQR (D095, D096, D097)
+%% Ten ham, ten endpoint va ten su kien giu nguyen tieng Anh nhu trong ma nguon.
+sequenceDiagram
+    autonumber
+    actor HV as Học viên
+    participant TD as Trình duyệt
+    participant API as billing_api.py
+    participant BS as BillingService
+    participant PG as PayosGateway
+    participant PO as payOS
+    participant BUS as MessageBus
+    participant ID as Identity (email)
+
+    HV->>TD: Chọn gói lượt, bấm Mua gói này
+    TD->>API: POST /api/v1/me/credit-orders
+    API->>BS: place_credit_order(runs, gateway="payos")
+    BS->>PG: checkout(order_id, amount, return_url)
+    PG->>PO: POST /v2/payment-requests (orderCode, amount, signature HMAC)
+    PO-->>PG: checkoutUrl, paymentLinkId
+    PG-->>BS: Checkout(url, paymentLinkId)
+    BS-->>API: đơn chờ, checkout_ref = paymentLinkId
+    API-->>TD: checkout_url
+    TD->>PO: Trang VietQR của payOS
+    HV->>PO: Quét mã bằng app ngân hàng, chuyển khoản
+
+    par Trình duyệt quay về
+        PO-->>TD: /billing/return/payos?id=…&status=PAID
+        TD->>API: GET /billing/return/payos?id=…
+        API->>BS: store.order_by_checkout("payos", id)
+        Note over API,BS: Link không phải của đơn nào: không hỏi payOS
+        API->>PG: verify_return(id)
+        PG->>PO: GET /v2/payment-requests/{id}
+        PO-->>PG: status, amount, amountPaid
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "return", "payos")
+        API-->>TD: Trang Thanh toán thành công
+    and Máy chủ payOS báo
+        PO->>API: POST /api/v1/billing/notify/payos (data, signature)
+        API->>PG: verify_notification: HMAC-SHA256 của data xếp theo tên
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "notify", "payos")
+        API-->>PO: 200
+    end
+    Note over BS: settle chỉ đổi đơn một lần, đúng cổng, đúng số tiền, rồi cộng lượt
+    BS-)BUS: publish billing.order_settled
+    BUS-)ID: on_order_settled (ít nhất một lần)
+    ID->>HV: Email biên nhận (email đã xác minh, một lần mỗi đơn)
