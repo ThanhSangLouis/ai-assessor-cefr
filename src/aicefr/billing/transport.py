@@ -19,6 +19,10 @@ TIMEOUT_S = 15
 USER_AGENT = "SpeakUp/1.0 (+https://speakup.fit)"
 
 
+# D099: plain HTTP only to this machine -- the fake payOS of the end-to-end tests.
+LOOPBACK = "http://127.0.0.1:"
+
+
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
     """A redirect is handed back as a reply, not followed.
 
@@ -49,7 +53,7 @@ class Unreachable(Exception):
 
 def https(method: str, url: str, headers: Mapping[str, str], body: bytes | None) -> Reply:
     """Send one request and return the reply; an HTTP error status is a reply, not an exception."""
-    if not url.startswith("https://"):
+    if not url.startswith(("https://", LOOPBACK)):
         raise ValueError("a gateway is only ever called over https")
     request = urllib.request.Request(
         url, data=body, method=method, headers={"User-Agent": USER_AGENT, **headers}

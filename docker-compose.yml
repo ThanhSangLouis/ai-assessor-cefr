@@ -51,6 +51,8 @@ x-env: &env
   AICEFR_EMAIL_PROVIDER: ${AICEFR_EMAIL_PROVIDER:-off}
   AICEFR_RESEND_API_KEY: ${AICEFR_RESEND_API_KEY:-}
   AICEFR_EMAIL_FROM: ${AICEFR_EMAIL_FROM:-}
+  # D099: shown on /payment-terms for payment questions and refunds.
+  AICEFR_SUPPORT_EMAIL: ${AICEFR_SUPPORT_EMAIL:-}
   AICEFR_REMINDER_HOUR: ${AICEFR_REMINDER_HOUR:-19}
   # D088: Web Push to the learner's devices; off until the key pair is set
   # (python -m aicefr.maintenance_cli vapid).

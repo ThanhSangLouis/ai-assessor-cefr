@@ -48,7 +48,7 @@ from aicefr.billing.payments import (
     notify_status,
     same_text,
 )
-from aicefr.billing.transport import Transport, Unreachable, https
+from aicefr.billing.transport import LOOPBACK, Transport, Unreachable, https
 
 API = "https://api-merchant.payos.vn"
 # A link outlives the order's wait by a minute: a payment that still arrives is
@@ -129,7 +129,12 @@ class PayosGateway:
     note = ""
 
     def __init__(
-        self, client_id: str, api_key: str, checksum_key: str, transport: Transport = https
+        self,
+        client_id: str,
+        api_key: str,
+        checksum_key: str,
+        transport: Transport = https,
+        api: str = API,
     ):
         for value, what in (
             (client_id, "AICEFR_PAYOS_CLIENT_ID"),
@@ -141,6 +146,7 @@ class PayosGateway:
         self._headers = {"x-client-id": client_id, "x-api-key": api_key}
         self._key = checksum_key.encode("utf-8")
         self._send = transport
+        self._api = api
 
     # ------------------------------------------------------------ the API
 
@@ -151,7 +157,7 @@ class PayosGateway:
             body = json.dumps(fields, ensure_ascii=False).encode("utf-8")
             headers["Content-Type"] = "application/json"
         try:
-            reply = self._send(method, API + path, headers, body)
+            reply = self._send(method, self._api + path, headers, body)
         except Unreachable as e:
             raise GatewayError(UNREACHABLE, "unreachable") from e
         try:
@@ -196,7 +202,9 @@ class PayosGateway:
         fields["expiredAt"] = int((now + timedelta(minutes=LINK_MINUTES)).timestamp())
         link = self._call("POST", "/v2/payment-requests", fields)
         url, link_id = link.get("checkoutUrl"), link.get("paymentLinkId")
-        if not (isinstance(url, str) and url.startswith("https://") and isinstance(link_id, str)):
+        # A page over plain HTTP only from a fake payOS on this machine (D099's tests).
+        pages = ("https://", LOOPBACK) if self._api.startswith(LOOPBACK) else ("https://",)
+        if not (isinstance(url, str) and url.startswith(pages) and isinstance(link_id, str)):
             raise GatewayError("payOS trả về một link thanh toán không dùng được.", "link")
         return Checkout(url, link_id)
 
@@ -229,6 +237,14 @@ class PayosGateway:
             message=MESSAGES[outcome],
             checkout=str(link.get("id", "")),
         )
+
+    def look_up(self, reference: str) -> PaymentResult | None:
+        """What payOS's own record says about a payment link this system opened.
+
+        For reconciliation (D099): an order whose webhook never came, and
+        whose payer never came back, is asked about by its link id.
+        """
+        return self.verify_return({"id": reference})
 
     def verify_notification(self, message: Incoming, now: datetime) -> PaymentResult | None:
         """A webhook, if payOS signed it; None otherwise.

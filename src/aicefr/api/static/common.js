@@ -898,3 +898,36 @@ document.addEventListener("DOMContentLoaded", () => {
   window.enhanceSelects();
 });
 
+
+// ---------------------------------------------------------------- D099: metering, said once
+// Where runs are counted, a learner is told once, per browser, how many free
+// runs are left this month. "Đã hiểu" keeps it from coming back.
+{
+  const box = document.getElementById("metering-notice");
+  const KEY = "su-metering-notice-v1";
+  let seen = null;
+  try {
+    seen = localStorage.getItem(KEY);
+  } catch (err) {
+    seen = "unavailable"; // no storage: never nag on every page
+  }
+  if (box && !seen && !location.pathname.startsWith("/credits")) {
+    fetch("/api/v1/me/credits", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !d.metering) return;
+        const free = Number(d.free_runs_left).toLocaleString("vi-VN", { maximumFractionDigits: 1 });
+        document.getElementById("metering-free").textContent = `Tháng này bạn còn ${free} lượt.`;
+        box.hidden = false;
+      })
+      .catch(() => {});
+    document.getElementById("metering-ok").addEventListener("click", () => {
+      try {
+        localStorage.setItem(KEY, "seen");
+      } catch (err) {
+        /* hidden for this page only */
+      }
+      box.remove();
+    });
+  }
+}

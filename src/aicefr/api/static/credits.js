@@ -31,48 +31,73 @@ async function load() {
   idpPerRun = credits.prices.idpoint_per_run;
   const total = credits.free_runs_left + credits.wallet_runs;
   balanceEl.innerHTML = `
-    <div class="stat-grid">
-      <div class="stat"><b>${runs(total)}</b><span>Còn dùng được</span></div>
-      <div class="stat"><b>${runs(credits.free_runs_left)}</b><span>Miễn phí chu kỳ ${escapeHtml(credits.cycle)}</span></div>
-      <div class="stat"><b>${runs(credits.wallet_runs)}</b><span>Đã mua</span></div>
-    </div>
-    <p class="muted">Bài đánh giá tới 1 phút: <b>${runs(credits.one_minute.assessment)}</b> (${idp(credits.prices.first_minute_runs)}), mỗi phút thêm ${runs(credits.prices.extra_minute_runs)} (${idp(credits.prices.extra_minute_runs)}), tối đa ${credits.prices.max_minutes} phút. Mỗi bản nâng cấp hay bản soạn bài do AI viết: ${runs(credits.prices.upgrade_runs)} (${idp(credits.prices.upgrade_runs)}); mỗi đoạn đọc do AI viết: ${runs(credits.prices.passage_runs ?? 0.1)} (${idp(credits.prices.passage_runs ?? 0.1)}); chỉ trừ khi viết xong. Lượt miễn phí được dùng trước và làm mới vào ngày 16 hằng tháng.</p>${lessonNote(credits.lesson)}`;
+    <div class="wallet-hero">
+      <div class="wallet-total"><b>${num(total)}</b><span>lượt còn dùng được</span></div>
+      <div class="wallet-split">
+        <div><span class="wallet-dot free"></span><b>${num(credits.free_runs_left)}</b><span>miễn phí · làm mới ngày 16</span></div>
+        <div><span class="wallet-dot paid"></span><b>${num(credits.wallet_runs)}</b><span>đã mua · không hết hạn</span></div>
+      </div>
+    </div>`;
+  showPrices(credits.prices, credits.one_minute, credits.lesson);
   historyEl.innerHTML = credits.history.length
-    ? `<ul class="plain-list">${credits.history
-        .map(
-          (e) => `<li><b>${ACTION[e.action] || escapeHtml(e.action)}</b> · ${e.free_slot && e.state === "charged" ? "Miễn phí trong ngày" : `${STATE[e.state] || escapeHtml(e.state)}
-            · ${e.state === "charged" ? runs(e.charged_runs) : runs(e.held_runs)}`}
-            <span class="muted">· ${when(e.created_at)}</span></li>`,
-        )
-        .join("")}</ul>`
+    ? `<ul class="ledger">${credits.history.map(ledgerRow).join("")}</ul>`
     : '<p class="muted">Chưa có bài nào được tính lượt.</p>';
   if (packs && packs.on_sale) showPacks(packs);
 }
 
-// D094: what a recording on the lesson path costs, and what is left today.
-function lessonNote(q) {
-  if (!q) return "";
-  return `<p class="muted">Bài học trong lộ trình (cả ôn tập, kể lại, luyện từ): ${Number(q.free_per_day)} bản ghi đầu mỗi ngày miễn phí, hôm nay còn <b>${Number(q.free_left_today)}</b>; sau đó mỗi phút nói ${runs(q.minute_runs)} (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint). Tối đa ${Number(q.daily_cap)} bản ghi mỗi ngày. Bản ghi máy không đo được (im lặng, không phải tiếng Anh) không bị tính.</p>`;
+const num = (n) => Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 3 });
+const icon = (name) => window.ui.icon(name);
+const ACTION_ICON = { assessment: "mic", practice: "target", upgrade: "sparkle", lesson_draft: "pencil", drill_passage: "book-open", lesson: "path" };
+
+// One line of the ledger: what, when, and the runs it moved.
+function ledgerRow(e) {
+  const free = e.free_slot && e.state === "charged";
+  const amount = free ? "0" : num(e.state === "charged" ? e.charged_runs : e.held_runs);
+  const state = free ? "Miễn phí trong ngày" : STATE[e.state] || escapeHtml(e.state);
+  return `<li class="ledger-row">
+    <span class="ledger-mark">${icon(ACTION_ICON[e.action] || "star")}</span>
+    <span class="ledger-what"><b>${ACTION[e.action] || escapeHtml(e.action)}</b><small>${state} · ${when(e.created_at)}</small></span>
+    <span class="ledger-runs${e.state === "released" ? " back" : ""}">${e.state === "released" ? "+" : "−"}${amount}</span></li>`;
+}
+
+// The price list as tiles: what one thing costs, in runs, IDPoint underneath.
+function showPrices(p, oneMinute, lesson) {
+  const tile = (mark, value, label, sub = "") =>
+    `<li><span class="cost-mark">${icon(mark)}</span><b>${value}</b><span>${label}</span>${sub ? `<small>${sub}</small>` : ""}</li>`;
+  const tiles = [
+    tile("mic", num(oneMinute.assessment), "lượt · bài nói 1 phút", `+${num(p.extra_minute_runs)} mỗi phút thêm`),
+    tile("sparkle", num(p.upgrade_runs), "lượt · AI viết lại", idp(p.upgrade_runs)),
+    tile("book-open", num(p.passage_runs ?? 0.1), "lượt · đoạn đọc AI", idp(p.passage_runs ?? 0.1)),
+  ];
+  // D094: the lesson path: some recordings a day free, then by the minute.
+  if (lesson) {
+    tiles.push(
+      tile("path", `${Number(lesson.free_left_today)}/${Number(lesson.free_per_day)}`, "bài học miễn phí hôm nay",
+        `sau đó ${num(lesson.minute_runs)} lượt/phút`),
+    );
+  }
+  document.getElementById("price-tiles").innerHTML = tiles.join("");
+  document.getElementById("price-card").hidden = false;
 }
 
 function showPacks(d) {
   document.getElementById("packs-card").hidden = false;
   const test = d.gateways.length && d.gateways.every((g) => !g.live);
-  document.getElementById("packs-note").textContent = test
-    ? "Môi trường thử: không có tiền thật nào được chuyển."
-    : "Lượt mua không hết hạn theo chu kỳ.";
+  document.getElementById("packs-note").textContent = test ? "Môi trường thử" : "Không hết hạn";
   const select = document.getElementById("gateway");
   select.innerHTML = d.gateways
     .map((g) => `<option value="${escapeHtml(g.name)}">${escapeHtml(g.title)}</option>`)
     .join("");
   document.getElementById("gateway-field").hidden = d.gateways.length < 2;
   const packsEl = document.getElementById("packs");
+  const cheapest = Math.min(...d.packs.map((p) => p.per_run_vnd));
+  const best = (p) => d.packs.length > 1 && p.per_run_vnd === cheapest;
   packsEl.innerHTML = d.packs
     .map(
-      (p) => `<div class="pack">
+      (p) => `<div class="pack${best(p) ? " best" : ""}">${best(p) ? '<span class="pack-flag">Lợi nhất</span>' : ""}
         <div class="pack-runs">${runs(p.runs)}</div>
         <div class="pack-price">${vnd(p.price_vnd)}</div>
-        <div class="muted small">${vnd(p.per_run_vnd)} mỗi lượt</div>
+        <div class="muted small">${vnd(p.per_run_vnd)}/lượt</div>
         <button type="button" class="button small" data-runs="${p.runs}">Mua gói này</button>
       </div>`,
     )
@@ -82,11 +107,16 @@ function showPacks(d) {
   );
   const orders = d.orders.filter((o) => o.status !== "expired" || o.credited);
   document.getElementById("orders-card").hidden = !orders.length;
-  document.getElementById("orders").innerHTML = `<ul class="plain-list">${orders
+  const PILL = { paid: "state-on", pending: "state-warn", failed: "state-bad" };
+  document.getElementById("orders").innerHTML = `<ul class="ledger">${orders
     .map(
-      (o) => `<li><code>${escapeHtml(o.order_id)}</code> · ${escapeHtml(o.plan_name)} · ${vnd(o.amount_vnd)}
-        · ${escapeHtml(o.status_name)}${o.status === "paid" ? (o.credited ? " · đã cộng lượt" : " · đang cộng lượt") : ""}
-        ${o.status === "paid" ? `· <a href="/billing/orders/${encodeURIComponent(o.order_id)}/receipt">biên nhận</a>` : ""}</li>`,
+      (o) => `<li class="ledger-row">
+        <span class="ledger-mark">${icon({ paid: "check-circle", pending: "clock" }[o.status] || "x")}</span>
+        <span class="ledger-what"><b>${escapeHtml(o.plan_name)} · ${vnd(o.amount_vnd)}</b>
+          <small><span class="badge ${PILL[o.status] || "state-off"}">${escapeHtml(o.status_name)}</span>${
+            o.status === "paid" && !o.credited ? " đang cộng lượt" : ""
+          } · ${when(o.created_at)}</small></span>
+        ${o.status === "paid" ? `<a class="button small secondary" href="/billing/orders/${encodeURIComponent(o.order_id)}/receipt">Biên nhận</a>` : ""}</li>`,
     )
     .join("")}</ul>`;
 }

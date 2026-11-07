@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.28** | **07/11/2026** | **D099.** +1 FR: FR-102 lưới an toàn khi bán thật: tự đối soát đơn còn mở với payOS mỗi hai phút, tối đa năm đơn chờ trong mười phút cho mỗi người, trang Đơn hàng cho quản trị viên (doanh thu 14 ngày, lọc trạng thái, sự kiện từng đơn), trang điều khoản và hoàn tiền mở cho mọi người và có liên kết ở chỗ mua | D099 |
 | **1.27** | **07/11/2026** | **D097.** Gỡ Stripe: FR-72 và AC-72.x gạch (gỡ bởi D097); AC-71.1, 71.3, 71.6, 71.7 gạch vì chỉ còn một cổng chạy mỗi lúc; AC-71.4 và 71.5 viết lại cho payOS. Đơn Stripe cũ vẫn hiện tên cổng | D097 |
 | **1.26** | **07/11/2026** | **D096.** +1 FR: FR-101 email cho luồng thanh toán: đơn gói lượt kết thúc đã thanh toán thì người mua nhận biên nhận, không thành công thì nhận thông báo; chỉ gửi tới email đã xác minh, mỗi đơn một email. Thanh toán phát sự kiện `billing.order_settled` trên bus, dịch vụ định danh nhận và gửi | D096 |
 | **1.25** | **07/11/2026** | **D095.** +1 FR: FR-100 bán gói lượt qua payOS (chuyển khoản VietQR, Napas 24/7): link thanh toán ký bằng checksum key, trả về được đọc lại từ API payOS, webhook chỉ tin khi chữ ký đúng; payOS không có môi trường thử nên chỉ chạy khi bật tiền thật (`AICEFR_PAYMENTS_LIVE`), khi đó cổng thử tắt. Đơn, gói lượt và luật chốt kết quả không đổi | D095 |
@@ -1685,6 +1686,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-101.4** — *Given* bus giao lại cùng một sự kiện, *When* bộ gửi nhận lần hai, *Then* không có email thứ hai (`test_a_second_delivery_of_the_event_sends_no_second_email`). |
 | **AC-101.5** — *Given* một đơn bất kỳ, *When* soạn email, *Then* email nói rõ đã mua gì và cách báo nếu không phải mình, không chứa mật khẩu, số thẻ hay khoá; thiếu địa chỉ công khai thì không chèn liên kết hỏng (`test_the_payment_email_says_what_was_bought_and_nothing_secret`). |
 | **AC-101.6** — *Given* bản triển khai tắt email, *When* đơn được thanh toán, *Then* đơn vẫn chốt và lượt vẫn vào ví (`test_with_email_off_a_payment_still_settles`). |
+
+### FR-102 — Lưới an toàn khi bán lượt bằng tiền thật (D099)
+
+**Mô tả:** Khi bán lượt bằng tiền thật (payOS), hệ thống không được để mất một khoản tiền đã chuyển, không để một người mở link thanh toán vô hạn, và phải cho quản trị viên thấy tiền. (1) **Tự đối soát:** mỗi hai phút, dịch vụ thanh toán hỏi lại payOS về mọi đơn còn mở (chờ hoặc hết hạn chờ) tạo trong một giờ qua đã mở link; payOS nói đã trả thì đơn được chốt và cộng lượt như khi webhook tới; payOS chưa có lời cuối thì không ghi gì. Cổng không hỏi lại được (cổng thử) thì bỏ qua. (2) **Giới hạn:** một tài khoản có từ năm đơn chờ thanh toán trong mười phút thì đơn thứ sáu bị từ chối (429) và không mở link nào. (3) **Trang Đơn hàng** (quản trị): doanh thu hôm nay và 14 ngày, số đơn theo trạng thái, danh sách đơn mới nhất trước kèm mã người mua, lọc theo trạng thái, mở từng đơn xem các sự kiện cổng đã báo. Chỉ quản trị viên đọc được. (4) **Điều khoản** `/payment-terms`: lượt không hết hạn, trả qua payOS, bài lỗi được trả lượt, khi nào được hoàn tiền và gửi cho ai; mở cho mọi người, trang Lượt của tôi có liên kết ngay dưới các gói.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-102.1** — *Given* người mua đã chuyển khoản trên payOS nhưng webhook không tới và họ đóng trang, *When* vòng đối soát chạy, *Then* đơn được chốt đã thanh toán, lượt vào ví đúng một lần, lần chạy sau không đổi gì (`test_reconcile_credits_a_payment_nobody_reported`). |
+| **AC-102.2** — *Given* link payOS chưa được trả, *When* vòng đối soát chạy, *Then* đơn vẫn chờ và không có sự kiện nào được ghi thêm (`test_reconcile_leaves_an_unpaid_link_waiting`). |
+| **AC-102.3** — *Given* một tài khoản đã có năm đơn chờ trong mười phút, *When* đặt đơn thứ sáu, *Then* nhận 429, không link nào được mở, người khác vẫn đặt được (`test_too_many_waiting_orders_are_refused`). |
+| **AC-102.4** — *Given* có đơn đã trả và đơn đang chờ, *When* quản trị viên mở trang Đơn hàng, *Then* thấy đơn mới nhất trước với mã người mua, số đơn theo trạng thái, doanh thu từng ngày trong 14 ngày, lọc được theo trạng thái và xem được sự kiện của từng đơn (`test_the_administrator_sees_every_order_and_the_money_of_each_day`). |
+| **AC-102.5** — *Given* sinh viên hoặc giảng viên, *When* gọi danh sách đơn hay sự kiện của một đơn, *Then* bị từ chối 403 (`test_only_the_administrator_reads_the_orders`). |
+| **AC-102.6** — *Given* bất kỳ ai, kể cả chưa đăng nhập, *When* mở `/payment-terms`, *Then* thấy quy tắc hoàn tiền, lưu ý biên nhận không phải hoá đơn VAT và email liên hệ đã cấu hình; trang Lượt của tôi có liên kết tới đó (`test_the_terms_are_open_and_linked_from_the_buy_page`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
