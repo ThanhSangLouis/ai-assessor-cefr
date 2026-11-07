@@ -180,7 +180,7 @@ File: `docs/sdd/diagrams/01a_usecase_sinhvien.mmd`
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
 %% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
-%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua Stripe.
+%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua payOS.
 flowchart LR
     SV(("Sinh viên"))
     CTT(("Cổng thanh toán"))
@@ -198,7 +198,7 @@ flowchart LR
         UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
         UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
         UC26["UC-26 Sinh viên ôn sổ cụm từ"]
-        UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
+        UC27["UC-27 Sinh viên nạp lượt qua payOS"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
     end
 
@@ -2199,6 +2199,8 @@ sequenceDiagram
 
 ### 4.16. Nhiều cổng thanh toán: Stripe và MoMo — hiện thực FR-71…FR-73 (D035)
 
+> **D097 (07/11/2026):** Stripe đã gỡ; payOS (D095, FR-100) là cổng thật duy nhất, cổng thử giữ cho môi trường không có tiền thật. Phần về Stripe và MoMo dưới đây là lịch sử; các bất biến 6–10 vẫn đúng với payOS. Hình 8 nay là luồng payOS, hình 9 là sơ đồ lớp của phân hệ.
+
 **Vì sao có mục này.** Chủ dự án muốn dùng Stripe vì Stripe có môi trường thử đầy đủ, và để ngỏ MoMo, VNPay "cho đa dạng". Stripe khác VNPay ở chỗ cốt lõi: không có gì được ký vào địa chỉ của trình duyệt. Hệ thống phải gọi API của Stripe để **mở** phiên thanh toán, và khi trình duyệt quay về chỉ mang theo mã phiên — một lời khai, không phải bằng chứng — nên phải gọi API lần nữa để **đọc lại** phiên. Cổng `PaymentGateway` của D034 (`checkout_url` trả chuỗi, `verify` đọc tham số địa chỉ) không chứa được cách làm đó, nên được đổi hình. D034 chưa phát hành, nên đổi thẳng, không giữ tên cũ.
 
 **Cổng `PaymentGateway` sau D035.**
@@ -2216,8 +2218,9 @@ sequenceDiagram
 
 | Bộ chuyển đổi | Tệp | Cách làm |
 | --- | --- | --- |
-| `StripeGateway` | `src/aicefr/billing/stripe_gateway.py` | `POST /v1/checkout/sessions` dạng form: `mode=payment`, một dòng hàng `price_data` VND với `unit_amount` bằng đúng số đồng (VND không có đơn vị lẻ), mã đơn ở `client_reference_id`, `metadata[order_id]` và metadata của PaymentIntent, `success_url` có `{CHECKOUT_SESSION_ID}`, `cancel_url` có `left=1`, `expires_at` sau 31 phút (Stripe nhận 30 phút tới 24 giờ), `locale=vi`, `Idempotency-Key: aicefr-<mã đơn>`. Đọc lại: `GET /v1/checkout/sessions/{id}`, chỉ tin `payment_status`, `amount_total`, `currency` của phiên. Webhook: tách `t` và mọi `v1` của `Stripe-Signature`, HMAC-SHA256 trên `<t>.<thân>` theo khoá `whsec_`, so bằng `compare_digest` với từng `v1`, lệch giờ tối đa 300 giây, bỏ sự kiện có `livemode` khác chế độ của khoá |
+| ~~`StripeGateway`~~ *(gỡ bởi D097)* | ~~`src/aicefr/billing/stripe_gateway.py`~~ | `POST /v1/checkout/sessions` dạng form: `mode=payment`, một dòng hàng `price_data` VND với `unit_amount` bằng đúng số đồng (VND không có đơn vị lẻ), mã đơn ở `client_reference_id`, `metadata[order_id]` và metadata của PaymentIntent, `success_url` có `{CHECKOUT_SESSION_ID}`, `cancel_url` có `left=1`, `expires_at` sau 31 phút (Stripe nhận 30 phút tới 24 giờ), `locale=vi`, `Idempotency-Key: aicefr-<mã đơn>`. Đọc lại: `GET /v1/checkout/sessions/{id}`, chỉ tin `payment_status`, `amount_total`, `currency` của phiên. Webhook: tách `t` và mọi `v1` của `Stripe-Signature`, HMAC-SHA256 trên `<t>.<thân>` theo khoá `whsec_`, so bằng `compare_digest` với từng `v1`, lệch giờ tối đa 300 giây, bỏ sự kiện có `livemode` khác chế độ của khoá |
 | `MomoGateway` | `src/aicefr/billing/momo_gateway.py` | `POST /v2/gateway/api/create` dạng JSON, `requestType=captureWallet`, chữ ký HMAC-SHA256 trên chuỗi `accessKey=…&amount=…&extraData=…&ipnUrl=…&orderId=…&orderInfo=…&partnerCode=…&redirectUrl=…&requestId=…&requestType=…`; số tiền ngoài 1.000–50.000.000 đ bị từ chối trước khi gọi. Kết quả (địa chỉ trả về và IPN) ký trên `accessKey … transId` theo thứ tự MoMo công bố; kiểm thêm mã đối tác |
+| `PayosGateway` (D095, FR-100) | `src/aicefr/billing/payos_gateway.py` | `POST /v2/payment-requests` dạng JSON với `x-client-id`, `x-api-key`; chữ ký HMAC-SHA256 bằng checksum key trên `amount&cancelUrl&description&orderCode&returnUrl` xếp theo tên. `orderCode` là số nguyên đổi từ mã đơn (`ngày × 16⁶ + số hex`, đổi ngược được, không thêm cột); nội dung chuyển khoản `SU` + 6 ký tự; `paymentLinkId` lưu ở `checkout_ref`. Trả về: đọc lại `GET /v2/payment-requests/{id}`, trạng thái và số tiền của payOS quyết định. Webhook: HMAC-SHA256 trên `data` xếp theo tên, trả 200, 400 khi sai chữ ký, 500 khi hệ thống lỗi. Không có môi trường thử nên luôn `live` |
 | Gọi HTTPS | `src/aicefr/billing/transport.py` | `urllib.request`, hết giờ 15 giây, chỉ `https://`, **không đi theo chuyển hướng** (urllib sẽ mang `Authorization: Bearer sk_…` tới bất cứ máy nào chuyển hướng chỉ tới); mã lỗi HTTP và mã 3xx là một câu trả lời, không phải ngoại lệ; mất kết nối là `Unreachable`. Bộ chuyển đổi nhận `transport` qua hàm dựng, nên test thay bằng hàm giả mà không chạm mạng |
 | Dựng từ cấu hình | `src/aicefr/billing/registry.py` (`build_gateways`) | Đọc `AICEFR_PAYMENT_GATEWAYS` theo thứ tự; mỗi cổng thiếu khoá, sai dạng hay tên lạ thành một câu lý do hiện trên tab; tên lặp bỏ qua; cổng `live` cần `AICEFR_PAYMENTS_LIVE`; có cổng thật thì bỏ mọi cổng ở môi trường thử |
 
@@ -2231,58 +2234,71 @@ sequenceDiagram
 
 **Bất biến 9 — không giữ gì của người trả.** Stripe giữ email và tên người trả trong `customer_details` của phiên; `StripeGateway` không đọc trường đó, `PaymentResult.details` chỉ có mã phiên. MoMo chỉ để lại `payType` và `responseTime` (BR-32). Test: `test_stripe_return_is_read_back_from_stripe`.
 
-File: `docs/sdd/diagrams/08_sequence_stripe.mmd`
+File: `docs/sdd/diagrams/08_sequence_payos.mmd` (D097 thay sơ đồ Stripe cũ)
 
 ```mermaid
-%% SDD - So do 08: thanh toan qua Stripe Checkout, che do thu (D035)
+%% SDD - So do 08: mua goi luot qua payOS, chuyen khoan VietQR (D095, D096, D097)
 %% Ten ham, ten endpoint va ten su kien giu nguyen tieng Anh nhu trong ma nguon.
 sequenceDiagram
     autonumber
-    actor QT as Quản trị viên
+    actor HV as Học viên
     participant TD as Trình duyệt
     participant API as billing_api.py
     participant BS as BillingService
-    participant SG as StripeGateway
-    participant ST as Stripe
+    participant PG as PayosGateway
+    participant PO as payOS
+    participant BUS as MessageBus
+    participant ID as Identity (email)
 
-    QT->>TD: Chọn gói, số sinh viên, cổng Stripe, bấm Thanh toán
-    TD->>API: POST /api/v1/admin/billing/orders
-    API->>BS: place_order(..., gateway="stripe")
-    BS->>SG: checkout(order_id, amount, return_url)
-    SG->>ST: POST /v1/checkout/sessions (vnd, client_reference_id, Idempotency-Key)
-    ST-->>SG: id cs_test_…, url
-    SG-->>BS: Checkout(url, cs_test_…)
-    BS-->>API: đơn chờ, checkout_ref = cs_test_…
+    HV->>TD: Chọn gói lượt, bấm Mua gói này
+    TD->>API: POST /api/v1/me/credit-orders
+    API->>BS: place_credit_order(runs, gateway="payos")
+    BS->>PG: checkout(order_id, amount, return_url)
+    PG->>PO: POST /v2/payment-requests (orderCode, amount, signature HMAC)
+    PO-->>PG: checkoutUrl, paymentLinkId
+    PG-->>BS: Checkout(url, paymentLinkId)
+    BS-->>API: đơn chờ, checkout_ref = paymentLinkId
     API-->>TD: checkout_url
-    TD->>ST: Trang thanh toán của Stripe
-    QT->>ST: Nhập thẻ thử 4242 4242 4242 4242
+    TD->>PO: Trang VietQR của payOS
+    HV->>PO: Quét mã bằng app ngân hàng, chuyển khoản
 
     par Trình duyệt quay về
-        ST-->>TD: 303 /billing/return/stripe?session_id=cs_test_…
-        TD->>API: GET /billing/return/stripe?session_id=…
-        API->>BS: store.order_by_checkout("stripe", session_id)
-        Note over API,BS: Không phải phiên của hệ thống: không hỏi Stripe
-        API->>SG: verify_return(session_id)
-        SG->>ST: GET /v1/checkout/sessions/{id}
-        ST-->>SG: payment_status, amount_total, currency
-        SG-->>API: PaymentResult
-        API->>BS: settle(result, "return", "stripe")
-        API-->>TD: Trang kết quả
-    and Máy chủ Stripe báo
-        ST->>API: POST /api/v1/billing/notify/stripe (Stripe-Signature)
-        API->>SG: verify_notification: HMAC-SHA256 của t.body, trong 5 phút
-        SG-->>API: PaymentResult
-        API->>BS: settle(result, "notify", "stripe")
-        API-->>ST: 200 received
+        PO-->>TD: /billing/return/payos?id=…&status=PAID
+        TD->>API: GET /billing/return/payos?id=…
+        API->>BS: store.order_by_checkout("payos", id)
+        Note over API,BS: Link không phải của đơn nào: không hỏi payOS
+        API->>PG: verify_return(id)
+        PG->>PO: GET /v2/payment-requests/{id}
+        PO-->>PG: status, amount, amountPaid
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "return", "payos")
+        API-->>TD: Trang Thanh toán thành công
+    and Máy chủ payOS báo
+        PO->>API: POST /api/v1/billing/notify/payos (data, signature)
+        API->>PG: verify_notification: HMAC-SHA256 của data xếp theo tên
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "notify", "payos")
+        API-->>PO: 200
     end
-    Note over BS: settle chỉ áp một lần, đúng cổng, đúng số tiền. Lần sau chỉ ghi sự kiện
+    Note over BS: settle chỉ đổi đơn một lần, đúng cổng, đúng số tiền, rồi cộng lượt
+    BS-)BUS: publish billing.order_settled
+    BUS-)ID: on_order_settled (ít nhất một lần)
+    ID->>HV: Email biên nhận (email đã xác minh, một lần mỗi đơn)
 ```
 
-![Hình 8. Thanh toán qua Stripe Checkout](images/08_sequence_stripe.png)
+![Hình 8. Mua gói lượt qua payOS](images/08_sequence_payos.png)
 
-*Hình 8. Thanh toán qua Stripe Checkout ở chế độ thử. File nguồn: `diagrams/08_sequence_stripe.mmd`*
+*Hình 8. Mua gói lượt qua payOS (chuyển khoản VietQR), kèm email biên nhận. File nguồn: `diagrams/08_sequence_payos.mmd`*
 
-**Cách đọc.** Bước 4–8 khác VNPay: hệ thống gọi Stripe **trước** khi chuyển trình duyệt, và giữ mã phiên vào đơn. Khối `par` là hai đường báo kết quả chạy độc lập, đường nào tới trước cũng được: trình duyệt quay về với mã phiên (bước 12–20; ghi chú ở bước 14 là bất biến chỉ-hỏi-phiên-của-mình), và webhook có chữ ký (bước 21–25). Ghi chú cuối là bất biến 3 của mục 4.15 cộng bất biến 6 ở trên: `settle` áp một lần, đúng cổng, đúng số tiền; lần sau chỉ thêm sự kiện.
+**Cách đọc.** Hệ thống gọi payOS **trước** khi chuyển trình duyệt và giữ `paymentLinkId` vào đơn. Khối `par` là hai đường báo kết quả chạy độc lập: trình duyệt quay về (hệ thống hỏi lại payOS, không tin trạng thái trong địa chỉ; link lạ thì không hỏi) và webhook có chữ ký. `settle` chỉ đổi đơn một lần; sau đó sự kiện `billing.order_settled` đi qua bus tới dịch vụ định danh để gửi email (D096).
+
+![Hình 9. Lớp của phân hệ thanh toán](images/09_class_thanh_toan.png)
+
+*Hình 9. Lớp của phân hệ thanh toán sau D097 và các mẫu thiết kế: Adapter và Strategy (`PaymentGateway`), Template Method (`SignedRedirect`), Factory (`build_gateways`), Repository, Value Object, Observer (`billing.order_settled`). File nguồn: `diagrams/09_class_thanh_toan.mmd`*
+
+![Hình 10. Vòng đời đơn gói lượt](images/10_state_don_hang.png)
+
+*Hình 10. Vòng đời đơn gói lượt theo mẫu State (D098): mỗi trạng thái là một lớp trong `billing/order_state.py`; đơn hết hạn vẫn nhận tiền đến muộn, ba trạng thái cuối không chuyển được nữa. Test giữ sơ đồ khớp với `transitions()`. File nguồn: `diagrams/10_state_don_hang.mmd`*
 
 ### 4.17. Bằng chứng học tập — hiện thực FR-75…FR-80 (D039–D042)
 
@@ -2413,6 +2429,10 @@ Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment
 Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 
 **Bản ghi trong lộ trình (D094, FR-99).** `PriceList` thêm `lesson_minute_runs` (0,1), `lesson_free_per_day` (5), `lesson_daily_cap` (30), đọc từ `AICEFR_PRICE_LESSON_MINUTE_RUNS`, `AICEFR_LESSON_FREE_PER_DAY`, `AICEFR_LESSON_DAILY_CAP` và đổi được trên dashboard (D078; bảng giá lưu trước D094 lấy giá trị của cấu hình). Năm endpoint ghi âm của `learning` gọi `_metered`: trước khi đo, `MeteringFacade.hold_lesson` lấy một suất của ngày giờ Việt Nam trong `wallet` (`lesson_day`, `lesson_used`, `lesson_free_used`) bằng cập nhật có điều kiện `lesson_used < trần`, rồi một cập nhật có điều kiện nữa cho suất miễn phí; suất trả phí giữ `lesson_units` của thời lượng tối đa của bước qua `_take` (lượt miễn phí tháng rồi ví). Từ chối trả về dạng dữ liệu `{"status", "message"}` (429, 402) và endpoint không đo gì. Đo xong, `settle_lesson` thu theo `StepResult.speaking_s`, mỗi phút đã bắt đầu, ít nhất một phút; `measured = false` hay lỗi thì thả bút toán, trả lượt và suất (`_give_back_slot`, chỉ trong đúng ngày đó). Bút toán `lesson` ghi `day` và `free_slot`. Bản xem thử và audio mẫu của giảng viên không đi qua `_metered`. Tắt tính lượt thì facade trả `None` và không ghi gì.
+
+**Email thanh toán (D096, FR-101).** `BillingService.settle` phát `billing.order_settled` lên bus một lần khi đơn chốt đã thanh toán hoặc không thành công; dịch vụ định danh nhận, kiểm email đã xác minh, chặn gửi trùng bằng `setting_once`, rồi gửi biên nhận qua bộ gửi D079.
+
+**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Observer, State, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
 
 ## 5. Thiết kế cơ sở dữ liệu
 
@@ -2750,7 +2770,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | 81 | Dịch vụ thanh toán | — | `BillingService` trong `src/aicefr/billing/service.py` | FR-67…FR-70 |
 | 82 | Bảng gói và đơn | — | `src/aicefr/storage/billing_repository.py` | FR-69, FR-70; chưa có hình ERD |
 | 83 | API, trang và chỗ áp gói | 01c | `src/aicefr/api/billing_api.py`; `_seats`, `AUTHORING`, `create_batch`, `cohort_stats`; `static/admin_billing.js`, `templates/billing_*.html` | FR-67…FR-70; `UC-23` |
-| 84 | Bộ chuyển đổi Stripe | 02b, 08 | `StripeGateway` trong `src/aicefr/billing/stripe_gateway.py` | FR-72; BR-32, BR-35; ADR-12 |
+| 84 | ~~Bộ chuyển đổi Stripe~~ (gỡ bởi D097; xem `PayosGateway`) | 02b, 08 | `StripeGateway` trong `src/aicefr/billing/stripe_gateway.py` | FR-72; BR-32, BR-35; ADR-12 |
 | 85 | Bộ chuyển đổi MoMo | 02b | `MomoGateway` trong `src/aicefr/billing/momo_gateway.py` | FR-73; BR-32; ADR-12 |
 | 86 | Dựng các cổng từ cấu hình | — | `build_gateways` trong `src/aicefr/billing/registry.py`; `payment_gateways`, `payments_live`, `stripe_*`, `momo_*` trong `src/aicefr/config.py` | FR-71; BR-34 |
 | 87 | Gọi HTTPS tới cổng | — | `https`, `Reply`, `Unreachable` trong `src/aicefr/billing/transport.py` | FR-72, FR-73; ADR-12 |
@@ -2956,7 +2976,9 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/05b_erd_target.mmd` | ERD dự kiến | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/06_deployment.mmd` | Component/Deployment | Mermaid `flowchart TB` |
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
-| `docs/sdd/diagrams/08_sequence_stripe.mmd` | Sequence: thanh toán qua Stripe Checkout (D035) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/08_sequence_payos.mmd` | Sequence: mua gói lượt qua payOS và email biên nhận (D095–D097) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/09_class_thanh_toan.mmd` | Lớp: phân hệ thanh toán và các mẫu thiết kế (D097) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/10_state_don_hang.mmd` | Trạng thái: vòng đời đơn gói lượt, mẫu State (D098) | Mermaid `sequenceDiagram` |
 
 Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 

@@ -1,8 +1,8 @@
 """How billing code calls a gateway's server: HTTPS through the standard library (D035).
 
-Two gateways must call out. Stripe opens a Checkout Session and reads it back;
-MoMo opens a payment. Each takes a `Transport`, and the tests hand it a fake,
-so no test ever reaches the network. There is no new dependency: a few JSON or
+A real gateway must call out: payOS opens a payment link and reads it back.
+It takes a `Transport`, and the tests hand it a fake, so no test ever reaches
+the network. There is no new dependency: a few JSON or
 form requests a day need nothing more than `urllib.request`.
 """
 
@@ -14,6 +14,9 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 TIMEOUT_S = 15
+# Sent with every call. payOS sits behind Cloudflare, which refuses urllib's own
+# "Python-urllib/3.x" with a 403 (error 1010) before payOS ever sees the request.
+USER_AGENT = "SpeakUp/1.0 (+https://speakup.fit)"
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -48,7 +51,9 @@ def https(method: str, url: str, headers: Mapping[str, str], body: bytes | None)
     """Send one request and return the reply; an HTTP error status is a reply, not an exception."""
     if not url.startswith("https://"):
         raise ValueError("a gateway is only ever called over https")
-    request = urllib.request.Request(url, data=body, method=method, headers=dict(headers))
+    request = urllib.request.Request(
+        url, data=body, method=method, headers={"User-Agent": USER_AGENT, **headers}
+    )
     try:
         with _OPENER.open(request, timeout=TIMEOUT_S) as response:
             return Reply(response.status, response.read())

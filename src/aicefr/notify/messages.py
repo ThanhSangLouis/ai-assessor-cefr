@@ -1,4 +1,5 @@
-"""What the emails say (D079): a one-time code, and the daily study reminder.
+"""What the emails say (D079, D096): a one-time code, the daily study reminder,
+and the result of a run-pack payment.
 
 Short, in Vietnamese, plain text with a matching simple HTML part. A code
 email says what the code is for, how long it lasts and what to do if the
@@ -79,3 +80,43 @@ def reminder_email(to: str, name: str, reasons: list[str], site: str, stop_url: 
             "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
         },
     )
+
+
+def _dong(amount: int) -> str:
+    return f"{amount:,}".replace(",", ".") + " đ"
+
+
+def payment_email(to: str, name: str, order: dict, site: str) -> Email:
+    """A paid order's receipt, or word that a payment did not go through (D096).
+
+    Says what was bought, for how much, through which gateway and under which
+    transaction number: what the buyer needs to recognise it, or to dispute it.
+    Never a card, an account number or a password (BR-32).
+    """
+    order_id, runs = order["order_id"], int(order["runs"])
+    amount, gateway = _dong(int(order["amount_vnd"])), order["gateway_title"]
+    paid = order["status"] == "paid"
+    if paid:
+        subject = f"Đã thanh toán gói {runs} lượt · {order_id}"
+        lines = [
+            f"Chào {name},",
+            f"SpeakUp đã nhận {amount} cho gói {runs} lượt qua {gateway}.",
+            f"{runs} lượt đã được cộng vào ví của bạn, dùng ngay được.",
+            f"Mã đơn: {order_id}"
+            + (f" · Mã giao dịch: {order['reference']}" if order.get("reference") else ""),
+        ]
+        link = ("Xem biên nhận", f"{site}/billing/orders/{order_id}/receipt") if site else None
+    else:
+        subject = f"Thanh toán chưa thành công · {order_id}"
+        lines = [
+            f"Chào {name},",
+            f"Thanh toán {amount} cho gói {runs} lượt qua {gateway} chưa thành công.",
+            "Không có lượt nào bị trừ hay được cộng. Bạn có thể đặt lại gói ở trang Lượt của tôi.",
+            f"Mã đơn: {order_id}",
+        ]
+        link = ("Mở trang Lượt của tôi", f"{site}/credits") if site else None
+    if not order.get("live"):
+        lines.append("Đây là môi trường thử: không có tiền thật nào được chuyển.")
+    lines.append("Nếu bạn không thực hiện giao dịch này, hãy báo ngay cho quản trị viên.")
+    text = "\n\n".join(lines) + (f"\n\n{link[0]}: {link[1]}" if link else "") + f"\n\n{BRAND}"
+    return Email(to=to, subject=subject, text=text, html=_html(lines, link=link))
