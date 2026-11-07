@@ -106,16 +106,14 @@ cần sửa gì. Giảng viên thì không đủ thời gian nghe từng bài. S
 ## Cách chấm một bài nói
 
 ```mermaid
-flowchart LR
-    A["Bản ghi<br/>40–60 giây"] --> B["Kiểm chất lượng<br/>độ dài, âm lượng, im lặng"]
-    B --> C["VAD<br/>tách đoạn có tiếng nói"]
-    C --> D["Whisper ASR<br/>chép lời theo từng từ"]
-    D --> E["Trích đặc trưng<br/>tốc độ, ngập ngừng, từ vựng, từ nối"]
-    E --> F["Ridge scorer<br/>điểm 0–6 và band"]
-    F --> G["Trust layer<br/>khoảng tin cậy 90%"]
-    G -->|chắc chắn| H["Báo cáo cho<br/>người học"]
-    G -->|sát ranh giới band| I["Hàng đợi<br/>giảng viên"]
-    I --> H
+flowchart TB
+    subgraph SP ["Dịch vụ speech chấm một bản ghi 40–60 giây"]
+        direction LR
+        A["Kiểm chất lượng<br/>độ dài, âm lượng"] --> B["VAD<br/>tách tiếng nói"] --> C["Whisper<br/>chép lời từng từ"] --> D["Đặc trưng<br/>tốc độ, ngập ngừng,<br/>từ vựng, từ nối"] --> E["Ridge scorer<br/>điểm 0–6, band"] --> F["Trust layer<br/>khoảng tin cậy 90%"]
+    end
+    SP --> G{"Đủ chắc chắn?"}
+    G -->|có| H(["Báo cáo cho người học"])
+    G -->|sát ranh giới band| I["Hàng đợi giảng viên"] --> H
 ```
 
 Mô hình chấm được huấn luyện trên bộ dữ liệu Speak & Improve (giấy phép phi thương mại) và nằm ngoài repo.
@@ -124,16 +122,14 @@ Với bài độc thoại, tiêu chí Interaction luôn để trống vì không
 ## Kiến trúc
 
 ```mermaid
-flowchart TB
-    U(["Trình duyệt"]) -->|HTTPS| CA["Caddy<br/>TLS tự động"]
-    CA --> GW["Nginx gateway"]
-    GW --> WEB["web<br/>Jinja2, tệp tĩnh, BFF"]
-    GW --> CORE["core<br/>định danh, bài nộp, duyệt bài,<br/>lộ trình, tính lượt, thanh toán"]
+flowchart LR
+    U(["Trình duyệt"]) -->|HTTPS| CA["Caddy<br/>TLS"] --> GW["Nginx<br/>gateway"]
+    GW --> WEB["web<br/>Jinja2, BFF"]
+    GW --> CORE["core<br/>định danh, bài nộp,<br/>duyệt bài, lộ trình,<br/>tính lượt, thanh toán"]
     WEB -->|HTTP nội bộ| CORE
-    CORE -->|"việc chấm (BullMQ)"| R[("Redis")]
-    R --> SP["speech<br/>QC, VAD, Whisper,<br/>đặc trưng, scorer"]
-    SP -->|"kết quả (Streams)"| R
     CORE --> M[("MongoDB")]
+    CORE <-->|"việc chấm, kết quả"| R[("Redis<br/>BullMQ, Streams")]
+    R <--> SP["speech<br/>QC, VAD, Whisper,<br/>scorer"]
     CORE -.-> S3[("S3 / MinIO<br/>bản ghi")]
     SP -.-> S3
 ```
