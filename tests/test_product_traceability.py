@@ -1,4 +1,4 @@
-"""The D028..D096 test plans and their test code must name the same test cases.
+"""The D028..D099 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
@@ -212,6 +212,17 @@ PLANS = [
         ROOT / "docs" / "test" / "TEST_PLAN_D096.md",
         {"TC-PE-I": ROOT / "tests" / "test_d096_payment_email.py"},
         "101",
+        6,
+    ),
+    Plan(
+        "D099",
+        ROOT / "docs" / "test" / "TEST_PLAN_D099.md",
+        {
+            "TC-PG-U": ROOT / "tests" / "test_d099_payment_safety_unit.py",
+            "TC-PG-I": ROOT / "tests" / "test_d099_payment_safety.py",
+            "TC-PG-E": ROOT / "tests" / "e2e" / "test_d099_payos_e2e.py",
+        },
+        "102",
         6,
     ),
 ]

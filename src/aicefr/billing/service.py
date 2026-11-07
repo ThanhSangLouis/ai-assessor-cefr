@@ -46,6 +46,14 @@ GATEWAY_TITLES = {
 # listens; a payload names the order, never the payer's email.
 ANNOUNCED = frozenset({OrderStatus.PAID, OrderStatus.FAILED})
 
+# D099: at most this many orders still waiting for payment, per buyer, opened
+# within the window -- each one opens a payment link at the gateway.
+OPEN_ORDER_LIMIT = 5
+OPEN_ORDER_WINDOW = timedelta(minutes=10)
+# D099: how far back reconciliation asks the gateway about orders still open.
+# A payOS link lives PENDING_MINUTES + 1; an hour covers it with room to spare.
+RECONCILE_WINDOW = timedelta(hours=1)
+
 
 class BillingOff(Exception):
     """The deployment sells nothing (AICEFR_BILLING is off, or nothing is metered)."""
@@ -53,6 +61,10 @@ class BillingOff(Exception):
 
 class OrderError(ValueError):
     """An order that cannot be placed; the message says why, for the person."""
+
+
+class TooManyOrders(OrderError):
+    """The buyer already has OPEN_ORDER_LIMIT orders waiting; nothing was opened (D099)."""
 
 
 class PaymentUnavailable(Exception):
@@ -196,6 +208,9 @@ class BillingService:
         gateway = self._chosen_gateway(gateway_name)
         now = self.now()
         self.store.expire_pending(self._stamp())
+        since = (now - OPEN_ORDER_WINDOW).astimezone(UTC).isoformat(timespec="seconds")
+        if self.store.pending_count(by_account, since) >= OPEN_ORDER_LIMIT:
+            raise TooManyOrders("Bạn đang có nhiều đơn chờ thanh toán. Đợi vài phút rồi thử lại.")
         order_id = self._new_order_id("DL", now)
         self.store.create_order(
             {
@@ -249,6 +264,37 @@ class BillingService:
     def credit_pending(self) -> list[str]:
         """Credit every paid run pack that has not reached its wallet yet."""
         return [o["order_id"] for o in self.store.uncredited() if self.credit_order(o)]
+
+    def reconcile(self) -> list[str]:
+        """Ask the gateway about every order still open, and settle what it says (D099).
+
+        For the payment whose webhook never arrived and whose payer closed the
+        page before coming back: the money moved, and nobody told this system.
+        Only gateways that can be asked about a checkout (`look_up`, payOS) are
+        asked, only about orders of the last RECONCILE_WINDOW that opened one,
+        and only a final word is applied. Returns the orders it moved.
+        """
+        if not self.enabled:
+            return []
+        self.store.expire_pending(self._stamp())
+        since = (self.now() - RECONCILE_WINDOW).astimezone(UTC).isoformat(timespec="seconds")
+        moved = []
+        for order in self.store.open_since(since):
+            gateway = self.gateways.get(order["gateway"])
+            look_up = getattr(gateway, "look_up", None)
+            if look_up is None or not order["checkout_ref"]:
+                continue
+            try:
+                result = look_up(order["checkout_ref"])
+            except GatewayError as e:
+                logger.warning("billing: reconcile %s: %s", order["order_id"], e)
+                continue
+            if result is None or result.outcome is OrderStatus.PENDING:
+                continue  # no final word yet: nothing to keep, asked again next time
+            if self.settle(result, "reconcile", gateway.name) == "ok":
+                moved.append(order["order_id"])
+        self.credit_pending()
+        return moved
 
     def settle(self, result: PaymentResult, via: str, gateway: str) -> str:
         """Apply a verified result from `gateway` once. Returns what happened, in VNPay's terms.

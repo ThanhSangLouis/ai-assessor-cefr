@@ -192,6 +192,8 @@ class Settings:
     resend_api_key: str = field(default_factory=lambda: os.getenv("AICEFR_RESEND_API_KEY", ""))
     # e.g. "SpeakUp <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
     email_from: str = field(default_factory=lambda: os.getenv("AICEFR_EMAIL_FROM", ""))
+    # D099: where a buyer writes about a payment or a refund, on the terms page.
+    support_email: str = field(default_factory=lambda: os.getenv("AICEFR_SUPPORT_EMAIL", ""))
     # When the daily study reminder goes out, Vietnam time (hour 0-23); -1 is off.
     reminder_hour: int = field(
         default_factory=lambda: int(os.getenv("AICEFR_REMINDER_HOUR", "19") or 19)
@@ -220,6 +222,11 @@ class Settings:
     )
     payos_checksum_key: str = field(
         default_factory=lambda: os.getenv("AICEFR_PAYOS_CHECKSUM_KEY", "").strip()
+    )
+    # D099: payOS's API address. Empty means payOS itself; only the end-to-end
+    # tests set it, to a fake payOS on this machine (http://127.0.0.1:...).
+    payos_api_url: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_API_URL", "").strip().rstrip("/")
     )
 
     # --- services (D043, D044) ---

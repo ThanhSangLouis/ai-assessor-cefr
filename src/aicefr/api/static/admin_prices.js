@@ -10,38 +10,50 @@
   const int = (n) => new Intl.NumberFormat("vi-VN").format(Math.round(Number(n) || 0));
   const when = (iso) => (iso ? new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "");
 
-  const FIELDS = [
-    ["first_minute_runs", "Bài nói đến 1 phút", "lượt", "0.1"],
-    ["extra_minute_runs", "Mỗi phút thêm", "lượt", "0.1"],
-    ["upgrade_runs", "Một lần AI viết lại / soạn bài", "lượt", "0.1"],
-    ["passage_runs", "Một đoạn đọc AI viết", "lượt", "0.1"],
+  // [key, label, unit, step], in three groups: one field each, the same width.
+  const GROUPS = [
+    ["Chấm bài", "mic", [
+      ["first_minute_runs", "Phút đầu", "lượt", "0.1"],
+      ["extra_minute_runs", "Mỗi phút thêm", "lượt", "0.1"],
+      ["upgrade_runs", "AI viết lại / soạn bài", "lượt", "0.1"],
+      ["passage_runs", "Đoạn đọc AI viết", "lượt", "0.1"],
+    ]],
     // D094: a recording on the lesson path, and how many a day are free or allowed.
-    ["lesson_minute_runs", "Bài học: mỗi phút nói", "lượt", "0.05"],
-    ["lesson_free_per_day", "Bài học: bản ghi miễn phí mỗi ngày", "bản ghi / người", "1"],
-    ["lesson_daily_cap", "Bài học: tối đa mỗi ngày", "bản ghi / người", "1"],
-    ["idpoint_per_run", "Một lượt bằng", "IDPoint", "100"],
-    ["free_runs", "Lượt miễn phí mỗi tháng", "lượt / người", "1"],
+    ["Bài học", "book-open", [
+      ["lesson_minute_runs", "Mỗi phút nói", "lượt", "0.05"],
+      ["lesson_free_per_day", "Miễn phí mỗi ngày", "bản ghi", "1"],
+      ["lesson_daily_cap", "Tối đa mỗi ngày", "bản ghi", "1"],
+    ]],
+    ["Ví", "star", [
+      ["free_runs", "Miễn phí mỗi tháng", "lượt", "1"],
+      ["idpoint_per_run", "Một lượt bằng", "IDPoint", "100"],
+    ]],
   ];
+  const FIELDS = GROUPS.flatMap(([, , fields]) => fields);
 
   function packRow(p) {
-    return `<tr>
-      <td><input type="number" min="1" step="1" class="pack-runs" value="${Number(p.runs) || ""}" aria-label="Số lượt"></td>
-      <td><input type="number" min="1" step="1000" class="pack-price" value="${Number(p.price_vnd) || ""}" aria-label="Giá (đồng)"></td>
-      <td class="muted pack-per">${p.runs && p.price_vnd ? int(p.price_vnd / p.runs) + " đ/lượt" : ""}</td>
-      <td><button type="button" class="icon-only secondary" data-drop-pack aria-label="Bỏ gói này">${icon("trash")}</button></td>
-    </tr>`;
+    const per = p.runs && p.price_vnd ? `${int(p.price_vnd / p.runs)} đ/lượt` : "";
+    return `<li class="pack-row">
+      <label class="unit-input"><input type="number" min="1" step="1" class="pack-in-runs" value="${Number(p.runs) || ""}" aria-label="Số lượt"><span>lượt</span></label>
+      <label class="unit-input"><input type="number" min="1" step="1000" class="pack-in-price" value="${Number(p.price_vnd) || ""}" aria-label="Giá (đồng)"><span>đ</span></label>
+      <span class="muted pack-per">${per}</span>
+      <button type="button" class="icon-only secondary" data-drop-pack aria-label="Bỏ gói này">${icon("trash")}</button>
+    </li>`;
+  }
+
+  function field([k, label, unit, step], d) {
+    return `<div class="price-field"><label for="price-${k}">${label}</label>
+      <span class="unit-input"><input id="price-${k}" type="number" min="0" step="${step}" value="${Number(d[k])}" required><span>${unit}</span></span></div>`;
   }
 
   function view(d) {
     const source = d.from_settings
-      ? '<span class="badge">Đang dùng giá mặc định của máy chủ</span>'
+      ? '<span class="badge">Mặc định</span>'
       : `<span class="badge state-on">${escapeHtml(d.version)}</span>
-         <span class="muted">đổi lúc ${escapeHtml(when(d.changed_at))}</span>`;
-    const fields = FIELDS.map(
-      ([k, label, unit, step]) => `<div class="price-field">
-        <label for="price-${k}">${label}</label>
-        <div class="price-input"><input id="price-${k}" type="number" min="0" step="${step}" value="${Number(d[k])}" required>
-          <span class="muted">${unit}</span></div></div>`,
+         <span class="muted">${escapeHtml(when(d.changed_at))}</span>`;
+    const groups = GROUPS.map(
+      ([title, mark, fields]) => `<fieldset class="price-group"><legend>${icon(mark)} ${title}</legend>
+        ${fields.map((f) => field(f, d)).join("")}</fieldset>`,
     ).join("");
     const history = (d.history || []).length
       ? `<details class="price-history"><summary>${d.history.length} phiên bản trước</summary><ul class="plain-list">${d.history
@@ -49,17 +61,15 @@
           .join("")}</ul></details>`
       : "";
     return `<div class="card-head"><h2 id="prices-h">${icon("star")} Giá lượt</h2><div class="price-source">${source}</div></div>
-      ${d.metering ? "" : '<p class="notice">Bản triển khai này chưa tính lượt (<code>AICEFR_METERING</code> tắt): giá lưu ở đây chỉ áp dụng khi bật.</p>'}
+      ${d.metering ? "" : '<p class="notice">Chưa bật tính lượt: giá chỉ áp dụng khi bật.</p>'}
       <form id="price-form" class="stack" novalidate>
-        <div class="price-grid">${fields}</div>
-        <h3>Gói lượt đang bán</h3>
-        <table class="price-packs"><thead><tr><th>Số lượt</th><th>Giá (đồng)</th><th></th><th></th></tr></thead>
-          <tbody id="price-packs">${(d.packs || []).map(packRow).join("")}</tbody></table>
-        <div class="button-row">
+        <div class="price-groups">${groups}</div>
+        <fieldset class="price-group price-packs-group"><legend>${icon("plus")} Gói lượt đang bán</legend>
+          <ul class="pack-list" id="price-packs">${(d.packs || []).map(packRow).join("")}</ul>
           <button type="button" class="secondary small" id="price-add-pack">${icon("plus")}<span>Thêm gói</span></button>
-        </div>
-        <p class="field-hint">Lưu là tạo phiên bản giá mới. Các lượt đã trừ giữ giá lúc trừ.</p>
-        <div class="button-row"><button type="submit" id="price-save">Lưu giá mới</button></div>
+        </fieldset>
+        <div class="button-row"><button type="submit" id="price-save">Lưu giá mới</button>
+          <span class="muted">Lượt đã trừ giữ giá cũ.</span></div>
       </form>
       ${history}`;
   }
@@ -69,13 +79,13 @@
     $("price-add-pack").addEventListener("click", () => packs.insertAdjacentHTML("beforeend", packRow({})));
     packs.addEventListener("click", (e) => {
       const drop = e.target.closest("[data-drop-pack]");
-      if (drop) drop.closest("tr").remove();
+      if (drop) drop.closest("li").remove();
     });
     $("price-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const body = Object.fromEntries(FIELDS.map(([k]) => [k, Number($("price-" + k).value)]));
-      body.packs = [...packs.querySelectorAll("tr")]
-        .map((tr) => ({ runs: Number(tr.querySelector(".pack-runs").value), price_vnd: Number(tr.querySelector(".pack-price").value) }))
+      body.packs = [...packs.querySelectorAll("li")]
+        .map((li) => ({ runs: Number(li.querySelector(".pack-in-runs").value), price_vnd: Number(li.querySelector(".pack-in-price").value) }))
         .filter((p) => p.runs && p.price_vnd);
       if (!body.packs.length) {
         window.toast("Cần ít nhất một gói lượt.", "error");

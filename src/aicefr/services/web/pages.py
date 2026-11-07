@@ -56,6 +56,10 @@ def _limits() -> dict:
     return svc().peers.assessment.page_limits()
 
 
+# D099: a pack none of whose runs were used may be refunded within this many days.
+REFUND_DAYS = 7
+
+
 def _page(request: Request, template: str, account: Account | None, nav: str, **extra):
     return templates.TemplateResponse(
         request, template, {"account": account, "nav_here": nav, **extra}
@@ -266,6 +270,23 @@ def page_bands(request: Request, account: Account | None = Depends(optional_acco
         "bands",
         rows=page_rows(),
         spans=spans,
+    )
+
+
+@router.get("/payment-terms", response_class=HTMLResponse, tags=["web"])
+def page_payment_terms(request: Request, account: Account | None = Depends(optional_account)):
+    """What a run pack is, how it is paid and when the money comes back (D099). Open to all."""
+    from aicefr.billing.payments import PENDING_MINUTES
+    from aicefr.config import get_settings
+
+    return _page(
+        request,
+        "payment_terms.html",
+        account,
+        "credits",
+        support_email=get_settings().support_email,
+        pending_minutes=PENDING_MINUTES,
+        refund_days=REFUND_DAYS,
     )
 
 
