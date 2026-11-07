@@ -177,15 +177,19 @@ def test_new_learner_sees_the_path_and_the_first_lesson_next(student):
     # D059: the sample path starts at A1.
     expect(student.locator(".next-card h2")).to_have_text(FIRST_TITLE)
     expect(student.locator(".lesson-node")).to_have_count(46)
-    expect(student.locator(".lesson-node.new")).to_have_count(46)
+    # D092: each band opens on its first lesson; the others unlock in order.
+    expect(student.locator(".lesson-node.new")).to_have_count(6)
+    expect(student.locator(".lesson-node.locked")).to_have_count(40)
     expect(student.locator(".path-part")).to_have_count(6)  # A1 to C2
-    expect(student.locator(".lesson-node.next .node-flag")).to_have_text("Bắt đầu")
+    flags = student.locator(".lesson-node.next .node-flag")
+    expect(flags).to_have_count(6)
+    expect(flags.first).to_have_text("Bắt đầu")
     expect(student.locator(".today-card .goal-ring")).to_contain_text("0/180 giây")
     # D092: the review card shows only when something is due.
     expect(student.locator(".review-card")).to_have_count(0)
     # D074 (replacing D025's "no band on this page"): the learner chooses the
     # bands to study; with no assessment yet the suggestion is A1 to A2.
-    expect(student.locator("#band-plan h2")).to_contain_text("Học theo band")
+    expect(student.locator("#band-plan")).to_contain_text("Lộ trình học")  # D092's heading
     expect(student.locator("#band-from")).to_have_value("A1")
     expect(student.locator("#band-to")).to_have_value("A2")
 
@@ -243,12 +247,12 @@ def test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson(student):
     coin.click()
     card = student.locator("#node-card")
     expect(card).to_be_visible()
-    expect(card.locator("h3")).to_have_text(FIRST_TITLE)
+    expect(card.locator(".rm-lesson-title")).to_have_text(FIRST_TITLE)
     expect(coin).to_have_attribute("aria-expanded", "true")
     student.keyboard.press("Escape")
     expect(card).to_have_count(0)
     coin.click()
-    card.get_by_role("link", name="Bắt đầu").click()
+    card.get_by_role("link", name="Học bài").click()
     first = "/practice/lessons/lesson-pr-flu-a1"
     student.wait_for_url(lambda url: urlparse(url).path == first)
 
@@ -361,12 +365,13 @@ def test_students_see_the_published_version_until_the_teacher_publishes_again(
         expect(teacher.locator("#save-state")).to_contain_text("Đã lưu nháp", timeout=10_000)
 
         student.goto(f"/practice?path={pid}")
-        expect(student.locator(".lesson-title")).to_have_text("Tên cũ")
+        # D092: the trail draws coins; the lesson's title is on the "next" card.
+        expect(student.locator(".next-card h2")).to_have_text("Tên cũ")
 
         teacher.locator("#publish").click()
         expect(teacher.locator("#builder-head")).to_contain_text("Đã xuất bản v2")
         student.reload()
-        expect(student.locator(".lesson-title")).to_have_text("Tên mới")
+        expect(student.locator(".next-card h2")).to_have_text("Tên mới")
     finally:
         teacher.context.close()
 

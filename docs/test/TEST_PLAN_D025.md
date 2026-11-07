@@ -166,7 +166,7 @@ Tệp: `tests/test_lessons_integration.py`.
 
 | ID | Hàm test | AC / FR | Loại | Nội dung kiểm |
 | --- | --- | --- | --- | --- |
-| TC-LS-E01 | `test_new_learner_sees_the_path_and_the_first_lesson_next` | FR-50 | Thuận | Sinh viên mới: ba phần A2, B1, B2; bài nên học là bài A2 đầu tiên, có cờ Bắt đầu; 31 bài đều chưa học; mục tiêu 0/180 giây; 0 mục ôn; không có chữ band |
+| TC-LS-E01 | `test_new_learner_sees_the_path_and_the_first_lesson_next` | FR-50 | Thuận | Sinh viên mới: sáu phần A1–C2, 46 bài; bài nên học là bài A1 đầu tiên; mỗi phần mở bài đầu có cờ Bắt đầu, 40 bài còn khoá (D092); mục tiêu 0/180 giây; 0 mục ôn; chọn band A1–A2 |
 | TC-LS-E02 | `test_read_aloud_step_marks_words_and_moves_on` | AC-46.1 | Thuận | Bước đọc to: 6 từ gợi ý tô đậm; nộp file, khung kết quả ghi rõ là kết quả giả lập (máy chủ E2E dùng bộ nhận dạng giả lập), kết luận Đạt, từng từ được tô, không từ nào "máy chưa nghe ra"; Bước tiếp mở bước nhắc lại |
 | TC-LS-E03 | `test_free_step_runs_in_shrinking_rounds_and_compares_them` | AC-46.5 | Thuận | Bước nói tự do: lượt 1 45 giây, lượt 2 35 giây; sau lượt 2 có mục "So với lượt 1" nêu số từ mỗi phút |
 | TC-LS-E04 | `test_completing_a_lesson_marks_it_done_on_the_path` | AC-45.4 | Thuận | Làm đủ bảy bước: trang lộ trình hiện bài đã hoàn thành, 1/31 bài, mục tiêu ngày khác 0, bài nên học chuyển sang bài khác |
@@ -177,7 +177,7 @@ Tệp: `tests/test_lessons_integration.py`.
 | TC-LS-E10 | `test_teacher_corrects_a_word_and_the_learner_sees_the_review` | AC-49.1 | Thuận | Giáo viên mở lượt luyện, đổi nhận định một từ, ghi chú; sinh viên mở lại bài thấy "Giáo viên đã xem lại", ghi chú và từ được đánh dấu |
 | TC-LS-E11 | `test_students_get_no_authoring_rights` | AC-47.3 | Âm | Sinh viên mở trang soạn bài: báo không có quyền; gọi API soạn bài nhận 403 |
 | TC-LS-E12 | `test_teacher_pages_fit_a_phone` | FR-47 | Biên | Màn 375 px: ba trang của giảng viên không tràn ngang |
-| TC-LS-E13 | `test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson` | FR-45 | Thuận | Bấm một bài trên đường đi: hiện thẻ bài, Esc đóng thẻ, nút Bắt đầu mở bài học (D027) |
+| TC-LS-E13 | `test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson` | FR-45 | Thuận | Bấm một bài trên đường đi: hiện thẻ bài, Esc đóng thẻ, nút "Học bài" mở bài học (D027, D092) |
 | TC-LS-E14 | `test_navigation_is_a_sidebar_on_the_left_with_icons` | FR-45 | Thuận | Thanh điều khiển nằm bên trái, nội dung trang bắt đầu sau nó; mỗi mục có icon từ bộ icon của hệ thống, mục hiện tại được đánh dấu (D027) |
 
 Tệp: `tests/e2e/test_lessons_e2e.py`.
