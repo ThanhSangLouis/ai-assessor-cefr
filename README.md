@@ -122,14 +122,14 @@ Với bài độc thoại, tiêu chí Interaction luôn để trống vì không
 ## Kiến trúc
 
 ```mermaid
-flowchart LR
-    U(["Trình duyệt"]) -->|HTTPS| CA["Caddy<br/>TLS"] --> GW["Nginx<br/>gateway"]
-    GW --> WEB["web<br/>Jinja2, BFF"]
-    GW --> CORE["core<br/>định danh, bài nộp,<br/>duyệt bài, lộ trình,<br/>tính lượt, thanh toán"]
+flowchart TB
+    U(["Trình duyệt"]) -->|HTTPS| GW["Caddy TLS + Nginx gateway"]
+    GW --> WEB["web<br/>Jinja2, tệp tĩnh, BFF"]
+    GW --> CORE["core<br/>định danh, bài nộp, duyệt bài,<br/>lộ trình, tính lượt, thanh toán"]
     WEB -->|HTTP nội bộ| CORE
     CORE --> M[("MongoDB")]
     CORE <-->|"việc chấm, kết quả"| R[("Redis<br/>BullMQ, Streams")]
-    R <--> SP["speech<br/>QC, VAD, Whisper,<br/>scorer"]
+    R <--> SP["speech<br/>QC, VAD, Whisper, scorer"]
     CORE -.-> S3[("S3 / MinIO<br/>bản ghi")]
     SP -.-> S3
 ```
