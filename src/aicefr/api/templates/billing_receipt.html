@@ -1,33 +1,46 @@
 {% extends "base.html" %}
-{% from "_icons.html" import icon %}
+{% from "_icons.html" import icon, logo %}
 {% block title %}Biên nhận {{ order.order_id }} · SpeakUp{% endblock %}
 {% block content %}
 {#- D033, D075. A receipt for a paid run pack, to print or save as PDF. Not a VAT
     invoice: an invoice is issued by the seller's accounting, outside this
-    system, and the page says so. -#}
-<div class="pay-page receipt">
-  <div class="button-row receipt-tools">
-    <a class="button secondary" href="/credits">← Lượt của tôi</a>
-    <button type="button" data-print>{{ icon("printer") }}<span>In hoặc lưu PDF</span></button>
+    system, and the page says so in one line. Drawn on the student stage
+    (D093); printed, it is a white sheet with nothing of the screen around it. -#}
+<link rel="stylesheet" href="{{ asset('student_stage.css') }}">
+<link rel="stylesheet" href="{{ asset('pay_stage.css') }}">
+<div class="st-page pay-page pay-stage receipt">
+  <div class="receipt-tools">
+    <a class="pay-ghost" href="/credits">{{ icon("star") }}<span>Lượt của tôi</span></a>
+    <button type="button" class="pay-cta" data-print>{{ icon("printer") }}<span>In hoặc lưu PDF</span></button>
   </div>
-  <section class="card receipt-sheet" aria-labelledby="receipt-h">
+  <section class="receipt-sheet" aria-labelledby="receipt-h">
     <header class="receipt-head">
-      <div>
-        <p class="eyebrow">Biên nhận thanh toán</p>
-        <h1 id="receipt-h">{{ order.order_id }}</h1>
-      </div>
-      <p class="receipt-paid">{{ icon("check-circle") }} Đã thanh toán<br><small>{{ order.settled_at | vn_time }}</small></p>
+      <div class="receipt-brand">{{ logo() }}<span>SpeakUp</span></div>
+      <p class="receipt-stamp">{{ icon("check") }}Đã thanh toán</p>
     </header>
-    <dl class="pay-facts receipt-parties">
-      <dt>Bên bán</dt><dd>SpeakUp</dd>
-      <dt>Bên mua</dt><dd>{{ account.display_name }}</dd>
+
+    <div class="receipt-title">
+      <p class="receipt-kicker">Biên nhận thanh toán</p>
+      <h1 id="receipt-h"><code>{{ order.order_id }}</code></h1>
+    </div>
+
+    <div class="receipt-total">
+      <span class="receipt-total-label">Tổng thanh toán</span>
+      <b>{{ order.amount_vnd | vnd }}</b>
+      <span class="receipt-total-what">{{ order.plan_name }}</span>
+    </div>
+
+    <dl class="receipt-parties">
+      <div><dt>Bên bán</dt><dd>SpeakUp</dd></div>
+      <div><dt>Bên mua</dt><dd>{{ account.display_name }}</dd></div>
     </dl>
+
     <div class="table-scroll">
       <table class="receipt-lines">
         <thead><tr><th>Nội dung</th><th class="num">Số lượt</th><th class="num">Thành tiền</th></tr></thead>
         <tbody>
           <tr>
-            <td>{{ order.plan_name }} dùng AI chấm và viết lại bài nói</td>
+            <td>{{ order.plan_name }} chấm và luyện nói</td>
             <td class="num">{{ order.runs }}</td>
             <td class="num">{{ order.amount_vnd | vnd }}</td>
           </tr>
@@ -35,14 +48,16 @@
         <tfoot><tr><th colspan="2">Đã thanh toán</th><th class="num">{{ order.amount_vnd | vnd }}</th></tr></tfoot>
       </table>
     </div>
-    <dl class="pay-facts">
-      <dt>Cổng thanh toán</dt><dd>{{ order.gateway_title }}{% if test %} (môi trường thử, không có tiền thật){% endif %}</dd>
-      <dt>Mã giao dịch</dt><dd><code>{{ order.reference or "—" }}</code></dd>
-      <dt>Ngày đặt</dt><dd>{{ order.created_at | vn_time }}</dd>
+
+    <dl class="receipt-meta">
+      <div><dt>Cổng</dt><dd>{{ order.gateway_title }}{% if test %} · thử{% endif %}</dd></div>
+      <div><dt>Mã giao dịch</dt><dd><code>{{ order.reference or "—" }}</code></dd></div>
+      <div><dt>Đặt lúc</dt><dd>{{ order.created_at | vn_time }}</dd></div>
+      <div><dt>Trả lúc</dt><dd>{{ order.settled_at | vn_time }}</dd></div>
     </dl>
-    <p class="muted receipt-note">
-      Biên nhận do hệ thống lập, không phải hoá đơn giá trị gia tăng. Hoá đơn do bộ phận kế toán
-      của bên bán phát hành riêng.{% if test %} Đơn này thanh toán trong môi trường thử của cổng nên không có giá trị thanh toán.{% endif %}
+
+    <p class="receipt-note">
+      Biên nhận điện tử, không phải hoá đơn giá trị gia tăng.{% if test %} Thanh toán ở môi trường thử, không có giá trị thanh toán.{% endif %}
     </p>
   </section>
 </div>

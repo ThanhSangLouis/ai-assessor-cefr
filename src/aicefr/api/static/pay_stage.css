@@ -1,0 +1,259 @@
+/* The payment result and the receipt on the student stage (D093 tokens from
+   student_stage.css): one card, a mark, the number that matters, two buttons.
+   The owner asked for pictures and numbers over sentences. Every rule is scoped
+   to .pay-stage; colours come from the --st-* tokens, which carry light, dark
+   and the theme toggle already. */
+
+.pay-stage {
+  --pay-ok: #1f8a4c;
+  --pay-ok-soft: #e2f4e8;
+  --pay-bad: #c2362c;
+  --pay-bad-soft: #fde8e6;
+  --pay-wait: #b26a00;
+  --pay-wait-soft: #fff1d6;
+  max-width: 560px;
+  padding-block: clamp(8px, 3vw, 28px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pay-stage {
+    --pay-ok: #7fd6a0;
+    --pay-ok-soft: #173826;
+    --pay-bad: #ff8f86;
+    --pay-bad-soft: #3a1c1a;
+    --pay-wait: #ffc56b;
+    --pay-wait-soft: #3a2c12;
+  }
+}
+:root[data-theme="dark"] .pay-stage {
+  --pay-ok: #7fd6a0;
+  --pay-ok-soft: #173826;
+  --pay-bad: #ff8f86;
+  --pay-bad-soft: #3a1c1a;
+  --pay-wait: #ffc56b;
+  --pay-wait-soft: #3a2c12;
+}
+
+/* ------------------------------------------------------------------ the card */
+.pay-card {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: clamp(22px, 4vw, 34px) clamp(18px, 4vw, 34px) clamp(20px, 3vw, 28px);
+  border: 1px solid var(--st-line);
+  border-radius: 22px;
+  background: var(--st-surface);
+  box-shadow: var(--st-shadow);
+  text-align: center;
+}
+.pay-card h1 { font-size: clamp(1.45rem, 3.4vw, 1.9rem); line-height: 1.25; }
+.pay-lede { color: var(--st-muted); }
+
+.pay-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--pay-wait-soft);
+  color: var(--pay-wait);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* The mascot holds the success mark up; other states show the mark alone. */
+.pay-hero { position: relative; display: grid; place-items: center; min-height: 72px; }
+.pay-mascot { width: 132px; height: auto; filter: drop-shadow(0 12px 18px rgba(217, 88, 11, 0.18)); }
+.pay-mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--pay-wait-soft);
+  color: var(--pay-wait);
+}
+.pay-mark .icon { width: 32px; height: 32px; }
+.pay-mark.ok { background: var(--pay-ok); color: #fff; box-shadow: 0 0 0 6px var(--pay-ok-soft); }
+.pay-mark.bad { background: var(--pay-bad-soft); color: var(--pay-bad); }
+.pay-mascot + .pay-mark {
+  position: absolute;
+  right: -12px;
+  bottom: -4px;
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--st-surface);
+}
+.pay-mascot + .pay-mark .icon { width: 22px; height: 22px; }
+@media (prefers-reduced-motion: no-preference) {
+  .pay-mark.ok { animation: pay-pop 520ms cubic-bezier(0.2, 1.4, 0.4, 1) both 120ms; }
+  @keyframes pay-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+}
+
+/* "+10 lượt": the one number that matters. */
+.pay-paid .pay-lede { display: grid; justify-items: center; gap: 2px; }
+.pay-gain {
+  font-family: var(--st-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--st-cta);
+}
+.pay-gain b { font-size: clamp(2.6rem, 9vw, 3.4rem); line-height: 1; letter-spacing: -0.02em; }
+.pay-gain-note { font-size: 0.95rem; }
+
+/* ---------------------------------------------------------- the ticket stub */
+.pay-ticket {
+  position: relative;
+  width: 100%;
+  margin-top: 6px;
+  padding: 18px 18px 6px;
+  border-top: 2px dashed var(--st-line);
+}
+.pay-ticket::before,
+.pay-ticket::after {
+  content: "";
+  position: absolute;
+  top: -13px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--st-bg);
+  border: 1px solid var(--st-line);
+}
+.pay-ticket::before { left: calc(-1 * clamp(18px, 4vw, 34px) - 13px); }
+.pay-ticket::after { right: calc(-1 * clamp(18px, 4vw, 34px) - 13px); }
+.pay-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin: 0;
+  text-align: left;
+}
+.pay-facts div { display: grid; gap: 2px; min-width: 0; }
+.pay-facts dt { color: var(--st-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.pay-facts dd { margin: 0; color: var(--st-ink); font-weight: 600; overflow-wrap: anywhere; }
+.pay-facts code, .pay-lede code { font-size: 0.9em; background: none; padding: 0; }
+.pay-money { font-variant-numeric: tabular-nums; }
+
+/* --------------------------------------------------------------- buttons */
+.pay-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; margin-top: 4px; }
+.pay-cta,
+.pay-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-family: var(--st-display);
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pay-cta {
+  flex: 1 1 200px;
+  border: 0;
+  background: linear-gradient(180deg, var(--st-cta-top), var(--st-cta));
+  box-shadow: 0 4px 0 var(--st-cta-rim);
+  color: var(--st-cta-ink);
+}
+.pay-cta:hover { filter: brightness(1.05); color: var(--st-cta-ink); }
+.pay-cta:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--st-cta-rim); }
+.pay-ghost {
+  flex: 1 1 160px;
+  border: 1px solid var(--st-line);
+  background: var(--st-surface);
+  color: var(--st-ink);
+}
+.pay-ghost:hover { background: var(--st-soft); color: var(--st-ink); }
+.pay-cta .icon, .pay-ghost .icon { width: 18px; height: 18px; }
+.pay-back { color: var(--st-muted); font-size: 0.92rem; }
+.pay-back:hover { color: var(--st-cta); }
+
+/* --------------------------------------------------------------- the receipt */
+.pay-stage.receipt { max-width: 720px; }
+.receipt-tools { display: flex; justify-content: space-between; gap: 10px; }
+.receipt-tools .pay-cta, .receipt-tools .pay-ghost { flex: 0 1 auto; padding-inline: 16px; }
+.receipt-sheet {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid var(--st-line);
+  border-radius: 22px;
+  background: var(--st-surface);
+  box-shadow: var(--st-shadow);
+  overflow: hidden;
+}
+.receipt-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: linear-gradient(90deg, var(--st-cta-top), var(--st-cta));
+}
+.receipt-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.receipt-brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--st-display); font-weight: 700; font-size: 1.2rem; }
+.receipt-brand svg { width: 34px; height: 34px; }
+.receipt-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 2px solid var(--pay-ok);
+  border-radius: 10px;
+  color: var(--pay-ok);
+  font-weight: 800;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(-4deg);
+}
+.receipt-stamp .icon { width: 16px; height: 16px; }
+.receipt-kicker { color: var(--st-muted); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.receipt-title h1 { font-size: clamp(1.15rem, 3vw, 1.45rem); overflow-wrap: anywhere; }
+.receipt-title h1 code { background: none; padding: 0; font-size: 1em; }
+.receipt-total {
+  display: grid;
+  gap: 2px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: var(--st-soft);
+}
+.receipt-total-label, .receipt-total-what { color: var(--st-muted); font-size: 0.9rem; }
+.receipt-total b {
+  font-family: var(--st-display);
+  font-size: clamp(2rem, 6vw, 2.6rem);
+  line-height: 1.1;
+  color: var(--st-cta);
+  font-variant-numeric: tabular-nums;
+}
+.receipt-parties, .receipt-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px 20px;
+  margin: 0;
+}
+.receipt-parties div, .receipt-meta div { display: grid; gap: 2px; min-width: 0; }
+.receipt-parties dt, .receipt-meta dt { color: var(--st-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.receipt-parties dd, .receipt-meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.receipt-meta code { background: none; padding: 0; }
+.receipt-lines { width: 100%; margin: 0; border-collapse: collapse; }
+.receipt-lines th, .receipt-lines td { padding: 10px 4px; border-bottom: 1px solid var(--st-line); text-align: left; }
+.receipt-lines thead th { color: var(--st-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+.receipt-lines .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.receipt-lines tfoot th { border-bottom: 0; border-top: 2px solid var(--st-ink); font-family: var(--st-display); }
+.receipt-note { color: var(--st-muted); font-size: 0.82rem; border-top: 1px dashed var(--st-line); padding-top: 14px; }
+
+/* Printed: a white sheet, nothing of the screen around it. */
+@media print {
+  body:has(.pay-stage) { background: #fff; }
+  .receipt-tools { display: none; }
+  .pay-stage.receipt { max-width: none; padding: 0; }
+  .receipt-sheet { border: 0; box-shadow: none; padding: 0; }
+  .receipt-stamp { transform: none; }
+}
