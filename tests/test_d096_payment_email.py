@@ -222,3 +222,31 @@ def test_the_order_event_crosses_redis_and_one_email_goes_out():
         assert email.to == EMAIL and order_id in email.subject
     finally:
         subscriber.close()
+
+
+@pytest.mark.unit
+def test_the_receipt_email_is_a_branded_card_mail_clients_can_draw():
+    order = {
+        "order_id": "DL26110788C3E0",
+        "status": "paid",
+        "runs": 30,
+        "amount_vnd": 129_000,
+        "gateway_title": "payOS",
+        "reference": "FT2611070001",
+        "live": True,
+        "settled_at": "2026-11-07T10:40:00+00:00",
+    }
+
+    html = payment_email(EMAIL, "<b>Bình</b>", order, SITE).html
+
+    # Tables and inline styles only: Gmail and Outlook drop <style> and classes.
+    assert "<style" not in html and "class=" not in html and "<table" in html
+    assert "Đã nhận 129.000 đ · +30 lượt vào ví" in html  # the inbox preview line
+    assert "+30" in html and "07/11/2026 17:40" in html  # the number, the Vietnam time
+    assert f'src="{SITE}/static/favicon.png"' in html  # the logo is linked, not attached
+    assert f'href="{SITE}/billing/orders/DL26110788C3E0/receipt"' in html
+    assert f'href="{SITE}/practice"' in html
+    assert "<b>Bình</b>" not in html and "&lt;b&gt;Bình&lt;/b&gt;" in html  # names are escaped
+    failed = payment_email(EMAIL, "Bình", order | {"status": "failed"}, SITE).html
+    assert "Thanh toán chưa thành công" in failed and "+30" not in failed
+    assert f'href="{SITE}/credits"' in failed

@@ -28,7 +28,7 @@
 | AC-101.2 | TC-PE-I02 |
 | AC-101.3 | TC-PE-I03 |
 | AC-101.4 | TC-PE-I04, TC-PE-I07 |
-| AC-101.5 | TC-PE-I05 |
+| AC-101.5 | TC-PE-I05, TC-PE-I08 |
 | AC-101.6 | TC-PE-I06 |
 
 ## 4. Test case — `tests/test_d096_payment_email.py`
@@ -42,6 +42,7 @@
 | TC-PE-I05 | `test_the_payment_email_says_what_was_bought_and_nothing_secret` | AC-101.5 | Có số tiền, cổng, mã giao dịch, lời dặn báo quản trị viên; tiền thật thì không có lưu ý thử; không chữ "mật khẩu", "số thẻ", khoá; không có địa chỉ công khai thì không có liên kết |
 | TC-PE-I06 | `test_with_email_off_a_payment_still_settles` | AC-101.6 | Email tắt: đơn đã thanh toán, ví +10, hộp thư trống |
 | TC-PE-I07 | `test_the_order_event_crosses_redis_and_one_email_goes_out` | AC-101.4 | Chỉ chạy khi có `AICEFR_TEST_REDIS` (CI có): sự kiện đi qua Redis Streams thật với consumer group; gửi cùng sự kiện hai lần, bộ xử lý chạy hai lần, chỉ một email đi |
+| TC-PE-I08 | `test_the_receipt_email_is_a_branded_card_mail_clients_can_draw` | AC-101.5 | Email là thẻ có thương hiệu dựng bằng bảng và style nội tuyến (không `<style>`, không class): dòng xem trước "Đã nhận … · +N lượt vào ví", số lượt, giờ Việt Nam, logo theo link của trang, nút Xem biên nhận, link Luyện nói ngay; tên người nhận được thoát ký tự; bản thất bại không có số lượt và dẫn về `/credits` |
 
 ## 5. Kết quả
 
