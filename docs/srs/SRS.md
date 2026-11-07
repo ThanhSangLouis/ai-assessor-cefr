@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.29** | **08/11/2026** | **D101.** +2 FR: FR-103 lượt miễn phí của tháng và bản ghi miễn phí trong ngày chỉ dành cho tài khoản đã xác minh email (tài khoản do quản trị viên tạo, không có email, giữ như cũ); lượt đã mua vẫn dùng được. FR-104 sinh viên tự xoá tài khoản ở trang Tài khoản: gõ lại email, xoá bài nói, bản ghi âm, bài học rồi xoá tài khoản và mọi phiên; đơn hàng và sổ lượt giữ lại | D101 |
 | **1.28** | **07/11/2026** | **D099.** +1 FR: FR-102 lưới an toàn khi bán thật: tự đối soát đơn còn mở với payOS mỗi hai phút, tối đa năm đơn chờ trong mười phút cho mỗi người, trang Đơn hàng cho quản trị viên (doanh thu 14 ngày, lọc trạng thái, sự kiện từng đơn), trang điều khoản và hoàn tiền mở cho mọi người và có liên kết ở chỗ mua | D099 |
 | **1.27** | **07/11/2026** | **D097.** Gỡ Stripe: FR-72 và AC-72.x gạch (gỡ bởi D097); AC-71.1, 71.3, 71.6, 71.7 gạch vì chỉ còn một cổng chạy mỗi lúc; AC-71.4 và 71.5 viết lại cho payOS. Đơn Stripe cũ vẫn hiện tên cổng | D097 |
 | **1.26** | **07/11/2026** | **D096.** +1 FR: FR-101 email cho luồng thanh toán: đơn gói lượt kết thúc đã thanh toán thì người mua nhận biên nhận, không thành công thì nhận thông báo; chỉ gửi tới email đã xác minh, mỗi đơn một email. Thanh toán phát sự kiện `billing.order_settled` trên bus, dịch vụ định danh nhận và gửi | D096 |
@@ -1700,6 +1701,32 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-102.4** — *Given* có đơn đã trả và đơn đang chờ, *When* quản trị viên mở trang Đơn hàng, *Then* thấy đơn mới nhất trước với mã người mua, số đơn theo trạng thái, doanh thu từng ngày trong 14 ngày, lọc được theo trạng thái và xem được sự kiện của từng đơn (`test_the_administrator_sees_every_order_and_the_money_of_each_day`). |
 | **AC-102.5** — *Given* sinh viên hoặc giảng viên, *When* gọi danh sách đơn hay sự kiện của một đơn, *Then* bị từ chối 403 (`test_only_the_administrator_reads_the_orders`). |
 | **AC-102.6** — *Given* bất kỳ ai, kể cả chưa đăng nhập, *When* mở `/payment-terms`, *Then* thấy quy tắc hoàn tiền, lưu ý biên nhận không phải hoá đơn VAT và email liên hệ đã cấu hình; trang Lượt của tôi có liên kết tới đó (`test_the_terms_are_open_and_linked_from_the_buy_page`). |
+
+### FR-103 — Lượt miễn phí cần email đã xác minh (D101)
+
+**Mô tả:** Trên bản tính lượt (FR-85), lượt miễn phí của tháng (FR-85) và bản ghi miễn phí trong ngày của lộ trình (FR-99) chỉ dành cho tài khoản **đã xác minh email** (mã 6 số, D079, hoặc Google đã xác minh). Tài khoản tự đăng ký luôn có email, nên trước khi xác minh chỉ dùng được lượt đã mua; lời từ chối và các trang Lượt của tôi, Nộp bài, bài học, thông báo đầu trang nhắc xác minh email kèm liên kết tới trang Tài khoản. Tài khoản không có email (do quản trị viên tạo) giữ lượt miễn phí như cũ. Mục đích: một người không lấy được nhiều lượt miễn phí bằng nhiều tài khoản đăng ký bằng email bất kỳ. Bản của trường và nghiên cứu không tính gì nên không đổi (BR-29, BR-30).
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-103.1** — *Given* sinh viên vừa tự đăng ký, chưa xác minh email, chưa mua lượt, *When* xem Lượt của tôi và nộp một bài, *Then* thấy 0 lượt miễn phí kèm cờ chờ xác minh (3 lượt mỗi tháng), bài bị từ chối 402 với lời nhắc xác minh email (`test_an_unverified_email_gets_no_free_runs`). |
+| **AC-103.2** — *Given* sinh viên đó, *When* nhập đúng mã xác minh email, *Then* có lại 3 lượt miễn phí và nộp bài được (`test_verifying_the_email_opens_the_free_runs`). |
+| **AC-103.3** — *Given* sinh viên chưa xác minh nhưng có lượt đã mua, *When* nộp bài, *Then* bài được nhận và chỉ trừ vào lượt đã mua (`test_an_unverified_learner_still_spends_bought_runs`). |
+| **AC-103.4** — *Given* sinh viên chưa xác minh, *When* ghi âm một bước bài học, *Then* không có bản ghi miễn phí nào trong ngày, lời từ chối 402 nhắc xác minh và suất trong ngày được trả lại (`test_no_free_lesson_recording_before_verifying`). |
+| **AC-103.5** — *Given* tài khoản do quản trị viên tạo, không có email, *When* xem lượt và nộp bài, *Then* vẫn có 3 lượt miễn phí (`test_an_account_made_by_an_administrator_keeps_its_free_runs`). |
+
+### FR-104 — Sinh viên tự xoá tài khoản (D101)
+
+**Mô tả:** Tab Dữ liệu ở trang Tài khoản của sinh viên có thẻ **Xoá tài khoản**. Nút chỉ bật khi gõ lại đúng email đăng nhập (không phân biệt hoa thường, bỏ khoảng trắng hai đầu; tài khoản không có email thì gõ mã tài khoản). Xoá theo thứ tự: bài nói, bản ghi âm, báo cáo, bài học, ôn tập, lộ trình, thành tựu, lớp học, thông báo thiết bị (cùng các bước như xoá dữ liệu của quản trị viên, FR-35), rồi tới tài khoản cùng mọi phiên đăng nhập; dừng giữa chừng thì tài khoản còn đó để làm lại. Đơn hàng và sổ lượt giữ lại để đối soát, chỉ còn mã tài khoản ngẫu nhiên; lượt đã mua mất theo tài khoản. Giảng viên và quản trị viên không tự xoá được ở đây (403): bài soạn và lượt duyệt của họ là việc chung, quản trị viên xử lý.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-104.1** — *Given* sinh viên đã nộp bài, *When* gõ đúng mã tài khoản và xoá, *Then* bài nói biến mất, tài khoản không còn, phiên cũ nhận 401 và không đăng nhập lại được (`test_a_learner_deletes_their_own_account`). |
+| **AC-104.2** — *Given* sinh viên có email, *When* xác nhận bằng chữ khác email, *Then* 422 và không gì bị xoá; gõ email khác hoa thường, thừa khoảng trắng vẫn được (`test_the_confirmation_must_match_the_email`). |
+| **AC-104.3** — *Given* giảng viên, *When* gọi xoá tài khoản của mình, *Then* 403 và tài khoản còn nguyên (`test_staff_cannot_delete_themselves_here`). |
+| **AC-104.4** — *Given* bài đã bị tính lượt, *When* sinh viên xoá tài khoản, *Then* dòng sổ lượt của bài đó vẫn còn (`test_payments_and_the_ledger_stay`). |
+| **AC-104.5** — *Given* trang Tài khoản, *When* sinh viên mở, *Then* có thẻ Xoá tài khoản; giảng viên thì không (`test_the_account_page_offers_the_delete_card_to_students_only`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

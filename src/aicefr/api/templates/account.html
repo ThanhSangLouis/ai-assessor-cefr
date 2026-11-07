@@ -248,7 +248,19 @@
       <div class="button-row">
         <button type="button" id="export-all">{{ icon("download") }} Tải toàn bộ dữ liệu (JSON)</button>
       </div>
-      <p class="muted small-note">Muốn xoá dữ liệu của mình thì báo quản trị viên trung tâm.</p>
+    </div>
+    {#- D101: the learner deletes their own account and data. -#}
+    <div class="card danger-card" aria-labelledby="delete-h">
+      <h2 id="delete-h">{{ icon("alert") }} Xoá tài khoản</h2>
+      <p>Xoá vĩnh viễn tài khoản, bài nói, bản ghi âm và tiến độ học. Không khôi phục được; lượt đã mua cũng mất.</p>
+      <form id="delete-form" class="stack" novalidate>
+        <label for="delete-confirm" id="delete-label">Gõ lại email đăng nhập để xác nhận</label>
+        <input id="delete-confirm" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="254">
+        <div class="button-row">
+          <button type="submit" class="danger" id="delete-button" disabled>Xoá vĩnh viễn</button>
+        </div>
+        <div id="delete-message" aria-live="polite"></div>
+      </form>
     </div>
   </div>
 </section>

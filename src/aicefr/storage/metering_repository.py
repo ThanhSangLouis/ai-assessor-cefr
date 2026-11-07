@@ -229,16 +229,19 @@ class MeteringRepository(MongoStore):
     def wallet(self, user_ref: str) -> int:
         return self._wallet(user_ref).balance
 
-    def free_left(self, user_ref: str, period: str | None = None) -> int:
+    def free_left(self, user_ref: str, period: str | None = None, free: bool = True) -> int:
+        """The free units left in `period`; none for an account not allowed them (D101)."""
+        if not free:
+            return 0
         w = self._wallet(user_ref)
         used = w.free_used if w.period == (period or cycle()) else 0
         return max(0, self.free_units - used)
 
-    def balance(self, user_ref: str) -> dict:
-        return {"wallet": self.wallet(user_ref), "free_left": self.free_left(user_ref)}
+    def balance(self, user_ref: str, free: bool = True) -> dict:
+        return {"wallet": self.wallet(user_ref), "free_left": self.free_left(user_ref, free=free)}
 
-    def available(self, user_ref: str) -> int:
-        return self._wallet(user_ref).available(self.free_units, cycle())
+    def available(self, user_ref: str, free: bool = True) -> int:
+        return self._wallet(user_ref).available(self.free_units if free else 0, cycle())
 
     # ------------------------------------------------------------ top-ups
 
@@ -310,12 +313,15 @@ class MeteringRepository(MongoStore):
     def entry(self, key: str, action: MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
-    def _take(self, user_ref: str, period: str, units: int) -> tuple[int, int]:
+    def _take(
+        self, user_ref: str, period: str, units: int, free_ok: bool = True
+    ) -> tuple[int, int]:
         """Take `units`: free runs of `period` first, then the wallet; (free, wallet).
 
+        Without `free_ok` (D101: an email not yet verified) only the wallet pays.
         Raises InsufficientCredits, taking nothing, when the two fall short.
         """
-        free = self._take_free(user_ref, period, units)
+        free = self._take_free(user_ref, period, units) if free_ok else 0
         rest = units - free
         if rest:
             paid = self.col("wallet").update_one(
@@ -323,7 +329,7 @@ class MeteringRepository(MongoStore):
             )
             if not paid.modified_count:
                 self._give_back(user_ref, period, free, 0)
-                raise InsufficientCredits(units, self.available(user_ref))
+                raise InsufficientCredits(units, self.available(user_ref, free_ok))
         return free, rest
 
     def hold(
@@ -333,8 +339,9 @@ class MeteringRepository(MongoStore):
         key: str,
         units: int,
         version: str = PRICE_VERSION,
+        free_ok: bool = True,
     ) -> dict:
-        """Hold `units` for `key`: free runs first, then the wallet.
+        """Hold `units` for `key`: free runs first (when `free_ok`), then the wallet.
 
         Idempotent: holding a key held before returns the existing entry and
         takes nothing. Raises InsufficientCredits, holding nothing, when the
@@ -344,7 +351,7 @@ class MeteringRepository(MongoStore):
         if existing is not None:
             return existing
         period = cycle()
-        free, rest = self._take(user_ref, period, units)
+        free, rest = self._take(user_ref, period, units, free_ok)
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
             user_ref=user_ref,
@@ -433,6 +440,7 @@ class MeteringRepository(MongoStore):
         free_per_day: int,
         cap: int,
         version: str = PRICE_VERSION,
+        free_ok: bool = True,
     ) -> dict:
         """Hold one lesson recording (D094): a place among the day's `cap`, then its price.
 
@@ -446,11 +454,13 @@ class MeteringRepository(MongoStore):
         if existing is not None:
             return existing
         day = self._take_lesson_slot(user_ref, day, cap)
-        free_slot = self._take_free_lesson(user_ref, day, free_per_day)
+        # D101: no free recording of the day, nor free run of the month, for
+        # an account whose email is not verified yet.
+        free_slot = free_ok and self._take_free_lesson(user_ref, day, free_per_day)
         units = 0 if free_slot else units
         period = cycle()
         try:
-            free, rest = self._take(user_ref, period, units)
+            free, rest = self._take(user_ref, period, units, free_ok)
         except InsufficientCredits:
             self._give_back_slot(user_ref, day, free_slot)
             raise

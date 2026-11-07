@@ -1534,6 +1534,9 @@ button.secondary:hover, .button.secondary:hover {
 }
 
 button.danger { background: var(--danger); color: #fff; }
+/* D101: the account page's delete card. */
+.danger-card { border-color: var(--danger); }
+.danger-card h2 .icon { color: var(--danger); }
 
 /* Một nút trông như liên kết, dùng bên trong ô bảng. Không phải nút đặc: một
    hàng bảng có sáu ô dữ liệu mà ô thứ bảy là một khối màu đỏ thì mắt đọc hàng
@@ -7104,6 +7107,14 @@ body.has-sidebar .ground-lines {
 .wallet-dot { width: 10px; height: 10px; border-radius: 50%; align-self: center; }
 .wallet-dot.free { background: var(--ok); }
 .wallet-dot.paid { background: var(--brand); }
+/* D101: the free runs wait for a verified email. */
+.verify-nudge {
+  display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3); border-radius: var(--r-md);
+  background: var(--accent-soft); color: var(--fg); font-size: var(--t-sm); text-decoration: none;
+}
+.verify-nudge:hover { text-decoration: underline; }
+.verify-nudge .icon { flex: none; color: var(--accent); }
 .cost-tiles {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: var(--sp-3);

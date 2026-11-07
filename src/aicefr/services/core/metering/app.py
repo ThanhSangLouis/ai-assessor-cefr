@@ -42,7 +42,14 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         lesson_daily_cap=settings.lesson_daily_cap,
     )
     book = PriceBook(store, prices, settings.credit_packs)
-    facade = MeteringFacade(store, audit_log, enabled, book)
+
+    def free_ok(account_id: str) -> bool:
+        # D101: free runs need a verified email. An account with no email at
+        # all was made by an administrator (self sign-up always has one).
+        who = peers.identity.account(account_id=account_id)
+        return who is None or not who.get("email") or bool(who.get("email_verified"))
+
+    facade = MeteringFacade(store, audit_log, enabled, book, free_ok)
     metering_api.configure(
         metering_api.Services(store=store, audit=audit_log, peers=peers, enabled=enabled, book=book)
     )

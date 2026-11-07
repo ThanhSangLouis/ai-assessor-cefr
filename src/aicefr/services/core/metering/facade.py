@@ -4,10 +4,16 @@ With metering off (`AICEFR_METERING`, the default) every hold is allowed and
 nothing is written: the school and research deployment never charges per use
 (BR-29, BR-30). No refusal crosses the wire as an exception: `hold` returns the
 sentence to show, or None for "allowed".
+
+D101: the free runs of the month and the free lesson recordings of the day
+go only to an account whose email is verified (or that has no email: one made
+by an administrator). One person, many unverified sign-ups, many free runs:
+that is what the rule closes.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from aicefr.metering.pricing import (
@@ -44,11 +50,14 @@ class MeteringFacade:
         audit: AuditLog,
         enabled: bool,
         prices: PriceList | PriceBook = DEFAULT_PRICES,
+        free_ok: Callable[[str], bool] | None = None,
     ) -> None:
         self.store = store
         self.audit = audit
         self.enabled = enabled
         self.book = prices if isinstance(prices, PriceBook) else PriceBook(store, prices)
+        # D101: may this account use the free runs? The identity service knows.
+        self.free_ok = free_ok or (lambda _account_id: True)
 
     @property
     def prices(self) -> PriceList:
@@ -65,17 +74,29 @@ class MeteringFacade:
         return self.enabled
 
     @exposed
+    def free_runs_locked(self, account_id: str) -> bool:
+        """True when the free runs wait for this account to verify its email (D101)."""
+        return self.enabled and not self.free_ok(account_id)
+
+    def _locked_hint(self, free: bool) -> str:
+        return "" if free else ". Xác minh email ở trang Tài khoản để nhận lượt miễn phí"
+
+    @exposed
     def hold(self, account_id: str, action: str, key: str, max_seconds: float) -> str | None:
         """Hold what a recording of at most `max_seconds` may cost; the refusal, or None."""
         if not self.enabled:
             return None
+        free = self.free_ok(account_id)
         try:
             units = hold_for(self.prices, max_seconds)
-            self.store.hold(account_id, MeteredAction(action), key, units, self.prices.version)
+            self.store.hold(
+                account_id, MeteredAction(action), key, units, self.prices.version, free_ok=free
+            )
         except InsufficientCredits as e:
             return (
                 f"bạn cần {as_runs(e.needed):g} lượt cho bài này nhưng chỉ còn"
                 f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
+                + self._locked_hint(free)
             )
         return None
 
@@ -114,12 +135,16 @@ class MeteringFacade:
         prices = self.prices
         done = self.store.lesson_today(account_id, self.today())
         units = lesson_units(prices, 60.0)
-        b = self.store.balance(account_id)
+        free = self.free_ok(account_id)
+        b = self.store.balance(account_id, free)
         return {
             "minute_runs": as_runs(units),
             "minute_idpoint": as_idpoint(prices, units),
             "free_per_day": prices.lesson_free_per_day,
-            "free_left_today": max(0, prices.lesson_free_per_day - done["free_used"]),
+            "free_left_today": (
+                max(0, prices.lesson_free_per_day - done["free_used"]) if free else 0
+            ),
+            "free_locked": not free,
             "daily_cap": prices.lesson_daily_cap,
             "left_today": max(0, prices.lesson_daily_cap - done["used"]),
             "runs_left": as_runs(b["free_left"] + b["wallet"]),
@@ -137,6 +162,7 @@ class MeteringFacade:
         if not self.enabled:
             return None
         prices = self.prices
+        free = self.free_ok(account_id)
         try:
             self.store.hold_lesson(
                 account_id,
@@ -146,6 +172,7 @@ class MeteringFacade:
                 prices.lesson_free_per_day,
                 prices.lesson_daily_cap,
                 prices.version,
+                free_ok=free,
             )
         except DailyCapReached as e:
             count("metering_lesson_refused_total", reason="cap")
@@ -156,12 +183,13 @@ class MeteringFacade:
             }
         except InsufficientCredits as e:
             count("metering_lesson_refused_total", reason="credits")
-            free = prices.lesson_free_per_day
-            spent = f"Đã hết {free} bản ghi miễn phí hôm nay; b" if free else "B"
+            per_day = prices.lesson_free_per_day
+            spent = f"Đã hết {per_day} bản ghi miễn phí hôm nay; b" if per_day and free else "B"
             return {
                 "status": 402,
                 "message": f"{spent}ản ghi này cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
-                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để học tiếp",
+                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để học tiếp"
+                + self._locked_hint(free),
             }
         return None
 
@@ -222,8 +250,9 @@ class MeteringFacade:
         units = passage_units(self.prices) if passage else upgrade_units(self.prices)
         if not self.enabled or units <= 0:
             return None
+        free = self.free_ok(account_id)
         try:
-            self.store.hold(account_id, what, key, units, self.prices.version)
+            self.store.hold(account_id, what, key, units, self.prices.version, free_ok=free)
         except InsufficientCredits as e:
             thing = {
                 MeteredAction.LESSON_DRAFT: "bản soạn bài bằng AI",
@@ -232,6 +261,7 @@ class MeteringFacade:
             return (
                 f"{thing} cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
                 f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
+                + self._locked_hint(free)
             )
         return None
 
@@ -266,7 +296,7 @@ class MeteringFacade:
         """Free and bought runs together; None where nothing is counted."""
         if not self.enabled:
             return None
-        b = self.store.balance(account_id)
+        b = self.store.balance(account_id, self.free_ok(account_id))
         return as_runs(b["free_left"] + b["wallet"])
 
     @exposed

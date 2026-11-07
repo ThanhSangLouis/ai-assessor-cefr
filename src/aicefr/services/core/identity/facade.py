@@ -11,13 +11,16 @@ from aicefr.platform.rpc import exposed
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import AuthRepository, Role
 
-ACCOUNT_FIELDS = ("account_id", "pseudonym", "role", "disabled", "email", "full_name")
+ACCOUNT_FIELDS = (
+    "account_id", "pseudonym", "role", "disabled", "email", "full_name", "email_verified",
+)  # fmt: skip
+FLAGS = ("disabled", "email_verified")
 
 
 def _account(row) -> dict | None:
     if row is None:
         return None
-    return {k: (bool(row[k]) if k == "disabled" else row[k]) for k in ACCOUNT_FIELDS}
+    return {k: (bool(row[k]) if k in FLAGS else row[k]) for k in ACCOUNT_FIELDS}
 
 
 class IdentityFacade:
@@ -28,6 +31,17 @@ class IdentityFacade:
     @exposed
     def account(self, account_id: str) -> dict | None:
         return _account(self.auth.get(account_id))
+
+    @exposed
+    def delete_account(self, account_id: str) -> bool:
+        """Delete the account itself, once its data elsewhere is erased (D101)."""
+        row = self.auth.get(account_id)
+        if row is None:
+            return False
+        deleted = self.auth.delete_account(account_id)
+        if deleted:
+            self.audit.write(row["pseudonym"], "account.delete", account_id, "by=self")
+        return deleted
 
     @exposed
     def by_pseudonym(self, pseudonym: str) -> dict | None:

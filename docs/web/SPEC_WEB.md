@@ -294,6 +294,8 @@ Lý do từ chối trích ngưỡng QC đang áp dụng, không chép số cứn
 
 D100 (07/11/2026): ít chữ hơn, cùng các ràng buộc trên. Thẻ Kết quả có điểm, band, nhãn khoảng tin cậy, một dòng "ước lượng" và bốn ô số đo (thời lượng, số từ, từ mỗi phút, từ máy nghe chưa rõ); nhận xét dẫn bằng chứng bằng nhãn bấm để nghe đúng mốc; bằng chứng mở sẵn dưới bản chép lời; phần kỹ thuật là "Chi tiết kỹ thuật".
 
+D101 (08/11/2026): trang Tài khoản của sinh viên, tab Dữ liệu, có thẻ **Xoá tài khoản** (viền đỏ): một câu cảnh báo, ô gõ lại email đăng nhập (không có email thì mã tài khoản), nút "Xoá vĩnh viễn" chỉ bật khi gõ khớp; xoá xong về trang chủ với thông báo "Đã xoá tài khoản và dữ liệu của bạn." Câu "báo quản trị viên để xoá" đã bỏ. Tài khoản chưa xác minh email thấy lời nhắc "Xác minh email để nhận N lượt miễn phí mỗi tháng" ở Lượt của tôi, Nộp bài, bài học và thông báo đầu trang, dẫn tới `/account#email-card`.
+
 ### M5 — Hàng đợi duyệt  ·  `/review`  · FR-29
 
 Sắp theo **độ tin cậy tăng dần** — bài máy ít chắc chắn nhất lên đầu. Lọc theo mã

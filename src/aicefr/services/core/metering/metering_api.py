@@ -76,9 +76,13 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
     s = svc()
     if not s.enabled:
         return {"metering": False}
-    balance = s.store.balance(account.account_id)
+    locked = s.peers.metering.free_runs_locked(account_id=account.account_id)
+    balance = s.store.balance(account.account_id, free=not locked)
     return {
         "metering": True,
+        # D101: the free runs wait for a verified email.
+        "free_locked": locked,
+        "free_runs_per_cycle": as_runs(s.store.free_units),
         "price_version": s.prices.version,
         "prices": s.prices.as_dict(),
         "cycle": cycle(),
@@ -102,11 +106,13 @@ def quote(
     if not s.enabled:
         return {"metering": False}
     units = hold_for(s.prices, seconds)
+    locked = s.peers.metering.free_runs_locked(account_id=account.account_id)
     return {
         "metering": True,
         "runs": as_runs(units),
         "idpoint": as_idpoint(s.prices, units),
-        "free_runs_left": as_runs(s.store.free_left(account.account_id)),
+        "free_locked": locked,
+        "free_runs_left": as_runs(s.store.free_left(account.account_id, free=not locked)),
         "wallet_runs": as_runs(s.store.wallet(account.account_id)),
     }
 
