@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from aicefr.api.deps import ROLE_HOME, require_login, set_session_cookie
 from aicefr.api.schemas import SIGN_IN_NAME
 from aicefr.auth.sessions import device_label
+from aicefr.config import get_settings
 from aicefr.notify.email import EmailError, EmailSender
 from aicefr.notify.messages import code_email, read_unsubscribe_token
 from aicefr.storage.audit_repository import AuditLog
@@ -76,7 +77,13 @@ def send_code(row: dict, purpose: str) -> str:
     if code is None:
         return "wait"
     try:
-        s.sender.send(code_email(row["email"], purpose, code, EMAIL_CODE_MINUTES))
+        # The card's logo and links point at the public address; the greeting
+        # uses the name the person gave, when there is one.
+        site = (get_settings().public_url or "").rstrip("/")
+        email = code_email(
+            row["email"], purpose, code, EMAIL_CODE_MINUTES, site, row.get("full_name") or ""
+        )
+        s.sender.send(email)
     except EmailError as e:
         raise HTTPException(502, f"chưa gửi được email: {e}") from e
     s.audit_log.write(row["pseudonym"], f"email.code_{purpose}", row["account_id"], None)
