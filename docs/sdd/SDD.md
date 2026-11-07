@@ -2296,6 +2296,10 @@ sequenceDiagram
 
 *Hình 9. Lớp của phân hệ thanh toán sau D097 và các mẫu thiết kế: Adapter và Strategy (`PaymentGateway`), Template Method (`SignedRedirect`), Factory (`build_gateways`), Repository, Value Object, Observer (`billing.order_settled`). File nguồn: `diagrams/09_class_thanh_toan.mmd`*
 
+![Hình 10. Vòng đời đơn gói lượt](images/10_state_don_hang.png)
+
+*Hình 10. Vòng đời đơn gói lượt theo mẫu State (D098): mỗi trạng thái là một lớp trong `billing/order_state.py`; đơn hết hạn vẫn nhận tiền đến muộn, ba trạng thái cuối không chuyển được nữa. Test giữ sơ đồ khớp với `transitions()`. File nguồn: `diagrams/10_state_don_hang.mmd`*
+
 ### 4.17. Bằng chứng học tập — hiện thực FR-75…FR-80 (D039–D042)
 
 **Vì sao có mục này.** Bốn yêu cầu này đo những điều hệ thống trước đó chỉ khẳng định. Cả bốn là **hàm thuần** đặt cạnh nhau ở `research/` và `pronunciation/`; kho lưu và API chỉ gom dữ liệu rồi gọi chúng, nên mỗi con số kiểm được bằng test tầng 1 không cần CSDL.
@@ -2428,7 +2432,7 @@ Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 
 **Email thanh toán (D096, FR-101).** `BillingService.settle` phát `billing.order_settled` lên bus một lần khi đơn chốt đã thanh toán hoặc không thành công; dịch vụ định danh nhận, kiểm email đã xác minh, chặn gửi trùng bằng `setting_once`, rồi gửi biên nhận qua bộ gửi D079.
 
-**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Observer, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
+**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Observer, State, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
 
 ## 5. Thiết kế cơ sở dữ liệu
 
@@ -2974,6 +2978,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/08_sequence_payos.mmd` | Sequence: mua gói lượt qua payOS và email biên nhận (D095–D097) | Mermaid `sequenceDiagram` |
 | `docs/sdd/diagrams/09_class_thanh_toan.mmd` | Lớp: phân hệ thanh toán và các mẫu thiết kế (D097) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/10_state_don_hang.mmd` | Trạng thái: vòng đời đơn gói lượt, mẫu State (D098) | Mermaid `sequenceDiagram` |
 
 Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 

@@ -16,6 +16,7 @@ Tài liệu này liệt kê các mẫu thiết kế **đang có trong mã**, m�
 | Cấu trúc (GoF) | Proxy (Remote Proxy) | `platform/rpc.py` (`RemoteFacade`) |
 | Hành vi (GoF) | Strategy | cổng thanh toán chọn theo đơn; VAD `EnergyVad`/`SileroVad` |
 | Hành vi (GoF) | Template Method | `billing/gateways.py` (`SignedRedirect`) |
+| Hành vi (GoF) | State | `billing/order_state.py` (`Pending`, `Expired`, `Paid`, `Failed`, `Cancelled`; D098) |
 | Khởi tạo (GoF) | Factory (Registry) | `billing/registry.py` (`build_gateways`), `asr/vad.py` (`default_vad`) |
 | Khởi tạo (GoF) | Singleton (cấu hình) | `config.py` (`get_settings`, `lru_cache`) |
 | Dữ liệu | Repository | `storage/*_repository.py` |
@@ -116,7 +117,15 @@ sequenceDiagram
 
 **Lợi ích đo được.** Thêm thông báo đẩy hay thành tựu cho thanh toán sau này chỉ là thêm một bên nghe, không sửa `BillingService`. Test giao lại cùng sự kiện để chứng minh mỗi đơn chỉ có một email.
 
-### 2.6. Cấu hình: Singleton
+### 2.6. Vòng đời đơn hàng: State
+
+Mỗi trạng thái của đơn gói lượt là một lớp con của `OrderState` (`billing/order_state.py`, D098). Lớp tự nói mình được chuyển sang đâu: `Pending` và `Expired` nhận lời chốt của cổng (`settle`), riêng `Pending` còn hết hạn được (`expire`); `Paid`, `Failed`, `Cancelled` là trạng thái cuối, mọi chuyển tiếp từ đó bị từ chối (`TransitionRefused`). Ba nơi trước đây tự kiểm tập `SETTLEABLE` (service, repository, API) nay đều hỏi đối tượng trạng thái; repository vẫn giữ một lệnh cập nhật nguyên tử, với điều kiện lấy từ cùng bảng (`sources`).
+
+![Hình 10. Vòng đời đơn gói lượt](images/10_state_don_hang.png)
+
+**Lợi ích đo được.** Sơ đồ trạng thái trong báo cáo khớp 1:1 với mã: test `test_the_state_diagram_draws_exactly_the_moves_the_code_allows` đọc tệp `.mmd` và so với `transitions()`. Một test khác thử đủ 25 cặp (trạng thái, đích) để chứng minh chỉ 7 bước chuyển là hợp lệ.
+
+### 2.7. Cấu hình: Singleton
 
 `get_settings()` đọc biến môi trường một lần và giữ lại (`lru_cache(maxsize=1)`). Test xoá bộ nhớ đệm (`cache_clear`) để nạp cấu hình khác cho từng ca.
 
@@ -124,7 +133,6 @@ sequenceDiagram
 
 | Mẫu | Đặt ở đâu | Được gì | Công sức |
 | --- | --- | --- | --- |
-| **State** | Đơn thanh toán (`OrderStatus`): bảng chuyển trạng thái tường minh thay cho tập `SETTLEABLE` | Sơ đồ trạng thái trong báo cáo khớp 1:1 với mã; chuyển sai bị chặn tại một chỗ | Nhỏ |
 | **Circuit Breaker** | Bọc `Transport` của payOS | Cổng sập thì ngừng gọi một lúc, báo ngay cho người mua thay vì chờ hết 15 giây mỗi lần | Vừa |
 | **Observer / Domain Event** (mở rộng) | Sự kiện "bài đã duyệt" cho thông báo đẩy và thành tựu, như D096 đã làm cho thanh toán | Bỏ các lời gọi chéo giữa phần chấm, thông báo và thành tựu | Vừa |
 | **Decorator** | Bọc `Scorer` để ghi thời gian chạy và số liệu Prometheus | Đo hiệu năng mà không sửa mô hình chấm | Nhỏ |

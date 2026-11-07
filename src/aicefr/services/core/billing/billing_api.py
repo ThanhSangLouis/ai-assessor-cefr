@@ -38,7 +38,8 @@ from aicefr.api.deps import (
 )
 from aicefr.api.web import templates
 from aicefr.billing.gateways import SandboxGateway
-from aicefr.billing.payments import SETTLEABLE, Ack, GatewayError, Incoming, OrderStatus
+from aicefr.billing.order_state import state_of
+from aicefr.billing.payments import Ack, GatewayError, Incoming, OrderStatus
 from aicefr.billing.service import (
     BillingOff,
     BillingService,
@@ -257,7 +258,7 @@ def billing_return(
             # stranger cannot spend this system's allowance of calls to payOS.
             context["state"] = "invalid"
             return templates.TemplateResponse(request, "billing_result.html", context)
-        if OrderStatus(known["status"]) not in SETTLEABLE:
+        if state_of(known["status"]).final:
             # Settled already: the page says so from the database, and nobody
             # replaying this address makes the system call the gateway again.
             context.update(
@@ -316,7 +317,7 @@ def sandbox_page(order_id: str, request: Request, t: str = ""):
             "account": None,
             "order": billing.order_view(order),
             "token": t,
-            "payable": OrderStatus(order["status"]) in SETTLEABLE,
+            "payable": state_of(order["status"]).settleable,
         },
     )
 

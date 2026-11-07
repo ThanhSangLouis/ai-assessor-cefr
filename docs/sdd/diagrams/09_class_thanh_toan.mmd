@@ -1,6 +1,7 @@
 %% SDD - So do 09: lop cua phan he thanh toan va cac mau thiet ke (D035, D095, D096, D097)
 %% Adapter + Strategy: PaymentGateway; Template Method: SignedRedirect;
-%% Factory: build_gateways; Observer: billing.order_settled; Repository; DI: Transport.
+%% Factory: build_gateways; Observer: billing.order_settled; State: OrderState (D098);
+%% Repository; DI: Transport.
 classDiagram
     direction LR
     class PaymentGateway {
@@ -64,23 +65,28 @@ classDiagram
         +order_id: str
         +runs: int
         +amount_vnd: int
-        +status: OrderStatus
+        +status: str
         +gateway: str
         +live: bool
         +checkout_ref: str
     }
-    class OrderStatus {
-        <<enumeration>>
-        PENDING
-        PAID
-        FAILED
-        CANCELLED
-        EXPIRED
+    class OrderState {
+        <<abstract>>
+        +status: OrderStatus
+        +name: str
+        +settleable: bool
+        +settle(outcome) OrderStatus
+        +expire() OrderStatus
     }
+    class Pending
+    class Expired
+    class Paid
+    class Failed
+    class Cancelled
     class PaymentResult {
         <<value object>>
         +order_id: str
-        +outcome: OrderStatus
+        +outcome: str
         +amount_vnd: int
         +reference: str
         +checkout: str
@@ -107,7 +113,13 @@ classDiagram
     BillingService o-- "1..*" PaymentGateway : gateways
     BillingService --> BillingRepository : store
     BillingRepository ..> Order
-    Order --> OrderStatus : status
+    Order --> OrderState : state_of(status)
+    OrderState <|-- Pending
+    OrderState <|-- Expired
+    OrderState <|-- Paid
+    OrderState <|-- Failed
+    OrderState <|-- Cancelled
+    BillingService ..> OrderState : hỏi trước khi chốt
     PaymentGateway ..> PaymentResult : trả về
     BillingService --> MessageBus : publish billing.order_settled
     MessageBus --> PaymentEmailHandler : giao sự kiện

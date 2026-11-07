@@ -1,6 +1,7 @@
 """Orders and what a gateway says about them (D033, D035).
 
-An order moves once: pending, then paid, failed or cancelled. A pending order
+An order moves once: pending, then paid, failed or cancelled (the states of
+`order_state`, D098). A pending order
 that nobody paid within `PENDING_MINUTES` expires, but a payment that still
 arrives for it is honoured -- the money has moved. Every later word about an
 order already settled changes nothing, which is what makes it safe for the
@@ -30,15 +31,9 @@ class OrderStatus(str, Enum):
     EXPIRED = "expired"
 
 
-ORDER_STATUS_NAMES = {
-    OrderStatus.PENDING: "Chờ thanh toán",
-    OrderStatus.PAID: "Đã thanh toán",
-    OrderStatus.FAILED: "Không thành công",
-    OrderStatus.CANCELLED: "Đã huỷ",
-    OrderStatus.EXPIRED: "Hết hạn chờ",
-}
+# Which status may move to which, and the name a buyer reads, are the states
+# of `order_state` (D098).
 PENDING_MINUTES = 15
-SETTLEABLE = frozenset({OrderStatus.PENDING, OrderStatus.EXPIRED})
 
 
 @dataclass(frozen=True)

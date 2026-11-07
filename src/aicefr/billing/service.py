@@ -17,10 +17,9 @@ import secrets
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
+from aicefr.billing.order_state import TransitionRefused, state_of
 from aicefr.billing.payments import (
-    ORDER_STATUS_NAMES,
     PENDING_MINUTES,
-    SETTLEABLE,
     GatewayError,
     OrderStatus,
     PaymentResult,
@@ -287,11 +286,17 @@ class BillingService:
                 order["order_id"], "rejected", said | {"via": via, "amount": result.amount_vnd}
             )
             return "amount"
+        # D098: the order's state says whether the gateway's word may still move
+        # it, and where to; the store's update is guarded by the same table.
         changed = False
-        if OrderStatus(order["status"]) in SETTLEABLE:
-            changed = self.store.settle(
-                order["order_id"], result.outcome, result.reference, result.code
-            )
+        state = state_of(order["status"])
+        if state.settleable:
+            try:
+                target = state.settle(result.outcome)
+            except TransitionRefused:
+                self.store.add_event(order["order_id"], "rejected", said | {"via": via})
+                return "already"
+            changed = self.store.settle(order["order_id"], target, result.reference, result.code)
         self.store.add_event(
             order["order_id"], via, said | dict(result.details) | {"applied": changed}
         )
@@ -334,15 +339,15 @@ class BillingService:
     # ------------------------------------------------------------ what the screens read
 
     def order_view(self, order: dict) -> dict:
-        status = OrderStatus(order["status"])
+        state = state_of(order["status"])
         return {
             "order_id": order["order_id"],
             "plan_name": f"Gói {order['runs']} lượt",
             "runs": order["runs"],
             "credited": bool(order.get("credited_at")),
             "amount_vnd": order["amount_vnd"],
-            "status": status.value,
-            "status_name": ORDER_STATUS_NAMES[status],
+            "status": state.status.value,
+            "status_name": state.name,
             "gateway": order["gateway"],
             "gateway_title": self._gateway_title(order["gateway"]),
             "live": bool(order["live"]),
