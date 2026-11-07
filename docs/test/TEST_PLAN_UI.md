@@ -41,6 +41,7 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | TC-UI-E10 | `test_admin_activation_asks_first_and_only_compatible_models_offer_it` | UX-10 | Âm | Mô hình không tương thích hoặc hỏng không có nút kích hoạt; bấm kích hoạt rồi Huỷ thì mô hình đang chấm không đổi |
 | TC-UI-E11 | `test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll` | UX-02 | Biên | Ở 375 px, bốn trang của sinh viên: điều hướng cố định sát đáy, không cuộn ngang |
 | TC-UI-E12 | `test_the_progress_page_prints_as_a_report_not_as_the_screen` | UX-06 | Thuận | Trang Tiến độ: hai nút mỗi nút một dòng; khi in chỉ còn báo cáo một trang (Kết quả, Cần luyện tiếp, Thành tựu, lưu ý không phải chứng chỉ), không còn thẻ, đầu trang hay nút của màn hình, và báo cáo không bị in mờ |
+| TC-UI-E14 | `test_a_header_tab_marks_its_section_and_leaves_its_heading_in_view` | UX-02 | Thuận | Trang chủ của khách: bấm tab "Phương pháp", "Giảng viên" thì đúng tab đó mang `aria-current` (một tab), mục cuộn tới dừng dưới thanh header, tiêu đề mục không bị che |
 | TC-UI-E13 | `test_the_band_blocks_fit_a_narrow_phone` | UX-02 | Biên | Ở 340 px, sáu khối band 3D của trang Band (cùng quy tắc với khối trên báo cáo) nằm gọn trong màn hình, trang không cuộn ngang |
 
 ## 3. Ma trận phủ tiêu chí
@@ -48,7 +49,7 @@ và `tests/test_web.py`; đợt này sửa hai ca ở đó cho khớp cách làm
 | Tiêu chí | Ca kiểm thử |
 | --- | --- |
 | UX-01 | TC-UI-I01, TC-UI-E01, TC-UI-E02 |
-| UX-02 | TC-UI-E11, TC-UI-E13 |
+| UX-02 | TC-UI-E11, TC-UI-E13, TC-UI-E14 |
 | UX-03 | TC-UI-E03 |
 | UX-04 | TC-UI-E04 |
 | UX-05 | TC-UI-E05 |

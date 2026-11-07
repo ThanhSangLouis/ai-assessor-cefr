@@ -148,17 +148,21 @@
 {% else %}
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="SpeakUp, về trang chính">
+    {#- The product page has no tab of its own any more: the logo says "you are here". -#}
+    <a class="brand" href="/" aria-label="SpeakUp, về trang chính"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>
       {{ logo() }}
       <span class="brand-text">
         <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
       </span>
     </a>
 
+    {#- The sections of the product page as they are now (D093), and the band
+        page. The logo leads to the top; landing.js marks the section in view. -#}
     <nav class="site-nav" aria-label="Điều hướng chính">
-      <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}><span>Giới thiệu</span></a>
-      <a href="/#how-it-works"><span>Cách hoạt động</span></a>
-      <a href="/#for-teachers"><span>Cho giảng viên</span></a>
+      <a href="/#how-it-works" data-section="how-it-works"><span>Cách hoạt động</span></a>
+      <a href="/#scaffolding-method" data-section="scaffolding-method"><span>Phương pháp</span></a>
+      <a href="/#for-teachers" data-section="for-teachers"><span>Giảng viên</span></a>
+      <a href="/#faq" data-section="faq"><span>Hỏi đáp</span></a>
       <a href="/bands"{% if here == "bands" %} aria-current="page"{% endif %}><span>Khung CEFR</span></a>
     </nav>
 

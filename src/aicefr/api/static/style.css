@@ -852,12 +852,12 @@ audio { width: 100%; }
   color: #1c1917;
   background: transparent;
 }
-.site-header .site-nav a[aria-current="page"] {
+.site-header .site-nav a[aria-current] {
   color: #ff7043;
   background: transparent;
   font-weight: 600;
 }
-.site-header .site-nav a[aria-current="page"]::after {
+.site-header .site-nav a[aria-current]::after {
   content: "";
   position: absolute;
   bottom: -2px;
@@ -868,13 +868,13 @@ audio { width: 100%; }
   border-radius: 1px;
   animation: navUnderlineIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-:root[data-theme="light"] .site-header .site-nav a[aria-current="page"] {
+:root[data-theme="light"] .site-header .site-nav a[aria-current] {
   color: #e64a19;
   background: transparent;
   font-weight: 600;
   box-shadow: none;
 }
-:root[data-theme="light"] .site-header .site-nav a[aria-current="page"]::after {
+:root[data-theme="light"] .site-header .site-nav a[aria-current]::after {
   background: #ff5722;
 }
 
@@ -3540,6 +3540,24 @@ body:has(.auth-figma-left) .auth-terraces {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
+
+/* The way back to sign-in from sign-up and the forgotten password: a button at
+   the top of the form, not only a link inside a sentence. */
+.auth-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin: 0 0 18px -8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  color: var(--fg-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-back .icon { width: 18px; height: 18px; transform: rotate(180deg); }
+.auth-back:hover { color: var(--brand-strong); background: var(--brand-soft); }
 
 /* 1. Tiêu đề: Giữ cỡ chữ 32px, giảm font-weight nhẹ về 650, margin-bottom 8px */
 .figma-heading {

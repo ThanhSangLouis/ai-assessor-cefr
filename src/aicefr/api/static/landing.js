@@ -77,3 +77,49 @@
   }, { threshold: 0.4 });
   seen.observe(demo);
 })();
+
+// The header bar's tabs are the sections of this page: the one in view is the
+// current one (aria-current="location"), so the underline follows the reader
+// instead of staying on the first tab.
+(() => {
+  "use strict";
+
+  const pairs = [...document.querySelectorAll(".site-nav a[data-section]")]
+    .map((a) => [a, document.getElementById(a.dataset.section)])
+    .filter(([, section]) => section);
+  if (!pairs.length) return;
+
+  function mark(current) {
+    for (const [a] of pairs) {
+      if (a === current) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    }
+  }
+
+  // The last section whose top has passed a line a third of the way down the
+  // window; above the first one (the hero), none.
+  function inView() {
+    const line = window.innerHeight / 3;
+    let current = null;
+    for (const [a, section] of pairs) {
+      if (section.getBoundingClientRect().top <= line) current = a;
+    }
+    return current;
+  }
+
+  let queued = false;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        mark(inView());
+      });
+    },
+    { passive: true },
+  );
+  for (const [a] of pairs) a.addEventListener("click", () => mark(a));
+  mark(inView());
+})();

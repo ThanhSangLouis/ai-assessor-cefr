@@ -181,7 +181,9 @@ body:has(.hm) .ground { display: none; }
 }
 .hm-title {
   font-size: clamp(2.1rem, 0.6rem + 3.2vw, 3.4rem);
-  line-height: 1.08;
+  /* Vietnamese stacks marks above and below (ế over ộ): 1.08 let the dot of one
+     line touch the accent of the next. */
+  line-height: 1.24;
   font-weight: 700;
   letter-spacing: -0.03em;
 }
@@ -406,10 +408,14 @@ body:has(.hm) .ground { display: none; }
 .hm-verify b { color: var(--hm-ink); font-weight: 600; }
 
 /* ----------------------------------------------------------------- sections */
-.hm-section { padding-block: clamp(64px, 9vw, 112px); }
+.hm-section { padding-block: clamp(64px, 9vw, 112px); scroll-margin-top: 64px; }
+/* A tab of the header bar glides to its section, unless motion is turned down. */
+@media (prefers-reduced-motion: no-preference) {
+  html:has(.hm-hero) { scroll-behavior: smooth; }
+}
 .hm-h2 {
   font-size: clamp(1.75rem, 1.2rem + 1.8vw, 2.6rem);
-  line-height: 1.15;
+  line-height: 1.25;
   font-weight: 700;
   letter-spacing: -0.025em;
   max-width: 22ch;

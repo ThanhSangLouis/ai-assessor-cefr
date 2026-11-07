@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "_art.html" import terraces %}
+{% from "_icons.html" import icon %}
 {% block title %}Quên mật khẩu · SpeakUp{% endblock %}
 {% block ground %}<div class="ground" aria-hidden="true"><i class="ground-lines"></i></div>{% endblock %}
 {% block content %}
@@ -15,6 +16,7 @@
   </section>
 
   <section class="card auth-card" aria-labelledby="forgot-h">
+    <a class="auth-back" href="/login">{{ icon("chevron-right") }}<span>Quay lại đăng nhập</span></a>
     <h1 id="forgot-h">Quên mật khẩu</h1>
     {% if email_on %}
     {#- D079: step 1 asks for a code, step 2 sets the password with it. -#}
