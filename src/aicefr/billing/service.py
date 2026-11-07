@@ -25,6 +25,7 @@ from aicefr.billing.payments import (
     OrderStatus,
     PaymentResult,
 )
+from aicefr.contracts import ORDER_SETTLED
 from aicefr.practice.streak import LOCAL_TZ
 
 logger = logging.getLogger(__name__)
@@ -39,6 +40,12 @@ GATEWAY_TITLES = {
     "momo": "MoMo",
     "payos": "payOS",
 }
+
+
+# D096: the outcomes announced on the bus as `ORDER_SETTLED`, for whoever tells
+# the buyer (the identity service emails them). The publisher does not know who
+# listens; a payload names the order, never the payer's email.
+ANNOUNCED = frozenset({OrderStatus.PAID, OrderStatus.FAILED})
 
 
 class BillingOff(Exception):
@@ -68,6 +75,8 @@ class BillingService:
         # D078: the run packs on sale, as an administrator set them; the
         # settings' packs where nothing is metered.
         packs: Callable[[], tuple[tuple[int, int], ...]] | None = None,
+        # D096: where a settled order is announced (the message bus); None: nowhere.
+        publish: Callable[[str, dict], None] | None = None,
     ) -> None:
         self.store = store
         self.settings = settings
@@ -78,6 +87,7 @@ class BillingService:
         self._clock = clock
         self._credit = credit
         self._packs = packs or (lambda: tuple(self.settings.credit_packs))
+        self._publish = publish
 
     # ------------------------------------------------------------ basics
 
@@ -295,7 +305,31 @@ class BillingService:
         )
         if result.outcome is OrderStatus.PAID:
             self.credit_order(self.store.order(order["order_id"]))
+        # A gateway that would not even open its page ("checkout") failed in
+        # front of the buyer, who reads why on the screen: no email for that.
+        if result.outcome in ANNOUNCED and via != "checkout":
+            self._announce(self.store.order(order["order_id"]))
         return "ok"
+
+    def _announce(self, order: dict) -> None:
+        """Tell whoever listens that this order was settled; never fails the settlement."""
+        if self._publish is None:
+            return
+        payload = {
+            "order_id": order["order_id"],
+            "account_id": order["created_by"],
+            "status": order["status"],
+            "runs": int(order["runs"]),
+            "amount_vnd": int(order["amount_vnd"]),
+            "gateway_title": self._gateway_title(order["gateway"]),
+            "reference": order["reference"] or "",
+            "live": bool(order["live"]),
+            "settled_at": order["settled_at"] or self._stamp(),
+        }
+        try:
+            self._publish(ORDER_SETTLED, payload)
+        except Exception:  # noqa: BLE001 - the money moved; an email must not undo that
+            logger.exception("billing: could not announce order %s", order["order_id"])
 
     # ------------------------------------------------------------ what the screens read
 

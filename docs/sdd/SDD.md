@@ -2415,7 +2415,9 @@ Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 
 **Bản ghi trong lộ trình (D094, FR-99).** `PriceList` thêm `lesson_minute_runs` (0,1), `lesson_free_per_day` (5), `lesson_daily_cap` (30), đọc từ `AICEFR_PRICE_LESSON_MINUTE_RUNS`, `AICEFR_LESSON_FREE_PER_DAY`, `AICEFR_LESSON_DAILY_CAP` và đổi được trên dashboard (D078; bảng giá lưu trước D094 lấy giá trị của cấu hình). Năm endpoint ghi âm của `learning` gọi `_metered`: trước khi đo, `MeteringFacade.hold_lesson` lấy một suất của ngày giờ Việt Nam trong `wallet` (`lesson_day`, `lesson_used`, `lesson_free_used`) bằng cập nhật có điều kiện `lesson_used < trần`, rồi một cập nhật có điều kiện nữa cho suất miễn phí; suất trả phí giữ `lesson_units` của thời lượng tối đa của bước qua `_take` (lượt miễn phí tháng rồi ví). Từ chối trả về dạng dữ liệu `{"status", "message"}` (429, 402) và endpoint không đo gì. Đo xong, `settle_lesson` thu theo `StepResult.speaking_s`, mỗi phút đã bắt đầu, ít nhất một phút; `measured = false` hay lỗi thì thả bút toán, trả lượt và suất (`_give_back_slot`, chỉ trong đúng ngày đó). Bút toán `lesson` ghi `day` và `free_slot`. Bản xem thử và audio mẫu của giảng viên không đi qua `_metered`. Tắt tính lượt thì facade trả `None` và không ghi gì.
 
-**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
+**Email thanh toán (D096, FR-101).** `BillingService.settle` phát `billing.order_settled` lên bus một lần khi đơn chốt đã thanh toán hoặc không thành công; dịch vụ định danh nhận, kiểm email đã xác minh, chặn gửi trùng bằng `setting_once`, rồi gửi biên nhận qua bộ gửi D079.
+
+**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Observer, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
 
 ## 5. Thiết kế cơ sở dữ liệu
 

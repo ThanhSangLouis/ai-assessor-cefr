@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.26** | **07/11/2026** | **D096.** +1 FR: FR-101 email cho luồng thanh toán: đơn gói lượt kết thúc đã thanh toán thì người mua nhận biên nhận, không thành công thì nhận thông báo; chỉ gửi tới email đã xác minh, mỗi đơn một email. Thanh toán phát sự kiện `billing.order_settled` trên bus, dịch vụ định danh nhận và gửi | D096 |
 | **1.25** | **07/11/2026** | **D095.** +1 FR: FR-100 bán gói lượt qua payOS (chuyển khoản VietQR, Napas 24/7): link thanh toán ký bằng checksum key, trả về được đọc lại từ API payOS, webhook chỉ tin khi chữ ký đúng; payOS không có môi trường thử nên chỉ chạy khi bật tiền thật (`AICEFR_PAYMENTS_LIVE`), khi đó cổng thử tắt. Đơn, gói lượt và luật chốt kết quả không đổi | D095 |
 | **1.24** | **07/11/2026** | **Không thêm FR.** AC-65.10 và AC-66.2 theo trang Lộ trình D092: thành tựu xem ở trang Kết quả; thẻ Mục tiêu hôm nay giữ chuỗi ngày và ngày nghỉ, không hiện kỷ lục và tổng 7 ngày (chủ dự án chốt giữ như giao diện mới). Dữ liệu `today_summary` không đổi | D092 |
 | **1.23** | **07/11/2026** | **D094.** +1 FR: FR-99 tính lượt cho bản ghi trong lộ trình học trên kênh NetID: 5 bản ghi đầu mỗi ngày (giờ Việt Nam) miễn phí, sau đó 0,1 lượt mỗi phút nói đã bắt đầu, tối đa 30 bản ghi mỗi ngày; bản ghi không đo được thì trả lại. `MeteredAction` thêm `LESSON`; `Wallet` thêm số bản ghi trong ngày; `LedgerEntry` thêm ngày và cờ miễn phí; `PriceList` thêm ba con số của bài học. Bản của trường và nghiên cứu không đổi (BR-29, BR-30) | D094 (APPROVED) |
@@ -1665,6 +1666,20 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-100.4** — *Given* một địa chỉ trả về ghi "PAID" mà payOS chưa nhận tiền, *When* mở địa chỉ đó, *Then* không cộng lượt; link không thuộc đơn nào thì không hỏi payOS; rời trang payOS thì đơn vẫn chờ (`test_a_return_address_alone_proves_nothing`). |
 | **AC-100.5** — *Given* khoá payOS đã điền, *When* `AICEFR_PAYMENTS_LIVE` chưa bật, *Then* payOS không được mời và không đặt được đơn qua payOS; bật lên thì payOS chạy và cổng thử tắt (`test_payos_is_offered_only_when_real_money_is_switched_on`). |
 | **AC-100.6** — *Given* payOS từ chối mở link hoặc không kết nối được, *When* học viên đặt gói, *Then* nhận một câu nói rõ lý do bằng tiếng Việt (`test_payos_refusals_read_as_sentences`). |
+
+### FR-101 — Email cho luồng thanh toán (D096)
+
+**Mô tả:** Khi một đơn gói lượt kết thúc **đã thanh toán**, người mua nhận email biên nhận: gói, số tiền, cổng, mã đơn, mã giao dịch, liên kết tới trang biên nhận. Khi đơn **không thành công**, người mua nhận email báo không có lượt nào bị trừ hay cộng, kèm liên kết đặt lại. Đơn bị huỷ (người mua tự rời trang cổng) hoặc cổng không mở được trang thì không gửi email. Chỉ gửi tới email đã xác minh, kể cả khi người mua đã tắt nhắc học (đây là email giao dịch). Phần thanh toán phát sự kiện `billing.order_settled` một lần cho mỗi đơn; dịch vụ định danh, nơi giữ email, nhận và gửi. Bus giao sự kiện ít nhất một lần nên mỗi đơn chỉ có một email. Email không chứa mật khẩu, số thẻ hay khoá (BR-32). Tắt email (`AICEFR_EMAIL_PROVIDER=off`) thì thanh toán vẫn chạy như cũ.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-101.1** — *Given* người mua có email đã xác minh, *When* đơn gói lượt được thanh toán, *Then* họ nhận đúng một email biên nhận ghi gói, số tiền, cổng, mã đơn và liên kết biên nhận, dù trình duyệt và máy chủ của cổng cùng báo kết quả (`test_a_paid_order_emails_its_buyer_a_receipt_once`). |
+| **AC-101.2** — *Given* người mua có email đã xác minh, *When* thanh toán không thành công, *Then* họ nhận email báo chưa thành công, không có lượt nào bị trừ hay cộng, kèm liên kết đặt lại (`test_a_failed_payment_says_so_and_nothing_was_taken`). |
+| **AC-101.3** — *Given* người mua chưa có email đã xác minh, hoặc tự huỷ trên trang cổng, *When* đơn kết thúc, *Then* không có email nào, còn thanh toán vẫn được ghi nhận bình thường (`test_only_a_verified_address_hears_and_a_cancel_says_nothing`). |
+| **AC-101.4** — *Given* bus giao lại cùng một sự kiện, *When* bộ gửi nhận lần hai, *Then* không có email thứ hai (`test_a_second_delivery_of_the_event_sends_no_second_email`). |
+| **AC-101.5** — *Given* một đơn bất kỳ, *When* soạn email, *Then* email nói rõ đã mua gì và cách báo nếu không phải mình, không chứa mật khẩu, số thẻ hay khoá; thiếu địa chỉ công khai thì không chèn liên kết hỏng (`test_the_payment_email_says_what_was_bought_and_nothing_secret`). |
+| **AC-101.6** — *Given* bản triển khai tắt email, *When* đơn được thanh toán, *Then* đơn vẫn chốt và lượt vẫn vào ví (`test_with_email_off_a_payment_still_settles`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

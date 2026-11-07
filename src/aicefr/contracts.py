@@ -874,3 +874,15 @@ class Response(BaseModel):
     @property
     def needs_teacher(self) -> bool:
         return self.status is ResponseStatus.REVIEW_REQUIRED
+
+
+# ---------------------------------------------------------------- events (D096)
+
+# Topics on the message bus (`aicefr.platform.bus`), named here so that the
+# publisher and the subscriber, in different services, share a contract and not
+# an import of each other.
+#
+# A run-pack order that ended paid or failed. Published once by the billing
+# service; payload: order_id, account_id, status ("paid" | "failed"), runs,
+# amount_vnd, gateway_title, reference, live, settled_at. Never an email.
+ORDER_SETTLED = "billing.order_settled"

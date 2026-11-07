@@ -20,7 +20,8 @@ Tài liệu này liệt kê các mẫu thiết kế **đang có trong mã**, m�
 | Khởi tạo (GoF) | Singleton (cấu hình) | `config.py` (`get_settings`, `lru_cache`) |
 | Dữ liệu | Repository | `storage/*_repository.py` |
 | Dữ liệu | Value Object | `billing/payments.py` (`PaymentResult`, `Checkout`, `Incoming`, `Ack`) |
-| Tích hợp | Idempotent Receiver | `BillingService.settle`, sổ lượt `hold`/`settle` theo `(key, action)` |
+| Tích hợp | Idempotent Receiver | `BillingService.settle`, sổ lượt `hold`/`settle` theo `(key, action)`, email thanh toán (`notify/payments.py`) |
+| Hành vi (GoF) | Observer (Domain Event) | `billing.order_settled`: `billing/service.py` phát, `services/core/identity/app.py` nhận và gửi email (D096) |
 | Nguyên lý | Dependency Injection | `ResponseProcessor`, `Transport` của cổng thanh toán |
 
 ## 2. Mẫu theo phần của hệ thống
@@ -97,7 +98,28 @@ Ba bộ lọc chạm ra ngoài lớp nghiệp vụ được khai báo là cổng
 - **Value Object.** Kết quả cổng thanh toán và các thông điệp qua lại là `dataclass(frozen=True)`, không sửa được sau khi tạo.
 - **Idempotent Receiver.** Cổng thanh toán có thể báo cùng một kết quả nhiều lần, qua trình duyệt lẫn webhook, theo thứ tự bất kỳ. `settle` chỉ đổi đơn một lần; lượt chỉ cộng một lần cho mỗi đơn; sổ lượt giữ và chốt theo cặp `(key, action)`. Test gửi lại webhook và mở lại địa chỉ trả về để chứng minh điều đó.
 
-### 2.5. Cấu hình: Singleton
+### 2.5. Email thanh toán: Observer (Domain Event)
+
+Khi một đơn chốt **đã thanh toán** hoặc **không thành công**, `BillingService` phát sự kiện `billing.order_settled` lên bus (`MessageBus.publish`). Dịch vụ định danh đăng ký nhận (`subscribe`) và gửi email cho người mua (D096). Bên phát không biết ai nghe; bên nghe không gọi ngược bên phát. Tên sự kiện nằm trong `contracts.py`, nên hai dịch vụ chỉ chung một hợp đồng chứ không import lẫn nhau.
+
+```mermaid
+sequenceDiagram
+    participant G as Cổng thanh toán
+    participant B as BillingService
+    participant Bus as MessageBus
+    participant I as Identity (email)
+    participant R as Resend
+    G->>B: kết quả có chữ ký
+    B->>B: settle: đổi đơn đúng một lần, cộng lượt
+    B-)Bus: publish billing.order_settled
+    Bus-)I: giao sự kiện (ít nhất một lần)
+    I->>I: email đã xác minh? đã gửi cho đơn này chưa?
+    I->>R: biên nhận hoặc báo không thành công
+```
+
+**Lợi ích đo được.** Thêm thông báo đẩy hay thành tựu cho thanh toán sau này chỉ là thêm một bên nghe, không sửa `BillingService`. Test giao lại cùng sự kiện để chứng minh mỗi đơn chỉ có một email.
+
+### 2.6. Cấu hình: Singleton
 
 `get_settings()` đọc biến môi trường một lần và giữ lại (`lru_cache(maxsize=1)`). Test xoá bộ nhớ đệm (`cache_clear`) để nạp cấu hình khác cho từng ca.
 
@@ -107,7 +129,7 @@ Ba bộ lọc chạm ra ngoài lớp nghiệp vụ được khai báo là cổng
 | --- | --- | --- | --- |
 | **State** | Đơn thanh toán (`OrderStatus`): bảng chuyển trạng thái tường minh thay cho tập `SETTLEABLE` | Sơ đồ trạng thái trong báo cáo khớp 1:1 với mã; chuyển sai bị chặn tại một chỗ | Nhỏ |
 | **Circuit Breaker** | Bọc `Transport` của Stripe và payOS | Cổng sập thì ngừng gọi một lúc, báo ngay cho người mua thay vì chờ hết 15 giây mỗi lần | Vừa |
-| **Observer / Domain Event** | Sự kiện "đơn đã thanh toán", "bài đã duyệt" phát ra cho thông báo đẩy, email, thành tựu | Bỏ các lời gọi chéo giữa phần thanh toán, thông báo và thành tựu | Vừa |
+| **Observer / Domain Event** (mở rộng) | Sự kiện "bài đã duyệt" cho thông báo đẩy và thành tựu, như D096 đã làm cho thanh toán | Bỏ các lời gọi chéo giữa phần chấm, thông báo và thành tựu | Vừa |
 | **Decorator** | Bọc `Scorer` để ghi thời gian chạy và số liệu Prometheus | Đo hiệu năng mà không sửa mô hình chấm | Nhỏ |
 | **Specification** | Điều kiện mở khoá bài học, thành tựu | Luật đọc như câu, ghép được, test riêng từng luật | Vừa |
 
