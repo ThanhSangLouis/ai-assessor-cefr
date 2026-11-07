@@ -121,18 +121,7 @@ Với bài độc thoại, tiêu chí Interaction luôn để trống vì không
 
 ## Kiến trúc
 
-```mermaid
-flowchart TB
-    U(["Trình duyệt"]) -->|HTTPS| GW["Caddy TLS + Nginx gateway"]
-    GW --> WEB["web<br/>Jinja2, tệp tĩnh, BFF"]
-    GW --> CORE["core<br/>định danh, bài nộp, duyệt bài,<br/>lộ trình, tính lượt, thanh toán"]
-    WEB -->|HTTP nội bộ| CORE
-    CORE --> M[("MongoDB")]
-    CORE <-->|"việc chấm, kết quả"| R[("Redis<br/>BullMQ, Streams")]
-    R <--> SP["speech<br/>QC, VAD, Whisper, scorer"]
-    CORE -.-> S3[("S3 / MinIO<br/>bản ghi")]
-    SP -.-> S3
-```
+<a href="docs/sdd/images/02b_kien_truc.png"><img src="docs/sdd/images/02b_kien_truc.png" alt="Sơ đồ kiến trúc tổng thể: gateway Nginx, ba dịch vụ web, core và speech, Redis BullMQ và Streams, các database MongoDB riêng, kho bản ghi S3, cổng thanh toán và Prometheus"></a>
 
 | Dịch vụ | Việc chính | Lưu trữ |
 | --- | --- | --- |
@@ -140,7 +129,7 @@ flowchart TB
 | `speech` | Xử lý âm thanh độc lập, nhận việc qua Redis BullMQ, trả kết quả qua Redis Streams | Không giữ khoá hay dữ liệu người dùng |
 | `web` | Giao diện Jinja2, tệp tĩnh, BFF gọi `core` qua HTTP nội bộ | Không có |
 
-Chi tiết: [SDD](docs/sdd/SDD.md) · [sơ đồ kiến trúc](docs/sdd/images/02b_kien_truc.png) · [sơ đồ triển khai](docs/sdd/images/06_deployment.png)
+Chi tiết: [SDD](docs/sdd/SDD.md) · [sơ đồ triển khai](docs/sdd/images/06_deployment.png)
 
 ## Công nghệ
 
