@@ -165,7 +165,7 @@ def test_on_a_phone_the_art_takes_no_tap_and_no_room(browser, live_server):
         page = ctx.new_page()
         for url, target in (
             ("/", page.get_by_role("link", name="Đăng nhập").first),
-            ("/login", page.get_by_role("button", name="Đăng nhập")),
+            ("/login", page.get_by_role("button", name="Đăng nhập", exact=True)),
             ("/bands", None),
         ):
             page.goto(url)

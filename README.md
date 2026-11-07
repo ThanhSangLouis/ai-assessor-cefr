@@ -98,7 +98,7 @@ cần sửa gì. Giảng viên thì không đủ thời gian nghe từng bài. S
 | Luyện tập | Lộ trình sáu bậc, bài học nhiều bước, ôn tập, nói lại, luyện từ khó, đọc đoạn văn do AI viết, cụm từ hay dùng, thành tựu và chuỗi ngày học |
 | Giảng viên | Hàng đợi duyệt, chấm mù kép, lớp học, soạn đề và bài học, lộ trình riêng cho lớp, thống kê lớp |
 | Tài khoản | Đăng nhập bằng mật khẩu hoặc Google (OAuth PKCE), đồng thuận dữ liệu, xoá dữ liệu theo yêu cầu, nhật ký kiểm toán |
-| Tính lượt | Lượt chấm theo phút nói (1 lượt = 2.000 IDPoint), lượt miễn phí mỗi tháng, bản ghi miễn phí mỗi ngày trong lộ trình, gói lượt qua Stripe, VNPay hoặc MoMo ở chế độ thử. Mặc định tắt (`AICEFR_METERING`) |
+| Tính lượt | Lượt chấm theo phút nói (1 lượt = 2.000 IDPoint), lượt miễn phí mỗi tháng, bản ghi miễn phí mỗi ngày trong lộ trình, gói lượt qua Stripe ở chế độ thử. Mặc định tắt (`AICEFR_METERING`) |
 | Vận hành | Ba dịch vụ tách rời, hàng đợi Redis, lưu bản ghi trên S3 tương thích, chỉ số Prometheus và Grafana, sao lưu MongoDB |
 
 </details>
@@ -139,7 +139,7 @@ Chi tiết: [SDD](docs/sdd/SDD.md) · [sơ đồ triển khai](docs/sdd/images/0
 | Giọng nói | Whisper (`mlx-whisper` trên Apple Silicon, `faster-whisper` nơi khác), Silero VAD, Ridge regression, conformal prediction |
 | Dữ liệu | MongoDB 7 (pymongo), Redis 7 (BullMQ, Streams), S3 tương thích (MinIO) |
 | Giao diện | Jinja2, JavaScript thuần, CSS tự viết, font tự host (Roboto, Poppins), PWA và thông báo đẩy |
-| Tích hợp | Google OAuth PKCE, Stripe, VNPay, MoMo (chế độ thử), Resend (email), Gemini (AI viết lại) |
+| Tích hợp | Google OAuth PKCE, Stripe (chế độ thử), Resend (email), Gemini (AI viết lại) |
 | Hạ tầng | Docker Compose, Caddy, Nginx, AWS EC2, Prometheus, Grafana |
 | Chất lượng | pytest, Playwright, Ruff, CodeQL, quét lộ khoá bí mật |
 
