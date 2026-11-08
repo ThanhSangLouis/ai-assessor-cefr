@@ -125,7 +125,7 @@ def test_only_the_administrator_reads_the_orders(payos):  # noqa: F811
 
 
 def test_the_terms_are_open_and_linked_from_the_buy_page(payos, monkeypatch):  # noqa: F811
-    """TC-PG-I08: the terms open to all, say the refund rule and name the contact."""
+    """TC-PG-I08: the terms open to all, say there is no refund and name the contact."""
     app, fake = payos
     monkeypatch.setenv("AICEFR_SUPPORT_EMAIL", "hotro@speakup.fit")
     from aicefr import config
@@ -136,7 +136,8 @@ def test_the_terms_are_open_and_linked_from_the_buy_page(payos, monkeypatch):  #
     page = TestClient(app.app).get("/payment-terms")
 
     assert page.status_code == 200
-    assert "Hoàn tiền 7 ngày" in page.text and "hotro@speakup.fit" in page.text
+    assert "Không hoàn tiền" in page.text and "hotro@speakup.fit" in page.text
+    assert "Hoàn tiền" not in page.text and "hoàn đủ" not in page.text
     assert "không phải hoá đơn VAT" in page.text
     credits = login_as(app, "SV-001").get("/credits").text
     assert 'href="/payment-terms"' in credits
