@@ -25,6 +25,7 @@
    - D084: đơn nạp lượt tách thành `Order` (phần mua) và `Payment` (phần cổng thanh toán).
    - D089: `WordDrill`, từ máy nghe chưa rõ được nói lại. `ReviewItem` thêm `drill`; `ReviewItem.lesson` thành 0..1.
    - D090: `DrillPassage`, đoạn đọc viết quanh 3–5 từ đang luyện dở. `PriceList` thêm `passageRuns`; `MeteredAction` thêm `DRILL_PASSAGE`.
+   - D094: tính lượt cho bản ghi trong lộ trình học. `PriceList` thêm `lessonMinuteRuns`, `lessonFreePerDay`, `lessonDailyCap`; `Wallet` thêm `lessonDay`, `lessonUsed`, `lessonFreeUsed`; `LedgerEntry` thêm `day`, `freeSlot`; `MeteredAction` thêm `LESSON`.
 
 ## 2. Quy tắc vẽ
 
