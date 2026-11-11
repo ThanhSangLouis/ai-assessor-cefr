@@ -24,7 +24,6 @@ construction rather than by a filter someone could forget.
 
 from __future__ import annotations
 
-import json
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
@@ -52,11 +51,14 @@ from aicefr.storage.db import (
 from aicefr.storage.db import now_iso as _now
 
 # path.status: draft | published | archived. A unit's topic (D027): what it
-# talks about. review_item.kind: word | talk; a word from a drill (D089) has no
-# lesson (lesson_id and step_id empty) and points back with drill_id. A
+# talks about. review_item.kind: word | talk | phrase; a word from a drill
+# (D089) has no lesson (lesson_id and step_id empty) and points back with
+# drill_id; a phrase of an upgraded answer (D070, D104) has neither, its
+# `word` is the phrase's key and it never ends (`done` stays 0). A
 # lesson's media kind: audio | image. achievement (D032): achievements reached,
-# kept even if the attempts behind them go; seen_at None until the learner has
-# seen it.
+# kept even if the attempts behind them go.
+# The kind of a review item that is a phrase of the phrase book (D104).
+PHRASE = "phrase"
 INDEXES = {
     "path": [(("path_id",), True), (("units.unit_id",), False)],
     "lesson": [
@@ -67,7 +69,6 @@ INDEXES = {
     "attempt": [
         (("attempt_id",), True),
         (("account_id", "lesson_id"), False),
-        (("lesson_id", "step_id"), False),
         (("created_at",), False),
     ],
     "review_item": [
@@ -86,10 +87,7 @@ PATH_FIELDS = (
     "band_from",
     "band_to",
     "status",
-    "built_in",
-    "created_by",
     "created_at",
-    "updated_at",
 )
 UNIT_FIELDS = (
     "unit_id",
@@ -99,23 +97,16 @@ UNIT_FIELDS = (
     "band",
     "criterion",
     "topic",
-    "position",
-    "created_at",
 )
 ATTEMPT_FIELDS = (
     "attempt_id",
     "account_id",
     "lesson_id",
     "lesson_version",
-    "step_id",
-    "round",
     "review_item_id",
     "audio_key",
-    "result_json",
-    "passed",
-    "speaking_s",
-    "rules_version",
-    "override_json",
+    "result",
+    "override",
     "overridden_by",
     "overridden_at",
     "created_at",
@@ -131,7 +122,6 @@ REVIEW_FIELDS = (
     "due_date",
     "done",
     "created_at",
-    "updated_at",
     "drill_id",
 )
 _BY_POSITION = [("position", ASCENDING), ("_id", ASCENDING)]
@@ -157,8 +147,6 @@ class Unit:
     band: Band | None = None
     criterion: Criterion | None = None
     topic: str | None = None
-    position: int = 0
-    created_at: str = ""
     lessons: list[Lesson] = field(default_factory=list)
 
     @classmethod
@@ -184,11 +172,7 @@ class LessonPath:
     band_from: Band | None = None
     band_to: Band | None = None
     status: PathStatus = PathStatus.DRAFT
-    # Shipped with the system (D085, `sample` before): the seed keeps it in shape.
-    built_in: int = 0
-    created_by: str | None = None
     created_at: str = ""
-    updated_at: str = ""
     units: list[Unit] = field(default_factory=list)
 
     @classmethod
@@ -199,9 +183,8 @@ class LessonPath:
         return cls(
             **found,
             status=PathStatus(doc["status"]),
-            units=sorted(
-                (Unit.from_doc(u) for u in doc.get("units") or []), key=lambda u: u.position
-            ),
+            # D103: a unit's place is its place in the list, no `position`.
+            units=[Unit.from_doc(u) for u in doc.get("units") or []],
         )
 
     def to_doc(self) -> dict:
@@ -221,29 +204,29 @@ class LessonPath:
 
 @dataclass
 class StepAttempt:
-    """One spoken take of one step, against the lesson version the learner saw."""
+    """One spoken take of one step, against the lesson version the learner saw.
+
+    The step, round, speaking time, rules and verdict are the result's own
+    fields (D105): `result` is the machine's `StepResult`, `override` a
+    teacher's correction of it. Nothing is copied out of them.
+    """
 
     attempt_id: str
     account_id: str
     lesson_id: str
     lesson_version: int
-    step_id: str
-    round: int
     review_item_id: str | None
     audio_key: str | None
-    result_json: str
-    passed: int
-    speaking_s: float
-    rules_version: str
+    result: dict  # the machine's StepResult, as a document (D104: no JSON string)
     created_at: str
-    override_json: str | None = None
+    override: dict | None = None
     overridden_by: str | None = None
     overridden_at: str | None = None
 
 
 @dataclass
 class ReviewItem:
-    """A word or a talk to say again later: its Leitner box and the day it is due."""
+    """A word, a talk or a phrase to say again later: its Leitner box and the day it is due."""
 
     item_id: str
     account_id: str
@@ -255,7 +238,6 @@ class ReviewItem:
     due_date: str
     done: int
     created_at: str
-    updated_at: str
     # D089: the drill a word came from, when it came from a recording, not a lesson.
     drill_id: str | None = None
 
@@ -270,7 +252,6 @@ class Achievement:
     account_id: str
     code: str
     unlocked_at: str
-    seen_at: str | None = None
 
 
 class LessonRepository(MongoStore):
@@ -300,9 +281,7 @@ class LessonRepository(MongoStore):
                     SAMPLE_PATH["description"],
                     SAMPLE_PATH["band_from"],
                     SAMPLE_PATH["band_to"],
-                    by="system",
                     path_id=SAMPLE_PATH_ID,
-                    built_in=True,
                     status="published",
                 )
             except IntegrityError:
@@ -327,7 +306,7 @@ class LessonRepository(MongoStore):
                 band_from=SAMPLE_PATH["band_from"],
                 band_to=SAMPLE_PATH["band_to"],
             )
-        for position, unit in enumerate(SAMPLE_UNITS, 1):
+        for unit in SAMPLE_UNITS:
             uid = unit["unit_id"]
             if self._path_of_unit(uid) is None:
                 self.add_unit(
@@ -347,11 +326,10 @@ class LessonRepository(MongoStore):
                     band=unit["band"],
                     topic=unit["topic"],
                 )
-            self._set_unit(uid, position=position)
             for item in lessons[uid]:
                 if lesson_docs.find_one({"lesson_id": item.lesson_id}) is None:
-                    self.add_lesson(uid, item, by="system")
-                    self.publish(item.lesson_id, by="system")
+                    self.add_lesson(uid, item)
+                    self.publish(item.lesson_id)
             ids = [item.lesson_id for item in lessons[uid]]
             # Sample lessons first, in layout order; anything a teacher added
             # to this unit follows in its own order.
@@ -364,10 +342,8 @@ class LessonRepository(MongoStore):
                 lesson_docs.update_one(
                     {"lesson_id": lid}, {"$set": {"unit_id": uid, "position": pos}}
                 )
-        sample_ids = [u["unit_id"] for u in SAMPLE_UNITS]
-        rest = [u.unit_id for u in self._path(SAMPLE_PATH_ID).units if u.unit_id not in sample_ids]
-        for pos, uid in enumerate(rest, len(sample_ids) + 1):
-            self._set_unit(uid, position=pos)
+        # Sample units first, in layout order; a teacher's own units follow.
+        self._order_units(SAMPLE_PATH_ID, [u["unit_id"] for u in SAMPLE_UNITS])
 
     # ------------------------------------------------------------ paths and units
 
@@ -377,9 +353,7 @@ class LessonRepository(MongoStore):
         description: str = "",
         band_from: Band | None = None,
         band_to: Band | None = None,
-        by: str | None = None,
         path_id: str | None = None,
-        built_in: bool = False,
         status: str = "draft",
     ) -> str:
         now = _now()
@@ -390,10 +364,7 @@ class LessonRepository(MongoStore):
             band_from=Band(band_from) if band_from else None,
             band_to=Band(band_to) if band_to else None,
             status=PathStatus(status),
-            built_in=int(built_in),
-            created_by=by,
             created_at=now,
-            updated_at=now,
         )
         self.col("path").insert_one(made.to_doc())
         return made.path_id
@@ -408,18 +379,13 @@ class LessonRepository(MongoStore):
                 sets[key] = sets[key].value
         if not sets:
             return
-        sets["updated_at"] = _now()
         done = self.col("path").update_one({"path_id": path_id}, {"$set": sets})
         if not done.matched_count:
             raise NotFound(path_id)
 
     def paths(self, published_only: bool = False) -> list[dict]:
         query = {"status": "published"} if published_only else {"status": {"$ne": "archived"}}
-        rows = (
-            self.col("path")
-            .find(query)
-            .sort([("built_in", ASCENDING), ("created_at", ASCENDING), ("_id", ASCENDING)])
-        )
+        rows = self.col("path").find(query).sort([("created_at", ASCENDING), ("_id", ASCENDING)])
         return [LessonPath.from_doc(r).view() for r in rows]
 
     def path(self, path_id: str) -> dict:
@@ -441,6 +407,14 @@ class LessonRepository(MongoStore):
         )
         return bool(done.matched_count)
 
+    def _order_units(self, path_id: str, order: list[str]) -> None:
+        """Put a path's units in `order` (unit ids); units not named keep their order, last."""
+        row = self.col("path").find_one({"path_id": path_id}, {"units": 1})
+        units = (row or {}).get("units") or []
+        rank = {uid: n for n, uid in enumerate(order)}
+        units = sorted(units, key=lambda u: rank.get(u["unit_id"], len(order)))
+        self.col("path").update_one({"path_id": path_id}, {"$set": {"units": units}})
+
     def _next_position(self, collection: str, parent: str, parent_id: str) -> int:
         """The position after the last lesson of a unit."""
         last = self.col(collection).find_one({parent: parent_id}, sort=[("position", DESCENDING)])
@@ -456,7 +430,7 @@ class LessonRepository(MongoStore):
         unit_id: str | None = None,
         topic: Topic | None = None,
     ) -> str:
-        owner = self._path(path_id)
+        self._path(path_id)  # NotFound when there is no such path
         made = Unit(
             unit_id=unit_id or new_id("u"),
             title=title,
@@ -464,8 +438,6 @@ class LessonRepository(MongoStore):
             band=Band(band) if band else None,
             criterion=Criterion(criterion) if criterion else None,
             topic=Topic(topic).value if topic else None,
-            position=max((u.position for u in owner.units), default=0) + 1,
-            created_at=_now(),
         )
         self.col("path").update_one({"path_id": path_id}, {"$push": {"units": made.to_doc()}})
         return made.unit_id
@@ -508,9 +480,9 @@ class LessonRepository(MongoStore):
             i = next(n for n, u in enumerate(units) if u.unit_id == key)
             j = i + (-1 if direction < 0 else 1)
             if 0 <= j < len(units):
-                a, b = units[i], units[j]
-                self._set_unit(a.unit_id, position=b.position)
-                self._set_unit(b.unit_id, position=a.position)
+                order = [u.unit_id for u in units]
+                order[i], order[j] = order[j], order[i]
+                self._order_units(owner.path_id, order)
             return
         id_field = "unit_id" if table == "lesson_unit" else "lesson_id"
         parent = "path_id" if table == "lesson_unit" else "unit_id"
@@ -534,7 +506,7 @@ class LessonRepository(MongoStore):
 
     # ------------------------------------------------------------ lessons
 
-    def add_lesson(self, unit_id: str, lesson: Lesson, by: str | None = None) -> str:
+    def add_lesson(self, unit_id: str, lesson: Lesson) -> str:
         if self._path_of_unit(unit_id) is None:
             raise NotFound(unit_id)
         self.col("lesson").insert_one(
@@ -542,11 +514,9 @@ class LessonRepository(MongoStore):
                 "lesson_id": lesson.lesson_id,
                 "unit_id": unit_id,
                 "position": self._next_position("lesson", "unit_id", unit_id),
-                "draft_json": lesson.model_dump_json(),
+                "draft": lesson.model_dump(mode="json"),
                 "published_version": 0,
-                "draft_changed": 1,
                 "archived": 0,
-                "updated_by": by,
                 "updated_at": _now(),
                 "versions": [],
                 "media": [],
@@ -556,7 +526,7 @@ class LessonRepository(MongoStore):
 
     def draft(self, lesson_id: str) -> tuple[Lesson, dict]:
         """The working copy and its metadata (unit, published version, unpublished changes)."""
-        row = self.col("lesson").find_one({"lesson_id": lesson_id}, {"versions": 0})
+        row = self.col("lesson").find_one({"lesson_id": lesson_id})
         owner = self._path_of_unit(row["unit_id"]) if row else None
         if row is None or owner is None:
             raise NotFound(lesson_id)
@@ -564,32 +534,28 @@ class LessonRepository(MongoStore):
             "unit_id": row["unit_id"],
             "path_id": owner.path_id,
             "published_version": row["published_version"],
-            "draft_changed": bool(row["draft_changed"]),
+            "draft_changed": _draft_changed(row),
             "archived": bool(row["archived"]),
-            "updated_by": row.get("updated_by"),
             "updated_at": row["updated_at"],
         }
-        return Lesson.model_validate_json(row["draft_json"]), meta
+        return Lesson.model_validate(row["draft"]), meta
 
-    def save_draft(self, lesson_id: str, lesson: Lesson, by: str | None = None) -> None:
+    def save_draft(self, lesson_id: str, lesson: Lesson) -> None:
         if lesson.lesson_id != lesson_id:
             raise ValueError("mã bài học không khớp")
         done = self.col("lesson").update_one(
             {"lesson_id": lesson_id},
-            {"$set": {"draft_json": lesson.model_dump_json(), "draft_changed": 1,
-                      "updated_by": by, "updated_at": _now()}},
-        )  # fmt: skip
+            {"$set": {"draft": lesson.model_dump(mode="json"), "updated_at": _now()}},
+        )
         if not done.matched_count:
             raise NotFound(lesson_id)
 
-    def publish(self, lesson_id: str, by: str | None = None) -> int:
+    def publish(self, lesson_id: str) -> int:
         lesson, meta = self.draft(lesson_id)
         version = meta["published_version"] + 1
         published = {
             "version": version,
-            "lesson_json": lesson.model_dump_json(),
-            "published_by": by,
-            "published_at": _now(),
+            "lesson": lesson.model_dump(mode="json"),
         }
         # Guarded by the version read: of two teachers publishing at once, one
         # appends the version and moves the number, the other changes nothing.
@@ -597,7 +563,7 @@ class LessonRepository(MongoStore):
             {"lesson_id": lesson_id, "published_version": version - 1},
             {
                 "$push": {"versions": published},
-                "$set": {"published_version": version, "draft_changed": 0},
+                "$set": {"published_version": version},
             },
         )
         if not done.modified_count:
@@ -615,7 +581,7 @@ class LessonRepository(MongoStore):
         found = next((v for v in row.get("versions") or [] if v["version"] == wanted), None)
         if found is None:
             return None
-        return Lesson.model_validate_json(found["lesson_json"]), found["version"]
+        return Lesson.model_validate(found["lesson"]), found["version"]
 
     def archive_lesson(self, lesson_id: str) -> None:
         """Hide a lesson from its path. Never-published drafts are deleted outright."""
@@ -639,7 +605,7 @@ class LessonRepository(MongoStore):
             .sort(_BY_POSITION)
         )
         published = {
-            (row["lesson_id"], v["version"]): v["lesson_json"]
+            (row["lesson_id"], v["version"]): v["lesson"]
             for row in lessons
             for v in row.get("versions") or []
         }
@@ -649,15 +615,15 @@ class LessonRepository(MongoStore):
             for row in lessons:
                 if row["unit_id"] != u.unit_id:
                     continue
-                published_json = published.get((row["lesson_id"], row["published_version"]))
-                if published_only and not published_json:
+                shown = published.get((row["lesson_id"], row["published_version"]))
+                if published_only and not shown:
                     continue
-                source = published_json if published_only else row["draft_json"]
+                source = shown if published_only else row["draft"]
                 items.append(
                     {
-                        "lesson": Lesson.model_validate_json(source),
+                        "lesson": Lesson.model_validate(source),
                         "published_version": row["published_version"],
-                        "draft_changed": bool(row["draft_changed"]),
+                        "draft_changed": _draft_changed(row),
                     }
                 )
             u.lessons = [item["lesson"] for item in items]
@@ -682,14 +648,9 @@ class LessonRepository(MongoStore):
             account_id=account_id,
             lesson_id=lesson_id,
             lesson_version=lesson_version,
-            step_id=result.step_id,
-            round=result.round,
             review_item_id=review_item_id,
             audio_key=audio_key,
-            result_json=result.model_dump_json(),
-            passed=int(result.passed),
-            speaking_s=result.speaking_s if result.measured else 0.0,
-            rules_version=result.rules_version,
+            result=result.model_dump(mode="json"),
             created_at=created_at or _now(),
         )
         self.col("attempt").insert_one(asdict(made))
@@ -698,10 +659,15 @@ class LessonRepository(MongoStore):
     @staticmethod
     def _attempt(row) -> dict:
         d = fields(row, ATTEMPT_FIELDS)
-        machine = StepResult.model_validate_json(d.pop("result_json"))  # type: ignore[union-attr]
-        override = json.loads(d.pop("override_json") or "null")  # type: ignore[union-attr]
+        machine = StepResult.model_validate(d.pop("result"))  # type: ignore[union-attr]
+        override = d.pop("override") or None  # type: ignore[union-attr]
         d["result"] = apply_override(machine, override) if override else machine  # type: ignore[index]
         d["passed"] = d["result"].passed  # type: ignore[index]
+        # Read from the result, never stored beside it (D105).
+        d["step_id"] = machine.step_id  # type: ignore[index]
+        d["round"] = machine.round  # type: ignore[index]
+        d["speaking_s"] = machine.speaking_s if machine.measured else 0.0  # type: ignore[index]
+        d["rules_version"] = machine.rules_version  # type: ignore[index]
         # Kept beside the corrected result, so a teacher editing a correction
         # starts from what the machine said and what was changed.
         d["machine_passed"] = machine.passed  # type: ignore[index]
@@ -739,20 +705,13 @@ class LessonRepository(MongoStore):
         return [self._attempt(r) for r in rows]
 
     def set_override(self, attempt_id: str, override: dict, by: str) -> None:
-        attempts = self.col("attempt")
-        row = attempts.find_one({"attempt_id": attempt_id}, {"result_json": 1})
-        if row is None:
-            raise NotFound(attempt_id)
-        passed = (
-            int(bool(override.get("passed")))
-            if "passed" in override
-            else int(StepResult.model_validate_json(row["result_json"]).passed)
-        )
-        attempts.update_one(
+        done = self.col("attempt").update_one(
             {"attempt_id": attempt_id},
-            {"$set": {"override_json": json.dumps(override, ensure_ascii=False),
-                      "overridden_by": by, "overridden_at": _now(), "passed": passed}},
+            {"$set": {"override": _string_keys(override), "overridden_by": by,
+                      "overridden_at": _now()}},
         )  # fmt: skip
+        if not done.matched_count:
+            raise NotFound(attempt_id)
 
     def delete_attempt(self, attempt_id: str) -> str | None:
         """Remove one attempt; returns its audio key so the caller deletes the file."""
@@ -785,13 +744,13 @@ class LessonRepository(MongoStore):
         """
         stats: dict[str, dict] = {}
         learners: dict[str, set] = {}
-        for r in self.col("attempt").find(
-            {"speaking_s": {"$gt": 0}}, {"lesson_id": 1, "passed": 1, "account_id": 1}
-        ):
-            cell = stats.setdefault(r["lesson_id"], {"attempts": 0, "passed": 0, "learners": 0})
+        measured = {"result.speaking_s": {"$gt": 0}, "result.measured": {"$ne": False}}
+        for r in self.col("attempt").find(measured):
+            a = self._attempt(r)
+            cell = stats.setdefault(a["lesson_id"], {"attempts": 0, "passed": 0, "learners": 0})
             cell["attempts"] += 1
-            cell["passed"] += int(r.get("passed") or 0)
-            learners.setdefault(r["lesson_id"], set()).add(r["account_id"])
+            cell["passed"] += int(a["passed"])
+            learners.setdefault(a["lesson_id"], set()).add(a["account_id"])
         for lesson_id, who in learners.items():
             stats[lesson_id]["learners"] = len(who)
         return stats
@@ -824,7 +783,7 @@ class LessonRepository(MongoStore):
         """
         rows = list(
             self.col("attempt").find(
-                {"created_at": {"$lt": cutoff}}, {"attempt_id": 1, "audio_key": 1, "result_json": 1}
+                {"created_at": {"$lt": cutoff}}, {"attempt_id": 1, "audio_key": 1, "result": 1}
             )
         )
         audio = cleared = freed = 0
@@ -836,7 +795,7 @@ class LessonRepository(MongoStore):
                 audio += 1
                 if not dry_run:
                     blobs.delete(key)
-            result = json.loads(row["result_json"])
+            result = row["result"]
             changed = bool(result.get("transcript"))
             result["transcript"] = ""
             for mark in [*result.get("words", []), *result.get("gaps", [])]:
@@ -847,23 +806,20 @@ class LessonRepository(MongoStore):
             if not dry_run and (changed or key):
                 self.col("attempt").update_one(
                     {"attempt_id": row["attempt_id"]},
-                    {"$set": {"result_json": json.dumps(result, ensure_ascii=False),
-                              "audio_key": None}},
+                    {"$set": {"result": result, "audio_key": None}},
                 )  # fmt: skip
         return len(rows), audio, cleared, freed
 
     # ------------------------------------------------------------ achievements
 
     def achievements(self, account_id: str) -> dict[str, dict]:
-        """What one account has reached (D032): code -> unlocked_at, seen_at."""
+        """What one account has reached (D032): code -> unlocked_at."""
         rows = (
             self.col("achievement")
             .find({"account_id": account_id})
             .sort([("unlocked_at", ASCENDING), ("_id", ASCENDING)])
         )
-        return {
-            r["code"]: {"unlocked_at": r["unlocked_at"], "seen_at": r.get("seen_at")} for r in rows
-        }
+        return {r["code"]: {"unlocked_at": r["unlocked_at"]} for r in rows}
 
     def unlock(self, account_id: str, codes: list[str], at: str | None = None) -> list[str]:
         """Store achievements just reached; returns those this call stored.
@@ -880,17 +836,6 @@ class LessonRepository(MongoStore):
                 continue
             stored.append(code)
         return stored
-
-    def mark_seen(self, account_id: str, codes: list[str] | None = None) -> int:
-        """Mark achievements as seen: those named, or every one not seen yet."""
-        query: dict = {"account_id": account_id, "seen_at": None}
-        if codes is not None:
-            if not codes:
-                return 0
-            query["code"] = {"$in": list(codes)}
-        return (
-            self.col("achievement").update_many(query, {"$set": {"seen_at": _now()}}).modified_count
-        )
 
     # ------------------------------------------------------------ reviews
 
@@ -918,7 +863,7 @@ class LessonRepository(MongoStore):
         if row is None:
             made = ReviewItem(
                 **key, item_id=new_id("r"), box=1, due_date=due.isoformat(), done=0,
-                created_at=now, updated_at=now, drill_id=drill_id,
+                created_at=now, drill_id=drill_id,
             )  # fmt: skip
             try:
                 items.insert_one(asdict(made))
@@ -927,13 +872,13 @@ class LessonRepository(MongoStore):
         elif row["done"]:
             items.update_one(
                 {"item_id": row["item_id"]},
-                {"$set": {"box": 1, "done": 0, "due_date": due.isoformat(), "updated_at": now}},
+                {"$set": {"box": 1, "done": 0, "due_date": due.isoformat()}},
             )
 
     def due_reviews(self, account_id: str, today: date) -> list[dict]:
         rows = (
             self.col("review_item")
-            .find({"account_id": account_id, "done": 0})
+            .find({"account_id": account_id, "done": 0, "kind": {"$ne": PHRASE}})
             .sort([("due_date", ASCENDING), ("created_at", ASCENDING), ("_id", ASCENDING)])
         )
         items = (ReviewItem(**fields(r, REVIEW_FIELDS)) for r in rows)  # type: ignore[arg-type]
@@ -942,7 +887,7 @@ class LessonRepository(MongoStore):
     def open_reviews(self, account_id: str) -> list[dict]:
         rows = (
             self.col("review_item")
-            .find({"account_id": account_id, "done": 0})
+            .find({"account_id": account_id, "done": 0, "kind": {"$ne": PHRASE}})
             .sort([("due_date", ASCENDING), ("_id", ASCENDING)])
         )
         return [fields(r, REVIEW_FIELDS) for r in rows]  # type: ignore[misc]
@@ -953,17 +898,37 @@ class LessonRepository(MongoStore):
             raise NotFound(item_id)
         return fields(row, REVIEW_FIELDS)  # type: ignore[return-value]
 
+    def phrase_reviews(self, account_id: str) -> dict[str, dict]:
+        """Where each phrase of the phrase book is (D104): key -> box and due day."""
+        rows = self.col("review_item").find({"account_id": account_id, "kind": PHRASE})
+        return {r["word"]: {"box": r["box"], "due": r["due_date"]} for r in rows}
+
+    def review_phrase(self, account_id: str, key: str, box: int, due: date) -> None:
+        """Keep a phrase's box and due day after a review; its first review makes the record."""
+        now = _now()
+        self.col("review_item").update_one(
+            {"account_id": account_id, "kind": PHRASE, "lesson_id": "", "step_id": "", "word": key},
+            {
+                "$set": {"box": box, "due_date": due.isoformat()},
+                "$setOnInsert": {
+                    "item_id": new_id("r"),
+                    "done": 0,
+                    "created_at": now,
+                    "drill_id": None,
+                },
+            },  # fmt: skip
+            upsert=True,
+        )
+
     def reschedule(self, item_id: str, box: int, due: date | None) -> None:
-        sets: dict = {"box": box, "done": int(due is None), "updated_at": _now()}
+        sets: dict = {"box": box, "done": int(due is None)}
         if due is not None:
             sets["due_date"] = due.isoformat()
         self.col("review_item").update_one({"item_id": item_id}, {"$set": sets})
 
     # ------------------------------------------------------------ media
 
-    def add_media(
-        self, lesson_id: str, kind: str, content_type: str, blob_key: str, by: str | None
-    ) -> str:
+    def add_media(self, lesson_id: str, kind: str, content_type: str, blob_key: str) -> str:
         """Keep a file a teacher uploaded for one of the lesson's steps; its key."""
         key = new_id("m")
         item = {
@@ -971,8 +936,6 @@ class LessonRepository(MongoStore):
             "kind": kind,
             "content_type": content_type,
             "blob_key": blob_key,
-            "created_by": by,
-            "created_at": _now(),
         }
         done = self.col("lesson").update_one({"lesson_id": lesson_id}, {"$push": {"media": item}})
         if not done.matched_count:
@@ -1023,7 +986,7 @@ class LessonRepository(MongoStore):
             "units": units,
         }
 
-    def import_path(self, data: dict, by: str | None = None) -> str:
+    def import_path(self, data: dict) -> str:
         """Create a draft path from an exported file.
 
         The whole file is checked before anything is written, so a file with one
@@ -1065,13 +1028,38 @@ class LessonRepository(MongoStore):
             str(data.get("description") or "")[:1000],
             band_from,
             band_to,
-            by=by,
         )
         for title, function, band, criterion, topic, lessons in planned:
             uid = self.add_unit(pid, title, function, band, criterion, topic=topic)
             for lesson in lessons:
-                self.add_lesson(uid, lesson, by=by)
+                self.add_lesson(uid, lesson)
         return pid
+
+
+def _draft_changed(row: dict) -> bool:
+    """Whether the draft differs from the version learners see (D105: worked out, not kept).
+
+    A lesson never published counts as changed: it has something to publish.
+    """
+    shown = row.get("published_version") or 0
+    if not shown:
+        return True
+    version = next((v for v in row.get("versions") or [] if v["version"] == shown), None)
+    return version is None or row.get("draft") != version.get("lesson")
+
+
+def _string_keys(value):
+    """`value` with every mapping key a string, as a document needs it.
+
+    A teacher's correction maps word positions (ints) to statuses. Kept as a
+    JSON string before D104, the keys came back as strings, and
+    `apply_override` reads them that way.
+    """
+    if isinstance(value, dict):
+        return {str(k): _string_keys(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_string_keys(v) for v in value]
+    return value
 
 
 def apply_override(result: StepResult, override: dict) -> StepResult:

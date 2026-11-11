@@ -34,10 +34,10 @@ from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
 pytestmark = pytest.mark.e2e
 
 
-def login_home(page, server, pseudonym: str, home: str) -> None:
+def login_home(page, server, name: str, home: str) -> None:
     """Log in WITHOUT `?next=`, and wait for the role's own start page."""
     page.goto("/login")
-    page.get_by_label("Email", exact=True).fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(name)
     page.get_by_label("Mật khẩu", exact=True).fill(server.password)
     page.get_by_role("button", name="Đăng nhập", exact=True).click()
     page.wait_for_url(lambda url: urlparse(url).path == home)
@@ -220,7 +220,7 @@ def test_teacher_opens_the_next_free_response_and_reads_names_not_codes(context,
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
         gv = live_server.account("teacher")
-        live_server.teach(gv, learner.request.get("/api/v1/me").json()["pseudonym"])
+        live_server.teach(gv, learner.request.get("/api/v1/me").json()["email"])
         login(teacher, live_server, gv, "/review")
         next_button = teacher.get_by_role("link", name="Duyệt bài tiếp theo")
         expect(next_button).not_to_have_attribute("aria-disabled", "true")

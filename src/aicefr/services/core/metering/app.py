@@ -44,10 +44,10 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     book = PriceBook(store, prices, settings.credit_packs)
 
     def free_ok(account_id: str) -> bool:
-        # D101: free runs need a verified email. An account with no email at
-        # all was made by an administrator (self sign-up always has one).
+        # D101: free runs need a verified email. An account an administrator
+        # made counts as verified: the administrator vouched for the address (D103).
         who = peers.identity.account(account_id=account_id)
-        return who is None or not who.get("email") or bool(who.get("email_verified"))
+        return who is None or bool(who.get("email_verified"))
 
     facade = MeteringFacade(store, audit_log, enabled, book, free_ok)
     metering_api.configure(

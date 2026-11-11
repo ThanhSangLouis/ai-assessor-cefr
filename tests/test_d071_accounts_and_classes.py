@@ -1,9 +1,8 @@
 """Accounts of real people, classes with teachers, review by class (D071).
 
 * a person signs in with their email, by password or by Google: the same
-  verified address is the same account; the pseudonym stays inside;
-* an account made before D071 still signs in with its pseudonym until its
-  owner adds an email, and changing an email needs the password;
+  verified address is the same account (D103: there is no other name);
+* changing an email needs the password;
 * a class has one or more teachers, assigned by an administrator; a teacher
   reads and reviews only the work of their classes' members, by name; the
   work of a student in no class is the administrator's;
@@ -12,6 +11,7 @@
 
 from __future__ import annotations
 
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_lessons_integration import PASSWORD as OLD_PASSWORD
 from test_lessons_integration import login_as as _login_as
@@ -25,8 +25,8 @@ from aicefr.storage.auth_repository import Account, Role
 PASSWORD = "mot-cau-de-nho-123"
 
 
-def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
-    return _login_as(m, pseudonym, role, school=False)
+def login_as(m, name: str, role: str = "student") -> TestClient:
+    return _login_as(m, name, role, school=False)
 
 
 def signup(m, email: str, name: str = "Nguyễn Văn An") -> tuple[TestClient, dict]:
@@ -53,7 +53,6 @@ def test_the_email_is_the_way_in_and_one_account_per_email(m):
     _, body = signup(m, "An.Nguyen@Truong.edu.vn")
     assert body["email"] == "an.nguyen@truong.edu.vn"
     assert sign_in(m, "AN.NGUYEN@truong.edu.vn") == 200
-    assert sign_in(m, body["pseudonym"]) == 401  # the pseudonym is an internal code now
     r = TestClient(m.app).post(
         "/api/v1/auth/signup",
         json={"email": "an.nguyen@truong.edu.vn", "full_name": "Khác", "password": PASSWORD},
@@ -61,13 +60,16 @@ def test_the_email_is_the_way_in_and_one_account_per_email(m):
     assert r.status_code == 409
 
 
-def test_an_older_account_adds_an_email_then_signs_in_with_it(m):
+def test_a_changed_email_is_the_new_way_in(m):
     old = login_as(m, "SV-001")
-    assert sign_in(m, "SV-001", OLD_PASSWORD) == 200  # no email yet: the pseudonym opens it
-    r = old.patch("/api/v1/me/contact", json={"email": "sv1@truong.edu.vn", "full_name": "Lê B"})
+    assert sign_in(m, email_of("SV-001"), OLD_PASSWORD) == 200
+    r = old.patch(
+        "/api/v1/me/contact",
+        json={"email": "sv1@truong.edu.vn", "full_name": "Lê B", "current_password": OLD_PASSWORD},
+    )
     assert r.status_code == 200 and r.json()["email"] == "sv1@truong.edu.vn"
     assert sign_in(m, "sv1@truong.edu.vn", OLD_PASSWORD) == 200
-    assert sign_in(m, "SV-001", OLD_PASSWORD) == 401
+    assert sign_in(m, email_of("SV-001"), OLD_PASSWORD) == 401
     # Moving the account to another address needs its password.
     moved = old.patch("/api/v1/me/contact", json={"email": "khac@truong.edu.vn"})
     assert moved.status_code == 403
@@ -82,12 +84,15 @@ def test_an_older_account_adds_an_email_then_signs_in_with_it(m):
 def test_a_taken_or_malformed_email_is_refused(m):
     signup(m, "a@truong.edu.vn")
     other = login_as(m, "SV-002")
-    assert other.patch("/api/v1/me/contact", json={"email": "a@truong.edu.vn"}).status_code == 409
-    assert other.patch("/api/v1/me/contact", json={"email": "khong-phai-email"}).status_code == 422
+    change = {"current_password": OLD_PASSWORD}
+    taken = other.patch("/api/v1/me/contact", json={**change, "email": "a@truong.edu.vn"})
+    assert taken.status_code == 409
+    bad = other.patch("/api/v1/me/contact", json={**change, "email": "khong-phai-email"})
+    assert bad.status_code == 422
 
 
 def test_the_gateway_carries_the_name_and_the_email():
-    who = Account("a1", "SV-001", Role.STUDENT, email="a@b.vn", full_name="Trần Thị C")
+    who = Account("a1", "a@b.vn", Role.STUDENT, full_name="Trần Thị C")
     back = decode_account(encode_account(who))
     assert (back.email, back.full_name, back.display_name) == ("a@b.vn", "Trần Thị C", "Trần Thị C")
 
@@ -102,8 +107,9 @@ def test_google_with_the_address_of_a_password_account_opens_that_account(tmp_pa
     _, flow = start(browser)
     r, _ = finish(monkeypatch, browser, flow, sub="g-71", name="Nguyễn Văn An")
     assert r.status_code == 303 and "google=" not in r.headers["location"]
-    assert browser.get("/api/v1/me").json()["pseudonym"] == body["pseudonym"]
-    row = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])
+    me = browser.get("/api/v1/me").json()
+    assert me["email"] == body["email"]
+    row = m.app.state.auth_repo.get_by_email(body["email"])
     assert row["email_verified"] == 1
     # The address was typed at sign-up, never proved: whoever typed it may not
     # own it, so the password it was given no longer opens the account.
@@ -119,14 +125,15 @@ def test_a_new_google_account_brings_its_name_and_address(tmp_path, monkeypatch)
     assert (me["email"], me["full_name"], me["role"]) == ("moi@example.edu.vn", "Phạm D", "student")
 
 
-def test_an_address_google_has_not_verified_names_no_account(tmp_path, monkeypatch):
+def test_an_address_google_has_not_verified_opens_no_account(tmp_path, monkeypatch):
+    """D103: an account is its email, so Google without a verified one signs nobody up."""
     m = profile_app(monkeypatch, tmp_path)
-    _, body = signup(m, "sinhvien@example.edu.vn")
+    signup(m, "sinhvien@example.edu.vn")
     browser = TestClient(m.app)
     _, flow = start(browser)
-    finish(monkeypatch, browser, flow, sub="g-73", email_verified=False)
-    me = browser.get("/api/v1/me").json()
-    assert me["pseudonym"] != body["pseudonym"] and me["email"] is None
+    r, _ = finish(monkeypatch, browser, flow, sub="g-73", email_verified=False)
+    assert r.status_code == 303 and "google=unverified" in r.headers["location"]
+    assert browser.get("/api/v1/me").status_code == 401
 
 
 # ================================================================= classes and who reviews
@@ -141,7 +148,10 @@ def class_with(admin: TestClient, *teacher_emails: str) -> dict:
 
 
 def named(client: TestClient, email: str, name: str) -> None:
-    r = client.patch("/api/v1/me/contact", json={"email": email, "full_name": name})
+    r = client.patch(
+        "/api/v1/me/contact",
+        json={"email": email, "full_name": name, "current_password": OLD_PASSWORD},
+    )
     assert r.status_code == 200, r.text
 
 
@@ -165,7 +175,7 @@ def test_an_administrator_assigns_teachers_and_a_teacher_has_many_classes(m):
     assert r.status_code == 403
     r = admin.post(f"/api/v1/classes/{b['class_id']}/teachers", json={"email": "gv2@truong.edu.vn"})
     assert r.status_code == 200 and r.json()["added"] is True
-    gv2 = m.app.state.auth_repo.get_by_pseudonym("GV-02")["account_id"]
+    gv2 = m.app.state.auth_repo.get_by_email("gv2@truong.edu.vn")["account_id"]
     assert admin.delete(f"/api/v1/classes/{b['class_id']}/teachers/{gv2}").status_code == 200
     # A student is not a teacher.
     login_as(m, "SV-009")

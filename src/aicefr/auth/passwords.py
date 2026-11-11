@@ -33,7 +33,7 @@ def hash_password(password: str) -> str:
 
 # A real bcrypt hash of a value nobody will guess, used to spend the same time
 # on a login for an account that does not exist as on one that does. Without
-# it, "unknown pseudonym" answers in about 5 ms and "wrong password" in about
+# it, "unknown email" answers in about 5 ms and "wrong password" in about
 # 300 ms, which tells an attacker exactly which accounts are real.
 DUMMY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEe.wt7VqQxHhpx1WHqZ8Vw0sWBQbSdpG0O"
 
@@ -55,20 +55,21 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return False
 
 
-def check_new_password(new: str, pseudonym: str, current: str | None = None) -> None:
+def check_new_password(new: str, email: str, current: str | None = None) -> None:
     """Raise ValueError, worded for the person choosing it, if `new` is not acceptable.
 
     Deliberately short: a length floor and two refusals that matter for this
     system. Composition rules ("one capital, one symbol") push people towards
-    Password1! and a sticky note; length does more for a pseudonymous account
-    that is already rate limited and locked after five failures (NFR-07).
+    Password1! and a sticky note; length does more for an account that is
+    already rate limited and locked after five failures (NFR-07).
     """
     if len(new) < MIN_LENGTH:
         raise ValueError(f"mật khẩu phải từ {MIN_LENGTH} ký tự trở lên")
     if len(new.encode("utf-8")) > MAX_BYTES:
         raise ValueError(f"mật khẩu dài quá {MAX_BYTES} byte")
-    if new.strip().lower() == pseudonym.strip().lower():
-        raise ValueError("mật khẩu không được trùng với mã tài khoản")
+    low = new.strip().lower()
+    if low and low in (email.strip().lower(), email.strip().lower().split("@")[0]):
+        raise ValueError("mật khẩu không được trùng với email")
     if current is not None and new == current:
         raise ValueError("mật khẩu mới phải khác mật khẩu đang dùng")
 

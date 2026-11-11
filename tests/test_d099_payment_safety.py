@@ -11,6 +11,7 @@ Test case ids (TC-PG-Ixx) are listed in `docs/test/TEST_PLAN_D099.md`.
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 from test_billing import m  # noqa: F401
 from test_d095_payos import BODY, PRICE, path_of, payos, place, wallet  # noqa: F401
 from test_lessons_integration import login_as
@@ -89,7 +90,7 @@ def test_a_paid_order_frees_its_place(payos):  # noqa: F811
 
 
 def test_the_administrator_sees_every_order_and_the_money_of_each_day(payos):  # noqa: F811
-    """TC-PG-I06: newest first with the buyer's code, counts by status, today's money, events."""
+    """TC-PG-I06: newest first with the buyer's name, counts by status, today's money, events."""
     app, fake = payos
     buyer = login_as(app, "SV-001")
     paid = place(buyer)["order"]
@@ -100,7 +101,7 @@ def test_the_administrator_sees_every_order_and_the_money_of_each_day(payos):  #
     d = admin.get("/api/v1/admin/credit-orders").json()
 
     assert [o["order_id"] for o in d["orders"]] == [waiting["order_id"], paid["order_id"]]
-    assert {o["buyer"] for o in d["orders"]} == {"SV-001"}
+    assert {o["buyer"] for o in d["orders"]} == {email_of("SV-001")}
     assert d["counts"] == {"paid": 1, "pending": 1} and d["live"] is True
     assert len(d["days"]) == 14 and d["days"][-1] == {
         "date": app.billing.today().isoformat(), "paid": 1, "revenue_vnd": PRICE,

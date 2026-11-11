@@ -37,7 +37,7 @@ from pathlib import Path
 
 from pymongo import DESCENDING, ReturnDocument
 
-from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, PRICE_VERSION, UNITS_PER_RUN, TokenUsage
+from aicefr.metering.pricing import FREE_UNITS_PER_CYCLE, UNITS_PER_RUN
 from aicefr.storage.db import IntegrityError, MongoStore
 from aicefr.storage.db import now_iso as _now
 from aicefr.storage.migrations import ensure_current
@@ -73,17 +73,12 @@ class LedgerEntry:
     user_ref: str  # the wallet's owner
     action: MeteredAction
     key: str  # the response; "upgrade-<response id>" for an upgraded answer
-    held: int
     from_free: int
     from_wallet: int
     charged: int
     state: LedgerState
     period: str
-    price_version: str
     created_at: str
-    input_tokens: int | None = None
-    output_tokens: int | None = None
-    usage_estimated: bool | None = None
     settled_at: str | None = None
     # D094, a lesson recording: the Vietnam day whose count it took, and
     # whether it was one of that day's free recordings.
@@ -97,6 +92,11 @@ class LedgerEntry:
         found["action"] = MeteredAction(doc["action"])
         found["state"] = LedgerState(doc["state"])
         return cls(**found)
+
+    @property
+    def held(self) -> int:
+        """What was held: the free runs and the wallet runs taken together (D103)."""
+        return self.from_free + self.from_wallet
 
     def to_doc(self) -> dict:
         return {**asdict(self), "action": self.action.value, "state": self.state.value}
@@ -136,7 +136,10 @@ class Wallet:
 
 
 def _entry(row: dict | None) -> dict | None:
-    return LedgerEntry.from_doc(row).to_doc() if row else None
+    if not row:
+        return None
+    entry = LedgerEntry.from_doc(row)
+    return {**entry.to_doc(), "held": entry.held}
 
 
 class InsufficientCredits(Exception):
@@ -179,27 +182,33 @@ class MeteringRepository(MongoStore):
 
     def price_list(self) -> dict | None:
         """The prices an administrator set, or None while the settings stand."""
-        return self.col("price_list").find_one({"_id": "current"}, {"_id": 0, "history": 0})
+        return self.col("price_list").find_one({"_id": "current"}, {"_id": 0})
 
     def price_history(self, limit: int = 10) -> list[dict]:
-        row = self.col("price_list").find_one({"_id": "current"}, {"history": 1})
-        return list(reversed((row or {}).get("history", [])))[:limit]
+        """The versions before the one in force, newest first, from the audit log (D105).
 
-    def set_price_list(self, values: dict, by: str) -> dict:
-        """A new version of the prices; the one before goes into the history."""
+        Each change of the prices is audited (`metering.prices`, its version as
+        the detail): that is the history, so the price list keeps no copy.
+        """
+        current = (self.price_list() or {}).get("version")
+        rows = (
+            self.col("audit_log")
+            .find({"service": "metering", "action": "metering.prices"})
+            .sort("id", DESCENDING)
+            .limit(limit + 1)
+        )
+        return [
+            {"version": r["detail"], "changed_at": r["created_at"]}
+            for r in rows
+            if r.get("detail") != current
+        ][:limit]
+
+    def set_price_list(self, values: dict) -> dict:
+        """A new version of the prices, numbered on from the one in force."""
         before = self.price_list()
-        number = int((before or {}).get("number", 0)) + 1
-        doc = {
-            **values,
-            "number": number,
-            "version": f"price-admin-{number}",
-            "changed_by": by,
-            "changed_at": _now(),
-        }
-        update: dict = {"$set": doc}
-        if before:
-            update["$push"] = {"history": before}
-        self.col("price_list").update_one({"_id": "current"}, update, upsert=True)
+        number = int(str((before or {}).get("version", "0")).rsplit("-", 1)[-1] or 0) + 1
+        doc = {**values, "version": f"price-admin-{number}", "changed_at": _now()}
+        self.col("price_list").replace_one({"_id": "current"}, doc, upsert=True)
         return doc
 
     @property
@@ -338,7 +347,6 @@ class MeteringRepository(MongoStore):
         action: MeteredAction,
         key: str,
         units: int,
-        version: str = PRICE_VERSION,
         free_ok: bool = True,
     ) -> dict:
         """Hold `units` for `key`: free runs first (when `free_ok`), then the wallet.
@@ -357,13 +365,11 @@ class MeteringRepository(MongoStore):
             user_ref=user_ref,
             action=MeteredAction(action.value),
             key=key,
-            held=units,
             from_free=free,
             from_wallet=rest,
             charged=0,
             state=LedgerState.HELD,
             period=period,
-            price_version=version,
             created_at=_now(),
         )
         try:
@@ -372,7 +378,7 @@ class MeteringRepository(MongoStore):
             # The same key held by a concurrent request: give back what this one took.
             self._give_back(user_ref, period, free, rest)
             return self.entry(key, action)  # type: ignore[return-value]
-        return entry.to_doc()
+        return _entry(entry.to_doc())
 
     # ------------------------------------------------------------ lesson recordings (D094)
 
@@ -439,7 +445,6 @@ class MeteringRepository(MongoStore):
         day: str,
         free_per_day: int,
         cap: int,
-        version: str = PRICE_VERSION,
         free_ok: bool = True,
     ) -> dict:
         """Hold one lesson recording (D094): a place among the day's `cap`, then its price.
@@ -469,13 +474,11 @@ class MeteringRepository(MongoStore):
             user_ref=user_ref,
             action=MeteredAction.LESSON,
             key=key,
-            held=units,
             from_free=free,
             from_wallet=rest,
             charged=0,
             state=LedgerState.HELD,
             period=period,
-            price_version=version,
             created_at=_now(),
             day=day,
             free_slot=free_slot,
@@ -486,7 +489,7 @@ class MeteringRepository(MongoStore):
             self._give_back(user_ref, period, free, rest)
             self._give_back_slot(user_ref, day, free_slot)
             return self.entry(key, MeteredAction.LESSON)  # type: ignore[return-value]
-        return entry.to_doc()
+        return _entry(entry.to_doc())
 
     def settle(
         self,
@@ -494,13 +497,12 @@ class MeteringRepository(MongoStore):
         action: MeteredAction,
         result: bool,
         charge: int | None = None,
-        usage: TokenUsage | None = None,
     ) -> dict | None:
         """Charge a held entry when the person got a result, release it otherwise.
 
         `charge` is what the recording really cost (the whole hold when not
         given), never more than was held; the rest goes back, to the wallet
-        first. `usage`, the tokens behind the charge, is kept with the entry.
+        first.
         Settling twice changes nothing: the state moves from `held` once, by
         one conditional update.
         """
@@ -512,15 +514,10 @@ class MeteringRepository(MongoStore):
         charged = (
             min(current["held"] if charge is None else charge, current["held"]) if result else 0
         )
-        tokens = (
-            {"input_tokens": usage.input_tokens, "output_tokens": usage.output_tokens,
-             "usage_estimated": usage.estimated}
-            if result and usage is not None else {}
-        )  # fmt: skip
         to = LedgerState.CHARGED if result else LedgerState.RELEASED
         moved = self.col("ledger").find_one_and_update(
             {"key": key, "action": action.value, "state": LedgerState.HELD.value},
-            {"$set": {"state": to.value, "charged": charged, "settled_at": _now(), **tokens}},
+            {"$set": {"state": to.value, "charged": charged, "settled_at": _now()}},
             return_document=ReturnDocument.AFTER,
         )
         if moved is None:

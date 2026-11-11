@@ -191,7 +191,8 @@ def _view(stored: dict, account: Account) -> dict:
     return {
         "plan_id": stored["plan_id"],
         "created_at": stored["created_at"],
-        **_with_progress(stored["plan"], account),
+        # D105: the goal is kept once, beside the plan, and shown with it.
+        **_with_progress({**stored["plan"], "goal": stored["goal"]}, account),
     }
 
 
@@ -208,9 +209,7 @@ def make_my_plan(body: GoalIn, account: Account = STUDENT_ONLY) -> dict:
     if not plan.lesson_ids:
         raise HTTPException(422, "không tìm được bài nào hợp với mục tiêu này; thử nới điều kiện")
     data = plan.as_dict()
-    plan_id = plans().save(
-        account.account_id, "student", goal_dict(plan.goal), data, COMPOSER_VERSION
-    )
+    plan_id = plans().save(account.account_id, "student", goal_dict(plan.goal), data)
     return _view(plans().get(plan_id), account)
 
 
@@ -287,7 +286,7 @@ def choose_bands(body: BandsIn, account: Account = STUDENT_ONLY) -> dict:
         raise HTTPException(422, "chưa có bài đã xuất bản nào ở các band này")
     goal = {"band_from": body.band_from.value, "band_to": body.band_to.value}
     data = {"goal": goal, "units": units, "warnings": list(dict.fromkeys(warnings))}
-    plan_id = plans().save(account.account_id, "student", goal, data, COMPOSER_VERSION)
+    plan_id = plans().save(account.account_id, "student", goal, data)
     return _view(plans().get(plan_id), account)
 
 
@@ -350,7 +349,7 @@ def assign_path(path_id: str, body: AssignIn, account: Account = STAFF_ONLY) -> 
     }
     data = {"goal": goal, "units": units, "warnings": []}
     for learner in dict.fromkeys(body.account_ids):
-        plans().save(learner, "student", goal, data, "teacher-assigned")
+        plans().save(learner, "student", goal, data)
     _audit(account, "lesson.path.assign", path_id, f"learners={len(set(body.account_ids))}")
     return {"assigned": len(set(body.account_ids)), "path_title": path["title"]}
 
@@ -366,9 +365,7 @@ def compose_path(body: GoalIn, account: Account = STAFF_ONLY) -> dict:
         raise HTTPException(409, "chưa có bài học nào được xuất bản để ghép lộ trình")
     plan = compose(candidates, paths, body.goal())
     data = plan.as_dict()
-    plan_id = plans().save(
-        account.account_id, "teacher", goal_dict(plan.goal), data, COMPOSER_VERSION
-    )
+    plan_id = plans().save(account.account_id, "teacher", goal_dict(plan.goal), data)
     return {"plan_id": plan_id, **data}
 
 
@@ -382,7 +379,7 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
         raise HTTPException(404, "không tìm thấy đề xuất")
     if stored["account_id"] != account.account_id:
         raise HTTPException(403, "đề xuất này của giảng viên khác")
-    if stored["path_id"]:
+    if not stored["active"]:  # saving it as a path set the proposal aside
         raise HTTPException(409, "đề xuất này đã được lưu thành lộ trình")
     keep = set(body.lesson_ids) if body.lesson_ids is not None else None
     units = []
@@ -403,7 +400,6 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
                 raise HTTPException(409, "một bài trong đề xuất không còn được xuất bản")
             lesson = found[0].model_copy(deep=True)
             lesson.lesson_id = new_id("l")
-            lesson.built_in = False
             lessons.append(lesson)
         copies.append((u, lessons))
 
@@ -413,9 +409,7 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
         f" ({COMPOSER_VERSION}). Mục tiêu: {stored['goal'].get('wish') or 'theo các ô đã chọn'}."
     )
     try:
-        path_id = repo.create_path(
-            body.title, description[:1000], bands[0], bands[-1], by=account.pseudonym
-        )
+        path_id = repo.create_path(body.title, description[:1000], bands[0], bands[-1])
         for u, lessons in copies:
             unit_id = repo.add_unit(
                 path_id,
@@ -425,10 +419,10 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
                 topic=Topic(u["topic"]) if u["topic"] else None,
             )
             for lesson in lessons:
-                repo.add_lesson(unit_id, lesson, by=account.pseudonym)
+                repo.add_lesson(unit_id, lesson)
     except NotFound:  # pragma: no cover - the path was made in this request
         raise HTTPException(409, "không tạo được lộ trình") from None
-    plans().saved_as(plan_id, path_id)
+    plans().retire(plan_id)
     kept = sum(len(ls) for _, ls in copies)
     _audit(account, "lesson.path.compose", path_id, f"plan={plan_id} lessons={kept}")
     return {"path_id": path_id, "lessons": kept}

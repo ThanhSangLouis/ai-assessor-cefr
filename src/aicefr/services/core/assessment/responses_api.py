@@ -61,10 +61,8 @@ async def submit_response(
     has no result yet.
     """
     s = svc()
-    # The pseudonym comes from the session, never from the form: a form field
-    # let a student submit under somebody else's pseudonym.
-    speaker_id = account.pseudonym
-
+    # The owner comes from the session, never from the form: a form field
+    # let a student submit under somebody else's name.
     task = s.tasks.get(task_id)
     if task is None:
         raise HTTPException(422, "đề bài không tồn tại")
@@ -151,7 +149,6 @@ async def submit_response(
 
         req = ProcessingRequest(
             response_id=rid,
-            speaker_id=speaker_id,
             task_id=task_id,
             audio_path=audio_ref,
             prompt_version=task.prompt_version,
@@ -168,7 +165,6 @@ async def submit_response(
                 config_version=CONFIG_VERSION,
                 prompt_version=req.prompt_version,
             ),
-            speaker_id,
             task_id,
             account_id=account.account_id,
             audio_path=audio_ref,
@@ -295,7 +291,6 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
     rows = svc().repo.speaking_profile(account.account_id)
     return JSONResponse(
         {
-            "pseudonym": account.pseudonym,
             "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
             "results": rows,
             "note": (
@@ -314,7 +309,7 @@ def speaking_profile(account: Account = Depends(require_login)) -> JSONResponse:
 # block saying what each piece of data is FOR, and it is the student's own
 # export, reachable without asking an administrator.
 FIELD_PURPOSES: dict[str, str] = {
-    "speaker_id": "Bút danh gắn bài nói với tài khoản. Không chứa họ tên hay MSSV.",
+    "account_id": "Mã tài khoản gắn bài nói với bạn. Không chứa họ tên hay email.",
     "response_id": "Mã bài nói, dùng để tra cứu và để xoá đúng bản ghi khi bạn yêu cầu.",
     "task_id": "Đề bài đã nói, để so sánh các bài cùng đề.",
     "status": "Trạng thái xử lý của bài.",
@@ -383,11 +378,10 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
         for a in s.peers.learning.attempts(account_id=account.account_id)
     ]
     achievements = s.peers.learning.achievements(account_id=account.account_id)
-    s.repo.write_audit(account.pseudonym, "export.personal", None, f"responses={len(responses)}")
+    s.repo.write_audit(account.account_id, "export.personal", None, f"responses={len(responses)}")
     return JSONResponse(
         {
             "exported_at": datetime.now(UTC).isoformat(timespec="seconds"),
-            "speaker_id": account.pseudonym,
             "fields": FIELD_PURPOSES,
             "response_count": len(responses),
             "responses": responses,
@@ -402,7 +396,6 @@ def export_my_data(account: Account = Depends(require_login)) -> JSONResponse:
                     "code": code,
                     "title": BY_CODE[code].title if code in BY_CODE else code,
                     "unlocked_at": stored["unlocked_at"],
-                    "seen_at": stored["seen_at"],
                 }
                 for code, stored in achievements.items()
             ],
@@ -475,7 +468,6 @@ def my_progress(account: Account = Depends(require_login)) -> dict:
             else None
         )
     return {
-        "pseudonym": account.pseudonym,
         "band_thresholds": limits,
         "results": rows,
         "verified_count": sum(1 for r in rows if r["teacher_verified"]),

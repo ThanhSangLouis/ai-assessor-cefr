@@ -3,10 +3,8 @@
 The email is how a person signs in, with a password or with Google, and the
 key that makes the two one account. It is kept lower case, so "An@x.vn" and
 "an@x.vn" are one person. The full name is what a teacher reads in the class
-list and the review queue.
-
-The pseudonym stays, but only inside: it is what research exports and the
-audit log carry (FR-33), so a name never leaves the system with a recording.
+list and the review queue. Neither travels with a recording: a response and an
+audit entry carry only the random account id.
 """
 
 from __future__ import annotations
@@ -40,8 +38,3 @@ def normalize_name(raw: str) -> str:
     if any(unicodedata.category(c).startswith("C") for c in value):
         raise ValueError("họ và tên có ký tự không hợp lệ")
     return value
-
-
-def looks_like_email(identifier: str) -> bool:
-    """Whether a sign-in name is an email rather than a legacy pseudonym."""
-    return "@" in (identifier or "")

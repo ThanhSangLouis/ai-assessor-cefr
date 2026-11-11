@@ -5,6 +5,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import email_of
 from fastapi.testclient import TestClient
 
 PASSWORD = "matkhau-check-thu"
@@ -22,21 +23,21 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def _create_account(app, pseudonym: str, role: str) -> None:
+def _create_account(app, name: str, role: str) -> None:
     from aicefr.storage.auth_repository import Role
 
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
 
 
-def _login_as(app, pseudonym: str, role: str) -> TestClient:
+def _login_as(app, name: str, role: str) -> TestClient:
     """Return a client already logged in with the given role.
 
     Logging in through the real endpoint instead of setting the cookie by hand, so that
     a broken login flow breaks these tests too rather than being quietly bypassed.
     """
-    _create_account(app, pseudonym, role)
+    _create_account(app, name, role)
     c = TestClient(app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return c
 
@@ -77,7 +78,7 @@ def submit(client, speaker="SV-001", seconds=20.0):
     return client.post(
         "/api/v1/responses",
         files={"audio": ("bai.wav", wav_bytes(seconds), "audio/wav")},
-        data={"speaker_id": speaker, "task_id": "P3"},
+        data={"task_id": "P3"},
     )
 
 
@@ -120,38 +121,30 @@ def test_missing_response_returns_404(client):
     assert client.get("/api/v1/responses/khongcothat").status_code == 404
 
 
-@pytest.mark.parametrize(
-    "bad_id",
-    ["MSSV21110001", "an.nguyen@gmail.com", "sdt0912345678", "21110001", "<svg onload=x>"],
-)
-def test_real_identifiers_rejected_when_the_account_is_created(app, bad_id):
-    """The rule belongs where a pseudonym is created, not where one is submitted.
-
-    It used to run on a form field at submission time. That was the wrong place
-    twice over: a bad pseudonym could already exist in the account table, and a
-    student could submit under somebody else's pseudonym because the field was
-    theirs to fill in.
-    """
+@pytest.mark.parametrize("bad", ["khong-co-a-cong", "a b@c.vn", "<svg>@x", "x@y"])
+def test_an_account_is_made_only_with_a_real_email(app, bad):
+    """D103: the email is the account, so one that is not an address makes none."""
     from aicefr.storage.auth_repository import Role
 
     with pytest.raises(ValueError):
-        app.state.auth_repo.create_account(bad_id, PASSWORD, Role.STUDENT)
+        app.state.auth_repo.create_account(bad, PASSWORD, Role.STUDENT)
 
 
-def test_submission_takes_the_pseudonym_from_the_session(app):
-    """A student cannot submit under another student's pseudonym."""
+def test_submission_takes_the_owner_from_the_session(app):
+    """A student cannot submit under another student's name."""
     client = _login_as(app, "SV-001", "student")
     rid = submit(client).json()["response_id"]
     rows = client.get("/api/v1/me/responses").json()
     assert [r["response_id"] for r in rows] == [rid]
-    assert rows[0]["speaker_id"] == "SV-001"
+    me = client.get("/api/v1/me").json()["account_id"]
+    assert rows[0]["account_id"] == me and "speaker_id" not in rows[0]
 
 
 def test_non_audio_file_rejected(client):
     r = client.post(
         "/api/v1/responses",
         files={"audio": ("a.wav", b"day khong phai audio", "audio/wav")},
-        data={"speaker_id": "SV-002", "task_id": "P3"},
+        data={"task_id": "P3"},
     )
     assert r.status_code == 415
 

@@ -1,8 +1,10 @@
-# Mô hình thực thể: 24 thực thể, 9 enum và 19 collection nghiệp vụ
+# Mô hình thực thể: 21 thực thể, 9 enum và 17 collection nghiệp vụ
 
 **Trạng thái:**
 - Thiết kế theo chỉ dẫn của chủ dự án ngày 29/10/2026; code chuyển theo ở D060 (gộp collection, migration 7).
 - Ngày 03/11/2026 cập nhật theo các thay đổi đến D090: gỡ chấm mù và thực nghiệm (D078), gỡ gói dịch vụ (D075), tách `ReviewSession` (D082), tách `Payment` (D084), thêm `WordDrill` (D089) và `DrillPassage` (D090).
+- Ngày 10/11/2026 cập nhật theo D103: tài khoản là email, bỏ bút danh và các thuộc tính không ai đọc.
+- Ngày 11/11/2026 cập nhật theo D104: gộp lại `ReviewSession` vào `Response`, `Payment` vào `Order`; `PhraseCard` thành `ReviewItem` loại `phrase`; không còn chuỗi JSON trong document.
 - Hai bên được giữ khớp bằng `tests/test_diagrams.py` và `tests/test_class_diagram_in_code.py` (mục 5).
 
 **Người soạn:** Sang.
@@ -25,6 +27,29 @@
    - D084: đơn nạp lượt tách thành `Order` (phần mua) và `Payment` (phần cổng thanh toán).
    - D089: `WordDrill`, từ máy nghe chưa rõ được nói lại. `ReviewItem` thêm `drill`; `ReviewItem.lesson` thành 0..1.
    - D090: `DrillPassage`, đoạn đọc viết quanh 3–5 từ đang luyện dở. `PriceList` thêm `passageRuns`; `MeteredAction` thêm `DRILL_PASSAGE`.
+   - D103: tài khoản đăng nhập và được tìm bằng email; chỉ giữ thuộc tính có người đọc.
+     - `Account` bỏ `pseudonym` và `seenMarkers` (cùng số đỏ "kết quả mới").
+     - `LessonPath` bỏ `author` và `builtIn`; `PriceList` bỏ `changedBy`. Hai đường `LessonPath` → `Account` và `PriceList` → `Account` bỏ theo: ai tạo, ai sửa đã có trong nhật ký kiểm toán.
+     - `CoachUpgrade` bỏ `provider`, `model`, `promptVersion`; `LearningPlan` bỏ `modelVersion`.
+     - `Payment` bỏ `gateway`, `live`, `resultCode`: một bản triển khai chạy đúng một cổng.
+     - `ReviewSession` bỏ `visits` và `Review` bỏ `openedAt`: không màn hình nào đọc giờ mở bài; phiên duyệt chỉ còn khoá.
+     - `LearningPlan` bỏ `savedAs` cùng đường `LearningPlan` → `LessonPath`: đề xuất đã lưu thì `active` về false, chặn lưu hai lần bằng chính cờ đó.
+     - `LedgerEntry` bỏ `priceVersion`; `PhraseCard` bỏ `reviews` (chỉ tăng, không ai đọc).
+     - `Achievement` bỏ `seenAt` cùng dấu "mới" trên trang Tiến độ; người học vẫn được báo một lần lúc đạt.
+     - Bỏ field suy ra được: `LedgerEntry.held` (bằng `fromFree` + `fromWallet`), `Unit.position` (vị trí trong danh sách `units`), và `DrillPassage.band` (chỉ dùng lúc viết đoạn văn).
+   - D104: bớt collection và bỏ chuỗi JSON.
+     - `ReviewSession` gộp lại vào `Response` thành `lockedBy`, `lockedUntil` (thay D082): lớp chỉ còn khoá, quan hệ 1–1 với bài nói, và giành quyền vẫn là một lệnh có điều kiện trên một document.
+     - `Payment` gộp lại vào `Order` (thay D084): `checkoutRef`, `reference`, `settledAt`, `events`. Chốt đơn và ghi kết quả của cổng giờ là một lệnh.
+     - `PhraseCard` bỏ: các cụm từ của `CoachUpgrade` chỉ còn chữ và nghĩa; hộp và ngày đến hạn của cụm từ là `ReviewItem` loại `phrase`, dùng chung bản ghi ôn với từ của bài học.
+     - Document `response` chính là báo cáo: các trường của `Response` lưu thẳng, không còn `report_json` và các cột chép lại điểm, band, xác nhận, phiên bản mô hình. Bài học, lượt luyện, lộ trình gợi ý cũng lưu document thay cho chuỗi JSON.
+   - D105: không lưu thứ suy ra được hay không ai đọc.
+     - `StepAttempt`: bước, vòng, thời gian nói, bộ luật và đạt hay chưa đọc từ `result` (cùng `override`), không chép ra field riêng; bỏ chỉ mục `(lesson_id, step_id)` không truy vấn nào dùng.
+     - `Lesson`: "có sửa đổi chưa xuất bản" tính bằng cách so bản nháp với phiên bản đang xuất bản.
+     - `PriceList` bỏ `history`: các phiên bản trước là các dòng `metering.prices` của nhật ký kiểm toán.
+     - `LearningPlan.plan` không chép lại mục tiêu và phiên bản bộ ghép; `DrillPassage` đọc chữ của các từ từ chính các `WordDrill`.
+     - Bỏ các mốc thời gian chỉ ghi mà không đọc: tạo đề, sửa lộ trình, tạo chặng, chuyển hộp ôn, xuất bản một phiên bản, tải media.
+     - `WordDrill` bỏ `wordIndex`: vị trí của từ trong bản chép chỉ được ghi, không ai đọc.
+     - `LedgerEntry` không còn ghi số token đã dùng: không màn hình hay báo cáo nào đọc.
 
 ## 2. Quy tắc vẽ
 
@@ -58,19 +83,19 @@
 
 | Nghiệp vụ | Thực thể | Ghi chú |
 | --- | --- | --- |
-| Tài khoản | `Account` | Danh tính đăng nhập ngoài, dấu đã xem, mã email và nhắc học là thuộc tính |
+| Tài khoản | `Account` | Email là khoá đăng nhập. Danh tính đăng nhập ngoài, mã email và nhắc học là thuộc tính |
 | Truy vết quyết định | `AuditEntry` | Ai làm gì, với đối tượng nào; mỗi database một nhật ký |
 | Đề và bài nói | `Task`, `Response` | Kết quả chấm (điểm, band, khoảng tin cậy, nhận xét, lý do) và nhãn nghe lại là thuộc tính của `Response` |
-| Giảng viên duyệt | `Review`, `ReviewSession` | `Review`: mỗi lần đổi điểm hoặc band, kèm lý do, nằm trong bài nói. `ReviewSession` (D082): ai đang giữ quyền duyệt, tới lúc nào, các lần mở bài |
-| Bản nâng cấp và sổ cụm từ | `CoachUpgrade`, `PhraseCard` | Bài nói viết lại một band cao hơn (D069), các cụm từ của nó ôn theo hộp (D070) |
+| Giảng viên duyệt | `Review` | `Review`: mỗi lần đổi điểm hoặc band, kèm lý do, nằm trong bài nói. Ai đang giữ quyền duyệt, tới lúc nào là `Response.lockedBy`, `lockedUntil` (D104) |
+| Bản nâng cấp và sổ cụm từ | `CoachUpgrade`, `ReviewItem` | Bài nói viết lại một band cao hơn (D069); các cụm từ của nó ôn theo hộp (D070), mỗi cụm từ một `ReviewItem` loại `phrase` (D104) |
 | Lớp học | `Classroom` | Giảng viên và thành viên là quan hệ nhiều–nhiều với `Account` |
 | Lộ trình, bài học | `LessonPath`, `Unit`, `Lesson`, `Step` | Phiên bản đã xuất bản và media là thuộc tính của `Lesson` |
 | Luyện ở bước bài học | `StepAttempt` | Một lượt nói ở một bước, ghi phiên bản bài học |
-| Ôn tập ngắt quãng | `ReviewItem` | Hộp Leitner, ngày đến hạn; từ của một bước bài học hoặc (D089) của một `WordDrill` |
+| Ôn tập ngắt quãng | `ReviewItem` | Hộp Leitner, ngày đến hạn; từ của một bước bài học, (D089) của một `WordDrill`, hoặc (D104) một cụm từ của Sổ cụm từ |
 | Luyện lại từ máy nghe chưa rõ | `WordDrill`, `DrillPassage` | `WordDrill` (D089): một từ của một bài nói và các lượt nói lại. `DrillPassage` (D090): một đoạn đọc viết quanh 3–5 `WordDrill`, kèm các lần đọc |
-| Thành tựu | `Achievement` | Đạt lúc nào, đã xem chưa |
-| Lộ trình gợi ý | `LearningPlan` | Với giảng viên còn nối tới lộ trình nháp đã lưu |
-| Nạp lượt | `Order`, `Payment` | `Order` (D084): phần mua. `Payment`: phần cổng thanh toán, kèm sự kiện của cổng |
+| Thành tựu | `Achievement` | Đạt lúc nào |
+| Lộ trình gợi ý | `LearningPlan` | Của học viên, hoặc đề xuất của giảng viên; đề xuất đã lưu thành lộ trình nháp thì không còn hiệu lực |
+| Nạp lượt | `Order` | Phần mua và phần cổng thanh toán, kèm sự kiện của cổng (D104 gộp `Payment` của D084) |
 | Tính lượt | `Wallet`, `LedgerEntry`, `PriceList` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nằm trong ví. Mỗi lần chấm hay mỗi lần AI viết là một bút toán. Bảng giá có phiên bản (D078) |
 
 ### Enum: chỉ giữ cái điều khiển nghiệp vụ
@@ -96,7 +121,7 @@ Bỏ khỏi sơ đồ, kèm cách ghi thay:
 
 Code vẫn dùng các enum này; sơ đồ chỉ không vẽ chúng.
 
-## 4. Collection: 19 nghiệp vụ + 3 kỹ thuật
+## 4. Collection: 17 nghiệp vụ + 3 kỹ thuật
 
 **Nguyên tắc:**
 - Mỗi aggregate root là một collection.
@@ -105,18 +130,16 @@ Code vẫn dùng các enum này; sơ đồ chỉ không vẽ chúng.
 
 | Database | Collection | Thực thể | Nhúng | Từ đâu |
 | --- | --- | --- | --- | --- |
-| core | `account` | `Account` | danh tính, dấu đã xem, mã email | D060 gộp `account`, `account_identity`, `seen_marker` |
+| core | `account` | `Account` | danh tính, mã email | D060 gộp `account`, `account_identity`, `seen_marker`; D103 bỏ dấu đã xem |
 | | `audit_log` | `AuditEntry` | | |
 | | `task` | `Task` | | |
-| | `response` | `Response` | `Review`, `CoachUpgrade` (kèm `PhraseCard`), nhãn nghe lại, báo cáo chấm | D060 gộp `response`, `replay_label`, `review_action` |
-| | `review_session` | `ReviewSession` | các lần mở bài | D082 tách từ `response` |
+| | `response` | `Response` | `Review`, `CoachUpgrade`, nhãn nghe lại, khoá duyệt; báo cáo chấm là chính các trường của document | D060 gộp `response`, `replay_label`, `review_action`; D104 gộp lại `review_session` |
 | | `classroom` | `Classroom` | giảng viên, thành viên | D060; `Assignment` gỡ ở D075 |
-| | `order` | `Order` | | D060 gộp `billing_order` |
-| | `payment` | `Payment` | sự kiện cổng thanh toán | D084 tách từ `order` |
+| | `order` | `Order` | sự kiện cổng thanh toán | D060 gộp `billing_order`; D104 gộp lại `payment` |
 | learning | `path` | `LessonPath` | `Unit` | D060 gộp `lesson_path`, `lesson_unit` |
 | | `lesson` | `Lesson` | `Step`, các phiên bản, media | D060 gộp `lesson`, `lesson_version`, `lesson_media` |
 | | `attempt` | `StepAttempt` | | |
-| | `review_item` | `ReviewItem` | | |
+| | `review_item` | `ReviewItem` | | D104: cả cụm từ của Sổ cụm từ |
 | | `achievement` | `Achievement` | | |
 | | `learning_plan` | `LearningPlan` | | |
 | | `word_drill` | `WordDrill` | các lượt nói lại (tối đa 20) | D089, migration 18 |
@@ -135,13 +158,11 @@ Mỗi database có `audit_log` riêng vì mỗi phần ghi nhật ký vào datab
 | Cặp | Vì sao không |
 | --- | --- |
 | `wallet`, `ledger` vào `account` | Khác database (metering), và mỗi lần chấm thêm một bút toán. |
-| `review_session` vào `response` | Chủ dự án chọn tách việc duyệt thành lớp riêng (D082). `Response` còn bài nộp, kết quả chấm và các lần duyệt; mỗi bài nhiều nhất một phiên (duy nhất `response_id`), nên giành quyền duyệt vẫn nguyên tử. |
-| `payment` vào `order` | Chủ dự án chọn tách (D084): `Order` giữ phần mua, `Payment` giữ phần cổng thanh toán, mỗi đơn một thanh toán. |
 | `lesson` vào `path` | Mỗi bài giữ mọi phiên bản đã xuất bản nên lớn dần. Lượt luyện, ôn tập, lộ trình gợi ý đều tìm bài theo mã bài. |
 | `attempt`, `review_item`, `achievement` vào một chỗ | Ba thực thể khác vòng đời và đều tăng theo từng lượt luyện. Không có document học viên nào ở database learning để nhúng vào. |
 | `word_drill` vào `response` | Khác database: bài nói ở core, việc luyện ở learning. |
 | `drill_passage` vào `word_drill` | Một đoạn đọc viết cho 3–5 từ, có thể của nhiều bài nói khác nhau. |
-| `learning_plan` vào `account` | Khác database. Lộ trình gợi ý của giảng viên còn nối tới lộ trình nháp. |
+| `learning_plan` vào `account` | Khác database. |
 | `session` vào `account` | Phiên cần chỉ mục TTL tự xoá khi hết hạn. TTL không áp được lên phần tử của mảng. |
 
 ## 5. Khớp sơ đồ và code
@@ -156,11 +177,11 @@ Sơ đồ là thiết kế mà code theo. Các kiểm tra sau chạy trong CI:
    - hợp thành nào cũng có trường chứa thật và chỉ một chủ;
    - bội số khớp giới hạn code ép.
 3. **`tests/test_class_diagram_in_code.py`** đối chiếu tới từng thuộc tính. Mỗi thuộc tính và thao tác vẽ trên một thực thể phải tìm được trong code theo một trong ba cách:
-   - **cùng tên**, viết kiểu snake case, trên lớp của thực thể (`wordIndex` → `WordDrill.word_index`);
+   - **cùng tên**, viết kiểu snake case, trên lớp của thực thể (`dailyGoalS` → `Account.daily_goal_s`);
    - **tham chiếu lưu bằng mã**: sơ đồ vẽ `learner: Account`, code giữ `account_id`; `wallet: Wallet` là `user_ref`;
    - **trường của document hay của báo cáo** mà lớp không khai:
      - `Account.emailVerified` là khoá `email_verified` kho tài khoản ghi;
      - `Response.transcript` là `Transcript.text` trong báo cáo chấm;
-     - `PriceList.history` là các phiên bản trước trong `price_list`.
+     - D105: các phiên bản trước của bảng giá đọc từ nhật ký kiểm toán (`metering.prices`), `price_list` không giữ bản sao.
 
    Hai cách sau được liệt kê trong bảng `ELSEWHERE` của test, và bảng được kiểm cả hai chiều: dòng cho thuộc tính đã không còn trên sơ đồ, hay trỏ tới chỗ không có, cũng làm test đỏ. Test còn kiểm mọi collection nghiệp vụ trong `docs/db/schema_core.json` thuộc một thực thể trên sơ đồ; chỉ ba collection kỹ thuật ở mục 4 được ngoại lệ.

@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from dbutil import store
+from dbutil import email_of, store
 from test_billing import boot
 from test_lessons_integration import account_id, login_as, wav
 
@@ -65,12 +65,12 @@ def model(monkeypatch):
     return fake
 
 
-def open_words(m, pseudonym: str, rows=OPEN) -> None:
+def open_words(m, name: str, rows=OPEN) -> None:
     """The learner said these words again once each, and the machine was not sure."""
     drills = m.core_parts.state["drills"]
-    me = account_id(m, pseudonym)
-    for i, (rid, word, phrase) in enumerate(rows):
-        drills.record(me, rid, word, i, phrase, False, None)
+    me = account_id(m, name)
+    for rid, word, phrase in rows:
+        drills.record(me, rid, word, phrase, False, None)
 
 
 @pytest.fixture
@@ -134,7 +134,7 @@ def test_the_model_writes_a_passage_once_and_it_is_read_again_for_free(
 
     made = student.post(URL, json={"source": "model"}).json()
 
-    assert (made["source"], made["band"]) == ("model", "B1")
+    assert made["source"] == "model" and "band" not in made  # D103: the band goes to the model only
     assert all(passage.places(made["text"], made["words"]).values())
     (asked,) = model.asked
     assert asked["user"] == {
@@ -170,7 +170,7 @@ def test_metered_a_passage_costs_its_own_price_and_a_failure_nothing(tmp_path, m
     states = sorted((e["state"], e["charged"]) for e in entries)
     assert states == [("charged", 100), ("released", 0), ("released", 0)]
     charged = next(e for e in entries if e["state"] == "charged")
-    assert (charged["input_tokens"], charged["output_tokens"]) == (340, 190)
+    assert "input_tokens" not in charged  # D105: the day's counters keep the tokens
     history = student.get("/api/v1/me/credits").json()["history"]
     assert any(h["action"] == "drill_passage" for h in history)
 
@@ -256,7 +256,8 @@ def test_erasing_a_participant_forgets_their_passages(tmp_path, monkeypatch, mod
     me = account_id(m, "SV-P09")
     admin = login_as(m, "QT-P02", "admin")
     r = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-P09", "confirm_speaker_id": "SV-P09"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-P09"), "confirm_email": email_of("SV-P09")},
     )
     assert r.status_code == 200
     assert store()["drill_passage"].count_documents({"account_id": me}) == 0

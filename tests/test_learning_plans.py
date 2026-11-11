@@ -8,6 +8,7 @@ published lessons ever enter a plan; plans leave with the learner's data.
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 from test_lessons_integration import (  # noqa: F401  (the fixture `m` is used by name)
     account_id,
     audit_entries,
@@ -59,7 +60,7 @@ def test_asking_again_replaces_the_plan_and_closing_it_sets_it_aside(m):
 def test_the_latest_assessment_steers_the_learners_path(m):
     student = login_as(m, "SV-001")
     acc = account_id(m, "SV-001")
-    m.repo.save(scored("as-1", Band.B1, [Criterion.FLUENCY]), "SV-001", "P3", account_id=acc)
+    m.repo.save(scored("as-1", Band.B1, [Criterion.FLUENCY]), "P3", account_id=acc)
     plan = student.post(PLAN, json={"length": 4}).json()
     reasons = [r for item in _lessons(plan) for r in item["reasons"]]
     assert any("yếu nhất" in r for r in reasons)
@@ -131,7 +132,8 @@ def test_plans_are_in_the_export_and_go_with_erasure(m):
 
     admin = login_as(m, "AD-01", "admin")
     r = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert r.status_code == 200, r.text
     assert m.app.state.plans.of_account(account_id(m, "SV-001")) == []

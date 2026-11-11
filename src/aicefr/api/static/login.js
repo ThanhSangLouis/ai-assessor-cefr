@@ -3,7 +3,7 @@ const form = document.getElementById("f");
 const submitButton = document.getElementById("b");
 const messageBox = document.getElementById("tb");
 const alertBox = document.getElementById("auth-alert");
-const emailEl = document.getElementById("pseudonym");
+const emailEl = document.getElementById("email");
 const passwordEl = document.getElementById("password");
 const showButton = document.getElementById("show-password");
 const capsHint = document.getElementById("caps-hint");
@@ -190,8 +190,7 @@ function validateEmail(val) {
   const trimmed = (val || "").trim();
   if (!trimmed) return "Hãy nhập email.";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  // If input contains '@', check standard email format. Legacy pseudonyms (SV-001) allowed if no '@'.
-  if (trimmed.includes("@") && !emailRegex.test(trimmed)) {
+  if (!emailRegex.test(trimmed)) {
     return "Hãy nhập một email hợp lệ.";
   }
   return null;

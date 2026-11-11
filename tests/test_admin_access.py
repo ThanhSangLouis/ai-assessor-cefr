@@ -14,6 +14,7 @@ import importlib
 import re
 
 import pytest
+from dbutil import email_of
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
@@ -96,13 +97,13 @@ def _calls(app, guard: str):
             yield method, url, route.path
 
 
-def _client(app, pseudonym: str | None, role: str = "student", temporary: bool = False):
+def _client(app, name: str | None, role: str = "student", temporary: bool = False):
     c = TestClient(app)
-    if pseudonym is None:
+    if name is None:
         return c
     auth = app.state.auth_repo
-    auth.create_account(pseudonym, PASSWORD, Role(role), must_change_password=temporary)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    auth.create_account(email_of(name), PASSWORD, Role(role), must_change_password=temporary)
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return c
 
@@ -191,17 +192,17 @@ def test_an_admin_is_refused_every_student_route(app) -> None:
 def test_a_disabled_admin_is_signed_out_at_once(app) -> None:
     first = _client(app, "QT-AC3", "admin")
     second = _client(app, "QT-AC4", "admin")
-    target = app.state.auth_repo.get_by_pseudonym("QT-AC4")["account_id"]
+    target = app.state.auth_repo.get_by_email(email_of("QT-AC4"))["account_id"]
     assert first.post(f"/api/v1/admin/accounts/{target}/disable").status_code == 200
     assert second.get("/api/v1/admin/accounts").status_code == 401
-    r = second.post("/api/v1/auth/login", json={"pseudonym": "QT-AC4", "password": PASSWORD})
+    r = second.post("/api/v1/auth/login", json={"email": email_of("QT-AC4"), "password": PASSWORD})
     assert r.status_code == 401
 
 
 def test_a_demoted_admin_loses_admin_routes_on_the_next_call(app) -> None:
     first = _client(app, "QT-AC5", "admin")
     second = _client(app, "QT-AC6", "admin")
-    target = app.state.auth_repo.get_by_pseudonym("QT-AC6")["account_id"]
+    target = app.state.auth_repo.get_by_email(email_of("QT-AC6"))["account_id"]
     r = first.post(f"/api/v1/admin/accounts/{target}/role", json={"role": "teacher"})
     assert r.status_code == 200
     assert second.get("/api/v1/admin/accounts").status_code == 403
@@ -211,7 +212,7 @@ def test_an_admin_cannot_lock_themself_out(app) -> None:
     """Not their own account: no disabling, demoting, resetting or signing out
     everywhere, so the last administrator can never shut the door on everyone."""
     admin = _client(app, "QT-AC7", "admin")
-    me = app.state.auth_repo.get_by_pseudonym("QT-AC7")["account_id"]
+    me = app.state.auth_repo.get_by_email(email_of("QT-AC7"))["account_id"]
     base = f"/api/v1/admin/accounts/{me}"
     assert admin.post(f"{base}/disable").status_code == 409
     assert admin.post(f"{base}/role", json={"role": "student"}).status_code == 409
@@ -227,8 +228,8 @@ def test_admin_pages_open_only_for_an_admin(app, path: str) -> None:
     assert r.status_code == 303 and r.headers["location"] == f"/login?next={path}"
 
     others = (("SV-AP1", "student", "/practice"), ("GV-AP1", "teacher", "/review"))
-    for pseudonym, role, home in others:
-        c = _client(app, pseudonym, role)
+    for name, role, home in others:
+        c = _client(app, name, role)
         c.follow_redirects = False
         r = c.get(path)
         assert r.status_code == 303 and r.headers["location"] == home, (role, r.status_code)

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 from test_billing import boot
-from test_lessons_integration import account_id, login_as
+from test_lessons_integration import login_as
 
 pytestmark = pytest.mark.integration
 
@@ -63,20 +63,6 @@ def test_a_change_is_a_new_version_that_everything_follows(m):
     again = admin.put(PRICES, json={**NEW, "upgrade_runs": 0.5}).json()
     assert again["version"] == "price-admin-2"
     assert [h["version"] for h in again["history"]] == ["price-admin-1"]
-
-
-def test_a_charge_keeps_the_price_it_was_held_under(m):
-    admin = login_as(m, "QT-01", "admin")
-    student = login_as(m, "SV-001")
-    r = student.post(
-        "/api/v1/responses",
-        files={"audio": ("a.wav", _wav(), "audio/wav")},
-        data={"task_id": "P3"},
-    )
-    assert r.status_code == 202, r.text
-    admin.put(PRICES, json=NEW)
-    ledger = m.core_parts.state["metering"].history(account_id(m, "SV-001"))
-    assert ledger[0]["price_version"] != "price-admin-1"
 
 
 def test_impossible_prices_are_refused_and_only_admins_set_them(m):

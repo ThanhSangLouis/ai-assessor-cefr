@@ -64,7 +64,8 @@ def test_every_staff_tool_is_open_without_a_plan(m):
 
 def test_accounts_are_not_limited_by_seats(m):
     admin = login_as(m, "QT-01", "admin")
-    made = admin.post("/api/v1/admin/accounts", json={"role": "student", "count": 60})
+    emails = [f"sv{i}@truong.edu.vn" for i in range(60)]
+    made = admin.post("/api/v1/admin/accounts", json={"role": "student", "emails": emails})
     assert made.status_code == 200, made.text
 
 

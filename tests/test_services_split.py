@@ -20,6 +20,7 @@ from http.cookies import SimpleCookie
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import email_of
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
@@ -103,8 +104,8 @@ class Gateway:
     def post(self, path: str, **kw):
         return self.request("POST", path, **kw)
 
-    def login(self, pseudonym: str) -> Gateway:
-        r = self.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    def login(self, name: str) -> Gateway:
+        r = self.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
         assert r.status_code == 200, r.text
         return self
 
@@ -151,12 +152,12 @@ def _system(monkeypatch, bus_for):
     for name, app in apps.items():
         clients[name] = TestClient(app)
     auth = apps["core"].state.auth_repo
-    for pseudonym, role in (
+    for name, role in (
         ("SV-001", Role.STUDENT),
         ("GV-01", Role.TEACHER),
         ("QT-01", Role.ADMIN),
     ):
-        auth.create_account(pseudonym, PASSWORD, role)
+        auth.create_account(email_of(name), PASSWORD, role)
     return {"apps": apps, "clients": clients, "settings": settings}
 
 
@@ -278,7 +279,7 @@ def test_the_gateway_never_forwards_internal_paths(system):
 def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     clients = system["clients"]
     student = Gateway(clients).login("SV-001")
-    assert student.get("/api/v1/me").json()["pseudonym"] == "SV-001"
+    assert student.get("/api/v1/me").json()["email"] == email_of("SV-001")
 
     # core -> speech (bus) -> core: the response is scored and saved.
     r = student.post(
@@ -300,16 +301,12 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     assert r.status_code == 200, r.text
     assert r.json()["result"]["missing"] == []
 
-    # web: the sidebar asks assessment and learning; reminders ask metering too (D055).
-    assert set(student.get("/api/v1/me/badges").json()) == {
-        "results",
-        "results_seen_at",
-        "reviews_due",
-    }
+    # web: the sidebar asks learning; reminders ask metering too (D055).
+    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due"}
     assert student.get("/api/v1/me/nudges").status_code == 200
     # web: a page drawn with the limits assessment applies.
     page = student.get("/practice/lessons/lesson-a2-neighborhood")
-    assert page.status_code == 200 and "SV-001" in page.text
+    assert page.status_code == 200 and email_of("SV-001") in page.text
 
     # assessment: the export gathers the account's responses and learning's attempts.
     export = student.get("/api/v1/me/export.json").json()
@@ -321,10 +318,11 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     assert {"auth.login", "export.personal"} <= set(actions)
 
     # assessment erases, and reaches learning for the lesson attempts.
-    preview = admin.get("/api/v1/admin/erase/SV-001").json()
+    preview = admin.get("/api/v1/admin/erase", params={"email": email_of("SV-001")}).json()
     assert preview["lesson_attempts"] == 1
     r = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert r.status_code == 200, r.text
     assert r.json()["lesson_attempts"] == 1

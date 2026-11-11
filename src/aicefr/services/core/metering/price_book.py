@@ -63,15 +63,13 @@ class PriceBook:
             "free_runs": self.store.free_units / UNITS_PER_RUN,
             "packs": [{"runs": r, "price_vnd": p} for r, p in self.packs()],
             "from_settings": not doc,
-            "changed_by": doc.get("changed_by"),
             "changed_at": doc.get("changed_at"),
             "history": [
-                {k: h.get(k) for k in ("version", "changed_by", "changed_at")}
-                for h in self.store.price_history()
+                {k: h.get(k) for k in ("version", "changed_at")} for h in self.store.price_history()
             ],
         }
 
-    def set(self, values: dict, by: str) -> dict:
+    def set(self, values: dict) -> dict:
         """Save a new version; ValueError when a price is impossible."""
         PriceList(
             **{f: float(values[f]) for f in FIELDS},
@@ -90,6 +88,5 @@ class PriceBook:
                 "idpoint_per_run": int(values["idpoint_per_run"]),
                 "free_runs": float(values["free_runs"]),
                 "packs": [{"runs": r, "price_vnd": v} for r, v in packs],
-            },
-            by,
+            }
         )

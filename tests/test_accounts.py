@@ -14,7 +14,7 @@ import re
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import one_school
+from dbutil import email_of, one_school
 from fastapi.testclient import TestClient
 
 from aicefr.auth import passwords
@@ -37,21 +37,21 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    one_school(pseudonym, role)
-    return sign_in(m, pseudonym, PASSWORD)
+def login_as(m, name: str, role: str = "student") -> TestClient:
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
+    one_school(name, role)
+    return sign_in(m, name, PASSWORD)
 
 
-def sign_in(m, pseudonym: str, password: str) -> TestClient:
+def sign_in(m, name: str, password: str) -> TestClient:
     client = TestClient(m.app)
-    r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": password})
+    r = client.post("/api/v1/auth/login", json={"email": email_of(name), "password": password})
     assert r.status_code == 200, r.text
     return client
 
 
-def account_id(m, pseudonym: str) -> str:
-    return m.app.state.auth_repo.get_by_pseudonym(pseudonym)["account_id"]
+def account_id(m, name: str) -> str:
+    return m.app.state.auth_repo.get_by_email(email_of(name))["account_id"]
 
 
 def wav(seconds: float = 35.0, sr: int = 16_000) -> bytes:
@@ -92,9 +92,11 @@ def test_password_change_needs_the_current_password_and_ends_other_sessions(m):
     assert elsewhere.get("/api/v1/me").status_code == 401
 
     fresh = TestClient(m.app)
-    old = fresh.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
+    old = fresh.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD})
     assert old.status_code == 401
-    new = fresh.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": NEW_PASSWORD})
+    new = fresh.post(
+        "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": NEW_PASSWORD}
+    )
     assert new.status_code == 200
     entry = audit(m, "account.password_change")
     assert entry and PASSWORD not in (entry[0].detail or "")
@@ -116,7 +118,7 @@ def test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout(m):
     assert r.status_code == 429
     assert (
         TestClient(m.app)
-        .post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
+        .post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD})
         .status_code
         == 429
     )
@@ -126,7 +128,7 @@ def test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout(m):
     "new, why",
     [
         ("ngan", "8 ký tự"),
-        ("Student-01", "mã tài khoản"),
+        ("student-01", "trùng với email"),
         (PASSWORD, "khác mật khẩu"),
         ("á" * 40, "72 byte"),
     ],
@@ -150,34 +152,35 @@ def test_signing_out_other_devices_keeps_this_one(m):
     assert here.get("/api/v1/me/account").json()["active_sessions"] == 1
 
 
-def test_the_account_page_needs_a_login_and_shows_the_pseudonym(m):
+def test_the_account_page_needs_a_login_and_shows_the_email(m):
     guest = TestClient(m.app)
     r = guest.get("/account", follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"] == "/login?next=/account"
     page = login_as(m, "SV-001").get("/account").text
-    assert "SV-001" in page
+    assert email_of("SV-001") in page
     assert 'id="pw-form"' in page
 
 
 # ================================================================= admin accounts (FR-52)
 
 
-def test_a_series_continues_the_numbering_with_one_time_passwords(m):
+def test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords(m):
     admin = login_as(m, "QT-01", "admin")
-    m.app.state.auth_repo.create_account("SV-007", PASSWORD, Role.STUDENT)
+    emails = [email_of(f"SV-00{i}") for i in (8, 9)] + ["Ten.Moi@Truong.EDU.vn"]
 
-    r = admin.post("/api/v1/admin/accounts", json={"role": "student", "count": 3})
+    r = admin.post("/api/v1/admin/accounts", json={"role": "student", "emails": emails})
     assert r.status_code == 200, r.text
     assert r.headers["cache-control"] == "no-store"
     created = r.json()["created"]
-    assert [c["pseudonym"] for c in created] == ["SV-008", "SV-009", "SV-010"]
+    assert [c["email"] for c in created] == [*emails[:2], "ten.moi@truong.edu.vn"]
     temporaries = [c["temporary_password"] for c in created]
     assert all(SLIP.match(t) for t in temporaries), temporaries
     assert len(set(temporaries)) == 3
 
-    listed = {a["pseudonym"]: a for a in admin.get("/api/v1/admin/accounts").json()}
-    assert listed["SV-008"]["must_change_password"] is True
+    listed = {a["email"]: a for a in admin.get("/api/v1/admin/accounts").json()}
+    assert listed[email_of("SV-008")]["must_change_password"] is True
+    assert listed[email_of("SV-008")]["email_verified"] is True  # the administrator vouched
     assert all("password_hash" not in a for a in listed.values())
     entries = audit(m, "account.create")
     assert len(entries) == 3
@@ -187,13 +190,13 @@ def test_a_series_continues_the_numbering_with_one_time_passwords(m):
 def test_a_temporary_password_opens_nothing_but_the_password_change(m):
     admin = login_as(m, "QT-01", "admin")
     made = admin.post(
-        "/api/v1/admin/accounts", json={"role": "teacher", "pseudonym": "GV-NN-01"}
+        "/api/v1/admin/accounts", json={"role": "teacher", "emails": [email_of("GV-NN-01")]}
     ).json()["created"][0]
 
     c = TestClient(m.app)
     r = c.post(
         "/api/v1/auth/login",
-        json={"pseudonym": "GV-NN-01", "password": made["temporary_password"]},
+        json={"email": email_of("GV-NN-01"), "password": made["temporary_password"]},
     )
     assert r.json()["must_change_password"] is True
     assert r.json()["home"] == "/account?first=1"
@@ -213,24 +216,24 @@ def test_a_temporary_password_opens_nothing_but_the_password_change(m):
     assert 'http-equiv="refresh"' not in c.get("/review").text
 
 
-def test_creating_accounts_is_all_or_nothing_and_checks_names(m):
+def test_creating_accounts_is_all_or_nothing_and_checks_emails(m):
     admin = login_as(m, "QT-01", "admin")
-    taken = admin.post("/api/v1/admin/accounts", json={"role": "student", "pseudonym": "QT-01"})
+    new = email_of("SV-NEW")
+    taken = admin.post(
+        "/api/v1/admin/accounts", json={"role": "student", "emails": [new, email_of("QT-01")]}
+    )
     assert taken.status_code == 409
-    for bad in ("<svg onload=x>", "mssv-2112", "211234567"):
-        r = admin.post("/api/v1/admin/accounts", json={"role": "student", "pseudonym": bad})
+    for bad in (["<svg onload=x>"], ["khong-co-a-cong"], [new, new.upper()]):
+        r = admin.post("/api/v1/admin/accounts", json={"role": "student", "emails": bad})
         assert r.status_code == 422, bad
+    too_many = [f"sv{i}@t.vn" for i in range(201)]
     assert (
         admin.post(
-            "/api/v1/admin/accounts", json={"role": "student", "count": 2, "prefix": "S1"}
+            "/api/v1/admin/accounts", json={"role": "student", "emails": too_many}
         ).status_code
         == 422
     )
-    assert (
-        admin.post("/api/v1/admin/accounts", json={"role": "student", "count": 201}).status_code
-        == 422
-    )
-    assert [a["pseudonym"] for a in admin.get("/api/v1/admin/accounts").json()] == ["QT-01"]
+    assert [a["email"] for a in admin.get("/api/v1/admin/accounts").json()] == [email_of("QT-01")]
 
 
 def test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password(m):
@@ -246,7 +249,7 @@ def test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password(m):
     assert student.get("/api/v1/me").status_code == 401
 
     again = TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": "SV-001", "password": temporary}
+        "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": temporary}
     )
     assert again.json()["must_change_password"] is True
     assert audit(m, "account.reset_password")[0].target_id == sid
@@ -263,7 +266,7 @@ def test_a_disabled_account_is_signed_out_and_cannot_sign_in(m):
     assert admin.post(f"/api/v1/admin/accounts/{sid}/disable").json()["disabled"] is True
     assert student.get("/api/v1/me").status_code == 401
     login = TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD}
     )
     assert login.status_code == 401
     own = admin.post(f"/api/v1/admin/accounts/{account_id(m, 'QT-01')}/disable")
@@ -277,19 +280,25 @@ def test_a_disabled_account_is_signed_out_and_cannot_sign_in(m):
 
 def test_an_administrator_lifts_a_lockout(m):
     admin = login_as(m, "QT-01", "admin")
-    m.app.state.auth_repo.create_account("SV-001", PASSWORD, Role.STUDENT)
+    m.app.state.auth_repo.create_account(email_of("SV-001"), PASSWORD, Role.STUDENT)
     c = TestClient(m.app)
     for _ in range(5):
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai-roi"})
+        c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai-roi"})
     assert (
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD}).status_code
+        c.post(
+            "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD}
+        ).status_code
         == 429
     )
-    row = next(a for a in admin.get("/api/v1/admin/accounts").json() if a["pseudonym"] == "SV-001")
+    row = next(
+        a for a in admin.get("/api/v1/admin/accounts").json() if a["email"] == email_of("SV-001")
+    )
     assert row["locked_until"]
     admin.post(f"/api/v1/admin/accounts/{row['account_id']}/unlock")
     assert (
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD}).status_code
+        c.post(
+            "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD}
+        ).status_code
         == 200
     )
 
@@ -307,23 +316,11 @@ def test_only_an_administrator_manages_accounts(m, role):
 # ================================================================= sidebar counts (FR-53)
 
 
-def test_a_teacher_decision_is_new_until_the_student_opens_their_list(m):
+def test_a_student_badge_counts_only_reviews_due(m):
+    """D103: the "new results" count is gone with the seen markers; reviews due stay."""
     student = login_as(m, "SV-001")
-    teacher = login_as(m, "GV-01", "teacher")
-    rid = submit(student)
-    assert student.get("/api/v1/me/badges").json()["results"] == 0
-
-    r = teacher.post(f"/api/v1/review/{rid}", json={"reason": "Đã nghe lại toàn bài."})
-    assert r.status_code == 200, r.text
-    badges = student.get("/api/v1/me/badges").json()
-    assert badges["results"] == 1
-    assert badges["results_seen_at"] is None
-    row = next(x for x in student.get("/api/v1/me/responses").json() if x["response_id"] == rid)
-    assert row["reviewed_at"]
-
-    student.post("/api/v1/me/badges/results/seen")
-    assert student.get("/api/v1/me/badges").json()["results"] == 0
-    assert student.post("/api/v1/me/badges/khac/seen").status_code == 422
+    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due"}
+    assert student.post("/api/v1/me/badges/results/seen").status_code in (404, 405)
 
 
 def test_a_teacher_sees_how_many_responses_wait_for_review(m):
@@ -338,7 +335,7 @@ def test_a_teacher_sees_how_many_responses_wait_for_review(m):
 
 def test_the_sidebar_carries_a_slot_for_each_count(m):
     student_page = login_as(m, "SV-001").get("/practice").text
-    assert 'data-badge="results"' in student_page
+    assert 'data-badge="results"' not in student_page
     assert 'data-badge="reviews_due"' in student_page
     teacher_page = login_as(m, "GV-01", "teacher").get("/review").text
     assert 'data-badge="queue"' in teacher_page

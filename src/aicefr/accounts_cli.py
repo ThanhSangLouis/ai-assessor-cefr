@@ -5,7 +5,7 @@ can change scores, so it cannot be left for the user to pick. The one way to
 self-register is Google sign-up (D063), and it only makes students.
 
 Run:
-    python -m aicefr.accounts_cli them --but-danh GV-01 --vai-tro teacher
+    python -m aicefr.accounts_cli them --email gv-01@demo.speakup.fit --vai-tro teacher
     python -m aicefr.accounts_cli liet-ke
     AICEFR_SEED_PASSWORD=... python -m aicefr.accounts_cli seed
 """
@@ -19,37 +19,36 @@ import sys
 
 from pymongo.errors import PyMongoError
 
-from aicefr.auth.pseudonyms import validate_pseudonym
+from aicefr.auth import contact
 from aicefr.config import get_settings
-from aicefr.storage.auth_repository import AuthRepository, Role
+from aicefr.storage.auth_repository import AuthRepository, EmailTaken, Role
 
 MIN_PASSWORD_LENGTH = 8
 SEED_PASSWORD_ENV = "AICEFR_SEED_PASSWORD"
 
 # The accounts a fresh deployment needs to be shown and tested: every role, a
-# class's worth of students. Pseudonyms only, as everywhere (FR-33).
+# class's worth of students. On a subdomain that receives no mail.
+SEED_DOMAIN = "demo.speakup.fit"
 SEED_ACCOUNTS: tuple[tuple[str, Role], ...] = (
-    ("QT-01", Role.ADMIN),
-    *((f"GV-{i:02d}", Role.TEACHER) for i in range(1, 4)),
-    *((f"SV-{i:03d}", Role.STUDENT) for i in range(1, 11)),
+    (f"qt-01@{SEED_DOMAIN}", Role.ADMIN),
+    *((f"gv-{i:02d}@{SEED_DOMAIN}", Role.TEACHER) for i in range(1, 4)),
+    *((f"sv-{i:03d}@{SEED_DOMAIN}", Role.STUDENT) for i in range(1, 11)),
 )
 
 
 def _add(args: argparse.Namespace) -> int:
     repo = AuthRepository(args.db)
 
-    # Validate the pseudonym BEFORE asking for a password. The repository
-    # validates it too -- that is the authoritative check -- but it runs after
-    # the password prompt, so a rejected pseudonym meant typing a password
-    # twice and then reading a traceback.
+    # Check the email BEFORE asking for a password, so a bad one does not mean
+    # typing a password twice and then reading a traceback.
     try:
-        validate_pseudonym(args.pseudonym)
+        email = contact.normalize_email(args.email)
     except ValueError as e:
-        print(f"Bút danh không hợp lệ: {e}", file=sys.stderr)
+        print(f"Email không hợp lệ: {e}", file=sys.stderr)
         return 1
 
-    if repo.get_by_pseudonym(args.pseudonym) is not None:
-        print(f"Bút danh {args.pseudonym!r} đã tồn tại.", file=sys.stderr)
+    if repo.get_by_email(email) is not None:
+        print(f"Email {email!r} đã có tài khoản.", file=sys.stderr)
         return 1
 
     password = args.password or getpass.getpass("Mật khẩu: ")
@@ -60,8 +59,12 @@ def _add(args: argparse.Namespace) -> int:
         print("Hai lần nhập không khớp.", file=sys.stderr)
         return 1
 
-    aid = repo.create_account(args.pseudonym, password, Role(args.role))
-    print(f"Đã tạo tài khoản {args.pseudonym} · vai trò {args.role} · mã {aid}")
+    try:
+        aid = repo.create_account(email, password, Role(args.role))
+    except EmailTaken:
+        print(f"Email {email!r} đã có tài khoản.", file=sys.stderr)
+        return 1
+    print(f"Đã tạo tài khoản {email} · vai trò {args.role} · mã {aid}")
     return 0
 
 
@@ -82,10 +85,11 @@ def _seed(args: argparse.Namespace) -> int:
         return 1
     repo = AuthRepository(args.db)
     made = []
-    for pseudonym, role in SEED_ACCOUNTS:
-        if repo.get_by_pseudonym(pseudonym) is None:
-            repo.create_account(pseudonym, password, role)
-            made.append(pseudonym)
+    for email, role in SEED_ACCOUNTS:
+        if repo.get_by_email(email) is None:
+            aid = repo.create_account(email, password, role)
+            repo.set_email_reminders(aid, False)  # the demo domain receives no mail
+            made.append(email)
     kept = len(SEED_ACCOUNTS) - len(made)
     print(f"Đã tạo {len(made)} tài khoản ({', '.join(made) or 'không có'}); giữ nguyên {kept}.")
     return 0
@@ -96,11 +100,11 @@ def _list(args: argparse.Namespace) -> int:
     if not rows:
         print("Chưa có tài khoản nào.")
         return 0
-    print(f"{'Bút danh':<20} {'Vai trò':<10} {'Sai':<5} {'Khóa đến':<22} Tình trạng")
+    print(f"{'Email':<32} {'Vai trò':<10} {'Sai':<5} {'Khóa đến':<22} Tình trạng")
     for r in rows:
         state = "đã tắt" if r["disabled"] else "đang dùng"
         print(
-            f"{r['pseudonym']:<20} {r['role']:<10} {r['failed_attempts']:<5} "
+            f"{r['email']:<32} {r['role']:<10} {r['failed_attempts']:<5} "
             f"{r['locked_until'] or '—':<22} {state}"
         )
     return 0
@@ -108,10 +112,10 @@ def _list(args: argparse.Namespace) -> int:
 
 def _unlock(args: argparse.Namespace) -> int:
     """Unlock an account that was locked after too many failed logins."""
-    if not AuthRepository(args.db).unlock_pseudonym(args.pseudonym):
-        print(f"Không có tài khoản {args.pseudonym!r}.", file=sys.stderr)
+    if not AuthRepository(args.db).unlock_email(args.email):
+        print(f"Không có tài khoản {args.email!r}.", file=sys.stderr)
         return 1
-    print(f"Đã gỡ khóa {args.pseudonym}.")
+    print(f"Đã gỡ khóa {args.email}.")
     return 0
 
 
@@ -130,12 +134,7 @@ def main(argv: list[str] | None = None) -> int:
     # The option names stay Vietnamese: they are the documented user interface.
     # Only the `dest` is English, so the code reads in English.
     p_add = sub.add_parser("them", help="tạo tài khoản mới")
-    p_add.add_argument(
-        "--but-danh",
-        dest="pseudonym",
-        required=True,
-        help="mã tài khoản, không dùng họ tên hay MSSV",
-    )
+    p_add.add_argument("--email", dest="email", required=True, help="email đăng nhập")
     p_add.add_argument(
         "--vai-tro",
         dest="role",
@@ -154,7 +153,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("liet-ke", help="liệt kê tài khoản").set_defaults(func=_list)
 
     p_seed = sub.add_parser(
-        "seed", help="tạo bộ tài khoản mẫu còn thiếu (QT-01, GV-01..03, SV-001..010)"
+        "seed",
+        help=f"tạo bộ tài khoản mẫu còn thiếu (qt-01, gv-01..03, sv-001..010 @{SEED_DOMAIN})",
     )
     p_seed.add_argument(
         "--mat-khau",
@@ -165,7 +165,7 @@ def main(argv: list[str] | None = None) -> int:
     p_seed.set_defaults(func=_seed)
 
     p_unlock = sub.add_parser("mo-khoa", help="gỡ khóa tài khoản")
-    p_unlock.add_argument("--but-danh", dest="pseudonym", required=True)
+    p_unlock.add_argument("--email", dest="email", required=True)
     p_unlock.set_defaults(func=_unlock)
 
     args = ap.parse_args(argv)

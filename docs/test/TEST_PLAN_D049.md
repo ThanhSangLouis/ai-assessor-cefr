@@ -46,8 +46,8 @@
 | TC-ME-U02 | `test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five` | AC-85.1 | 61 và 120 giây là 3.400; 300 giây và dài hơn là 7.600 |
 | ~~TC-ME-U03~~ *(gỡ bởi D083)* | ~~`test_practice_pays_half`~~ | FR-85 | Bài luyện tập 0,5 lượt = 1.000 IDPoint |
 | TC-ME-U04 | `test_a_cycle_starts_on_the_sixteenth` | FR-85 | Chu kỳ đổi lúc 0 giờ ngày 16, qua năm đúng |
-| TC-ME-U05 | `test_counted_output_tokens_win_over_the_estimate_from_words` | FR-85 | Token do bộ nhận dạng đếm được dùng trước; không có thì ước lượng từ số từ và ghi là ước lượng (D057) |
-| TC-ME-U06 | `test_audio_tokens_are_whispers_windows_plus_the_language_check` | FR-85 | 1.500 token mỗi cửa sổ 30 giây, thêm 1 cửa sổ kiểm tra ngôn ngữ; ghi kèm bút toán để tính giá vốn |
+| ~~TC-ME-U05~~ *(gỡ bởi D105)* | ~~`test_counted_output_tokens_win_over_the_estimate_from_words`~~ | FR-85 | Bút toán không còn ghi số token |
+| ~~TC-ME-U06~~ *(gỡ bởi D105)* | ~~`test_audio_tokens_are_whispers_windows_plus_the_language_check`~~ | FR-85 | Bút toán không còn ghi số token |
 | TC-ME-U07 | `test_the_seller_sets_the_prices` | FR-85 | Giá do người bán đặt; giá âm hay hệ số luyện tập 0 bị từ chối (D057) |
 | TC-ME-U08 | `test_a_hold_is_the_longest_the_task_allows` | FR-85 | Giữ chỗ theo thời lượng tối đa của đề: 90 giây là 1,7 lượt |
 
@@ -65,7 +65,7 @@
 | TC-ME-I08 | `test_a_top_up_is_credited_once_per_reference` | FR-85 | Một số tham chiếu chỉ cộng một lần; số lượt phải dương |
 | TC-ME-I09 | `test_concurrent_holds_never_overdraw` | AC-85.7 | 12 luồng, đúng 5 qua, số dư về 0 |
 | TC-ME-I10 | `test_with_metering_off_nothing_is_held_or_refused` | AC-85.8 | 5 bài trên bản của trường, sổ trống |
-| TC-ME-I11 | `test_a_submission_is_held_then_charged_and_shows_in_my_credits` | FR-85 | Bài 35 giây thu 1 lượt, bút toán ghi số token; trang lượt không lộ mã nội bộ |
+| TC-ME-I11 | `test_a_submission_is_held_then_charged_and_shows_in_my_credits` | FR-85 | Bài 35 giây thu 1 lượt, bút toán không ghi số token (D105); trang lượt không lộ mã nội bộ |
 | TC-ME-I12 | `test_a_failed_scoring_releases_the_hold` | AC-85.6 | Báo lỗi từ máy chấm: FAILED và hoàn |
 | TC-ME-I13 | `test_a_submission_without_runs_left_is_refused_with_402` | AC-85.9 | 402, không lưu bài, không để lại tệp |
 | TC-ME-I14 | `test_only_an_administrator_grants_runs` | FR-85 | Giảng viên 403; một phiếu chỉ cộng một lần; bút danh lạ 404 |

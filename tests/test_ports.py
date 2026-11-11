@@ -46,7 +46,6 @@ def test_processor_runs_on_injected_doubles_alone(tone, sr) -> None:
     """
     request = ProcessingRequest(
         response_id="r1",
-        speaker_id="SV-001",
         task_id="P3",
         audio_path="unused.wav",
         prompt_version="v1",

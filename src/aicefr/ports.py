@@ -171,7 +171,7 @@ class ResponseStore(Protocol):
       mot Response. Nguoi goi ba phuong thuc nay la tang web.
     * `api/main.py` khoi tao `repo = Repository()` bang kieu CU THE, va goi
       hon hai muoi phuong thuc khac khong nam trong cong nay: apply_review,
-      queue_with_locks, cohort_stats, erase_speaker, write_audit...
+      queue_with_locks, cohort_stats, erase_account_data, write_audit...
 
     Nghia la doi kho du lieu khong phai "viet mot bo chuyen doi ba phuong thuc"
     ma la viet lai gan nhu toan bo `Repository` -- dung nhu D048 da lam khi
@@ -185,7 +185,6 @@ class ResponseStore(Protocol):
     def save(
         self,
         report: Response,
-        speaker_id: str,
         task_id: str,
         account_id: str | None = None,
         audio_path: str | None = None,

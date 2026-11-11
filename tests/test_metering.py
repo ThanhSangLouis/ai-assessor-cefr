@@ -11,6 +11,7 @@ from __future__ import annotations
 import threading
 
 import pytest
+from dbutil import email_of
 from test_billing import boot
 from test_lessons_integration import account_id, login_as, submit_assessment, wav
 
@@ -19,7 +20,6 @@ from aicefr.metering.pricing import (
     as_runs,
     hold_for,
     units_for,
-    usage_of,
 )
 from aicefr.storage.metering_repository import (
     InsufficientCredits,
@@ -150,9 +150,8 @@ def test_a_submission_is_held_then_charged_and_shows_in_my_credits(metered):
     entry = m.core_parts.state["metering"].entry(rid, MeteredAction.ASSESSMENT)
     expected = units_for(DEFAULT_PRICES, 35.0)  # one run
     assert (entry["state"], entry["charged"]) == (LedgerState.CHARGED, expected)
-    # The tokens it used are kept with the charge, for the cost per request.
-    assert (entry["input_tokens"], entry["usage_estimated"]) == (4500, True)
-    assert entry["output_tokens"] == usage_of(35.0, None, len(report.asr.words)).output_tokens
+    # D105: no token counts kept with the charge.
+    assert "input_tokens" not in entry and "output_tokens" not in entry
     body = student.get("/api/v1/me/credits").json()
     assert body["metering"] is True and body["free_runs_left"] == as_runs(3000 - expected)
     assert body["one_minute"] == {"assessment": 1.0}
@@ -177,8 +176,11 @@ def test_a_failed_scoring_releases_the_hold(metered):
     m = metered
     login_as(m, "SV-001")
     who = account_id(m, "SV-001")
-    m.repo.save(Response(response_id="r-fail", status=ResponseStatus.QUEUED, config_version="v1"),
-                "SV-001", "P3", account_id=who)  # fmt: skip
+    m.repo.save(
+        Response(response_id="r-fail", status=ResponseStatus.QUEUED, config_version="v1"),
+        "P3",
+        account_id=who,
+    )
     assert (
         m.core_parts.facade.metering.hold(
             account_id=who, action="assessment", key="r-fail", max_seconds=60
@@ -219,13 +221,15 @@ def test_only_an_administrator_grants_runs(metered):
     login_as(m, "SV-001")
     admin = login_as(m, "QT-01", "admin")
     teacher = login_as(m, "GV-01", "teacher")
-    body = {"pseudonym": "SV-001", "runs": 2, "reference": "phiếu-1"}
+    body = {"email": email_of("SV-001"), "runs": 2, "reference": "phiếu-1"}
     assert teacher.post("/api/v1/admin/credits/grant", json=body).status_code == 403
     first = admin.post("/api/v1/admin/credits/grant", json=body).json()
     again = admin.post("/api/v1/admin/credits/grant", json=body).json()
     assert (first["credited"], again["credited"], again["wallet_runs"]) == (True, False, 2)
     assert (
-        admin.post("/api/v1/admin/credits/grant", json={**body, "pseudonym": "SV-404"}).status_code
+        admin.post(
+            "/api/v1/admin/credits/grant", json={**body, "email": email_of("SV-404")}
+        ).status_code
         == 404
     )
 
@@ -242,6 +246,6 @@ def test_granting_on_the_school_deployment_is_refused(tmp_path, monkeypatch):
     admin = login_as(m, "QT-01", "admin")
     r = admin.post(
         "/api/v1/admin/credits/grant",
-        json={"pseudonym": "QT-01", "runs": 1, "reference": "x"},
+        json={"email": email_of("QT-01"), "runs": 1, "reference": "x"},
     )
     assert r.status_code == 409

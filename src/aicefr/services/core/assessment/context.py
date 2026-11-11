@@ -160,3 +160,10 @@ def scorable_duration(model: dict) -> dict:
         "accepted_low": round(max(0.0, lo - tol * span), 1),
         "accepted_high": round(hi + tol * span, 1),
     }
+
+
+def name_of(account_id: str | None) -> str | None:
+    """The name of whoever changed something, as staff read it; None for nobody."""
+    if not account_id:
+        return None
+    return svc().peers.identity.display_names(account_ids=[account_id]).get(account_id, account_id)

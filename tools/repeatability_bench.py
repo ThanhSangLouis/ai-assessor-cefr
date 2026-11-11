@@ -62,7 +62,6 @@ def bench(paths: list[pathlib.Path], temperature, runs: int, task: str, model) -
         for i in range(runs):
             request = ProcessingRequest(
                 response_id=f"bench-{path.stem}-{i}",
-                speaker_id="SV-000",
                 task_id=task,
                 audio_path=str(path),
                 prompt_version="v1",

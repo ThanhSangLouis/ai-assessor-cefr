@@ -19,6 +19,7 @@ import uuid
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_billing import PACKS, boot
 from test_lessons_integration import login_as
@@ -108,9 +109,14 @@ def test_only_a_verified_address_hears_and_a_cancel_says_nothing(m):
     buyer = verified_buyer(m)
     pay(buyer, "cancelled")  # the buyer left on purpose: nothing to tell
     assert outbox().sent == []
-    # No address at all (the seeded learner), or one never verified: no email,
-    # and the payment itself goes through untouched.
-    plain = login_as(m, "SV-001")
+    # An address never verified: no email, and the payment itself goes through untouched.
+    plain = TestClient(m.app)
+    r = plain.post(
+        "/api/v1/auth/signup",
+        json={"email": "chua.xac.minh@example.edu.vn", "full_name": "Lê C", "password": PASSWORD},
+    )
+    assert r.status_code == 200, r.text
+    outbox().sent.clear()  # the verification code, never used
     pay(plain, "paid")
     assert outbox().sent == []
     assert plain.get("/api/v1/me/credits").json()["wallet_runs"] == 10
@@ -183,7 +189,7 @@ def test_the_order_event_crosses_redis_and_one_email_goes_out():
 
     url = os.environ["AICEFR_TEST_REDIS"]
     auth = AuthRepository(f"mongomock://redis-email-{uuid.uuid4().hex[:8]}")
-    account_id = auth.create_account("SV-R01", PASSWORD, Role.STUDENT)
+    account_id = auth.create_account(email_of("SV-R01"), PASSWORD, Role.STUDENT)
     auth.col("account").update_one(
         {"account_id": account_id}, {"$set": {"email": EMAIL, "email_verified": 1}}
     )

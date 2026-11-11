@@ -9,7 +9,6 @@ one stays, inactive, until the learner's data is erased.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -27,10 +26,8 @@ PLAN_FIELDS = (
     "plan_id",
     "account_id",
     "audience",
-    "goal_json",
-    "plan_json",
-    "model_version",
-    "path_id",
+    "goal",
+    "plan",
     "active",
     "created_at",
 )
@@ -45,8 +42,6 @@ class LearningPlan:
     audience: Role  # a learner's own plan, or a teacher's proposal
     goal: dict
     plan: dict  # units, each with its lessons and the reasons they were picked
-    model_version: str
-    path_id: str | None  # the draft path a teacher saved it as
     active: bool
     created_at: str
 
@@ -57,10 +52,8 @@ class LearningPlan:
             plan_id=out["plan_id"],  # type: ignore[index]
             account_id=out["account_id"],  # type: ignore[index]
             audience=Role(out["audience"]),  # type: ignore[index]
-            goal=json.loads(out["goal_json"]),  # type: ignore[index]
-            plan=json.loads(out["plan_json"]),  # type: ignore[index]
-            model_version=out["model_version"],  # type: ignore[index]
-            path_id=out["path_id"],  # type: ignore[index]
+            goal=out["goal"],  # type: ignore[index]
+            plan=out["plan"],  # type: ignore[index]
             active=bool(out["active"]),  # type: ignore[index]
             created_at=out["created_at"],  # type: ignore[index]
         )
@@ -70,8 +63,6 @@ class LearningPlan:
             "plan_id": self.plan_id,
             "account_id": self.account_id,
             "audience": self.audience.value,
-            "model_version": self.model_version,
-            "path_id": self.path_id,
             "active": self.active,
             "created_at": self.created_at,
             "goal": self.goal,
@@ -84,9 +75,7 @@ class PlanRepository(MongoStore):
         self.db_path = str(db_path)
         ensure_indexes(self.db, PLAN_INDEXES, "plans")
 
-    def save(
-        self, account_id: str, audience: str, goal: dict, plan: dict, model_version: str
-    ) -> str:
+    def save(self, account_id: str, audience: str, goal: dict, plan: dict) -> str:
         """Store a plan; a learner's new plan replaces their active one."""
         if audience not in AUDIENCES:
             raise ValueError(audience)
@@ -103,10 +92,9 @@ class PlanRepository(MongoStore):
                 "plan_id": plan_id,
                 "account_id": account_id,
                 "audience": audience,
-                "goal_json": json.dumps(goal, ensure_ascii=False),
-                "plan_json": json.dumps(plan, ensure_ascii=False),
-                "model_version": model_version,
-                "path_id": None,
+                "goal": goal,
+                # The goal is its own field (D105): not repeated inside the plan.
+                "plan": {k: v for k, v in plan.items() if k != "goal"},
                 "active": 1,
                 "created_at": _now(),
             }
@@ -146,11 +134,9 @@ class PlanRepository(MongoStore):
         )
         return done.modified_count
 
-    def saved_as(self, plan_id: str, path_id: str) -> None:
-        """A teacher's plan became this draft path."""
-        self.col("learning_plan").update_one(
-            {"plan_id": plan_id}, {"$set": {"path_id": path_id, "active": 0}}
-        )
+    def retire(self, plan_id: str) -> None:
+        """A teacher's plan became a draft path; the plan itself is set aside."""
+        self.col("learning_plan").update_one({"plan_id": plan_id}, {"$set": {"active": 0}})
 
     def of_account(self, account_id: str) -> list[dict]:
         """Every plan of one account, oldest first: the personal export."""

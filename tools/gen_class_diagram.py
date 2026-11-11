@@ -131,12 +131,10 @@ CLASSES = [
             "- email: str",
             "- emailVerified: bool",
             "- fullName: str",
-            "- pseudonym: str",
             "- role: Role",
             "- mustChangePassword: bool",
             "- dailyGoalS: int",
             "- identities: List<str>",
-            "- seenMarkers: List<str>",
             "- emailCodes: List<str>",
             "- emailReminders: bool",
             "- reminderSentOn: date",
@@ -193,6 +191,8 @@ CLASSES = [
             "- modelVersion: str",
             "- teacherVerified: bool",
             "- createdAt: datetime",
+            "- lockedBy: Account [0..1]",
+            "- lockedUntil: datetime",
             "+ isSingleBand(): bool",
         ],
     ),
@@ -207,23 +207,14 @@ CLASSES = [
             "- oldBand: Band",
             "- newBand: Band",
             "- reason: str",
-            "- openedAt: datetime",
             "- decidedAt: datetime",
         ],
     ),
-    # D082: reviewing a response, apart from it: who holds it now and every visit.
-    _e(
-        "RevSess",
-        "ReviewSession",
-        [
-            "- response: Response [1]",
-            "- lockedBy: Account [0..1]",
-            "- lockedUntil: datetime",
-            "- visits: List<str>",
-        ],
-    ),
+    # D104: who may decide on a response now is part of it again
+    # (`Response.lockedBy`), no ReviewSession apart (D082).
     # D069: the learner's answer rewritten one band higher, made once on request
-    # and kept with the response; D070: its phrases are the phrase book's cards.
+    # and kept with the response; D070: its phrases feed the phrase book, whose
+    # boxes are review items (D104).
     _e(
         "Upgrade",
         "CoachUpgrade",
@@ -232,24 +223,8 @@ CLASSES = [
             "- toBand: Band",
             "- upgraded: str",
             "- changes: List<str>",
-            "- phrases: PhraseCard [0..*]",
-            "- provider: str",
-            "- model: str",
-            "- promptVersion: str",
+            "- phrases: List<str>",
             "- createdAt: datetime",
-        ],
-    ),
-    _e(
-        "Phrase",
-        "PhraseCard",
-        [
-            "- phrase: str",
-            "- meaningVi: str",
-            "- box: int",
-            "- due: datetime",
-            "- reviews: int",
-            "- reviewedAt: datetime",
-            "+ isDue(at: datetime): bool",
         ],
     ),
     _e(
@@ -269,12 +244,10 @@ CLASSES = [
         [
             "- pathId: str",
             "- title: str",
-            "- author: Account [0..1]",
             "- bandFrom: Band",
             "- bandTo: Band",
             "- status: PathStatus",
             "- units: Unit [0..*]",
-            "- builtIn: bool",
         ],
     ),
     _e(
@@ -287,7 +260,6 @@ CLASSES = [
             "- band: Band",
             "- criterion: Criterion",
             "- topic: str",
-            "- position: int",
             "- lessons: Lesson [0..*]",
         ],
     ),
@@ -346,7 +318,6 @@ CLASSES = [
             "- learner: Account [1]",
             "- response: Response [1]",
             "- word: str",
-            "- wordIndex: int",
             "- phrase: str",
             "- streak: int",
             "- passed: bool",
@@ -363,7 +334,6 @@ CLASSES = [
             "- passageId: str",
             "- learner: Account [1]",
             "- words: WordDrill [3..5]",
-            "- band: str",
             "- text: str",
             "- source: str",
             "- takes: List<str>",
@@ -393,7 +363,6 @@ CLASSES = [
             "- code: str",
             "- learner: Account [1]",
             "- unlockedAt: datetime",
-            "- seenAt: datetime",
         ],
     ),
     _e(
@@ -405,9 +374,7 @@ CLASSES = [
             "- goal: str",
             "- audience: Role",
             "- lessons: Lesson [1..*]",
-            "- savedAs: LessonPath [0..1]",
             "- active: bool",
-            "- modelVersion: str",
         ],
     ),
     # D075: one centre, no plans -- every order is a pack of runs for its buyer.
@@ -423,19 +390,9 @@ CLASSES = [
             "- createdAt: datetime",
             "- expiresAt: datetime",
             "- creditedAt: datetime",
-        ],
-    ),
-    # D084: how the gateway took the money for an order, apart from what was bought.
-    _e(
-        "Payment",
-        "Payment",
-        [
-            "- order: Order [1]",
-            "- gateway: str",
-            "- live: bool",
+            # D104: the gateway's part, D084's Payment folded back in.
             "- checkoutRef: str",
             "- reference: str",
-            "- resultCode: str",
             "- settledAt: datetime",
             "- events: List<str>",
         ],
@@ -456,7 +413,7 @@ CLASSES = [
         ],
     ),
     # D078: the prices an administrator sets on the dashboard, one version at a
-    # time; a ledger entry keeps the version it was held under (`priceVersion`).
+    # time.
     _e(
         "Price",
         "PriceList",
@@ -472,9 +429,7 @@ CLASSES = [
             "- idpointPerRun: int",
             "- freeRuns: float",
             "- packs: List<str>",
-            "- changedBy: Account [1]",
             "- changedAt: datetime",
-            "- history: List<str>",
         ],
     ),
     _e(
@@ -485,12 +440,10 @@ CLASSES = [
             "- wallet: Wallet [1]",
             "- response: Response [0..1]",
             "- action: MeteredAction",
-            "- held: int",
             "- fromFree: int",
             "- fromWallet: int",
             "- charged: int",
             "- state: LedgerState",
-            "- priceVersion: str",
             "- day: str",
             "- freeSlot: bool",
         ],
@@ -547,15 +500,12 @@ EDGES = [
     ("Resp", "Task", "0..* : 1", "assoc"),
     ("Resp", "Review", "1 : 0..*", "comp"),
     ("Resp", "Upgrade", "1 : 0..1", "comp"),
-    ("Upgrade", "Phrase", "1 : 0..*", "comp"),
     ("Review", "Account", "0..* : 1", "assoc"),
-    ("RevSess", "Resp", "0..1 : 1", "assoc"),
-    ("RevSess", "Account", "0..* : lockedBy 0..1", "assoc"),
+    ("Resp", "Account", "0..* : lockedBy 0..1", "assoc"),
     # D071: a class has its teachers and its members, both many-to-many; the
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
     ("Class", "Account", "0..* : members 0..*", "nn"),
-    ("Path", "Account", "0..* : 0..1", "assoc"),
     ("Path", "Unit", "1 : 0..*", "comp"),
     ("Unit", "Lesson", "1 : 0..*", "comp"),
     ("Lesson", "Step", "1 : 1..12", "comp"),
@@ -571,11 +521,8 @@ EDGES = [
     ("Achv", "Account", "0..* : 1", "assoc"),
     ("Plan", "Account", "0..* : 1", "assoc"),
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
-    ("Plan", "Path", "0..1 : 0..1", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
-    ("Payment", "Order", "0..1 : 1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
-    ("Price", "Account", "0..* : 1", "assoc"),
     ("Ledger", "Wallet", "0..* : 1", "assoc"),
     # A recording and, since D072, its upgraded answer: two entries at most; a
     # teacher's lesson draft (D075) pays for no response.
@@ -614,12 +561,12 @@ EDGES += [
 ZONES = [
     ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order", "Payment"]),
+     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),
       (6, ["OrderSt", "Price"])]),
     ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,
-     [(1, ["Task", "Upgrade", "Phrase"]), (2, ["Resp", "Review"]),
-      (3, ["Status", "Band", "Criterion", "RevSess"])]),
+     [(1, ["Task", "Upgrade"]), (2, ["Resp", "Review"]),
+      (3, ["Status", "Band", "Criterion"])]),
     ("learning", "Học tập", 1,
      [(4, ["Achv", "Plan", "Drill", "RevItem", "Attempt"]), (5, ["Path", "Unit", "Lesson", "Step"]),
       (6, ["Passage", "PathSt", ("StepKind", "Step")])]),

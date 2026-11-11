@@ -52,9 +52,8 @@ def add_prompt(body: PromptIn, account: Account = STAFF_ONLY) -> dict:
         body.band,
         " ".join(body.prompt_text.split()),
         _keywords(body.topic_keywords),
-        account.account_id,
     )
-    s.repo.write_audit(account.pseudonym, "task.create", task_id, body.band.value)
+    s.repo.write_audit(account.account_id, "task.create", task_id, body.band.value)
     return {"task_id": task_id}
 
 
@@ -70,5 +69,5 @@ def edit_prompt(task_id: str, body: PromptPatch, account: Account = STAFF_ONLY) 
         raise HTTPException(422, "không có gì để đổi")
     if not s.tasks.edit_assessment(task_id, changes):
         raise HTTPException(404, "không tìm thấy đề đánh giá này")
-    s.repo.write_audit(account.pseudonym, "task.edit", task_id, ",".join(sorted(changes)))
+    s.repo.write_audit(account.account_id, "task.edit", task_id, ",".join(sorted(changes)))
     return {"task_id": task_id, "changed": sorted(changes)}

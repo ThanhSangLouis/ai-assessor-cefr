@@ -139,7 +139,7 @@ class Settings:
         default_factory=lambda: os.getenv("AICEFR_GOOGLE_DOMAIN") or None
     )
     # D063: a Google account linked to no account signs up as a new student
-    # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
+    # with the email Google vouched for. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
     # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
     google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
     # D065: a student opens an account with a password from /signup; a

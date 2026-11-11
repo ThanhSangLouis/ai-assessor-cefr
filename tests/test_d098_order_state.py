@@ -80,14 +80,14 @@ def test_the_store_moves_an_order_once_whatever_arrives_after(tmp_path, monkeypa
     order_id = buyer.post("/api/v1/me/credit-orders", json={"runs": 10}).json()["order"]["order_id"]
     store = m.billing_store
 
-    assert store.settle(order_id, S.PAID, "REF1", "00") is True
+    assert store.settle(order_id, S.PAID, "REF1") is True
     # Paid is final: a late "failed", an expiry run, a second "paid" change nothing.
-    assert store.settle(order_id, S.FAILED, "REF2", "99") is False
-    assert store.settle(order_id, S.PAID, "REF3", "00") is False
+    assert store.settle(order_id, S.FAILED, "REF2") is False
+    assert store.settle(order_id, S.PAID, "REF3") is False
     store.expire_pending("9999-12-31T00:00:00+00:00")
     order = store.order(order_id)
     assert (order["status"], order["reference"]) == ("paid", "REF1")
     # An expired order still takes a payment that arrives late.
     other = buyer.post("/api/v1/me/credit-orders", json={"runs": 10}).json()["order"]["order_id"]
     assert store.expire_pending("9999-12-31T00:00:00+00:00") == [other]
-    assert store.settle(other, S.PAID, "LATE", "00") is True
+    assert store.settle(other, S.PAID, "LATE") is True

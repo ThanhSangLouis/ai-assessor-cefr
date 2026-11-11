@@ -1,4 +1,4 @@
-"""The price list of the metered channel: priced by the recording, measured in tokens (D057).
+"""The price list of the metered channel: priced by the recording (D057).
 
 What the learner pays is fixed by the recording, as every worker on NetID is
 priced (team decision, 24/10/2026): the first minute is one run (2,000 IDPoint
@@ -6,15 +6,9 @@ at the agreed 1 IDPoint = 1 VND), every further started minute 0.7 run, up to
 five minutes. The seller sets these numbers (`AICEFR_PRICE_*`,
 `AICEFR_IDPOINT_PER_RUN`), and since D078 an administrator on the dashboard.
 
-What a recording really used is measured in tokens and kept with each charge,
-for the cost per request and the reconciliation with NetID -- the recogniser is
-a token model too:
-
-* **input tokens** are Whisper's audio tokens: 1500 per started 30-second
-  window, and one more window for the language check (D022);
-* **output tokens** are the text tokens the decoder produced, counted by the
-  recogniser (`Transcript.output_tokens`), or estimated from the words where
-  it cannot count them, and marked so.
+D105: the tokens a recording or a model call used are not kept with each
+charge any more; nothing read them. The language model's daily token counts
+stay on the coach dashboard (D072).
 
 Charges are kept in thousandths of a run, integers so no sum ever rounds. A hold
 is taken for the longest recording a task allows and settled on what the
@@ -31,11 +25,6 @@ UNITS_PER_RUN = 1000
 # Three runs a month for everyone before anything is charged.
 FREE_UNITS_PER_CYCLE = 3 * UNITS_PER_RUN
 
-WINDOW_S = 30.0
-AUDIO_TOKENS_PER_WINDOW = 1500
-LANGUAGE_CHECK_WINDOWS = 1
-# English text in Whisper's tokenizer: about four tokens for every three words.
-TOKENS_PER_WORD = 4 / 3
 # The longest recording the price covers; QC refuses anything longer anyway.
 MAX_MINUTES = 5
 MAX_SECONDS = MAX_MINUTES * 60.0
@@ -92,30 +81,6 @@ class PriceList:
 
 
 DEFAULT_PRICES = PriceList()
-
-
-@dataclass(frozen=True)
-class TokenUsage:
-    input_tokens: int
-    output_tokens: int
-    estimated: bool = False  # the output count came from words, not the recogniser
-
-
-def windows(seconds: float) -> int:
-    """Started 30-second windows, at least one, up to the longest priced recording."""
-    return max(1, math.ceil(min(max(0.0, seconds), MAX_SECONDS) / WINDOW_S))
-
-
-def input_tokens(seconds: float) -> int:
-    return AUDIO_TOKENS_PER_WINDOW * (windows(seconds) + LANGUAGE_CHECK_WINDOWS)
-
-
-def usage_of(seconds: float, output_tokens: int | None, words: int | None = None) -> TokenUsage:
-    """What one recording used: counted output tokens, or an estimate from its words."""
-    if output_tokens is not None:
-        return TokenUsage(input_tokens(seconds), max(0, int(output_tokens)))
-    estimate = math.ceil(max(0, words or 0) * TOKENS_PER_WORD)
-    return TokenUsage(input_tokens(seconds), estimate, estimated=True)
 
 
 def minutes(seconds: float) -> int:

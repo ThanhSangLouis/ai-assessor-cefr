@@ -176,7 +176,7 @@ def test_the_clarity_line_reads_lower_as_better():
 
 def test_takes_are_kept_on_the_drill_and_a_closed_word_stays_closed():
     repo = DrillRepository(store())
-    args = ("acc-1", "resp-1", "worked", 3, "I worked hard")
+    args = ("acc-1", "resp-1", "worked", "I worked hard")
     assert repo.of_response("acc-1", "resp-1") == {}
     assert repo.record(*args, passed=True, said=None).streak == 1
     assert repo.record(*args, passed=False, said="work").streak == 0

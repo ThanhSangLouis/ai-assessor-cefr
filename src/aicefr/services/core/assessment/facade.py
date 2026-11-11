@@ -118,17 +118,6 @@ class AssessmentFacade:
         return self.repo.assessments_by_account(since, until)
 
     @exposed
-    def student_badges(self, account_id: str) -> dict:
-        """Teacher decisions on this student's responses since they last looked (D028)."""
-        from aicefr.services.core.assessment.context import svc
-
-        seen = svc().peers.identity.seen_at(account_id=account_id, marker="results")
-        return {
-            "results": self.repo.count_reviewed_since(account_id, seen),
-            "results_seen_at": seen,
-        }
-
-    @exposed
     def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
         """Responses waiting for review.
 

@@ -59,13 +59,13 @@ def test_a_learner_picks_an_avatar_and_a_daily_goal_and_the_path_follows(context
 
 
 def test_a_session_on_another_device_is_ended_from_the_account_page(context, browser, live_server):
-    pseudonym = live_server.account()
+    name = live_server.account()
     here = context.new_page()
-    login(here, live_server, pseudonym, "/account")
+    login(here, live_server, name, "/account")
     ctx = fresh_context(browser, live_server)
     try:
         there = ctx.new_page()
-        login(there, live_server, pseudonym, "/practice")
+        login(there, live_server, name, "/practice")
         here.goto("/account#security")
         rows = here.locator("#session-list .session")
         expect(rows).to_have_count(2)

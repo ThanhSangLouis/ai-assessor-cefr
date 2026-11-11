@@ -131,7 +131,7 @@ until curl -fsS --max-time 10 "${URL}/healthz" >/dev/null 2>&1; do
   sleep 5
 done
 
-# D063: the seed accounts (QT-01, GV-01..03, SV-001..010), only those still
+# D063: the seed accounts (qt-01, gv-01..03, sv-001..010 @demo.speakup.fit), only those still
 # missing, and only when the server's .env sets AICEFR_SEED_PASSWORD. The
 # password is read on the server and handed to the one command that needs it;
 # it never travels back here or into a log.

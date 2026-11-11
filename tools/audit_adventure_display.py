@@ -49,7 +49,8 @@ def run():
             base_url="http://localhost:8000", viewport={"width": 1440, "height": 900}
         )
         assert ctx.request.post(
-            "/api/v1/auth/login", data={"identifier": "SV-001", "password": "matkhau123"}
+            "/api/v1/auth/login",
+            data={"identifier": "sv-001@demo.speakup.fit", "password": "matkhau123"},
         ).ok
         original = ctx.request.get("/api/v1/learn").json()
         bands = ctx.request.get("/api/v1/learn/bands").json()

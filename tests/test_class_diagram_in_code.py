@@ -6,7 +6,7 @@ level down: every attribute and operation drawn on an entity of
 ways:
 
 1. **the same name** on the entity's code class, in snake case
-   (`wordIndex` -> `WordDrill.word_index`);
+   (`dailyGoalS` -> `Account.daily_goal_s`);
 2. **a reference kept as an id**: the diagram draws the relation as an
    attribute typed with the other entity (`learner: Account`), the code keeps
    the other's id (`account_id`) -- `ELSEWHERE` says which field;
@@ -45,9 +45,7 @@ ENTITY_CLASS = {
     "Task": "storage/task_repository.py",
     "Response": "contracts.py",
     "Review": "contracts.py",
-    "ReviewSession": "contracts.py",
     "CoachUpgrade": "contracts.py",
-    "PhraseCard": "contracts.py",
     "Classroom": "storage/classroom_repository.py",
     "LessonPath": "storage/lesson_repository.py",
     "Unit": "storage/lesson_repository.py",
@@ -60,7 +58,6 @@ ENTITY_CLASS = {
     "Achievement": "storage/lesson_repository.py",
     "LearningPlan": "storage/plan_repository.py",
     "Order": "storage/billing_repository.py",
-    "Payment": "storage/billing_repository.py",
     "Wallet": "storage/metering_repository.py",
     "PriceList": "metering/pricing.py",
     "LedgerEntry": "storage/metering_repository.py",
@@ -75,13 +72,15 @@ ELSEWHERE = {
     ("Response", "speaker"): 'storage/repository.py:"account_id"',
     ("Response", "task"): 'storage/repository.py:"task_id"',
     ("Review", "reviewer"): "reviewer_id",
-    ("ReviewSession", "response"): "response_id",
-    ("ReviewSession", "lockedBy"): "ReviewLock.reviewer_id",
-    ("ReviewSession", "lockedUntil"): "ReviewLock.locked_until",
+    ("Response", "lockedBy"): "ReviewLock.reviewer_id",
+    ("Response", "lockedUntil"): "ReviewLock.locked_until",
     ("Classroom", "teachers"): "teacher_ids",
-    ("LessonPath", "author"): "created_by",
     ("StepAttempt", "learner"): "account_id",
-    ("StepAttempt", "step"): "step_id",
+    ("StepAttempt", "step"): "StepResult.step_id",
+    # D105: the attempt's round, verdict and speaking time are its result's.
+    ("StepAttempt", "round"): "StepResult.round",
+    ("StepAttempt", "passed"): "StepResult.passed",
+    ("StepAttempt", "speakingS"): "StepResult.speaking_s",
     ("WordDrill", "learner"): "account_id",
     ("WordDrill", "response"): "response_id",
     ("DrillPassage", "learner"): "account_id",
@@ -90,14 +89,11 @@ ELSEWHERE = {
     ("ReviewItem", "drill"): "drill_id",
     ("Achievement", "learner"): "account_id",
     ("LearningPlan", "owner"): "account_id",
-    ("LearningPlan", "savedAs"): "path_id",
-    ("Payment", "order"): "order_id",
     ("Wallet", "owner"): "user_ref",
     ("LedgerEntry", "wallet"): "user_ref",
     ("LedgerEntry", "response"): "key",
     # Another name for the same thing.
     ("Review", "decidedAt"): "created_at",
-    ("StepAttempt", "result"): "result_json",
     ("LearningPlan", "lessons"): "plan",
     # Keys of the stored document the code class does not declare.
     ("Account", "emailVerified"): 'storage/auth_repository.py:"email_verified"',
@@ -112,9 +108,7 @@ ELSEWHERE = {
     ("Lesson", "archived"): 'storage/lesson_repository.py:"archived"',
     ("PriceList", "freeRuns"): 'services/core/metering/price_book.py:"free_runs"',
     ("PriceList", "packs"): 'services/core/metering/price_book.py:"packs"',
-    ("PriceList", "changedBy"): 'services/core/metering/price_book.py:"changed_by"',
     ("PriceList", "changedAt"): 'services/core/metering/price_book.py:"changed_at"',
-    ("PriceList", "history"): 'services/core/metering/price_book.py:"history"',
     ("Response", "replayLabels"): 'storage/replay_repository.py:"replay_labels"',
     ("Response", "createdAt"): 'storage/repository.py:"created_at"',
     # The response's report: the scored result the response holds.
@@ -140,7 +134,6 @@ COLLECTION = {
     "AuditEntry": "audit_log",
     "Task": "task",
     "Response": "response",
-    "ReviewSession": "review_session",
     "Classroom": "classroom",
     "LessonPath": "path",
     "Lesson": "lesson",
@@ -151,7 +144,6 @@ COLLECTION = {
     "Achievement": "achievement",
     "LearningPlan": "learning_plan",
     "Order": "order",
-    "Payment": "payment",
     "Wallet": "wallet",
     "PriceList": "price_list",
     "LedgerEntry": "ledger",
@@ -159,7 +151,6 @@ COLLECTION = {
 EMBEDDED = {
     "Review": "Response",
     "CoachUpgrade": "Response",
-    "PhraseCard": "CoachUpgrade",
     "Unit": "LessonPath",
     "Step": "Lesson",
 }

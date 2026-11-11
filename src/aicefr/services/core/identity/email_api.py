@@ -86,7 +86,7 @@ def send_code(row: dict, purpose: str) -> str:
         s.sender.send(email)
     except EmailError as e:
         raise HTTPException(502, f"chưa gửi được email: {e}") from e
-    s.audit_log.write(row["pseudonym"], f"email.code_{purpose}", row["account_id"], None)
+    s.audit_log.write(row["account_id"], f"email.code_{purpose}", row["account_id"], None)
     return "sent"
 
 
@@ -109,7 +109,7 @@ def forgot_by_email(body: ForgotEmailIn) -> dict:
     s = svc()
     if s.sender is None:
         raise HTTPException(503, OFF)
-    row = s.auth.by_sign_in_name(body.email.strip())
+    row = s.auth.get_by_email(body.email.strip())
     if row is not None and row.get("email") and not row["disabled"]:
         send_code(row, "reset")
     return {
@@ -137,10 +137,10 @@ def reset_by_email(body: ForgotResetIn, request: Request, response: HttpResponse
     if done is None:
         raise HTTPException(401, "email hoặc mã không đúng, hoặc mã đã hết hạn")
     token, row = done
-    s.audit_log.write(row["pseudonym"], "account.reset_by_email", row["account_id"], None)
+    s.audit_log.write(row["account_id"], "account.reset_by_email", row["account_id"], None)
     set_session_cookie(response, token)
     response.headers.update(NO_STORE)
-    return {"pseudonym": row["pseudonym"], "home": ROLE_HOME.get(Role(row["role"]), "/")}
+    return {"email": row["email"], "home": ROLE_HOME.get(Role(row["role"]), "/")}
 
 
 # ================================================================= the account's own email
@@ -186,7 +186,7 @@ def send_verification(account: Account = Depends(require_login)) -> dict:
 def verify(body: CodeIn, account: Account = Depends(require_login)) -> dict:
     if not svc().auth.verify_email(account.account_id, body.code):
         raise HTTPException(422, "mã không đúng hoặc đã hết hạn; bấm gửi lại để nhận mã mới")
-    svc().audit_log.write(account.pseudonym, "email.verified", account.account_id, None)
+    svc().audit_log.write(account.account_id, "email.verified", account.account_id, None)
     return {"verified": True}
 
 

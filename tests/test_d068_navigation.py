@@ -12,6 +12,7 @@ from __future__ import annotations
 import importlib
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 
 from aicefr.storage.auth_repository import Role
@@ -28,10 +29,10 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def login_as(m, pseudonym: str, role: str = "student") -> TestClient:
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+def login_as(m, name: str, role: str = "student") -> TestClient:
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     c = TestClient(m.app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return c
 

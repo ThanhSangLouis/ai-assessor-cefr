@@ -154,7 +154,6 @@
       <div class="card" aria-labelledby="me-h">
         <h2 id="me-h">{{ icon("user") }} Thông tin đăng nhập</h2>
         <dl class="facts" id="me-facts" aria-busy="true">
-          <div><dt>Mã tài khoản</dt><dd>{{ account.pseudonym }}</dd></div>
           <div><dt>Vai trò</dt><dd>{{ role_names.get(account.role.value, account.role.value) }}</dd></div>
           <div><dt>Tạo lúc</dt><dd data-fact="created_at">—</dd></div>
           <div><dt>Đăng nhập gần nhất</dt><dd data-fact="last_login_at">—</dd></div>
@@ -179,7 +178,7 @@
                minlength="{{ min_length }}" aria-describedby="pw-rules">
         <ul class="pw-rules" id="pw-rules">
           <li data-rule="length">Từ {{ min_length }} ký tự trở lên; một câu ngắn dễ nhớ là đủ tốt</li>
-          <li data-rule="pseudonym">Không trùng với mã tài khoản</li>
+          <li data-rule="email">Không trùng với email</li>
           <li data-rule="different">Khác mật khẩu hiện tại</li>
         </ul>
 

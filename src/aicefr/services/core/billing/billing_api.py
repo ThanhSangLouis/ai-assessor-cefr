@@ -82,9 +82,9 @@ templates.env.filters["vn_time"] = _when
 @dataclass
 class Services:
     billing: BillingService
-    # D099: account ids -> pseudonyms, from the identity service; for the
+    # D099: account ids -> names, from the identity service; for the
     # administrator's order list. None: the ids are shown as they are.
-    pseudonyms: Callable[[list[str]], dict[str, str]] | None = None
+    display_names: Callable[[list[str]], dict[str, str]] | None = None
 
 
 _services: Services | None = None
@@ -148,7 +148,6 @@ def my_credit_order(
         order, url = billing.place_credit_order(
             body.runs,
             account.account_id,
-            account.pseudonym,
             _site(request),
             request.client.host if request.client else "127.0.0.1",
             body.gateway,
@@ -190,7 +189,7 @@ def admin_credit_orders(status: str = "", account: Account = ADMIN_ONLY) -> dict
             days[day][0] += 1
             days[day][1] += int(order["amount_vnd"])
     rows = billing.store.recent(ADMIN_ORDER_LIMIT, status or None)
-    lookup = svc().pseudonyms
+    lookup = svc().display_names
     ids = sorted({o["created_by"] for o in rows})
     names = lookup(ids) if lookup and ids else {}
     return {
@@ -311,7 +310,7 @@ def billing_return(
         return templates.TemplateResponse(request, "billing_result.html", context)
     reference = gw.return_reference(query)
     if reference is not None:
-        known = billing.store.order_by_checkout(gw.name, reference)
+        known = billing.store.order_by_checkout(reference)
         if known is None:
             # Not a checkout of ours: the gateway is not asked about it, so a
             # stranger cannot spend this system's allowance of calls to payOS.
@@ -320,9 +319,7 @@ def billing_return(
         if state_of(known["status"]).final:
             # Settled already: the page says so from the database, and nobody
             # replaying this address makes the system call the gateway again.
-            context.update(
-                state=known["status"], order=billing.order_view(known), test=not known["live"]
-            )
+            context.update(state=known["status"], order=billing.order_view(known))
             return templates.TemplateResponse(request, "billing_result.html", context)
     try:
         result = gw.verify_return(query)
@@ -345,7 +342,6 @@ def billing_return(
             state=order["status"],
             order=billing.order_view(order),
             message=result.message,
-            test=not order["live"],
         )
     return templates.TemplateResponse(request, "billing_result.html", context)
 
@@ -357,7 +353,7 @@ def _sandbox_order(order_id: str, token: str) -> tuple[SandboxGateway, dict]:
     billing = _billing()
     gw = billing.gateway("sandbox")
     order = billing.store.order(order_id) if billing.enabled else None
-    if not isinstance(gw, SandboxGateway) or order is None or order["gateway"] != gw.name:
+    if not isinstance(gw, SandboxGateway) or order is None:
         raise HTTPException(404, "không có đơn này")
     if not hmac.compare_digest(gw.token(order_id, order["amount_vnd"]), token):
         raise HTTPException(404, "không có đơn này")
@@ -425,6 +421,6 @@ def billing_receipt(
             "account": account,
             "nav_here": "credits",
             "order": billing.order_view(order),
-            "test": not order["live"] and order["gateway"] != "none",
+            "test": not billing.order_view(order)["live"],
         },
     )

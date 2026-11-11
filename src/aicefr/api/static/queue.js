@@ -1,7 +1,7 @@
 // Review queue screen. See docs/web/SPEC_WEB.md sections M5 and M6.
 //
 // Every value below comes from another user: a student chooses their own
-// pseudonym, and it lands on a teacher's screen. Without escaping, a pseudonym
+// name, and it lands on a teacher's screen. Without escaping, a name
 // like `<svg onload=...>` runs script in the teacher's session, with the
 // teacher's cookie, and can read every recording and change every score.
 //
@@ -70,7 +70,7 @@ function renderRows(visible) {
     const title = escapeHtml(titles[r.task_id] || "Đề");
     h +=
       `<tr${r.locked_by ? ' class="is-locked"' : ""}>` +
-      `<td><b>${r.student_name ? escapeHtml(r.student_name) : escapeHtml(r.speaker_id)}</b>` +
+      `<td><b>${r.student_name ? escapeHtml(r.student_name) : "Học viên"}</b>` +
       `<span class="cell-sub">${title}</span>` +
       `<span class="cell-sub">${escapeHtml(window.ui.localTime(r.created_at))} · ` +
       `<a href="/report/${encodeURIComponent(r.response_id)}">báo cáo ${escapeHtml(r.response_id)}</a></span></td>` +

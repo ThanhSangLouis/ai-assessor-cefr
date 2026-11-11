@@ -163,9 +163,9 @@ cd ai-assessor-cefr && python3.12 -m venv .venv && .venv/bin/pip install -e '.[d
 
 | Tài khoản | Vai trò | Mật khẩu |
 | --- | --- | --- |
-| `SV-001`, `SV-002` | Sinh viên | `matkhau123` |
-| `GV-01` | Giảng viên | `matkhau123` |
-| `QT-01` | Quản trị viên | `matkhau123` |
+| `sv-001@demo.speakup.fit`, `sv-002@demo.speakup.fit` | Sinh viên | `matkhau123` |
+| `gv-01@demo.speakup.fit` | Giảng viên | `matkhau123` |
+| `qt-01@demo.speakup.fit` | Quản trị viên | `matkhau123` |
 
 Muốn chấm thật bằng Whisper:
 
@@ -198,13 +198,12 @@ và [CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md) (cho AI agent).
 
 <br>
 
-Hệ thống không cho tự đăng ký tự do: tài khoản do quản trị viên cấp, hoặc vào qua mã lớp, NetID hay Google.
+Học viên tự đăng ký bằng email hoặc Google. Tài khoản giảng viên và quản trị viên do quản trị viên tạo bằng email.
 
 ```bash
+python -m aicefr.accounts_cli them --email gv-02@truong.edu.vn --vai-tro teacher
 python -m aicefr.accounts_cli liet-ke
-python -m aicefr.accounts_cli doi-mat-khau --but-danh SV-001 --mat-khau-moi MatKhauMoi456
-python -m aicefr.accounts_cli khoa --but-danh SV-001
-python -m aicefr.accounts_cli mo-khoa --but-danh SV-001
+python -m aicefr.accounts_cli mo-khoa --email sv-001@demo.speakup.fit
 ```
 
 </details>

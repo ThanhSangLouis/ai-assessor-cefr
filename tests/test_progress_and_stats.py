@@ -22,7 +22,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import one_school, store
+from dbutil import email_of, one_school, store
 from fastapi.testclient import TestClient
 
 PASSWORD = "matkhau-kiem-thu"
@@ -37,15 +37,15 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
+def login_as(app, name: str, role: str) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    one_school(pseudonym, role)
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
+    one_school(name, role)
     c = TestClient(app)
     assert (
         c.post(
-            "/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD}
+            "/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD}
         ).status_code
         == 200
     )
@@ -76,26 +76,18 @@ def _force_score(app, response_id: str, score: float, band: str = "B1") -> None:
     mà thứ đang kiểm thử ở đây là phần TỔNG HỢP, không phải phần chấm. Đi qua
     chấm thật chỉ làm kiểm thử phụ thuộc vào mô hình đang dùng là bản nào.
 
-    Sửa cả cột lẫn `report_json`. Chỉ sửa cột là một cái bẫy đã sập một lần:
-    màn hình đọc cột, còn `apply_review` đọc lại báo cáo từ JSON, nên bài trông
-    như đã có điểm nhưng lượt duyệt lại ghi `old_band = NULL` và biến mất khỏi
-    thống kê đồng ý.
+    D104: điểm chỉ còn một chỗ, `assessment` của bài. Trước kia có hai chỗ (cột
+    và `report_json`) và sửa một chỗ là một cái bẫy đã sập một lần: màn hình đọc
+    cột, còn `apply_review` đọc lại báo cáo, nên lượt duyệt ghi `old_band = NULL`.
     """
-    import json
-
     responses = store()["response"]
-    report = json.loads(responses.find_one({"response_id": response_id})["report_json"])
-    assessment = report.get("assessment") or {}
+    assessment = responses.find_one({"response_id": response_id}).get("assessment") or {}
     assessment["overall_0_6"] = score
     assessment["overall_band"] = band
     for criterion in assessment.get("criteria", []):
         criterion["score_0_6"] = score
         criterion["band"] = band
-    report["assessment"] = assessment
-    responses.update_one(
-        {"response_id": response_id},
-        {"$set": {"overall_0_6": score, "overall_band": band, "report_json": json.dumps(report)}},
-    )
+    responses.update_one({"response_id": response_id}, {"$set": {"assessment": assessment}})
 
 
 # ---------------------------------------------------------------- FR-27
@@ -286,7 +278,7 @@ def test_quan_tri_vien_xoa_thi_xoa_ca_tep_ghi_am(app) -> None:
     assert path and pathlib.Path(path).is_file()
 
     admin = login_as(app, "QT-01", "admin")
-    body = {"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+    body = {"email": email_of("SV-001"), "confirm_email": email_of("SV-001")}
     assert admin.post("/api/v1/admin/erase", json=body).status_code == 200
     assert not pathlib.Path(path).exists()
     assert c.get("/api/v1/me/responses").json() == []

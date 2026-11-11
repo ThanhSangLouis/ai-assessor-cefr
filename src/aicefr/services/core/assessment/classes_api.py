@@ -3,8 +3,7 @@
 D071: a class has one or more teachers. An administrator makes classes and
 assigns teachers to them (a teacher who makes a class teaches it); one teacher
 may teach many classes, and reviews only the work of their classes' members.
-Students are added by email (a pseudonym still works for an account made
-before D071). D074: the roster shows the bands each student studies.
+Students are added by email. D074: the roster shows the bands each student studies.
 
 D075: one centre that places its learners itself -- no join code, and no
 assessment tasks set to a class: a teacher reviews and writes band paths.
@@ -35,10 +34,8 @@ class ClassIn(BaseModel):
 
 
 class MembersIn(BaseModel):
-    # Emails; a pseudonym still names an account made before D071.
-    people: list[str] = Field(
-        min_length=1, max_length=MAX_ADD, validation_alias=AliasChoices("people", "pseudonyms")
-    )
+    # The students' emails.
+    people: list[str] = Field(min_length=1, max_length=MAX_ADD)
 
 
 class TeacherIn(BaseModel):
@@ -55,8 +52,8 @@ def _owned(class_id: str, account: Account) -> dict:
     return found
 
 
-def _person(identifier: str) -> dict | None:
-    return svc().peers.identity.by_sign_in_name(identifier=identifier.strip())
+def _person(email: str) -> dict | None:
+    return svc().peers.identity.by_email(email=email.strip())
 
 
 def _teacher_views(teacher_ids: list[str]) -> list[dict]:
@@ -81,7 +78,7 @@ def create_class(body: ClassIn, account: Account = STAFF_ONLY) -> dict:
     if unknown:
         raise HTTPException(422, "không phải tài khoản giảng viên: " + ", ".join(unknown))
     made = s.classrooms.create(body.name.strip(), teachers)
-    s.repo.write_audit(account.pseudonym, "class.create", made["class_id"], body.name.strip())
+    s.repo.write_audit(account.account_id, "class.create", made["class_id"], body.name.strip())
     return made
 
 
@@ -122,9 +119,8 @@ def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
     roster = [
         {
             "account_id": m,
-            "name": people[m].get("full_name") or people[m].get("pseudonym") or "?",
+            "name": people[m].get("full_name") or people[m].get("email") or "?",
             "email": people[m].get("email"),
-            "pseudonym": people[m].get("pseudonym"),
             "bands": bands.get(m),
         }
         for m in members
@@ -138,14 +134,12 @@ def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
 
 @router.post("/api/v1/classes/{class_id}/members", tags=["teacher"])
 def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -> dict:
-    """Add students by email (or legacy pseudonym); what was added, already there, unknown."""
+    """Add students by email; what was added, already there, unknown."""
     s = svc()
     _owned(class_id, account)
     added, already, unknown = [], [], []
-    # An email is kept lower case, a pseudonym upper case: what was added is
-    # echoed in the form the system keeps.
-    typed = (p.strip() for p in body.people if p.strip())
-    for raw in dict.fromkeys(p.lower() if "@" in p else p.upper() for p in typed):
+    # An email is kept lower case: what was added is echoed as the system keeps it.
+    for raw in dict.fromkeys(p.strip().lower() for p in body.people if p.strip()):
         who = _person(raw)
         if who is None or who.get("role") != Role.STUDENT.value:
             unknown.append(raw)
@@ -154,7 +148,7 @@ def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -
         else:
             already.append(raw)
     if added:
-        s.repo.write_audit(account.pseudonym, "class.add_members", class_id, f"n={len(added)}")
+        s.repo.write_audit(account.account_id, "class.add_members", class_id, f"n={len(added)}")
     return {"added": added, "already": already, "unknown": unknown}
 
 
@@ -162,10 +156,7 @@ def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -
 def remove_member(class_id: str, account_id: str, account: Account = STAFF_ONLY) -> dict:
     s = svc()
     _owned(class_id, account)
-    # By account id; a pseudonym still works for links made before D071.
-    who = s.peers.identity.account(account_id=account_id) or s.peers.identity.by_pseudonym(
-        pseudonym=account_id
-    )
+    who = s.peers.identity.account(account_id=account_id)
     if who is None or not s.classrooms.remove_member(class_id, who["account_id"]):
         raise HTTPException(404, "sinh viên này không ở trong lớp")
     return {"removed": account_id}
@@ -181,7 +172,7 @@ def add_teacher(class_id: str, body: TeacherIn, account: Account = ADMIN_ONLY) -
         raise HTTPException(422, "không có tài khoản giảng viên với email này")
     added = s.classrooms.add_teacher(class_id, who["account_id"])
     if added:
-        s.repo.write_audit(account.pseudonym, "class.add_teacher", class_id, who["pseudonym"])
+        s.repo.write_audit(account.account_id, "class.add_teacher", class_id, who["account_id"])
     return {"added": added, "teachers": _teacher_views(s.classrooms.get(class_id)["teacher_ids"])}
 
 
@@ -191,7 +182,7 @@ def remove_teacher(class_id: str, account_id: str, account: Account = ADMIN_ONLY
     _owned(class_id, account)
     if not s.classrooms.remove_teacher(class_id, account_id):
         raise HTTPException(404, "giảng viên này không dạy lớp này")
-    s.repo.write_audit(account.pseudonym, "class.remove_teacher", class_id, account_id)
+    s.repo.write_audit(account.account_id, "class.remove_teacher", class_id, account_id)
     return {"teachers": _teacher_views(s.classrooms.get(class_id)["teacher_ids"])}
 
 

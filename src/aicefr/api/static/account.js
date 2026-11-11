@@ -233,10 +233,11 @@ const messageEl = document.getElementById("pw-message");
 function checkRules() {
   const value = newEl.value;
   const min = (me && me.min_password_length) || Number(newEl.getAttribute("minlength")) || 8;
-  const pseudonym = me ? me.pseudonym : "";
+  const email = ((me && me.email) || "").trim().toLowerCase();
+  const typed = value.trim().toLowerCase();
   const rules = {
     length: value.length >= min,
-    pseudonym: !!value && value.trim().toLowerCase() !== pseudonym.trim().toLowerCase(),
+    email: !!value && typed !== email && typed !== email.split("@")[0],
     different: !!value && value !== currentEl.value,
   };
   document.querySelectorAll("#pw-rules [data-rule]").forEach((li) => {
@@ -467,7 +468,7 @@ const DETAIL = {
 function activityItem(a) {
   const [iconName, text] = ACTIVITY[a.action] || ["info", a.action];
   const detail = DETAIL[a.detail] ? " " + DETAIL[a.detail] : "";
-  // A failed attempt carries the pseudonym it was made against, not who made
+  // A failed attempt carries the account it was made against, not who made
   // it: calling it "you" would hide exactly the attempt worth noticing.
   const who =
     a.action === "auth.login_failed" ? "Không rõ ai thử" : a.by_self ? "Bạn" : "Quản trị viên";
@@ -521,20 +522,14 @@ if (exportAll) {
   });
 }
 
-// D101: delete my account. The button wakes only when the email (or, without
-// one, the pseudonym) is typed again exactly.
+// D101: delete my account. The button wakes only when the email is typed again exactly.
 const deleteForm = document.getElementById("delete-form");
 if (deleteForm) {
   const input = document.getElementById("delete-confirm");
   const button = document.getElementById("delete-button");
   const message = document.getElementById("delete-message");
-  const expected = () => ((me && (me.email || me.pseudonym)) || "").trim().toLowerCase();
-  const paintLabel = () => {
-    if (me && !me.email) document.getElementById("delete-label").textContent = "Gõ lại mã tài khoản để xác nhận";
-  };
-  input.addEventListener("focus", paintLabel);
+  const expected = () => ((me && me.email) || "").trim().toLowerCase();
   input.addEventListener("input", () => {
-    paintLabel();
     button.disabled = !expected() || input.value.trim().toLowerCase() !== expected();
   });
   deleteForm.addEventListener("submit", async (e) => {

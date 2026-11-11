@@ -235,7 +235,6 @@ class SpeechWorker:
             {
                 "response_id": rid,
                 "report": report.model_dump(mode="json"),
-                "speaker_id": job["speaker_id"],
                 "task_id": job["task_id"],
                 "account_id": job["account_id"],
             }

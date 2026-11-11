@@ -23,13 +23,10 @@ INTERNAL_TOKEN = "test-internal-token"
 
 
 class IdentityStub:
-    def by_pseudonym(self, *, pseudonym: str) -> dict | None:
-        if pseudonym.upper() == "SV-001":
-            return {"account_id": "student-1", "role": Role.STUDENT.value}
+    def by_email(self, *, email: str) -> dict | None:
+        if email.lower() == "sv-001@test.speakup.vn":
+            return {"account_id": "student-1", "role": Role.STUDENT.value, "email": email.lower()}
         return None
-
-    def pseudonyms(self, *, account_ids: list[str]) -> dict[str, str]:
-        return {account_id: "SV-001" for account_id in account_ids if account_id == "student-1"}
 
     def display_names(self, *, account_ids: list[str]) -> dict[str, str]:
         return {

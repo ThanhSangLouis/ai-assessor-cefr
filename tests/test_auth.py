@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import teach
+from dbutil import email_of, teach
 from fastapi.testclient import TestClient
 
 from aicefr.auth import passwords, sessions
@@ -36,14 +36,14 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def make_account(app, pseudonym: str, role: str) -> None:
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+def make_account(app, name: str, role: str) -> None:
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
-    make_account(app, pseudonym, role)
+def login_as(app, name: str, role: str) -> TestClient:
+    make_account(app, name, role)
     c = TestClient(app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return c
 
@@ -59,7 +59,7 @@ def submit(c, speaker="SV-001"):
     return c.post(
         "/api/v1/responses",
         files={"audio": ("bai.wav", wav(), "audio/wav")},
-        data={"speaker_id": speaker, "task_id": "P3"},
+        data={"task_id": "P3"},
     )
 
 
@@ -154,7 +154,7 @@ def test_session_cookie_has_httponly_and_samesite(app) -> None:
     """NFR-07: HttpOnly stops JavaScript from reading the cookie, SameSite blocks basic CSRF."""
     make_account(app, "SV-001", "student")
     c = TestClient(app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD})
     set_cookie = r.headers["set-cookie"].lower()
     assert "httponly" in set_cookie
     assert "samesite=lax" in set_cookie
@@ -255,11 +255,11 @@ def test_repeated_wrong_password_locks_and_returns_429(app) -> None:
     for _ in range(MAX_FAILED_ATTEMPTS):
         assert (
             c.post(
-                "/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai"}
+                "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai"}
             ).status_code
             == 401
         )
-    r = c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai"})
+    r = c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai"})
     assert r.status_code == 429
 
 
@@ -267,8 +267,8 @@ def test_locked_account_rejects_even_correct_password(app) -> None:
     make_account(app, "SV-001", "student")
     c = TestClient(app)
     for _ in range(MAX_FAILED_ATTEMPTS):
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai"})
-    r = c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD})
+        c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai"})
+    r = c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD})
     assert r.status_code == 429
 
 
@@ -276,20 +276,22 @@ def test_successful_login_clears_failure_count(app) -> None:
     make_account(app, "SV-001", "student")
     c = TestClient(app)
     for _ in range(MAX_FAILED_ATTEMPTS - 1):
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai"})
+        c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai"})
     assert (
-        c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": PASSWORD}).status_code
+        c.post(
+            "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD}
+        ).status_code
         == 200
     )
-    assert app.state.auth_repo.get_by_pseudonym("SV-001")["failed_attempts"] == 0
+    assert app.state.auth_repo.get_by_email(email_of("SV-001"))["failed_attempts"] == 0
 
 
 def test_error_does_not_distinguish_unknown_user_from_wrong_password(app) -> None:
     """Telling the two cases apart would leak which accounts actually exist."""
     make_account(app, "SV-001", "student")
     c = TestClient(app)
-    a = c.post("/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "sai"})
-    b = c.post("/api/v1/auth/login", json={"pseudonym": "khong-ton-tai", "password": "sai"})
+    a = c.post("/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "sai"})
+    b = c.post("/api/v1/auth/login", json={"email": email_of("khong-ton-tai"), "password": "sai"})
     assert a.status_code == b.status_code == 401
     assert a.json()["detail"] == b.json()["detail"]
 
@@ -301,10 +303,7 @@ def test_error_does_not_distinguish_unknown_user_from_wrong_password(app) -> Non
 
 
 def _with_email(app) -> TestClient:
-    c = login_as(app, "SV-001", "student")
-    r = c.patch("/api/v1/me/contact", json={"email": "sv1@example.edu.vn"})
-    assert r.status_code == 200, r.text  # a first email needs no password
-    return c
+    return login_as(app, "SV-001", "student")  # D103: every account has its email
 
 
 def _move(c: TestClient, password: str):
@@ -320,10 +319,10 @@ def test_wrong_passwords_on_the_email_change_lock_the_account(app) -> None:
     assert _move(c, "sai").status_code == 429
     # Locked: even the right password is refused, and nothing moved.
     assert _move(c, PASSWORD).status_code == 429
-    assert app.state.auth_repo.get_by_pseudonym("SV-001")["email"] == "sv1@example.edu.vn"
+    assert app.state.auth_repo.get_by_email(email_of("SV-001"))["email"] == email_of("SV-001")
     # The login door is shut by the same counter.
     r = TestClient(app).post(
-        "/api/v1/auth/login", json={"email": "sv1@example.edu.vn", "password": PASSWORD}
+        "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": PASSWORD}
     )
     assert r.status_code == 429
 
@@ -333,7 +332,7 @@ def test_the_email_change_opens_again_when_the_lock_expires(app) -> None:
     for _ in range(MAX_FAILED_ATTEMPTS):
         _move(c, "sai")
     repo = app.state.auth_repo
-    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+    aid = repo.get_by_email(email_of("SV-001"))["account_id"]
     # Fifteen minutes later, written into the record instead of waited for.
     repo.col("account").update_one(
         {"account_id": aid}, {"$set": {"locked_until": "2000-01-01T00:00:00+00:00"}}
@@ -359,7 +358,7 @@ def test_reauthentication_counts_every_concurrent_guess(app) -> None:
 
     make_account(app, "SV-001", "student")
     repo = app.state.auth_repo
-    aid = repo.get_by_pseudonym("SV-001")["account_id"]
+    aid = repo.get_by_email(email_of("SV-001"))["account_id"]
 
     def guess(_):
         try:
@@ -391,7 +390,7 @@ def test_audit_records_real_reviewer_account(app) -> None:
     admin = login_as(app, "QT-01", "admin")
     entries = admin.get("/api/v1/audit").json()
     assert entries, "there must be at least one audit entry"
-    teacher_id = app.state.auth_repo.get_by_pseudonym("GV-01")["account_id"]
+    teacher_id = app.state.auth_repo.get_by_email(email_of("GV-01"))["account_id"]
     assert any(e["actor_id"] == teacher_id for e in entries)
 
 
@@ -422,7 +421,6 @@ def test_stuck_running_response_marked_failed(app, monkeypatch) -> None:
 
     m.repo.save(
         Response(response_id="ket001", status=ResponseStatus.RUNNING, config_version="v1"),
-        "SV-001",
         "P3",
     )
     # The response was just created and is not overdue yet; call with a 0-minute
@@ -496,7 +494,7 @@ def test_second_teacher_cannot_lock_a_held_response(app) -> None:
     assert a.post(f"/api/v1/review/{rid}/lock").status_code == 200
     r = b.post(f"/api/v1/review/{rid}/lock")
     assert r.status_code == 409
-    assert "GV-01" in r.json()["detail"]
+    assert email_of("GV-01") in r.json()["detail"]
 
 
 def test_non_holder_cannot_save(app) -> None:
@@ -526,7 +524,7 @@ def test_expired_lock_can_be_reclaimed(app) -> None:
     from aicefr.api import main as m
 
     rid = submit(login_as(app, "SV-001", "student")).json()["response_id"]
-    granted, _ = m.repo.lock_response(rid, "gv-cu", "GV-CU", minutes=-1)  # lock already expired
+    granted, _ = m.repo.lock_response(rid, "gv-cu", minutes=-1)  # lock already expired
     assert granted
     assert m.repo.locked_by(rid) is None, "an expired lock counts as held by nobody"
     b = login_as(app, "GV-02", "teacher")
