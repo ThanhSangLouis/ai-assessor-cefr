@@ -49,8 +49,8 @@
   function view(d) {
     const source = d.from_settings
       ? '<span class="badge">Mặc định</span>'
-      : `<span class="badge state-on">${escapeHtml(d.version)}</span>
-         <span class="muted">${escapeHtml(when(d.changed_at))}</span>`;
+      : `<span class="badge state-on">Đang áp dụng</span>
+         <span class="muted">sửa lúc ${escapeHtml(when(d.changed_at))}</span>`;
     const groups = GROUPS.map(
       ([title, mark, fields]) => `<fieldset class="price-group"><legend>${icon(mark)} ${title}</legend>
         ${fields.map((f) => field(f, d)).join("")}</fieldset>`,
@@ -98,7 +98,7 @@
       });
       if (!d) return;
       paint(el, d);
-      window.toast(`Đã lưu giá mới (${d.version}).`, "ok");
+      window.toast("Đã lưu giá mới.", "ok");
     });
   }
 

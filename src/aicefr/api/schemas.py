@@ -78,6 +78,9 @@ class QueueItem(BaseModel):
     locked_by: str | None = None
     # D071. The student's full name, on a teacher's queue.
     student_name: str | None = None
+    # How long the recording is, in seconds: the week view draws each waiting
+    # response as tall as it is long. None before audio checks ran.
+    duration_s: float | None = None
 
 
 class ReviewClose(BaseModel):

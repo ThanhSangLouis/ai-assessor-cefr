@@ -454,22 +454,34 @@ function scoreBlock(d, a) {
     );
   }
 
-  let h = '<div class="score-panel">';
-  h += `<div class="score-figure">
+  // After a review the teacher's band is the result; the 0-6 number stays as
+  // the reference it was decided against, not as a second headline.
+  const verified = a.teacher_verified && a.overall_band;
+  let h = `<div class="score-panel" data-band="${escapeHtml(a.overall_band || "")}">`;
+  h += verified
+    ? `<div class="score-figure">
+      <span class="score">${escapeHtml(a.overall_band)}</span>
+      <span class="score-scale">giảng viên xác nhận</span>
+    </div>`
+    : `<div class="score-figure">
       <span class="score">${a.overall_0_6.toFixed(2)}</span>
       <span class="score-scale">trên thang 0 – 6</span>
     </div>`;
   h += bandPodium(a);
   h += '<div class="score-meta">';
-  h += `<span class="score-band">${escapeHtml(a.overall_band)}</span>`;
+  h += verified
+    ? `<span class="score-ref">Điểm tham chiếu ${a.overall_0_6.toFixed(2)} / 6</span>`
+    : `<span class="score-band">${escapeHtml(a.overall_band)}</span>`;
   if (a.band_position) {
     h += `<p class="band-place">${bandPlace(a.band_position)}</p>${bandTrack(a.band_position)}`;
   }
   h += intervalBlock(a);
   // FR-21: the "estimate" label goes with every report, it must never be missing.
   h +=
-    '<p class="score-caption">Ước lượng tổng thể của máy · không phải chứng chỉ CEFR' +
-    (a.teacher_verified ? "" : " · <b>giảng viên sẽ xác nhận</b>") +
+    '<p class="score-caption">' +
+    (verified
+      ? "Giảng viên đã xác nhận band · không phải chứng chỉ CEFR"
+      : "Ước lượng tổng thể của máy · không phải chứng chỉ CEFR · <b>giảng viên sẽ xác nhận</b>") +
     // D028: what the band describes, and what the machine measured of it.
     ' · <a class="band-help" href="/bands">Band nghĩa là gì?</a></p>';
   h += "</div></div>";
@@ -902,7 +914,9 @@ function coachTargets(nb) {
     )
     .join("");
   return (
-    `<p class="coach-gap"><b>${escapeHtml(nb.from_band)}</b> → <b>${escapeHtml(nb.to_band)}</b>: còn ${num(nb.gap)} điểm. Lần tới, nhắm vào:</p>` +
+    `<p class="coach-gap"><b>${escapeHtml(nb.from_band)}</b> → <b>${escapeHtml(nb.to_band)}</b>` +
+    (nb.gap == null ? "" : `: còn ${num(nb.gap)} điểm`) +
+    ". Lần tới, nhắm vào:</p>" +
     `<ul class="coach-targets">${tiles}</ul>` +
     `<p class="muted small-note">${nb.enough ? `Đạt cả ${nb.targets.length} thì đủ lên ${escapeHtml(nb.to_band)}.` : "Hướng đi cho vài bài tới."} Giảng viên quyết định band.</p>`
   );

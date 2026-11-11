@@ -56,15 +56,29 @@ MAX_STEP_SD = 1.0
 MARGIN = 0.05
 
 
-def next_band_plan(model: dict, features: FeatureSet, score: float | None) -> dict | None:
-    """The next band and up to three targets to reach it; None at C2 or without a score."""
+def next_band_plan(
+    model: dict, features: FeatureSet, score: float | None, band: str | None = None
+) -> dict | None:
+    """The next band and up to three targets to reach it; None at C2 or without a score.
+
+    `band` is the band the report stands on. After a review it is the teacher's,
+    and it can differ from the band of the score: the plan then starts from the
+    teacher's band ("B2 -> C1"), never from the machine's ("C1 -> C2"). When the
+    score already sits past that boundary the model has no gap left to measure,
+    so the plan keeps the direction and asks for a half step, without a number
+    of points to make up.
+    """
     if score is None:
         return None
     thresholds = thresholds_of(model.get("band_thresholds"))
-    above = [(name, value) for name, value in thresholds.items() if value > score]
+    if band is not None:
+        above = [(name, value) for name, value in thresholds.items() if name.startswith(f"{band}_")]
+    else:
+        above = [(name, value) for name, value in thresholds.items() if value > score]
     if not above:
         return None
     boundary, threshold = min(above, key=lambda x: x[1])
+    measured = threshold > score
     gap = threshold - score + MARGIN
 
     order = model["feature_order"]
@@ -89,7 +103,10 @@ def next_band_plan(model: dict, features: FeatureSet, score: float | None) -> di
     # smallest that closes the gap: no single habit carries the whole change.
     # One recording asks for at most one standard deviation each; past that,
     # the plan is a direction for the next few recordings.
-    step = min(gap / sum(abs(r[3]) for r in chosen), MAX_STEP_SD)
+    if measured:
+        step = min(gap / sum(abs(r[3]) for r in chosen), MAX_STEP_SD)
+    else:
+        step = MAX_STEP_SD / 2
     targets, gained = [], 0.0
     for _, name, lever, coef, scale, value, lo, hi in chosen:
         wanted = value + math.copysign(step, coef) * scale
@@ -115,9 +132,10 @@ def next_band_plan(model: dict, features: FeatureSet, score: float | None) -> di
         "from_band": lower,
         "to_band": upper,
         "threshold": round(threshold, 2),
-        "gap": round(threshold - score, 2),
+        # None when the teacher placed the recording below the model's score.
+        "gap": round(threshold - score, 2) if measured else None,
         "targets": targets,
         # Whether the targets together close the gap, in the model's own terms.
-        "enough": gained >= threshold - score,
+        "enough": measured and gained >= threshold - score,
         "boundary": boundary,
     }

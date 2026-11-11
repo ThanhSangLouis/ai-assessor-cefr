@@ -15,6 +15,10 @@
   <link rel="preload" href="/static/fonts/poppins-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   {% endif %}
   <link rel="stylesheet" href="{{ asset('style.css') }}">
+  {#- The staff world (teachers, administrators): its own sheet, scoped to body.staff. -#}
+  {% if account and account.role.value in ("teacher", "admin") %}
+  <link rel="stylesheet" href="{{ asset('staff.css') }}">
+  {% endif %}
   <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
   {#- D088: installable as an app; the colour of the browser's bar on a phone. -#}
   <link rel="manifest" href="/manifest.webmanifest">
@@ -40,7 +44,7 @@
 {%- set role_names = {"student": "Sinh viên", "teacher": "Giảng viên", "admin": "Quản trị"} -%}
 {%- set homes = {"student": "/practice", "teacher": "/review", "admin": "/admin"} -%}
 {%- set here = nav_here | default("") -%}
-<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}" data-icons="{{ asset('icons.svg') }}">
+<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}{% if role in ("teacher", "admin") %} staff{% endif %}" data-icons="{{ asset('icons.svg') }}">
 <a class="skip-link" href="#main">Bỏ qua điều hướng, tới nội dung chính</a>
 {#- D037: the ground behind every page -- contour lines high on the right,
     terraced hills low on the right whose ridges are spoken phrases. Decoration
@@ -189,7 +193,7 @@
 </div>
 {% endif %}
 {#- D099: once per browser, a word that runs are counted and how many are free; common.js shows it. -#}
-{% if account and role != "admin" and metered() %}
+{% if account and role == "student" and metered() %}
 <div class="metering-notice" id="metering-notice" role="status" hidden>
   {{ icon("star") }}
   <p>Mỗi tháng có lượt miễn phí để chấm bài nói. <b id="metering-free"></b></p>

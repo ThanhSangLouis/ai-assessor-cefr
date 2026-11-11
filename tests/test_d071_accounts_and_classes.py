@@ -234,6 +234,8 @@ def test_the_queue_is_the_teachers_classes_by_name(m, monkeypatch):
     assert {q["response_id"] for q in admin.get("/api/v1/review/queue").json()} == set(rids)
     assert mine.get("/api/v1/me/badges").json()["queue"] == 1
     assert admin.get("/api/v1/me/badges").json()["queue"] == 2
+    # The week view draws each waiting response as tall as the recording.
+    assert abs(queue[0]["duration_s"] - 35.0) < 0.5
 
 
 def test_migration_9_gives_an_old_class_its_teacher_as_a_list(tmp_path):

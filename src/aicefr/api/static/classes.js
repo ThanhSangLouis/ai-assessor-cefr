@@ -23,7 +23,8 @@ const post = (url, body) =>
 // a published one to it. Assigning replaces each learner's own path.
 function bandText(b) {
   if (!b) return '<span class="muted">chưa chọn</span>';
-  const range = b.band_from === b.band_to ? escapeHtml(b.band_from) : `${escapeHtml(b.band_from)} → ${escapeHtml(b.band_to)}`;
+  const chip = (x) => `<span class="band-chip" data-band="${escapeHtml(x)}">${escapeHtml(x)}</span>`;
+  const range = b.band_from === b.band_to ? chip(b.band_from) : `${chip(b.band_from)} → ${chip(b.band_to)}`;
   return b.assigned_by ? `${range} <span class="muted small">· giảng viên giao</span>` : range;
 }
 
@@ -133,8 +134,26 @@ async function detailView() {
   if (!c) return;
   document.getElementById("page-title").textContent = c.name;
   document.getElementById("page-lede").innerHTML =
-    `${c.archived ? "Lớp đã lưu trữ. " : ""}Thêm sinh viên theo email ở cuối trang. <a href="/teach/classes">Tất cả lớp</a>`;
+    `${c.archived ? "Lớp đã lưu trữ. " : ""}<a href="/teach/classes">Tất cả lớp</a>`;
   root.innerHTML = `
+    <section class="card" aria-labelledby="members-h">
+      <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
+      <form id="members-form" class="inline-form">
+        <label class="field"><span>Thêm sinh viên theo email, cách nhau bằng dấu phẩy</span><input name="list" placeholder="an.nguyen@truong.edu.vn, binh.tran@truong.edu.vn"></label>
+        <button class="button secondary" type="submit">Thêm</button>
+      </form>
+      ${
+        c.members.length
+          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Sinh viên</th><th>Học theo band</th><th></th></tr></thead><tbody>${c.members
+              .map(
+                (m) => `<tr><td>${escapeHtml(m.name)}${m.email && m.email !== m.name ? `<span class="cell-sub">${escapeHtml(m.email)}</span>` : ""}</td>
+                  <td>${bandText(m.bands)}</td>
+                  <td><button class="button secondary small" data-remove="${escapeHtml(m.account_id)}">Xoá khỏi lớp</button></td></tr>`,
+              )
+              .join("")}</tbody></table></div>`
+          : '<p class="muted">Chưa có ai.</p>'
+      }
+    </section>
     <section class="card" aria-labelledby="teachers-h">
       <div class="card-head"><h2 id="teachers-h">Giảng viên (${c.teachers.length})</h2></div>
       <ul class="plain-list">${
@@ -158,24 +177,7 @@ async function detailView() {
       }
     </section>
     ${bandGroups(c)}
-    <section class="card" aria-labelledby="members-h">
-      <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
-      ${
-        c.members.length
-          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Họ và tên</th><th>Email</th><th>Học theo band</th><th></th></tr></thead><tbody>${c.members
-              .map(
-                (m) => `<tr><td>${escapeHtml(m.name)}</td><td>${m.email ? escapeHtml(m.email) : '<span class="muted">chưa có</span>'}</td>
-                  <td>${bandText(m.bands)}</td>
-                  <td><button class="button secondary small" data-remove="${escapeHtml(m.account_id)}">Xoá khỏi lớp</button></td></tr>`,
-              )
-              .join("")}</tbody></table></div>`
-          : '<p class="muted">Chưa có ai.</p>'
-      }
-      <form id="members-form" class="inline-form">
-        <label class="field"><span>Thêm sinh viên theo email, cách nhau bằng dấu phẩy</span><input name="list" placeholder="an.nguyen@truong.edu.vn, binh.tran@truong.edu.vn"></label>
-        <button class="button secondary" type="submit">Thêm</button>
-      </form>
-    </section>`;
+`;
   wireGroups(c);
   root.querySelectorAll("button[data-remove]").forEach((b) =>
     b.addEventListener("click", async () => {

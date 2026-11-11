@@ -136,19 +136,25 @@ button.ref-chip:hover { border-color: var(--brand); background: var(--brand-soft
 .report .evidence-grid { grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr)); gap: var(--sp-2); }
 .report .evidence {
   display: grid; gap: 4px; padding: var(--sp-3);
-  border: 1px solid var(--border); border-left: 4px solid var(--brand);
+  border: 1px solid var(--border);
   border-radius: 12px; font-size: var(--t-sm);
+  --kind: var(--brand);
 }
-.report .evidence.kind-pause { border-left-color: var(--warn); }
-.report .evidence.kind-low_confidence_word { border-left-color: var(--fg-muted); }
-.report .evidence.kind-filler { border-left-color: #8e5cd9; }
+/* The kind is said in words; a dot of its colour beside the word, not a stripe. */
+.report .evidence.kind-pause { --kind: var(--warn); }
+.report .evidence.kind-low_confidence_word { --kind: var(--fg-muted); }
+.report .evidence.kind-filler { --kind: #8e5cd9; }
+.report .evidence .evidence-kind::before {
+  content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px;
+  border-radius: 50%; background: var(--kind); vertical-align: 1px;
+}
 .report .evidence .evidence-head { justify-content: flex-start; gap: var(--sp-2); }
 .report .evidence .evidence-time {
   display: inline-flex; align-items: center; gap: 4px;
   background: var(--brand); color: var(--brand-fg); font-size: 0.75rem;
 }
 .report .evidence .evidence-time .icon { width: 10px; height: 10px; }
-.report .evidence .evidence-kind { font-size: 0.72rem; }
+.report .evidence .evidence-kind { font-size: var(--t-xs); }
 .evidence-aspect { margin-left: auto; font-size: 0.72rem; color: var(--fg-muted); }
 .report .evidence .evidence-note { font-weight: 600; }
 .report .evidence .evidence-snippet { font-size: 0.8rem; }

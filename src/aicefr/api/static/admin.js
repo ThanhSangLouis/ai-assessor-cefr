@@ -149,11 +149,13 @@ function accountState(a) {
   return chips.join(" ");
 }
 
-function iconButton(action, a, icon, label, extra = "") {
+// A short word beside the icon: a key and a power symbol alone left people
+// guessing which one locks an account. The full sentence stays for readers.
+function iconButton(action, a, icon, short, label, extra = "") {
   return (
-    `<button type="button" class="icon-only ${extra}" data-account-action="${action}"` +
-    ` data-account="${escapeHtml(a.account_id)}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">` +
-    `${window.ui.icon(icon)}</button>`
+    `<button type="button" class="small secondary ${extra}" data-account-action="${action}"` +
+    ` data-account="${escapeHtml(a.account_id)}" aria-label="${escapeHtml(label)}">` +
+    `${window.ui.icon(icon)}<span>${escapeHtml(short)}</span></button>`
   );
 }
 
@@ -162,11 +164,11 @@ function accountActions(a) {
   if (a.account_id === myAccountId) {
     return '<span class="muted small-note">Tài khoản của bạn</span>';
   }
-  let h = iconButton("reset", a, "key", `Cấp mật khẩu tạm mới cho ${who}`);
-  if (a.locked_until) h += iconButton("unlock", a, "unlock", `Gỡ khoá đăng nhập của ${who}`);
+  let h = iconButton("reset", a, "key", "Mật khẩu tạm", `Cấp mật khẩu tạm mới cho ${who}`);
+  if (a.locked_until) h += iconButton("unlock", a, "unlock", "Gỡ khoá", `Gỡ khoá đăng nhập của ${who}`);
   h += a.disabled
-    ? iconButton("enable", a, "check", `Bật lại tài khoản ${who}`)
-    : iconButton("disable", a, "power", `Tắt tài khoản ${who}`, "danger");
+    ? iconButton("enable", a, "check", "Bật lại", `Bật lại tài khoản ${who}`)
+    : iconButton("disable", a, "power", "Tắt", `Tắt tài khoản ${who}`, "danger");
   return `<div class="row-actions">${h}</div>`;
 }
 
@@ -638,7 +640,7 @@ async function loadModels() {
     let action = '<span class="muted">—</span>';
     if (m.active) action = '<span class="muted">Đang dùng</span>';
     else if (compatible) {
-      action = `<button type="button" class="small" data-activate="${escapeHtml(m.name)}">Kích hoạt</button>`;
+      action = `<button type="button" class="small secondary" data-activate="${escapeHtml(m.name)}">Kích hoạt</button>`;
     }
 
     h += `<tr class="${m.active ? "row-active" : usable ? "" : "row-broken"}">
@@ -647,7 +649,7 @@ async function loadModels() {
           đặc trưng <code>${escapeHtml(m.feature_version ?? "—")}</code></span>
         <span class="cell-sub">Hiệu chuẩn <code>${escapeHtml(calibration ?? "—")}</code></span></td>
       <td>PCC <b>${numberOrDash(m.cv_pcc, 3)}</b> · RMSE ${numberOrDash(m.cv_rmse, 3)}
-        <span class="cell-sub">Đơn vị: ${escapeHtml(m.unit_of_inference ?? "—")} ·
+        <span class="cell-sub">Đơn vị: ${escapeHtml(unitName(m.unit_of_inference))} ·
           ${m.train_n == null ? "—" : escapeHtml(m.train_n)} mẫu</span></td>
       <td>${state}</td>
       <td class="action-cell">${action}</td>
@@ -727,7 +729,7 @@ const CONFIG_LABELS = {
   changed_at: "Lúc sửa gần nhất",
   config_version: "Phiên bản cấu hình",
   candidate_thresholds: "Ngưỡng mặc định ban đầu",
-  max_bytes: "Kích thước tệp tối đa (byte)",
+  max_bytes: "Kích thước tệp tối đa",
   target_sr: "Tần số lấy mẫu chuẩn hoá (Hz)",
   reject_below: "Dưới mức này thì từ chối bài",
   review_below: "Dưới mức này thì chuyển giảng viên duyệt",
@@ -735,8 +737,9 @@ const CONFIG_LABELS = {
   reject_above: "Trên mức này thì từ chối bài",
 };
 
-function formatConfigValue(v) {
+function formatConfigValue(v, key) {
   if (v === null || v === undefined) return "—";
+  if (key === "max_bytes" && typeof v === "number") return `${Math.round(v / 1048576)} MB`;
   if (typeof v === "boolean") return v ? "có" : "không";
   return escapeHtml(v);
 }
@@ -744,8 +747,7 @@ function formatConfigValue(v) {
 function configRow(key, value, groupLabel) {
   const what = groupLabel ? `${groupLabel} · ${CONFIG_LABELS[key] || key}` : CONFIG_LABELS[key] || key;
   return `<tr><td>${escapeHtml(what)}</td>
-    <td><b>${formatConfigValue(value)}</b></td>
-    <td><code>${escapeHtml(key)}</code></td></tr>`;
+    <td><b>${formatConfigValue(value, key)}</b></td></tr>`;
 }
 
 // Each editable threshold, where its current value sits in the GET payload,
@@ -792,7 +794,7 @@ async function loadConfig() {
       const step = range.max <= 1 ? "0.01" : "0.5";
       h +=
         `<label for="cfg-${key}">${escapeHtml(label)}` +
-        `<span class="cell-sub">Cho phép ${escapeHtml(range.min)} – ${escapeHtml(range.max)} · <code>${escapeHtml(key)}</code></span></label>` +
+        `<span class="cell-sub">Cho phép ${escapeHtml(range.min)} – ${escapeHtml(range.max)}</span></label>` +
         `<input id="cfg-${key}" name="${key}" type="number" step="${step}"` +
         ` min="${escapeHtml(range.min)}" max="${escapeHtml(range.max)}" value="${escapeHtml(now ?? "")}"` +
         ` data-current="${escapeHtml(now ?? "")}">`;
@@ -1020,6 +1022,15 @@ async function loadOps() {
   await loadAudit();
 }
 
+// The model artifacts write this sentence without diacritics; the screen says
+// it in Vietnamese. An unknown sentence is still shown as written.
+const UNIT_NAMES = {
+  "mot bai noi (mot file audio), khong phai ca bai thi": "Một bài nói (một tệp âm thanh), không phải cả bài thi",
+};
+function unitName(v) {
+  return v == null ? "—" : UNIT_NAMES[v] || v;
+}
+
 function yesNo(v) {
   return v ? '<span class="badge COMPLETED">có</span>' : '<span class="badge FAILED">không</span>';
 }
@@ -1032,7 +1043,11 @@ async function loadHealth() {
   let h = `<h2>Tình trạng hệ thống</h2>
     <table>
       <tr><th>Mục</th><th>Giá trị</th></tr>
-      <tr><td>Trạng thái</td><td>${escapeHtml(d.status)}</td></tr>
+      <tr><td>Trạng thái</td><td>${
+        d.status === "ok"
+          ? '<span class="badge COMPLETED">Hoạt động bình thường</span>'
+          : `<span class="badge FAILED">${escapeHtml(d.status)}</span>`
+      }</td></tr>
       <tr><td>Engine nhận dạng tiếng nói</td><td><code>${escapeHtml(
         d.asr_engine
       )}</code></td></tr>
@@ -1042,7 +1057,7 @@ async function loadHealth() {
       )}</td></tr>
       <tr><td>Phiên bản mô hình</td><td><code>${escapeHtml(d.model_version)}</code></td></tr>
       <tr><td>Phiên bản cấu hình</td><td><code>${escapeHtml(d.config_version)}</code></td></tr>
-      <tr><td>Đơn vị suy luận</td><td>${escapeHtml(d.unit_of_inference)}</td></tr>
+      <tr><td>Đơn vị suy luận</td><td>${escapeHtml(unitName(d.unit_of_inference))}</td></tr>
       <tr><td>PCC (kiểm định chéo)</td><td>${numberOrDash(d.cv_pcc, 4)}</td></tr>
     </table>`;
   if (d.asr_is_real === false) {
@@ -1089,7 +1104,7 @@ async function loadStats() {
   h += byBand.length
     ? "<table><tr><th>Band</th><th>Số lượng</th></tr>" +
       byBand
-        .map(([k, v]) => `<tr><td><b>${escapeHtml(k)}</b></td><td>${escapeHtml(v)}</td></tr>`)
+        .map(([k, v]) => `<tr><td><span class="band-chip" data-band="${escapeHtml(k)}">${escapeHtml(k)}</span></td><td>${escapeHtml(v)}</td></tr>`)
         .join("") +
       "</table>"
     : '<p class="muted">Chưa có bài nào được chấm xong.</p>';

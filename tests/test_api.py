@@ -184,7 +184,7 @@ def test_stats_and_audit_endpoints_work(app):
 
 def test_queue_and_report_pages_render(client_teacher):
     client = client_teacher
-    assert "Hàng đợi chờ duyệt" in client.get("/review").text
+    assert "Bài chờ duyệt" in client.get("/review").text
     assert "abc123" in client.get("/report/abc123").text
 
 

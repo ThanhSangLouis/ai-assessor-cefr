@@ -160,7 +160,7 @@ function windowSummary(a) {
 function renderMachineScore(d, a) {
   let h = `<div class="card-head"><h2>Máy chấm</h2>${window.ui.statusBadge(d.status)}</div>`;
   if (a.overall_0_6 != null) {
-    h += '<div class="score-panel">';
+    h += `<div class="score-panel" data-band="${escapeHtml(a.overall_band || "")}">`;
     h += `<div class="score-figure"><span class="score">${a.overall_0_6.toFixed(2)}</span>
       <span class="score-scale">trên thang 0 – 6</span></div>`;
     h += `<div class="score-meta"><span class="score-band">${escapeHtml(a.overall_band)}</span>
@@ -174,8 +174,7 @@ function renderMachineScore(d, a) {
       h +=
         '<p class="interval-line">Khoảng tin cậy ' + Math.round(iv.coverage * 100) + "%: <b>" +
         iv.low.toFixed(2) + " – " + iv.high.toFixed(2) + "</b> · band có thể: <b>" +
-        (iv.band_set || []).map((b) => escapeHtml(b)).join(", ") + "</b> (" +
-        escapeHtml(iv.method) + ", " + escapeHtml(iv.calibration_version) + ")</p>";
+        (iv.band_set || []).map((b) => escapeHtml(b)).join(", ") + "</b></p>";
     }
   } else {
     h += '<p class="muted">Máy không chấm được bài này.</p>';
@@ -184,12 +183,12 @@ function renderMachineScore(d, a) {
   h += windowSummary(a);
 
   if (d.reasons && d.reasons.length) {
-    // The same Vietnamese names as the queue, which is filtered by them; the
-    // code itself stays in the tooltip for anyone matching it to a log line.
+    // The same Vietnamese names as the queue, which is filtered by them. The
+    // code itself is for logs, not for the teacher.
     h +=
       '<p class="muted reason-line">Lý do gắn cờ: ' +
       d.reasons
-        .map((c) => `<span class="badge" title="${escapeHtml(c)}">${escapeHtml(window.ui.reasonName(c))}</span>`)
+        .map((c) => `<span class="badge">${escapeHtml(window.ui.reasonName(c))}</span>`)
         .join(" ") +
       "</p>";
   }
@@ -200,7 +199,7 @@ function renderMachineScore(d, a) {
   const partial = (a.criteria || []).filter((c) => cov(c) != null && cov(c) < 1);
   if (partial.length) {
     h +=
-      '<p class="muted">Thiếu phép đo ở: ' +
+      '<p class="muted">Đo chưa đủ ở: ' +
       partial
         .map(
           (c) =>
@@ -218,10 +217,66 @@ function renderMachineScore(d, a) {
   renderEvidence(a);
 }
 
+// The recording as one ruled strip under the player. A mark is exactly as long
+// as what it marks: a 1.6-second pause is 1.6 seconds of the strip. Clicking a
+// mark plays that moment; the orange head follows the audio.
+const TIMELINE_KINDS = {
+  pause: "Ngừng dài",
+  filler: "Từ ngập ngừng",
+  low_confidence_word: "Từ máy nghe không rõ",
+  lexical: "Vốn từ",
+  connector: "Từ nối",
+};
+const timelineEl = document.getElementById("rec-timeline");
+let timelineEvidence = [];
+
+function renderTimeline() {
+  if (!timelineEl) return;
+  const ev = timelineEvidence.filter((e) => e.start_s != null);
+  const ends = ev.map((e) => e.end_s ?? e.start_s);
+  const total = Number.isFinite(player.duration) && player.duration > 0 ? player.duration : Math.max(0, ...ends);
+  if (!ev.length || !total) {
+    timelineEl.hidden = true;
+    return;
+  }
+  const pct = (t) => `${Math.min(100, Math.max(0, (t / total) * 100)).toFixed(2)}%`;
+  const marks = ev
+    .map((e) => {
+      const end = e.end_s ?? e.start_s;
+      const name = TIMELINE_KINDS[e.kind] || CRITERION_NAMES[e.criterion] || e.kind;
+      return (
+        `<button type="button" class="rec-mark kind-${escapeHtml(e.kind)}" data-seconds="${e.start_s}"` +
+        ` style="left:${pct(e.start_s)};width:${pct(end - e.start_s)}"` +
+        ` aria-label="${escapeHtml(`${name} ở ${mmss(e.start_s)}, dài ${(end - e.start_s).toFixed(1)} giây`)}"></button>`
+      );
+    })
+    .join("");
+  const kinds = Array.from(new Set(ev.map((e) => e.kind)));
+  timelineEl.innerHTML =
+    `<div class="rec-track">${marks}<span class="rec-head" style="left:0"></span></div>` +
+    `<div class="rec-scale"><span>0:00</span><span>${mmss(total / 2)}</span><span>${mmss(total)}</span></div>` +
+    '<div class="rec-keys">' +
+    kinds.map((k) => `<span><i class="rec-mark kind-${escapeHtml(k)}" style="position:static;display:inline-block"></i>${escapeHtml(TIMELINE_KINDS[k] || k)}</span>`).join("") +
+    "<span>dài đúng thời lượng</span></div>";
+  timelineEl.hidden = false;
+  timelineEl.querySelectorAll(".rec-track [data-seconds]").forEach((n) =>
+    n.addEventListener("click", () => seekTo(parseFloat(n.dataset.seconds)))
+  );
+}
+if (timelineEl) {
+  player.addEventListener("loadedmetadata", renderTimeline);
+  player.addEventListener("timeupdate", () => {
+    const head = timelineEl.querySelector(".rec-head");
+    if (head && player.duration) head.style.left = `${(player.currentTime / player.duration) * 100}%`;
+  });
+}
+
 // Evidence sits under the transcript, on the listening side of the screen:
 // each card seeks the pinned player to its moment.
 function renderEvidence(a) {
   evidenceMarks = [];
+  timelineEvidence = a.evidence || [];
+  renderTimeline();
   let h = "";
   const ev = (a.evidence || []).slice(0, 6);
   if (ev.length) {

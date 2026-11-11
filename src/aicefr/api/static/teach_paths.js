@@ -57,13 +57,15 @@ function lessonRow(l) {
     `<div class="muted">${escapeHtml(l.band)}${l.criterion ? ` · ${escapeHtml(criterionName(l.criterion))}` : ""}</div></td>` +
     `<td class="t-steps">${ladder(l.kinds)} <span class="muted">${Number(l.steps)} bước</span></td>` +
     `<td>${state}</td>` +
+    // The title opens the editor; one visible action, the rest in a small menu.
     '<td><div class="t-row-actions">' +
-    `<a class="button small" href="/teach/lessons/${id}">${icon("pencil")}Soạn</a>` +
     `<a class="button small secondary" href="/practice/lessons/${id}?preview=1">${icon("eye")}Xem thử</a>` +
-    `<button type="button" class="small secondary icon-only" data-action="lesson-up" data-id="${escapeHtml(l.lesson_id)}" aria-label="Đưa bài ${name} lên trên">${icon("arrow-up")}</button>` +
-    `<button type="button" class="small secondary icon-only" data-action="lesson-down" data-id="${escapeHtml(l.lesson_id)}" aria-label="Đưa bài ${name} xuống dưới">${icon("arrow-down")}</button>` +
-    `<button type="button" class="small secondary icon-only" data-action="archive-lesson" data-id="${escapeHtml(l.lesson_id)}" data-name="${name}" aria-label="Lưu trữ bài ${name}" title="Lưu trữ">${icon("archive")}</button>` +
-    "</div></td></tr>"
+    `<details class="row-menu"><summary class="button small secondary icon-only" aria-label="Thao tác khác với bài ${name}">${icon("more")}</summary>` +
+    '<div class="row-menu-list">' +
+    `<button type="button" class="small secondary" data-action="lesson-up" data-id="${escapeHtml(l.lesson_id)}">${icon("arrow-up")}<span>Đưa lên trên</span></button>` +
+    `<button type="button" class="small secondary" data-action="lesson-down" data-id="${escapeHtml(l.lesson_id)}">${icon("arrow-down")}<span>Đưa xuống dưới</span></button>` +
+    `<button type="button" class="small secondary" data-action="archive-lesson" data-id="${escapeHtml(l.lesson_id)}" data-name="${name}">${icon("archive")}<span>Lưu trữ</span></button>` +
+    "</div></details></div></td></tr>"
   );
 }
 
@@ -76,11 +78,11 @@ function unitBlock(u) {
       `<tbody>${u.lessons.map(lessonRow).join("")}</tbody></table>`
     : '<p class="muted t-empty">Chặng này chưa có bài học.</p>';
   return (
-    `<div class="t-unit topic-${topicOf(u)}">` +
+    `<div class="t-unit topic-${topicOf(u)}" id="unit-${uid}">` +
     '<div class="t-unit-head">' +
     `<span class="unit-icon">${icon(TOPICS[u.topic] ? TOPICS[u.topic][1] : "layers")}</span>` +
     '<div class="t-unit-title"><div class="unit-tags">' +
-    (u.band ? `<span class="badge band-badge">${escapeHtml(u.band)}</span>` : "") +
+    (u.band ? `<span class="badge band-badge" data-band="${escapeHtml(u.band)}">${escapeHtml(u.band)}</span>` : "") +
     (TOPICS[u.topic] ? `<span class="badge topic-badge">${escapeHtml(TOPICS[u.topic][0])}</span>` : "") +
     (u.criterion ? `<span class="badge">${escapeHtml(criterionName(u.criterion))}</span>` : "") +
     `</div><h3>${escapeHtml(u.title)}</h3>` +
@@ -99,6 +101,20 @@ function unitBlock(u) {
   );
 }
 
+// A long path (24 units) needs a way to its middle without scrolling past
+// everything above it.
+function unitJump(p, i) {
+  if (p.units.length < 6) return "";
+  const options = p.units
+    .map((u, k) => `<option value="unit-${escapeHtml(u.unit_id)}">${k + 1}. ${escapeHtml(u.title)}${u.band ? ` (${escapeHtml(u.band)})` : ""}</option>`)
+    .join("");
+  return (
+    '<div class="unit-jump">' +
+    `<label for="unit-jump-${i}">Đi tới chặng</label>` +
+    `<select id="unit-jump-${i}" data-jump><option value="">Chọn chặng…</option>${options}</select></div>`
+  );
+}
+
 function pathCard(p, i) {
   const all = p.units.flatMap((u) => u.lessons);
   const live = all.filter((l) => l.published_version).length;
@@ -108,8 +124,8 @@ function pathCard(p, i) {
   return (
     `<section class="card t-path" aria-labelledby="path-h-${i}">` +
     '<div class="t-path-head"><div class="t-path-title">' +
-    `<p class="eyebrow">${bands}${p.units.length} chặng · ${live}/${all.length} bài đã xuất bản</p>` +
     `<h2 id="path-h-${i}">${escapeHtml(p.title)}</h2>` +
+    `<p class="muted t-path-meta">${bands}${p.units.length} chặng · ${live}/${all.length} bài đã xuất bản</p>` +
     '<div class="unit-tags">' +
     (published
       ? '<span class="badge state-on">Sinh viên đang thấy lộ trình này</span>'
@@ -123,6 +139,7 @@ function pathCard(p, i) {
     `<a class="button small secondary" href="/api/v1/teach/paths/${encodeURIComponent(p.path_id)}/export" download>${icon("download")}Xuất JSON</a>` +
     `<button type="button" class="small" data-action="add-unit" data-id="${pid}">${icon("plus")}<span>Thêm chặng</span></button>` +
     "</div></div>" +
+    unitJump(p, i) +
     (p.units.length ? p.units.map(unitBlock).join("") : '<p class="muted t-empty">Lộ trình chưa có chặng nào.</p>') +
     "</section>"
   );
@@ -361,7 +378,20 @@ async function act(button) {
 
 root.addEventListener("click", (e) => {
   const button = e.target.closest("[data-action]");
-  if (button) act(button);
+  if (!button) return;
+  const menu = button.closest("details.row-menu");
+  if (menu) menu.open = false;
+  act(button);
+});
+root.addEventListener("change", (e) => {
+  if (!e.target.matches("select[data-jump]") || !e.target.value) return;
+  const target = document.getElementById(e.target.value);
+  e.target.value = "";
+  if (target) {
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    target.setAttribute("tabindex", "-1");
+    target.focus({ preventScroll: true });
+  }
 });
 $("new-path").addEventListener("click", () => openPath(null));
 

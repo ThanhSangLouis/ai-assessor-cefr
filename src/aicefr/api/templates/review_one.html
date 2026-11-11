@@ -1,14 +1,11 @@
 {% extends "base.html" %}
 {% from "_icons.html" import icon %}
-{% block title %}Duyệt {{ response_id }} · SpeakUp{% endblock %}
+{% block title %}Duyệt bài nói · SpeakUp{% endblock %}
 {% block content %}
 <p class="crumb"><a href="/review">← Hàng đợi duyệt</a></p>
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("headphones") }}</span>Duyệt bài nói</h1>
-  <p class="lede">
-    Mã bài <code>{{ response_id }}</code>. Nghe lại, đối chiếu bằng chứng, rồi giữ nguyên
-    hoặc sửa kết quả. Mọi quyết định đều được ghi nhật ký kèm lý do.
-  </p>
+  <p class="lede">Nghe lại, đối chiếu bằng chứng, rồi giữ hoặc sửa kết quả. Mọi quyết định được ghi lại kèm lý do.</p>
 </div>
 
 <div id="lock-warning"></div>
@@ -20,6 +17,9 @@
   <audio id="phat" controls preload="metadata" aria-label="Bản ghi của bài đang duyệt"
          src="/api/v1/responses/{{ response_id }}/audio"></audio>
   <a class="button small secondary jump-decision" href="#decision">Tới phần quyết định</a>
+  {#- The recording as a ruled strip: every mark exactly as long as the moment
+      it marks; review_one.js draws it once the evidence is in. -#}
+  <div class="rec-timeline" id="rec-timeline" hidden></div>
 </div>
 
 <div class="two-col">
