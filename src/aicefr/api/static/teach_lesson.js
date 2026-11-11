@@ -183,8 +183,8 @@ function renderHead() {
       (meta.draft_changed ? ' <span class="badge state-warn">Có sửa đổi chưa xuất bản</span>' : "")
     : '<span class="badge state-off">Chưa xuất bản: sinh viên chưa thấy bài này</span>';
   $("builder-head").innerHTML =
-    `<p class="eyebrow">${escapeHtml(path.title)} · ${escapeHtml(unit.title)}</p>` +
     `<h1>${escapeHtml(lesson.title || "Bài học chưa đặt tên")}</h1>` +
+    `<p class="muted builder-where">${escapeHtml(path.title)} · ${escapeHtml(unit.title)}</p>` +
     `<div class="unit-tags">${state}</div>`;
   document.title = lesson.title + " · Soạn bài";
 }
@@ -283,8 +283,8 @@ function renderEditor() {
   const last = lesson.steps.length - 1;
   $("editor-top").innerHTML =
     '<div class="editor-title">' +
-    `<p class="eyebrow">Bước ${selected + 1}/${lesson.steps.length} · ${STAGE_NAMES[STAGE_OF[s.kind]]}</p>` +
-    `<h2 id="editor-h"><span class="editor-kind">${icon(KIND_ICON[s.kind])}</span>${escapeHtml(KIND_NAMES[s.kind])}</h2></div>` +
+    `<h2 id="editor-h"><span class="editor-kind">${icon(KIND_ICON[s.kind])}</span>${escapeHtml(KIND_NAMES[s.kind])}</h2>` +
+    `<p class="muted editor-where">Bước ${selected + 1}/${lesson.steps.length} · ${STAGE_NAMES[STAGE_OF[s.kind]]}</p></div>` +
     '<div class="t-actions">' +
     `<button type="button" class="small secondary icon-only" data-move="-1"${selected === 0 ? " disabled" : ""} aria-label="Đưa bước lên trên">${icon("arrow-up")}</button>` +
     `<button type="button" class="small secondary icon-only" data-move="1"${selected === last ? " disabled" : ""} aria-label="Đưa bước xuống dưới">${icon("arrow-down")}</button>` +
@@ -325,7 +325,7 @@ function renderAudio() {
   if (!show) return;
   $("audio-check").hidden = true;
   $("audio-current").innerHTML = s.model_audio
-    ? '<div class="media-current"><span class="eyebrow">Giọng mẫu hiện tại</span>' +
+    ? '<div class="media-current"><span class="muted small">Giọng mẫu hiện tại</span>' +
       `<audio controls preload="none" src="${escapeHtml(s.model_audio_url || "")}"></audio>` +
       `<button type="button" class="small secondary" id="audio-remove">${icon("trash")}<span>Bỏ giọng mẫu</span></button></div>`
     : '<p class="muted">Bước này chưa có giọng mẫu.</p>';

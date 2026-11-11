@@ -1,0 +1,545 @@
+/* The staff world: teachers and administrators.
+
+   Staff work is laid out like the faculty timetable on the notice board: white
+   ruled sheets on a cool ground, a deep ink rail, and six band colours that mean
+   the same band on every page. Orange stays the brand: actions, selection and
+   the "now" line, nothing else. Loaded only for the teacher and admin roles
+   (base.html), scoped under body.staff, so student pages keep their own world. */
+
+/* ------------------------------------------------------------------ tokens */
+body.staff {
+  --bg: #f6f7f9;
+  --bg-elevated: #ffffff;
+  --bg-sunken: #eef0f4;
+  --bg-hover: #e8ebf1;
+  --border: #d6dae2;
+  --border-strong: #b6bdcb;
+  --rule-soft: #eef0f4;
+  --fg: #1d2433;
+  --fg-muted: #535c6e;
+  --brand-soft: #fef5f1;
+  --shadow-sm: none;
+  --shadow-md: 0 6px 18px -6px rgba(29, 36, 51, 0.18);
+  --shadow-card: none;
+  /* Text on a filled destructive button: white on the deep light-theme red. */
+  --on-danger: #ffffff;
+
+  /* One scale, one colour per band, everywhere a band is drawn. */
+  --band-a1: #4a6cc9;
+  --band-a2: #2a7a89;
+  --band-b1: #3a7d52;
+  --band-b2: #85650b;
+  --band-c1: #b04a6c;
+  --band-c2: #6c4fb5;
+
+  /* The rail: deep ink, both themes. */
+  --rail: #1f2a44;
+  --rail-raise: #2c3a5c;
+  --rail-ink: #c9d1e3;
+  --rail-quiet: #8f9bbd;
+  --rail-mark: #ff7a45;
+  --sb-bg: var(--rail);
+  --sb-border: rgba(255, 255, 255, 0.08);
+  --sb-border-subtle: rgba(255, 255, 255, 0.06);
+  --sb-text-primary: #ffffff;
+  --sb-text-secondary: var(--rail-ink);
+  --sb-text-muted: var(--rail-quiet);
+  --sb-primary: #ffffff;
+  --sb-hover: rgba(255, 255, 255, 0.06);
+  --sb-active-bg: var(--rail-raise);
+  --sb-active-indicator: var(--rail-mark);
+  --sb-popover-bg: #ffffff;
+  --sb-popover-border: var(--border);
+  --sb-popover-user-name: var(--fg);
+  --sb-popover-user-email: var(--fg-muted);
+  --sb-popover-divider: var(--border);
+  --sb-popover-item-text: var(--fg);
+  --sb-popover-item-hover-bg: var(--bg-sunken);
+  --sb-popover-item-hover-text: var(--fg);
+  --sb-trigger-hover: rgba(255, 255, 255, 0.06);
+  --sb-trigger-open: rgba(255, 255, 255, 0.08);
+  --sb-avatar-bg: rgba(255, 122, 69, 0.18);
+  --sb-avatar-color: #ffb08f;
+  --sb-switch-track: #3a4870;
+  background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.staff {
+    --bg: #0f1420;
+    --bg-elevated: #161d2c;
+    --bg-sunken: #1c2436;
+    --bg-hover: #222c41;
+    --border: #2b3549;
+    --border-strong: #3c4862;
+    --rule-soft: #1e2739;
+    --fg: #e7ebf3;
+    --fg-muted: #a3adc2;
+    --brand-soft: rgba(255, 87, 34, 0.14);
+    --band-a1: #8ea7ef;
+    --band-a2: #6cc4d3;
+    --band-b1: #7cc596;
+    --band-b2: #dcb54f;
+    --band-c1: #e58cab;
+    --band-c2: #ab94ea;
+    --rail: #121a2c;
+    --rail-raise: #1f2a44;
+    --sb-popover-bg: #161d2c;
+    /* The dark red is light: ink reads on it, white does not. */
+    --on-danger: #0f1420;
+    --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
+  }
+}
+:root[data-theme="dark"] body.staff {
+  --bg: #0f1420;
+  --bg-elevated: #161d2c;
+  --bg-sunken: #1c2436;
+  --bg-hover: #222c41;
+  --border: #2b3549;
+  --border-strong: #3c4862;
+  --rule-soft: #1e2739;
+  --fg: #e7ebf3;
+  --fg-muted: #a3adc2;
+  --brand-soft: rgba(255, 87, 34, 0.14);
+  --band-a1: #8ea7ef;
+  --band-a2: #6cc4d3;
+  --band-b1: #7cc596;
+  --band-b2: #dcb54f;
+  --band-c1: #e58cab;
+  --band-c2: #ab94ea;
+  --rail: #121a2c;
+  --rail-raise: #1f2a44;
+  --sb-popover-bg: #161d2c;
+  --on-danger: #0f1420;
+  --shadow-md: 0 6px 18px -6px rgba(0, 0, 0, 0.55);
+}
+
+body.staff ::selection { background: color-mix(in srgb, var(--brand) 22%, transparent); }
+body.staff :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+body.staff { accent-color: var(--brand); caret-color: var(--brand); }
+
+/* A flat ground: no glow behind the sheets, no blocks rising into place.
+   Staff load into a task. */
+body.staff::before { background: none; }
+@media (prefers-reduced-motion: no-preference) {
+  body.staff main > * { animation: none; }
+}
+
+/* ------------------------------------------------------------------ rail */
+body.staff .app-sidebar { background: var(--rail); border-right: 0; }
+body.staff .app-sidebar .site-nav a { color: var(--rail-ink); }
+body.staff .app-sidebar .site-nav a .icon { color: var(--rail-quiet); }
+body.staff .app-sidebar .site-nav a:hover { color: #fff; background: var(--sb-hover); }
+body.staff .app-sidebar .site-nav a[aria-current="page"] {
+  background: var(--rail-raise) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border-radius: 8px !important;
+}
+body.staff .app-sidebar .site-nav a[aria-current="page"] .icon { color: var(--rail-mark); }
+body.staff .app-sidebar .brand-name,
+body.staff .app-sidebar .brand { color: #fff; }
+body.staff .nav-count { background: var(--brand); color: #fff; }
+body.staff .mobile-topbar { background: var(--rail); border-bottom: 0; color: #fff; }
+body.staff .mobile-topbar .brand,
+body.staff .mobile-topbar button { color: #fff; }
+body.staff .app-tabbar { background: var(--rail); border-top: 0; }
+body.staff .app-tabbar a { color: var(--rail-ink); }
+body.staff .app-tabbar a.on { background: var(--rail-raise); color: #fff; }
+
+/* ------------------------------------------------------------------ type and head */
+body.staff h1,
+body.staff h2 { font-family: var(--font-display); letter-spacing: -0.01em; }
+body.staff h1 { font-size: 1.625rem; font-weight: 700; }
+body.staff .card h2,
+body.staff .card-head h2 { font-size: 1.125rem; font-weight: 600; }
+body.staff .page-head { margin-bottom: var(--sp-4); }
+body.staff .page-head .lede { color: var(--fg-muted); margin-top: 2px; max-width: 70ch; }
+/* A timetable carries no icon tiles: the heading speaks for itself. */
+body.staff .page-head .head-icon { display: none; }
+body.staff td, body.staff th, body.staff .stat b, body.staff .num { font-variant-numeric: tabular-nums; }
+
+/* ------------------------------------------------------------------ sheets */
+body.staff .card,
+body.staff .table-scroll {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: none;
+}
+body.staff .card-head { align-items: center; }
+
+/* Tables ruled like a printed timetable: a sunken head, hairline rules
+   between rows and a fainter one between columns. */
+body.staff table { font-size: var(--t-md); }
+body.staff th {
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+  font-size: var(--t-sm);
+  font-weight: 650;
+  border-bottom: 1px solid var(--border);
+}
+body.staff th + th, body.staff td + td { border-left: 1px solid var(--rule-soft); }
+body.staff td { border-bottom: 1px solid var(--rule-soft); }
+body.staff tr:hover > td { background: color-mix(in srgb, var(--bg-sunken) 60%, transparent); }
+body.staff .cell-sub { color: var(--fg-muted); }
+
+/* ------------------------------------------------------------------ controls */
+/* Plain buttons only: the strip's marks, tabs, switches and chips keep their own shape. */
+body.staff :is(button, .button):not(.rec-mark, .tabs button, .view-switch button, .subnav a, .word-pick, .chips button, .reason-chips button, .evidence, .link-button, .toast-close, .account-button, .header-button, .icon-only) {
+  border-radius: 8px;
+  box-shadow: none;
+  background-image: none;
+  padding: 9px 16px;
+  font-size: var(--t-md);
+  line-height: 1.3;
+}
+body.staff :is(button, .button).small:not(.icon-only, .rec-mark) { padding: 5px 11px; font-size: var(--t-sm); }
+/* Flat sheets, flat controls: no hairline of shadow under any button.
+   :where keeps this below a component's own lift (a queue block on focus). */
+body.staff :where(button, .button),
+body.staff :where(button, .button):hover { transform: none; box-shadow: none; }
+body.staff button.secondary,
+body.staff .button.secondary {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+}
+body.staff button.secondary:hover,
+body.staff .button.secondary:hover { background: var(--bg-sunken); color: var(--fg); }
+/* Destructive actions stand apart, outlined until chosen. */
+body.staff button.danger,
+body.staff .row-actions button.danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+}
+body.staff button.danger:hover,
+body.staff button.danger:focus-visible,
+body.staff .row-actions button.danger:hover { background: var(--danger); color: var(--on-danger); }
+body.staff .row-actions button.danger { margin-left: var(--sp-4); }
+body.staff .row-actions button:not(.danger) { background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border-strong); }
+body.staff .row-actions button:not(.danger):hover { background: var(--bg-sunken); color: var(--fg); }
+
+body.staff input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+body.staff select,
+body.staff textarea {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+/* Tabs and the two-page switch: ink labels, an orange rule under the chosen. */
+body.staff .tabs { border-bottom: 1px solid var(--border); }
+body.staff .tabs button { color: var(--fg-muted); }
+body.staff .tabs button.chosen { color: var(--fg); }
+body.staff .subnav a[aria-current="page"] { border-bottom-color: var(--brand); }
+
+/* Badges: quiet chips; status keeps its semantic colour. */
+body.staff .badge { border-radius: 6px; padding: 2px 8px; font-weight: 650; }
+body.staff .notice { border-radius: 8px; }
+
+/* Band chips: the band's own colour, the same on every page. */
+.band-chip {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.4em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: #fff;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  background: var(--band, var(--fg-muted));
+  font-variant-numeric: tabular-nums;
+}
+[data-band="A1"] { --band: var(--band-a1); }
+[data-band="A2"] { --band: var(--band-a2); }
+[data-band="B1"] { --band: var(--band-b1); }
+[data-band="B2"] { --band: var(--band-b2); }
+[data-band="C1"] { --band: var(--band-c1); }
+[data-band="C2"] { --band: var(--band-c2); }
+:root[data-theme="dark"] body.staff .band-chip { color: #0f1420; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.staff .band-chip { color: #0f1420; }
+}
+
+/* Stats as ruled cells, not floating tiles. */
+body.staff .stat-grid { gap: 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg-elevated); }
+body.staff .stat { border: 0; border-radius: 0; background: var(--bg-elevated); padding: var(--sp-3) var(--sp-4); }
+body.staff .stat + .stat { border-left: 1px solid var(--rule-soft); }
+body.staff .stat.attention { background: var(--brand-soft); }
+body.staff .stat.attention b { color: var(--brand-strong); }
+
+body.staff .empty-state { background: var(--bg-sunken); border: 1px dashed var(--border-strong); border-radius: 10px; }
+body.staff .empty-state .empty-mark { background: var(--bg-elevated); color: var(--fg-muted); box-shadow: inset 0 0 0 1px var(--border); }
+
+/* ------------------------------------------------------------------ the week sheet (review queue) */
+.view-switch { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden; }
+.view-switch button {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg-elevated);
+  color: var(--fg-muted);
+  padding: 7px 14px;
+  font-weight: 600;
+}
+.view-switch button + button { border-left: 1px solid var(--border-strong); }
+.view-switch button[aria-pressed="true"] { background: var(--fg); color: var(--bg-elevated); }
+.view-switch button:hover:not([aria-pressed="true"]) { background: var(--bg-sunken); color: var(--fg); }
+
+.tt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2) var(--sp-4);
+  align-items: center;
+  margin: 0 0 var(--sp-3);
+  color: var(--fg-muted);
+  font-size: var(--t-sm);
+}
+.tt-legend .band-chip { margin-right: 2px; }
+.tt-legend .tt-forms { display: flex; gap: var(--sp-4); padding-left: var(--sp-4); border-left: 1px solid var(--border); }
+.tt-key { display: inline-block; width: 14px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; background: var(--fg-muted); }
+.tt-key.is-held { background: transparent; border: 2px dashed var(--fg-muted); }
+.tt-key.is-late { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.55) 0 3px, transparent 3px 6px); }
+
+.tt-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-elevated); }
+.tt {
+  --hour: 26px;
+  --hours: 17;
+  display: grid;
+  grid-template-columns: 52px repeat(var(--days), minmax(104px, 1fr));
+  grid-template-rows: auto calc(var(--hour) * var(--hours));
+  min-width: calc(52px + var(--days) * 104px);
+  position: relative;
+}
+.tt-dayhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: var(--t-sm);
+  white-space: nowrap;
+}
+.tt-dayhead small { color: var(--fg-muted); font-weight: 500; }
+.tt-dayhead.is-today { background: var(--brand-soft); color: var(--brand-strong); }
+.tt-dayhead.is-older { color: var(--fg-muted); }
+.tt-corner { border-bottom: 1px solid var(--border); }
+.tt-hours { position: relative; }
+.tt-hours span {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+.tt-day {
+  position: relative;
+  border-left: 1px solid var(--rule-soft);
+  background: repeating-linear-gradient(to bottom, transparent 0 calc(var(--hour) * 2 - 1px), var(--rule-soft) calc(var(--hour) * 2 - 1px) calc(var(--hour) * 2));
+}
+.tt-day.is-today { background-color: color-mix(in srgb, var(--brand-soft) 45%, transparent); }
+.tt-day.is-older { background-color: var(--bg-sunken); }
+.tt-block {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  display: grid;
+  align-content: start;
+  gap: 1px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: var(--band, var(--fg-muted));
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.25;
+  text-decoration: none;
+  overflow: hidden;
+  border: 2px solid transparent;
+  transition: transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+.tt-block b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-block span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tt-block:hover,
+.tt-block:focus-visible { box-shadow: var(--shadow-md); transform: translateY(-1px); z-index: 2; color: #fff; }
+/* State by form, not hue: being reviewed is an outline, overdue is hatched. */
+.tt-block.is-held { background: var(--bg-elevated); color: var(--band); border: 2px dashed var(--band); }
+.tt-block.is-held:hover { color: var(--band); }
+.tt-block.is-late { background-image: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0 6px, transparent 6px 12px); }
+:root[data-theme="dark"] body.staff .tt-block:not(.is-held) { color: #0f1420; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.staff .tt-block:not(.is-held) { color: #0f1420; }
+}
+.tt-now {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px solid var(--brand);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Blocks sit above the ruling and the "now" line, so the line never cuts a name. */
+.tt-block { z-index: 1; }
+.tt-foot { margin: var(--sp-2) 0 0; color: var(--fg-muted); font-size: var(--t-sm); }
+
+/* ------------------------------------------------------------------ the recording timeline (review screen) */
+.rec-timeline { margin-top: var(--sp-3); }
+.rec-track {
+  position: relative;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: repeating-linear-gradient(to right, transparent 0 calc(10% - 1px), var(--rule-soft) calc(10% - 1px) 10%), var(--bg-sunken);
+}
+/* A mark is exactly as long as what it marks. */
+.rec-mark {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  min-width: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: var(--mark, var(--brand));
+  cursor: pointer;
+}
+.rec-mark.kind-pause { --mark: var(--warn); }
+.rec-mark.kind-low_confidence_word { --mark: var(--fg-muted); top: 9px; bottom: 9px; }
+.rec-mark.kind-filler { --mark: var(--band-c2); }
+.rec-mark:hover, .rec-mark:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.rec-head {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: var(--brand);
+  pointer-events: none;
+}
+.rec-scale { display: flex; justify-content: space-between; margin-top: 4px; font-size: 12px; color: var(--fg-muted); font-variant-numeric: tabular-nums; }
+.rec-keys { display: flex; flex-wrap: wrap; gap: var(--sp-3); margin-top: var(--sp-1); font-size: var(--t-xs); color: var(--fg-muted); }
+.rec-keys i { display: inline-block; width: 14px; height: 6px; border-radius: 3px; margin-right: 5px; vertical-align: 1px; }
+
+/* ------------------------------------------------------------------ band bars (one A1–C2 scale for every chart) */
+.band-bars { display: grid; gap: var(--sp-2); margin: var(--sp-2) 0 var(--sp-3); }
+.band-bar { display: grid; grid-template-columns: 2.8em 1fr 5.5em; align-items: center; gap: var(--sp-3); }
+.band-bar-track { display: block; height: 22px; border-radius: 5px; background: var(--bg-sunken); overflow: hidden; }
+.band-bar-fill { display: block; height: 100%; border-radius: 5px; background: var(--band); min-width: 0; }
+.band-bar-n { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-muted); font-size: var(--t-sm); }
+.band-bar-n b { color: var(--fg); }
+
+/* ------------------------------------------------------------------ paths: units as periods */
+body.staff .t-unit-head .unit-icon { display: none; }
+body.staff .t-unit-title .band-badge {
+  background: var(--band, var(--fg-muted));
+  color: #fff;
+  border-radius: 5px;
+}
+body.staff .t-path { border-radius: 10px; }
+body.staff .unit-jump { background: var(--bg-sunken); }
+
+/* ------------------------------------------------------------------ the report, as staff read it */
+body.staff .report .score-panel { background: var(--bg-elevated); border: 1px solid var(--border); }
+body.staff .report .evidence { border-radius: 8px; }
+
+/* ------------------------------------------------------------------ narrow screens */
+@media (max-width: 720px) {
+  .tt { --hour: 22px; grid-template-columns: 40px repeat(var(--days), minmax(104px, 1fr)); min-width: calc(40px + var(--days) * 104px); }
+  .tt-legend .tt-forms { border-left: 0; padding-left: 0; }
+  body.staff .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  body.staff .stat + .stat { border-left: 0; }
+  body.staff .stat { border-top: 1px solid var(--rule-soft); }
+}
+
+/* The page head's tools: a view switch beside the primary action. */
+body.staff .page-head-row > .head-tools { flex: none; display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+body.staff .page-head-row > .head-tools > * { margin-top: 0; }
+
+/* The pinned player carries the ruled strip on its own line. */
+.player-bar:has(.rec-timeline:not([hidden])) { flex-wrap: wrap; }
+.player-bar .rec-timeline { flex: 1 0 100%; margin-top: 0; }
+.rec-keys .rec-mark { width: 14px; height: 6px; border-radius: 3px; margin-right: 5px; vertical-align: 1px; cursor: default; }
+
+/* ------------------------------------------------------------------ fixes from the first look */
+body.staff .builder-where, body.staff .editor-where { margin: 2px 0 0; font-size: var(--t-sm); }
+/* Lesson titles read as names, the action lives in the row. */
+body.staff .t-lesson-link { color: var(--fg); font-weight: 600; text-decoration: none; }
+body.staff .t-lesson-link:hover { color: var(--brand); text-decoration: underline; }
+/* Icon buttons in a row are quiet; the page's one primary action stays orange. */
+body.staff button.icon-only:not(.danger) { background: var(--bg-elevated); color: var(--fg-muted); border: 1px solid var(--border-strong); }
+body.staff button.icon-only:not(.danger):hover { background: var(--bg-sunken); color: var(--fg); }
+/* The report as staff read it: the band in its own colour, no podium. */
+body.staff .report .score-panel[data-band] .score { color: var(--band, var(--brand)); }
+body.staff .report .band-podium { display: none; }
+/* Evidence cards on the review screen: a note to read, left-aligned and quiet. */
+body.staff .evidence { text-align: left; align-items: flex-start; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 8px; }
+body.staff .evidence .evidence-kind { text-transform: none; letter-spacing: 0; color: var(--fg-muted); font-weight: 600; }
+body.staff .evidence .evidence-time { background: var(--bg-sunken); color: var(--fg); }
+body.staff .evidence .evidence-action { color: var(--brand); }
+/* The note is read across two or three lines: give it body leading. */
+body.staff .evidence .evidence-note { line-height: 1.45; }
+/* A marked passage is a ruled sheet like any other, no coloured side stripe. */
+body.staff .read-text.marked { border-left: 1px solid var(--border); }
+/* The machine's score panel on the review screen: ruled, not tinted. */
+body.staff .score-panel { background: var(--bg-elevated); border: 1px solid var(--border); }
+body.staff .score-panel[data-band] .score,
+body.staff .score-panel[data-band] .score-band { color: var(--band, var(--brand)); }
+/* The ground reaches the bottom of the window on a short page. */
+body.staff { min-height: 100vh; }
+/* The wordmark sits on the ink rail and the ink top bar in both themes. */
+body.staff .app-sidebar .brand-name,
+body.staff .mobile-topbar .brand-name { color: #ffffff; }
+body.staff .mobile-topbar .mobile-drawer-toggle { color: #ffffff; }
+/* On a phone the player takes its own row, the jump link the next. */
+@media (max-width: 720px) {
+  body.staff .player-bar { flex-wrap: wrap; }
+  body.staff .player-bar audio { flex: 1 0 100%; }
+}
+.tt-legend .tt-forms { flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); }
+.tt-legend .tt-forms > span { white-space: nowrap; }
+body.staff, body.staff .tt-scroll, body.staff .table-scroll { scrollbar-color: var(--border-strong) transparent; }
+
+/* The filters sit on one quiet row above the sheet, not in a panel of their own. */
+body.staff .filter-bar { padding: 0; border: 0; background: none; gap: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-3); }
+body.staff .filter-bar .filter { display: flex; align-items: center; gap: var(--sp-2); }
+body.staff .filter-bar label { margin: 0; font-size: var(--t-sm); color: var(--fg-muted); white-space: nowrap; }
+body.staff .filter-bar select { width: auto; min-width: 12rem; padding-top: 6px; padding-bottom: 6px; }
+/* The time now, in the hours gutter: it never covers a block. */
+.tt-now-label {
+  position: absolute;
+  right: 4px;
+  transform: translateY(-50%);
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 4;
+  font-variant-numeric: tabular-nums;
+}
+/* The document behind the body keeps the ground too, below a short page. */
+:root:has(> body.staff) { background: #f6f7f9; }
+:root[data-theme="dark"]:has(> body.staff) { background: #0f1420; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):has(> body.staff) { background: #0f1420; }
+}
+
+/* Headings speak in the brand's voice, as on the home page: Poppins, heavy,
+   tight, in SpeakUp orange (4.97:1 on the sheet, 5.0:1 on the ground in light;
+   the coral partner in dark). Running text, tables and figures stay in ink. */
+body.staff { --heading: var(--brand); }
+:root[data-theme="dark"] body.staff { --heading: #ff7043; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body.staff { --heading: #ff7043; }
+}
+body.staff main h1 { color: var(--heading); font-weight: 700; letter-spacing: -0.025em; }
+body.staff main :is(h2, h3):not(.visually-hidden):not(.empty-state h2) { color: var(--heading); font-weight: 700; letter-spacing: -0.01em; }
+body.staff main .card h2 .count { color: var(--fg-muted); }
+/* The current rail item reads in orange too. */
+body.staff .app-sidebar .site-nav a[aria-current="page"] { color: #ffb08f !important; }

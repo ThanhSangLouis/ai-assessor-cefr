@@ -47,7 +47,10 @@ function lessonsSection(d) {
   const attempts = d.lessons.reduce((n, l) => n + l.attempts, 0);
   const done = d.lessons.reduce((n, l) => n + l.completed, 0);
   const active = d.lessons.filter((l) => l.attempts).length;
+  // Lessons nobody has opened say nothing row by row: they fold into one list.
+  const idle = d.lessons.filter((l) => !l.attempts);
   const rows = d.lessons
+    .filter((l) => l.attempts)
     .map((l) => {
       const steps = l.steps
         .map(
@@ -80,9 +83,22 @@ function lessonsSection(d) {
   return (
     '<section class="card" aria-labelledby="ins-lessons-h">' +
     '<div class="card-head"><h2 id="ins-lessons-h">Theo bài học</h2>' +
-    `<span class="muted">${attempts} lượt luyện · ${done} lượt hoàn thành bài · ${active}/${d.lessons.length} bài đã có người học</span></div>` +
-    '<p class="muted">Bấm một bài để xem tỷ lệ đạt của từng bước. «Hay dừng» là bước có tỷ lệ đạt thấp nhất, dưới 60%, tính trên ít nhất ba lượt.</p>' +
-    `<div class="ins-lessons">${rows}</div></section>`
+    (attempts
+      ? `<span class="muted">${attempts} lượt luyện · ${done} lượt hoàn thành bài · ${active}/${d.lessons.length} bài đã có người học</span>`
+      : "") +
+    "</div>" +
+    (rows
+      ? '<p class="muted">Bấm một bài để xem tỷ lệ đạt từng bước. «Hay dừng»: bước đạt dưới 60%, từ ba lượt trở lên.</p>' +
+        `<div class="ins-lessons">${rows}</div>`
+      : '<p class="muted">Chưa ai luyện bài nào trong lộ trình này.</p>') +
+    (idle.length
+      ? `<details class="fold"><summary>${idle.length} bài chưa ai học</summary><ul class="ins-idle-list">` +
+        idle
+          .map((l) => `<li>${escapeHtml(l.title)} <span class="muted">${escapeHtml(l.unit)} · ${escapeHtml(l.band)}</span></li>`)
+          .join("") +
+        "</ul></details>"
+      : "") +
+    "</section>"
   );
 }
 

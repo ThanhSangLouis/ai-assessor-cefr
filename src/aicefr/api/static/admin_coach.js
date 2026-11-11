@@ -155,7 +155,9 @@
   }
 
   function head(d) {
-    const name = PROVIDER[d.provider] || d.provider;
+    // "Tắt" is a state, not a name: the card is the rewrite feature, the
+    // provider follows it once one is chosen.
+    const name = d.provider === "off" ? "Viết lại bằng AI" : `Viết lại bằng AI · ${PROVIDER[d.provider] || d.provider}`;
     const state = d.enabled
       ? '<span class="badge COMPLETED">Đang bật</span>'
       : `<span class="badge REJECTED">Chưa bật</span>`;

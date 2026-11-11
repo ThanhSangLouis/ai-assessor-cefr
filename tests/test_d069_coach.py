@@ -21,6 +21,7 @@ from test_lessons_integration import login_as, m, submit_assessment, wav  # noqa
 from aicefr.coach import providers
 from aicefr.coach.upgrade import UpgradeError, parse
 from aicefr.report.next_band import next_band_plan
+from aicefr.scoring.band_map import thresholds_of, to_band
 from aicefr.scoring.scorer import RidgeScorer, load_model
 
 TRANSCRIPT = (
@@ -60,6 +61,25 @@ def test_no_targets_without_a_score_or_above_the_last_threshold():
     model, features = shifted(0.0)
     assert next_band_plan(model, features, None) is None
     assert next_band_plan(model, features, 5.99) is None
+
+
+def test_a_teacher_band_below_the_score_sets_where_the_plan_starts():
+    # Confirmed B2 while the machine scored C1: the plan climbs B2 -> C1 and has
+    # no gap of points to quote, because the model already sits past it.
+    model, features = shifted(0.0)
+    c1 = thresholds_of(model["band_thresholds"])["C1_C2"] - 0.1
+    plan = next_band_plan(model, features, c1, band="B2")
+    assert plan and (plan["from_band"], plan["to_band"]) == ("B2", "C1")
+    assert plan["gap"] is None and plan["enough"] is False
+    assert plan["targets"]
+
+
+def test_a_teacher_band_above_the_score_still_measures_the_gap():
+    model, features = shifted(-0.6)
+    score = RidgeScorer("ridge_resp_v2").score(features).overall_0_6
+    band = to_band(score, thresholds_of(model["band_thresholds"])).value
+    plan = next_band_plan(model, features, score, band=band)
+    assert plan == next_band_plan(model, features, score)
 
 
 # ================================================================= the upgraded answer

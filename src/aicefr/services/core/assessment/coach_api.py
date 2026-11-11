@@ -74,7 +74,9 @@ def _plan(report) -> dict | None:
         model = load_model(a.model_version)
     except Exception:  # noqa: BLE001 - an artifact no longer installed: no targets, not an error
         return None
-    return next_band_plan(model, report.features, a.overall_0_6)
+    # After a review the teacher's band is the one the plan climbs from.
+    band = a.overall_band.value if a.teacher_verified and a.overall_band else None
+    return next_band_plan(model, report.features, a.overall_0_6, band)
 
 
 @router.get("/api/v1/responses/{response_id}/coach", tags=["student"])

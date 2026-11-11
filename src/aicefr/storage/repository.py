@@ -938,6 +938,8 @@ class Repository(MongoStore):
             held = lock is not None and lock["locked_until"] > now
             item["locked_by"] = lock["reviewer_id"] if held else None  # type: ignore[index]
             item["account_id"] = r.get("account_id")
+            ms = (r.get("qc") or {}).get("duration_ms")
+            item["duration_s"] = round(ms / 1000, 1) if ms else None
             out.append(item)
         return out  # type: ignore[return-value]
 
