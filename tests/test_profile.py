@@ -16,7 +16,7 @@ import time
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from dbutil import store
+from dbutil import email_of, store
 from fastapi.testclient import TestClient
 
 from aicefr.auth import google
@@ -65,20 +65,20 @@ def m(tmp_path, monkeypatch):
     return make_app(monkeypatch, tmp_path)
 
 
-def login_as(m, pseudonym: str, role: str = "student", agent: str = CHROME_MAC) -> TestClient:
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    return sign_in(m, pseudonym, agent)
+def login_as(m, name: str, role: str = "student", agent: str = CHROME_MAC) -> TestClient:
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
+    return sign_in(m, name, agent)
 
 
-def sign_in(m, pseudonym: str, agent: str = CHROME_MAC) -> TestClient:
+def sign_in(m, name: str, agent: str = CHROME_MAC) -> TestClient:
     client = TestClient(m.app, headers={"user-agent": agent})
-    r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = client.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return client
 
 
-def account_id(m, pseudonym: str) -> str:
-    return m.app.state.auth_repo.get_by_pseudonym(pseudonym)["account_id"]
+def account_id(m, name: str) -> str:
+    return m.app.state.auth_repo.get_by_email(email_of(name))["account_id"]
 
 
 def audit(m, action: str) -> list:
@@ -222,7 +222,7 @@ def test_sessions_of_one_account_cannot_be_ended_by_another(m):
 def test_the_history_shows_sign_ins_failed_attempts_and_changes(m):
     c = login_as(m, "SV-001")
     TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": "SV-001", "password": "doan-sai-roi"}
+        "/api/v1/auth/login", json={"email": email_of("SV-001"), "password": "doan-sai-roi"}
     )
     c.post(
         "/api/v1/me/password",
@@ -249,9 +249,9 @@ def test_what_an_administrator_did_shows_as_an_administrator(m):
     assert row["by_self"] is False
 
 
-def test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log(m):
+def test_an_unknown_email_leaves_nothing_in_the_audit_log(m):
     TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": "<script>x</script>", "password": "a"}
+        "/api/v1/auth/login", json={"email": email_of("<script>x</script>"), "password": "a"}
     )
     assert not audit(m, "auth.login_failed")
 
@@ -293,36 +293,36 @@ def test_linking_then_signing_in_with_google(m, monkeypatch, tmp_path):
     assert student.get("/api/v1/me/account").json()["google"]["linked"] is True
     assert audit(m, "account.google_link")[0].target_id == account_id(m, "SV-001")
 
-    # A hash of the Google subject is kept, not the subject itself; the
-    # address Google verified becomes the account's sign-in email (D071).
+    # A hash of the Google subject is kept, not the subject itself. The
+    # account keeps its own email: linking never overwrites it (D103).
     links = [i for a in store()["account"].find() for i in a.get("identities") or []]
     stored = links[0]["subject_hash"]
     assert stored == google.subject_hash("google-sub-1") and len(stored) == 64
-    row = store()["account"].find_one({"pseudonym": "SV-001"})
-    assert (row["email"], row["email_verified"]) == ("sinhvien@example.edu.vn", 1)
+    row = store()["account"].find_one({"account_id": account_id(m, "SV-001")})
+    assert (row["email"], row["email_verified"]) == (email_of("SV-001"), 1)
 
     browser = TestClient(m.app, headers={"user-agent": CHROME_MAC})
     _, flow = start(browser, "login", "/my-progress")
     r, _ = finish(monkeypatch, browser, flow, sub="google-sub-1")
     assert r.headers["location"] == "/my-progress"
-    assert browser.get("/api/v1/me").json()["pseudonym"] == "SV-001"
+    assert browser.get("/api/v1/me").json()["email"] == email_of("SV-001")
     session = next(s for s in browser.get("/api/v1/me/sessions").json() if s["current"])
     assert session["method"] == "google"
     assert audit(m, "auth.login")[0].detail == "method=google"
 
 
 def test_an_unlinked_google_account_signs_up_as_a_student(m, monkeypatch):
-    """D063: the first Google sign-in makes a student with a random pseudonym."""
+    """D063: the first Google sign-in makes a student with the address Google verified."""
     browser = TestClient(m.app)
     _, flow = start(browser)
     r, _ = finish(monkeypatch, browser, flow, sub="first-time-here")
     assert r.headers["location"] == "/practice"  # D064: no terms step
     me = browser.get("/api/v1/me").json()
-    assert me["role"] == "student" and me["pseudonym"].startswith("SV-G")
+    assert me["role"] == "student" and me["email"] == "sinhvien@example.edu.vn"
     row = m.app.state.auth_repo.account_by_identity(
         google.PROVIDER, google.subject_hash("first-time-here")
     )
-    assert row["pseudonym"] == me["pseudonym"]
+    assert row["account_id"] == me["account_id"]
     assert audit(m, "account.google_signup")[0].target_id == row["account_id"]
 
     # The second time it is a sign-in to the same account, not a new one.
@@ -330,7 +330,7 @@ def test_an_unlinked_google_account_signs_up_as_a_student(m, monkeypatch):
     again = TestClient(m.app)
     _, flow = start(again)
     r, _ = finish(monkeypatch, again, flow, sub="first-time-here")
-    assert again.get("/api/v1/me").json()["pseudonym"] == me["pseudonym"]
+    assert again.get("/api/v1/me").json()["account_id"] == me["account_id"]
     assert len(m.app.state.auth_repo.list_accounts()) == count
 
 
@@ -387,7 +387,7 @@ def test_a_callback_without_its_cookie_or_after_cancel_is_refused(m):
     assert google_note(r) == "cancelled"
 
 
-def test_one_google_account_links_to_one_pseudonym(m, monkeypatch):
+def test_one_google_account_links_to_one_account(m, monkeypatch):
     a = login_as(m, "SV-001")
     _, flow = start(a, "link")
     finish(monkeypatch, a, flow, sub="shared-google")
@@ -401,8 +401,8 @@ def test_one_google_account_links_to_one_pseudonym(m, monkeypatch):
 def test_the_link_must_be_finished_by_the_account_that_started_it(m, monkeypatch):
     client = login_as(m, "SV-001")
     _, flow = start(client, "link")
-    m.app.state.auth_repo.create_account("SV-002", PASSWORD, Role.STUDENT)
-    client.post("/api/v1/auth/login", json={"pseudonym": "SV-002", "password": PASSWORD})
+    m.app.state.auth_repo.create_account(email_of("SV-002"), PASSWORD, Role.STUDENT)
+    client.post("/api/v1/auth/login", json={"email": email_of("SV-002"), "password": PASSWORD})
     r, _ = finish(monkeypatch, client, flow)
     assert r.headers["location"] == "/account?google=signin"
 
@@ -437,10 +437,10 @@ def test_a_disabled_account_cannot_sign_in_with_google(m, monkeypatch):
 def test_a_temporary_password_still_has_to_be_replaced_after_google(m, monkeypatch):
     admin = login_as(m, "QT-01", "admin")
     temporary = admin.post(
-        "/api/v1/admin/accounts", json={"role": "student", "pseudonym": "SV-NEW"}
+        "/api/v1/admin/accounts", json={"role": "student", "emails": [email_of("SV-NEW")]}
     ).json()["created"][0]["temporary_password"]
     newcomer = TestClient(m.app)
-    newcomer.post("/api/v1/auth/login", json={"pseudonym": "SV-NEW", "password": temporary})
+    newcomer.post("/api/v1/auth/login", json={"email": email_of("SV-NEW"), "password": temporary})
     _, flow = start(newcomer, "link")
     finish(monkeypatch, newcomer, flow, sub="g-3")
     browser = TestClient(m.app)
@@ -508,7 +508,7 @@ def test_the_account_detail_shows_sessions_link_and_history(m, monkeypatch):
     _, flow = start(student, "link")
     finish(monkeypatch, student, flow, sub="g-5")
     detail = admin.get(f"/api/v1/admin/accounts/{account_id(m, 'SV-001')}").json()
-    assert detail["pseudonym"] == "SV-001" and detail["google_linked"] is True
+    assert detail["email"] == email_of("SV-001") and detail["google_linked"] is True
     assert detail["google_linked_at"]
     assert detail["sessions"][0]["device"] == "Chrome · macOS"
     assert {"auth.login", "account.google_link"} <= {a["action"] for a in detail["activity"]}

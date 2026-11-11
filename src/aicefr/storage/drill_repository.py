@@ -34,7 +34,6 @@ DRILL_FIELDS = (
     "account_id",
     "response_id",
     "word",
-    "word_index",
     "phrase",
     "streak",
     "passed",
@@ -45,16 +44,9 @@ DRILL_FIELDS = (
 PASSAGE_FIELDS = (
     "passage_id",
     "account_id",
-    "band",
-    "words",
     "drill_ids",
     "text",
     "source",
-    "provider",
-    "model",
-    "prompt_version",
-    "input_tokens",
-    "output_tokens",
     "takes",
     "created_at",
 )
@@ -77,7 +69,6 @@ class WordDrill:
     account_id: str
     response_id: str
     word: str
-    word_index: int
     phrase: str
     streak: int = 0
     passed: bool = False
@@ -119,33 +110,31 @@ class DrillPassage:
 
     `source` is "model" when the language model wrote it (and it was paid
     for), "phrases" when it is the learner's own phrases put together.
+    `words` are the words of its drills (`drill_ids`), in that order: read
+    from the drills, not stored with the passage (D105).
     """
 
     passage_id: str
     account_id: str
-    band: str | None
     words: list[str]
     drill_ids: list[str]
     text: str
     source: str
-    provider: str | None = None
-    model: str | None = None
-    prompt_version: str | None = None
-    input_tokens: int | None = None
-    output_tokens: int | None = None
     takes: list[PassageTake] = field(default_factory=list)
     created_at: str = ""
 
     @classmethod
-    def from_doc(cls, doc: dict) -> DrillPassage:
+    def from_doc(cls, doc: dict, words: list[str]) -> DrillPassage:
         row = fields(doc, PASSAGE_FIELDS) or {}
         row["takes"] = [PassageTake(**t) for t in row.get("takes") or []]
-        return cls(**row)
+        return cls(**row, words=words)
+
+    def to_doc(self) -> dict:
+        return {k: v for k, v in asdict(self).items() if k != "words"}
 
     def view(self) -> dict:
         return {
             "passage_id": self.passage_id,
-            "band": self.band,
             "words": list(self.words),
             "text": self.text,
             "source": self.source,
@@ -168,7 +157,6 @@ class DrillRepository(MongoStore):
         account_id: str,
         response_id: str,
         word: str,
-        word_index: int,
         phrase: str,
         passed: bool,
         said: str | None,
@@ -187,7 +175,6 @@ class DrillRepository(MongoStore):
                     {
                         **key,
                         "drill_id": new_id("d"),
-                        "word_index": word_index,
                         "phrase": phrase,
                         "streak": 0,
                         "passed": False,
@@ -249,14 +236,21 @@ class DrillRepository(MongoStore):
 
     def save_passage(self, passage: DrillPassage) -> DrillPassage:
         passage.created_at = passage.created_at or _now()
-        self.col("drill_passage").insert_one(asdict(passage))
+        self.col("drill_passage").insert_one(passage.to_doc())
         return passage
+
+    def _passage(self, doc: dict | None) -> DrillPassage | None:
+        """A stored passage with the words of its drills."""
+        if doc is None:
+            return None
+        drills = self.by_ids(doc["account_id"], list(doc.get("drill_ids") or []))
+        return DrillPassage.from_doc(doc, [d.word for d in drills])
 
     def passage(self, account_id: str, passage_id: str) -> DrillPassage | None:
         doc = self.col("drill_passage").find_one(
             {"account_id": account_id, "passage_id": passage_id}
         )
-        return DrillPassage.from_doc(doc) if doc else None
+        return self._passage(doc)
 
     def passage_for(self, account_id: str, drill_ids: list[str]) -> DrillPassage | None:
         """The latest passage written for exactly these drills: read again, never paid again."""
@@ -264,7 +258,7 @@ class DrillRepository(MongoStore):
             {"account_id": account_id, "drill_ids": {"$size": len(drill_ids), "$all": drill_ids}},
             sort=[("created_at", DESCENDING)],
         )
-        return DrillPassage.from_doc(doc) if doc else None
+        return self._passage(doc)
 
     def model_passages_since(self, account_id: str, since: str) -> int:
         """Passages the model wrote for this learner since `since`: their daily cap."""
@@ -281,7 +275,7 @@ class DrillRepository(MongoStore):
     def passages_of(self, account_id: str) -> list[dict]:
         """Every passage of one learner with its takes, oldest first."""
         rows = self.col("drill_passage").find({"account_id": account_id}).sort("created_at", 1)
-        return [asdict(DrillPassage.from_doc(r)) for r in rows]
+        return [asdict(self._passage(r)) for r in rows]  # type: ignore[arg-type]
 
     def erase_account(self, account_id: str) -> int:
         """Forget the learner's drills and passages; how many documents went."""

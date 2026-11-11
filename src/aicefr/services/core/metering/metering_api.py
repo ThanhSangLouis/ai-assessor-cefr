@@ -62,9 +62,6 @@ def _entry(e: dict, prices: PriceList) -> dict:
         "charged_idpoint": as_idpoint(prices, e["charged"]),
         "created_at": e["created_at"],
         "settled_at": e["settled_at"],
-        "input_tokens": e.get("input_tokens"),
-        "output_tokens": e.get("output_tokens"),
-        "usage_estimated": e.get("usage_estimated"),
         # D094: one of the day's free lesson recordings.
         "free_slot": bool(e.get("free_slot")),
     }
@@ -125,7 +122,7 @@ def lesson_quote(account: Account = Depends(require_login)) -> dict:
 
 
 class GrantIn(BaseModel):
-    pseudonym: str = Field(min_length=1, max_length=40)
+    email: str = Field(min_length=3, max_length=254)
     runs: int = Field(ge=1, le=10_000)
     # What the top-up answers to: a NetID statement line, a receipt number.
     reference: str = Field(min_length=1, max_length=80)
@@ -137,7 +134,7 @@ def grant_credits(body: GrantIn, account: Account = ADMIN_ONLY) -> dict:
     s = svc()
     if not s.enabled:
         raise HTTPException(409, "bản triển khai này không tính lượt (AICEFR_METERING=off)")
-    who = s.peers.identity.by_pseudonym(pseudonym=body.pseudonym)
+    who = s.peers.identity.by_email(email=body.email)
     if who is None:
         raise HTTPException(404, "không có tài khoản này")
     credited = s.store.grant(
@@ -182,7 +179,7 @@ def set_prices(body: PricesIn, account: Account = ADMIN_ONLY) -> dict:
     """A new version of the prices; charges already made keep theirs."""
     s = svc()
     try:
-        saved = s.book.set(body.model_dump(), account.account_id)
+        saved = s.book.set(body.model_dump())
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     s.audit.write(account.account_id, "metering.prices", None, saved["version"])

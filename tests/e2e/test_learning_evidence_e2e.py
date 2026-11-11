@@ -27,13 +27,13 @@ from test_practice_e2e import login  # noqa: E402
 pytestmark = pytest.mark.e2e
 
 
-def _page(browser, live_server, next_path: str, role: str = "student", pseudonym: str = ""):
+def _page(browser, live_server, next_path: str, role: str = "student", name: str = ""):
     """A signed-in page in a context of its own, confirming every dialog."""
     ctx = browser.new_context(base_url=live_server.base_url, locale="vi-VN")
     ctx.set_default_timeout(20_000)
     page = ctx.new_page()
     page.on("dialog", lambda d: d.accept())
-    login(page, live_server, pseudonym or live_server.account(role), next_path)
+    login(page, live_server, name or live_server.account(role), next_path)
     return page
 
 

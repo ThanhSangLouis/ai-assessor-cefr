@@ -6,7 +6,7 @@ better version of it is what makes the gap noticeable; a model answer written
 from scratch shows a level, not the way from here to there.
 
 What leaves the system is the transcript and the task prompt, nothing else: no
-pseudonym, no recording, no score history. The language model is a third
+name, no email, no recording, no score history. The language model is a third
 party (`providers.py`); a wrong rewrite is possible, so the page says it is a
 suggestion, and every change the model claims must point at words the learner
 actually said, or it is dropped.

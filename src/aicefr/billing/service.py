@@ -29,18 +29,6 @@ from aicefr.practice.streak import LOCAL_TZ
 
 logger = logging.getLogger(__name__)
 
-# An order's gateway by name, for orders whose gateway is no longer offered
-# (VNPay and MoMo orders made before D075 among them).
-GATEWAY_TITLES = {
-    "none": "Không cần thanh toán",
-    "sandbox": "Cổng thử",
-    "vnpay": "VNPay",
-    "stripe": "Stripe",
-    "momo": "MoMo",
-    "payos": "payOS",
-}
-
-
 # D096: the outcomes announced on the bus as `ORDER_SETTLED`, for whoever tells
 # the buyer (the identity service emails them). The publisher does not know who
 # listens; a payload names the order, never the payer's email.
@@ -109,6 +97,16 @@ class BillingService:
     def gateway(self, name: str):
         """The gateway of that name if this deployment offers it, else None."""
         return self.gateways.get(name)
+
+    @property
+    def active(self):
+        """The one gateway this deployment runs (D103), or None.
+
+        The registry never runs a test gateway beside one that moves real
+        money, so an order's gateway and money mode are the deployment's: they
+        are not kept on each payment.
+        """
+        return next(iter(self.gateways.values()), None)
 
     def now(self) -> datetime:
         return self._clock()
@@ -190,7 +188,6 @@ class BillingService:
         self,
         runs: int,
         by_account: str,
-        by_pseudonym: str,
         site: str,
         client_ip: str,
         gateway_name: str | None = None,
@@ -218,15 +215,13 @@ class BillingService:
                 "runs": runs,
                 "amount_vnd": price,
                 "status": OrderStatus.PENDING.value,
-                "gateway": gateway.name,
-                "live": bool(gateway.live),
                 "created_by": by_account,
                 "created_at": self._stamp(),
                 "expires_at": self._expiry(now),
             }
         )
         self.store.add_event(order_id, "created", {"amount": price, "runs": runs})
-        self._audit(by_pseudonym, "billing.credit_order", order_id, f"runs={runs} amount={price}")
+        self._audit(by_account, "billing.credit_order", order_id, f"runs={runs} amount={price}")
         url = self._open_checkout(
             gateway,
             order_id,
@@ -279,9 +274,9 @@ class BillingService:
         self.store.expire_pending(self._stamp())
         since = (self.now() - RECONCILE_WINDOW).astimezone(UTC).isoformat(timespec="seconds")
         moved = []
+        gateway = self.active
+        look_up = getattr(gateway, "look_up", None)
         for order in self.store.open_since(since):
-            gateway = self.gateways.get(order["gateway"])
-            look_up = getattr(gateway, "look_up", None)
             if look_up is None or not order["checkout_ref"]:
                 continue
             try:
@@ -302,10 +297,10 @@ class BillingService:
         "ok" the order moved; "already" it had been settled; "pending" the
         gateway has no final word yet and nothing changes; "amount" the amount
         is not the order's and nothing changes (BR-33); "not_found", also for a
-        result that is not this order's to settle (BR-35): from another
-        gateway, from the same gateway in the other money mode -- a test card
-        never pays for a real order, nor the other way round -- or about
-        another checkout than the one the order opened. Every message about a
+        result that is not this order's to settle (BR-35): from a gateway this
+        deployment does not run -- a test card never pays for a real order, nor
+        the other way round -- or about another checkout than the one the order
+        opened. Every message about a
         known order is kept as an event; an identical repeat is counted, not
         stored again.
         """
@@ -313,14 +308,8 @@ class BillingService:
         if order is None:
             return "not_found"
         said = {"outcome": result.outcome.value, "code": result.code, "reference": result.reference}
-        current = self.gateways.get(gateway)
-        if order["gateway"] != gateway or (
-            gateway != "none"
-            and (
-                current is None
-                or bool(current.live) != bool(order["live"])
-                or (order["checkout_ref"] and result.checkout != order["checkout_ref"])
-            )
+        if self.gateways.get(gateway) is None or (
+            order["checkout_ref"] and result.checkout != order["checkout_ref"]
         ):
             said |= {"via": via, "from": gateway, "checkout": result.checkout}
             self.store.add_event(order["order_id"], "rejected", said)
@@ -345,14 +334,14 @@ class BillingService:
             except TransitionRefused:
                 self.store.add_event(order["order_id"], "rejected", said | {"via": via})
                 return "already"
-            changed = self.store.settle(order["order_id"], target, result.reference, result.code)
+            changed = self.store.settle(order["order_id"], target, result.reference)
         self.store.add_event(
             order["order_id"], via, said | dict(result.details) | {"applied": changed}
         )
         if not changed:
             return "already"
         self._audit(
-            f"gateway:{order['gateway']}",
+            f"gateway:{gateway}",
             f"billing.{result.outcome.value}",
             order["order_id"],
             f"amount={result.amount_vnd} ref={result.reference} code={result.code}",
@@ -375,9 +364,9 @@ class BillingService:
             "status": order["status"],
             "runs": int(order["runs"]),
             "amount_vnd": int(order["amount_vnd"]),
-            "gateway_title": self._gateway_title(order["gateway"]),
+            "gateway_title": self._gateway_title(),
             "reference": order["reference"] or "",
-            "live": bool(order["live"]),
+            "live": self._live(),
             "settled_at": order["settled_at"] or self._stamp(),
         }
         try:
@@ -397,18 +386,17 @@ class BillingService:
             "amount_vnd": order["amount_vnd"],
             "status": state.status.value,
             "status_name": state.name,
-            "gateway": order["gateway"],
-            "gateway_title": self._gateway_title(order["gateway"]),
-            "live": bool(order["live"]),
+            "gateway_title": self._gateway_title(),
+            "live": self._live(),
             "reference": order["reference"],
-            "result_code": order["result_code"],
             "created_at": order["created_at"],
             "settled_at": order["settled_at"],
         }
 
-    def _gateway_title(self, name: str) -> str:
-        """The name a buyer reads for an order's gateway, offered now or not."""
-        gateway = self.gateways.get(name)
-        if gateway is not None:
-            return gateway.title
-        return GATEWAY_TITLES.get(name, name)
+    def _gateway_title(self) -> str:
+        """The name a buyer reads for the deployment's gateway."""
+        return self.active.title if self.active is not None else "Chưa có cổng thanh toán"
+
+    def _live(self) -> bool:
+        """Whether the deployment's gateway moves real money."""
+        return bool(self.active is not None and self.active.live)

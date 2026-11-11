@@ -2,10 +2,11 @@
 
 * An account that signed itself up gets the month's free runs and the day's
   free lesson recordings only once its email is verified; bought runs are
-  spent either way; an account an administrator made (no email) keeps them.
-* A student deletes their own account from the account page: the email (or
-  pseudonym) typed again, recordings and reports erased, the account and its
-  sessions gone; payments and the run ledger stay; staff cannot do it there.
+  spent either way; an account an administrator made keeps them (D103: the
+  administrator vouched for its email).
+* A student deletes their own account from the account page: the email typed
+  again, recordings and reports erased, the account and its sessions gone;
+  payments and the run ledger stay; staff cannot do it there.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import re
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_billing import boot
 from test_lessons_integration import account_id, login_as, submit_assessment, wav
@@ -84,9 +86,8 @@ def test_verifying_the_email_opens_the_free_runs(m):
 
 def test_an_unverified_learner_still_spends_bought_runs(m):
     c = _signup(m)
-    pseudonym = _me(c)["pseudonym"]
     admin = login_as(m, "QT-01", "admin")
-    grant = {"pseudonym": pseudonym, "runs": 2, "reference": "phieu-d101"}
+    grant = {"email": EMAIL, "runs": 2, "reference": "phieu-d101"}
     assert admin.post("/api/v1/admin/credits/grant", json=grant).status_code == 200
     r = _submit(c)
     assert r.status_code == 202, r.text
@@ -96,7 +97,7 @@ def test_an_unverified_learner_still_spends_bought_runs(m):
 
 def test_no_free_lesson_recording_before_verifying(m):
     c = _signup(m)
-    who = account_id(m, _me(c)["pseudonym"])
+    who = c.get("/api/v1/me").json()["account_id"]
     quote = c.get("/api/v1/me/credits/lesson").json()
     assert (quote["free_locked"], quote["free_left_today"]) == (True, 0)
     refused = m.core_parts.facade.metering.hold_lesson(account_id=who, key="k1", max_seconds=30)
@@ -107,7 +108,7 @@ def test_no_free_lesson_recording_before_verifying(m):
 
 
 def test_an_account_made_by_an_administrator_keeps_its_free_runs(m):
-    student = login_as(m, "SV-101")  # no email: made by an administrator
+    student = login_as(m, "SV-101")  # made by an administrator, who vouched for the email
     credits = student.get("/api/v1/me/credits").json()
     assert (credits["free_locked"], credits["free_runs_left"]) == (False, 3)
     assert submit_assessment(student)
@@ -121,7 +122,7 @@ def test_a_learner_deletes_their_own_account(m):
     who = account_id(m, "SV-102")
     submit_assessment(student)
     assert m.repo.list_by_account(who)
-    r = student.post("/api/v1/me/delete-account", json={"confirm": "SV-102"})
+    r = student.post("/api/v1/me/delete-account", json={"confirm": email_of("SV-102")})
     assert r.status_code == 200, r.text
     assert r.json()["deleted"] is True and r.json()["responses"] == 1
     assert m.repo.list_by_account(who) == []
@@ -129,24 +130,23 @@ def test_a_learner_deletes_their_own_account(m):
     assert student.get("/api/v1/me/account").status_code == 401
     # The sign-in no longer works either.
     again = TestClient(m.app).post(
-        "/api/v1/auth/login", json={"pseudonym": "SV-102", "password": "x" * 12}
+        "/api/v1/auth/login", json={"email": email_of("SV-102"), "password": "x" * 12}
     )
     assert again.status_code in (401, 404)
 
 
 def test_the_confirmation_must_match_the_email(m):
     c = _signup(m)
-    pseudonym = _me(c)["pseudonym"]
-    wrong = c.post("/api/v1/me/delete-account", json={"confirm": pseudonym})
+    wrong = c.post("/api/v1/me/delete-account", json={"confirm": "khac@truong.edu.vn"})
     assert wrong.status_code == 422 and "email" in wrong.json()["detail"]
-    assert _me(c)["pseudonym"] == pseudonym  # nothing happened
+    assert _me(c)["email"] == EMAIL.lower()  # nothing happened
     done = c.post("/api/v1/me/delete-account", json={"confirm": f"  {EMAIL.upper()} "})
     assert done.status_code == 200, done.text
 
 
 def test_staff_cannot_delete_themselves_here(m):
     teacher = login_as(m, "GV-101", "teacher")
-    r = teacher.post("/api/v1/me/delete-account", json={"confirm": "GV-101"})
+    r = teacher.post("/api/v1/me/delete-account", json={"confirm": email_of("GV-101")})
     assert r.status_code == 403
     assert m.app.state.auth_repo.get(account_id(m, "GV-101")) is not None
 
@@ -156,7 +156,10 @@ def test_payments_and_the_ledger_stay(m):
     rid = submit_assessment(student)
     ledger = m.core_parts.state["metering"]
     assert ledger.entry(rid, MeteredAction.ASSESSMENT) is not None
-    assert student.post("/api/v1/me/delete-account", json={"confirm": "sv-103"}).status_code == 200
+    assert (
+        student.post("/api/v1/me/delete-account", json={"confirm": email_of("SV-103")}).status_code
+        == 200
+    )
     assert ledger.entry(rid, MeteredAction.ASSESSMENT) is not None
 
 

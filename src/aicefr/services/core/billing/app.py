@@ -76,7 +76,7 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
     billing_api.configure(
         billing_api.Services(
             billing=service,
-            pseudonyms=lambda ids: peers.identity.pseudonyms(account_ids=ids),
+            display_names=lambda ids: peers.identity.display_names(account_ids=ids),
         )
     )
     return Parts(

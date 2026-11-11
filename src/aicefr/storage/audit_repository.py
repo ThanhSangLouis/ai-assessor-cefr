@@ -69,7 +69,7 @@ class AuditLog(MongoStore):
     """One service's audit log: write an entry, read the latest, read those about one target.
 
     Kept deliberately small: an actor, what they did, to what, and when. No
-    transcript, no pseudonym of a third party, no free text unless the action
+    transcript, no name or email of a third party, no free text unless the action
     needs one.
     """
 

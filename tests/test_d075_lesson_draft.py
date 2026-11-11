@@ -122,7 +122,7 @@ def test_metered_the_teachers_runs_pay_for_the_draft(tmp_path, monkeypatch, mode
     ledger = m.core_parts.state["metering"].history(account_id(m, "GV-01"))
     entry = next(e for e in ledger if e["action"] == "lesson_draft")
     assert (entry["state"], entry["charged"]) == ("charged", 300)
-    assert (entry["input_tokens"], entry["output_tokens"]) == (300, 220)
+    assert "input_tokens" not in entry  # D105: the day's counters keep the tokens
     history = teacher.get("/api/v1/me/credits").json()["history"]
     assert any(h["action"] == "lesson_draft" for h in history)
 

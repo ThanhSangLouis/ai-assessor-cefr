@@ -153,7 +153,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
         assessment=assessment,
         config_version="v1",
     )
-    context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
+    context.svc().repo.save(report, "P3", account_id="student-1")
 
     student = Account("student-1", "SV-001", Role.STUDENT)
     with TestClient(asgi(parts, settings)) as client:
@@ -179,7 +179,7 @@ def test_review_queue_includes_pending_response_and_its_reviewer_can_lock_it(ass
         ),
         config_version="v1",
     )
-    context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
+    context.svc().repo.save(report, "P3", account_id="student-1")
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
     admin = Account("admin-1", "QT-01", Role.ADMIN)
 

@@ -171,10 +171,8 @@ def test_the_provider_is_asked_to_write_little(monkeypatch):
 
 def test_passages_are_found_again_for_the_same_words_and_erased():
     repo = DrillRepository(store())
-    a = repo.save_passage(
-        DrillPassage("p-1", "acc-1", "B1", WORDS, ["d1", "d2", "d3"], TEXT, "model")
-    )
-    repo.save_passage(DrillPassage("p-2", "acc-1", "B1", WORDS[:2], ["d1", "d2"], "x", "phrases"))
+    a = repo.save_passage(DrillPassage("p-1", "acc-1", WORDS, ["d1", "d2", "d3"], TEXT, "model"))
+    repo.save_passage(DrillPassage("p-2", "acc-1", WORDS[:2], ["d1", "d2"], "x", "phrases"))
     assert repo.passage_for("acc-1", ["d3", "d1", "d2"]).passage_id == a.passage_id
     assert repo.passage_for("acc-1", ["d1", "d2", "d4"]) is None
     assert repo.passage_for("acc-2", ["d1", "d2", "d3"]) is None

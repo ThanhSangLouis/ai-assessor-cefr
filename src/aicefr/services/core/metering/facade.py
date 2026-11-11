@@ -20,7 +20,6 @@ from aicefr.metering.pricing import (
     DEFAULT_PRICES,
     UNITS_PER_RUN,
     PriceList,
-    TokenUsage,
     as_idpoint,
     as_runs,
     hold_for,
@@ -28,7 +27,6 @@ from aicefr.metering.pricing import (
     passage_units,
     units_for,
     upgrade_units,
-    usage_of,
 )
 from aicefr.observability import count
 from aicefr.platform.rpc import exposed
@@ -89,9 +87,7 @@ class MeteringFacade:
         free = self.free_ok(account_id)
         try:
             units = hold_for(self.prices, max_seconds)
-            self.store.hold(
-                account_id, MeteredAction(action), key, units, self.prices.version, free_ok=free
-            )
+            self.store.hold(account_id, MeteredAction(action), key, units, free_ok=free)
         except InsufficientCredits as e:
             return (
                 f"bạn cần {as_runs(e.needed):g} lượt cho bài này nhưng chỉ còn"
@@ -107,16 +103,12 @@ class MeteringFacade:
         action: str,
         result: bool,
         seconds: float | None = None,
-        output_tokens: int | None = None,
-        words: int | None = None,
     ) -> None:
-        """Charge what the recording lasted when the person got a result, and keep
-        the tokens it used (D057); release the hold otherwise. Without its length,
-        the whole hold is charged."""
+        """Charge what the recording lasted when the person got a result (D057);
+        release the hold otherwise. Without its length, the whole hold is charged."""
         if self.enabled:
-            usage = usage_of(seconds, output_tokens, words) if seconds is not None else None
-            charge = units_for(self.prices, seconds) if usage else None
-            entry = self.store.settle(key, MeteredAction(action), result, charge, usage)
+            charge = units_for(self.prices, seconds) if seconds is not None else None
+            entry = self.store.settle(key, MeteredAction(action), result, charge)
             if entry is not None:
                 count("metering_units_total", entry["charged"], action=action, state=entry["state"])
 
@@ -171,7 +163,6 @@ class MeteringFacade:
                 self.today(),
                 prices.lesson_free_per_day,
                 prices.lesson_daily_cap,
-                prices.version,
                 free_ok=free,
             )
         except DailyCapReached as e:
@@ -199,7 +190,6 @@ class MeteringFacade:
         key: str,
         result: bool,
         speaking_seconds: float | None = None,
-        words: int | None = None,
     ) -> None:
         """Charge what was said when the recording was measured, release it otherwise.
 
@@ -210,9 +200,8 @@ class MeteringFacade:
         if not self.enabled:
             return
         seconds = max(0.0, float(speaking_seconds or 0.0))
-        usage = usage_of(seconds, None, words) if result else None
         charge = lesson_units(self.prices, seconds) if result else None
-        entry = self.store.settle(key, MeteredAction.LESSON, result, charge, usage)
+        entry = self.store.settle(key, MeteredAction.LESSON, result, charge)
         if entry is not None:
             count("metering_units_total", entry["charged"], action="lesson", state=entry["state"])
 
@@ -252,7 +241,7 @@ class MeteringFacade:
             return None
         free = self.free_ok(account_id)
         try:
-            self.store.hold(account_id, what, key, units, self.prices.version, free_ok=free)
+            self.store.hold(account_id, what, key, units, free_ok=free)
         except InsufficientCredits as e:
             thing = {
                 MeteredAction.LESSON_DRAFT: "bản soạn bài bằng AI",
@@ -270,24 +259,13 @@ class MeteringFacade:
         self,
         key: str,
         result: bool,
-        input_tokens: int | None = None,
-        output_tokens: int | None = None,
         action: str = "upgrade",
     ) -> None:
-        """Charge the hold when the model answered, release it when it failed.
-
-        The language model's own token counts are kept with the entry, for the
-        cost per request and the reconciliation, as Whisper's are for a recording.
-        """
+        """Charge the hold when the model answered, release it when it failed."""
         if not self.enabled:
             return
-        usage = (
-            TokenUsage(int(input_tokens or 0), int(output_tokens or 0),
-                       estimated=input_tokens is None or output_tokens is None)
-            if result else None
-        )  # fmt: skip
         what = MeteredAction(action)
-        entry = self.store.settle(key, what, result, None, usage)
+        entry = self.store.settle(key, what, result, None)
         if entry is not None:
             count("metering_units_total", entry["charged"], action=what.value, state=entry["state"])
 

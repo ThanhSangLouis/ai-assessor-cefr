@@ -20,6 +20,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_ui_depth import enclosing_media, rule_bodies
 
@@ -51,10 +52,10 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def signed_in(m, pseudonym: str, role: str) -> TestClient:
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+def signed_in(m, name: str, role: str) -> TestClient:
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     client = TestClient(m.app)
-    r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = client.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return client
 

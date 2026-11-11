@@ -269,7 +269,6 @@ def _metered(
         key=key,
         result=result.measured,
         speaking_seconds=result.speaking_s,
-        words=len(result.transcript.split()),
     )
     return out
 
@@ -418,7 +417,6 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
                     "steps": st.total,
                     "passed": st.passed,
                     "status": "completed" if complete else st.status,
-                    "built_in": lesson.built_in,
                     "kinds": [s.kind.value for s in lesson.steps],
                 }
             )
@@ -456,17 +454,13 @@ def learn_home(path_id: str | None = None, account: Account = Depends(require_lo
     today = today_summary(_infos(all_rows), _now(), goal_seconds=account.daily_goal_s)
     facts, have, _new = _award(account, all_rows)
     return {
-        "paths": [
-            {"path_id": p["path_id"], "title": p["title"], "built_in": bool(p["built_in"])}
-            for p in paths
-        ],
+        "paths": [{"path_id": p["path_id"], "title": p["title"]} for p in paths],
         "path": {
             "path_id": chosen["path_id"],
             "title": chosen["title"],
             "description": chosen["description"],
             "band_from": chosen["band_from"],
             "band_to": chosen["band_to"],
-            "built_in": bool(chosen["built_in"]),
             "units": units,
             "lessons_total": len(ordered),
             "lessons_completed": done_total,
@@ -1092,7 +1086,7 @@ def _just_reached(account: Account) -> list[dict]:
     try:
         _facts_, _have, new = _award(account)
     except Exception:  # noqa: BLE001 - see the docstring
-        logger.exception("achievements: could not count for %s", account.pseudonym)
+        logger.exception("achievements: could not count for %s", account.account_id)
         return []
     return [{"code": c, "title": BY_CODE[c].title, "icon": BY_CODE[c].icon} for c in new]
 
@@ -1111,18 +1105,16 @@ def _achievement_view(standing: Standing, stored: dict | None) -> dict:
         "value": a.target if stored else standing.value,
         "unlocked": stored is not None,
         "unlocked_at": stored["unlocked_at"] if stored else None,
-        "new": stored is not None and stored["seen_at"] is None,
     }
 
 
 def _achievement_summary(facts: Facts, have: dict[str, dict]) -> dict:
-    """The practice page's card: how many, which are new, the last three, the nearest."""
+    """The practice page's card: how many, the last three, the nearest."""
     known = [(code, v) for code, v in have.items() if code in BY_CODE]
     near = nearest(facts, have)
     return {
         "unlocked": len(known),
         "total": len(CATALOG),
-        "new": sum(1 for _code, v in known if v["seen_at"] is None),
         "recent": [
             {"code": code, "title": BY_CODE[code].title, "icon": BY_CODE[code].icon}
             for code, _v in reversed(known)
@@ -1195,19 +1187,6 @@ def class_pronunciation(account: Account = STAFF_ONLY) -> dict:
     return out
 
 
-class SeenIn(BaseModel):
-    codes: list[str] | None = Field(default=None, max_length=len(CATALOG))
-
-
-@router.post("/api/v1/me/achievements/seen", tags=["student"])
-def achievements_seen(
-    body: SeenIn | None = None, account: Account = Depends(require_login)
-) -> dict:
-    """The learner has seen these achievements (all new ones without a body)."""
-    codes = body.codes if body else None
-    return {"seen": svc().lessons.mark_seen(account.account_id, codes)}
-
-
 # ================================================================= teachers
 
 
@@ -1256,7 +1235,7 @@ class OverrideIn(BaseModel):
 
 
 def _audit(account: Account, action: str, target: str, detail: str = "") -> None:
-    svc().audit_log.write(account.pseudonym, action, target, detail or None)
+    svc().audit_log.write(account.account_id, action, target, detail or None)
 
 
 def _lesson_summary(item: dict) -> dict:
@@ -1270,7 +1249,6 @@ def _lesson_summary(item: dict) -> dict:
         "kinds": [s.kind.value for s in lesson.steps],
         "published_version": item["published_version"],
         "draft_changed": item["draft_changed"],
-        "built_in": lesson.built_in,
     }
 
 
@@ -1292,15 +1270,13 @@ def teach_paths(account: Account = STAFF_ONLY) -> list[dict]:
                     "lessons": [_lesson_summary(i) for i in u["lessons"]],
                 }
             )
-        out.append({**p, "built_in": bool(p["built_in"]), "units": units})
+        out.append({**p, "units": units})
     return out
 
 
 @router.post("/api/v1/teach/paths", tags=["teacher"], dependencies=[AUTHORING])
 def teach_new_path(body: PathIn, account: Account = STAFF_ONLY) -> dict:
-    pid = svc().lessons.create_path(
-        body.title, body.description, body.band_from, body.band_to, by=account.pseudonym
-    )
+    pid = svc().lessons.create_path(body.title, body.description, body.band_from, body.band_to)
     _audit(account, "lesson.path.create", pid)
     return {"path_id": pid}
 
@@ -1335,7 +1311,7 @@ async def teach_import(request: Request, account: Account = STAFF_ONLY) -> dict:
         raise HTTPException(413, "tệp lộ trình quá lớn")
     try:
         data = json.loads(raw)
-        pid = svc().lessons.import_path(data, by=account.pseudonym)
+        pid = svc().lessons.import_path(data)
     except (ValueError, TypeError, KeyError) as e:
         raise HTTPException(422, f"tệp lộ trình không hợp lệ: {e}") from e
     _audit(account, "lesson.path.import", pid)
@@ -1448,7 +1424,7 @@ def teach_new_lesson(unit_id: str, body: LessonIn, account: Account = STAFF_ONLY
             ],
         )
     try:
-        svc().lessons.add_lesson(unit_id, lesson, by=account.pseudonym)
+        svc().lessons.add_lesson(unit_id, lesson)
     except NotFound:
         raise HTTPException(404, "không tìm thấy chặng") from None
     _audit(account, "lesson.create", lesson.lesson_id)
@@ -1499,7 +1475,7 @@ def teach_save_lesson(lesson_id: str, body: Lesson, account: Account = STAFF_ONL
         old = known.get(step.step_id)
         step.model_audio = old.model_audio if old and step.model_audio else None
         step.image = old.image if old and step.image else None
-    svc().lessons.save_draft(lesson_id, body, by=account.pseudonym)
+    svc().lessons.save_draft(lesson_id, body)
     return {"status": "ok", "lint": [i.as_dict() for i in lint_lesson(body)]}
 
 
@@ -1510,7 +1486,7 @@ def teach_publish(lesson_id: str, account: Account = STAFF_ONLY) -> dict:
     lesson, _ = _draft_or_404(lesson_id)
     if not lesson.steps:
         raise HTTPException(422, "bài học chưa có bước nào")
-    version = svc().lessons.publish(lesson_id, by=account.pseudonym)
+    version = svc().lessons.publish(lesson_id)
     _audit(account, "lesson.publish", lesson_id, f"version={version}")
     return {"version": version}
 
@@ -1532,13 +1508,13 @@ def teach_archive_lesson(lesson_id: str, account: Account = STAFF_ONLY) -> dict:
     return {"status": "ok"}
 
 
-def _set_step_media(lesson_id: str, step_id: str, field: str, key: str, by: str) -> Lesson:
+def _set_step_media(lesson_id: str, step_id: str, field: str, key: str) -> Lesson:
     lesson, _ = _draft_or_404(lesson_id)
     step = lesson.step(step_id)
     if step is None:
         raise HTTPException(404, "không tìm thấy bước này")
     setattr(step, field, key)
-    svc().lessons.save_draft(lesson_id, lesson, by=by)
+    svc().lessons.save_draft(lesson_id, lesson)
     return lesson
 
 
@@ -1566,10 +1542,8 @@ async def teach_model_audio(
         _probe(data, kind)
     blob_key = f"lesson-media-{lesson_id}-{step_id}-{_rand()}.{kind}"
     svc().blobs.put(blob_key, data)
-    key = svc().lessons.add_media(
-        lesson_id, "audio", AUDIO_TYPES.get(kind, "audio/wav"), blob_key, account.pseudonym
-    )
-    _set_step_media(lesson_id, step_id, "model_audio", key, account.pseudonym)
+    key = svc().lessons.add_media(lesson_id, "audio", AUDIO_TYPES.get(kind, "audio/wav"), blob_key)
+    _set_step_media(lesson_id, step_id, "model_audio", key)
     check = None
     if measured is not None:
         result = measured
@@ -1605,10 +1579,8 @@ async def teach_image(
         raise HTTPException(415, "chỉ nhận ảnh png, jpg hoặc webp")
     blob_key = f"lesson-media-{lesson_id}-{step_id}-{_rand()}.{kind}"
     svc().blobs.put(blob_key, data)
-    key = svc().lessons.add_media(
-        lesson_id, "image", IMAGE_TYPES[kind], blob_key, account.pseudonym
-    )
-    _set_step_media(lesson_id, step_id, "image", key, account.pseudonym)
+    key = svc().lessons.add_media(lesson_id, "image", IMAGE_TYPES[kind], blob_key)
+    _set_step_media(lesson_id, step_id, "image", key)
     return {"media_key": key, "url": _media_url(key)}
 
 
@@ -1798,14 +1770,17 @@ def teach_attempt(attempt_id: str, request: Request, account: Account = STAFF_ON
     found = lessons_repo.published(row["lesson_id"], row["lesson_version"])
     lesson = found[0] if found else None
     step = lesson.step(row["step_id"]) if lesson else None
-    names = svc().peers.identity.display_names(account_ids=[row["account_id"]])
+    by = row.get("overridden_by")
+    names = svc().peers.identity.display_names(
+        account_ids=[row["account_id"], *([by] if by else [])]
+    )
     name = names.get(row["account_id"], "?")
     return {
         **_attempt_view(row),
         "learner": name,
         "lesson": {"lesson_id": row["lesson_id"], "title": lesson.title if lesson else ""},
         "step": _step_view(step) if step else None,
-        "overridden_by": row.get("overridden_by"),
+        "overridden_by": names.get(by, "giảng viên") if by else None,
         "overridden_at": row.get("overridden_at"),
         "machine_passed": row["machine_passed"],
         "override": row.get("override"),
@@ -1827,7 +1802,7 @@ def teach_override(attempt_id: str, body: OverrideIn, account: Account = STAFF_O
     override = {"words": words, "note": body.note}
     if body.passed is not None:
         override["passed"] = body.passed
-    lessons_repo.set_override(attempt_id, override, account.pseudonym)
+    lessons_repo.set_override(attempt_id, override, account.account_id)
     _audit(
         account,
         "lesson.override",

@@ -31,7 +31,7 @@ from test_lessons_e2e import (  # noqa: E402, F401  (fixtures are used by name)
 pytestmark = pytest.mark.e2e
 
 
-def test_a_first_recording_is_congratulated_then_listed_as_new_once(student, live_server):
+def test_a_first_recording_is_congratulated_then_listed_as_reached(student, live_server):
     student.goto(f"/practice/lessons/{LESSON}")
     answer(student, live_server)
     expect(student.locator(".toast").last).to_contain_text("Thành tựu mới: Lượt nói đầu tiên")
@@ -41,15 +41,12 @@ def test_a_first_recording_is_congratulated_then_listed_as_new_once(student, liv
     student.goto("/my-progress#achievements")
 
     tile = student.locator(".ach", has_text="Lượt nói đầu tiên")
-    expect(tile).to_have_class(re.compile(r"\bis-unlocked\b.*\bis-new\b"))
-    expect(tile.locator(".ach-fresh")).to_have_text("Mới")
+    expect(tile).to_have_class(re.compile(r"\bis-unlocked\b"))
+    # D105: no "new" mark; the toast above said it once.
+    expect(student.locator(".ach-fresh")).to_have_count(0)
     locked = student.locator(".ach", has_text="Ba ngày liền")
     expect(locked).to_have_class(re.compile(r"\bis-locked\b"))
     expect(locked.get_by_role("progressbar")).to_have_attribute("aria-valuemax", "3")
-    # Seen once: the next visit shows it reached, no longer new.
-    student.reload()
-    expect(tile).to_have_class(re.compile(r"\bis-unlocked\b"))
-    expect(student.locator(".ach.is-new")).to_have_count(0)
     assert "band" not in student.locator("#achievements").inner_text().lower()
 
 

@@ -163,14 +163,14 @@ Script tự làm ba việc rồi mới mở máy chủ:
 3. **Tài khoản demo:** tạo bốn tài khoản (mật khẩu đều là `matkhau123`); chạy lại
    script thì tài khoản đã có được giữ nguyên:
 
-| Bút danh | Vai trò | Dùng để xem |
+| Email | Vai trò | Dùng để xem |
 |---|---|---|
-| `SV-001` | student | màn nộp bài, báo cáo của chính mình |
-| `SV-002` | student | kiểm tra sinh viên A **không** xem được bài sinh viên B |
-| `GV-01` | teacher | hàng đợi duyệt bài, khóa bài, sửa điểm |
-| `QT-01` | admin | trang quản trị, thống kê, nhật ký kiểm toán |
+| `sv-001@demo.speakup.fit` | student | màn nộp bài, báo cáo của chính mình |
+| `sv-002@demo.speakup.fit` | student | kiểm tra sinh viên A **không** xem được bài sinh viên B |
+| `gv-01@demo.speakup.fit` | teacher | hàng đợi duyệt bài, khóa bài, sửa điểm |
+| `qt-01@demo.speakup.fit` | admin | trang quản trị, thống kê, nhật ký kiểm toán |
 
-Mở http://localhost:8000, đăng nhập `SV-001` / `matkhau123`.
+Mở http://localhost:8000, đăng nhập `sv-001@demo.speakup.fit` / `matkhau123`.
 
 Nếu bạn muốn chạy tay thay vì qua script:
 
@@ -209,12 +209,12 @@ có ít nhất một thứ hỏng — đọc trường nào ghi `failed:` để 
 
 ### A.6. Thử một vòng đầy đủ
 
-1. Đăng nhập `SV-001`, chọn một đề, bấm ghi âm (trình duyệt sẽ xin quyền
+1. Đăng nhập `sv-001@demo.speakup.fit`, chọn một đề, bấm ghi âm (trình duyệt sẽ xin quyền
    micro — phải cho phép), nói **40–60 giây** rồi nộp.
    Đừng nói ngắn hơn 20 giây: hệ thống sẽ từ chối thẳng với mã
    `AUDIO_TOO_SHORT`, đó là hành vi đúng theo SRS chứ không phải lỗi.
 2. Trang tiến trình sẽ tự nhảy sang báo cáo.
-3. Đăng xuất, đăng nhập `GV-01`, vào `/review` để xem bài vừa nộp nếu nó bị
+3. Đăng xuất, đăng nhập `gv-01@demo.speakup.fit`, vào `/review` để xem bài vừa nộp nếu nó bị
    đẩy sang hàng đợi duyệt.
 
 **Ở chặng A bản chép lời là giả lập, nên điểm số vô nghĩa.** Đừng hoảng khi
@@ -350,7 +350,7 @@ Tạo tài khoản bên trong container:
 
 ```bash
 docker compose exec app python -m aicefr.accounts_cli them \
-  --but-danh SV-001 --vai-tro student
+  --email sv-001@demo.speakup.fit --vai-tro student
 ```
 
 ---
@@ -360,23 +360,18 @@ docker compose exec app python -m aicefr.accounts_cli them \
 ### Tạo thêm tài khoản
 
 ```bash
-.venv/bin/python -m aicefr.accounts_cli them --but-danh SV-003 --vai-tro student
+.venv/bin/python -m aicefr.accounts_cli them --email sv-003@truong.edu.vn --vai-tro student
 ```
 
 Bỏ `--mat-khau` thì CLI hỏi kín, mật khẩu không lọt vào lịch sử lệnh. Vai trò
 hợp lệ: `student`, `teacher`, `admin`.
 
-Quy tắc bắt buộc: bút danh **không được** là họ tên thật hay MSSV. Đây là yêu
-cầu bảo vệ dữ liệu cá nhân (FR-33), không phải quy ước đặt tên cho đẹp.
-
-`validate_pseudonym` chặn được: ký tự ngoài `A-Z a-z 0-9 - _`, độ dài ngoài
-khoảng 2–32, các chuỗi `mssv` `cmnd` `cccd` `sdt` `phone`, và dãy thuần số dài
-7–12 chữ số. Nó **không** đoán được `vothanhsang` là tên người — phần đó là
-trách nhiệm của bạn khi đặt bút danh. Cứ theo mẫu `SV-001`, `GV-01` cho chắc.
+Mỗi email chỉ có một tài khoản (D103). Tài khoản mẫu dùng tên miền
+`demo.speakup.fit`, không nhận thư.
 
 ```bash
 .venv/bin/python -m aicefr.accounts_cli liet-ke              # xem có những ai
-.venv/bin/python -m aicefr.accounts_cli mo-khoa --but-danh SV-001   # gỡ khóa khi nhập sai nhiều lần
+.venv/bin/python -m aicefr.accounts_cli mo-khoa --email sv-001@demo.speakup.fit   # gỡ khóa khi nhập sai nhiều lần
 ```
 
 ### Làm lại từ đầu khi dữ liệu thử rối

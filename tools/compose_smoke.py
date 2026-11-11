@@ -93,11 +93,11 @@ class Browser:
             except ValueError:
                 return e.code, raw.decode(errors="replace")
 
-    def login(self, pseudonym: str, password: str) -> Browser:
+    def login(self, email: str, password: str) -> Browser:
         status, body = self.call(
-            "POST", "/api/v1/auth/login", {"pseudonym": pseudonym, "password": password}
+            "POST", "/api/v1/auth/login", {"email": email, "password": password}
         )
-        check(status == 200, f"login {pseudonym}", body)
+        check(status == 200, f"login {email}", body)
         return self
 
 
@@ -111,11 +111,11 @@ def check(ok: bool, what: str, detail=None) -> None:
         sys.exit(1)
 
 
-def create_account(pseudonym: str, role: str) -> str:
+def create_account(email: str, role: str) -> str:
     password = secrets.token_urlsafe(18)
     subprocess.run(
         ["docker", "compose", "exec", "-T", "core", "python", "-m", "aicefr.accounts_cli",
-         "them", "--but-danh", pseudonym, "--vai-tro", role, "--mat-khau", password],
+         "them", "--email", email, "--vai-tro", role, "--mat-khau", password],
         check=True,
         capture_output=True,
     )  # fmt: skip
@@ -143,7 +143,7 @@ def main(argv: list[str] | None = None) -> int:
         TLS_CONTEXT.check_hostname = False
         TLS_CONTEXT.verify_mode = ssl.CERT_NONE
     tag = secrets.token_hex(2).upper()
-    student_id, admin_id = f"SV-{tag}", f"QT-{tag}"
+    student_id, admin_id = f"sv-{tag.lower()}@smoke.test.vn", f"qt-{tag.lower()}@smoke.test.vn"
     student_pw, admin_pw = create_account(student_id, "student"), create_account(admin_id, "admin")
 
     anon = Browser(args.base)
@@ -152,14 +152,14 @@ def main(argv: list[str] | None = None) -> int:
     status, _ = anon.call("GET", "/internal/identity/session")
     check(status == 404, "gateway: /internal/ is never forwarded")
     forged = base64.urlsafe_b64encode(
-        json.dumps({"account_id": "x", "pseudonym": "QT-99", "role": "admin"}).encode()
+        json.dumps({"account_id": "x", "email": "qt-99@smoke.test.vn", "role": "admin"}).encode()
     ).decode()
     status, _ = anon.call("GET", "/api/v1/stats", headers={"X-Aicefr-Account": forged})
     check(status == 401, "gateway: an account header sent by the browser is ignored")
 
     student = Browser(args.base).login(student_id, student_pw)
     status, me = student.call("GET", "/api/v1/me")
-    check(status == 200 and me["pseudonym"] == student_id, "core: who am I")
+    check(status == 200 and me["email"] == student_id, "core: who am I")
     status, terms = student.call("POST", "/api/v1/me/terms")
     check(status == 200 and terms["may_submit"], "core: terms accepted")
 

@@ -516,12 +516,11 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
 }
 
 // ---------------------------------------------------------------- badges
-// How many things wait behind a sidebar item (D028): teacher decisions a
-// student has not seen, reviews due today, the review queue. A
-// number for the eye and a sentence for a screen reader; nothing at zero.
+// How many things wait behind a sidebar item (D028): reviews due today, the
+// review queue. A number for the eye and a sentence for a screen reader;
+// nothing at zero.
 {
   const BADGE_WORDS = {
-    results: "kết quả mới được giảng viên xác nhận",
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
   };

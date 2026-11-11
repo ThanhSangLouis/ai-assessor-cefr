@@ -48,15 +48,15 @@ def fake(monkeypatch):
     return model
 
 
-def ready(m, pseudonym: str):
-    student = login_as(m, pseudonym)
+def ready(m, name: str):
+    student = login_as(m, name)
     rid = submit_assessment(student)
     scored(m, rid)
     return student, rid
 
 
-def ledger(m, pseudonym: str) -> list[dict]:
-    return m.core_parts.state["metering"].history(account_id(m, pseudonym))
+def ledger(m, name: str) -> list[dict]:
+    return m.core_parts.state["metering"].history(account_id(m, name))
 
 
 # ================================================================= the price itself
@@ -210,11 +210,11 @@ def test_metered_an_upgrade_is_charged_with_its_tokens(tmp_path, monkeypatch, fa
     coach = student.get(f"/api/v1/responses/{rid}/coach").json()
     assert coach["price"] == {"runs": 0.3, "idpoint": 600}
     made = student.post(f"/api/v1/responses/{rid}/upgrade").json()
-    # The tokens are the ledger's and the day's, not the upgrade's own.
+    # The tokens are the day's, not the upgrade's own.
     assert "input_tokens" not in made
     entry = next(e for e in ledger(m, "SV-M01") if e["action"] == "upgrade")
     assert (entry["state"], entry["charged"]) == ("charged", 300)
-    assert (entry["input_tokens"], entry["output_tokens"]) == (812, 233)
+    assert "input_tokens" not in entry  # D105: the day's counters keep them, not the ledger
     # Made once: asking again returns it and charges nothing more.
     student.post(f"/api/v1/responses/{rid}/upgrade")
     assert sum(e["action"] == "upgrade" for e in ledger(m, "SV-M01")) == 1

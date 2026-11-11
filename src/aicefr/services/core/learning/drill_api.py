@@ -131,7 +131,6 @@ async def drill_take(
             account.account_id,
             response_id,
             found.word,
-            found.index,
             found.phrase,
             verdict.passed,
             verdict.said,
@@ -226,36 +225,29 @@ def make_passage(body: PassageIn, account: Account = STUDENT_ONLY) -> dict:
     if kept is not None and not body.fresh and kept.source == body.source:
         return kept.view()
     passage_id = new_id("p")
-    band = _band(account)
     if body.source == "phrases":
         try:
             made = passages.from_phrases([d.phrase for d in chosen], words)
         except UpgradeError as e:  # pragma: no cover - each phrase holds its word
             raise HTTPException(409, str(e)) from e
-        saved = DrillPassage(passage_id, account.account_id, band, words, ids, made.text, "phrases")
+        saved = DrillPassage(passage_id, account.account_id, words, ids, made.text, "phrases")
         return drills.save_passage(saved).view()
     if _daily_left(account) <= 0:
         raise HTTPException(
             429, f"mỗi ngày AI viết được tối đa {svc().passage_daily} đoạn cho bạn, hãy thử lại sau"
         )
     written = svc().peers.assessment.write_passage(
-        account_id=account.account_id, band=band, words=words, key=f"passage-{passage_id}"
+        account_id=account.account_id, band=_band(account), words=words, key=f"passage-{passage_id}"
     )
     if "refused" in written:
         raise HTTPException(int(written.get("status") or 502), written["refused"])
     saved = DrillPassage(
         passage_id,
         account.account_id,
-        band,
         words,
         ids,
         written["text"],
         "model",
-        provider=written.get("provider"),
-        model=written.get("model"),
-        prompt_version=written.get("prompt_version"),
-        input_tokens=written.get("input_tokens"),
-        output_tokens=written.get("output_tokens"),
     )
     svc().audit_log.write(account.account_id, "drill.passage", passage_id, f"words={len(words)}")
     return drills.save_passage(saved).view()
@@ -300,7 +292,7 @@ async def passage_take(passage_id: str, audio: UploadFile, account: Account = ST
             d = by_word.get(word)
             if d is not None:  # a drill erased since: the reading still shows, nothing to count
                 made = drills.record(
-                    account.account_id, d.response_id, d.word, d.word_index, d.phrase,
+                    account.account_id, d.response_id, d.word, d.phrase,
                     verdict.passed, verdict.said,
                 )  # fmt: skip
                 item["drill"] = made.view()

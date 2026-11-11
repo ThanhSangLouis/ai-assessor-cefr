@@ -14,7 +14,7 @@ A repository names its store with one string:
 
 Each table of the former SQL schema is a collection of the same name, each row
 a document with the same field names, so the repositories still read
-`row["pseudonym"]`. A document's `_id` is MongoDB's own and never leaves this
+`row["email"]`. A document's `_id` is MongoDB's own and never leaves this
 package; it orders documents by insertion where SQLite's `rowid` once did.
 What a primary key or a UNIQUE constraint guaranteed, a unique index guarantees
 (`ensure_indexes`); an `INTEGER PRIMARY KEY AUTOINCREMENT` is a counter

@@ -27,7 +27,8 @@ def main():
             base_url=args.base_url, viewport={"width": 1440, "height": 1000}
         )
         auth = context.request.post(
-            "/api/v1/auth/login", data={"identifier": "SV-001", "password": "matkhau123"}
+            "/api/v1/auth/login",
+            data={"identifier": "sv-001@demo.speakup.fit", "password": "matkhau123"},
         )
         assert auth.ok, "Local demo account is required"
         original = context.request.get("/api/v1/learn").json()

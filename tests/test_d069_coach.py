@@ -140,9 +140,8 @@ def scored(m, rid: str, band: str = "B1", score: float = 3.2) -> None:
     )
     store()["response"].update_one(
         {"response_id": rid},
-        {"$set": {"status": "COMPLETED", "overall_0_6": score, "overall_band": band,
-                  "report_json": report.model_dump_json()}},
-    )  # fmt: skip
+        {"$set": report.model_dump(mode="json", exclude={"reviews", "upgrade"})},
+    )
 
 
 @pytest.fixture

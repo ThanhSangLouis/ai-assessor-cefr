@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 from test_lessons_integration import (  # noqa: F401  (the fixture `m` is used by name)
     account_id,
     login_as,
@@ -43,7 +44,7 @@ def test_without_an_assessment_the_suggestion_starts_at_a1(m):
 def test_the_latest_assessment_suggests_where_to_start(m):
     student = login_as(m, "SV-001")
     acc = account_id(m, "SV-001")
-    m.repo.save(scored("as-1", Band.B1, [Criterion.FLUENCY]), "SV-001", "P3", account_id=acc)
+    m.repo.save(scored("as-1", Band.B1, [Criterion.FLUENCY]), "P3", account_id=acc)
     d = student.get(BANDS).json()
     assert (d["assessed_band"], d["suggested_from"], d["suggested_to"]) == ("B1", "B1", "B2")
 
@@ -76,14 +77,16 @@ def test_a_class_shows_each_learners_bands_and_a_teacher_assigns_a_path(m):
     an.post(BANDS, json={"band_from": "A2", "band_to": "B1"})
     made = teacher.post("/api/v1/classes", json={"name": "Lớp B1"}).json()
     teacher.post(
-        f"/api/v1/classes/{made['class_id']}/members", json={"people": ["SV-001", "SV-002"]}
+        f"/api/v1/classes/{made['class_id']}/members",
+        json={"people": [email_of("SV-001"), email_of("SV-002")]},
     )
     members = {
-        r["pseudonym"]: r["bands"]
+        r["email"]: r["bands"]
         for r in teacher.get(f"/api/v1/classes/{made['class_id']}").json()["members"]
     }
-    assert members["SV-001"]["band_from"] == "A2" and members["SV-001"]["band_to"] == "B1"
-    assert members["SV-002"] is None
+    an_bands = members[email_of("SV-001")]
+    assert an_bands["band_from"] == "A2" and an_bands["band_to"] == "B1"
+    assert members[email_of("SV-002")] is None
 
     path = next(p for p in teacher.get("/api/v1/teach/paths").json() if p["status"] == "published")
     ids = [account_id(m, "SV-001"), account_id(m, "SV-002")]

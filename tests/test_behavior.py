@@ -46,7 +46,6 @@ FOOTBALL = (
 def req() -> ProcessingRequest:
     return ProcessingRequest(
         response_id="r1",
-        speaker_id="SV-001",
         task_id="P4",
         audio_path="khong-dung-den.wav",
         prompt_version="v1",

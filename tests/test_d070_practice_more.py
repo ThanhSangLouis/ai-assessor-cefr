@@ -11,7 +11,6 @@
 
 from __future__ import annotations
 
-import json
 from datetime import UTC, datetime, timedelta
 
 from dbutil import store
@@ -22,6 +21,7 @@ from aicefr.coach import phrasebook
 from aicefr.report import habits
 
 NOW = datetime(2026, 10, 31, 9, 0, tzinfo=UTC)
+TODAY = NOW.date()
 
 
 def upgrade(rid: str, phrases: list[dict], at: str = "2026-10-30T08:00:00+00:00") -> dict:
@@ -44,35 +44,40 @@ def test_one_card_per_phrase_with_the_sentence_that_used_it():
                 "r2", [{"phrase": "on  balance", "meaning_vi": "khác"}, {"phrase": "keeps me"}]
             ),
         ],
-        NOW,
+        {},
+        TODAY,
     )
     assert [c["key"] for c in cards] == ["on balance", "keeps me"]
     first = cards[0]
     assert first["response_id"] == "r1" and first["meaning_vi"] == "cân nhắc mọi mặt"
     assert first["example"] == "On balance, I prefer the class."
-    assert first["box"] == 0 and phrasebook.due_today(cards, NOW)[0]["key"] == "on balance"
+    assert first["box"] == 0 and first["due"] == "2026-10-30"  # due from the day it was offered
+    assert phrasebook.due_today(cards, TODAY)[0]["key"] == "on balance"
+    # A review record (D104) says where a phrase is.
+    moved = phrasebook.cards([upgrade("r1", [{"phrase": "On balance"}])],
+                             {"on balance": {"box": 2, "due": "2026-11-03"}}, TODAY)  # fmt: skip
+    assert (moved[0]["box"], moved[0]["due"]) == (2, "2026-11-03")
 
 
 def test_remembered_moves_up_a_box_and_forgotten_comes_back_tomorrow():
-    card = {"box": 0, "reviews": 0}
-    once = phrasebook.reviewed(card, True, NOW)
-    assert once["box"] == 1 and once["due"] == "2026-11-01T09:00:00+00:00"
-    twice = phrasebook.reviewed({**card, **once}, True, NOW)
-    assert twice["box"] == 2 and twice["due"] == "2026-11-03T09:00:00+00:00"
-    lost = phrasebook.reviewed({**card, **twice}, False, NOW)
-    assert lost["box"] == 1 and lost["reviews"] == 3
-    top = phrasebook.reviewed({"box": phrasebook.LAST_BOX, "reviews": 9}, True, NOW)
+    card = {"box": 0}
+    once = phrasebook.reviewed(card, True, TODAY)
+    assert once == {"box": 1, "due": "2026-11-01"}
+    twice = phrasebook.reviewed({**card, **once}, True, TODAY)
+    assert twice == {"box": 2, "due": "2026-11-03"}
+    lost = phrasebook.reviewed({**card, **twice}, False, TODAY)
+    assert lost == {"box": 1, "due": "2026-11-01"}
+    top = phrasebook.reviewed({"box": phrasebook.LAST_BOX}, True, TODAY)
     assert top["box"] == phrasebook.LAST_BOX
 
 
 def test_a_day_asks_for_a_few_cards_the_longest_waiting_first():
     phrases = [{"phrase": f"p{i}", "meaning_vi": "x"} for i in range(8)]
-    cards = phrasebook.cards([upgrade("r1", phrases)], NOW)
-    later = (NOW + timedelta(days=2)).isoformat(timespec="seconds")
-    cards[0]["due"] = later
-    due = phrasebook.due_today(cards, NOW)
+    cards = phrasebook.cards([upgrade("r1", phrases)], {}, TODAY)
+    cards[0]["due"] = (TODAY + timedelta(days=2)).isoformat()
+    due = phrasebook.due_today(cards, TODAY)
     assert len(due) == phrasebook.PER_DAY and "p0" not in [c["key"] for c in due]
-    assert phrasebook.summary(cards, NOW)["due_count"] == 7
+    assert phrasebook.summary(cards, TODAY)["due_count"] == 7
 
 
 # ================================================================= the phrase book, served
@@ -93,9 +98,13 @@ def test_the_upgrade_fills_the_phrase_book_and_a_review_moves_the_card(m, coach_
     assert r.status_code == 200 and r.json()["box"] == 1
     book = student.get("/api/v1/me/phrases").json()
     assert book["due"] == [] and book["cards"][0]["box"] == 1
-    # Kept with the upgrade it came from: erased with the response.
+    # D104: the upgrade keeps the phrase's words; its box is a review item of kind "phrase".
     kept = store()["response"].find_one({"response_id": rid})["coach_upgrade"]["phrases"][0]
-    assert kept["box"] == 1 and kept["reviews"] == 1
+    assert set(kept) == {"phrase", "meaning_vi"}
+    item = m.lessons.col("review_item").find_one({"kind": "phrase"})
+    assert (item["word"], item["box"], item["done"]) == ("on balance", 1, 0)
+    # Phrases stay out of the lesson reviews and their count.
+    assert student.get("/api/v1/learn").json()["reviews_due"] == 0
 
     missing = student.post("/api/v1/me/phrases/review", json={"key": "nope", "remembered": True})
     assert missing.status_code == 404
@@ -160,19 +169,22 @@ def test_the_report_and_the_retell_page_load_the_voice(m):
 
 
 def test_the_report_carries_the_upgrade_and_its_cards_as_the_contract_says(m, coach_on):
-    """Response ◆ CoachUpgrade ◆ PhraseCard: the class diagram's parts are real fields."""
-    from aicefr.contracts import PhraseCard
+    """Response ◆ CoachUpgrade, its phrases a list of words: the diagram's parts are real fields."""
 
     student = login_as(m, "SV-P07")
     rid = submit_assessment(student)
     scored(m, rid)
     assert student.get(f"/api/v1/responses/{rid}").json()["upgrade"] is None
-    student.post(f"/api/v1/responses/{rid}/upgrade")
+    made = student.post(f"/api/v1/responses/{rid}/upgrade")
+    assert made.status_code == 200, made.text
     student.post("/api/v1/me/phrases/review", json={"key": "on balance", "remembered": True})
     up = student.get(f"/api/v1/responses/{rid}").json()["upgrade"]
-    assert (up["from_band"], up["to_band"], up["model"]) == ("B1", "B2", "llama-3.3-70b-versatile")
-    card = PhraseCard(**up["phrases"][0])
-    assert card.box == 1 and not card.is_due("2026-01-01T00:00:00+00:00")
+    assert (up["from_band"], up["to_band"]) == ("B1", "B2")
+    assert "model" not in up and "provider" not in up  # D103: no model name with the learner
+    assert up["phrases"][0] == {
+        "phrase": "on balance",
+        "meaning_vi": up["phrases"][0]["meaning_vi"],
+    }
     # Kept beside the stored report, never inside it.
     row = store()["response"].find_one({"response_id": rid})
-    assert json.loads(row["report_json"]).get("upgrade") is None and row["coach_upgrade"]
+    assert "upgrade" not in row and row["coach_upgrade"]

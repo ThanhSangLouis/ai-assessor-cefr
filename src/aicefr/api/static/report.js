@@ -922,9 +922,6 @@ function coachUpgrade(u) {
     .join("");
   return (
     `<h3 class="block-title">Bài của bạn ở mức ${escapeHtml(u.to_band)} <span class="muted">(gợi ý của AI, có thể sai)</span></h3>` +
-    // Which model wrote it, so a reader can weigh it and a teacher can report it.
-    `<p class="muted small-note coach-model">Viết bởi <code>${escapeHtml(u.model || "?")}</code>` +
-    ` (${escapeHtml(u.provider || "?")}) lúc ${escapeHtml(window.ui.localTime(u.created_at))}.</p>` +
     // D070: listen to it and say it after the voice, sentence by sentence.
     '<div class="shadow-host"></div>' +
     (changes ? `<h4>Các chỗ đổi</h4><ul class="coach-changes">${changes}</ul>` : "") +

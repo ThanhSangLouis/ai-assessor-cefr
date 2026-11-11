@@ -41,6 +41,7 @@ from urllib.parse import urlparse
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import email_of
 
 pytest.importorskip("playwright.sync_api")
 
@@ -80,9 +81,9 @@ class LiveServer:
         """Create a fresh account for one test: every test gets its own data."""
         from aicefr.storage.auth_repository import AuthRepository, Role
 
-        pseudonym = f"E2E-{role[:2].upper()}-{next(_counter):03d}"
-        AuthRepository(self.db_path).create_account(pseudonym, PASSWORD, Role(role))
-        return pseudonym
+        email = email_of(f"E2E-{role[:2].upper()}-{next(_counter):03d}")
+        AuthRepository(self.db_path).create_account(email, PASSWORD, Role(role))
+        return email
 
     def teach(self, teacher: str, *students: str) -> str:
         """D071: a class the teacher teaches, with these students; returns its id."""
@@ -91,9 +92,11 @@ class LiveServer:
 
         auth = AuthRepository(self.db_path)
         rooms = ClassroomRepository(self.db_path)
-        made = rooms.create(f"Lớp của {teacher}", [auth.get_by_pseudonym(teacher)["account_id"]])
+        made = rooms.create(
+            f"Lớp của {teacher}", [auth.get_by_email(email_of(teacher))["account_id"]]
+        )
         for s in students:
-            rooms.add_member(made["class_id"], auth.get_by_pseudonym(s)["account_id"])
+            rooms.add_member(made["class_id"], auth.get_by_email(email_of(s))["account_id"])
         return made["class_id"]
 
 
@@ -202,10 +205,10 @@ def context(browser, live_server):
 pytestmark = pytest.mark.e2e
 
 
-def login(page, server, pseudonym: str, next_path: str = "/practice") -> None:
+def login(page, server, name: str, next_path: str = "/practice") -> None:
     """Log in through the real form, then wait for the target page."""
     page.goto(f"/login?next={next_path}")
-    page.get_by_label("Email", exact=True).fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(name)
     page.get_by_label("Mật khẩu", exact=True).fill(server.password)
     page.get_by_role("button", name="Đăng nhập", exact=True).click()
     # Compare the PATH, not the URL's tail: "/login?next=/practice" also ends in

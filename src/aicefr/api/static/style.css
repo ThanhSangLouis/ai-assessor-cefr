@@ -5886,17 +5886,6 @@ h1:has(> .head-icon) { display: flex; align-items: center; gap: var(--sp-3); }
   }
 }
 
-/* "New since you last looked", on a row of the student's own list. */
-.new-chip {
-  display: inline-block;
-  padding: 1px var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--t-xs);
-  font-weight: 700;
-}
-
 .small-note { font-size: var(--t-sm); }
 
 /* The account page: the password form wider, the facts beside it. */
@@ -5960,6 +5949,7 @@ label.check-row {
 }
 .inline-form .field { display: grid; min-width: 150px; }
 .inline-form .field[hidden] { display: none; }
+.inline-form .field-wide { flex: 1 1 280px; }
 .inline-form label { margin: 0 0 var(--sp-2); }
 .inline-form .button-row { flex-basis: 100%; margin-top: var(--sp-1); }
 
@@ -6318,20 +6308,6 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
 
 /* --- D032: achievements, the record, the week -------------------------------------- */
 
-/* A new achievement, marked on the progress page's tile. */
-.ach-fresh {
-  display: inline-block;
-  padding: 0 var(--sp-2);
-  border-radius: var(--r-pill);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: var(--t-xs);
-  font-weight: 700;
-  line-height: 20px;
-  vertical-align: 1px;
-  white-space: nowrap;
-}
-
 /* The progress page's list: one tile per achievement, grouped. A tile reached
    is a filled medal; one not reached yet keeps its words readable and shows
    how far it is -- dimmed medals, never dimmed text. */
@@ -6355,7 +6331,6 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
   border-radius: var(--r-lg);
   background: var(--bg-elevated);
 }
-.ach.is-new { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
 .ach-medal {
   flex: none;
   width: 44px;
@@ -6374,10 +6349,6 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
 .ach-desc { font-size: var(--t-sm); color: var(--fg-muted); line-height: 1.45; }
 .ach-state { font-size: var(--t-xs); color: var(--fg-muted); font-variant-numeric: tabular-nums; }
 .ach.is-unlocked .ach-state { color: var(--ok); font-weight: 600; }
-@media (prefers-reduced-motion: no-preference) {
-  .ach.is-new .ach-medal { animation: medal-in 520ms var(--ease-out) both; }
-}
-@keyframes medal-in { from { scale: 0.6; opacity: 0; } }
 
 /* --- D033: service plans, payment, receipts ------------------------------------------- */
 

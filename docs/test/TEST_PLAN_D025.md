@@ -158,6 +158,7 @@ Tệp: `tests/test_lessons_unit.py`.
 | TC-LS-I37 | `test_next_lesson_follows_the_weakest_criterion` | AC-50.2 | Thuận | Band B1, tiêu chí yếu nhất Range: bài nên học là bài chưa xong đầu tiên của chặng Range B1 |
 | TC-LS-I38 | `test_units_carry_their_topic_through_the_api_export_and_import` | FR-47 | Thuận | Chủ đề của chặng đi qua API, sửa được, chủ đề lạ bị từ chối, giữ nguyên khi xuất rồi nhập (D027) |
 | TC-LS-I39 | `test_an_older_sample_path_is_laid_out_by_topic_once` | FR-45 | Biên | Cơ sở dữ liệu có lộ trình mẫu kiểu cũ (chưa có chủ đề) được xếp lại theo chủ đề đúng một lần: lượt luyện giữ nguyên, chặng của giảng viên giữ nguyên, lần khởi động sau không đè thay đổi của giảng viên (D027) |
+| TC-LS-I41 | `test_saving_an_unchanged_draft_leaves_nothing_to_publish` | FR-45 | Hồi quy | D105: "có sửa đổi chưa xuất bản" tính bằng cách so bài nháp với phiên bản đang xuất bản dưới dạng `Lesson`; lưu lại bài không đổi (kể cả khi phiên bản cũ thiếu trường mặc định) không bật nhãn, sửa tên thì bật, xuất bản thì tắt |
 | TC-LS-I40 | `test_band_entry_open_but_later_lessons_require_completion` | FR-45 | Biên | Bài đầu mỗi band mở sẵn, các bài sau khoá; bài khoá trả 403 cả khi xem lẫn khi nộp (chặn trước khi đọc âm thanh); xong bài đầu thì mở đúng bài kế (Thắng, f84b377) |
 
 Tệp: `tests/test_lessons_integration.py`.

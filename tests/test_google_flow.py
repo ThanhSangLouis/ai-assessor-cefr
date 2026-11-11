@@ -72,7 +72,7 @@ def test_behind_tls_the_flow_cookie_is_a_host_cookie(tmp_path, monkeypatch):
     flow = google.decode_flow(browser.cookies.get(google.SECURE_COOKIE_NAME), key)
     done, _ = finish(monkeypatch, browser, flow, sub="google-sub-1")
     assert done.headers["location"] == "/practice"
-    assert browser.get("/api/v1/me").json()["pseudonym"] == "SV-001"
+    assert browser.get("/api/v1/me").json()["account_id"] == account_id(m, "SV-001")
     gone = [h for h in done.headers.get_list("set-cookie") if h.startswith("__Host-aicefr_oauth")]
     assert gone and "Max-Age=0" in gone[0]
 

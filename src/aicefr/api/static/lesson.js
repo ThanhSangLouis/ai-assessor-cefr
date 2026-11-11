@@ -632,8 +632,7 @@ function showSummary() {
 
 // ---------------------------------------------------------------- submit
 
-// Achievements this recording just reached (D032), said once in a toast. They
-// stay "new" until the learner opens the list on the progress page.
+// Achievements this recording just reached (D032), said once in a toast.
 function celebrate(list) {
   if (!Array.isArray(list) || !list.length) return;
   const names = list.map((a) => a.title).join(", ");

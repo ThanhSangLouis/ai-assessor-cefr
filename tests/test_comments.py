@@ -165,7 +165,6 @@ def test_bao_cao_that_co_nhan_xet_va_uu_tien(tone, sr) -> None:
     report = ResponseProcessor(asr_engine=FakeAsrEngine()).process(
         ProcessingRequest(
             response_id="r-1",
-            speaker_id="SV-001",
             task_id="P3",
             audio_path="x.wav",
             prompt_version="v1",

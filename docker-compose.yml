@@ -2,7 +2,7 @@
 #
 #   cp .env.example .env    # set the two keys and the passwords
 #   docker compose up --build
-#   docker compose exec core python -m aicefr.accounts_cli them --but-danh QT-01 --vai-tro admin
+#   docker compose exec core python -m aicefr.accounts_cli them --email qt-01@demo.speakup.fit --vai-tro admin
 #
 # Then open http://localhost:8000. Only the gateway publishes a port; the
 # services, MongoDB and Redis are reachable from each other only.

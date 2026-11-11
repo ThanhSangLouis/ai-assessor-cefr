@@ -432,7 +432,6 @@ Thêm 06/10/2026 (D023). Trang chính của chế độ luyện tập, cho sinh 
 | GET | `/api/v1/practice/tasks/{task_id}` | FR-40 (D023) |
 | GET | `/api/v1/practice/attempts/{id}` | FR-41, FR-43 (D023); chỉ chủ bài, bài khác hoặc bài đánh giá trả 404 |
 | GET | `/api/v1/me/achievements` | FR-65 (D032); chỉ của chính người gọi, lưu luôn những thành tựu vừa đạt |
-| POST | `/api/v1/me/achievements/seen` | FR-65 (D032); thân `{"codes": [...]}` hoặc rỗng là mọi thành tựu mới |
 | GET | `/api/v1/plan` | FR-67 (D034); giảng viên và quản trị viên |
 | GET, POST, PATCH | `/api/v1/admin/billing`, `/quote`, `/orders`, `/license`, `/organization` | FR-67..FR-70 (D034); quản trị viên |
 | GET | `/api/v1/billing/notify/{gateway}` | FR-69 (D034); máy chủ của cổng gọi, chữ ký là thứ xác thực |
@@ -458,7 +457,7 @@ sẽ hỏng và phải sửa theo, không được nới lỏng test để nó x
 
 Bảng `response` thêm `account_id`.
 
-D032: bảng `achievement(account_id, code, unlocked_at, seen_at)`, khoá chính
+D032: bảng `achievement(account_id, code, unlocked_at)` (D103 gỡ `seen_at`), khoá chính
 `(account_id, code)`; `GET /api/v1/learn` trả thêm `today.best_streak`, `today.rest_days`,
 `today.week_seconds`, `today.last_week_seconds` và khối `achievements`; hai API lượt luyện
 trả thêm `achievements` (những thành tựu lượt đó vừa đạt).

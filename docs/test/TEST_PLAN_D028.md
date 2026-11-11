@@ -72,15 +72,15 @@ Tiêu chí chấp nhận AC-51.1..AC-55.2 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PC-I02 | `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout` | AC-51.2 | Năm lần sai mật khẩu hiện tại thì khoá như đăng nhập sai |
 | TC-PC-I03 | `test_the_password_policy_says_what_is_wrong` | AC-51.3 | Bốn trường hợp bị từ chối, mỗi trường hợp một lý do |
 | TC-PC-I04 | `test_signing_out_other_devices_keeps_this_one` | AC-51.4 | Đăng xuất thiết bị khác, giữ phiên này |
-| TC-PC-I05 | `test_the_account_page_needs_a_login_and_shows_the_pseudonym` | AC-51.5 | Khách bị đưa về đăng nhập; người dùng thấy bút danh |
-| TC-PC-I06 | `test_a_series_continues_the_numbering_with_one_time_passwords` | AC-52.1 | Dãy đánh số tiếp nối, mật khẩu tạm đúng mẫu và khác nhau, `no-store`, không lộ băm |
+| TC-PC-I05 | `test_the_account_page_needs_a_login_and_shows_the_email` | AC-51.5 | Khách bị đưa về đăng nhập; người dùng thấy email của mình |
+| TC-PC-I06 | `test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords` | AC-52.1 | Mỗi email một tài khoản (D103), mật khẩu tạm đúng mẫu và khác nhau, `no-store`, không lộ băm |
 | TC-PC-I07 | `test_a_temporary_password_opens_nothing_but_the_password_change` | AC-52.2 | Cổng mật khẩu tạm ở API và ở trang; đổi xong về trang chính của vai trò |
-| TC-PC-I08 | `test_creating_accounts_is_all_or_nothing_and_checks_names` | AC-52.5 | Bút danh trùng, ký tự lạ, giống mã số sinh viên, tiền tố sai, quá 200: không tạo gì |
+| TC-PC-I08 | `test_creating_accounts_is_all_or_nothing_and_checks_emails` | AC-52.5 | Email đã có, sai dạng, trùng trong danh sách, quá 200: không tạo gì |
 | TC-PC-I09 | `test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password` | AC-52.3 | Cấp lại mật khẩu tạm kết thúc phiên; không tự cấp cho mình; 404 khi không có tài khoản |
 | TC-PC-I10 | `test_a_disabled_account_is_signed_out_and_cannot_sign_in` | AC-52.4 | Tắt thì đăng xuất ngay; không tự tắt; bật lại thì đăng nhập được |
 | TC-PC-I11 | `test_an_administrator_lifts_a_lockout` | AC-52.7 | Gỡ khoá sau năm lần đăng nhập sai |
 | TC-PC-I12 | `test_only_an_administrator_manages_accounts` | AC-52.6 | Sinh viên và giảng viên nhận 403 ở mọi API quản lý tài khoản |
-| TC-PC-I13 | `test_a_teacher_decision_is_new_until_the_student_opens_their_list` | AC-53.1 | Con số "kết quả mới" tăng khi giảng viên quyết định, về 0 khi đã xem |
+| TC-PC-I13 | `test_a_student_badge_counts_only_reviews_due` | AC-53.1 | D103: sinh viên chỉ còn con số ôn tập đến hạn, không còn "kết quả mới" |
 | TC-PC-I14 | `test_a_teacher_sees_how_many_responses_wait_for_review` | AC-53.2 | Con số hàng đợi bằng số bài chờ duyệt |
 | TC-PC-I15 | `test_the_sidebar_carries_a_slot_for_each_count` | AC-53.3 | Chỗ hiện con số có trên thanh điều khiển của mỗi vai trò |
 | TC-PC-I16 | `test_the_band_page_labels_what_the_machine_does_not_measure` | AC-54.1 | Ngưỡng của mô hình, nhãn "máy không đo" và "không đánh giá", giới hạn với người nói lắp |
@@ -104,7 +104,6 @@ Tiêu chí chấp nhận AC-51.1..AC-55.2 nằm ở `docs/srs/SRS.md`, mục 3.9
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
 | TC-PC-E01 | `test_an_administrator_hands_out_an_account_and_its_first_login_sets_a_password` | AC-52.1 | Tạo tài khoản, đọc mật khẩu tạm trên phiếu, ẩn phiếu; người mới đăng nhập ở trình duyệt khác bị đưa về `/account` dù định đi đâu, đổi mật khẩu rồi về hàng đợi |
-| TC-PC-E02 | `test_a_teacher_decision_is_a_count_until_the_student_opens_their_list` | AC-53.1 | Sinh viên nộp bài, giảng viên quyết định; con số hiện trên thanh điều khiển, mở "Bài của tôi" thì có nhãn "Mới xác nhận" và con số ẩn |
 | TC-PC-E03 | `test_thirty_seconds_of_preparation_then_the_answer_is_recorded` | AC-55.2 | Đồng hồ chạy, huỷ về 30; "Nói ngay" bật ghi âm bằng micro giả, dừng để nghe lại |
 | TC-PC-E04 | `test_the_band_page_says_what_the_machine_does_not_measure` | AC-54.1 | Trang band cho khách: hai mặt "máy không đo", ba bậc band, đường dẫn ở chân trang |
 

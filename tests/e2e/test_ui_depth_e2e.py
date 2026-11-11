@@ -100,9 +100,8 @@ def scored(live_server, response_id: str) -> None:
     )
     database(live_server.db_path)["response"].update_one(
         {"response_id": response_id},
-        {"$set": {"overall_0_6": 3.62, "overall_band": "B1",
-                  "report_json": report.model_dump_json()}},
-    )  # fmt: skip
+        {"$set": report.model_dump(mode="json", exclude={"reviews", "upgrade"})},
+    )
 
 
 def test_the_report_marks_the_estimated_band_among_the_six(context, live_server):

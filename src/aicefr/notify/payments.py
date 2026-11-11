@@ -39,7 +39,7 @@ def on_order_settled(
     key = f"{KEY}{payload['order_id']}:{payload['status']}"
     if not setting_once(auth.db, key, now_iso())[1]:
         return False  # delivered before
-    email = payment_email(who["email"], who.get("full_name") or who["pseudonym"], payload, site)
+    email = payment_email(who["email"], who.get("full_name") or "bạn", payload, site)
     try:
         sender.send(email)
     except EmailError as e:

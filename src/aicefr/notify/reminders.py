@@ -58,17 +58,15 @@ def send_due(
                 learning.reviews_due(account_id=who),
             )
         except Exception:  # noqa: BLE001 - one learner's facts must not stop the others
-            logger.exception("reminder: could not read %s", row["pseudonym"])
+            logger.exception("reminder: could not read %s", who)
             continue
         if not why or not auth.claim_reminder(who, day):
             continue
         stop = f"{site}/api/v1/email/unsubscribe?t={unsubscribe_token(secret, who)}"
-        email = reminder_email(
-            row["email"], row.get("full_name") or row["pseudonym"], why, site, stop
-        )
+        email = reminder_email(row["email"], row.get("full_name") or "bạn", why, site, stop)
         try:
             sender.send(email)
             sent += 1
         except EmailError as e:
-            logger.warning("reminder to %s not sent: %s", row["pseudonym"], e)
+            logger.warning("reminder to %s not sent: %s", who, e)
     return sent

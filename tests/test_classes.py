@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 from test_billing import boot
 from test_lessons_integration import login_as as _login_as
 
 
-def login_as(m, pseudonym: str, role: str = "student"):
+def login_as(m, name: str, role: str = "student"):
     """These tests are about classes: no class is arranged for them."""
-    return _login_as(m, pseudonym, role, school=False)
+    return _login_as(m, name, role, school=False)
 
 
 pytestmark = pytest.mark.integration
@@ -30,10 +31,12 @@ def test_a_teacher_adds_students_and_sees_them_by_name(m):
     teacher = login_as(m, "GV-01", "teacher")
     login_as(m, "SV-001")
     c = make_class(teacher)
-    added = teacher.post(f"/api/v1/classes/{c['class_id']}/members", json={"people": ["SV-001"]})
+    added = teacher.post(
+        f"/api/v1/classes/{c['class_id']}/members", json={"people": [email_of("SV-001")]}
+    )
     assert added.status_code == 200 and len(added.json()["added"]) == 1
     detail = teacher.get(f"/api/v1/classes/{c['class_id']}").json()
-    assert [r["pseudonym"] for r in detail["members"]] == ["SV-001"]
+    assert [r["email"] for r in detail["members"]] == [email_of("SV-001")]
     assert "assignments" not in detail and "code" not in detail  # D075
     assert teacher.get("/api/v1/classes").json()[0]["members"] == 1
 

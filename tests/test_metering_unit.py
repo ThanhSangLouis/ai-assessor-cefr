@@ -9,15 +9,11 @@ import pytest
 from aicefr.metering.pricing import (
     DEFAULT_PRICES,
     PriceList,
-    TokenUsage,
     as_idpoint,
     as_runs,
     hold_for,
-    input_tokens,
     minutes,
     units_for,
-    usage_of,
-    windows,
 )
 from aicefr.storage.metering_repository import cycle
 
@@ -48,18 +44,6 @@ def test_the_seller_sets_the_prices():
     assert (units, as_idpoint(dearer, units)) == (2500, 2500)
     with pytest.raises(ValueError):
         PriceList(first_minute_runs=-1)
-
-
-def test_audio_tokens_are_whispers_windows_plus_the_language_check():
-    # Kept with each charge for the cost per request, not to price it.
-    assert [windows(s) for s in (0, 1, 30, 31, 60, 61)] == [1, 1, 1, 2, 2, 3]
-    assert input_tokens(35) == 1500 * 3
-    assert input_tokens(10_000) == input_tokens(300)
-
-
-def test_counted_output_tokens_win_over_the_estimate_from_words():
-    assert usage_of(60, 170, words=999) == TokenUsage(4500, 170)
-    assert usage_of(60, None, words=120) == TokenUsage(4500, 160, estimated=True)
 
 
 def test_a_cycle_starts_on_the_sixteenth():

@@ -55,7 +55,10 @@ def test_a_gateway_that_will_not_open_fails_the_order_with_a_reason(payos):
     assert detail.startswith("payOS không mở được") and "đã tồn tại" in detail
     assert "payOS: payOS" not in detail  # the gateway is named once
     [failed] = buyer.get("/api/v1/me/credit-packs").json()["orders"]
-    assert (failed["status"], failed["result_code"]) == ("failed", "231")
+    assert failed["status"] == "failed"
+    # D103: the gateway's code is kept with what it said, not as a field.
+    said = m.billing_store.events(failed["order_id"])
+    assert any((e.get("detail") or {}).get("code") == "231" for e in said)
 
     def down(*a):
         raise Unreachable("timeout")
@@ -105,14 +108,10 @@ def test_one_gateway_cannot_settle_another_gateways_order(payos, tmp_path, monke
         "created",
         "rejected",
     ]
-    # The same gateway in the other money mode never settles it either.
+    # The gateway this deployment runs settles it.
     [link_id] = fake.links
     fake.pay(link_id)
-    gw = m.billing.gateways["payos"]
-    paid = gw.verify_return({"id": link_id})
-    gw.live = False
-    assert m.billing.settle(paid, "notify", "payos") == "not_found"
-    gw.live = True
+    paid = m.billing.gateways["payos"].verify_return({"id": link_id})
     assert m.billing.settle(paid, "notify", "payos") == "ok"
 
 

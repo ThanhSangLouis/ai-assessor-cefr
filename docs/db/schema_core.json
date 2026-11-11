@@ -1,13 +1,6 @@
 {
   "account": [
     {
-      "name": "i_pseudonym_lower",
-      "keys": [
-        "pseudonym_lower"
-      ],
-      "unique": false
-    },
-    {
       "name": "u_account_id",
       "keys": [
         "account_id"
@@ -26,13 +19,6 @@
       "keys": [
         "identities.provider",
         "identities.subject_hash"
-      ],
-      "unique": true
-    },
-    {
-      "name": "u_pseudonym",
-      "keys": [
-        "pseudonym"
       ],
       "unique": true
     }
@@ -60,14 +46,6 @@
       "name": "i_created_at",
       "keys": [
         "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_lesson_id_step_id",
-      "keys": [
-        "lesson_id",
-        "step_id"
       ],
       "unique": false
     },
@@ -212,6 +190,13 @@
   ],
   "order": [
     {
+      "name": "i_checkout_ref",
+      "keys": [
+        "checkout_ref"
+      ],
+      "unique": false
+    },
+    {
       "name": "i_created_at",
       "keys": [
         "created_at"
@@ -219,10 +204,9 @@
       "unique": false
     },
     {
-      "name": "i_created_by_kind",
+      "name": "i_created_by",
       "keys": [
-        "created_by",
-        "kind"
+        "created_by"
       ],
       "unique": false
     },
@@ -254,23 +238,6 @@
       "name": "u_path_id",
       "keys": [
         "path_id"
-      ],
-      "unique": true
-    }
-  ],
-  "payment": [
-    {
-      "name": "i_gateway_checkout_ref",
-      "keys": [
-        "gateway",
-        "checkout_ref"
-      ],
-      "unique": false
-    },
-    {
-      "name": "u_order_id",
-      "keys": [
-        "order_id"
       ],
       "unique": true
     }
@@ -315,13 +282,6 @@
       "unique": false
     },
     {
-      "name": "i_speaker_id",
-      "keys": [
-        "speaker_id"
-      ],
-      "unique": false
-    },
-    {
       "name": "i_status",
       "keys": [
         "status"
@@ -361,15 +321,6 @@
       "name": "u_item_id",
       "keys": [
         "item_id"
-      ],
-      "unique": true
-    }
-  ],
-  "review_session": [
-    {
-      "name": "u_response_id",
-      "keys": [
-        "response_id"
       ],
       "unique": true
     }

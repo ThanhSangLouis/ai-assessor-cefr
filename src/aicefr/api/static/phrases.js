@@ -1,7 +1,8 @@
 // The phrase book (D070): today's few cards, then every card with its box.
 // A card shows the phrase, its meaning and the sentence of the upgraded answer
 // that used it; the learner says a sentence of their own, then says whether it
-// came. The server moves the card (coach/phrasebook.py).
+// came. The server moves the card (coach/phrasebook.py) and keeps its box in a
+// review item (D104).
 const root = document.getElementById("phrases");
 const todayBody = document.getElementById("phrase-today-body");
 const allCard = document.getElementById("phrase-all");
@@ -14,8 +15,9 @@ const BOX_TEXT = ["Mới", "Ôn sau 1 ngày", "Ôn sau 3 ngày", "Ôn sau 7 ngà
 let queue = [];
 let book = null;
 
+// `iso` is a day, "2026-11-12" (D104): read as the learner's own midnight.
 function dueDay(iso) {
-  const d = new Date(iso);
+  const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return "";
   if (d <= new Date()) return "đến hạn";
   const two = (n) => String(n).padStart(2, "0");

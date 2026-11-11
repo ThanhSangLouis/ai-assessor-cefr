@@ -72,8 +72,8 @@ def test_no_external_resources_are_fetched(script: pathlib.Path) -> None:
 def test_values_from_other_users_are_escaped(script: pathlib.Path) -> None:
     """Anything a user typed reaches another user's screen, so it must be escaped.
 
-    The review queue was the one screen that interpolated a student's pseudonym
-    straight into innerHTML. A pseudonym is chosen by the student and read by a
+    The review queue was the one screen that interpolated a student's name
+    straight into innerHTML. A name is chosen by the student and read by a
     teacher: that is a stored XSS with a session that can change scores.
     """
     source = _without_comments(script.read_text(encoding="utf-8"))

@@ -11,7 +11,7 @@
 
 1. **Không thưởng con số.** Không thành tựu nào đọc được điểm, band, tỷ lệ đạt hay dữ liệu của người khác (BR-28). Điều này kiểm bằng cấu trúc — `Facts` không có trường như vậy — chứ không chỉ bằng vài ví dụ.
 2. **Đếm đúng công sức.** Chỉ lượt máy đo được tiếng nói; ngày theo giờ Việt Nam; mục tiêu ngày của chính người học; thử lại tính một lần mỗi bước; ôn tập đếm riêng.
-3. **Đã đạt thì giữ, chỉ chủ nhân thấy.** Xoá lượt hay giáo viên sửa nhận định không lấy lại thành tựu; đánh dấu đã xem chỉ chạm thành tựu của mình; xoá dữ liệu người học xoá theo.
+3. **Đã đạt thì giữ, chỉ chủ nhân thấy.** Xoá lượt hay giáo viên sửa nhận định không lấy lại thành tựu; xoá dữ liệu người học xoá theo.
 4. **Người học thấy đúng điều đã làm**: một lời chúc mừng sau lượt vừa đạt, thẻ trên trang Luyện tập, danh sách ở trang Tiến độ, kỷ lục và ngày nghỉ trên thẻ Hôm nay.
 
 ## 2. Ba tầng kiểm thử
@@ -19,8 +19,8 @@
 | Tầng | Kiểm cái gì | Công cụ | Môi trường | Chạy ở đâu | Lệnh |
 | --- | --- | --- | --- | --- | --- |
 | 1. Unit | Kỷ lục, ngày nghỉ được tính, đếm dữ kiện, danh mục, thành tựu gần đạt nhất | pytest | Không ứng dụng, không CSDL | Máy và CI | `pytest tests/test_achievements_unit.py` |
-| 2. Integration | API thành tựu, lưu khi đạt, đánh dấu đã xem, không lấy lại, ngày Việt Nam, bài và chặng xong, ôn tập, bài đánh giá, trang Luyện tập, bản xuất và xoá | pytest, FastAPI TestClient | SQLite thật trên tệp tạm; bộ nhận dạng giả, âm tổng hợp; lịch sử ngày cũ ghi thẳng qua kho; đồng hồ của API bài học bị ghim | Máy và CI | `pytest tests/test_achievements.py` |
-| 3. E2E | Lời chúc mừng, thẻ "1 mới", danh sách với nhãn "Mới" một lần; kỷ lục, ô ngày nghỉ, dòng bảy ngày; cột bên thôi dính khi cao hơn cửa sổ | Playwright + Chromium | Máy chủ uvicorn của `test_lessons_e2e.py` (bộ dò năng lượng, bộ nhận dạng giả) | **Chỉ trên máy**; CI tự bỏ qua | `pytest -m e2e tests/e2e/test_achievements_e2e.py` |
+| 2. Integration | API thành tựu, lưu khi đạt, không lấy lại, ngày Việt Nam, bài và chặng xong, ôn tập, bài đánh giá, trang Luyện tập, bản xuất và xoá | pytest, FastAPI TestClient | SQLite thật trên tệp tạm; bộ nhận dạng giả, âm tổng hợp; lịch sử ngày cũ ghi thẳng qua kho; đồng hồ của API bài học bị ghim | Máy và CI | `pytest tests/test_achievements.py` |
+| 3. E2E | Lời chúc mừng, danh sách thành tựu đã đạt (không nhãn "Mới", D103); kỷ lục, ô ngày nghỉ, dòng bảy ngày; cột bên thôi dính khi cao hơn cửa sổ | Playwright + Chromium | Máy chủ uvicorn của `test_lessons_e2e.py` (bộ dò năng lượng, bộ nhận dạng giả) | **Chỉ trên máy**; CI tự bỏ qua | `pytest -m e2e tests/e2e/test_achievements_e2e.py` |
 
 Phần nhìn — thẻ Thành tựu, ô thành tựu đã đạt, chưa đạt và mới, ô ngày nghỉ — kiểm bằng ảnh chụp từ máy chủ tạm ở 1280×820 và 390×844, sáng và tối; ảnh không lưu vào kho mã.
 
@@ -81,22 +81,22 @@ Tiêu chí chấp nhận AC-65.1..AC-66.4 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-TT-I01 | `test_a_first_recording_is_congratulated_once` | AC-65.1 | Lượt đầu trả đúng "Lượt nói đầu tiên", lượt hai không trả gì; thành tựu lưu là chưa xem |
+| TC-TT-I01 | `test_a_first_recording_is_congratulated_once` | AC-65.1 | Lượt đầu trả đúng "Lượt nói đầu tiên", lượt hai không trả gì; không có dấu "mới" (D103) |
 | TC-TT-I02 | `test_the_list_shows_how_far_each_one_is_without_a_score` | AC-65.2 | 17 mục, năm nhóm theo thứ tự, mức đã làm trên mức cần, phút theo phút; phản hồi không chứa điểm, band hay xếp hạng; chưa đăng nhập nhận 401 |
-| TC-TT-I03 | `test_new_achievements_are_marked_seen_by_their_owner_only` | AC-65.3 | Đánh dấu đã xem chỉ chạm của mình; mã không có thật không tính; thân rỗng là mọi cái mới; quá 17 mã nhận 422 |
+| TC-TT-I03 | `test_a_first_recording_is_congratulated_once` | AC-65.3 | D103: thành tựu chỉ được báo một lần lúc đạt, không lưu dấu đã xem, không còn API đánh dấu |
 | TC-TT-I04 | `test_an_achievement_is_never_taken_back` | AC-65.4 | "Thử lại và qua" còn nguyên sau khi giáo viên sửa lượt qua thành chưa qua và người học xoá lượt trượt |
 | TC-TT-I05 | `test_habit_achievements_count_vietnam_days_and_the_learners_goal` | AC-65.5 | Lượt lúc 00:30 giờ Việt Nam thuộc ngày Việt Nam, nên chuỗi dài 5 chứ không 4; đổi mục tiêu ngày đổi số ngày đủ mục tiêu; quay lại sau ba ngày được tính |
 | TC-TT-I06 | `test_completing_a_lesson_and_a_unit_reach_the_path_achievements` | AC-65.6 | "Bài học đầu tiên" đạt sau bài thứ nhất, "Xong một chặng" chỉ khi xong cả chặng; bước nói tự do tính "Nói tự do" |
 | TC-TT-I07 | `test_review_attempts_count_towards_the_review_achievement` | AC-65.7 | Lượt ôn trả danh sách thành tựu và tăng "Mười lượt ôn" |
 | TC-TT-I08 | `test_assessments_with_a_result_count_towards_the_assessment_achievements` | AC-65.8 | Bài đánh giá có kết quả thứ nhất và thứ năm mở hai thành tựu; trang Tiến độ bắt đầu nói về xu hướng cùng lúc |
-| TC-TT-I09 | `test_the_practice_page_shows_the_record_rest_days_and_last_week` | AC-66.1 | `GET /api/v1/learn`: chuỗi, kỷ lục, ngày nghỉ, giây của hai tuần; thẻ Thành tựu: số đạt, số mới, ba cái gần nhất, cái gần đạt nhất |
+| TC-TT-I09 | `test_the_practice_page_shows_the_record_rest_days_and_last_week` | AC-66.1 | `GET /api/v1/learn`: chuỗi, kỷ lục, ngày nghỉ, giây của hai tuần; thẻ Thành tựu: số đạt, ba cái gần nhất, cái gần đạt nhất |
 | TC-TT-I10 | `test_the_personal_export_and_erasure_cover_achievements` | AC-65.9 | Bản xuất cá nhân có thành tựu và mục đích của trường; xoá dữ liệu người học xoá thành tựu của họ, không chạm người khác |
 
 ### Tầng 3 — E2E (`tests/e2e/test_achievements_e2e.py`)
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_new_once` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; mục Thành tựu của trang Kết quả (D092): ô mới có nhãn "Mới", ô chưa đạt có thanh tiến độ; tải lại thì hết "Mới"; không có chữ "band" |
+| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_reached` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; mục Thành tựu của trang Kết quả (D092) hiện ô đã đạt, không có nhãn "Mới" (D103 bỏ `seenAt`); ô chưa đạt có thanh tiến độ |
 | TC-TT-E02 | `test_the_week_shows_the_streak_and_the_rest_day` | AC-66.2 | "3 ngày liên tiếp", một ô ngày nghỉ có chú thích; cột bên cao hơn cửa sổ thì thôi dính (D092 bỏ kỷ lục, tổng 7 ngày và thẻ "Sắp đạt" khỏi trang Lộ trình) |
 
 ## 7. Kết quả chạy

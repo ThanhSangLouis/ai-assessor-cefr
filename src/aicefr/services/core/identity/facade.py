@@ -1,6 +1,6 @@
 """What other services may ask the identity service (D043).
 
-Accounts by id or pseudonym, how many students there are, whose data may be
+Accounts by id or email, how many students there are, whose data may be
 used in research (D058: those who accepted the terms). Answers are plain JSON:
 an account is a small dict with no password hash and no session.
 """
@@ -12,7 +12,7 @@ from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.auth_repository import AuthRepository, Role
 
 ACCOUNT_FIELDS = (
-    "account_id", "pseudonym", "role", "disabled", "email", "full_name", "email_verified",
+    "account_id", "role", "disabled", "email", "full_name", "email_verified",
 )  # fmt: skip
 FLAGS = ("disabled", "email_verified")
 
@@ -40,27 +40,18 @@ class IdentityFacade:
             return False
         deleted = self.auth.delete_account(account_id)
         if deleted:
-            self.audit.write(row["pseudonym"], "account.delete", account_id, "by=self")
+            self.audit.write(account_id, "account.delete", account_id, "by=self")
         return deleted
 
     @exposed
-    def by_pseudonym(self, pseudonym: str) -> dict | None:
-        return _account(self.auth.get_by_pseudonym(pseudonym))
-
-    @exposed
-    def by_sign_in_name(self, identifier: str) -> dict | None:
-        """The account an email (or, before D071, a pseudonym) names, or None."""
-        return _account(self.auth.by_sign_in_name(identifier))
+    def by_email(self, email: str) -> dict | None:
+        """The enabled account that signs in with this email, or None."""
+        return _account(self.auth.get_by_email(email))
 
     @exposed
     def display_names(self, account_ids: list[str]) -> dict[str, str]:
-        """What a teacher reads for each account: the full name, else the pseudonym (D071)."""
+        """What a teacher reads for each account: the full name, else the email (D071)."""
         return self.auth.display_names(account_ids)
-
-    @exposed
-    def pseudonyms(self, account_ids: list[str]) -> dict[str, str]:
-        """Pseudonym of each account id, for screens that list other people's work."""
-        return self.auth.pseudonyms(account_ids)
 
     @exposed
     def accounts(self, roles: list[str] | None = None, enabled_only: bool = True) -> list[dict]:
@@ -75,15 +66,6 @@ class IdentityFacade:
     def count_role(self, role: str) -> int:
         """Enabled accounts of one role: the seats a plan counts (D033)."""
         return self.auth.count_role(Role(role))
-
-    @exposed
-    def seen_at(self, account_id: str, marker: str) -> str | None:
-        """When the owner last looked at `marker` (D028): the account keeps it (D060)."""
-        return self.auth.seen_at(account_id, marker)
-
-    @exposed
-    def mark_seen(self, account_id: str, marker: str) -> str:
-        return self.auth.mark_seen(account_id, marker)
 
     @exposed
     def audit_recent(self, limit: int = 100) -> list[dict]:

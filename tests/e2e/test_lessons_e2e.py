@@ -142,7 +142,7 @@ def teacher_page(browser, live_server, *students):
     page.on("dialog", lambda d: d.accept())
     teacher = live_server.account("teacher")
     if students:
-        names = [s.request.get("/api/v1/me").json()["pseudonym"] for s in students]
+        names = [s.request.get("/api/v1/me").json()["email"] for s in students]
         live_server.teach(teacher, *names)
     login(page, live_server, teacher, "/teach")
     return page

@@ -113,7 +113,8 @@ def _with_moments(m, rid: str) -> None:
     rich = report(rid)
     stored.asr, stored.assessment.evidence = rich.asr, rich.assessment.evidence
     repo.col("response").update_one(
-        {"response_id": rid}, {"$set": {"report_json": stored.model_dump_json()}}
+        {"response_id": rid},
+        {"$set": stored.model_dump(mode="json", exclude={"reviews", "upgrade"})},
     )
 
 

@@ -24,6 +24,7 @@ import inspect
 import threading
 
 import pytest
+from dbutil import email_of
 from fastapi import HTTPException
 from test_billing import boot
 from test_d089_drill import take, with_words
@@ -214,13 +215,8 @@ def test_the_charge_follows_the_speech_not_the_steps_limit(facade, ledger):
         assert facade.hold_lesson(account_id="a1", key=f"free-{i}", max_seconds=30) is None
     assert facade.hold_lesson(account_id="a1", key="k", max_seconds=150) is None
     assert ledger.entry("k", MeteredAction.LESSON)["held"] == 3 * MINUTE
-    facade.settle_lesson(key="k", result=True, speaking_seconds=61.0, words=120)
-    done = ledger.entry("k", MeteredAction.LESSON)
-    assert (done["charged"], done["input_tokens"], done["usage_estimated"]) == (
-        2 * MINUTE,
-        1500 * 4,  # three 30-second windows and the language check
-        True,
-    )
+    facade.settle_lesson(key="k", result=True, speaking_seconds=61.0)
+    assert ledger.entry("k", MeteredAction.LESSON)["charged"] == 2 * MINUTE
     assert ledger.balance("a1")["free_left"] == 3000 - 2 * MINUTE
 
 
@@ -283,9 +279,9 @@ def metered(tmp_path, monkeypatch):
     )
 
 
-def lesson_entries(m, pseudonym: str) -> list[dict]:
+def lesson_entries(m, name: str) -> list[dict]:
     # The history is newest first (to the second, then by insertion): oldest first here.
-    rows = m.core_parts.state["metering"].history(account_id(m, pseudonym), limit=100)
+    rows = m.core_parts.state["metering"].history(account_id(m, name), limit=100)
     return [e for e in reversed(rows) if e["action"] == "lesson"]
 
 
@@ -366,7 +362,8 @@ def test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on(metered):
     assert "Nạp thêm IDPoint" in poor["detail"]
     assert len(m.lessons.attempts()) == attempts
     granted = admin.post(
-        "/api/v1/admin/credits/grant", json={"pseudonym": "SV-L04", "runs": 1, "reference": "t1"}
+        "/api/v1/admin/credits/grant",
+        json={"email": email_of("SV-L04"), "runs": 1, "reference": "t1"},
     )
     assert granted.status_code == 200, granted.text
     record(student, SAMPLE, KEYWORDS, audio=wav(4.5))
@@ -425,7 +422,6 @@ def test_a_price_list_saved_before_d094_keeps_the_defaults(metered):
         {"first_minute_runs": 1.0, "extra_minute_runs": 0.7, "upgrade_runs": 0.3,
          "passage_runs": 0.1, "idpoint_per_run": 2000, "free_runs": 3.0,
          "packs": [{"runs": 10, "price_vnd": 19000}]},
-        "AD-old",
     )  # fmt: skip
     student = login_as(m, "SV-L06")
     quote = student.get("/api/v1/me/credits/lesson").json()

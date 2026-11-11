@@ -30,7 +30,7 @@ const loaded = new Set();
 const escapeHtml = window.escapeHtml;
 // How a person is named to the administrator: the full name, else the email,
 // else the account code of an account that has neither yet (D071).
-const nameOf = (a) => a.full_name || a.email || a.pseudonym;
+const nameOf = (a) => a.full_name || a.email;
 
 // Every admin endpoint is behind require_role(ADMIN). A 401 means the session
 // expired; a 403 means the account is logged in but is a student or a teacher.
@@ -110,14 +110,10 @@ TABS.forEach((t, i) => {
 // the server keeps only its hash.
 
 const ROLE_NAMES = { student: "Sinh viên", teacher: "Giảng viên", admin: "Quản trị" };
-const DEFAULT_PREFIX = { student: "SV", teacher: "GV", admin: "QT" };
 const accountsEl = document.getElementById("accounts-body");
 const accForm = document.getElementById("acc-form");
 const accRole = document.getElementById("acc-role");
-const accMode = document.getElementById("acc-mode");
-const accCount = document.getElementById("acc-count");
-const accPrefix = document.getElementById("acc-prefix");
-const accPseudonym = document.getElementById("acc-pseudonym");
+const accEmails = document.getElementById("acc-emails");
 const accPreview = document.getElementById("acc-preview");
 const accSearch = document.getElementById("acc-search");
 const accFilter = document.getElementById("acc-filter");
@@ -127,37 +123,16 @@ const slipGrid = document.getElementById("slip-grid");
 let accounts = [];
 let slips = [];
 
-function nextNumbers(prefix, count) {
-  const re = new RegExp(`^${prefix}-(\\d+)$`, "i");
-  const used = accounts
-    .map((a) => (re.exec(a.pseudonym) || [])[1])
-    .filter(Boolean)
-    .map(Number);
-  const start = (used.length ? Math.max(...used) : 0) + 1;
-  const width = Math.max(3, String(start + count - 1).length);
-  const name = (n) => `${prefix}-${String(n).padStart(width, "0")}`;
-  return count > 1 ? `${name(start)} → ${name(start + count - 1)}` : name(start);
-}
+// One email per line (commas and spaces work too), duplicates dropped.
+const typedEmails = () => [
+  ...new Set(accEmails.value.split(/[\s,;]+/).map((v) => v.trim().toLowerCase()).filter(Boolean)),
+];
 
-// "Sẽ tạo SV-011 → SV-020": the same continuation rule as the server, so the
-// administrator sees which pseudonyms are about to exist before pressing.
 function paintPreview() {
-  const series = accMode.value === "series";
-  accForm.querySelectorAll("[data-mode]").forEach((el) => {
-    el.hidden = el.dataset.mode !== accMode.value;
-  });
-  accPrefix.placeholder = DEFAULT_PREFIX[accRole.value];
-  if (!series) {
-    accPreview.textContent = "";
-    return;
-  }
-  const prefix = (accPrefix.value.trim() || DEFAULT_PREFIX[accRole.value]).toUpperCase();
-  const count = Math.min(200, Math.max(1, Number(accCount.value) || 1));
-  accPreview.textContent = /^[A-Z]{1,6}$/.test(prefix)
-    ? `Sẽ tạo ${nextNumbers(prefix, count)}`
-    : "Tiền tố chỉ gồm 1 đến 6 chữ cái không dấu.";
+  const n = typedEmails().length;
+  accPreview.textContent = n ? `Sẽ tạo ${n} tài khoản` : "";
 }
-[accRole, accMode, accCount, accPrefix].forEach((el) => el.addEventListener("input", paintPreview));
+accEmails.addEventListener("input", paintPreview);
 
 function avatarHtml(a) {
   return `<span class="avatar avatar-${escapeHtml(a.avatar_color || "none")}" aria-hidden="true">` +
@@ -201,7 +176,7 @@ function renderAccounts() {
   const rows = accounts.filter(
     (a) =>
       (!role || a.role === role) &&
-      (!q || [a.pseudonym, a.email, a.full_name].some((v) => (v || "").toLowerCase().includes(q)))
+      (!q || [a.email, a.full_name].some((v) => (v || "").toLowerCase().includes(q)))
   );
   const counts = Object.keys(ROLE_NAMES)
     .map((r) => `${ROLE_NAMES[r]} ${accounts.filter((a) => a.role === r).length}`)
@@ -220,8 +195,8 @@ function renderAccounts() {
     h += `<tr class="${a.disabled ? "row-muted" : ""}">
       <td><span class="account-cell">${avatarHtml(a)}<span>
         <button type="button" class="link-button account-open" data-account-open="${escapeHtml(a.account_id)}"
-          aria-label="${escapeHtml("Xem chi tiết " + (a.full_name || a.pseudonym))}">${escapeHtml(a.full_name || a.pseudonym)}</button>
-        <span class="cell-sub">${escapeHtml(a.email || "chưa có email")} · ${escapeHtml(ROLE_NAMES[a.role] || a.role)} · <code>${escapeHtml(a.pseudonym)}</code></span></span></span></td>
+          aria-label="${escapeHtml("Xem chi tiết " + nameOf(a))}">${escapeHtml(nameOf(a))}</button>
+        <span class="cell-sub">${escapeHtml(a.email)} · ${escapeHtml(ROLE_NAMES[a.role] || a.role)}</span></span></span></td>
       <td>${escapeHtml(last)}<span class="cell-sub">${escapeHtml(sessions)}</span></td>
       <td>${accountState(a)}</td>
       <td class="action-cell">${accountActions(a)}</td>
@@ -270,12 +245,11 @@ function slipHtml(x) {
   return `<article class="slip">
     <p class="slip-brand">SpeakUp · Phiếu tài khoản · ${escapeHtml(ROLE_NAMES[x.role] || x.role)}</p>
     <div class="slip-codes">
-      <div><span class="slip-label">Mã đăng nhập</span><span class="slip-code">${escapeHtml(x.pseudonym)}</span></div>
+      <div><span class="slip-label">Email</span><span class="slip-code">${escapeHtml(x.email)}</span></div>
       <div><span class="slip-label">Mật khẩu tạm</span><span class="slip-code">${escapeHtml(x.temporary_password)}</span></div>
     </div>
     <p class="slip-note">Đăng nhập tại <b>${escapeHtml(origin)}</b>. Lần đầu, hệ thống yêu cầu đặt
       mật khẩu của riêng bạn; từ đó mật khẩu tạm hết hiệu lực.</p>
-    <p class="slip-name">Sau đó thêm email và họ tên ở trang Tài khoản để đăng nhập bằng email.</p>
   </article>`;
 }
 
@@ -300,9 +274,9 @@ window.addEventListener("afterprint", () => document.body.classList.remove("prin
 // it as UTF-8, so Vietnamese headers survive.
 document.getElementById("slips-csv").addEventListener("click", () => {
   const cell = (v) => `"${String(v).replace(/"/g, '""')}"`;
-  const lines = [["but_danh", "vai_tro", "mat_khau_tam", "dia_chi_dang_nhap"].join(",")];
+  const lines = [["email", "vai_tro", "mat_khau_tam", "dia_chi_dang_nhap"].join(",")];
   slips.forEach((x) =>
-    lines.push([x.pseudonym, x.role, x.temporary_password, `${location.origin}/login`].map(cell).join(","))
+    lines.push([x.email, x.role, x.temporary_password, `${location.origin}/login`].map(cell).join(","))
   );
   const blob = new Blob(["\ufeff" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -331,17 +305,11 @@ window.addEventListener("beforeunload", (e) => {
 accForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const role = accRole.value;
-  const body = { role };
-  if (accMode.value === "one") {
-    body.pseudonym = accPseudonym.value.trim();
-    if (!body.pseudonym) {
-      window.toast("Hãy nhập mã tài khoản.", "error");
-      accPseudonym.focus();
-      return;
-    }
-  } else {
-    body.count = Math.min(200, Math.max(1, Number(accCount.value) || 1));
-    body.prefix = (accPrefix.value.trim() || DEFAULT_PREFIX[role]).toUpperCase();
+  const body = { role, emails: typedEmails() };
+  if (!body.emails.length) {
+    window.toast("Hãy nhập ít nhất một email.", "error");
+    accEmails.focus();
+    return;
   }
   const button = document.getElementById("acc-create");
   button.disabled = true;
@@ -350,7 +318,8 @@ accForm.addEventListener("submit", async (e) => {
     if (!d) return;
     window.toast(`Đã tạo ${d.created.length} tài khoản. Hãy in hoặc tải phiếu trước khi rời trang.`, "ok");
     addSlips(d.created, d.role);
-    accPseudonym.value = "";
+    accEmails.value = "";
+    paintPreview();
     loadAccounts();
   } finally {
     button.disabled = false;
@@ -467,7 +436,7 @@ function detailHtml(d) {
         ${d.google_linked ? actionButton("unlinkGoogle", d, "x", "Gỡ liên kết Google") : ""}
         ${d.locked_until ? actionButton("unlock", d, "unlock", "Gỡ khoá") : ""}
         ${d.disabled ? actionButton("enable", d, "check", "Bật lại") : actionButton("disable", d, "power", "Tắt tài khoản", "danger")}
-        <a class="button secondary" href="#erase" data-erase="${escapeHtml(d.pseudonym)}">Xoá dữ liệu…</a>
+        <a class="button secondary" href="#erase" data-erase="${escapeHtml(d.email)}">Xoá dữ liệu…</a>
       </div>
       <div class="inline-form role-form">
         <div class="field"><label for="role-select">Vai trò</label><select id="role-select">${roleOptions}</select></div>
@@ -499,8 +468,8 @@ function detailHtml(d) {
     : '<p class="muted">Chưa có hoạt động nào.</p>';
   return `<div class="sheet-head">
       <div class="profile-head">${avatarHtml(d)}
-        <div><h2 id="account-dialog-h">${escapeHtml(d.full_name || d.pseudonym)}</h2>
-        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)} · mã <code>${escapeHtml(d.pseudonym)}</code></p></div></div>
+        <div><h2 id="account-dialog-h">${escapeHtml(nameOf(d))}</h2>
+        <p class="muted">${escapeHtml(ROLE_NAMES[d.role] || d.role)} · ${accountState(d)}</p></div></div>
       <button type="button" class="secondary icon-only" id="account-dialog-close" aria-label="Đóng">${window.ui.icon("x")}</button>
     </div>
     <dl class="facts">
@@ -544,7 +513,7 @@ accountDialogBody.addEventListener("click", async (e) => {
   if (erase) {
     // Erasing data is the Data tab's job, with its own preview and double entry.
     accountDialog.close();
-    document.getElementById("speaker-id").value = erase.dataset.erase;
+    document.getElementById("erase-email").value = erase.dataset.erase;
     return;
   }
   const button = e.target.closest("[data-account-action]");
@@ -598,7 +567,7 @@ document.getElementById("acc-csv").addEventListener("click", () => {
   const lines = [head.join(",")];
   accounts.forEach((a) =>
     lines.push(
-      [a.pseudonym, a.email || "", a.full_name || "", a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
+      [a.account_id, a.email, a.full_name || "", a.role, a.created_at, a.last_login_at || "", a.disabled ? 1 : 0, a.must_change_password ? 1 : 0, a.google_linked ? 1 : 0]
         .map(cell)
         .join(",")
     )
@@ -934,38 +903,35 @@ async function saveConfig(e) {
 
 // ---------- Tab 3: personal data erasure (FR-34, FR-35) ----------
 
-const speakerInput = document.getElementById("speaker-id");
-const speakerInputAgain = document.getElementById("speaker-id-again");
+const eraseInput = document.getElementById("erase-email");
+const eraseInputAgain = document.getElementById("erase-email-again");
 const previewBody = document.getElementById("preview-body");
 const confirmBody = document.getElementById("confirm-body");
 const eraseButton = document.getElementById("erase-button");
 const eraseMessage = document.getElementById("erase-message");
 
-// The pseudonym the preview was run for. The delete call uses this, not the
+// The email the preview was run for. The delete call uses this, not the
 // live input, so editing the first field after a preview cannot delete someone
 // else's data.
-let previewedSpeakerId = null;
+let previewedEmail = null;
 
 function resetErasePanel() {
-  previewedSpeakerId = null;
+  previewedEmail = null;
   previewBody.innerHTML = "";
   confirmBody.hidden = true;
-  speakerInputAgain.value = "";
+  eraseInputAgain.value = "";
   eraseButton.disabled = true;
   eraseMessage.innerHTML = "";
 }
 
 document.getElementById("preview-button").addEventListener("click", async () => {
-  const speakerId = speakerInput.value.trim();
+  const email = eraseInput.value.trim().toLowerCase();
   resetErasePanel();
-  if (!speakerId) {
-    previewBody.innerHTML = '<p class="error">Hãy nhập mã tài khoản.</p>';
+  if (!email) {
+    previewBody.innerHTML = '<p class="error">Hãy nhập email.</p>';
     return;
   }
-  const data = await getJson(
-    `/api/v1/admin/erase/${encodeURIComponent(speakerId)}`,
-    previewBody
-  );
+  const data = await getJson(`/api/v1/admin/erase?email=${encodeURIComponent(email)}`, previewBody);
   if (!data) return;
 
   const ids = data.response_ids || [];
@@ -980,24 +946,24 @@ document.getElementById("preview-button").addEventListener("click", async () => 
     </table>`;
   h += ids.length
     ? `<p>Mã các bài sẽ bị xoá:</p><p><code>${ids.map(escapeHtml).join("</code> <code>")}</code></p>`
-    : '<p class="muted">Không có bài nào thuộc mã tài khoản này.</p>';
+    : '<p class="muted">Tài khoản này chưa có bài nói nào.</p>';
   h += `<div class="notice notice-danger">Bấm xác nhận là xoá ngay và
     <b>không hoàn tác được</b>.</div>`;
   previewBody.innerHTML = h;
 
-  previewedSpeakerId = data.speaker_id ?? speakerId;
+  previewedEmail = data.email ?? email;
   confirmBody.hidden = false;
 });
 
-// The confirm button only wakes up when the second field matches the pseudonym
+// The confirm button only wakes up when the second field matches the email
 // the preview was actually run for.
-speakerInputAgain.addEventListener("input", () => {
+eraseInputAgain.addEventListener("input", () => {
   eraseButton.disabled =
-    previewedSpeakerId === null || speakerInputAgain.value.trim() !== previewedSpeakerId;
+    previewedEmail === null || eraseInputAgain.value.trim().toLowerCase() !== previewedEmail;
 });
 
 eraseButton.addEventListener("click", async () => {
-  if (previewedSpeakerId === null) return;
+  if (previewedEmail === null) return;
   eraseButton.disabled = true;
   eraseMessage.innerHTML = '<p class="muted">Đang xoá…</p>';
 
@@ -1007,8 +973,8 @@ eraseButton.addEventListener("click", async () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        speaker_id: previewedSpeakerId,
-        confirm_speaker_id: speakerInputAgain.value.trim(),
+        email: previewedEmail,
+        confirm_email: eraseInputAgain.value.trim(),
       }),
     });
   } catch (e) {
@@ -1033,17 +999,17 @@ eraseButton.addEventListener("click", async () => {
     "Dữ liệu đã dùng huấn luyện các mô hình phát hành trước đó không bị gỡ khỏi mô hình.";
   window.toast("Đã xoá dữ liệu cá nhân của người học.", "ok", { sticky: true });
   eraseMessage.innerHTML = `
-    <p class="success">Đã xoá dữ liệu của <code>${escapeHtml(previewedSpeakerId)}</code>:
+    <p class="success">Đã xoá dữ liệu của <code>${escapeHtml(previewedEmail)}</code>:
       ${escapeHtml(data.responses ?? 0)} bài nói,
       ${escapeHtml(data.audio_files ?? 0)} tệp ghi âm,
       ${escapeHtml(data.review_actions ?? 0)} lần duyệt.</p>
     <div class="notice notice-danger"><b>Lưu ý về phạm vi xoá.</b>
       ${escapeHtml(cutoffNote)}</div>`;
-  previewedSpeakerId = null;
+  previewedEmail = null;
   previewBody.innerHTML = "";
   confirmBody.hidden = true;
-  speakerInput.value = "";
-  speakerInputAgain.value = "";
+  eraseInput.value = "";
+  eraseInputAgain.value = "";
 });
 
 // ---------- Tab 4: operations (NFR-11) ----------

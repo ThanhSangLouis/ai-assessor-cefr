@@ -834,6 +834,376 @@ def _d090_drill_passage(db: Database, target: str) -> None:
     )
 
 
+# Where an account made before D103 without an email gets one: a subdomain
+# that receives no mail, so nothing is ever sent to it.
+D103_EMAIL_DOMAIN = "demo.speakup.fit"
+
+
+def _drop_index(db: Database, collection: str, name: str) -> None:
+    if _has(db, collection) and name in {ix["name"] for ix in db[collection].list_indexes()}:
+        db[collection].drop_index(name)
+
+
+def _d103_account_email(db: Database) -> dict[str, str]:
+    """Every account signs in with an email; the pseudonym goes. Returns pseudonym -> id."""
+    if not _has(db, "account"):
+        return {}
+    accounts = db["account"]
+    ids = {
+        a["pseudonym"]: a["account_id"]
+        for a in accounts.find(
+            {"pseudonym": {"$type": "string"}}, {"pseudonym": 1, "account_id": 1}
+        )
+    }
+    taken = set(accounts.distinct("email"))
+    for a in accounts.find(
+        {"email": {"$not": {"$type": "string"}}}, {"account_id": 1, "pseudonym": 1}
+    ):
+        base = (a.get("pseudonym") or a["account_id"]).lower()
+        email, n = f"{base}@{D103_EMAIL_DOMAIN}", 1
+        while email in taken:
+            n += 1
+            email = f"{base}-{n}@{D103_EMAIL_DOMAIN}"
+        taken.add(email)
+        # An administrator made it, so it keeps its free runs (verified, as
+        # D103 counts such accounts) and gets no reminders at a domain without mail.
+        accounts.update_one(
+            {"account_id": a["account_id"]},
+            {"$set": {"email": email, "email_verified": 1, "email_reminders": 0}},
+        )
+        logger.info("account %s signs in as %s from now on", a["account_id"], email)
+    _drop_index(db, "account", "u_pseudonym")
+    _drop_index(db, "account", "i_pseudonym_lower")
+    # Partial before (accounts without an email), whole from now on.
+    old = {ix["name"]: ix for ix in accounts.list_indexes()}.get("u_email")
+    if old is not None and "partialFilterExpression" in old:
+        accounts.drop_index("u_email")
+    accounts.create_index([("email", 1)], unique=True, name="u_email")
+    accounts.update_many(
+        {},
+        {"$unset": {"pseudonym": "", "pseudonym_lower": "", "seen_markers": ""}},
+    )
+    return ids
+
+
+def _d103_fields(db: Database, target: str) -> None:
+    """The pseudonym and the fields nothing reads go (D103).
+
+    An account is its email from now on: one without becomes
+    `<pseudonym>@demo.speakup.fit`. Where a pseudonym named a person -- the
+    audit log's actor, who changed a setting, who overrode a lesson step -- the
+    account id takes its place, as far as this store knows the accounts.
+    Removed for good: `response.speaker_id` (the account id says whose it is),
+    the review lock's copied name, a path's "built in" mark, the "seen" markers (D028's new-results
+    badge goes with them), who made a task or a path and who edited or
+    published a lesson or a price list (the audit log keeps who did what), the
+    model name and token counts on an upgrade and a passage (the ledger keeps
+    the tokens), a plan's model version, a payment's result code, gateway and
+    money mode (a deployment runs one gateway), an order's kind (every order
+    is a run pack; the plan orders of D033 are deleted), the review visits and
+    a decision's opening time (D041), the path a plan was saved as, the price
+    version on a ledger entry, a phrase card's review count and when an
+    achievement was seen (its "new" mark goes with it). Two fields that other
+    fields already give go too: a ledger entry's `held` (free runs plus wallet
+    runs) and a unit's `position` (its place in the path's list, put in that
+    order here); a passage's band, used to write it and never read after. Approved
+    by the project owner on 10/11/2026; the data was test data.
+    """
+    ids = _d103_account_email(db)
+    for name in ids:  # an actor or an author recorded by pseudonym
+        aid = ids[name]
+        if _has(db, "audit_log"):
+            db["audit_log"].update_many({"actor_id": name}, {"$set": {"actor_id": aid}})
+        if _has(db, "system"):
+            db["system"].update_many({"updated_by": name}, {"$set": {"updated_by": aid}})
+        if _has(db, "attempt"):
+            db["attempt"].update_many({"overridden_by": name}, {"$set": {"overridden_by": aid}})
+    unset = {
+        "response": ("speaker_id", "coach_upgrade.provider", "coach_upgrade.model",
+                     "coach_upgrade.prompt_version"),
+        "task": ("created_by",),
+        "path": ("created_by", "built_in"),
+        "lesson": ("updated_by",),
+        "payment": ("result_code", "gateway", "live"),
+        "drill_passage": ("provider", "model", "prompt_version", "input_tokens", "output_tokens",
+                          "band"),
+        "price_list": ("changed_by",),
+        "review_session": ("visits",),
+        "learning_plan": ("model_version", "path_id"),
+        "ledger": ("price_version", "held"),
+        "achievement": ("seen_at",),
+    }  # fmt: skip
+    for collection, names in unset.items():
+        if _has(db, collection):
+            db[collection].update_many({}, {"$unset": {n: "" for n in names}})
+    _drop_index(db, "response", "i_speaker_id")
+    _drop_index(db, "payment", "i_gateway_checkout_ref")
+    _drop_index(db, "order", "i_created_by_kind")
+    if _has(db, "payment"):
+        db["payment"].create_index([("checkout_ref", 1)], name="i_checkout_ref")
+    if _has(db, "order"):
+        db["order"].create_index([("created_by", 1)], name="i_created_by")
+    if _has(db, "order"):
+        # Only run packs are orders now: the plan orders of D033 go, with their payments.
+        gone = [o["order_id"] for o in db["order"].find({"kind": {"$nin": [None, "credits"]}})]
+        if gone:
+            db["order"].delete_many({"order_id": {"$in": gone}})
+            if _has(db, "payment"):
+                db["payment"].delete_many({"order_id": {"$in": gone}})
+        db["order"].update_many(
+            {"runs": {"$exists": False}, "seats": {"$exists": True}}, {"$rename": {"seats": "runs"}}
+        )
+        db["order"].update_many({}, {"$unset": {"kind": ""}})
+    if _has(db, "review_session"):
+        db["review_session"].update_many(
+            {"lock.reviewer_name": {"$exists": True}}, {"$unset": {"lock.reviewer_name": ""}}
+        )
+    if _has(db, "lesson"):
+        for row in db["lesson"].find(
+            {"$or": [{"versions.published_by": {"$exists": True}},
+                     {"media.created_by": {"$exists": True}}]},
+            {"lesson_id": 1, "versions": 1, "media": 1},
+        ):  # fmt: skip
+            db["lesson"].update_one(
+                {"lesson_id": row["lesson_id"]},
+                {
+                    "$set": {
+                        "versions": [
+                            {k: v for k, v in x.items() if k != "published_by"}
+                            for x in row.get("versions") or []
+                        ],
+                        "media": [
+                            {k: v for k, v in x.items() if k != "created_by"}
+                            for x in row.get("media") or []
+                        ],
+                    }
+                },
+            )
+    if _has(db, "response"):
+        for row in db["response"].find(
+            {"$or": [{"reviews.opened_at": {"$exists": True}},
+                     {"coach_upgrade.phrases.reviews": {"$exists": True}}]},
+            {"response_id": 1, "reviews": 1, "coach_upgrade.phrases": 1},
+        ):  # fmt: skip
+            reviews = row.get("reviews") or []
+            kept = [{k: v for k, v in r.items() if k != "opened_at"} for r in reviews]
+            sets: dict = {"reviews": kept}
+            phrases = (row.get("coach_upgrade") or {}).get("phrases")
+            if phrases is not None:
+                sets["coach_upgrade.phrases"] = [
+                    {k: v for k, v in x.items() if k != "reviews"} for x in phrases
+                ]
+            db["response"].update_one({"response_id": row["response_id"]}, {"$set": sets})
+    if _has(db, "path"):
+        placed = db["path"].find({"units.position": {"$exists": True}}, {"path_id": 1, "units": 1})
+        for row in placed:
+            units = sorted(row.get("units") or [], key=lambda u: u.get("position") or 0)
+            kept = [{k: v for k, v in u.items() if k != "position"} for u in units]
+            db["path"].update_one({"path_id": row["path_id"]}, {"$set": {"units": kept}})
+    if _has(db, "price_list"):
+        for row in db["price_list"].find({"history.changed_by": {"$exists": True}}):
+            history = [{k: v for k, v in h.items() if k != "changed_by"} for h in row["history"]]
+            db["price_list"].update_one({"_id": row["_id"]}, {"$set": {"history": history}})
+
+
+# ---------------------------------------------------------------- D104
+# Fewer collections and no JSON in strings: the review lock back into the
+# response, the payment into its order, a phrase's review state into the
+# learning store's review items, and every stored report, lesson, attempt and
+# plan as a document instead of a string holding JSON.
+
+D104_SCORE_COPIES = ("overall_0_6", "overall_band", "teacher_verified", "model_version")
+# The report's own fields (the contract `Response` but its reviews and upgrade),
+# fixed here: a report written before D083 also carries `practice`, gone since.
+D104_REPORT_KEYS = ("response_id", "status", "qc", "asr", "features", "assessment", "reasons",
+                    "config_version", "prompt_version")  # fmt: skip
+
+
+def _parsed(value):
+    """A stored JSON string as the document it holds; anything else as it is."""
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except ValueError:
+            return None
+    return value
+
+
+def _d104_response(db: Database) -> None:
+    """The report becomes the response's own fields; the copied scores and review_session go."""
+    if not _has(db, "response"):
+        return
+    for row in db["response"].find(
+        {"$or": [{"report_json": {"$exists": True}},
+                 {"coach_upgrade.phrases.box": {"$exists": True}}]},
+        {"response_id": 1, "report_json": 1, "coach_upgrade": 1},
+    ):  # fmt: skip
+        sets: dict = {}
+        report = _parsed(row.get("report_json")) or {}
+        for key, value in report.items():
+            if key in D104_REPORT_KEYS:
+                sets[key] = value
+        upgrade = row.get("coach_upgrade") or {}
+        if upgrade.get("phrases"):
+            # The words stay with the upgrade; a phrase's box starts again in the
+            # learning store (the data held then was test data).
+            sets["coach_upgrade.phrases"] = [
+                {k: v for k, v in p.items() if k in ("phrase", "meaning_vi")}
+                for p in upgrade["phrases"]
+            ]
+        update: dict = {"$unset": {k: "" for k in ("report_json", *D104_SCORE_COPIES)}}
+        if sets:
+            update["$set"] = sets
+        db["response"].update_one({"response_id": row["response_id"]}, update)
+    if _has(db, "review_session"):
+        for session in db["review_session"].find({"lock": {"$ne": None}}):
+            lock = {
+                k: v for k, v in session["lock"].items() if k in ("reviewer_id", "locked_until")
+            }
+            db["response"].update_one(
+                {"response_id": session["response_id"]}, {"$set": {"review_lock": lock}}
+            )
+        db.drop_collection("review_session")
+
+
+def _d104_order(db: Database) -> None:
+    """Each payment's fields join its order; the payment collection goes."""
+    if not _has(db, "payment"):
+        return
+    for paid in db["payment"].find({}):
+        fields = {k: paid.get(k) for k in ("checkout_ref", "reference", "settled_at")}
+        db["order"].update_one(
+            {"order_id": paid["order_id"]},
+            {"$set": {**fields, "events": paid.get("events") or []}},
+        )
+    db.drop_collection("payment")
+    db["order"].create_index([("checkout_ref", 1)], name="i_checkout_ref")
+
+
+def _d104_learning(db: Database) -> None:
+    """Lessons, attempts and plans hold documents, not JSON strings."""
+    if _has(db, "lesson"):
+        for row in db["lesson"].find(
+            {"$or": [{"draft_json": {"$exists": True}},
+                     {"versions.lesson_json": {"$exists": True}}]},
+            {"lesson_id": 1, "draft_json": 1, "versions": 1},
+        ):  # fmt: skip
+            versions = [
+                {**{k: v for k, v in x.items() if k != "lesson_json"},
+                 "lesson": _parsed(x.get("lesson_json", x.get("lesson")))}
+                for x in row.get("versions") or []
+            ]  # fmt: skip
+            sets: dict = {"versions": versions}
+            if "draft_json" in row:
+                sets["draft"] = _parsed(row["draft_json"])
+            db["lesson"].update_one(
+                {"lesson_id": row["lesson_id"]}, {"$set": sets, "$unset": {"draft_json": ""}}
+            )
+    if _has(db, "attempt"):
+        for row in db["attempt"].find(
+            {"$or": [{"result_json": {"$exists": True}}, {"override_json": {"$exists": True}}]},
+            {"attempt_id": 1, "result_json": 1, "override_json": 1},
+        ):
+            db["attempt"].update_one(
+                {"attempt_id": row["attempt_id"]},
+                {
+                    "$set": {
+                        "result": _parsed(row.get("result_json")),
+                        "override": _parsed(row.get("override_json")),
+                    },
+                    "$unset": {"result_json": "", "override_json": ""},
+                },
+            )
+    if _has(db, "learning_plan"):
+        for row in db["learning_plan"].find(
+            {"$or": [{"goal_json": {"$exists": True}}, {"plan_json": {"$exists": True}}]},
+            {"plan_id": 1, "goal_json": 1, "plan_json": 1},
+        ):
+            db["learning_plan"].update_one(
+                {"plan_id": row["plan_id"]},
+                {
+                    "$set": {"goal": _parsed(row.get("goal_json")),
+                             "plan": _parsed(row.get("plan_json"))},
+                    "$unset": {"goal_json": "", "plan_json": ""},
+                },
+            )  # fmt: skip
+
+
+def _d104_documents(db: Database, target: str) -> None:
+    """Fewer collections and no JSON strings (D104).
+
+    `review_session` (D082) folds back into `response.review_lock`, `payment`
+    (D084) into its `order`; the response's report is stored as the response's
+    own fields, without the score, band, verification and model copied out of
+    it; a phrase card's box leaves the upgrade (the learning store's review
+    items keep it from now on, starting again); lessons, attempts and plans
+    keep documents where they kept JSON strings. Approved by the project owner
+    on 11/11/2026; the data was test data.
+    """
+    _d104_response(db)
+    _d104_order(db)
+    _d104_learning(db)
+
+
+# ---------------------------------------------------------------- D105
+
+
+def _d105_copies(db: Database, target: str) -> None:
+    """Fields another field already gives go (D105).
+
+    An attempt's step, round, speaking time, rules and verdict (its `result`
+    and `override` give them) and the index on its step nothing queried; a
+    lesson's "changed since published" mark (the draft compared with the
+    version shown); the price list's copies of earlier versions and its counter
+    (the audit log keeps every change, the version carries the number); a
+    plan's copy of its goal and the path model's version inside it; a reading
+    passage's words (its drills hold them). And the times written and never
+    read: when a task was made, a path last changed, a unit made, a review item
+    last moved, a lesson version published, a medium uploaded. The token counts
+    kept with each charge and the recogniser's output count behind them go
+    too: nothing read them (the coach's daily counters keep the model's). Approved by the
+    project owner on 11/11/2026.
+    """
+    unset = {
+        "attempt": ("step_id", "round", "passed", "speaking_s", "rules_version"),
+        "lesson": ("draft_changed",),
+        "price_list": ("history", "number"),
+        "learning_plan": ("plan.goal", "plan.model_version"),
+        "drill_passage": ("words",),
+        "word_drill": ("word_index",),
+        "ledger": ("input_tokens", "output_tokens", "usage_estimated"),
+        "response": ("asr.output_tokens",),
+        "task": ("created_at",),
+        "path": ("updated_at",),
+        "review_item": ("updated_at",),
+    }
+    for collection, names in unset.items():
+        if _has(db, collection):
+            db[collection].update_many({}, {"$unset": {n: "" for n in names}})
+    _drop_index(db, "attempt", "i_lesson_id_step_id")
+    if _has(db, "path"):
+        for row in db["path"].find(
+            {"units.created_at": {"$exists": True}}, {"path_id": 1, "units": 1}
+        ):
+            units = [{k: v for k, v in u.items() if k != "created_at"} for u in row["units"]]
+            db["path"].update_one({"path_id": row["path_id"]}, {"$set": {"units": units}})
+    if _has(db, "lesson"):
+        stamped = {"$or": [{"versions.published_at": {"$exists": True}},
+                           {"media.created_at": {"$exists": True}}]}  # fmt: skip
+        for row in db["lesson"].find(stamped, {"lesson_id": 1, "versions": 1, "media": 1}):
+            db["lesson"].update_one(
+                {"lesson_id": row["lesson_id"]},
+                {
+                    "$set": {
+                        "versions": [{k: v for k, v in x.items() if k != "published_at"}
+                                     for x in row.get("versions") or []],
+                        "media": [{k: v for k, v in x.items() if k != "created_at"}
+                                  for x in row.get("media") or []],
+                    }
+                },
+            )  # fmt: skip
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -870,6 +1240,13 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(18, "word_drill: words said again from a recording (D089)", _d089_word_drill),
     Migration(19, "drill_passage: passages read around unclear words (D090)", _d090_drill_passage),
+    Migration(20, "account by email, pseudonym and unread fields removed (D103)", _d103_fields),
+    Migration(
+        21,
+        "review lock, payment and phrase state folded in; no JSON strings (D104)",
+        _d104_documents,
+    ),
+    Migration(22, "copies of other fields removed (D105)", _d105_copies),
 )
 
 LATEST = MIGRATIONS[-1].version

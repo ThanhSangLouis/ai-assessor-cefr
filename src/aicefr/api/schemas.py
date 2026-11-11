@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator
 
-from aicefr.auth.pseudonyms import validate_pseudonym  # noqa: F401 - re-export
 from aicefr.contracts import Band
 
 
@@ -36,9 +35,8 @@ class ReviewDecision(BaseModel):
         return v
 
 
-# D071: people sign in with their email. `pseudonym` is still read, for an
-# account made before D071 that has no email yet.
-SIGN_IN_NAME = AliasChoices("email", "pseudonym", "identifier")
+# D071: people sign in with their email.
+SIGN_IN_NAME = AliasChoices("email", "identifier")
 
 
 class LoginRequest(BaseModel):
@@ -50,8 +48,7 @@ class LoginRequest(BaseModel):
 
 class SignupRequest(BaseModel):
     """Self sign-up (D065, D071): the email to sign in with, the full name a
-    teacher reads, a password. The pseudonym is drawn by the system and stays
-    inside, for research exports and the audit log."""
+    teacher reads, a password."""
 
     email: str = Field(min_length=3, max_length=254)
     full_name: str = Field(min_length=1, max_length=80)
@@ -59,19 +56,19 @@ class SignupRequest(BaseModel):
 
 
 class EraseRequest(BaseModel):
-    """Erasure request. The id is sent twice on purpose.
+    """Erasure request. The email is sent twice on purpose.
 
     This deletes audio from disk and cannot be undone, so the second field is
-    the only thing between a mistyped id and somebody else's data. FR-35.
+    the only thing between a mistyped email and somebody else's data. FR-35.
     """
 
-    speaker_id: str = Field(min_length=1, max_length=64)
-    confirm_speaker_id: str = Field(min_length=1, max_length=64)
+    email: str = Field(min_length=3, max_length=254)
+    confirm_email: str = Field(min_length=3, max_length=254)
 
 
 class QueueItem(BaseModel):
     response_id: str
-    speaker_id: str
+    account_id: str | None
     task_id: str
     status: str
     overall_0_6: float | None
@@ -79,11 +76,6 @@ class QueueItem(BaseModel):
     teacher_verified: bool
     created_at: str
     locked_by: str | None = None
-    # D023. 'practice' for a practice attempt; the "my responses" screen then
-    # links to the practice result page instead of the scored report.
-    purpose: str = "assessment"
-    # D028. Time of the latest teacher decision, on the owner's own list only.
-    reviewed_at: str | None = None
     # D071. The student's full name, on a teacher's queue.
     student_name: str | None = None
 

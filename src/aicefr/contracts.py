@@ -49,7 +49,7 @@ class ReasonCode(str, Enum):
     kiem tra duoc, nen do phan giai cua ly do chinh la san pham.
 
     Ba ma tung ton tai ma khong noi nao sinh ra da duoc bo ngay 19/09/2026:
-    `IDENTITY_FIELD_REJECTED` (het nghia tu khi `speaker_id` lay tu phien dang
+    `IDENTITY_FIELD_REJECTED` (het nghia tu khi chu bai lay tu phien dang
     nhap, form khong con truong dinh danh nao de tu choi), `PROVENANCE_MISSING`
     va `TEACHER_REVIEW_REQUESTED` (chua bao gio duoc gan o dau).
     """
@@ -241,9 +241,6 @@ class Transcript(BaseModel):
     # khong phat hien duoc -- vi du model chi tieng Anh, hoac ban gia lap.
     language: str | None = None
     language_probability: float | None = Field(default=None, ge=0.0, le=1.0)
-    # D057: text tokens the decoder produced, counted by the recogniser; None
-    # when it cannot count them (the test double) or for a report made earlier.
-    output_tokens: int | None = Field(default=None, ge=0)
 
     def is_foreign(self, min_probability: float) -> bool:
         """Confidently not English (D022). A recogniser forced into English
@@ -580,11 +577,10 @@ class Assessment(BaseModel):
 
 
 class ProcessingRequest(BaseModel):
-    """Pipeline input. speaker_id must be a pseudonym; it must never contain a
-    student ID or a real name."""
+    """Pipeline input. Nothing in it names the speaker: the pipeline scores a
+    recording, not a person."""
 
     response_id: str
-    speaker_id: str
     task_id: str
     audio_path: str
     prompt_version: str
@@ -610,9 +606,8 @@ class Review(BaseModel):
     reason: str
     created_at: str  # when the teacher decided
     # D060: a review is part of its response's document; numbered in the order
-    # decisions were taken, and stamped with when the teacher opened it (D041).
+    # decisions were taken.
     review_id: int | None = None
-    opened_at: str | None = None
 
 
 class ReviewLock(BaseModel):
@@ -625,7 +620,6 @@ class ReviewLock(BaseModel):
 
     response_id: str
     reviewer_id: str
-    reviewer_name: str
     locked_until: str
 
     def is_held_by(self, reviewer_id: str) -> bool:
@@ -635,27 +629,6 @@ class ReviewLock(BaseModel):
         """So sanh chuoi ISO-8601 truc tiep duoc vi chung cung mui gio UTC va
         cung do chinh xac giay -- thu tu tu dien trung voi thu tu thoi gian."""
         return self.locked_until <= now
-
-
-class ReviewVisit(BaseModel):
-    """One time a teacher opened a response to review it, and how it ended. D041."""
-
-    reviewer_id: str
-    opened_at: str
-    decided_at: str | None = None
-    action: str | None = None
-
-
-class ReviewSession(BaseModel):
-    """Reviewing one response, kept apart from it (D082): at most one per response.
-
-    `lock` is who may decide now (FR-30); `visits` every opening, so a decision
-    can say when its teacher began (the lock is cleared on decision).
-    """
-
-    response_id: str
-    lock: ReviewLock | None = None
-    visits: list[ReviewVisit] = Field(default_factory=list)
 
 
 class AuditEntry(BaseModel):
@@ -806,41 +779,30 @@ class PracticeResult(BaseModel):
         return sum(1 for c in self.checks if c.met)
 
 
-class PhraseCard(BaseModel):
-    """One phrase of an upgraded answer and where it is in its reviews (D070).
+class UpgradePhrase(BaseModel):
+    """One phrase of an upgraded answer worth learning, with its meaning (D070).
 
-    A card of the phrase book: `box` is its Leitner box, `due` when it comes
-    back. Part of the upgrade it came from (`CoachUpgrade ◆ PhraseCard`).
+    Its words only: where the learner is in reviewing it is a `ReviewItem` of
+    kind "phrase" in the learning store (D104).
     """
 
     phrase: str
     meaning_vi: str = ""
-    box: int = 0
-    due: str | None = None
-    reviews: int = 0
-    reviewed_at: str | None = None
-
-    def is_due(self, at: str) -> bool:
-        """A card never reviewed is due at once."""
-        return (self.due or "") <= at
 
 
 class CoachUpgrade(BaseModel):
     """The learner's answer rewritten one band higher (D069), made once and kept.
 
     Part of the response (`Response ◆ CoachUpgrade`): it is made from the
-    response's transcript and goes with it. `provider` and `model` say which
-    language model wrote it.
+    response's transcript and goes with it. Which model wrote it is not kept
+    (D103): the audit log names the provider.
     """
 
     from_band: Band
     to_band: Band
     upgraded: str
     changes: list[dict] = Field(default_factory=list)
-    phrases: list[PhraseCard] = Field(default_factory=list)
-    provider: str
-    model: str
-    prompt_version: str
+    phrases: list[UpgradePhrase] = Field(default_factory=list)
     created_at: str
 
 
