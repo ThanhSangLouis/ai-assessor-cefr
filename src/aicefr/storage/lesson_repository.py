@@ -1045,7 +1045,11 @@ def _draft_changed(row: dict) -> bool:
     if not shown:
         return True
     version = next((v for v in row.get("versions") or [] if v["version"] == shown), None)
-    return version is None or row.get("draft") != version.get("lesson")
+    if version is None:
+        return True
+    # Compared as lessons, not as stored documents: a version published before
+    # a field was added to `Lesson` lacks its default, and is the same lesson.
+    return Lesson.model_validate(row.get("draft")) != Lesson.model_validate(version.get("lesson"))
 
 
 def _string_keys(value):

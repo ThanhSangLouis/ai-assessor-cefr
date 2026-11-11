@@ -20,7 +20,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 1. Unit | Kỷ lục, ngày nghỉ được tính, đếm dữ kiện, danh mục, thành tựu gần đạt nhất | pytest | Không ứng dụng, không CSDL | Máy và CI | `pytest tests/test_achievements_unit.py` |
 | 2. Integration | API thành tựu, lưu khi đạt, không lấy lại, ngày Việt Nam, bài và chặng xong, ôn tập, bài đánh giá, trang Luyện tập, bản xuất và xoá | pytest, FastAPI TestClient | SQLite thật trên tệp tạm; bộ nhận dạng giả, âm tổng hợp; lịch sử ngày cũ ghi thẳng qua kho; đồng hồ của API bài học bị ghim | Máy và CI | `pytest tests/test_achievements.py` |
-| 3. E2E | Lời chúc mừng, thẻ "1 mới", danh sách với nhãn "Mới" một lần; kỷ lục, ô ngày nghỉ, dòng bảy ngày; cột bên thôi dính khi cao hơn cửa sổ | Playwright + Chromium | Máy chủ uvicorn của `test_lessons_e2e.py` (bộ dò năng lượng, bộ nhận dạng giả) | **Chỉ trên máy**; CI tự bỏ qua | `pytest -m e2e tests/e2e/test_achievements_e2e.py` |
+| 3. E2E | Lời chúc mừng, danh sách thành tựu đã đạt (không nhãn "Mới", D103); kỷ lục, ô ngày nghỉ, dòng bảy ngày; cột bên thôi dính khi cao hơn cửa sổ | Playwright + Chromium | Máy chủ uvicorn của `test_lessons_e2e.py` (bộ dò năng lượng, bộ nhận dạng giả) | **Chỉ trên máy**; CI tự bỏ qua | `pytest -m e2e tests/e2e/test_achievements_e2e.py` |
 
 Phần nhìn — thẻ Thành tựu, ô thành tựu đã đạt, chưa đạt và mới, ô ngày nghỉ — kiểm bằng ảnh chụp từ máy chủ tạm ở 1280×820 và 390×844, sáng và tối; ảnh không lưu vào kho mã.
 
@@ -96,7 +96,7 @@ Tiêu chí chấp nhận AC-65.1..AC-66.4 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_new_once` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; mục Thành tựu của trang Kết quả (D092): ô mới có nhãn "Mới", ô chưa đạt có thanh tiến độ; tải lại thì hết "Mới"; không có chữ "band" |
+| TC-TT-E01 | `test_a_first_recording_is_congratulated_then_listed_as_reached` | AC-65.10 | Thông báo "Thành tựu mới: Lượt nói đầu tiên"; mục Thành tựu của trang Kết quả (D092) hiện ô đã đạt, không có nhãn "Mới" (D103 bỏ `seenAt`); ô chưa đạt có thanh tiến độ |
 | TC-TT-E02 | `test_the_week_shows_the_streak_and_the_rest_day` | AC-66.2 | "3 ngày liên tiếp", một ô ngày nghỉ có chú thích; cột bên cao hơn cửa sổ thì thôi dính (D092 bỏ kỷ lục, tổng 7 ngày và thẻ "Sắp đạt" khỏi trang Lộ trình) |
 
 ## 7. Kết quả chạy

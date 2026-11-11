@@ -1013,6 +1013,10 @@ def _d103_fields(db: Database, target: str) -> None:
 # plan as a document instead of a string holding JSON.
 
 D104_SCORE_COPIES = ("overall_0_6", "overall_band", "teacher_verified", "model_version")
+# The report's own fields (the contract `Response` but its reviews and upgrade),
+# fixed here: a report written before D083 also carries `practice`, gone since.
+D104_REPORT_KEYS = ("response_id", "status", "qc", "asr", "features", "assessment", "reasons",
+                    "config_version", "prompt_version")  # fmt: skip
 
 
 def _parsed(value):
@@ -1037,7 +1041,7 @@ def _d104_response(db: Database) -> None:
         sets: dict = {}
         report = _parsed(row.get("report_json")) or {}
         for key, value in report.items():
-            if key not in ("reviews", "upgrade"):
+            if key in D104_REPORT_KEYS:
                 sets[key] = value
         upgrade = row.get("coach_upgrade") or {}
         if upgrade.get("phrases"):

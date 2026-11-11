@@ -196,6 +196,27 @@ def audit_entries(m, target_id: str) -> list[dict]:
 # ================================================================= paths and versions (FR-45)
 
 
+def test_saving_an_unchanged_draft_leaves_nothing_to_publish(m, tmp_path):
+    """D105: "changed since published" is worked out, as lessons and not as documents.
+
+    A version published before a field was added to `Lesson` lacks its default;
+    saving the same lesson again must not mark it changed.
+    """
+    repo = LessonRepository(tmp_path / "drafts.db")
+    lesson, meta = repo.draft(SAMPLE)
+    assert meta["published_version"] >= 1 and meta["draft_changed"] is False
+    row = repo.col("lesson").find_one({"lesson_id": SAMPLE})
+    old = [{**v, "lesson": {k: x for k, x in v["lesson"].items() if k != "pass_ratio"}}
+           for v in row["versions"]]  # fmt: skip
+    repo.col("lesson").update_one({"lesson_id": SAMPLE}, {"$set": {"versions": old}})
+    repo.save_draft(SAMPLE, lesson)
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is False
+    repo.save_draft(SAMPLE, lesson.model_copy(update={"title": lesson.title + " (sửa)"}))
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is True
+    repo.publish(SAMPLE)
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is False
+
+
 def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     repo = LessonRepository(tmp_path / "fresh.db")
     LessonRepository(tmp_path / "fresh.db")  # a restart must not seed it twice

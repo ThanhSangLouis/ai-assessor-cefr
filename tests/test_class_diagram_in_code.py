@@ -254,3 +254,33 @@ def test_every_business_collection_belongs_to_an_entity_drawn():
     code = "\n".join(p.read_text(encoding="utf-8") for p in SRC.rglob("*.py"))
     unused = [c for c in owned if c not in collections and f'"{c}"' not in code]
     assert not unused, f"COLLECTION nhắc collection mã không dùng: {unused}"
+
+
+def _generator_spec() -> dict[str, list[str]]:
+    """Each entity of `tools/gen_class_diagram.py` and its attributes, in order."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "gen_class_diagram", ROOT / "tools/gen_class_diagram.py"
+    )
+    gen = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    spec.loader.exec_module(gen)  # type: ignore[union-attr]
+    return {
+        title.split(gen.BR)[-1]: [
+            m.group(1) for line in lines if (m := re.match(r"[-+] (\w+)", line))
+        ]
+        for _cid, title, lines in gen.CLASSES
+    }
+
+
+def test_every_box_drawn_matches_the_generator_spec():
+    """The drawio is routed by hand, the spec is where attributes are added: they must agree.
+
+    The diagram had drifted once: D094's lesson counters were in the spec but
+    never drawn on `Wallet`, `PriceList` and `LedgerEntry`, and every other
+    check passed, since they only ask that what is drawn exists in the code.
+    """
+    spec, boxes = _generator_spec(), drawn()
+    assert sorted(spec) == sorted(boxes), "sơ đồ và bộ sinh không cùng các thực thể"
+    differ = {e: (spec[e], boxes[e]) for e in spec if spec[e] != boxes[e]}
+    assert not differ, f"hộp trên sơ đồ khác đặc tả trong bộ sinh: {differ}"
