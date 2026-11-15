@@ -61,7 +61,8 @@ def stats_summary(account: Account = ADMIN_ONLY) -> dict:
 def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
     """Scoring artifacts on disk, with the metrics each one reports. FR-36."""
     from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer, load_model
+    from aicefr.scoring.factory import build_scorer
+    from aicefr.scoring.scorer import IncompatibleModelError, load_model
 
     active = active_model_name()
     out = []
@@ -79,8 +80,9 @@ def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
         # fitted on whole exam sittings and reports a higher correlation for a
         # different task. Saying so stops an administrator activating it.
         try:
-            RidgeScorer(stem)
-            compatible, why = True, None
+            missing = getattr(build_scorer(stem), "missing_files", lambda: [])()
+            compatible = not missing
+            why = f"thiếu tệp mô hình văn bản: {missing}" if missing else None
         except IncompatibleModelError as e:
             compatible, why = False, str(e)
         out.append(
@@ -111,16 +113,22 @@ def activate_model(name: str, account: Account = ADMIN_ONLY) -> dict:
     the new pipeline on the next job, since every job names its model.
     """
     from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer
+    from aicefr.scoring.factory import build_scorer
+    from aicefr.scoring.scorer import IncompatibleModelError
 
     if name not in artifacts.available():
         raise HTTPException(404, f"không có tệp mô hình tên {name!r}")
     try:
-        scorer = RidgeScorer(name)
+        scorer = build_scorer(name)
     except IncompatibleModelError as e:
         raise HTTPException(409, f"mô hình không dùng được cho hệ thống này: {e}") from e
     except Exception as e:  # noqa: BLE001 - a broken artifact must be reported, not raised raw
         raise HTTPException(422, f"không nạp được mô hình: {e}") from e
+    # A fusion model whose text weights are not on this machine would score
+    # every response with Ridge alone while the admin believes otherwise.
+    missing = getattr(scorer, "missing_files", lambda: [])()
+    if missing:
+        raise HTTPException(409, f"thiếu tệp mô hình văn bản trên máy chủ: {missing}")
 
     repo = svc().repo
     before = active_model_name()

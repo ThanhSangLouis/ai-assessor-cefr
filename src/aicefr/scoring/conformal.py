@@ -124,23 +124,32 @@ class ConformalCalibrator:
         co gia tri thi KHONG co chi bao -- vang mat khong duoc doc thanh trung
         binh.
         """
-        out: list[CriterionIndicator] = []
-        for crit, names in criterion_features.items():
-            for name in names:
-                ref = self._reference.get(name)
-                value = features.value_of(name)
-                if ref is None or value is None:
-                    continue
-                out.append(
-                    CriterionIndicator(
-                        criterion=crit,
-                        feature=name,
-                        value=round(float(value), 4),
-                        percentile=round(_percentile(float(value), ref["deciles"]), 3),
-                        higher_is_better=bool(ref["higher_is_better"]),
-                    )
+        return reference_indicators(features, self._reference, criterion_features)
+
+
+def reference_indicators(
+    features: FeatureSet,
+    reference: dict,
+    criterion_features: dict[Criterion, tuple[str, ...]],
+) -> list[CriterionIndicator]:
+    """Each measurement's percentile in the training distribution `reference` (deciles)."""
+    out: list[CriterionIndicator] = []
+    for crit, names in criterion_features.items():
+        for name in names:
+            ref = reference.get(name)
+            value = features.value_of(name)
+            if ref is None or value is None:
+                continue
+            out.append(
+                CriterionIndicator(
+                    criterion=crit,
+                    feature=name,
+                    value=round(float(value), 4),
+                    percentile=round(_percentile(float(value), ref["deciles"]), 3),
+                    higher_is_better=bool(ref["higher_is_better"]),
                 )
-        return out
+            )
+    return out
 
 
 def weakest(indicators: list[CriterionIndicator]) -> list[Criterion]:

@@ -145,14 +145,14 @@ class SpeechWorker:
         """
         key = (qc["version"], model)
         if key not in self._processors:
-            from aicefr.scoring.scorer import RidgeScorer
+            from aicefr.scoring.factory import build_scorer
 
             self._processors[key] = ResponseProcessor(
                 self.engine(),
                 quality_checker=audio_qc.AudioQualityChecker(
                     audio_qc.QcThresholds(**qc["thresholds"]), qc["version"]
                 ),
-                scorer=RidgeScorer(model),
+                scorer=build_scorer(model),
                 task_lookup=self._tasks.get,
             )
         return self._processors[key]
