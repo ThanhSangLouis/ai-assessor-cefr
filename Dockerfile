@@ -23,13 +23,19 @@ FROM builder AS builder-speech
 # faster-whisper (MIT) for the real recogniser; the energy detector is used when
 # Silero (torch, about 2 GB) is not installed. Build with --build-arg VAD=1 to add it.
 ARG VAD=0
-# EC2 runs on CPU. Install the CPU wheel before the vad extra so enabling
-# Silero does not pull CUDA libraries into the speech image.
+# --build-arg TEXT=1 adds the text half of the fusion scorer (`text` extra:
+# transformers, safetensors, sentencepiece on top of torch). The weights are not
+# in the image: they come from AICEFR_MODEL_DIR, and an administrator must still
+# activate a fusion artifact before any response is scored with them.
+ARG TEXT=0
+# EC2 runs on CPU. Install the CPU wheel before the vad and text extras so
+# neither pulls CUDA libraries into the speech image.
 RUN /opt/venv/bin/pip install ".[services,asr]" \
- && if [ "$VAD" = "1" ]; then \
-      /opt/venv/bin/pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu \
-      && /opt/venv/bin/pip install ".[vad]"; \
+ && if [ "$VAD" = "1" ] || [ "$TEXT" = "1" ]; then \
+      /opt/venv/bin/pip install "torch>=2.2" --index-url https://download.pytorch.org/whl/cpu; \
     fi \
+ && if [ "$VAD" = "1" ]; then /opt/venv/bin/pip install ".[vad]"; fi \
+ && if [ "$TEXT" = "1" ]; then /opt/venv/bin/pip install ".[text]"; fi \
  && /opt/venv/bin/pip install --upgrade "setuptools>=78.1.1"
 
 # ---------------------------------------------------------------------------

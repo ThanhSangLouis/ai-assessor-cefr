@@ -154,7 +154,26 @@ jobs:
       - name: Anh dich vu
         run: docker build --target service -t aicefr-service:ci .
       - name: Anh speech
-        run: docker build --target speech --build-arg VAD=1 -t aicefr-speech:ci .
+        run: docker build --target speech --build-arg VAD=1 --build-arg TEXT=1 -t aicefr-speech:ci .
+      # The fusion scorer imports these lazily, on its first prediction: a missing
+      # library would only show up after an administrator activates it.
+      - name: Anh speech co thu vien mo hinh van ban, torch ban CPU
+        run: |
+          docker run --rm --network none --entrypoint python aicefr-speech:ci -c '
+          import importlib.metadata as md
+          import safetensors, sentencepiece, torch
+          from transformers import AutoTokenizer, DebertaV2Config, DebertaV2ForSequenceClassification
+          from aicefr.scoring.text_model import DebertaTextModel
+          cuda = sorted(d.metadata["Name"] for d in md.distributions() if d.metadata["Name"].lower().startswith("nvidia"))
+          assert not cuda, f"CUDA libraries in the speech image: {cuda}"
+          assert torch.version.cuda is None, torch.__version__
+          model = DebertaV2ForSequenceClassification(DebertaV2Config(
+              vocab_size=1000, hidden_size=32, num_hidden_layers=1, num_attention_heads=2,
+              intermediate_size=64, num_labels=1)).eval()
+          with torch.inference_mode():
+              out = model(input_ids=torch.tensor([[1, 5, 7, 2]])).logits
+          assert out.shape == (1, 1)
+          print("text model libraries ok:", torch.__version__, md.version("transformers"))'
       - name: Anh speech nap duoc Silero khi khong co mang
         run: |
           docker run --rm --network none --entrypoint python aicefr-speech:ci -c '
