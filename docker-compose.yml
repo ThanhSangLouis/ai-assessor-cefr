@@ -152,6 +152,9 @@ services:
       target: speech
       args:
         VAD: "1"
+        # Libraries for the fusion scorer (DeBERTa text model). Unused until an
+        # administrator activates a fusion artifact; needs the weights in /models.
+        TEXT: "1"
     image: aicefr-speech:latest
     restart: unless-stopped
     environment:
