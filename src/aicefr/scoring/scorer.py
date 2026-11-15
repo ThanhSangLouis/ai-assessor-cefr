@@ -163,6 +163,36 @@ def predict_overall(features: FeatureSet, model: dict) -> tuple[float | None, li
     return float(min(max(raw, SCORE_MIN), SCORE_MAX)), []
 
 
+def criteria_coverage(
+    features: FeatureSet, overall: float | None, reasons: list[ReasonCode]
+) -> list[CriterionCoverage]:
+    """How much of each criterion's evidence could be measured. Shared by every scorer."""
+    criteria: list[CriterionCoverage] = []
+    for crit, feats in CRITERION_FEATURES.items():
+        usable = [f for f in feats if features.value_of(f) is not None]
+        if overall is None or not usable:
+            criteria.append(
+                CriterionCoverage(
+                    criterion=crit,
+                    reasons=reasons or [ReasonCode.FEATURE_NOT_COMPUTABLE],
+                )
+            )
+            continue
+        conf = len(usable) / len(feats)
+        criteria.append(
+            # Khong con score_0_6 va band o day. Mo hinh co MOT dau ra;
+            # ghi dung con so do vao ca nam dong tao ra nam ban sao doc
+            # nhu nam phan xet doc lap. Thu that su rieng cho tung tieu chi
+            # la ty le phep do tinh duoc, va do la thu duy nhat con lai.
+            CriterionCoverage(
+                criterion=crit,
+                coverage=round(conf, 2),
+                reasons=[] if conf == 1.0 else [ReasonCode.FEATURE_NOT_COMPUTABLE],
+            )
+        )
+    return criteria
+
+
 class RidgeScorer:
     """Scores a response with the calibrated linear (ridge) model.
 
@@ -241,8 +271,11 @@ class RidgeScorer:
             out[name] = coef * ((x - mean) / scale)
         return out
 
-    def score(self, features: FeatureSet) -> Assessment:
+    def score(self, features: FeatureSet, text: str | None = None) -> Assessment:
         """Score the overall response and each criterion.
+
+        `text` (the transcript) is part of the `Scorer` port for scorers that
+        read it (`aicefr.scoring.fusion.DebertaScorer`); this model does not.
 
         Declared limitations, which must be stated whenever results are reported:
         1. The model was trained on the OVERALL score label of a response, not on
@@ -254,30 +287,7 @@ class RidgeScorer:
         model = self._model
         overall, reasons = predict_overall(features, model)
         th = self.band_thresholds
-
-        criteria: list[CriterionCoverage] = []
-        for crit, feats in CRITERION_FEATURES.items():
-            usable = [f for f in feats if features.value_of(f) is not None]
-            if overall is None or not usable:
-                criteria.append(
-                    CriterionCoverage(
-                        criterion=crit,
-                        reasons=reasons or [ReasonCode.FEATURE_NOT_COMPUTABLE],
-                    )
-                )
-                continue
-            conf = len(usable) / len(feats)
-            criteria.append(
-                # Khong con score_0_6 va band o day. Mo hinh co MOT dau ra;
-                # ghi dung con so do vao ca nam dong tao ra nam ban sao doc
-                # nhu nam phan xet doc lap. Thu that su rieng cho tung tieu chi
-                # la ty le phep do tinh duoc, va do la thu duy nhat con lai.
-                CriterionCoverage(
-                    criterion=crit,
-                    coverage=round(conf, 2),
-                    reasons=[] if conf == 1.0 else [ReasonCode.FEATURE_NOT_COMPUTABLE],
-                )
-            )
+        criteria = criteria_coverage(features, overall, reasons)
 
         interval = None
         indicators = []

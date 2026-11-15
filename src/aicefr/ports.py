@@ -74,7 +74,15 @@ class Scorer(Protocol):
 
     model_version: str
 
-    def score(self, features: FeatureSet) -> Assessment: ...
+    def score(self, features: FeatureSet, text: str | None = None) -> Assessment:
+        """Score one response.
+
+        `text` is the transcript of exactly the audio `features` describe. A
+        scorer that reads only the measurements ignores it; one that also reads
+        the words (`DebertaScorer`) falls back to its measurement-only model
+        when it is None, rather than guessing.
+        """
+        ...
 
     def contributions(self, features: FeatureSet) -> dict[str, float]:
         """How many points each measurement added to or took from the score.

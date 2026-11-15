@@ -44,6 +44,11 @@ asr = [
   "faster-whisper>=1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
 ]
 vad = ["silero-vad>=5.1", "torch>=2.2"]
+# The fusion scorer's text half (aicefr.scoring.text_model): DeBERTa-v3 with a
+# LoRA adapter merged at load time, so peft is not needed. Apache-2.0 (transformers,
+# safetensors, sentencepiece) and BSD (torch). Only the speech service needs it,
+# and only when an administrator activates a fusion artifact.
+text = ["torch>=2.2", "transformers>=4.45", "safetensors>=0.4", "sentencepiece>=0.2"]
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
