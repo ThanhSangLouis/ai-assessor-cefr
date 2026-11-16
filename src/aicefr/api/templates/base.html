@@ -80,6 +80,8 @@
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
       {#- D068: one entry for the history and the progress, two tabs inside. -#}
       <a href="/my-progress"{% if here in ("mine", "progress") %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Kết quả</span></a>
+      {#- D109: classes join only by the student's own act; invitations wait here. -#}
+      <a href="/my-classes"{% if here == "my_classes" %} aria-current="page"{% endif %}>{{ icon("users") }}<span class="nav-label">Lớp của tôi</span>{{ badge("class_invites") }}</a>
       {% if metered() %}
       <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
       {% endif %}

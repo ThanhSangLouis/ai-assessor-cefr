@@ -119,6 +119,14 @@ class AssessmentFacade:
         return self.repo.assessments_by_account(since, until)
 
     @exposed
+    def class_invites(self, account_id: str) -> int:
+        """Invitations to a running class this student has not answered (D109)."""
+        from aicefr.services.core.assessment.context import svc
+
+        rooms = svc().classrooms
+        return rooms.count_invitations(account_id) if rooms is not None else 0
+
+    @exposed
     def staff_badges(self, account_id: str, role: str = "teacher") -> dict:
         """Responses waiting for review.
 

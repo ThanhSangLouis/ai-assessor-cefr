@@ -543,3 +543,16 @@ body.staff main :is(h2, h3):not(.visually-hidden):not(.empty-state h2) { color: 
 body.staff main .card h2 .count { color: var(--fg-muted); }
 /* The current rail item reads in orange too. */
 body.staff .app-sidebar .site-nav a[aria-current="page"] { color: #ffb08f !important; }
+
+/* ------------------------------------------------------------------ join code (D109) */
+/* The code is read aloud across a classroom: large, spaced, digits even. */
+body.staff .join-code {
+  margin: 0 0 var(--sp-2);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: var(--brand);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  font-variant-numeric: tabular-nums;
+}
+body.staff .sub-head { margin: var(--sp-4) 0 var(--sp-2); font-size: var(--t-base); }

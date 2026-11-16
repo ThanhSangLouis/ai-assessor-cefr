@@ -88,7 +88,7 @@
 | Đề và bài nói | `Task`, `Response` | Kết quả chấm (điểm, band, khoảng tin cậy, nhận xét, lý do) và nhãn nghe lại là thuộc tính của `Response` |
 | Giảng viên duyệt | `Review` | `Review`: mỗi lần đổi điểm hoặc band, kèm lý do, nằm trong bài nói. Ai đang giữ quyền duyệt, tới lúc nào là `Response.lockedBy`, `lockedUntil` (D104) |
 | Bản nâng cấp và sổ cụm từ | `CoachUpgrade`, `ReviewItem` | Bài nói viết lại một band cao hơn (D069); các cụm từ của nó ôn theo hộp (D070), mỗi cụm từ một `ReviewItem` loại `phrase` (D104) |
-| Lớp học | `Classroom` | Giảng viên và thành viên là quan hệ nhiều–nhiều với `Account` |
+| Lớp học | `Classroom` | Giảng viên, thành viên và người được mời (D109) là ba quan hệ nhiều–nhiều với `Account`, phân biệt bằng tên vai ở đầu đường; `joinCode` là mã sinh viên tự nhập để vào lớp |
 | Lộ trình, bài học | `LessonPath`, `Unit`, `Lesson`, `Step` | Phiên bản đã xuất bản và media là thuộc tính của `Lesson` |
 | Luyện ở bước bài học | `StepAttempt` | Một lượt nói ở một bước, ghi phiên bản bài học |
 | Ôn tập ngắt quãng | `ReviewItem` | Hộp Leitner, ngày đến hạn; từ của một bước bài học, (D089) của một `WordDrill`, hoặc (D104) một cụm từ của Sổ cụm từ |
@@ -134,7 +134,7 @@ Code vẫn dùng các enum này; sơ đồ chỉ không vẽ chúng.
 | | `audit_log` | `AuditEntry` | | |
 | | `task` | `Task` | | |
 | | `response` | `Response` | `Review`, `CoachUpgrade`, nhãn nghe lại, khoá duyệt; báo cáo chấm là chính các trường của document | D060 gộp `response`, `replay_label`, `review_action`; D104 gộp lại `review_session` |
-| | `classroom` | `Classroom` | giảng viên, thành viên | D060; `Assignment` gỡ ở D075 |
+| | `classroom` | `Classroom` | giảng viên, thành viên, người được mời, mã vào lớp | D060; `Assignment` gỡ ở D075; `invited`, `join_code` thêm ở D109 |
 | | `order` | `Order` | sự kiện cổng thanh toán | D060 gộp `billing_order`; D104 gộp lại `payment` |
 | learning | `path` | `LessonPath` | `Unit` | D060 gộp `lesson_path`, `lesson_unit` |
 | | `lesson` | `Lesson` | `Step`, các phiên bản, media | D060 gộp `lesson`, `lesson_version`, `lesson_media` |

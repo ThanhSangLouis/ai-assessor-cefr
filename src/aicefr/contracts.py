@@ -848,3 +848,12 @@ class Response(BaseModel):
 # service; payload: order_id, account_id, status ("paid" | "failed"), runs,
 # amount_vnd, gateway_title, reference, live, settled_at. Never an email.
 ORDER_SETTLED = "billing.order_settled"
+
+# D109: a teacher invited a student to a class. Published once per new
+# invitation by the assessment service; payload: class_id, class_name,
+# account_id (the student), by (the teacher's account id), at. Never an email.
+CLASS_INVITED = "classroom.invited"
+# D109: a student joined a class by their own act. Payload: class_id,
+# class_name, account_id (the student), via ("code" | "invite"), teacher_ids,
+# members (how many now), at.
+CLASS_JOINED = "classroom.joined"

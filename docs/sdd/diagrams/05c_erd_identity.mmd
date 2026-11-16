@@ -1,5 +1,6 @@
 %% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
-%% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
+%% Ban 1.34: tai khoan la email (D103 bo but danh va dau "da xem").
+%% Lien ket Google nam trong document cua tai khoan; phien dang
 %% nhap la collection rieng vi can chi muc TTL tu xoa phien het han; trinh
 %% duyet nhan thong bao day (D088) cung rieng, mot tai khoan nhieu trinh duyet.
 erDiagram
@@ -8,21 +9,22 @@ erDiagram
 
     account {
         string account_id PK
-        string pseudonym UK "mã tài khoản (SV-001…), dữ liệu nghiên cứu chỉ mang mã này"
-        string email UK "D071: đăng nhập, viết thường; trống ở tài khoản cũ"
-        int email_verified "D071: Google đã xác minh"
+        string email UK "đăng nhập, viết thường; tài khoản là email (D103)"
+        int email_verified "mã qua email hay Google đã xác minh; cần cho lượt miễn phí (D101)"
         string full_name "D071: giảng viên lớp thấy"
         string password_hash "scrypt"
         string role "student · teacher · admin"
         int failed_attempts
         string locked_until
+        string created_at
+        string last_login_at
+        string password_changed_at
         int disabled
         int must_change_password "D028"
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
         array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
-        object seen_markers "tên dấu → lúc xem (D028)"
         object email_codes "mã gửi qua email, chỉ lưu băm (D079)"
         int email_reminders "nhắc học qua email (D079)"
         string reminder_sent_on "ngày đã gửi thư nhắc (D079)"

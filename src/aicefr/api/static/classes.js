@@ -2,6 +2,8 @@
 // by name; D074: the bands each student studies, grouped by target, and a path
 // for each group. Classes set no assessments any more (D075). An
 // administrator sees every class and assigns its teachers.
+// D109: a teacher invites students by email or gives out the class's join
+// code; the student joins by their own act. An administrator adds directly.
 const escapeHtml = window.escapeHtml;
 const root = document.getElementById("classes-root");
 const classId = root.dataset.classId;
@@ -150,13 +152,43 @@ async function detailView() {
       <p class="muted">Lưu trữ khi lớp đã học xong: giảng viên không còn xem bài của sinh viên trong lớp. Kết quả vẫn giữ, khôi phục được bất cứ lúc nào.</p>
       <button class="button secondary" type="button" id="class-archive">Lưu trữ lớp</button>
     </section>`;
-  root.innerHTML = `${state}
+  // D109: the join code, while the class runs.
+  const code = c.archived
+    ? ""
+    : `<section class="card join-code-card" aria-labelledby="code-h">
+      <div class="card-head"><h2 id="code-h">Mã vào lớp</h2></div>
+      ${
+        c.join_code
+          ? `<p class="join-code" aria-label="Mã vào lớp ${escapeHtml(c.join_code.split("").join(" "))}">${escapeHtml(c.join_code)}</p>
+        <p class="muted small">Sinh viên nhập mã ở trang Lớp của tôi để tự vào lớp.</p>
+        <div class="button-row">
+          <button class="button secondary small" type="button" id="code-copy">Sao chép</button>
+          <button class="button secondary small" type="button" id="code-new">Đổi mã</button>
+          <button class="button secondary small" type="button" id="code-off">Tắt mã</button>
+        </div>`
+          : `<p class="muted">Đang tắt. Bật để sinh viên tự vào lớp bằng mã.</p>
+        <button class="button secondary" type="button" id="code-new">Bật mã vào lớp</button>`
+      }
+    </section>`;
+  const invited = c.invited || [];
+  const invitedList = invited.length
+    ? `<h3 class="sub-head">Chờ sinh viên trả lời (${invited.length})</h3>
+      <ul class="plain-list">${invited
+        .map(
+          (m) => `<li class="assign-row"><span>${escapeHtml(m.name)}${m.email && m.email !== m.name ? `<span class="cell-sub">${escapeHtml(m.email)}</span>` : ""}</span>
+            <button class="button secondary small" data-withdraw="${escapeHtml(m.account_id)}">Huỷ lời mời</button></li>`,
+        )
+        .join("")}</ul>`
+    : "";
+  root.innerHTML = `${state}${code}
     <section class="card" aria-labelledby="members-h">
       <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
       <form id="members-form" class="inline-form">
-        <label class="field"><span>Thêm sinh viên theo email, cách nhau bằng dấu phẩy</span><input name="list" placeholder="an.nguyen@truong.edu.vn, binh.tran@truong.edu.vn"></label>
-        <button class="button secondary" type="submit">Thêm</button>
+        <label class="field"><span>${isAdmin ? "Thêm sinh viên theo email" : "Mời sinh viên theo email"}, cách nhau bằng dấu phẩy</span><input name="list" placeholder="an.nguyen@truong.edu.vn, binh.tran@truong.edu.vn"></label>
+        <button class="button secondary" type="submit">${isAdmin ? "Thêm" : "Gửi lời mời"}</button>
       </form>
+      ${isAdmin ? "" : '<p class="muted small">Sinh viên chấp nhận lời mời thì mới vào lớp.</p>'}
+      ${invitedList}
       ${
         c.members.length
           ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Sinh viên</th><th>Học theo band</th><th></th></tr></thead><tbody>${c.members
@@ -205,6 +237,29 @@ async function detailView() {
   };
   document.getElementById("class-archive")?.addEventListener("click", setArchived(true));
   document.getElementById("class-restore")?.addEventListener("click", setArchived(false));
+  const setCode = (on) => async () => {
+    if (on && c.join_code && !window.confirm("Đổi mã? Mã cũ sẽ không dùng được nữa.")) return;
+    const url = `/api/v1/classes/${encodeURIComponent(classId)}/code`;
+    const r = on ? await post(url, {}) : await window.apiJson(url, { method: "DELETE" });
+    if (r) detailView();
+  };
+  document.getElementById("code-new")?.addEventListener("click", setCode(true));
+  document.getElementById("code-off")?.addEventListener("click", setCode(false));
+  document.getElementById("code-copy")?.addEventListener("click", () => {
+    navigator.clipboard
+      ?.writeText(c.join_code)
+      .then(() => window.toast("Đã sao chép mã.", "ok"))
+      .catch(() => {});
+  });
+  root.querySelectorAll("button[data-withdraw]").forEach((b) =>
+    b.addEventListener("click", async () => {
+      const r = await window.apiJson(
+        `/api/v1/classes/${encodeURIComponent(classId)}/invites/${encodeURIComponent(b.dataset.withdraw)}`,
+        { method: "DELETE" },
+      );
+      if (r) detailView();
+    }),
+  );
   root.querySelectorAll("button[data-remove]").forEach((b) =>
     b.addEventListener("click", async () => {
       const r = await window.apiJson(
@@ -241,7 +296,8 @@ async function detailView() {
     if (!people.length) return;
     const d = await post(`/api/v1/classes/${encodeURIComponent(classId)}/members`, { people });
     if (!d) return;
-    const parts = [`Đã thêm ${d.added.length}`];
+    const parts = [isAdmin ? `Đã thêm ${d.added.length}` : `Đã gửi ${d.invited.length} lời mời`];
+    if (d.pending?.length) parts.push(`${d.pending.length} đã mời, đang chờ trả lời`);
     if (d.already.length) parts.push(`${d.already.length} đã ở trong lớp`);
     const notStudents = d.not_students || [];
     if (notStudents.length) parts.push(`không phải tài khoản sinh viên: ${notStudents.join(", ")}`);

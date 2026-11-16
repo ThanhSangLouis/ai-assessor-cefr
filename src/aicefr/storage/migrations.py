@@ -1253,6 +1253,26 @@ def _d107_ai_runs(db: Database, target: str) -> None:
         db["price_list"].update_one({"_id": "current", name: 0.0}, {"$set": {name: 1.0}})
 
 
+def _d109_join_code(db: Database, target: str) -> None:
+    """A student joins a class by its join code or an invitation (D109).
+
+    A unique index on `classroom.join_code` over the classes that have one,
+    and one on `invited`: the sidebar counts a student's invitations on every
+    page. The join code of D054 (`code`, unread since D075) is another field
+    and stays as it is. Only indexes are added: no document changes.
+    """
+    ensure_indexes(
+        db,
+        {
+            "classroom": [
+                (("join_code",), True, {"join_code": {"$exists": True}}),
+                (("invited",), False),
+            ]
+        },
+        "migration-25",
+    )
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -1298,6 +1318,9 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(22, "copies of other fields removed (D105)", _d105_copies),
     Migration(23, "balances and prices in whole runs (D106)", _d106_whole_runs),
     Migration(24, "an answer a language model writes costs one run (D107)", _d107_ai_runs),
+    Migration(
+        25, "classroom.join_code: a student joins by code or invitation (D109)", _d109_join_code
+    ),
 )
 
 LATEST = MIGRATIONS[-1].version

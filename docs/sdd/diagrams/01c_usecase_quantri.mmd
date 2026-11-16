@@ -3,12 +3,16 @@
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
 %% Ban 1.16 (D078): mot trung tam, hoc vien tra theo luot -- quan tri vien dat
 %% gia luot va goi luot, theo doi AI viet lai; khong con goi dich vu (D075).
+%% Ban 1.34: tao lop va phan cong giang vien (UC-30, D071), theo doi don nap
+%% luot va doi soat voi payOS (UC-41, D099), quen mat khau (UC-35).
 flowchart LR
     QT(("Quản trị viên"))
+    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
         UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
         UC07["UC-07 Quản trị viên xoá dữ liệu của một người học"]
         UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
@@ -17,6 +21,8 @@ flowchart LR
         UC32["UC-32 Quản trị viên đặt giá lượt và gói lượt"]
         UC34["UC-34 Quản trị viên cộng lượt cho một tài khoản"]
         UC33["UC-33 Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp"]
+        UC30["UC-30 Giảng viên quản lý lớp và giao lộ trình band"]
+        UC41["UC-41 Quản trị viên theo dõi đơn nạp lượt và đối soát"]
     end
 
     QT --> UC17
@@ -28,10 +34,17 @@ flowchart LR
     QT --> UC34
     QT --> UC33
     QT --> UC07
+    QT --> UC35
+    QT --> UC30
+    QT --> UC41
+    UC41 --- CTT
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia chin
-    %% use case thanh hai cot (tai khoan va mo hinh; luot va AI) cho hinh vua A4.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia muoi
+    %% hai use case thanh hai cot (tai khoan, lop va mo hinh; luot, don va AI)
+    %% cho hinh vua A4.
     UC17 ~~~ UC12
     UC10 ~~~ UC32
     UC07 ~~~ UC34
     UC08 ~~~ UC33
+    UC35 ~~~ UC41
+    UC30 ~~~ UC09

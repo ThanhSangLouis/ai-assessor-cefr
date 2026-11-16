@@ -25,6 +25,18 @@ RESEND_URL = "https://api.resend.com/emails"
 TIMEOUT_S = 10
 
 
+# The demo accounts' subdomain receives no mail (`accounts_cli.SEED_DOMAIN`):
+# a message there only bounces and costs the sending domain its standing.
+NO_MAILBOX_DOMAINS = frozenset({"demo.speakup.fit"})
+
+
+def has_mailbox(address: str | None) -> bool:
+    """Whether an email to this address can be read by someone."""
+    if not address or "@" not in address:
+        return False
+    return address.rsplit("@", 1)[1].lower() not in NO_MAILBOX_DOMAINS
+
+
 class EmailError(Exception):
     """The provider refused or did not answer; the caller says so, never pretends."""
 

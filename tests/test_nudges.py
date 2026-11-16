@@ -77,3 +77,12 @@ def test_the_endpoint_gathers_the_learners_reminders(tmp_path, monkeypatch):
     assert student.get("/api/v1/me/nudges").json() == {"nudges": []}
     assert "assignments" not in student.get("/api/v1/me/badges").json()
     assert teacher.get("/api/v1/me/nudges").json() == {"nudges": []}
+
+
+@pytest.mark.unit
+def test_an_unanswered_class_invitation_is_a_reminder():
+    # D109: a student joins a class only by answering; the reminder points there.
+    one = nudges(MORNING, QUIET, 0, None, class_invites=1)
+    assert [(n.kind, n.href) for n in one] == [("classes", "/my-classes")]
+    assert "Một lớp" in one[0].text
+    assert "2 lớp" in nudges(MORNING, QUIET, 0, None, class_invites=2)[0].text

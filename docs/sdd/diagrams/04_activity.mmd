@@ -1,6 +1,8 @@
 %% SDD - So do 04: Activity diagram - vong doi mot bai noi
 %% Khop may trang thai that: QUEUED -> RUNNING -> COMPLETED / REVIEW_REQUIRED / REJECTED / FAILED
 %% Ba muc QC: PASS / REVIEW / REJECT (aicefr/qc/audio_qc.py). Chi tiet ma ly do xem enum ReasonCode muc 4.0.
+%% Ban 1.34: giu luot truoc khi nhan (D049, D106), cham o dich vu speech qua Redis (D050),
+%% band A1..C2 (D076), tinh luot theo ket qua (D107).
 flowchart TD
     A0(["Nhận POST /api/v1/responses"]) --> A1["Kiểm tra phiên đăng nhập, task_id<br/>và kích thước tối đa 25 MiB"]
     A1 --> D1{"Hợp lệ?"}
@@ -10,8 +12,10 @@ flowchart TD
     A2 --> D2{"Nhận ra định dạng?"}
     D2 -- Không --> E2["415 · không nhận ra định dạng audio"]
 
-    D2 -- Có --> A3["Lưu báo cáo status QUEUED, trả 202 Accepted ngay;<br/>JobQueue.enqueue đặt status RUNNING"]
-    A3 --> A3b["FirstMatchDecoder.decode ở nền<br/>SoundFileDecoder hoặc FfmpegDecoder"]
+    D2 -- Có --> D2a{"Giữ được 1 lượt?<br/>MeteringFacade.hold"}
+    D2a -- Không --> E1b["402 · hết lượt, mời mua thêm"]
+    D2a -- Có --> A3["Lưu báo cáo status QUEUED, trả 202 Accepted ngay;<br/>gửi việc speech.score qua Redis, speech báo RUNNING"]
+    A3 --> A3b["Dịch vụ speech: FirstMatchDecoder.decode<br/>SoundFileDecoder hoặc FfmpegDecoder"]
     A3b --> D2b{"Giải mã được?"}
     D2b -- Không --> E2b["status FAILED · AUDIO_UNSUPPORTED"]
 
@@ -32,7 +36,7 @@ flowchart TD
     D5 -- ModelNotFoundError --> E6["status REVIEW_REQUIRED · MODEL_VERSION_MISSING"]
     D5 -- "Ngoài phân bố huấn luyện" --> E6b["status REVIEW_REQUIRED · SCORE_OUT_OF_DISTRIBUTION"]
 
-    D5 -- Có --> A7["Quy điểm 0-6 về band A2 B1 B2 · EvidenceBuilder sinh bằng chứng ·<br/>so phiên bản ASR/VAD với trained_with · ReviewRouter gắn cờ"]
+    D5 -- Có --> A7["Quy điểm 0-6 về band A1 … C2 · EvidenceBuilder sinh bằng chứng ·<br/>so phiên bản ASR/VAD với trained_with · ReviewRouter gắn cờ"]
     A7 --> D6{"Có cờ REVIEW nào<br/>kể cả cờ QC?"}
     D6 -- Không --> Z1(["status COMPLETED<br/>teacher_verified false"])
     D6 -- Có --> Z3(["status REVIEW_REQUIRED<br/>vào hàng đợi giảng viên"])
@@ -42,10 +46,14 @@ flowchart TD
     E6b --> Z3
     Z3 --> A8["Giảng viên khóa bài, duyệt hoặc sửa điểm;<br/>Repository.apply_review ghi audit_log, teacher_verified true"]
 
+    Z9["scoring.settle_charge: có kết quả thì trừ 1 lượt,<br/>FAILED hay REJECTED thì trả lượt; báo trực tiếp qua SSE và Web Push"]
+    E2b --> Z9
+    E3 --> Z9
+    E4 --> Z9
+    Z1 --> Z9
+    Z3 --> Z9
     E1 --> Z4(["Trả báo cáo kèm mã lý do qua<br/>GET /api/v1/responses/{id}"])
+    E1b --> Z4
     E2 --> Z4
-    E2b --> Z4
-    E3 --> Z4
-    E4 --> Z4
-    Z1 --> Z4
+    Z9 --> Z4
     A8 --> Z4

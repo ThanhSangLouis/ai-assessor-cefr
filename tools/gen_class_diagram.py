@@ -233,8 +233,12 @@ CLASSES = [
         [
             "- classId: str",
             "- name: str",
+            # D109: the code a student types to join; none while it is off.
+            "- joinCode: str",
             "- teachers: Account [0..*]",
             "- members: Account [0..*]",
+            # D109: invited by a teacher, not yet answered; gives no access.
+            "- invited: Account [0..*]",
             "- archived: bool",
         ],
     ),
@@ -508,6 +512,8 @@ EDGES = [
     # role name at the far end tells the two lines apart.
     ("Class", "Account", "0..* : teachers 0..*", "nn"),
     ("Class", "Account", "0..* : members 0..*", "nn"),
+    # D109: a student invited and not yet answered is not a member.
+    ("Class", "Account", "0..* : invited 0..*", "nn"),
     ("Path", "Unit", "1 : 0..*", "comp"),
     ("Unit", "Lesson", "1 : 0..*", "comp"),
     ("Lesson", "Step", "1 : 1..12", "comp"),

@@ -523,6 +523,7 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
   const BADGE_WORDS = {
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
+    class_invites: "lời mời vào lớp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {

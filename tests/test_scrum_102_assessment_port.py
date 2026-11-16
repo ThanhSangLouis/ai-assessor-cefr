@@ -39,9 +39,9 @@ def test_assessment_api_registers_the_migrated_response_review_admin_and_class_r
     assert "/api/v1/review/queue" in paths
     assert "/api/v1/admin/models" in paths
     assert "/api/v1/classes/{class_id}/members" in paths
-    # D075: classes set no assessments and nobody joins with a code.
+    # D075: classes set no assessments. D109: a student joins by code or invitation.
     assert "/api/v1/classes/{class_id}/assignments" not in paths
-    assert "/api/v1/me/classes/join" not in paths
+    assert "/api/v1/me/classes/join" in paths
 
 
 def test_band_descriptors_distinguish_unmeasured_and_out_of_scope_aspects():

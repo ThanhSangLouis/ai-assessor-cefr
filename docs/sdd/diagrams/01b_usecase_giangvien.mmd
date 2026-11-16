@@ -4,12 +4,15 @@
 %% Ban 1.16 (D078): giang vien duyet va cham lai bai, soan lo trinh theo band
 %% (co the nho AI soan nhap), giu ngan hang de theo band, xep lop va giao lo
 %% trinh band, xem thong ke lop theo band.
+%% Ban 1.34 (D109): lop chi them sinh vien bang loi moi hay ma lop (UC-30, sinh
+%% vien tu vao o UC-36); quen mat khau (UC-35) dung cho moi vai tro.
 flowchart LR
     GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
         UC20["UC-20 Giảng viên soạn lộ trình theo band và theo dõi lượt luyện"]
@@ -21,6 +24,7 @@ flowchart LR
     end
 
     GV --> UC17
+    GV --> UC35
     GV --> UC05
     GV --> UC20
     GV --> UC29

@@ -9,7 +9,8 @@ learner who has not practised yet and left email reminders on (D079,
   the rest day the streak allows (`streak.py`), never as a threat;
 * reviews whose day has come;
 * a daily goal begun and not yet met;
-* no runs left, on a metered deployment.
+* no runs left, on a metered deployment;
+* invitations to a class not yet answered (D109).
 
 The list is computed when asked, stored nowhere, and empty when there is
 nothing to do. D078: "today" and the streak are the lesson path's (D025), the
@@ -44,6 +45,7 @@ def nudges(
     daily: dict | None,
     reviews_due: int,
     runs_left: float | None,
+    class_invites: int = 0,
 ) -> list[Nudge]:
     """The reminders for one learner at `now`, most pressing first.
 
@@ -78,6 +80,10 @@ def nudges(
                 urgent=True,
             )
         )
+
+    if class_invites > 0:
+        what = "Một lớp" if class_invites == 1 else f"{class_invites} lớp"
+        out.append(Nudge("classes", f"{what} mời bạn vào. Xem và trả lời.", "/my-classes"))
 
     out.sort(key=lambda n: not n.urgent)  # stable: urgent first, rule order kept
     return out[:MAX_NUDGES]

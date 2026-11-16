@@ -76,6 +76,13 @@
   ],
   "classroom": [
     {
+      "name": "i_invited",
+      "keys": [
+        "invited"
+      ],
+      "unique": false
+    },
+    {
       "name": "i_members",
       "keys": [
         "members"
@@ -93,6 +100,13 @@
       "name": "u_class_id",
       "keys": [
         "class_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_join_code",
+      "keys": [
+        "join_code"
       ],
       "unique": true
     }

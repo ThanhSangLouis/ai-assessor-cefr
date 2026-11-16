@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
-from aicefr.notify.email import EmailError, EmailSender
+from aicefr.notify.email import EmailError, EmailSender, has_mailbox
 from aicefr.notify.messages import reminder_email, unsubscribe_token
 from aicefr.practice.streak import LOCAL_TZ
 
@@ -52,6 +52,8 @@ def send_due(
     sent = 0
     for row in auth.reminder_candidates(day):
         who = row["account_id"]
+        if not has_mailbox(row.get("email")):
+            continue  # a demo address: the email would only bounce
         try:
             why = reasons(
                 learning.daily(account_id=who, goal_seconds=row.get("daily_goal_s") or 180),

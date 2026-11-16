@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Lớp của tôi · SpeakUp{% endblock %}
+{% block content %}
+{#- D109. A student joins a class only by their own act: by the code the
+    teacher gives out, or by accepting an invitation. The teachers of a class
+    see its members' recordings and results; leaving ends that. -#}
+<div class="page-head">
+  <h1><span class="head-icon">{{ icon("users") }}</span>Lớp của tôi</h1>
+  <p class="lede">Giảng viên của lớp xem và duyệt được bài nói của bạn.</p>
+</div>
+
+<section class="card" id="invites-card" aria-labelledby="invites-h" hidden>
+  <div class="card-head"><h2 id="invites-h">Lời mời vào lớp</h2></div>
+  <ul class="plain-list" id="invites"></ul>
+</section>
+
+<section class="card" aria-labelledby="join-h">
+  <div class="card-head"><h2 id="join-h">Vào lớp bằng mã</h2></div>
+  <form id="join-form" class="inline-form" autocomplete="off">
+    <label class="field"><span>Mã lớp giảng viên đưa</span>
+      <input name="code" class="code-input" maxlength="12" required placeholder="VD: K7M2QX" autocapitalize="characters" spellcheck="false" inputmode="text"></label>
+    <button class="button" type="submit">Vào lớp</button>
+  </form>
+</section>
+
+<section class="card" aria-labelledby="mine-h">
+  <div class="card-head"><h2 id="mine-h">Lớp đang học</h2></div>
+  <div id="mine" aria-live="polite" aria-busy="true"><div class="skeleton skeleton-line"></div></div>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{{ asset('my_classes.js') }}"></script>{% endblock %}

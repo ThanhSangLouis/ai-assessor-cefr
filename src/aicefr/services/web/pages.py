@@ -354,6 +354,16 @@ def page_my_assignments_gone():
     return RedirectResponse("/practice", status_code=301)
 
 
+@router.get("/my-classes", response_class=HTMLResponse, tags=["web"])
+def page_my_classes(request: Request, account: Account | None = Depends(optional_account)):
+    """A student's classes and invitations, and the join code box (D109)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    if account.role is not Role.STUDENT:
+        return RedirectResponse("/teach/classes", status_code=303)
+    return _page(request, "my_classes.html", account, "my_classes")
+
+
 @router.get("/teach/classes", response_class=HTMLResponse, tags=["web"])
 def page_classes(request: Request, account: Account | None = Depends(optional_account)):
     """A teacher's classes and what each has been set (D054)."""

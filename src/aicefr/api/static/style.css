@@ -7603,3 +7603,8 @@ button.c-dropdown-trigger:hover,
 .unit-jump select { width: auto; max-width: 100%; }
 .t-path-meta { margin: var(--sp-1) 0 0; }
 .t-unit:focus { outline: none; }
+
+/* ------------------------------------------------------------------ join code box (D109) */
+/* A typed class code reads as the teacher wrote it on the board. */
+.code-input { text-transform: uppercase; letter-spacing: 0.14em; font-variant-numeric: tabular-nums; }
+.code-input::placeholder { text-transform: none; letter-spacing: normal; }

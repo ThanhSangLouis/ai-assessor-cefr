@@ -13,8 +13,8 @@ import threading
 from datetime import UTC, datetime
 
 from aicefr.config import Settings
-from aicefr.contracts import ORDER_SETTLED
-from aicefr.notify import payments, reminders
+from aicefr.contracts import CLASS_INVITED, CLASS_JOINED, ORDER_SETTLED
+from aicefr.notify import classes, payments, reminders
 from aicefr.notify.email import sender_from
 from aicefr.platform.bus import MessageBus
 from aicefr.platform.callers import SessionCallers
@@ -63,6 +63,19 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             lambda payload: payments.on_order_settled(
                 payload, auth, sender, (settings.public_url or "").rstrip("/")
             ),
+        )
+        # D109: the invited student, and the teachers of a class a student
+        # joined, hear of it; the assessment service announces both.
+        site = (settings.public_url or "").rstrip("/")
+        bus.subscribe(
+            CLASS_INVITED,
+            "identity-class-email",
+            lambda payload: classes.on_invited(payload, auth, sender, site),
+        )
+        bus.subscribe(
+            CLASS_JOINED,
+            "identity-class-email",
+            lambda payload: classes.on_joined(payload, auth, sender, site),
         )
     stop = threading.Event()
 
