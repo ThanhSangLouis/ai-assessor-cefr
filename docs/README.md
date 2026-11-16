@@ -5,6 +5,7 @@
 | `../AGENTS.md`, `../ANTIGRAVITY.md`, `../.agents/skills/sdd-antigravity-orchestrator/` | Một bộ quy tắc/skill SDD dùng chung cho cả ba người và điểm vào Antigravity | Dùng bản trong repo, không dựa vào skill cài riêng trên từng máy |
 | `plan/three-week-roadmap.md` | Tổng quan các mốc và quyết định còn mở | Dẫn tới kế hoạch tuần riêng |
 | `plan/week-01.md` … `week-05.md` | Kế hoạch/record theo tuần | W5 là task bắt buộc theo người, giữ modular monolith |
+| `plan/CHUNG_MINH_GIA_MOT_LUOT.md`, `plan/TINH_GIA_THEO_TOKEN.md` | Vì sao 1 lượt = 2.000 đồng (cộng đủ chi phí, hoà vốn, nguồn) và bảng giá đang áp dụng (D106, D107) | Nguồn chuẩn cho mọi số liệu về giá trong báo cáo; đổi giá thì cập nhật cả hai |
 | `sdd/modules/<slug>/` | SDD độc lập theo M01–M16 | M01–M08 là nền hiện hành; M09–M16 là scope W5 DRAFT, mỗi module có Status local |
 | `sdd/features/w3-local-integration/` | Scope tích hợp W3, ba lane Luna, Codex review | Quyền implement trực tiếp từ Thắng; formal verdict PENDING |
 | `local-run.md` | Cài đặt, CLI/demo, cấu hình model local và restart | Audio/model/DB ngoài Git; không tự tải weights khi chạy |
