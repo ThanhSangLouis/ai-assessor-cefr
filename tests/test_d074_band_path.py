@@ -80,6 +80,8 @@ def test_a_class_shows_each_learners_bands_and_a_teacher_assigns_a_path(m):
         f"/api/v1/classes/{made['class_id']}/members",
         json={"people": [email_of("SV-001"), email_of("SV-002")]},
     )
+    for learner in (an, binh):  # D109: a student joins by accepting
+        learner.post(f"/api/v1/me/classes/{made['class_id']}/accept")
     members = {
         r["email"]: r["bands"]
         for r in teacher.get(f"/api/v1/classes/{made['class_id']}").json()["members"]

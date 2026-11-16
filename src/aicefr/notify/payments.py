@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 
-from aicefr.notify.email import EmailError, EmailSender
+from aicefr.notify.email import EmailError, EmailSender, has_mailbox
 from aicefr.notify.messages import payment_email
 from aicefr.storage.db import now_iso, setting_once
 
@@ -34,7 +34,7 @@ def on_order_settled(
     if payload.get("status") not in ("paid", "failed"):
         return False
     who = auth.get(str(payload.get("account_id", "")))
-    if who is None or not who.get("email") or not who.get("email_verified"):
+    if who is None or not has_mailbox(who.get("email")) or not who.get("email_verified"):
         return False  # no address to trust: the result page and receipt still say it
     key = f"{KEY}{payload['order_id']}:{payload['status']}"
     if not setting_once(auth.db, key, now_iso())[1]:

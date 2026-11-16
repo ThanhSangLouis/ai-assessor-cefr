@@ -45,6 +45,7 @@
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 | **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
+| **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.10), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên | D109 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
 | **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
 | **1.30** | **08/11/2026** | **D102.** Bỏ hoàn tiền: trang `/payment-terms` nói lượt đã mua không hoàn tiền; trả tiền gặp sự cố (lượt chưa vào ví sau 30 phút, trả hai lần) được bù bằng lượt. Sửa FR-102 mục (4) và AC-102.6 | D102 |
@@ -1004,7 +1005,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 | Acceptance Criteria |
 | --- |
-| **AC-53.1** — D103: con số "kết quả mới" của sinh viên bị gỡ cùng `seen_markers`; thanh điều khiển của sinh viên chỉ còn số mục ôn tập đến hạn (`test_a_student_badge_counts_only_reviews_due`). |
+| **AC-53.1** — D103: con số "kết quả mới" của sinh viên bị gỡ cùng `seen_markers`; thanh điều khiển của sinh viên còn số mục ôn tập đến hạn và (D109) số lời mời vào lớp chưa trả lời (`test_a_student_badge_counts_reviews_due_and_class_invitations`). |
 | **AC-53.2** — *Given* có bài chờ duyệt, *When* giảng viên xem thanh điều khiển, *Then* con số bằng số bài trong hàng đợi (`test_a_teacher_sees_how_many_responses_wait_for_review`). |
 | **AC-53.3** — *Given* trang của sinh viên và của giảng viên, *When* hiển thị, *Then* mỗi con số có chỗ của nó trên thanh điều khiển (`test_the_sidebar_carries_a_slot_for_each_count`). |
 
@@ -1516,18 +1517,23 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-87.2** — *Given* dịch vụ tính lượt không trả lời lúc thanh toán, *When* gọi lại sau, *Then* lượt được cộng (`test_a_pack_paid_while_metering_was_away_is_credited_later`). |
 | **AC-87.3** — *Given* bản không tính lượt, *When* đặt gói, *Then* 409 (`test_no_packs_where_runs_are_not_counted`). |
 
-### FR-88 — Lớp học (D054, D071, D075)
+### FR-88 — Lớp học (D054, D071, D075, D108, D109)
 
-**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên; giảng viên hoặc quản trị viên thêm học viên theo email. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá và mã tự vào lớp. D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
+**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên. D109: học viên vào lớp chỉ bằng việc của chính mình, vì giảng viên của lớp xem được bài của học viên: giảng viên mời theo email và học viên chấp nhận hay từ chối ở trang **Lớp của tôi**, hoặc học viên nhập mã lớp 6 ký tự giảng viên đưa (giảng viên bật, đổi, tắt mã); quản trị viên vẫn thêm thẳng theo email; học viên rời lớp được. Lời mời chưa trả lời không cho giảng viên quyền gì. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá (và mã lớp, D109 đặt lại theo cách mới). D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-88.1** — *Given* một lớp, *When* giảng viên thêm học viên theo email hoặc mã tài khoản, *Then* học viên có trong danh sách theo họ tên và lớp không còn phần bài đã giao (`test_a_teacher_adds_students_and_sees_them_by_name`). |
-| **AC-88.2** — *Given* một học viên, *When* gọi API vào lớp bằng mã hay xem bài được giao, *Then* 404: không còn hai chức năng này (`test_students_cannot_make_classes_and_nobody_joins_with_a_code`). |
+| **AC-88.1** — *Given* một lớp, *When* quản trị viên thêm học viên theo email, *Then* học viên vào lớp ngay, giảng viên thấy họ theo họ tên và lớp không có phần bài đã giao (`test_an_administrator_adds_students_and_the_teacher_sees_them_by_name`). |
+| **AC-88.2** — *Given* một học viên, *When* tạo lớp, xem danh sách lớp của giảng viên hay xem bài được giao, *Then* 403 hoặc 404 (`test_students_cannot_make_classes_and_classes_set_no_assessments`). |
 | **AC-88.3** — *Given* lớp của giảng viên khác, *When* mở, *Then* 404 (`test_another_teachers_class_is_not_found`). |
 | **AC-88.4** — *Given* học viên trong lớp của giảng viên, *When* lớp bị lưu trữ, *Then* giảng viên nhận 404 khi mở báo cáo và ghi âm, bài không còn trong hàng chờ của họ, danh sách lớp và kết quả vẫn còn; khi khôi phục, giảng viên xem lại được (`test_an_archived_class_gives_its_teachers_no_access_until_restored`). |
 | **AC-88.5** — *Given* thêm học viên, *When* nhập email của một giảng viên, *Then* email đó nằm trong `not_students`, không nằm trong `unknown` (`test_a_staff_address_is_said_not_to_be_a_student`). |
+| **AC-88.6** — *Given* giảng viên mời một học viên, *When* học viên chưa trả lời, *Then* giảng viên không mở được bài của học viên, học viên thấy lời mời và một số trên thanh bên; *When* học viên chấp nhận, *Then* giảng viên mở được bài (`test_an_invited_student_gives_the_teacher_nothing_until_they_accept`). |
+| **AC-88.7** — *Given* lời mời, *When* học viên từ chối hoặc giảng viên huỷ lời mời, *Then* giảng viên không có quyền và lời mời không còn chấp nhận được (`test_a_declined_or_withdrawn_invitation_gives_no_access`). |
+| **AC-88.8** — *Given* lớp có mã, *When* học viên nhập mã (không phân biệt hoa thường, dấu cách, gạch nối), *Then* học viên vào lớp; mã đã đổi, đã tắt hay của lớp đã lưu trữ trả 404 (`test_a_student_joins_by_the_class_code_until_it_changes_or_goes`). |
+| **AC-88.9** — *Given* học viên trong lớp, *When* học viên rời lớp, *Then* giảng viên không còn mở được bài của họ; nhật ký có `class.invite`, `class.join`, `class.leave` (`test_a_student_who_leaves_takes_their_work_from_the_teacher`). |
+| **AC-88.10** — *Given* một học viên, *When* nhập sai mã quá 10 lần trong một phút, *Then* 429 (`test_guessing_class_codes_is_limited`). |
 
 ### FR-89 — Nhắc việc trong ứng dụng (D055)
 
@@ -1789,6 +1795,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-33 | Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp | Quản trị viên | — | D072, D073 | S |
 | UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
 | UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên | — | FR-92, FR-93 (D079) | S |
+| UC-36 | Sinh viên vào lớp bằng mã lớp hoặc lời mời | Sinh viên | Giảng viên | FR-88 (D109) | S |
 
 > **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Các use case
 > không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-14 (học viên tự xoá; nay chỉ quản trị viên xoá, UC-07), UC-18
@@ -2374,21 +2381,22 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | --- | --- |
 | **Mã** | UC-30 |
 | **Actor chính** | Giảng viên |
-| **Mô tả** | Tạo lớp, thêm học viên bằng email, xem học viên theo band đang học và giao một lộ trình đã xuất bản cho một nhóm band (D054, D071, D074, D075) |
+| **Mô tả** | Tạo lớp, mời học viên bằng email hoặc đưa mã lớp (D109), xem học viên theo band đang học và giao một lộ trình đã xuất bản cho một nhóm band (D054, D071, D074, D075) |
 | **Tiền điều kiện** | Đã đăng nhập với vai trò giảng viên |
 | **Kích hoạt** | Giảng viên mở trang Lớp học |
 
 **Luồng chính:**
 
 1. Giảng viên tạo lớp hoặc mở một lớp của mình.
-2. Giảng viên thêm học viên bằng email.
+2. Giảng viên mời học viên bằng email hoặc bật mã lớp; học viên tự vào lớp (UC-36).
 3. Hệ thống nhóm học viên theo band bắt đầu–band đích họ đang học.
 4. Giảng viên chọn một nhóm và giao một lộ trình đã xuất bản.
 5. Lộ trình đó thay lộ trình riêng của từng học viên trong nhóm, ghi ai giao.
 
 **Luồng thay thế:**
 
-- **2a. Email không có tài khoản:** Báo không tìm thấy, không thêm.
+- **2a. Email không có tài khoản:** Báo không tìm thấy, không mời.
+- **2b. Quản trị viên thêm:** Học viên vào lớp ngay, không cần chấp nhận.
 - **4a. Học viên ngoài lớp của giảng viên:** Từ chối.
 
 **Hậu điều kiện:** Học viên trong nhóm học theo lộ trình được giao.
@@ -2516,6 +2524,35 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **1a. Không nhận được thư:** Xem mục Spam, hoặc nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (D081).
 
 **Hậu điều kiện:** Mật khẩu mới có hiệu lực; mã đã dùng.
+
+---
+
+### UC-36 — Sinh viên vào lớp bằng mã lớp hoặc lời mời *(mới ở bản 1.34: D109)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-36 |
+| **Actor chính** | Sinh viên |
+| **Actor phụ** | Giảng viên (mời, đưa mã) |
+| **Mô tả** | Sinh viên tự vào lớp: chấp nhận lời mời của giảng viên hoặc nhập mã lớp. Giảng viên của lớp xem được bài nói của thành viên, nên chỉ việc của sinh viên mới cho quyền đó (FR-88) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò sinh viên; giảng viên đã mời hoặc đã đưa mã của một lớp đang chạy |
+| **Kích hoạt** | Sinh viên mở trang **Lớp của tôi** (thanh bên có số lời mời, trang Lộ trình có lời nhắc) |
+
+**Luồng chính:**
+
+1. Sinh viên thấy lời mời: tên lớp và giảng viên.
+2. Sinh viên bấm **Vào lớp**.
+3. Hệ thống chuyển sinh viên từ danh sách được mời sang thành viên, ghi `class.join` vào nhật ký.
+4. Giảng viên của lớp xem và duyệt được bài của sinh viên.
+
+**Luồng thay thế:**
+
+- **1a. Vào bằng mã:** Sinh viên nhập mã 6 ký tự; mã đúng của lớp đang chạy thì vào lớp ngay.
+- **2a. Từ chối:** Lời mời mất, giảng viên không có quyền gì.
+- **1b. Mã sai, đã đổi, đã tắt hay lớp đã lưu trữ:** Báo "mã lớp không đúng hoặc lớp đã kết thúc"; sai quá 10 lần một phút thì chờ một phút.
+- **4a. Rời lớp:** Sinh viên bấm **Rời lớp** và xác nhận; giảng viên không còn xem bài của sinh viên.
+
+**Hậu điều kiện:** Sinh viên là thành viên lớp; giảng viên của lớp có quyền trên bài của sinh viên đến khi sinh viên rời lớp hoặc lớp bị lưu trữ.
 
 ---
 
@@ -2899,7 +2936,7 @@ Cột "Module code" ghi **đường dẫn có thật trong repository** tại th
 | FR-50 Tiến độ ngày, bài nên học | UC-19 | `test_daily_goal_counts_seconds_spoken`, `test_next_lesson_follows_the_weakest_criterion` | `src/aicefr/lessons/progress.py` (`today_summary`, `next_lesson`) |
 | FR-51 Đổi mật khẩu, quản lý phiên | UC-17 | `test_password_change_needs_the_current_password_and_ends_other_sessions`, `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`, `test_the_password_policy_says_what_is_wrong`, `test_signing_out_other_devices_keeps_this_one`, `test_the_account_page_needs_a_login_and_shows_the_email` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`change_password`, `revoke_sessions`), `src/aicefr/auth/passwords.py` (`check_new_password`) |
 | FR-52 Quản lý tài khoản trên web | UC-10 | `test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords`, `test_a_temporary_password_opens_nothing_but_the_password_change`, `test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password`, `test_a_disabled_account_is_signed_out_and_cannot_sign_in`, `test_creating_accounts_is_all_or_nothing_and_checks_emails`, `test_only_an_administrator_manages_accounts`, `test_an_administrator_lifts_a_lockout` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`create_with_temporary_passwords`, `set_temporary_password`, `set_disabled`), `src/aicefr/api/deps.py` (`PASSWORD_CHANGE_PATHS`), `src/aicefr/api/static/admin.js` |
-| FR-53 Đếm việc đang chờ | UC-04, UC-05 | `test_a_student_badge_counts_only_reviews_due`, `test_a_teacher_sees_how_many_responses_wait_for_review`, `test_the_sidebar_carries_a_slot_for_each_count` | `src/aicefr/api/accounts_api.py` (`my_badges`), `src/aicefr/storage/repository.py` (`seen_marker`, `count_reviewed_since`), `src/aicefr/api/static/common.js` |
+| FR-53 Đếm việc đang chờ | UC-04, UC-05 | `test_a_student_badge_counts_reviews_due_and_class_invitations`, `test_a_teacher_sees_how_many_responses_wait_for_review`, `test_the_sidebar_carries_a_slot_for_each_count` | `src/aicefr/api/accounts_api.py` (`my_badges`), `src/aicefr/storage/repository.py` (`seen_marker`, `count_reviewed_since`), `src/aicefr/api/static/common.js` |
 | FR-54 Trang giải thích band | UC-04 | `test_the_band_page_labels_what_the_machine_does_not_measure`, `test_the_report_links_its_band_to_the_band_page` | `src/aicefr/report/bands.py`, `src/aicefr/api/templates/bands.html` |
 | FR-55 Chuẩn bị trước khi nói | UC-01 | `test_the_submit_page_offers_thirty_seconds_of_preparation`, `test_thirty_seconds_of_preparation_then_the_answer_is_recorded` | `src/aicefr/api/static/submit.js`, `src/aicefr/api/static/recorder.js` (`startNow`) |
 | FR-56 Hồ sơ cá nhân | UC-17 | `test_a_profile_takes_only_listed_avatars_and_goals`, `test_the_daily_goal_sets_the_target_on_the_path_page`, `test_the_sidebar_draws_the_chosen_avatar`, `test_the_account_page_has_four_parts_for_a_student_and_three_for_staff` | `src/aicefr/storage/auth_repository.py` (`update_profile`, `AVATAR_ICONS`, `DAILY_GOALS`), `src/aicefr/api/accounts_api.py` (`change_my_profile`), `src/aicefr/api/static/account.js` |

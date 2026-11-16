@@ -316,10 +316,11 @@ def test_only_an_administrator_manages_accounts(m, role):
 # ================================================================= sidebar counts (FR-53)
 
 
-def test_a_student_badge_counts_only_reviews_due(m):
-    """D103: the "new results" count is gone with the seen markers; reviews due stay."""
+def test_a_student_badge_counts_reviews_due_and_class_invitations(m):
+    """D103: the "new results" count is gone with the seen markers; reviews due stay.
+    D109: and the invitations to a class not yet answered."""
     student = login_as(m, "SV-001")
-    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due"}
+    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due", "class_invites"}
     assert student.post("/api/v1/me/badges/results/seen").status_code in (404, 405)
 
 
@@ -337,6 +338,7 @@ def test_the_sidebar_carries_a_slot_for_each_count(m):
     student_page = login_as(m, "SV-001").get("/practice").text
     assert 'data-badge="results"' not in student_page
     assert 'data-badge="reviews_due"' in student_page
+    assert 'data-badge="class_invites"' in student_page
     teacher_page = login_as(m, "GV-01", "teacher").get("/review").text
     assert 'data-badge="queue"' in teacher_page
 

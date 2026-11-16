@@ -181,6 +181,7 @@ File: `docs/sdd/diagrams/01a_usecase_sinhvien.mmd`
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
 %% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
 %% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua payOS.
+%% Ban 1.34 (D109): sinh vien tu vao lop bang ma lop hoac nhan loi moi (UC-36).
 flowchart LR
     SV(("Sinh viên"))
     CTT(("Cổng thanh toán"))
@@ -200,6 +201,7 @@ flowchart LR
         UC26["UC-26 Sinh viên ôn sổ cụm từ"]
         UC27["UC-27 Sinh viên nạp lượt qua payOS"]
         UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
+        UC36["UC-36 Sinh viên vào lớp bằng mã lớp hoặc lời mời"]
     end
 
     SV --> UC17
@@ -212,6 +214,7 @@ flowchart LR
     SV --> UC26
     SV --> UC27
     SV --> UC16
+    SV --> UC36
     UC27 --- CTT
 
     %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
@@ -993,7 +996,7 @@ File: `docs/sdd/diagrams/05_erd.mmd`
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071), được mời · invited (D109)"
     account ||--o{ audit_log : "ghi · actor_id"
 
     account {
@@ -1031,7 +1034,9 @@ erDiagram
     classroom {
         string class_id PK
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
-        array members "mã tài khoản theo thứ tự vào lớp"
+        array members "mã tài khoản theo thứ tự vào lớp; chỉ vào khi sinh viên tự đồng ý (D109)"
+        array invited "giảng viên mời, sinh viên chưa trả lời; chưa cho quyền xem (D109)"
+        string join_code UK "mã vào lớp 6 ký tự; không có trường này là tắt mã (D109)"
         bool archived "lưu trữ thì giảng viên mất quyền xem, khôi phục thì có lại (D108)"
     }
 
@@ -1994,7 +1999,7 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 **Ba phần nhỏ đi cùng D028.**
 
-- *Con số việc đang chờ (FR-53).* `GET /api/v1/me/badges` trả cho sinh viên số bài có quyết định của giảng viên sau mốc `seen_marker(account_id, 'results')` (`count_reviewed_since`, chỉ bài đánh giá) và số mục ôn đến hạn hôm nay (`lessons_api.reviews_due`); cho giảng viên và quản trị viên, số bài đánh giá đang chờ duyệt (`count_waiting_review`) và số phiếu chấm mù chưa nộp trong đợt đang mở (`ratings_open`, nối tới `RatingRepository.open_count` ở D030). Mở "Bài của tôi" gọi `POST /api/v1/me/badges/results/seen`, ghi đè mốc bằng `INSERT … ON CONFLICT … DO UPDATE`. Đây chỉ là con số trên thanh điều khiển; không gửi thư, không gửi gì ra ngoài. Test: `test_a_student_badge_counts_only_reviews_due`, `test_a_teacher_sees_how_many_responses_wait_for_review`.
+- *Con số việc đang chờ (FR-53).* `GET /api/v1/me/badges` trả cho sinh viên số bài có quyết định của giảng viên sau mốc `seen_marker(account_id, 'results')` (`count_reviewed_since`, chỉ bài đánh giá) và số mục ôn đến hạn hôm nay (`lessons_api.reviews_due`); cho giảng viên và quản trị viên, số bài đánh giá đang chờ duyệt (`count_waiting_review`) và số phiếu chấm mù chưa nộp trong đợt đang mở (`ratings_open`, nối tới `RatingRepository.open_count` ở D030). Mở "Bài của tôi" gọi `POST /api/v1/me/badges/results/seen`, ghi đè mốc bằng `INSERT … ON CONFLICT … DO UPDATE`. Đây chỉ là con số trên thanh điều khiển; không gửi thư, không gửi gì ra ngoài. Test: `test_a_student_badge_counts_reviews_due_and_class_invitations`, `test_a_teacher_sees_how_many_responses_wait_for_review`.
 - *Thông báo trực tiếp (FR-95, D086).* Mỗi tab đã đăng nhập mở một `EventSource` tới `GET /api/v1/me/events` ở `core` (`services/core/assessment/live_api.py`). `platform/live.py` giữ các luồng của tiến trình (`LiveHub`, mỗi luồng một hàng đợi 64 khung, mỗi tài khoản tối đa 8 luồng) và kênh chuyển sự kiện tới mọi tiến trình: Redis pub/sub (`aicefr:live`) cạnh bus Redis, trong tiến trình khi bus là `inline`. `scoring.on_scoring` và `sweep_overdue` báo `response.finished` cho chủ bài; khoá, nhả khoá, quyết định và đóng bài trong `review_api` báo `queue.changed` cho giảng viên các lớp có học viên đó (`ClassroomRepository.teachers_of`) và vai trò quản trị viên; quyết định và đóng bài báo thêm `review.done` cho chủ bài. Sự kiện không mang điểm hay tên: trang nhận sự kiện gọi lại API thường nên quyền xem D071 giữ nguyên. Luồng tự đóng sau `AICEFR_LIVE_MAX_SECONDS` (900 giây) để phiên đã kết thúc không còn nhận gì, gửi chú thích `: ping` mỗi `AICEFR_LIVE_HEARTBEAT` (20 giây), và đóng ngay khi tiến trình nhận SIGTERM. Gateway có riêng `location = /api/v1/me/events` tắt đệm, chờ đọc 1 giờ. Mọi việc ở đây là cố gắng hết sức (`Live.notify` không bao giờ ném lỗi); không có luồng thì trang chờ chấm vẫn hỏi trạng thái 2 giây một lần, hàng chờ vẫn có nút Tải lại. Test: `tests/test_d086_live_unit.py`, `tests/test_d086_live_events.py` (TEST_PLAN_D086).
 - *Cài như ứng dụng và thông báo đẩy (FR-96, D088).* Dịch vụ web phục vụ `/manifest.webmanifest` và `/sw.js` từ gốc trang (`Service-Worker-Allowed: /`, không lưu đệm); mọi trang gắn manifest. Service worker (`static/sw.js`) chỉ làm ba việc: trả trang báo mất kết nối khi mở trang lúc mất mạng (không lưu đệm trang hay API), biến thông báo đẩy thành thông báo của hệ điều hành, và mở đúng báo cáo khi bấm vào (chỉ đường dẫn cùng trang). `push_api.py` lưu đăng ký của trình duyệt vào `push_subscription` (`PushRepository`), chỉ nhận `endpoint` trên dịch vụ push của trình duyệt (`PUSH_HOSTS`, HTTPS cổng 443) và khoá đúng dạng (điểm P-256 65 byte, bí mật 16 byte). `live_api.response_finished` và `review_done` gọi `push_api.tell_device`, chỉ gửi khi tài khoản không mở luồng D086 nào trong tiến trình. `notify/push.py` (`PushSender`) ký VAPID và mã hoá aes128gcm bằng `pywebpush` trên hai luồng riêng, TTL 24 giờ; trả lời 404/410 thì xoá đăng ký. Trang Tài khoản (chỉ học viên) có công tắc; đăng xuất gỡ đăng ký của trình duyệt. Test: `tests/test_d088_push_unit.py`, `tests/test_d088_push.py` (TEST_PLAN_D088).
 - *Luyện lại từ máy nghe chưa rõ (FR-97, D089).* Trang `/drill/{response_id}` (dịch vụ web, `templates/drill.html`, `static/drill.js`) mở từ bản chép lời của báo cáo. `services/core/learning/drill_api.py` hỏi phần đánh giá bản chép lời qua `AssessmentFacade.drill_source` (chỉ chủ bài, chỉ bài đã có điểm), rồi `lessons/drill.py` chọn từ: `Word.is_uncertain`, từ chữ cái thường, mỗi chính tả một lần, tối đa `MAX_WORDS = 8`, kém rõ nhất trước; cụm là `BEFORE = 1` từ trước, `AFTER = 2` từ sau, không vắt qua quãng ngừng dài hơn `MAX_GAP_S = 1.0`; mẹo là mẫu lỗi đầu tiên chính tả cho phép theo `pronunciation.vietnamese.opportunities`. Danh sách từ không lưu, tính lại mỗi lần từ bản chép lời. Một lượt nói lại đi qua `_measure` như bước đọc to (`step_for`: `READ_ALOUD`, `hint_words` là từ đó; bản ghi không giữ); `judge` đọc `WordMark` ở vị trí của từ trong cụm: `HEARD` là rõ. `DrillRepository` (collection `word_drill`, migration 18) giữ `WordDrill` kèm tối đa 20 lượt; `streak` đạt `PASS_STREAK = 2` thì `passed`, và đã xong thì giữ xong. Lượt chưa rõ gọi `LessonRepository.schedule(kind="word", lesson_id="", step_id="", drill_id=...)`: từ vào ôn ngắt quãng của D025 và quay lại như một bước dùng từ trong câu mới. Trang Tiến độ: `Repository.unsure_series` đọc bản chép lời đã lưu, `habits.clarity_series` thành một đường thói quen "Từ máy nghe chưa rõ" (phần trăm, thấp hơn là tốt); `GET /api/v1/learn/drill` cho mục "Từ cần luyện". Không đổi đặc trưng, rubric hay mô hình chấm. Bản xuất dữ liệu cá nhân có `word_drills` (`LearningFacade.drills_of`); `LearningFacade.erase_account` xoá cả `word_drill`.
@@ -2415,6 +2420,8 @@ Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình 
 Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
 
 **Lưu trữ lớp là thu lại quyền (D108).** `ClassroomRepository.teaches`, `students_of`, `teachers_of` lọc thêm `archived != true` (hằng `ACTIVE`), nên mọi chỗ kiểm quyền của giảng viên (`context.can_view`, hàng chờ và thống kê qua `students_of`, giao lộ trình qua `facade.teaches`, thông báo trực tiếp qua `teachers_of`) đều bỏ qua lớp đã lưu trữ mà không phải sửa từng nơi. `set_archived` trả `False` khi lớp đã ở trạng thái đó, để chỉ ghi nhật ký `class.archive` / `class.restore` khi thật sự đổi. `POST /api/v1/classes/{id}/restore` dùng cùng `_owned` như lưu trữ: giảng viên của lớp hoặc quản trị viên. `add_members` tách `not_students` khỏi `unknown`.
+
+**Sinh viên tự vào lớp (D109).** Lớp cho giảng viên quyền trên bài của thành viên, nên chỉ việc của sinh viên mới thêm sinh viên vào `members`. `classroom` có thêm `invited` (mã tài khoản được mời, chưa trả lời) và `join_code` (6 ký tự trong bảng chữ không có 0/O, 1/I/L; không có trường là tắt mã; chỉ mục duy nhất có điều kiện `join_code` tồn tại, migration 25). Mọi bước là một lệnh cập nhật có điều kiện trên một document: `invite` thêm vào `invited` khi chưa là thành viên và chưa được mời; `accept` chuyển từ `invited` sang `members` khi lớp chưa lưu trữ; `join_by_code` chuẩn hoá mã (bỏ hoa thường, dấu cách, gạch nối) rồi `add_member`, đồng thời gỡ lời mời cũ. `teaches`, `students_of`, `teachers_of` không đổi: chỉ đọc `members`, nên lời mời chưa trả lời không cho quyền gì. API: giảng viên `POST /api/v1/classes/{id}/members` thành mời (trả `invited`, `pending`, `already`, `not_students`, `unknown`), quản trị viên vẫn thêm thẳng (`added`); `DELETE /api/v1/classes/{id}/invites/{account_id}`; `POST`/`DELETE /api/v1/classes/{id}/code`. Sinh viên: `GET /api/v1/me/classes`, `POST /api/v1/me/classes/join` (mười lần một phút cho mỗi tài khoản), `POST /api/v1/me/classes/{id}/accept|decline|leave`; sinh viên không bao giờ thấy mã của lớp. Thanh bên của sinh viên có số `class_invites` (`/api/v1/me/badges`, qua `AssessmentFacade.class_invites`), trang Lộ trình có lời nhắc tới `/my-classes`. Nhật ký: `class.invite`, `class.join` (chi tiết `code` hay `invite`), `class.decline`, `class.leave`, `class.code`.
 
 ### 4.28. Nhắc việc — D055 (đề xuất)
 

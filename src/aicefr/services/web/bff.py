@@ -1,6 +1,7 @@
 """What the pages ask that no single service owns: the sidebar's counts (D028, D029, D043).
 
-A student: words or talks due for review today (learning). A
+A student: words or talks due for review today (learning), and invitations
+to a class not yet answered (assessment, D109). A
 teacher: responses waiting in the review queue, less those they rate blind, and
 their open blind-rating sheets (assessment). Counts only -- the pages
 themselves say what the items are. And the learner's reminders (D055), which
@@ -25,7 +26,11 @@ router = APIRouter()
 def my_badges(account: Account = Depends(require_login)) -> dict:
     peers = pages.svc().peers
     if account.role == Role.STUDENT:
-        return {"reviews_due": peers.learning.reviews_due(account_id=account.account_id)}
+        who = account.account_id
+        return {
+            "reviews_due": peers.learning.reviews_due(account_id=who),
+            "class_invites": peers.assessment.class_invites(account_id=who),
+        }
     return peers.assessment.staff_badges(account_id=account.account_id, role=account.role.value)
 
 
@@ -41,5 +46,6 @@ def my_nudges(account: Account = Depends(require_login)) -> dict:
         daily=peers.learning.daily(account_id=who, goal_seconds=account.daily_goal_s),
         reviews_due=peers.learning.reviews_due(account_id=who),
         runs_left=peers.metering.runs_left(account_id=who),
+        class_invites=peers.assessment.class_invites(account_id=who),
     )
     return {"nudges": [n.as_dict() for n in found]}

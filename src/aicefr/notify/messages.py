@@ -1,5 +1,6 @@
-"""What the emails say (D079, D096): a one-time code, the daily study reminder,
-and the result of a run-pack payment.
+"""What the emails say (D079, D096, D109): a one-time code, the daily study
+reminder, the result of a run-pack payment, an invitation to a class and word
+to a class's teachers that a student joined.
 
 Short, in Vietnamese: a plain-text part, and an HTML part drawn as one branded
 card (owner, 07/11/2026: "make every email look good"). A code email says what
@@ -311,3 +312,106 @@ def _payment_html(name: str, order: dict, site: str, link: tuple[str, str] | Non
         actions=actions,
         note="Nếu bạn không thực hiện giao dịch này, hãy báo ngay cho quản trị viên.",
     )
+
+
+# ---------------------------------------------------------------- classes (D109)
+
+
+def _pill(text: str, bg: str, fg: str) -> str:
+    return (
+        f'<span style="display:inline-block;padding:4px 12px;border-radius:999px;background:{bg};'
+        f'color:{fg};font-size:12px;font-weight:700">{escape(text)}</span>'
+    )
+
+
+def _class_name(name: str) -> str:
+    return (
+        f'<div style="margin:10px auto 4px;padding:14px 18px;border-radius:14px;background:{SOFT};'
+        f'border:1px solid {LINE};font-size:20px;font-weight:800;color:{INK}">{escape(name)}</div>'
+    )
+
+
+def class_invite_email(to: str, name: str, class_name: str, teacher: str, site: str) -> Email:
+    """A teacher invited this student to a class; the student answers on /my-classes.
+
+    Says who invites, to which class, what joining gives the class's teachers
+    and that nothing happens until the student says yes.
+    """
+    link = f"{site}/my-classes" if site else ""
+    lines = [
+        f"Chào {name},",
+        f"{teacher} mời bạn vào lớp \u201c{class_name}\u201d trên SpeakUp.",
+        "Vào lớp thì giảng viên của lớp xem và duyệt được bài nói của bạn. "
+        "Bạn rời lớp được bất cứ lúc nào.",
+        "Bạn chỉ vào lớp khi tự bấm Vào lớp; không biết giảng viên này thì bỏ qua email.",
+    ]
+    text = "\n\n".join(lines) + (f"\n\nXem lời mời: {link}" if link else "") + f"\n\n{BRAND}"
+    body = (
+        _muted(f"{teacher} mời bạn vào lớp")
+        + _class_name(class_name)
+        + '<div style="height:10px;line-height:10px;font-size:0">&nbsp;</div>'
+        + _pill("Chờ bạn trả lời", "#fff1d6", "#b26a00")
+    )
+    rows = [
+        ("Giảng viên", f"<b>{escape(teacher)}</b>"),
+        ("Khi vào lớp", "Giảng viên xem và duyệt bài nói của bạn"),
+        ("Rời lớp", "Bất cứ lúc nào, ở trang Lớp của tôi"),
+    ]
+    html = _card(
+        preheader=f"{teacher} mời bạn vào lớp {class_name}",
+        site=site,
+        mark="&#9993;",
+        mark_bg=CORAL,
+        title="Lời mời vào lớp",
+        name=name,
+        body=body,
+        rows=rows,
+        actions=_button("Xem lời mời", link) if link else "",
+        note=escape(lines[3]),
+    )
+    return Email(to=to, subject=f"{teacher} mời bạn vào lớp {class_name}", text=text, html=html)
+
+
+def class_joined_email(
+    to: str,
+    name: str,
+    student: str,
+    student_email: str,
+    class_name: str,
+    class_id: str,
+    via: str,
+    members: int,
+    site: str,
+) -> Email:
+    """A student joined a class this teacher teaches, by its code or an invitation."""
+    how = "Nhập mã lớp" if via == "code" else "Nhận lời mời"
+    link = f"{site}/teach/classes/{class_id}" if site else ""
+    lines = [
+        f"Chào {name},",
+        f"{student} ({student_email}) đã vào lớp \u201c{class_name}\u201d ({how.lower()}).",
+        f"Lớp có {members} sinh viên. Từ giờ bạn xem và duyệt được bài nói của sinh viên này.",
+        "Bạn nhận email này vì là giảng viên của lớp.",
+    ]
+    text = "\n\n".join(lines) + (f"\n\nMở lớp: {link}" if link else "") + f"\n\n{BRAND}"
+    body = (
+        f'<div style="font-size:20px;font-weight:800;color:{INK};margin-top:4px">'
+        f"{escape(student)}</div>" + _muted("vừa vào lớp") + _class_name(class_name)
+    )
+    rows = [
+        ("Email", f'<span style="{MONO};font-size:12px">{escape(student_email)}</span>'),
+        ("Cách vào", _pill(how, "#e3f4ea", GREEN)),
+        ("Sĩ số", f"<b>{members}</b> sinh viên"),
+    ]
+    html = _card(
+        preheader=f"{student} vừa vào lớp {class_name} · sĩ số {members}",
+        site=site,
+        mark="+1",
+        mark_bg=GREEN,
+        title="Học viên mới vào lớp",
+        name=name,
+        body=body,
+        rows=rows,
+        actions=_button("Mở lớp", link) if link else "",
+        note=escape(lines[3]),
+    )
+    return Email(to=to, subject=f"{student} vừa vào lớp {class_name}", text=text, html=html)

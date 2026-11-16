@@ -80,7 +80,7 @@ Tiêu chí chấp nhận AC-51.1..AC-55.2 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PC-I10 | `test_a_disabled_account_is_signed_out_and_cannot_sign_in` | AC-52.4 | Tắt thì đăng xuất ngay; không tự tắt; bật lại thì đăng nhập được |
 | TC-PC-I11 | `test_an_administrator_lifts_a_lockout` | AC-52.7 | Gỡ khoá sau năm lần đăng nhập sai |
 | TC-PC-I12 | `test_only_an_administrator_manages_accounts` | AC-52.6 | Sinh viên và giảng viên nhận 403 ở mọi API quản lý tài khoản |
-| TC-PC-I13 | `test_a_student_badge_counts_only_reviews_due` | AC-53.1 | D103: sinh viên chỉ còn con số ôn tập đến hạn, không còn "kết quả mới" |
+| TC-PC-I13 | `test_a_student_badge_counts_reviews_due_and_class_invitations` | AC-53.1 | D103: sinh viên chỉ còn con số ôn tập đến hạn, không còn "kết quả mới" |
 | TC-PC-I14 | `test_a_teacher_sees_how_many_responses_wait_for_review` | AC-53.2 | Con số hàng đợi bằng số bài chờ duyệt |
 | TC-PC-I15 | `test_the_sidebar_carries_a_slot_for_each_count` | AC-53.3 | Chỗ hiện con số có trên thanh điều khiển của mỗi vai trò |
 | TC-PC-I16 | `test_the_band_page_labels_what_the_machine_does_not_measure` | AC-54.1 | Ngưỡng của mô hình, nhãn "máy không đo" và "không đánh giá", giới hạn với người nói lắp |

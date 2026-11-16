@@ -301,8 +301,8 @@ def test_a_student_submits_practises_and_is_erased_across_the_services(system):
     assert r.status_code == 200, r.text
     assert r.json()["result"]["missing"] == []
 
-    # web: the sidebar asks learning; reminders ask metering too (D055).
-    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due"}
+    # web: the sidebar asks learning and assessment (D109); reminders ask metering too (D055).
+    assert set(student.get("/api/v1/me/badges").json()) == {"reviews_due", "class_invites"}
     assert student.get("/api/v1/me/nudges").status_code == 200
     # web: a page drawn with the limits assessment applies.
     page = student.get("/practice/lessons/lesson-a2-neighborhood")

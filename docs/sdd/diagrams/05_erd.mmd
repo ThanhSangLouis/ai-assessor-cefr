@@ -7,7 +7,7 @@
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071), được mời · invited (D109)"
     account ||--o{ audit_log : "ghi · actor_id"
 
     account {
@@ -45,7 +45,9 @@ erDiagram
     classroom {
         string class_id PK
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
-        array members "mã tài khoản theo thứ tự vào lớp"
+        array members "mã tài khoản theo thứ tự vào lớp; chỉ vào khi sinh viên tự đồng ý (D109)"
+        array invited "giảng viên mời, sinh viên chưa trả lời; chưa cho quyền xem (D109)"
+        string join_code UK "mã vào lớp 6 ký tự; không có trường này là tắt mã (D109)"
         bool archived "lưu trữ thì giảng viên mất quyền xem, khôi phục thì có lại (D108)"
     }
 
