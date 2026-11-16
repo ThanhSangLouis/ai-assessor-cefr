@@ -43,13 +43,15 @@
 | Mã | Test | Truy vết | Kiểm |
 | --- | --- | --- | --- |
 | TC-ME-U01 | `test_a_recording_up_to_a_minute_is_one_run` | AC-85.1 | 1, 35, 60 giây đều là 1 lượt = 2.000 IDPoint (D057) |
-| TC-ME-U02 | `test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five` | AC-85.1 | 61 và 120 giây là 3.400; 300 giây và dài hơn là 7.600 |
+| TC-ME-U02 | `test_a_scored_recording_is_one_run_whatever_it_lasted` | AC-85.1 | D106: 5, 61, 120, 121, 300 và 900 giây đều là 1 lượt = 2.000 IDPoint; `minutes()` vẫn đếm phút đã bắt đầu, 1 đến 5 |
 | ~~TC-ME-U03~~ *(gỡ bởi D083)* | ~~`test_practice_pays_half`~~ | FR-85 | Bài luyện tập 0,5 lượt = 1.000 IDPoint |
 | TC-ME-U04 | `test_a_cycle_starts_on_the_sixteenth` | FR-85 | Chu kỳ đổi lúc 0 giờ ngày 16, qua năm đúng |
 | ~~TC-ME-U05~~ *(gỡ bởi D105)* | ~~`test_counted_output_tokens_win_over_the_estimate_from_words`~~ | FR-85 | Bút toán không còn ghi số token |
 | ~~TC-ME-U06~~ *(gỡ bởi D105)* | ~~`test_audio_tokens_are_whispers_windows_plus_the_language_check`~~ | FR-85 | Bút toán không còn ghi số token |
-| TC-ME-U07 | `test_the_seller_sets_the_prices` | FR-85 | Giá do người bán đặt; giá âm hay hệ số luyện tập 0 bị từ chối (D057) |
-| TC-ME-U08 | `test_a_hold_is_the_longest_the_task_allows` | FR-85 | Giữ chỗ theo thời lượng tối đa của đề: 90 giây là 1,7 lượt |
+| TC-ME-U07 | `test_the_seller_sets_the_prices` | FR-85 | Giá do người bán đặt (2 lượt bài đầu, 1 lượt mỗi phút thêm, 1.000 IDPoint/lượt: 100 giây là 3.000); giá âm bị từ chối |
+| TC-ME-U08 | `test_a_hold_is_the_longest_the_task_allows` | FR-85 | Giữ chỗ theo thời lượng tối đa của đề: 90 giây là 1 lượt với giá mặc định, 2 lượt khi người bán đặt 1 lượt mỗi phút thêm |
+| TC-ME-U09 | `test_a_seller_may_still_charge_whole_runs_per_further_minute` | FR-85 | D106: 1 lượt mỗi phút thêm cho 61, 120, 121, 300, 900 giây là 4.000 / 4.000 / 6.000 / 10.000 / 10.000 IDPoint |
+| TC-ME-U10 | `test_every_price_is_a_whole_run_and_a_fraction_rounds_down` | FR-85 | D106: giá lẻ 1,5 / 0,7 / 0,3 / 0,1 / 0,1 thành 1 / 0 / 0 / 0 / 0; `whole_runs`, `is_whole` |
 
 ### 4.2. Integration — `tests/test_metering.py`
 
@@ -71,7 +73,7 @@
 | TC-ME-I14 | `test_only_an_administrator_grants_runs` | FR-85 | Giảng viên 403; một phiếu chỉ cộng một lần; bút danh lạ 404 |
 | TC-ME-I15 | `test_the_metered_deployment_runs_no_research_study` | AC-85.10 | Tạo thực nghiệm trả 404 (gỡ bởi D078) |
 | TC-ME-I16 | `test_granting_on_the_school_deployment_is_refused` | FR-85 | Bản của trường không cộng lượt |
-| TC-ME-I17 | `test_the_submission_screen_quotes_the_most_a_task_costs` | FR-85 | Trang Nộp bài báo giá tối đa: đề 90 giây là 1,7 lượt = 3.400 IDPoint (D057) |
+| TC-ME-I17 | `test_the_submission_screen_quotes_one_whole_run` | FR-85 | D106: trang Nộp bài báo 1 lượt = 2.000 IDPoint cho đề 90 giây; 0 giây là 422 |
 
 ## 5. Kết quả
 

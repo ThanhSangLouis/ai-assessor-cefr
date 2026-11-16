@@ -1204,6 +1204,38 @@ def _d105_copies(db: Database, target: str) -> None:
             )  # fmt: skip
 
 
+def _d106_whole_runs(db: Database, target: str) -> None:
+    """Every balance and price becomes a whole number of runs (D106).
+
+    A wallet's prepaid balance is rounded up and the free runs it used this
+    cycle rounded down, both in the learner's favour; the administrator's price
+    list keeps only the whole part of each price. Charges already made keep
+    what they were. Each change is conditional on the value it replaces, so
+    running this twice, or beside a hold that moves a balance, changes nothing
+    twice. Approved by the project owner on 16/11/2026.
+    """
+    from aicefr.metering.pricing import RUN_PRICES, UNITS_PER_RUN, whole_runs
+
+    run = UNITS_PER_RUN
+    if _has(db, "wallet"):
+        for w in db["wallet"].find({}, {"user_ref": 1, "balance": 1, "free_used": 1}):
+            for name, rounded in (
+                ("balance", -(-int(w.get("balance") or 0) // run) * run),
+                ("free_used", int(w.get("free_used") or 0) // run * run),
+            ):
+                if rounded != w.get(name, 0) and name in w:
+                    db["wallet"].update_one(
+                        {"user_ref": w["user_ref"], name: w[name]}, {"$set": {name: rounded}}
+                    )
+    if _has(db, "price_list"):
+        doc = db["price_list"].find_one({"_id": "current"})
+        if doc:
+            whole = {f: float(whole_runs(float(doc[f]))) for f in RUN_PRICES if f in doc}
+            if "free_runs" in doc:
+                whole["free_runs"] = float(whole_runs(float(doc["free_runs"])))
+            db["price_list"].update_one({"_id": "current"}, {"$set": whole})
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -1247,6 +1279,7 @@ MIGRATIONS: tuple[Migration, ...] = (
         _d104_documents,
     ),
     Migration(22, "copies of other fields removed (D105)", _d105_copies),
+    Migration(23, "balances and prices in whole runs (D106)", _d106_whole_runs),
 )
 
 LATEST = MIGRATIONS[-1].version

@@ -55,31 +55,40 @@ function verifyNudge(perCycle) {
 const icon = (name) => window.ui.icon(name);
 const ACTION_ICON = { assessment: "mic", practice: "target", upgrade: "sparkle", lesson_draft: "pencil", drill_passage: "book-open", lesson: "path" };
 
-// One line of the ledger: what, when, and the runs it moved.
+// One line of the ledger: what, when, and the runs it moved. D106: something
+// charged nothing (an AI answer, a lesson recording) reads "Miễn phí", not −0.
 function ledgerRow(e) {
-  const free = e.free_slot && e.state === "charged";
+  const free = e.state === "charged" && (e.free_slot || Number(e.charged_runs) === 0);
   const amount = free ? "0" : num(e.state === "charged" ? e.charged_runs : e.held_runs);
-  const state = free ? "Miễn phí trong ngày" : STATE[e.state] || escapeHtml(e.state);
+  const state = free ? "Miễn phí" : STATE[e.state] || escapeHtml(e.state);
   return `<li class="ledger-row">
     <span class="ledger-mark">${icon(ACTION_ICON[e.action] || "star")}</span>
     <span class="ledger-what"><b>${ACTION[e.action] || escapeHtml(e.action)}</b><small>${state} · ${when(e.created_at)}</small></span>
     <span class="ledger-runs${e.state === "released" ? " back" : ""}">${e.state === "released" ? "+" : "−"}${amount}</span></li>`;
 }
 
-// The price list as tiles: what one thing costs, in runs, IDPoint underneath.
+// The price list as tiles: what one thing costs, in whole runs (D106), IDPoint
+// underneath; what costs nothing says "Miễn phí".
 function showPrices(p, oneMinute, lesson) {
   const tile = (mark, value, label, sub = "") =>
     `<li><span class="cost-mark">${icon(mark)}</span><b>${value}</b><span>${label}</span>${sub ? `<small>${sub}</small>` : ""}</li>`;
+  const priced = (mark, runsCost, what) =>
+    Number(runsCost) > 0
+      ? tile(mark, num(runsCost), `lượt · ${what}`, idp(runsCost))
+      : tile(mark, "Miễn phí", what);
+  const extra = Number(p.extra_minute_runs) > 0 ? ` · +${num(p.extra_minute_runs)} mỗi phút thêm` : "";
   const tiles = [
-    tile("mic", num(oneMinute.assessment), "lượt · bài nói 1 phút", `+${num(p.extra_minute_runs)} mỗi phút thêm`),
-    tile("sparkle", num(p.upgrade_runs), "lượt · AI viết lại", idp(p.upgrade_runs)),
-    tile("book-open", num(p.passage_runs ?? 0.1), "lượt · đoạn đọc AI", idp(p.passage_runs ?? 0.1)),
+    tile("mic", num(oneMinute.assessment), "lượt · mỗi bài nói được chấm", idp(oneMinute.assessment) + extra),
+    priced("sparkle", p.upgrade_runs, "AI viết lại"),
+    priced("book-open", p.passage_runs ?? 0, "đoạn đọc AI"),
   ];
-  // D094: the lesson path: some recordings a day free, then by the minute.
+  // D094: the lesson path, free since D106 up to the day's limit.
   if (lesson) {
     tiles.push(
-      tile("path", `${Number(lesson.free_left_today)}/${Number(lesson.free_per_day)}`, "bài học miễn phí hôm nay",
-        `sau đó ${num(lesson.minute_runs)} lượt/phút`),
+      Number(lesson.minute_runs) > 0
+        ? tile("path", `${Number(lesson.free_left_today)}/${Number(lesson.free_per_day)}`, "bài học miễn phí hôm nay",
+            `sau đó ${num(lesson.minute_runs)} lượt/phút`)
+        : tile("path", "Miễn phí", "bản ghi trong lộ trình", `tối đa ${Number(lesson.daily_cap)} bản/ngày`),
     );
   }
   document.getElementById("price-tiles").innerHTML = tiles.join("");

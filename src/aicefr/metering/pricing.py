@@ -1,18 +1,23 @@
-"""The price list of the metered channel: priced by the recording (D057).
+"""The price list of the metered channel: whole runs only (D106).
 
-What the learner pays is fixed by the recording, as every worker on NetID is
-priced (team decision, 24/10/2026): the first minute is one run (2,000 IDPoint
-at the agreed 1 IDPoint = 1 VND), every further started minute 0.7 run, up to
-five minutes. The seller sets these numbers (`AICEFR_PRICE_*`,
-`AICEFR_IDPOINT_PER_RUN`), and since D078 an administrator on the dashboard.
+A learner buys runs in whole packs (1, 10, 30, 100), so every price is a whole
+number of runs too: one scored recording is one run, and nothing is ever
+charged as 0.3 or 0.7 of a run. Since D106 the AI-written answer (D072), the
+reading passage (D090) and the recordings on the lesson path (D094) are free,
+held back only by their daily limits; every task is at most a minute, so a
+recording costs its one run whatever it lasted. The seller still sets these
+numbers (`AICEFR_PRICE_*`, `AICEFR_IDPOINT_PER_RUN`), and since D078 an
+administrator on the dashboard, but only as whole runs: a fraction saved
+before D106 counts as its whole part, rounded down, in the learner's favour.
 
-D105: the tokens a recording or a model call used are not kept with each
-charge any more; nothing read them. The language model's daily token counts
-stay on the coach dashboard (D072).
+D057 (team decision, 24/10/2026) set the first minute at one run, 2,000
+IDPoint at the agreed 1 IDPoint = 1 VND. D105: the tokens a recording or a
+model call used are not kept with each charge any more; nothing read them.
 
-Charges are kept in thousandths of a run, integers so no sum ever rounds. A hold
-is taken for the longest recording a task allows and settled on what the
-recording really lasted.
+Charges are kept in thousandths of a run (the ledger's unit since D049), so a
+charge made before D106 still reads as it was; every charge since is a whole
+thousand. A hold is taken for the longest recording a task allows and settled
+on what the recording really lasted.
 """
 
 from __future__ import annotations
@@ -20,7 +25,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-PRICE_VERSION = "price-v3-per-recording"
+PRICE_VERSION = "price-v4-whole-runs"
 UNITS_PER_RUN = 1000
 # Three runs a month for everyone before anything is charged.
 FREE_UNITS_PER_CYCLE = 3 * UNITS_PER_RUN
@@ -30,22 +35,42 @@ MAX_MINUTES = 5
 MAX_SECONDS = MAX_MINUTES * 60.0
 
 
+def whole_runs(runs: float) -> int:
+    """`runs` rounded down to a whole run; a hair under one is float noise, not less."""
+    return math.floor(round(runs, 6))
+
+
+def is_whole(runs: float) -> bool:
+    """True for 0, 1, 2...: the only prices a learner can count with (D106)."""
+    return runs >= 0 and round(runs, 6) == whole_runs(runs)
+
+
+# The prices in runs (D106: each a whole number of runs).
+RUN_PRICES = (
+    "first_minute_runs",
+    "extra_minute_runs",
+    "upgrade_runs",
+    "passage_runs",
+    "lesson_minute_runs",
+)
+
+
 @dataclass(frozen=True)
 class PriceList:
     """What the seller charges, in runs. Read from the settings (`AICEFR_PRICE_*`)."""
 
-    first_minute_runs: float = 1.0  # a recording up to one minute
-    extra_minute_runs: float = 0.7  # every further started minute
+    first_minute_runs: float = 1.0  # a scored recording up to one minute
+    extra_minute_runs: float = 0.0  # every further started minute (no task is longer)
     idpoint_per_run: int = 2000  # what one run is on NetID (1 IDPoint = 1 VND)
     # D072: one upgraded answer (D069) written by a language model; 0 is free.
-    upgrade_runs: float = 0.3
+    upgrade_runs: float = 0.0
     # D090: one reading passage written around the learner's unclear words.
-    passage_runs: float = 0.1
+    passage_runs: float = 0.0
     # D094: a recording on the lesson path (a step, a review, a retelling, a
     # word or a passage said again), per started minute of speech; the first
     # `lesson_free_per_day` recordings of a Vietnam day are free, and no more
-    # than `lesson_daily_cap` are measured in a day.
-    lesson_minute_runs: float = 0.1
+    # than `lesson_daily_cap` are measured in a day. Free since D106.
+    lesson_minute_runs: float = 0.0
     lesson_free_per_day: int = 5
     lesson_daily_cap: int = 30
     version: str = PRICE_VERSION
@@ -60,6 +85,10 @@ class PriceList:
         )
         if lowest < 0 or self.idpoint_per_run < 0:
             raise ValueError("giá không được âm")
+        # D106: whole runs only. A fraction from an older price list or the
+        # settings counts as its whole part, in the learner's favour.
+        for name in RUN_PRICES:
+            object.__setattr__(self, name, float(whole_runs(getattr(self, name))))
         if self.lesson_daily_cap < 1:
             raise ValueError("trần bản ghi bài học mỗi ngày phải từ 1 trở lên")
         if not 0 <= self.lesson_free_per_day <= self.lesson_daily_cap:

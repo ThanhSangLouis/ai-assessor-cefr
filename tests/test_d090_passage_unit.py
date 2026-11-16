@@ -112,12 +112,13 @@ def test_the_passage_is_read_aloud_with_its_words_highlighted():
 
 
 def test_a_passage_has_its_own_price_kept_in_the_versions():
-    prices = PriceList()
-    assert passage_units(prices) == 100 and as_idpoint(prices, 100) == 200
-    assert prices.as_dict()["passage_runs"] == 0.1
+    # D106: free by default, whole runs otherwise.
+    assert passage_units(PriceList()) == 0 and PriceList().as_dict()["passage_runs"] == 0.0
+    prices = PriceList(passage_runs=1)
+    assert passage_units(prices) == 1000 and as_idpoint(prices, 1000) == 2000
     with pytest.raises(ValueError):
         PriceList(passage_runs=-1)
-    book = PriceBook(MeteringRepository(store()), PriceList(passage_runs=0.2))
+    book = PriceBook(MeteringRepository(store()), PriceList(passage_runs=2))
     # A version saved before D090 has no passage price: the default stands.
     book.store.col("price_list").insert_one(
         {
@@ -131,10 +132,11 @@ def test_a_passage_has_its_own_price_kept_in_the_versions():
         }
     )
     current = book.current()
+    # Its fractions count as their whole part (D106): 0.5 of a run is nothing.
     assert (current.version, current.upgrade_runs, current.passage_runs) == (
         "price-admin-1",
-        0.5,
-        0.2,
+        0.0,
+        2.0,
     )
 
 

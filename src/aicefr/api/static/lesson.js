@@ -648,6 +648,16 @@ async function refreshMeter() {
     const r = await fetch("/api/v1/me/credits/lesson");
     const q = r.ok ? await r.json() : null;
     if (!q || !q.metering) return;
+    // D106: free up to the day's limit; only the limit is worth saying.
+    if (!(Number(q.minute_runs) > 0)) {
+      meterEl.textContent = q.free_locked
+        ? "Xác minh email ở trang Tài khoản để học lộ trình miễn phí."
+        : q.left_today <= 0
+          ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`
+          : `Bản ghi trong lộ trình miễn phí · hôm nay còn ${q.left_today}/${q.daily_cap}.`;
+      meterEl.hidden = false;
+      return;
+    }
     const price = `${Number(q.minute_runs).toLocaleString("vi-VN")} lượt (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint) mỗi phút nói`;
     meterEl.textContent = q.left_today <= 0
       ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`

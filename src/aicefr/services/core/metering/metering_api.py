@@ -157,9 +157,9 @@ class PricesIn(BaseModel):
     first_minute_runs: float = Field(ge=0, le=100)
     extra_minute_runs: float = Field(ge=0, le=100)
     upgrade_runs: float = Field(ge=0, le=100)
-    passage_runs: float = Field(default=0.1, ge=0, le=100)
-    # D094: defaults, so a dashboard of before keeps working.
-    lesson_minute_runs: float = Field(default=0.1, ge=0, le=100)
+    # D094: defaults, so a dashboard of before keeps working; free since D106.
+    passage_runs: float = Field(default=0, ge=0, le=100)
+    lesson_minute_runs: float = Field(default=0, ge=0, le=100)
     lesson_free_per_day: int = Field(default=5, ge=0, le=1000)
     lesson_daily_cap: int = Field(default=30, ge=1, le=1000)
     idpoint_per_run: int = Field(ge=0, le=10_000_000)

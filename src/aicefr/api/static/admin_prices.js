@@ -11,16 +11,17 @@
   const when = (iso) => (iso ? new Date(iso).toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }) : "");
 
   // [key, label, unit, step], in three groups: one field each, the same width.
+  // D106: every price is a whole number of runs (0 = free), so the step is 1.
   const GROUPS = [
     ["Chấm bài", "mic", [
-      ["first_minute_runs", "Phút đầu", "lượt", "0.1"],
-      ["extra_minute_runs", "Mỗi phút thêm", "lượt", "0.1"],
-      ["upgrade_runs", "AI viết lại / soạn bài", "lượt", "0.1"],
-      ["passage_runs", "Đoạn đọc AI viết", "lượt", "0.1"],
+      ["first_minute_runs", "Một bài nói", "lượt", "1"],
+      ["extra_minute_runs", "Mỗi phút thêm", "lượt", "1"],
+      ["upgrade_runs", "AI viết lại / soạn bài", "lượt", "1"],
+      ["passage_runs", "Đoạn đọc AI viết", "lượt", "1"],
     ]],
     // D094: a recording on the lesson path, and how many a day are free or allowed.
     ["Bài học", "book-open", [
-      ["lesson_minute_runs", "Mỗi phút nói", "lượt", "0.05"],
+      ["lesson_minute_runs", "Mỗi phút nói", "lượt", "1"],
       ["lesson_free_per_day", "Miễn phí mỗi ngày", "bản ghi", "1"],
       ["lesson_daily_cap", "Tối đa mỗi ngày", "bản ghi", "1"],
     ]],

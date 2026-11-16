@@ -249,27 +249,28 @@ class Settings:
     # on; labels are analysed only for learners who accepted the terms (D058).
     guided_replay: bool = field(default_factory=lambda: _flag("AICEFR_GUIDED_REPLAY"))
     # D057: the seller's prices, in runs: a recording up to one minute, every
-    # further started minute, the share a practice attempt pays, and what one
-    # run is in IDPoint on NetID (team decision 24/10/2026, 1 IDPoint = 1 VND).
+    # further started minute, and what one run is in IDPoint on NetID (team
+    # decision 24/10/2026, 1 IDPoint = 1 VND). D106: whole runs only; a scored
+    # recording is one run, everything else free within its daily limit.
     price_first_minute_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_FIRST_MINUTE_RUNS", 1.0)
     )
     price_extra_minute_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.7)
+        default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.0)
     )
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
     # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
     price_upgrade_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
+        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.0)
     )
     # D090: what one reading passage around the unclear words costs, in runs.
     price_passage_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.1)
+        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.0)
     )
     # D094: a recording on the lesson path, per started minute of speech, and
     # how many recordings of a Vietnam day are free and measured at most.
     price_lesson_minute_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_LESSON_MINUTE_RUNS", 0.1)
+        default_factory=lambda: _float("AICEFR_PRICE_LESSON_MINUTE_RUNS", 0.0)
     )
     lesson_free_per_day: int = field(default_factory=lambda: _int("AICEFR_LESSON_FREE_PER_DAY", 5))
     lesson_daily_cap: int = field(default_factory=lambda: _int("AICEFR_LESSON_DAILY_CAP", 30))
