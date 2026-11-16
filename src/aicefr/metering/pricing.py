@@ -1,6 +1,6 @@
 """The price list of the metered channel: whole runs only (D106, D107).
 
-A learner buys runs in whole packs (1, 10, 30, 100), so every price is a whole
+A learner buys runs in whole packs (5, 10, 30, 100), so every price is a whole
 number of runs too: one scored recording is one run, and nothing is ever
 charged as 0.3 or 0.7 of a run. Every task is at most a minute, so a recording
 costs its one run whatever it lasted.

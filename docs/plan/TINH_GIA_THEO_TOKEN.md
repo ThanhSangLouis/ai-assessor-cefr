@@ -22,7 +22,7 @@ Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 | Giảng viên soạn bài bằng AI (D075) | **Miễn phí** (D107) | 0 | 5 bản nháp mỗi giảng viên trong 24 giờ |
 | Bản ghi trong lộ trình học (D094) | **Miễn phí** | 0 | Tối đa 30 lần ghi âm mỗi ngày; đo bằng Whisper và luật đếm từ, không qua mô hình ngôn ngữ |
 | Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 | Cần email đã xác minh (D101) |
-| Gói bán trực tiếp (production, đặt trên dashboard) | 1 / 10 / 30 / 100 lượt | 2.000 / 19.000 / 49.000 / 149.000 đồng | — |
+| Gói bán trực tiếp (production, đặt trên dashboard; từ 16/11/2026 gói nhỏ nhất 5 lượt, D107) | 5 / 10 / 30 / 100 lượt | 10.000 / 19.000 / 49.000 / 149.000 đồng | — |
 
 **Quy tắc nguyên lượt:**
 - **Giá:** mọi giá và số lượt miễn phí là số nguyên (0, 1, 2…). Form quản trị và API từ chối giá lẻ (422).
