@@ -126,7 +126,9 @@ function blockHtml(r, top, height, now) {
   const late = now - new Date(r.created_at).getTime() > 3 * DAY_MS;
   const cls = ["tt-block", r.locked_by ? "is-held" : "", late ? "is-late" : ""].join(" ").trim();
   const who = r.student_name ? escapeHtml(r.student_name) : "Học viên";
-  const len = r.duration_s ? `${Math.floor(r.duration_s / 60)}:${String(Math.round(r.duration_s % 60)).padStart(2, "0")}` : "";
+  // Round the whole first, so 59.6 s reads 1:00, not 0:60.
+  const secs = r.duration_s ? Math.round(r.duration_s) : 0;
+  const len = secs ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}` : "";
   const first = (r.reasons || [])[0];
   const lines = [
     `<b>${who}</b>`,

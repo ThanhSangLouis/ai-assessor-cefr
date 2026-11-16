@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
 | **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
 | **1.30** | **08/11/2026** | **D102.** Bỏ hoàn tiền: trang `/payment-terms` nói lượt đã mua không hoàn tiền; trả tiền gặp sự cố (lượt chưa vào ví sau 30 phút, trả hai lần) được bù bằng lượt. Sửa FR-102 mục (4) và AC-102.6 | D102 |
@@ -1517,7 +1518,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-88 — Lớp học (D054, D071, D075)
 
-**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên; giảng viên hoặc quản trị viên thêm học viên theo email. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá và mã tự vào lớp.
+**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên; giảng viên hoặc quản trị viên thêm học viên theo email. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá và mã tự vào lớp. D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1525,6 +1526,8 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-88.1** — *Given* một lớp, *When* giảng viên thêm học viên theo email hoặc mã tài khoản, *Then* học viên có trong danh sách theo họ tên và lớp không còn phần bài đã giao (`test_a_teacher_adds_students_and_sees_them_by_name`). |
 | **AC-88.2** — *Given* một học viên, *When* gọi API vào lớp bằng mã hay xem bài được giao, *Then* 404: không còn hai chức năng này (`test_students_cannot_make_classes_and_nobody_joins_with_a_code`). |
 | **AC-88.3** — *Given* lớp của giảng viên khác, *When* mở, *Then* 404 (`test_another_teachers_class_is_not_found`). |
+| **AC-88.4** — *Given* học viên trong lớp của giảng viên, *When* lớp bị lưu trữ, *Then* giảng viên nhận 404 khi mở báo cáo và ghi âm, bài không còn trong hàng chờ của họ, danh sách lớp và kết quả vẫn còn; khi khôi phục, giảng viên xem lại được (`test_an_archived_class_gives_its_teachers_no_access_until_restored`). |
+| **AC-88.5** — *Given* thêm học viên, *When* nhập email của một giảng viên, *Then* email đó nằm trong `not_students`, không nằm trong `unknown` (`test_a_staff_address_is_said_not_to_be_a_student`). |
 
 ### FR-89 — Nhắc việc trong ứng dụng (D055)
 

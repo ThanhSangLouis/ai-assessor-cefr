@@ -10,6 +10,11 @@ assessments any more (the assignments of D054 are gone; a class document
 from before keeps its old list, unread), and nobody joins with a code: an
 administrator or a teacher adds members by email. A class from before keeps
 its old join code, unread (migration 10 dropped its index).
+
+D108: an archived class gives its teachers no access any more: they keep
+seeing the class and its roster, but not its members' work, and its members'
+recordings are no longer theirs to be told about. Restoring the class gives
+the access back. The results and the reviews are kept either way.
 """
 
 from __future__ import annotations
@@ -67,6 +72,10 @@ class Classroom:
         }
 
 
+# Only a class still running gives its teachers access to its members (D108).
+ACTIVE = {"archived": {"$ne": True}}
+
+
 class ClassroomRepository(MongoStore):
     def __init__(self, db_path: str | Path) -> None:
         self.db_path = str(db_path)
@@ -98,8 +107,12 @@ class ClassroomRepository(MongoStore):
         rows = self.col("classroom").find(query).sort([("created_at", DESCENDING)])
         return [Classroom.from_doc(r).view() for r in rows]
 
-    def set_archived(self, class_id: str, archived: bool) -> None:
-        self.col("classroom").update_one({"class_id": class_id}, {"$set": {"archived": archived}})
+    def set_archived(self, class_id: str, archived: bool) -> bool:
+        """False when the class was in that state already."""
+        done = self.col("classroom").update_one(
+            {"class_id": class_id, "archived": {"$ne": archived}}, {"$set": {"archived": archived}}
+        )
+        return bool(done.modified_count)
 
     # ------------------------------------------------------------ teachers (D071)
 
@@ -119,20 +132,22 @@ class ClassroomRepository(MongoStore):
         return bool(done.modified_count)
 
     def teaches(self, teacher_id: str, student_id: str) -> bool:
-        """Whether the student is a member of a class the teacher teaches, archived or not."""
+        """Whether the student is a member of a class the teacher teaches and that
+        is not archived (D108)."""
         found = self.col("classroom").find_one(
-            {"teacher_ids": teacher_id, "members": student_id}, {"_id": 1}
+            {"teacher_ids": teacher_id, "members": student_id, **ACTIVE}, {"_id": 1}
         )
         return found is not None
 
     def students_of(self, teacher_id: str) -> set[str]:
-        """Every member of every class the teacher teaches."""
-        rows = self.col("classroom").find({"teacher_ids": teacher_id}, {"members": 1})
+        """Every member of every class the teacher teaches, archived classes aside (D108)."""
+        rows = self.col("classroom").find({"teacher_ids": teacher_id, **ACTIVE}, {"members": 1})
         return {m for r in rows for m in r.get("members", [])}
 
     def teachers_of(self, student_id: str) -> set[str]:
-        """Every teacher of every class the student is a member of (D086)."""
-        rows = self.col("classroom").find({"members": student_id}, {"teacher_ids": 1})
+        """Every teacher of every class the student is a member of (D086), archived
+        classes aside (D108)."""
+        rows = self.col("classroom").find({"members": student_id, **ACTIVE}, {"teacher_ids": 1})
         return {t for r in rows for t in r.get("teacher_ids", [])}
 
     # ------------------------------------------------------------ members
