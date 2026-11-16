@@ -17,6 +17,12 @@ Hỏi về production, EC2/AWS, GitHub Actions, CI, deploy, `.env` máy chủ ha
 self-hosted runner); `main` có branch protection; AI agent không SSH, không gọi AWS, không
 đụng secret.
 
+Viết báo cáo hay trả lời về giá, lượt, chi phí vận hành hoặc điểm hoà vốn: đọc
+[docs/plan/CHUNG_MINH_GIA_MOT_LUOT.md](docs/plan/CHUNG_MINH_GIA_MOT_LUOT.md) (vì sao 1 lượt =
+2.000 đồng, cộng đủ chi phí, nguồn từng con số) và
+[docs/plan/TINH_GIA_THEO_TOKEN.md](docs/plan/TINH_GIA_THEO_TOKEN.md) (bảng giá đang áp dụng). Chép
+số từ đó, không tự ước lượng lại.
+
 ## 1. Quy trình 8 bước chuẩn (co giãn theo loại task)
 
 Với việc nhỏ/trực tiếp, có thể gộp nhanh các bước 01–04. Với thay đổi code, bug fix hoặc liên module, thực hiện đầy đủ theo trình tự:
