@@ -46,6 +46,7 @@ erDiagram
         string class_id PK
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
+        bool archived "lưu trữ thì giảng viên mất quyền xem, khôi phục thì có lại (D108)"
     }
 
     audit_log {
