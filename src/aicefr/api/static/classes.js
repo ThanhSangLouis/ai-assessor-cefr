@@ -135,7 +135,22 @@ async function detailView() {
   document.getElementById("page-title").textContent = c.name;
   document.getElementById("page-lede").innerHTML =
     `${c.archived ? "Lớp đã lưu trữ. " : ""}<a href="/teach/classes">Tất cả lớp</a>`;
-  root.innerHTML = `
+  // D108: an archived class gives its teachers no access to its members' work.
+  const state = c.archived
+    ? `<section class="card class-state" aria-labelledby="state-h">
+      <div class="card-head"><h2 id="state-h">Lớp đã lưu trữ</h2></div>
+      <p class="muted">Giảng viên của lớp không xem và không duyệt được bài của sinh viên trong lớp. Kết quả và lịch sử duyệt vẫn giữ nguyên.</p>
+      <button class="button" type="button" id="class-restore">Khôi phục lớp</button>
+    </section>`
+    : "";
+  const archive = c.archived
+    ? ""
+    : `<section class="card class-state" aria-labelledby="archive-h">
+      <div class="card-head"><h2 id="archive-h">Kết thúc lớp</h2></div>
+      <p class="muted">Lưu trữ khi lớp đã học xong: giảng viên không còn xem bài của sinh viên trong lớp. Kết quả vẫn giữ, khôi phục được bất cứ lúc nào.</p>
+      <button class="button secondary" type="button" id="class-archive">Lưu trữ lớp</button>
+    </section>`;
+  root.innerHTML = `${state}
     <section class="card" aria-labelledby="members-h">
       <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
       <form id="members-form" class="inline-form">
@@ -177,8 +192,19 @@ async function detailView() {
       }
     </section>
     ${bandGroups(c)}
+    ${archive}
 `;
   wireGroups(c);
+  const setArchived = (on) => async () => {
+    if (on && !window.confirm("Lưu trữ lớp này? Giảng viên của lớp sẽ không còn xem bài của sinh viên trong lớp.")) return;
+    const r = await post(`/api/v1/classes/${encodeURIComponent(classId)}/${on ? "archive" : "restore"}`, {});
+    if (r) {
+      window.toast(on ? "Đã lưu trữ lớp." : "Đã khôi phục lớp.", "ok");
+      detailView();
+    }
+  };
+  document.getElementById("class-archive")?.addEventListener("click", setArchived(true));
+  document.getElementById("class-restore")?.addEventListener("click", setArchived(false));
   root.querySelectorAll("button[data-remove]").forEach((b) =>
     b.addEventListener("click", async () => {
       const r = await window.apiJson(
@@ -217,8 +243,10 @@ async function detailView() {
     if (!d) return;
     const parts = [`Đã thêm ${d.added.length}`];
     if (d.already.length) parts.push(`${d.already.length} đã ở trong lớp`);
+    const notStudents = d.not_students || [];
+    if (notStudents.length) parts.push(`không phải tài khoản sinh viên: ${notStudents.join(", ")}`);
     if (d.unknown.length) parts.push(`không tìm thấy: ${d.unknown.join(", ")}`);
-    window.toast(parts.join(" · "), d.unknown.length ? "warn" : "ok");
+    window.toast(parts.join(" · "), d.unknown.length || notStudents.length ? "warn" : "ok");
     detailView();
   });
 }

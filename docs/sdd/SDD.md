@@ -1032,6 +1032,7 @@ erDiagram
         string class_id PK
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
         array members "mã tài khoản theo thứ tự vào lớp"
+        bool archived "lưu trữ thì giảng viên mất quyền xem, khôi phục thì có lại (D108)"
     }
 
     audit_log {
@@ -2412,6 +2413,8 @@ Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình 
 ### 4.27. Lớp học và giao bài — D054 (đề xuất)
 
 Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
+
+**Lưu trữ lớp là thu lại quyền (D108).** `ClassroomRepository.teaches`, `students_of`, `teachers_of` lọc thêm `archived != true` (hằng `ACTIVE`), nên mọi chỗ kiểm quyền của giảng viên (`context.can_view`, hàng chờ và thống kê qua `students_of`, giao lộ trình qua `facade.teaches`, thông báo trực tiếp qua `teachers_of`) đều bỏ qua lớp đã lưu trữ mà không phải sửa từng nơi. `set_archived` trả `False` khi lớp đã ở trạng thái đó, để chỉ ghi nhật ký `class.archive` / `class.restore` khi thật sự đổi. `POST /api/v1/classes/{id}/restore` dùng cùng `_owned` như lưu trữ: giảng viên của lớp hoặc quản trị viên. `add_members` tách `not_students` khỏi `unknown`.
 
 ### 4.28. Nhắc việc — D055 (đề xuất)
 

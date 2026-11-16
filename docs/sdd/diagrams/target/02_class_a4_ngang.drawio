@@ -605,7 +605,7 @@
                     <mxGeometry height="22" width="230" y="288" as="geometry" />
                 </mxCell>
                 <mxCell id="Ledger" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=46;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontSize=13;" value="«entity»&lt;br&gt;LedgerEntry" vertex="1">
-                    <mxGeometry height="266" width="230" x="570" y="950" as="geometry" />
+                    <mxGeometry height="288" width="230" x="570" y="950" as="geometry" />
                 </mxCell>
                 <mxCell id="Ledger-0" parent="Ledger" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="- entryId: str" vertex="1">
                     <mxGeometry height="22" width="230" y="46" as="geometry" />
@@ -636,6 +636,9 @@
                 </mxCell>
                 <mxCell id="Ledger-10" parent="Ledger" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="- freeSlot: bool" vertex="1">
                     <mxGeometry height="22" width="230" y="244" as="geometry" />
+                </mxCell>
+                <mxCell id="Ledger-11" parent="Ledger" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;spacingLeft=6;spacingRight=6;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontSize=12;" value="- included: bool" vertex="1">
+                    <mxGeometry height="22" width="230" y="266" as="geometry" />
                 </mxCell>
                 <mxCell id="Role" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=46;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;whiteSpace=wrap;html=1;fillColor=#eef2f8;strokeColor=#000000;fontSize=13;" value="«enumeration»&lt;br&gt;Role" vertex="1">
                     <mxGeometry height="112" width="170" x="1240" y="720" as="geometry" />

@@ -446,6 +446,8 @@ CLASSES = [
             "- state: LedgerState",
             "- day: str",
             "- freeSlot: bool",
+            # D107: an AI answer a scored recording's run already paid for.
+            "- included: bool",
         ],
     ),
 ]

@@ -134,22 +134,25 @@ def class_detail(class_id: str, account: Account = STAFF_ONLY) -> dict:
 
 @router.post("/api/v1/classes/{class_id}/members", tags=["teacher"])
 def add_members(class_id: str, body: MembersIn, account: Account = STAFF_ONLY) -> dict:
-    """Add students by email; what was added, already there, unknown."""
+    """Add students by email; what was added, already there, not a student, unknown."""
     s = svc()
     _owned(class_id, account)
-    added, already, unknown = [], [], []
+    added, already, not_students, unknown = [], [], [], []
     # An email is kept lower case: what was added is echoed as the system keeps it.
     for raw in dict.fromkeys(p.strip().lower() for p in body.people if p.strip()):
         who = _person(raw)
-        if who is None or who.get("role") != Role.STUDENT.value:
+        if who is None:
             unknown.append(raw)
+        elif who.get("role") != Role.STUDENT.value:
+            # A teacher's or an administrator's address: said as such, not "not found".
+            not_students.append(raw)
         elif s.classrooms.add_member(class_id, who["account_id"]):
             added.append(raw)
         else:
             already.append(raw)
     if added:
         s.repo.write_audit(account.account_id, "class.add_members", class_id, f"n={len(added)}")
-    return {"added": added, "already": already, "unknown": unknown}
+    return {"added": added, "already": already, "not_students": not_students, "unknown": unknown}
 
 
 @router.delete("/api/v1/classes/{class_id}/members/{account_id}", tags=["teacher"])
@@ -188,7 +191,27 @@ def remove_teacher(class_id: str, account_id: str, account: Account = ADMIN_ONLY
 
 @router.post("/api/v1/classes/{class_id}/archive", tags=["teacher"])
 def archive_class(class_id: str, account: Account = STAFF_ONLY) -> dict:
-    """An archived class keeps its results and its members."""
+    """End a class (D108): its teachers no longer see its members' work.
+
+    The class, its roster, the results and the reviews are kept; restoring
+    the class gives the access back.
+    """
+    s = svc()
     _owned(class_id, account)
-    svc().classrooms.set_archived(class_id, True)
+    if s.classrooms.set_archived(class_id, True):
+        s.repo.write_audit(account.account_id, "class.archive", class_id, None)
     return {"archived": True}
+
+
+@router.post("/api/v1/classes/{class_id}/restore", tags=["teacher"])
+def restore_class(class_id: str, account: Account = STAFF_ONLY) -> dict:
+    """Open an archived class again (D108): its teachers see its members' work again.
+
+    A teacher of the class or an administrator. To take a class from one
+    teacher, an administrator removes that teacher from it instead.
+    """
+    s = svc()
+    _owned(class_id, account)
+    if s.classrooms.set_archived(class_id, False):
+        s.repo.write_audit(account.account_id, "class.restore", class_id, None)
+    return {"archived": False}

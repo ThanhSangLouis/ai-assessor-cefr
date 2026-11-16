@@ -1,4 +1,5 @@
-"""Classes (D054, D071, D075): who teaches whom, members added by email, no assignments."""
+"""Classes (D054, D071, D075, D108): who teaches whom, members added by email, no
+assignments; an archived class gives its teachers no access until it is restored."""
 
 from __future__ import annotations
 
@@ -6,6 +7,7 @@ import pytest
 from dbutil import email_of
 from test_billing import boot
 from test_lessons_integration import login_as as _login_as
+from test_lessons_integration import submit_assessment
 
 
 def login_as(m, name: str, role: str = "student"):
@@ -72,3 +74,52 @@ def test_the_pages_render(m):
     # The old address of the assignments goes to the path (D075).
     gone = student.get("/my-assignments", follow_redirects=False)
     assert (gone.status_code, gone.headers["location"]) == (301, "/practice")
+
+
+def test_an_archived_class_gives_its_teachers_no_access_until_restored(m):
+    # D108: archiving ends the teacher's access; the results and the class stay.
+    teacher = login_as(m, "GV-01", "teacher")
+    student = login_as(m, "SV-001")
+    rid = submit_assessment(student)
+    c = make_class(teacher)
+    cid = c["class_id"]
+    teacher.post(f"/api/v1/classes/{cid}/members", json={"people": [email_of("SV-001")]})
+    assert teacher.get(f"/api/v1/responses/{rid}").status_code == 200
+
+    assert teacher.post(f"/api/v1/classes/{cid}/archive").json() == {"archived": True}
+
+    assert teacher.get(f"/api/v1/responses/{rid}").status_code == 404
+    assert teacher.get(f"/api/v1/responses/{rid}/audio").status_code == 404
+    assert all(r["response_id"] != rid for r in teacher.get("/api/v1/review/queue").json())
+    kept = teacher.get(f"/api/v1/classes/{cid}").json()
+    assert kept["archived"] is True and len(kept["members"]) == 1  # the roster stays
+    assert student.get(f"/api/v1/responses/{rid}").status_code == 200  # the result stays
+
+    assert teacher.post(f"/api/v1/classes/{cid}/restore").json() == {"archived": False}
+    assert teacher.get(f"/api/v1/responses/{rid}").status_code == 200
+    actions = [e["action"] for e in login_as(m, "QT-01", "admin").get("/api/v1/audit").json()]
+    assert "class.archive" in actions and "class.restore" in actions
+
+
+def test_only_the_class_teachers_or_an_administrator_restore_it(m):
+    owner = login_as(m, "GV-01", "teacher")
+    other = login_as(m, "GV-02", "teacher")
+    admin = login_as(m, "QT-01", "admin")
+    cid = make_class(owner)["class_id"]
+    owner.post(f"/api/v1/classes/{cid}/archive")
+    assert other.post(f"/api/v1/classes/{cid}/restore").status_code == 404
+    assert admin.post(f"/api/v1/classes/{cid}/restore").status_code == 200
+    assert owner.get(f"/api/v1/classes/{cid}").json()["archived"] is False
+
+
+def test_a_staff_address_is_said_not_to_be_a_student(m):
+    teacher = login_as(m, "GV-01", "teacher")
+    login_as(m, "GV-02", "teacher")
+    cid = make_class(teacher)["class_id"]
+    added = teacher.post(
+        f"/api/v1/classes/{cid}/members",
+        json={"people": [email_of("GV-02"), "khong-co@vidu.vn"]},
+    ).json()
+    assert added["not_students"] == [email_of("GV-02")]
+    assert added["unknown"] == ["khong-co@vidu.vn"]
+    assert added["added"] == []

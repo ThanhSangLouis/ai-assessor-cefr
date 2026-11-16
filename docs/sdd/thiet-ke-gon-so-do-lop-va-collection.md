@@ -96,7 +96,7 @@
 | Thành tựu | `Achievement` | Đạt lúc nào |
 | Lộ trình gợi ý | `LearningPlan` | Của học viên, hoặc đề xuất của giảng viên; đề xuất đã lưu thành lộ trình nháp thì không còn hiệu lực |
 | Nạp lượt | `Order` | Phần mua và phần cổng thanh toán, kèm sự kiện của cổng (D104 gộp `Payment` của D084) |
-| Tính lượt | `Wallet`, `LedgerEntry`, `PriceList` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nằm trong ví. Mỗi lần chấm hay mỗi lần AI viết là một bút toán. Bảng giá có phiên bản (D078) |
+| Tính lượt | `Wallet`, `LedgerEntry`, `PriceList` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nằm trong ví. Mỗi lần chấm hay mỗi lần AI viết là một bút toán; D107: bản viết lại và đoạn đọc đã gồm trong lượt chấm ghi `included = true`, thu 0. Bảng giá có phiên bản (D078) |
 
 ### Enum: chỉ giữ cái điều khiển nghiệp vụ
 
