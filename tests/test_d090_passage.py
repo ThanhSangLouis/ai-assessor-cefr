@@ -153,10 +153,11 @@ def test_the_model_writes_a_passage_once_and_it_is_read_again_for_free(
 
 
 def test_metered_a_passage_costs_its_own_price_and_a_failure_nothing(tmp_path, monkeypatch, model):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
+    # D106: free by default; a seller may set a whole run.
+    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_PASSAGE_RUNS="1")
     student = login_as(m, "SV-P03")
     open_words(m, "SV-P03")
-    assert student.get(URL).json()["offer"]["price"] == {"runs": 0.1, "idpoint": 200}
+    assert student.get(URL).json()["offer"]["price"] == {"runs": 1.0, "idpoint": 2000}
 
     made = student.post(URL, json={"source": "model"})
     assert made.status_code == 200, made.text
@@ -168,7 +169,7 @@ def test_metered_a_passage_costs_its_own_price_and_a_failure_nothing(tmp_path, m
     ledger = m.core_parts.state["metering"].history(account_id(m, "SV-P03"))
     entries = [e for e in ledger if e["action"] == "drill_passage"]
     states = sorted((e["state"], e["charged"]) for e in entries)
-    assert states == [("charged", 100), ("released", 0), ("released", 0)]
+    assert states == [("charged", 1000), ("released", 0), ("released", 0)]
     charged = next(e for e in entries if e["state"] == "charged")
     assert "input_tokens" not in charged  # D105: the day's counters keep the tokens
     history = student.get("/api/v1/me/credits").json()["history"]

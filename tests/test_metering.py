@@ -161,10 +161,11 @@ def test_a_submission_is_held_then_charged_and_shows_in_my_credits(metered):
     )
 
 
-def test_the_submission_screen_quotes_the_most_a_task_costs(metered):
+def test_the_submission_screen_quotes_one_whole_run(metered):
+    # D106: a scored recording is one run, however long the task allows.
     student = login_as(metered, "SV-001")
     q = student.get("/api/v1/me/credits/quote", params={"seconds": 90}).json()
-    assert (q["runs"], q["idpoint"], q["free_runs_left"]) == (1.7, 3400, 3.0)
+    assert (q["runs"], q["idpoint"], q["free_runs_left"]) == (1.0, 2000, 3.0)
     assert student.get("/api/v1/me/credits/quote", params={"seconds": 0}).status_code == 422
 
 

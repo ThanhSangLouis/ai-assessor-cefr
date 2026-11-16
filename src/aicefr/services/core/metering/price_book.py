@@ -8,20 +8,17 @@ every change is a new version
 (`price-admin-N`). A charge keeps the version it was held under, so changing
 the prices never rewrites what was already paid. Until the first change the
 settings (`AICEFR_PRICE_*`, `AICEFR_CREDIT_PACKS`) stand.
+
+D106: every price and the free runs of the month are whole runs. A new version
+with a fraction is refused; one saved before D106 is read as its whole part.
 """
 
 from __future__ import annotations
 
-from aicefr.metering.pricing import UNITS_PER_RUN, PriceList
+from aicefr.metering.pricing import RUN_PRICES, UNITS_PER_RUN, PriceList, is_whole
 from aicefr.storage.metering_repository import MeteringRepository
 
-FIELDS = (
-    "first_minute_runs",
-    "extra_minute_runs",
-    "upgrade_runs",
-    "passage_runs",
-    "lesson_minute_runs",
-)
+FIELDS = RUN_PRICES
 # D094: counts, not prices.
 COUNTS = ("lesson_free_per_day", "lesson_daily_cap")
 
@@ -71,6 +68,9 @@ class PriceBook:
 
     def set(self, values: dict) -> dict:
         """Save a new version; ValueError when a price is impossible."""
+        # D106: a learner buys whole runs, so every price is a whole run too.
+        if not all(is_whole(float(values[f])) for f in (*FIELDS, "free_runs")):
+            raise ValueError("giá và lượt miễn phí phải là số lượt nguyên: 0, 1, 2…")
         PriceList(
             **{f: float(values[f]) for f in FIELDS},
             **{f: int(values[f]) for f in COUNTS},

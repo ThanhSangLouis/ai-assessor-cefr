@@ -155,6 +155,15 @@ class MeteringFacade:
             return None
         prices = self.prices
         free = self.free_ok(account_id)
+        if not free and lesson_units(prices, max_seconds) <= 0:
+            # D101 with D106: the lesson path is free, and free things wait for
+            # a verified email; without this an unverified sign-up recorded free.
+            count("metering_lesson_refused_total", reason="unverified")
+            return {
+                "status": 402,
+                "message": "Bản ghi trong lộ trình miễn phí cho tài khoản đã xác minh email"
+                + self._locked_hint(False),
+            }
         try:
             self.store.hold_lesson(
                 account_id,
@@ -209,18 +218,19 @@ class MeteringFacade:
 
     @exposed
     def upgrade_price(self) -> dict | None:
-        """What one upgraded answer costs, in runs and IDPoint; None when nothing is counted."""
-        if not self.enabled:
-            return None
+        """What one upgraded answer costs, in runs and IDPoint; None when it is free
+        or nothing is counted."""
         units = upgrade_units(self.prices)
+        if not self.enabled or units <= 0:
+            return None  # D106: free, so no price is shown
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
     @exposed
     def passage_price(self) -> dict | None:
-        """What one reading passage costs (D090); None when nothing is counted."""
-        if not self.enabled:
-            return None
+        """What one reading passage costs (D090); None when it is free or nothing is counted."""
         units = passage_units(self.prices)
+        if not self.enabled or units <= 0:
+            return None  # D106: free, so no price is shown
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
     @exposed
@@ -261,11 +271,17 @@ class MeteringFacade:
         result: bool,
         action: str = "upgrade",
     ) -> None:
-        """Charge the hold when the model answered, release it when it failed."""
+        """Charge the hold when the model answered, release it when it failed.
+
+        The charge is today's price, never more than was held: a hold taken
+        before D106 made the answer free is charged nothing.
+        """
         if not self.enabled:
             return
         what = MeteredAction(action)
-        entry = self.store.settle(key, what, result, None)
+        passage = what is MeteredAction.DRILL_PASSAGE
+        price = passage_units(self.prices) if passage else upgrade_units(self.prices)
+        entry = self.store.settle(key, what, result, price)
         if entry is not None:
             count("metering_units_total", entry["charged"], action=what.value, state=entry["state"])
 

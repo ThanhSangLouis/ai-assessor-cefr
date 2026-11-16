@@ -26,7 +26,7 @@
 
 | Tiêu chí chấp nhận | Test case |
 | --- | --- |
-| AC-99.1 | TC-LM-I01, TC-LM-I15 |
+| AC-99.1 | TC-LM-I01, TC-LM-I15, TC-LM-I25 |
 | AC-99.2 | TC-LM-U02, TC-LM-I02, TC-LM-I06, TC-LM-I11 |
 | AC-99.3 | TC-LM-I04, TC-LM-I10, TC-LM-I15 |
 | AC-99.4 | TC-LM-I03, TC-LM-I09, TC-LM-I18 |
@@ -41,10 +41,10 @@
 
 | Mã | Test | Truy vết | Kiểm |
 | --- | --- | --- | --- |
-| TC-LM-U01 | `test_the_defaults_are_the_owners_choice` | FR-99 | Mặc định 0,1 lượt mỗi phút nói, 5 bản ghi miễn phí, trần 30 |
-| TC-LM-U02 | `test_a_recording_pays_per_started_minute_of_speech_at_least_one` | AC-99.2 | 0 và 4,5 giây đều là một phút (100 phần nghìn lượt = 200 IDPoint); 60,5 giây là hai phút; tối đa năm phút |
-| TC-LM-U03 | `test_a_typical_lesson_costs_less_than_one_assessment` | FR-99 | Bài học trung vị 4 bản ghi dưới một phút nói: 800 IDPoint, rẻ hơn một bài đánh giá (2.000) |
-| TC-LM-U04 | `test_the_seller_sets_the_lesson_price` | FR-99 | Giá 0,25 lượt/phút cho 61 giây là 500; giá 0 thì miễn phí |
+| TC-LM-U01 | `test_the_defaults_are_the_owners_choice` | FR-99 | D106: mặc định miễn phí (0 lượt mỗi phút nói), 5 bản ghi miễn phí, trần 30 bản mỗi ngày |
+| TC-LM-U02 | `test_a_priced_recording_pays_per_started_minute_of_speech_at_least_one` | AC-99.2 | Khi người bán đặt 1 lượt/phút: 0 và 4,5 giây đều là một phút (1.000 phần nghìn lượt = 2.000 IDPoint); 60,5 giây là hai phút; tối đa năm phút |
+| ~~TC-LM-U03~~ *(gỡ bởi D106)* | ~~`test_a_typical_lesson_costs_less_than_one_assessment`~~ | FR-99 | Bản ghi lộ trình miễn phí nên không còn so giá |
+| TC-LM-U04 | `test_the_seller_sets_the_lesson_price_in_whole_runs` | FR-99 | 2 lượt/phút cho 61 giây là 4.000; giá 0 miễn phí; giá lẻ 0,25 lấy phần nguyên là 0 (D106) |
 | TC-LM-U05 | `test_impossible_lesson_numbers_are_refused` | FR-99 | Giá âm, trần 0, số miễn phí âm hay lớn hơn trần đều bị từ chối |
 | TC-LM-U06 | `test_the_price_list_shows_the_lesson_numbers` | FR-99 | `PriceList.as_dict()` có ba số của bài học |
 
@@ -76,6 +76,7 @@
 | TC-LM-I22 | `test_a_price_list_saved_before_d094_keeps_the_defaults` | AC-99.7 | Bảng giá quản trị viên lưu trước D094 vẫn đọc được, ba số lấy theo cấu hình của bản triển khai |
 | TC-LM-I23 | `test_the_admin_form_refuses_impossible_lesson_numbers` | AC-99.7 | Số miễn phí lớn hơn trần, trần 0: 422 |
 | TC-LM-I24 | `test_with_metering_off_lessons_are_never_held_counted_or_refused` | AC-99.8 | Tắt tính lượt với trần 1: 3 bản ghi đều qua, không bút toán, báo giá `metering: false` |
+| TC-LM-I25 | `test_by_default_a_lesson_recording_is_free_past_the_free_ones_too` | AC-99.1 | D106: giá mặc định, 7 bản ghi 120 giây trong ngày không lấy lượt nào; báo giá 0 lượt/phút, còn 23 suất, 3 lượt |
 
 ## 5. Kết quả
 

@@ -259,8 +259,8 @@ function chooseTask(task) {
   showPrice(task);
 }
 
-// D057: on a metered deployment, what this task can cost at most, before the
-// learner records. Nothing on a school deployment.
+// D057, D106: on a metered deployment, what this task costs (whole runs), said
+// before the learner records. Nothing on a school deployment.
 async function showPrice(task) {
   const r = await fetch(`/api/v1/me/credits/quote?seconds=${Number(task.max_seconds)}`);
   if (!r.ok) return;
@@ -270,7 +270,7 @@ async function showPrice(task) {
   const left = q.free_runs_left + q.wallet_runs;
   const n = (x) => Number(x).toLocaleString("vi-VN", { maximumFractionDigits: 3 });
   note.innerHTML =
-    `Bài này tối đa <b>${n(q.runs)} lượt</b> (${n(q.idpoint)} IDPoint), tính theo thời lượng thật; ` +
+    `Chấm bài này: <b>${n(q.runs)} lượt</b> (${n(q.idpoint)} IDPoint), chỉ trừ khi có kết quả; ` +
     `bạn còn ${n(left)} lượt. <a href="/credits">Lượt của tôi</a>` +
     (q.free_locked ? ` · <a href="/account#email-card">Xác minh email để nhận lượt miễn phí</a>` : "");
   note.hidden = false;

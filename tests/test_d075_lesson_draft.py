@@ -113,22 +113,23 @@ def test_learners_cannot_ask_for_a_draft(tmp_path, monkeypatch, model):
 
 
 def test_metered_the_teachers_runs_pay_for_the_draft(tmp_path, monkeypatch, model):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
+    # D106: free by default; a seller who sets a whole run gets it from the teacher's wallet.
+    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="1")
     teacher = login_as(m, "GV-01", "teacher")
-    assert teacher.get(DRAFT_URL).json()["price"] == {"runs": 0.3, "idpoint": 600}
+    assert teacher.get(DRAFT_URL).json()["price"] == {"runs": 1.0, "idpoint": 2000}
 
     assert teacher.post(DRAFT_URL, json=BODY).status_code == 200
 
     ledger = m.core_parts.state["metering"].history(account_id(m, "GV-01"))
     entry = next(e for e in ledger if e["action"] == "lesson_draft")
-    assert (entry["state"], entry["charged"]) == ("charged", 300)
+    assert (entry["state"], entry["charged"]) == ("charged", 1000)
     assert "input_tokens" not in entry  # D105: the day's counters keep the tokens
     history = teacher.get("/api/v1/me/credits").json()["history"]
     assert any(h["action"] == "lesson_draft" for h in history)
 
 
 def test_metered_a_failed_draft_costs_nothing(tmp_path, monkeypatch, model):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
+    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="1")
     teacher = login_as(m, "GV-01", "teacher")
     model.fail = True
 

@@ -1,34 +1,48 @@
-# Bảng giá kênh tính lượt (D057)
+# Bảng giá kênh tính lượt (D057, D106)
 
-**Trạng thái:** team đã chốt mức giá ngày 24/10/2026 (theo chủ dự án). Trong decision log, D057 vẫn ghi PROPOSED, chờ người có thẩm quyền ghi APPROVED. Thay phần bảng giá của D049 trên bản triển khai tính lượt (kênh NetID). Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
+**Trạng thái:** từ 16/11/2026 áp dụng **D106, tính nguyên lượt** (chủ dự án duyệt). D106 thay phần giá lẻ của bảng giá team chốt ngày 24/10/2026 (D057). Chỉ áp dụng trên bản triển khai tính lượt (kênh NetID). Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
 
-## Bảng giá đã chốt
+**Vì sao đổi (D106):**
+- Người học mua lượt theo gói nguyên: 1, 10, 30 hay 100 lượt.
+- Bảng giá cũ trừ 0,3 lượt cho AI viết lại, 0,1 lượt cho đoạn đọc, 0,1 lượt mỗi phút nói trong lộ trình. Số dư vì thế thành 2,4 hay 1,7 lượt, và người học không biết mình tốn lượt khi nào.
+- Từ D106, câu trả lời chỉ còn một: **mỗi bài nói được chấm là 1 lượt.**
+
+## Bảng giá đang áp dụng (D106)
 
 Quy ước 1 IDPoint = 1 đồng (NetID chưa công bố tỷ giá).
 
-| Loại bài | Lượt | IDPoint |
-| --- | --- | --- |
-| Đánh giá tới 1 phút | 1 | 2.000 |
-| Mỗi phút bắt đầu thêm, tối đa 5 phút | +0,7 | +1.400 (5 phút: 7.600) |
-| Luyện tập | 50% của bài đánh giá cùng thời lượng | 1.000 cho bài tới 1 phút |
-| Bản nâng cấp do AI viết (D072) | 0,3 | 600 |
-| Bản ghi trong lộ trình học (D094): 5 bản đầu mỗi ngày | 0 | 0 |
-| Bản ghi trong lộ trình học từ bản thứ 6: mỗi phút nói đã bắt đầu, tối đa 30 bản/ngày | 0,1 | 200 |
-| Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 |
-| Gói bán trực tiếp | 10 / 30 / 100 lượt | 19.000 / 49.000 / 149.000 đồng |
+| Việc | Lượt | IDPoint | Giới hạn |
+| --- | --- | --- | --- |
+| Một bài nói được chấm (mọi đề tối đa 60 giây) | **1** | 2.000 | — |
+| AI viết lại câu trả lời (D072), soạn bài bằng AI (D075) | **Miễn phí** | 0 | Ngân sách gọi mô hình mỗi ngày (D072) |
+| Đoạn đọc AI viết (D090) | **Miễn phí** | 0 | 3 đoạn mới mỗi học viên trong 24 giờ |
+| Bản ghi trong lộ trình học (D094) | **Miễn phí** | 0 | Tối đa 30 bản ghi mỗi ngày |
+| Miễn phí mỗi chu kỳ (từ ngày 16) | 3 | 6.000 | Cần email đã xác minh (D101) |
+| Gói bán trực tiếp (production, đặt trên dashboard) | 1 / 10 / 30 / 100 lượt | 2.000 / 19.000 / 49.000 / 149.000 đồng | — |
 
-- **Thu và hoàn:** chỉ thu khi bài có kết quả; bài lỗi, quá hạn hay bị từ chối thì hoàn hết. Giữ chỗ theo thời lượng tối đa của đề. Trang Nộp bài báo trước "bài này tối đa X lượt (Y IDPoint)".
+**Quy tắc nguyên lượt:**
+- **Giá:** mọi giá và số lượt miễn phí là số nguyên (0, 1, 2…). Form quản trị và API từ chối giá lẻ (422).
+- **Giá lẻ cũ:** giá lẻ trong cấu hình hoặc bảng giá đã lưu được tính theo phần nguyên, làm tròn xuống, có lợi cho người học.
+- **Ví lúc chuyển đổi:** migration 23 làm tròn ví có lợi cho người học. Số dư đã mua làm tròn lên, lượt miễn phí đã dùng trong chu kỳ làm tròn xuống.
+- **Lịch sử:** bút toán cũ giữ nguyên.
+
+Bảng giá D057 cũ, để đối chiếu:
+- bài tới 1 phút: 1 lượt; mỗi phút bắt đầu thêm: +0,7 lượt;
+- bản nâng cấp AI: 0,3 lượt; đoạn đọc AI: 0,1 lượt;
+- bản ghi lộ trình từ bản thứ 6 trong ngày: 0,1 lượt mỗi phút nói.
+
+- **Thu và hoàn:** chỉ thu khi bài có kết quả; bài lỗi, quá hạn hay bị từ chối thì hoàn hết. Giữ chỗ khi nộp. Trang Nộp bài báo trước "Chấm bài này: 1 lượt (2.000 IDPoint), chỉ trừ khi có kết quả".
 - **Token:** đo và ghi kèm từng bút toán (token âm thanh và token chữ của Whisper) để tính giá vốn và đối soát với NetID. Không dùng để tính giá. Người học chỉ thấy lượt và IDPoint.
 
 | Biến | Ý nghĩa | Mặc định |
 | --- | --- | --- |
-| `AICEFR_PRICE_FIRST_MINUTE_RUNS` | Lượt cho bài tới 1 phút | 1,0 |
-| `AICEFR_PRICE_EXTRA_MINUTE_RUNS` | Lượt cho mỗi phút bắt đầu thêm | 0,7 |
-| `AICEFR_PRICE_PRACTICE_FACTOR` | Phần bài luyện tập phải trả | 0,5 |
+| `AICEFR_PRICE_FIRST_MINUTE_RUNS` | Lượt cho một bài nói được chấm (tới 1 phút); số nguyên | 1 |
+| `AICEFR_PRICE_EXTRA_MINUTE_RUNS` | Lượt cho mỗi phút bắt đầu thêm (chưa đề nào dài hơn 1 phút); số nguyên | 0 |
+| `AICEFR_PRICE_PRACTICE_FACTOR` | Phần bài luyện tập phải trả; không còn dùng từ D083 (bỏ bài luyện tập) | 0,5 |
 | `AICEFR_IDPOINT_PER_RUN` | IDPoint cho 1 lượt | 2.000 |
-| `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); 0 là miễn phí | 0,3 |
-| `AICEFR_PRICE_PASSAGE_RUNS` | Lượt cho một đoạn đọc do AI viết quanh từ đang luyện dở (D090); đọc lại miễn phí; 0 là miễn phí | 0,1 |
-| `AICEFR_PRICE_LESSON_MINUTE_RUNS` | Lượt cho mỗi phút nói đã bắt đầu của một bản ghi trong lộ trình (D094), ít nhất một phút; 0 là miễn phí | 0,1 |
+| `AICEFR_PRICE_UPGRADE_RUNS` | Lượt cho một bản nâng cấp do AI viết (D072); số nguyên, 0 là miễn phí | 0 |
+| `AICEFR_PRICE_PASSAGE_RUNS` | Lượt cho một đoạn đọc do AI viết quanh từ đang luyện dở (D090); đọc lại miễn phí; số nguyên, 0 là miễn phí | 0 |
+| `AICEFR_PRICE_LESSON_MINUTE_RUNS` | Lượt cho mỗi phút nói đã bắt đầu của một bản ghi trong lộ trình (D094), ít nhất một phút; số nguyên, 0 là miễn phí | 0 |
 | `AICEFR_LESSON_FREE_PER_DAY` | Số bản ghi lộ trình miễn phí mỗi ngày giờ Việt Nam (D094) | 5 |
 | `AICEFR_LESSON_DAILY_CAP` | Số bản ghi lộ trình đo tối đa mỗi ngày cho một người (D094); giữ máy 2 vCPU cho bài đánh giá | 30 |
 | `AICEFR_COACH_GLOBAL_DAILY` | Số yêu cầu gửi nhà cung cấp của cả hệ thống trong một ngày của nhà cung cấp (Google: hết lúc 0 giờ giờ Thái Bình Dương), tính cả lỗi và lần gọi lại, dưới hạn mức miễn phí 500 | 475 |

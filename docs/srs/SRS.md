@@ -44,6 +44,7 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
 | **1.30** | **08/11/2026** | **D102.** Bỏ hoàn tiền: trang `/payment-terms` nói lượt đã mua không hoàn tiền; trả tiền gặp sự cố (lượt chưa vào ví sau 30 phút, trả hai lần) được bù bằng lượt. Sửa FR-102 mục (4) và AC-102.6 | D102 |
 | **1.29** | **08/11/2026** | **D101.** +2 FR: FR-103 lượt miễn phí của tháng và bản ghi miễn phí trong ngày chỉ dành cho tài khoản đã xác minh email (tài khoản do quản trị viên tạo, không có email, giữ như cũ); lượt đã mua vẫn dùng được. FR-104 sinh viên tự xoá tài khoản ở trang Tài khoản: gõ lại email, xoá bài nói, bản ghi âm, bài học rồi xoá tài khoản và mọi phiên; đơn hàng và sổ lượt giữ lại | D101 |
 | **1.28** | **07/11/2026** | **D099.** +1 FR: FR-102 lưới an toàn khi bán thật: tự đối soát đơn còn mở với payOS mỗi hai phút, tối đa năm đơn chờ trong mười phút cho mỗi người, trang Đơn hàng cho quản trị viên (doanh thu 14 ngày, lọc trạng thái, sự kiện từng đơn), trang điều khoản và hoàn tiền mở cho mọi người và có liên kết ở chỗ mua | D099 |
@@ -1475,12 +1476,12 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-85 — Tính lượt trên bản triển khai thương mại (kênh NetID)
 
-**Mô tả:** Chỉ khi `AICEFR_METERING=on`, tức bản triển khai cho kênh NetID, mỗi bài nộp bị tính lượt theo bảng giá team chốt ngày 24/10/2026 (D057): bài tới 1 phút là 1 lượt (2.000 IDPoint, quy ước 1 IDPoint = 1 đồng), mỗi phút bắt đầu thêm 0,7 lượt (1.400 IDPoint), tối đa 5 phút; bài luyện tập trả 50%. Người bán đặt các mức này bằng `AICEFR_PRICE_*` và `AICEFR_IDPOINT_PER_RUN`. D105: bút toán không còn ghi số token đã dùng; số token của mô hình ngôn ngữ vẫn được đếm theo ngày trên trang AI viết lại (D072). Khi nộp, hệ thống giữ chỗ theo thời lượng tối đa của đề, lấy lượt miễn phí của chu kỳ trước (3 lượt, chu kỳ bắt đầu ngày 16) rồi tới ví; trang Nộp bài báo trước giá tối đa. Bài có kết quả thì thu theo thời lượng thật và trả lại phần thừa; mọi kết cục khác thì hoàn hết. Bản của trường và nghiên cứu không bao giờ giữ, thu hay từ chối gì (BR-29, BR-30), và bản tính lượt không chạy thực nghiệm nghiên cứu. Thiết kế: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+**Mô tả:** Chỉ khi `AICEFR_METERING=on`, tức bản triển khai cho kênh NetID, mỗi bài nộp bị tính lượt. Từ D106 (16/11/2026) **một bài nói được chấm là 1 lượt** (2.000 IDPoint, quy ước 1 IDPoint = 1 đồng), mọi đề đều tối đa 60 giây; mọi giá là số lượt nguyên, không có 0,3 hay 0,7 lượt (bảng giá team chốt ngày 24/10/2026 theo D057 tính thêm 0,7 lượt mỗi phút, nay bỏ). Người bán đặt các mức này bằng `AICEFR_PRICE_*` và `AICEFR_IDPOINT_PER_RUN`, chỉ bằng số nguyên. D105: bút toán không còn ghi số token đã dùng; số token của mô hình ngôn ngữ vẫn được đếm theo ngày trên trang AI viết lại (D072). Khi nộp, hệ thống giữ chỗ theo thời lượng tối đa của đề, lấy lượt miễn phí của chu kỳ trước (3 lượt, chu kỳ bắt đầu ngày 16) rồi tới ví; trang Nộp bài báo trước "Chấm bài này: 1 lượt, chỉ trừ khi có kết quả". Bài có kết quả thì thu theo thời lượng thật và trả lại phần thừa; mọi kết cục khác thì hoàn hết. Bản của trường và nghiên cứu không bao giờ giữ, thu hay từ chối gì (BR-29, BR-30), và bản tính lượt không chạy thực nghiệm nghiên cứu. Thiết kế: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-85.1** — *Given* bảng giá `price-v3-per-recording`, *When* tính bài 1, 35 và 60 giây, *Then* đều 1 lượt = 2.000 IDPoint (`test_a_recording_up_to_a_minute_is_one_run`); bài 61–120 giây là 3.400 IDPoint, 5 phút trở lên là 7.600 (`test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five`). |
+| **AC-85.1** — *Given* bảng giá `price-v4-whole-runs` (D106), *When* tính bài 1, 35 và 60 giây, *Then* đều 1 lượt = 2.000 IDPoint (`test_a_recording_up_to_a_minute_is_one_run`); bài dài bao nhiêu cũng 1 lượt (`test_a_scored_recording_is_one_run_whatever_it_lasted`); giá lẻ cũ tính phần nguyên, làm tròn xuống (`test_every_price_is_a_whole_run_and_a_fraction_rounds_down`). |
 | **AC-85.2** — *Given* còn lượt miễn phí và có ví, *When* giữ chỗ, *Then* lấy lượt miễn phí trước (`test_free_runs_are_used_before_the_wallet`). |
 | **AC-85.3** — *Given* lượt miễn phí và ví cộng lại không đủ, *When* giữ chỗ, *Then* bị từ chối và không lấy gì (`test_a_hold_beyond_free_and_wallet_is_refused_and_takes_nothing`). |
 | **AC-85.4** — *Given* một bài đã được giữ chỗ, *When* giữ lại cùng bài, *Then* không lấy thêm (`test_holding_the_same_key_twice_takes_once`). |
@@ -1556,7 +1557,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-91.2** — *Given* quản trị viên, *When* tạo 60 tài khoản học viên, *Then* thành công: không có giới hạn chỗ (`test_accounts_are_not_limited_by_seats`). |
 | **AC-91.3** — *Given* bản mới, *When* gọi API gói, báo giá, đặt gói, cài mã giấy phép, *Then* 404 hoặc 405 (`test_the_plan_routes_are_gone`). |
 | **AC-91.4** — *Given* giảng viên, *When* nhờ AI viết nháp bài A2 về một chủ đề, *Then* nhận tên, tóm tắt, đoạn văn mẫu, từ khóa có trong đoạn văn và đề nói tự do, không lưu gì; bộ đếm ngày ghi một bản soạn bài (`test_a_teacher_gets_a_draft_for_the_form`). |
-| **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* trừ 0,3 lượt trong ví của giảng viên kèm số token, lịch sử ghi "Soạn bài bằng AI" (`test_metered_the_teachers_runs_pay_for_the_draft`). |
+| **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* trừ giá đặt cho AI viết (mặc định 0 từ D106, tức miễn phí; người bán đặt được số lượt nguyên) trong ví của giảng viên, lịch sử ghi "Soạn bài bằng AI" (`test_metered_the_teachers_runs_pay_for_the_draft`). |
 | **AC-91.6** — *Given* trang Lượt của tôi, *When* học viên mua gói 10 lượt qua cổng thử, *Then* trang kết quả báo 10 lượt và có biên nhận (`test_a_learner_buys_a_pack_and_gets_a_receipt`). |
 
 ### FR-92 — Đặt lại mật khẩu bằng mã gửi qua email (D079)
@@ -1632,7 +1633,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-98 — Đoạn đọc viết quanh từ đang luyện dở (D090)
 
-**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Mỗi đoạn mới trừ một số lượt nhỏ (mặc định 0,1 lượt), chỉ khi viết xong; đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
+**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Mỗi đoạn mới miễn phí từ D106 (người bán đặt được số lượt nguyên, chỉ trừ khi viết xong); đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
@@ -1647,7 +1648,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-99 — Tính lượt cho bản ghi trong lộ trình học (D094)
 
-**Mô tả:** Trên bản triển khai tính lượt (FR-85, kênh NetID), mỗi bản ghi học viên nói trong lộ trình (bước bài học, ôn tập, kể lại bài, luyện lại từ, đọc đoạn) chiếm một suất trong ngày theo giờ Việt Nam. Các suất đầu của ngày miễn phí (mặc định 5). Từ suất sau, bản ghi giữ giá của thời lượng tối đa của bước rồi chỉ thu theo số giây nói thật đo bằng VAD, mỗi phút đã bắt đầu một mức (mặc định 0,1 lượt = 200 IDPoint, ít nhất một phút); lượt miễn phí của tháng được dùng trước, rồi tới ví. Mỗi ngày đo tối đa một số bản ghi (mặc định 30). Bản ghi máy không đo được hoặc máy đo lỗi thì trả lại cả suất lẫn lượt. Học viên thấy giá và số còn lại hôm nay dưới bộ ghi âm và ở trang Lượt của tôi; quản trị viên đổi ba con số trong bảng giá (D078). Bản xem thử và audio mẫu của giảng viên không tính. Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
+**Mô tả:** Trên bản triển khai tính lượt (FR-85, kênh NetID), mỗi bản ghi học viên nói trong lộ trình (bước bài học, ôn tập, kể lại bài, luyện lại từ, đọc đoạn) chiếm một suất trong ngày theo giờ Việt Nam. Các suất đầu của ngày miễn phí (mặc định 5). Từ suất sau, bản ghi giữ giá của thời lượng tối đa của bước rồi chỉ thu theo số giây nói thật đo bằng VAD, mỗi phút đã bắt đầu một mức (mặc định 0 từ D106, tức miễn phí và chỉ giới hạn bởi trần ngày; người bán đặt được số lượt nguyên, ít nhất một phút); lượt miễn phí của tháng được dùng trước, rồi tới ví. Mỗi ngày đo tối đa một số bản ghi (mặc định 30). Bản ghi máy không đo được hoặc máy đo lỗi thì trả lại cả suất lẫn lượt. Học viên thấy giá và số còn lại hôm nay dưới bộ ghi âm và ở trang Lượt của tôi; quản trị viên đổi ba con số trong bảng giá (D078). Bản xem thử và audio mẫu của giảng viên không tính. Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -2420,7 +2421,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | --- | --- |
 | **Mã** | UC-32 |
 | **Actor chính** | Quản trị viên |
-| **Mô tả** | Đặt giá bài nói đến 1 phút, mỗi phút thêm, hệ số bài luyện, giá một lần AI viết lại hoặc soạn bài, IDPoint mỗi lượt, lượt miễn phí mỗi tháng và các gói lượt bán qua Stripe (D078) |
+| **Mô tả** | Đặt giá (số lượt nguyên, D106) bài nói đến 1 phút, mỗi phút thêm, hệ số bài luyện, giá một lần AI viết lại hoặc soạn bài, IDPoint mỗi lượt, lượt miễn phí mỗi tháng và các gói lượt bán qua Stripe (D078) |
 | **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên |
 | **Kích hoạt** | Quản trị viên mở tab Cấu hình, thẻ Giá lượt |
 

@@ -3,7 +3,8 @@
 * until the first change, the settings' prices, free runs and packs stand;
 * a change is a new version: quotes, free runs and the packs on sale follow it
   at once, and a charge made before keeps the version it was held under;
-* impossible prices are refused, and only an administrator sets them.
+* impossible prices are refused (D106: a fraction of a run among them), and
+  only an administrator sets them.
 """
 
 from __future__ import annotations
@@ -16,9 +17,9 @@ pytestmark = pytest.mark.integration
 
 PRICES = "/api/v1/admin/prices"
 NEW = {
-    "first_minute_runs": 1.5,
+    "first_minute_runs": 2,
     "extra_minute_runs": 1.0,
-    "upgrade_runs": 0.4,
+    "upgrade_runs": 1,
     "idpoint_per_run": 1000,
     "free_runs": 5,
     "packs": [{"runs": 20, "price_vnd": 30000}, {"runs": 5, "price_vnd": 9000}],
@@ -57,10 +58,10 @@ def test_a_change_is_a_new_version_that_everything_follows(m):
     assert (d["version"], d["from_settings"], d["free_runs"]) == ("price-admin-1", False, 5.0)
     assert [p["runs"] for p in d["packs"]] == [5, 20]  # sorted by runs
     after = student.get("/api/v1/me/credits/quote?seconds=60").json()
-    assert (after["runs"], after["idpoint"], after["free_runs_left"]) == (1.5, 1500, 5.0)
+    assert (after["runs"], after["idpoint"], after["free_runs_left"]) == (2.0, 2000, 5.0)
     packs = student.get("/api/v1/me/credit-packs").json()["packs"]
     assert [(p["runs"], p["price_vnd"]) for p in packs] == [(5, 9000), (20, 30000)]
-    again = admin.put(PRICES, json={**NEW, "upgrade_runs": 0.5}).json()
+    again = admin.put(PRICES, json={**NEW, "upgrade_runs": 0}).json()
     assert again["version"] == "price-admin-2"
     assert [h["version"] for h in again["history"]] == ["price-admin-1"]
 
@@ -71,6 +72,9 @@ def test_impossible_prices_are_refused_and_only_admins_set_them(m):
     assert admin.put(PRICES, json={**NEW, "first_minute_runs": -1}).status_code == 422
     assert admin.put(PRICES, json={**NEW, "packs": []}).status_code == 422
     assert admin.put(PRICES, json={**NEW, "free_runs": -1}).status_code == 422
+    # D106: whole runs only, for every price and for the free runs.
+    for field in ("first_minute_runs", "extra_minute_runs", "upgrade_runs", "free_runs"):
+        assert admin.put(PRICES, json={**NEW, field: 0.5}).status_code == 422, field
     assert teacher.get(PRICES).status_code == 403
     assert teacher.put(PRICES, json=NEW).status_code == 403
 

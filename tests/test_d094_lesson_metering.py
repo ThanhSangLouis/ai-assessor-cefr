@@ -16,6 +16,10 @@ through it, a refusal measures nothing, the charge follows the speech, the
 learner reads the price and what is left today, an administrator sets the
 three numbers -- and with metering off nothing is held, counted or refused
 (BR-29, BR-30).
+
+D106: a lesson recording is free by default, held back by the day's cap alone;
+the charging tested here is what a seller who sets a whole run per minute of
+speech (`PRICED`, `AICEFR_PRICE_LESSON_MINUTE_RUNS=1`) gets.
 """
 
 from __future__ import annotations
@@ -40,7 +44,7 @@ from test_lessons_integration import (
     wav,
 )
 
-from aicefr.metering.pricing import DEFAULT_PRICES, PriceList, lesson_units
+from aicefr.metering.pricing import PriceList, lesson_units
 from aicefr.services.core.learning import drill_api, lessons_api
 from aicefr.services.core.metering.facade import MeteringFacade
 from aicefr.storage.audit_repository import AuditLog
@@ -56,7 +60,8 @@ pytestmark = pytest.mark.integration
 
 DAY = "2026-11-07"
 NEXT_DAY = "2026-11-08"
-MINUTE = lesson_units(DEFAULT_PRICES, 60.0)  # 100: a tenth of a run
+PRICED = PriceList(lesson_minute_runs=1)
+MINUTE = lesson_units(PRICED, 60.0)  # 1000: one whole run (D106)
 # What the administrator's form sent before D094.
 PRICE_KEYS = ("first_minute_runs", "extra_minute_runs", "upgrade_runs", "passage_runs",
               "idpoint_per_run", "free_runs", "packs")  # fmt: skip
@@ -82,17 +87,17 @@ def test_the_first_recordings_of_a_day_are_free_and_hold_nothing(ledger):
 
 
 def test_past_the_free_ones_the_months_free_runs_pay_first_then_the_wallet(ledger):
-    ledger.grant("a1", 150, "admin", "r1", None)
+    ledger.grant("a1", 2 * MINUTE, "admin", "r1", None)
     for i in range(5):
         hold(ledger, f"free-{i}")
     sixth = hold(ledger, "k6")
     assert (sixth["held"], sixth["free_slot"], sixth["from_free"]) == (MINUTE, False, MINUTE)
-    for i in range(29):  # the month's three runs go a tenth at a time
+    for i in range(2):  # the month's other two runs
         hold(ledger, f"paid-{i}", free=5, cap=100)
-    assert ledger.balance("a1") == {"wallet": 150, "free_left": 0}
+    assert ledger.balance("a1") == {"wallet": 2 * MINUTE, "free_left": 0}
     from_wallet = hold(ledger, "k-wallet", free=5, cap=100)
     assert (from_wallet["from_free"], from_wallet["from_wallet"]) == (0, MINUTE)
-    assert ledger.balance("a1") == {"wallet": 50, "free_left": 0}
+    assert ledger.balance("a1") == {"wallet": MINUTE, "free_left": 0}
 
 
 def test_no_runs_left_refuses_and_gives_the_place_back(ledger):
@@ -207,7 +212,9 @@ def test_twelve_recordings_at_once_never_overrun_the_cap(ledger):
 @pytest.fixture
 def facade(ledger, tmp_path, monkeypatch) -> MeteringFacade:
     monkeypatch.setattr(MeteringFacade, "today", staticmethod(lambda: DAY))
-    return MeteringFacade(ledger, AuditLog(tmp_path / "metering.db", "metering"), enabled=True)
+    return MeteringFacade(
+        ledger, AuditLog(tmp_path / "metering.db", "metering"), enabled=True, prices=PRICED
+    )
 
 
 def test_the_charge_follows_the_speech_not_the_steps_limit(facade, ledger):
@@ -226,11 +233,11 @@ def test_the_facade_refuses_as_data_with_the_status_to_answer(ledger, tmp_path, 
         MeteringRepository(ledger.db_path, free_units=0),
         AuditLog(tmp_path / "metering.db", "metering"),
         True,
-        PriceList(lesson_free_per_day=0, lesson_daily_cap=1),
+        PriceList(lesson_minute_runs=1, lesson_free_per_day=0, lesson_daily_cap=1),
     )
     refused = poor.hold_lesson(account_id="a2", key="k1", max_seconds=30)
     assert refused["status"] == 402
-    assert refused["message"].startswith("Bản ghi này cần 0.1 lượt")
+    assert refused["message"].startswith("Bản ghi này cần 1 lượt")
     assert "Nạp thêm IDPoint" in refused["message"]
     poor.store.grant("a2", MINUTE, "admin", "r", None)
     assert poor.hold_lesson(account_id="a2", key="k2", max_seconds=30) is None
@@ -241,8 +248,8 @@ def test_the_facade_refuses_as_data_with_the_status_to_answer(ledger, tmp_path, 
 def test_the_quote_says_what_is_left_today(facade):
     q = facade.lesson_quote(account_id="a1")
     assert q == {
-        "minute_runs": 0.1,
-        "minute_idpoint": 200,
+        "minute_runs": 1.0,
+        "minute_idpoint": 2000,
         "free_per_day": 5,
         "free_locked": False,
         "free_left_today": 5,
@@ -253,7 +260,21 @@ def test_the_quote_says_what_is_left_today(facade):
     for i in range(6):
         facade.hold_lesson(account_id="a1", key=f"k{i}", max_seconds=30)
     q = facade.lesson_quote(account_id="a1")
-    assert (q["free_left_today"], q["left_today"], q["runs_left"]) == (0, 24, 2.9)
+    assert (q["free_left_today"], q["left_today"], q["runs_left"]) == (0, 24, 2.0)
+
+
+def test_by_default_a_lesson_recording_is_free_past_the_free_ones_too(
+    ledger, tmp_path, monkeypatch
+):
+    # D106: only the day's cap holds a learner back; nothing is taken, nothing shows a price.
+    monkeypatch.setattr(MeteringFacade, "today", staticmethod(lambda: DAY))
+    free = MeteringFacade(ledger, AuditLog(tmp_path / "metering.db", "metering"), enabled=True)
+    for i in range(7):
+        assert free.hold_lesson(account_id="a1", key=f"k{i}", max_seconds=150) is None
+        free.settle_lesson(key=f"k{i}", result=True, speaking_seconds=120.0)
+    assert ledger.balance("a1") == {"wallet": 0, "free_left": 3000}
+    q = free.lesson_quote(account_id="a1")
+    assert (q["minute_runs"], q["left_today"], q["runs_left"]) == (0.0, 23, 3.0)
 
 
 def test_with_metering_off_the_facade_holds_counts_and_refuses_nothing(ledger, tmp_path):
@@ -274,6 +295,7 @@ def metered(tmp_path, monkeypatch):
         tmp_path,
         monkeypatch,
         AICEFR_METERING="on",
+        AICEFR_PRICE_LESSON_MINUTE_RUNS="1",
         AICEFR_LESSON_FREE_PER_DAY="2",
         AICEFR_LESSON_DAILY_CAP="4",
     )
@@ -291,8 +313,8 @@ def test_steps_are_free_then_charged_by_speech_then_capped(metered):
     quote = student.get("/api/v1/me/credits/lesson").json()
     assert quote == {
         "metering": True,
-        "minute_runs": 0.1,
-        "minute_idpoint": 200,
+        "minute_runs": 1.0,
+        "minute_idpoint": 2000,
         "free_per_day": 2,
         "free_left_today": 2,
         "free_locked": False,
@@ -314,7 +336,7 @@ def test_steps_are_free_then_charged_by_speech_then_capped(metered):
     assert "4 bản ghi" in full["detail"]
     assert len(m.lessons.attempts()) == attempts  # refused before anything was measured
     credits = student.get("/api/v1/me/credits").json()
-    assert credits["free_runs_left"] == 2.8
+    assert credits["free_runs_left"] == 1.0
     assert credits["lesson"]["left_today"] == 0
     shown = [(h["action"], h["free_slot"]) for h in credits["history"]]
     assert shown.count(("lesson", True)) == 2 and shown.count(("lesson", False)) == 2
@@ -350,10 +372,10 @@ def test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on(metered):
     admin = login_as(m, "AD-L01", "admin")
     prices = admin.get("/api/v1/admin/prices").json()
     body = {k: prices[k] for k in PRICE_KEYS if k != "free_runs"}
-    body.update(free_runs=0, lesson_minute_runs=0.2, lesson_free_per_day=1, lesson_daily_cap=10)
+    body.update(free_runs=0, lesson_minute_runs=1, lesson_free_per_day=1, lesson_daily_cap=10)
     saved = admin.put("/api/v1/admin/prices", json=body)
     assert saved.status_code == 200, saved.text
-    assert (saved.json()["lesson_minute_runs"], saved.json()["lesson_daily_cap"]) == (0.2, 10)
+    assert (saved.json()["lesson_minute_runs"], saved.json()["lesson_daily_cap"]) == (1.0, 10)
 
     student = login_as(m, "SV-L04")
     record(student, SAMPLE, KEYWORDS, audio=wav(4.5))  # the day's one free recording
@@ -363,11 +385,11 @@ def test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on(metered):
     assert len(m.lessons.attempts()) == attempts
     granted = admin.post(
         "/api/v1/admin/credits/grant",
-        json={"email": email_of("SV-L04"), "runs": 1, "reference": "t1"},
+        json={"email": email_of("SV-L04"), "runs": 2, "reference": "t1"},
     )
     assert granted.status_code == 200, granted.text
     record(student, SAMPLE, KEYWORDS, audio=wav(4.5))
-    assert student.get("/api/v1/me/credits").json()["wallet_runs"] == 0.8
+    assert student.get("/api/v1/me/credits").json()["wallet_runs"] == 1.0
 
 
 def test_a_drill_take_is_a_lesson_recording_too(metered):
@@ -425,8 +447,11 @@ def test_a_price_list_saved_before_d094_keeps_the_defaults(metered):
     )  # fmt: skip
     student = login_as(m, "SV-L06")
     quote = student.get("/api/v1/me/credits/lesson").json()
-    # The deployment's settings (AICEFR_LESSON_*: 2 and 4 here), not zeros.
-    assert (quote["minute_runs"], quote["free_per_day"], quote["daily_cap"]) == (0.1, 2, 4)
+    # The deployment's settings (AICEFR_*: 1, 2 and 4 here), not zeros.
+    assert (quote["minute_runs"], quote["free_per_day"], quote["daily_cap"]) == (1.0, 2, 4)
+    # D106: its fractions count as their whole part: 0.7 and 0.3 of a run are nothing.
+    shown = login_as(m, "AD-L03", "admin").get("/api/v1/admin/prices").json()
+    assert (shown["extra_minute_runs"], shown["upgrade_runs"], shown["passage_runs"]) == (0, 0, 0)
 
 
 def test_the_admin_form_refuses_impossible_lesson_numbers(metered):
