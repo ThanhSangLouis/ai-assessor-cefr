@@ -91,11 +91,12 @@ class AssessmentFacade:
         }
 
     @exposed
-    def passage_offer(self) -> dict:
-        """Whether the language model can write a reading passage now, and its price (D090)."""
+    def passage_offer(self, account_id: str | None = None) -> dict:
+        """Whether the language model can write a reading passage now, and what
+        `account_id`'s next one costs (D090, D107)."""
         from aicefr.services.core.assessment import coach_api
 
-        return coach_api.passage_offer()
+        return coach_api.passage_offer(account_id)
 
     @exposed
     def write_passage(self, account_id: str, band: str | None, words: list[str], key: str) -> dict:

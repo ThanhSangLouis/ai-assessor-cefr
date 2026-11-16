@@ -7,12 +7,12 @@ const escapeHtml = window.escapeHtml;
 const balanceEl = document.getElementById("balance");
 const historyEl = document.getElementById("history");
 
-const ACTION = { assessment: "Bài đánh giá", practice: "Bài luyện tập", upgrade: "Bản nâng cấp (AI)", lesson_draft: "Soạn bài bằng AI", drill_passage: "Đoạn đọc (AI)", lesson: "Bản ghi bài học" };
+const ACTION = { assessment: "Bài đánh giá", practice: "Bài luyện tập", upgrade: "AI viết lại", lesson_draft: "Soạn bài bằng AI", drill_passage: "Đoạn đọc (AI)", lesson: "Luyện trong lộ trình" };
 const STATE = { held: "Đang giữ", charged: "Đã trừ", released: "Đã trả lại" };
 const runs = (n) => `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits: 3 })} lượt`;
 const vnd = (n) => `${Number(n).toLocaleString("vi-VN")} ₫`;
-let idpPerRun = 0;
-const idp = (r) => `${Math.round(r * idpPerRun).toLocaleString("vi-VN")} IDPoint`;
+// D107: a learner reads runs, and money only on the packs; IDPoint stays on the dashboard.
+const renewDate = (iso) => (iso ? iso.split("-").reverse().slice(0, 2).join("/") : "");
 const when = (iso) => (iso ? new Date(iso).toLocaleString("vi-VN") : "—");
 
 async function load() {
@@ -28,13 +28,12 @@ async function load() {
     historyEl.innerHTML = "";
     return;
   }
-  idpPerRun = credits.prices.idpoint_per_run;
   const total = credits.free_runs_left + credits.wallet_runs;
   balanceEl.innerHTML = `
     <div class="wallet-hero">
       <div class="wallet-total"><b>${num(total)}</b><span>lượt còn dùng được</span></div>
       <div class="wallet-split">
-        <div><span class="wallet-dot free"></span><b>${num(credits.free_runs_left)}</b><span>miễn phí · làm mới ngày 16</span></div>
+        <div><span class="wallet-dot free"></span><b>${num(credits.free_runs_left)}</b><span>miễn phí · làm mới ${renewDate(credits.free_runs_renew_on)}</span></div>
         <div><span class="wallet-dot paid"></span><b>${num(credits.wallet_runs)}</b><span>đã mua · không hết hạn</span></div>
       </div>
     </div>${credits.free_locked ? verifyNudge(credits.free_runs_per_cycle) : ""}`;
@@ -56,39 +55,40 @@ const icon = (name) => window.ui.icon(name);
 const ACTION_ICON = { assessment: "mic", practice: "target", upgrade: "sparkle", lesson_draft: "pencil", drill_passage: "book-open", lesson: "path" };
 
 // One line of the ledger: what, when, and the runs it moved. D106: something
-// charged nothing (an AI answer, a lesson recording) reads "Miễn phí", not −0.
+// charged nothing (a lesson recording) reads "Miễn phí", not −0; D107: an AI
+// answer a scored recording's run paid for reads "Đã gồm trong lượt chấm".
 function ledgerRow(e) {
-  const free = e.state === "charged" && (e.free_slot || Number(e.charged_runs) === 0);
+  const free = e.state === "charged" && (e.included || e.free_slot || Number(e.charged_runs) === 0);
   const amount = free ? "0" : num(e.state === "charged" ? e.charged_runs : e.held_runs);
-  const state = free ? "Miễn phí" : STATE[e.state] || escapeHtml(e.state);
+  const state = e.included && e.state !== "released"
+    ? "Đã gồm trong lượt chấm"
+    : free ? "Miễn phí" : STATE[e.state] || escapeHtml(e.state);
   return `<li class="ledger-row">
     <span class="ledger-mark">${icon(ACTION_ICON[e.action] || "star")}</span>
     <span class="ledger-what"><b>${ACTION[e.action] || escapeHtml(e.action)}</b><small>${state} · ${when(e.created_at)}</small></span>
     <span class="ledger-runs${e.state === "released" ? " back" : ""}">${e.state === "released" ? "+" : "−"}${amount}</span></li>`;
 }
 
-// The price list as tiles: what one thing costs, in whole runs (D106), IDPoint
+// The price list as tiles: what one thing costs, in whole runs (D106; D107: no IDPoint)
 // underneath; what costs nothing says "Miễn phí".
 function showPrices(p, oneMinute, lesson) {
   const tile = (mark, value, label, sub = "") =>
     `<li><span class="cost-mark">${icon(mark)}</span><b>${value}</b><span>${label}</span>${sub ? `<small>${sub}</small>` : ""}</li>`;
-  const priced = (mark, runsCost, what) =>
-    Number(runsCost) > 0
-      ? tile(mark, num(runsCost), `lượt · ${what}`, idp(runsCost))
-      : tile(mark, "Miễn phí", what);
-  const extra = Number(p.extra_minute_runs) > 0 ? ` · +${num(p.extra_minute_runs)} mỗi phút thêm` : "";
+  const extra = Number(p.extra_minute_runs) > 0 ? `+${num(p.extra_minute_runs)} lượt mỗi phút thêm` : "";
+  const more = (runsCost) => (Number(runsCost) > 0 ? `thêm: ${num(runsCost)} lượt mỗi lần` : "thêm: miễn phí");
+  // D107: one run scores a recording and brings its AI rewrite and one reading passage.
   const tiles = [
-    tile("mic", num(oneMinute.assessment), "lượt · mỗi bài nói được chấm", idp(oneMinute.assessment) + extra),
-    priced("sparkle", p.upgrade_runs, "AI viết lại"),
-    priced("book-open", p.passage_runs ?? 0, "đoạn đọc AI"),
+    tile("mic", num(oneMinute.assessment), "lượt · mỗi bài nói được chấm", extra),
+    tile("sparkle", "Đã gồm", "AI viết lại bài đã chấm", "trong lượt chấm bài đó"),
+    tile("book-open", "Đã gồm", "1 đoạn đọc AI mỗi bài đã chấm", more(p.passage_runs ?? 0)),
   ];
   // D094: the lesson path, free since D106 up to the day's limit.
   if (lesson) {
     tiles.push(
       Number(lesson.minute_runs) > 0
-        ? tile("path", `${Number(lesson.free_left_today)}/${Number(lesson.free_per_day)}`, "bài học miễn phí hôm nay",
+        ? tile("path", `${Number(lesson.free_left_today)}/${Number(lesson.free_per_day)}`, "lần ghi âm miễn phí hôm nay",
             `sau đó ${num(lesson.minute_runs)} lượt/phút`)
-        : tile("path", "Miễn phí", "bản ghi trong lộ trình", `tối đa ${Number(lesson.daily_cap)} bản/ngày`),
+        : tile("path", "Miễn phí", "luyện trong lộ trình", `tối đa ${Number(lesson.daily_cap)} lần ghi âm mỗi ngày`),
     );
   }
   document.getElementById("price-tiles").innerHTML = tiles.join("");

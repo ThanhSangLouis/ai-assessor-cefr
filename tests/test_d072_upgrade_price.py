@@ -4,10 +4,11 @@
   daily quota: every request sent, retries and failures included, in the
   provider's day; on a paid tier a daily budget in USD replaces it;
 * the administrator sees those counters, today and the last 14 days;
-* on the metered channel an upgrade costs `AICEFR_PRICE_UPGRADE_RUNS` runs,
-  free by default since D106 (a seller may set a whole number): held before
-  the model is asked, charged when the upgrade is made, released when the
-  model fails, refused when the learner has too few runs;
+* on the metered channel the upgrade of a recording scored for a run is part
+  of that run (D107); the upgrade of a recording no run paid for costs
+  `AICEFR_PRICE_UPGRADE_RUNS` runs, one by default (whole runs only, D106):
+  held before the model is asked, charged when the upgrade is made, released
+  when the model fails, refused when the learner has too few runs;
 * the provider's token counts are kept with the ledger entry and the day's counters.
 """
 
@@ -63,11 +64,11 @@ def ledger(m, name: str) -> list[dict]:
 # ================================================================= the price itself
 
 
-def test_an_upgrade_is_free_by_default_and_otherwise_whole_runs():
-    # D106: free by default; a seller may charge whole runs, never a third of one.
-    assert upgrade_units(PriceList()) == 0
-    one = PriceList(upgrade_runs=1)
+def test_an_upgrade_is_one_run_by_default_and_otherwise_whole_runs():
+    # D107: one run by default; D106: whole runs, never a third of one.
+    one = PriceList()
     assert upgrade_units(one) == 1000 and as_idpoint(one, upgrade_units(one)) == 2000
+    assert upgrade_units(PriceList(upgrade_runs=2)) == 2000
     assert upgrade_units(PriceList(upgrade_runs=0.3)) == 0
     with pytest.raises(ValueError):
         PriceList(upgrade_runs=-0.1)
@@ -207,19 +208,29 @@ def test_gemini_is_the_deployed_provider_and_its_caps_reach_the_container():
 # ================================================================= the metered channel
 
 
-def test_metered_the_default_upgrade_is_free_and_charges_nothing(tmp_path, monkeypatch, fake):
-    # D106: no price is shown and no ledger entry is made.
+def test_metered_the_upgrade_of_a_scored_recording_is_part_of_its_run(tmp_path, monkeypatch, fake):
+    # D107: the recording's run paid for it; the history shows it as included.
     m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
     student, rid = ready(m, "SV-M05")
     before = student.get("/api/v1/me/credits").json()["free_runs_left"]
-    assert student.get(f"/api/v1/responses/{rid}/coach").json()["price"] is None
+    price = student.get(f"/api/v1/responses/{rid}/coach").json()["price"]
+    assert price == {"runs": 0, "idpoint": 0, "included": True}
     assert student.post(f"/api/v1/responses/{rid}/upgrade").status_code == 200
-    assert not any(e["action"] == "upgrade" for e in ledger(m, "SV-M05"))
-    assert student.get("/api/v1/me/credits").json()["free_runs_left"] == before
+    entry = next(e for e in ledger(m, "SV-M05") if e["action"] == "upgrade")
+    assert (entry["state"], entry["charged"], entry["included"]) == ("charged", 0, True)
+    credits = student.get("/api/v1/me/credits").json()
+    assert credits["free_runs_left"] == before
+    assert any(h["action"] == "upgrade" and h["included"] for h in credits["history"])
 
 
 def test_metered_an_upgrade_is_charged_with_its_tokens(tmp_path, monkeypatch, fake):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="1")
+    m = boot(
+        tmp_path,
+        monkeypatch,
+        AICEFR_METERING="on",
+        AICEFR_PRICE_UPGRADE_RUNS="1",
+        AICEFR_PRICE_FIRST_MINUTE_RUNS="0",  # no run paid for the recording
+    )
     student, rid = ready(m, "SV-M01")
     coach = student.get(f"/api/v1/responses/{rid}/coach").json()
     assert coach["price"] == {"runs": 1.0, "idpoint": 2000}
@@ -237,7 +248,13 @@ def test_metered_an_upgrade_is_charged_with_its_tokens(tmp_path, monkeypatch, fa
 
 
 def test_metered_a_failed_upgrade_costs_nothing(tmp_path, monkeypatch, fake):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="1")
+    m = boot(
+        tmp_path,
+        monkeypatch,
+        AICEFR_METERING="on",
+        AICEFR_PRICE_UPGRADE_RUNS="1",
+        AICEFR_PRICE_FIRST_MINUTE_RUNS="0",  # no run paid for the recording
+    )
     student, rid = ready(m, "SV-M02")
     before = student.get("/api/v1/me/credits").json()["free_runs_left"]
     fake.fail = True
@@ -248,11 +265,17 @@ def test_metered_a_failed_upgrade_costs_nothing(tmp_path, monkeypatch, fake):
 
 
 def test_metered_too_few_runs_is_refused_before_the_model_is_asked(tmp_path, monkeypatch, fake):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="50")
+    m = boot(
+        tmp_path,
+        monkeypatch,
+        AICEFR_METERING="on",
+        AICEFR_PRICE_UPGRADE_RUNS="50",
+        AICEFR_PRICE_FIRST_MINUTE_RUNS="0",
+    )
     student, rid = ready(m, "SV-M03")
     fake.fail = True  # would be a 502 if the model were asked
     r = student.post(f"/api/v1/responses/{rid}/upgrade")
-    assert r.status_code == 402 and "Nạp thêm IDPoint" in r.json()["detail"]
+    assert r.status_code == 402 and "Mua thêm lượt" in r.json()["detail"]
     assert not any(e["action"] == "upgrade" for e in ledger(m, "SV-M03"))
 
 

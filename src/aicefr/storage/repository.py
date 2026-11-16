@@ -720,6 +720,17 @@ class Repository(MongoStore):
             {"account_id": account_id, "coach_upgrade.created_at": {"$gte": since}}
         )
 
+    def drafts_since(self, account_id: str, since: str) -> int:
+        """How many lesson drafts this teacher had the model write since `since` (D107)."""
+        return self.db["audit_log"].count_documents(
+            {
+                "service": "assessment",
+                "actor_id": account_id,
+                "action": "coach.lesson_draft",
+                "created_at": {"$gte": since},
+            }
+        )
+
     def upgrades_of_account(self, account_id: str, limit: int = 500) -> list[dict]:
         """Every upgrade this account made, oldest first: the phrase book's source (D070)."""
         rows = (

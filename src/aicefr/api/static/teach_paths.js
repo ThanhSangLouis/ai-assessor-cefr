@@ -270,10 +270,10 @@ async function offerDraft() {
   const r = await fetch("/api/v1/teach/lessons/draft");
   const d = r.ok ? await r.json() : { available: false };
   box.hidden = !d.available;
-  if (d.available && d.price) {
+  // D107: free for the teacher, a few a day.
+  if (d.available && d.daily) {
     $("ai-draft-hint").textContent =
-      `Mỗi lần AI viết nháp trừ ${d.price.runs} lượt (${new Intl.NumberFormat("vi-VN").format(d.price.idpoint)} IDPoint) ` +
-      "trong ví của bạn, chỉ trừ khi viết xong. Bạn đọc lại và sửa trước khi tạo.";
+      `Miễn phí, hôm nay còn ${d.daily_left}/${d.daily} bản nháp. Bạn đọc lại và sửa trước khi tạo.`;
   }
 }
 

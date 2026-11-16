@@ -2377,7 +2377,7 @@ sequenceDiagram
 - **Dịch vụ `metering`** (`services/core/metering`): facade `hold` / `settle` / `is_enabled`, trang `GET /api/v1/me/credits`, `POST /api/v1/admin/credits/grant`. Kho riêng theo `AICEFR_METERING_DB`, mặc định dùng kho của `core`.
 - **Sổ lượt** (`storage/metering_repository.py`): `usage_ledger` duy nhất theo (`key`, `action`); `credit_wallet`; `free_quota` theo chu kỳ; `credit_grant` duy nhất theo (`source`, `ref`). Không có giao dịch nhiều document. Lượt miễn phí lấy bằng so-sánh-rồi-ghi trên số đã dùng; ví trừ bằng cập nhật có điều kiện `balance >= cần`. Chuyển `held` sang trạng thái khác bằng một cập nhật có điều kiện, nên chốt hai lần không đổi gì.
 - **Móc vào `assessment`:** giữ chỗ sau khi tệp ghi âm qua kiểm định dạng, trước khi lưu bài; hết lượt thì 402 và xoá tệp tạm. `scoring.settle_charge` chạy sau mọi kết cục (có kết quả, lỗi, quá hạn) và không bao giờ làm hỏng việc lưu kết quả. Một vòng quét hoàn các chỗ giữ cũ hơn hai lần thời gian chạy tối đa của job.
-- **Bảng giá** (`metering/pricing.py`): từ D106 là `price-v4-whole-runs`, một bài nói được chấm là 1 lượt, mọi giá là số lượt nguyên (mục 4.30; D057 trước đó tính theo bài và phút). Sổ vẫn tính bằng 1/1000 lượt nên bút toán cũ đọc như cũ; mỗi bút toán ghi phiên bản giá.
+- **Bảng giá** (`metering/pricing.py`): từ D107 là `price-v5-ai-runs`, một bài nói được chấm là 1 lượt và đã gồm một lần AI viết lại bài đó, mọi giá là số lượt nguyên (mục 4.30; D057 trước đó tính theo bài và phút). Sổ vẫn tính bằng 1/1000 lượt nên bút toán cũ đọc như cũ; mỗi bút toán ghi phiên bản giá.
 
 **Chưa làm:** adapter API IDPoint của NetID, đối soát mỗi ngày, tính lượt cho bước luyện trong bài học và lộ trình, lối vào API riêng cho NetID, Redis/BullMQ.
 
@@ -2442,6 +2442,15 @@ Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 - **Chốt theo giá hiện hành:** `settle_upgrade` thu theo giá hiện hành, không quá chỗ đã giữ. Một chỗ giữ 0,3 lượt từ trước D106 vì thế thu 0.
 - **Giữ D101:** khi bản ghi lộ trình miễn phí mà tài khoản có email chưa xác minh, `hold_lesson` trả 402 kèm câu nhắc xác minh và không lấy suất của ngày.
 - **Migration 23** làm tròn ví có lợi cho người học: `balance` làm tròn lên, `free_used` làm tròn xuống, mỗi lệnh có điều kiện trên giá trị cũ. Bảng giá đã lưu giữ phần nguyên. Bút toán cũ giữ nguyên.
+
+**Phần AI tính bằng lượt (D107, 16/11/2026).** AI viết lại, soạn bài và đoạn đọc gọi mô hình ngôn ngữ trả phí theo token, nên không để miễn phí như D106 (2).
+- **Mặc định:** `upgrade_runs = passage_runs = 1`; `extra_minute_runs` và `lesson_minute_runs` vẫn 0.
+- **Một lượt gồm bản viết lại và một đoạn đọc:** `MeteringFacade._run_paid_for(response_id)` đúng khi bút toán `assessment` của bài ở trạng thái `charged` và `charged > 0`; khi đó `hold_upgrade(..., response_id)` ghi một bút toán `included = true`, giữ 0, thu 0. `_passages_included(account_id)` = `runs_paid` (bài chấm đã thu lượt) trừ `included_taken` (đoạn đã gồm, chưa bị trả lại); còn suất thì đoạn đọc cũng ghi `included`. `upgrade_price(response_id)` và `passage_price(account_id)` trả `{"included": true}` (đoạn đọc kèm `left`) để giao diện ghi "đã gồm". Mỗi bài chỉ có một bản viết lại (`repo.upgrade_of`).
+- **Còn lại 1 lượt mỗi lần:** bản viết lại của bài không có lượt nào trả, đoạn đọc vượt số suất; giữ trước khi gọi mô hình, thu khi viết xong, trả lại khi lỗi.
+- **Giảng viên soạn bài miễn phí:** `write_lesson_draft` không gọi metering; `_drafts_left` đếm `coach.lesson_draft` trong `audit_log` 24 giờ qua (`repo.drafts_since`), tối đa `AICEFR_COACH_DRAFT_DAILY` (5), quá thì 429. Bản mô hình viết lỗi không ghi audit nên không tính.
+- **Bản ghi lộ trình giữ miễn phí:** đo bằng Whisper và `StepChecker`, không qua mô hình chấm hay mô hình ngôn ngữ; trần 30 lần ghi âm mỗi ngày.
+- **Màn của người học không còn IDPoint:** `credits.js`, `submit.js`, `report.js`, `passage.js`, `lesson.js` chỉ ghi lượt; lời từ chối khi thiếu lượt chỉ tới trang Lượt của tôi. `/api/v1/me/credits` thêm `free_runs_renew_on` (ngày 16 kế tiếp) và `included` cho mỗi dòng lịch sử.
+- **Migration 24** đổi `upgrade_runs`, `passage_runs` đang bằng 0 trong bảng giá đã lưu thành 1, có điều kiện trên giá trị 0.
 
 **Sinh viên tự xoá tài khoản (D101, FR-104).** `POST /api/v1/me/delete-account` ở `assessment/admin_api.py`: các bước xoá của FR-35 tách thành `erase_everywhere(pseudonym, who, actor)` dùng chung với quản trị viên (bài nói và audio, `learning.erase_account`, lớp, nghe lại, thông báo thiết bị), rồi `identity.delete_account` xoá document `account` (email, họ tên, mật khẩu, liên kết Google, mã email nằm trên đó) và mọi `session`, ghi `account.delete`. Xoá dữ liệu trước, tài khoản sau, nên lỗi giữa chừng để lại tài khoản để làm lại. `order`, `wallet`, `ledger` giữ lại để đối soát.
 

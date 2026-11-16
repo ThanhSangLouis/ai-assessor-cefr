@@ -30,7 +30,6 @@ counts go to the ledger entry and the day's counters, not into the upgrade.
 
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
@@ -94,7 +93,9 @@ def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
         and report.assessment.overall_band.value in NEXT
     )
     metering = getattr(svc().peers, "metering", None)
-    price = metering.upgrade_price() if metering is not None and can else None
+    price = (
+        metering.upgrade_price(response_id=response_id) if metering is not None and can else None
+    )
     return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can, "price": price}
 
 
@@ -135,7 +136,9 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     metering = getattr(s.peers, "metering", None)
     key = f"upgrade-{response_id}"
     if metering is not None:
-        refusal = metering.hold_upgrade(account_id=account.account_id, key=key)
+        refusal = metering.hold_upgrade(
+            account_id=account.account_id, key=key, response_id=response_id
+        )
         if refusal:
             raise HTTPException(402, refusal)
     status = s.repo.status_of(response_id) or {}
@@ -214,22 +217,35 @@ class DraftIn(BaseModel):
     topic: str = Field(min_length=3, max_length=300)
 
 
+def _drafts_left(account: Account) -> int:
+    """D107: the lesson drafts this teacher may still ask for in the last 24 hours."""
+    s = svc()
+    since = (datetime.now(UTC) - timedelta(days=1)).isoformat(timespec="seconds")
+    return max(0, s.settings.coach_draft_daily - s.repo.drafts_since(account.account_id, since))
+
+
 @router.get("/api/v1/teach/lessons/draft", tags=["teacher"])
 def lesson_draft_offer(account: Account = STAFF_ONLY) -> dict:
-    """Whether a teacher can ask the model for a lesson draft now, and what it costs."""
-    metering = getattr(svc().peers, "metering", None)
+    """Whether a teacher can ask the model for a lesson draft now, and how many are left.
+
+    D107: free for the teacher, `AICEFR_COACH_DRAFT_DAILY` a day (5).
+    """
     available = _provider(_tier()) is not None
-    price = metering.upgrade_price() if metering is not None and available else None
-    return {"available": available, "price": price}
+    return {
+        "available": available,
+        "price": None,
+        "daily": svc().settings.coach_draft_daily,
+        "daily_left": _drafts_left(account),
+    }
 
 
 @router.post("/api/v1/teach/lessons/draft", tags=["teacher"])
 def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
     """A first draft of a lesson by the language model, for the teacher to correct (D075).
 
-    Paid like a learner's upgraded answer: the same price held from the
-    teacher's own runs, the same daily cap and tier, the same day's counters.
-    Nothing is saved: the draft fills the teacher's "Bài học mới" form.
+    D107: free for the teacher, at most `AICEFR_COACH_DRAFT_DAILY` (5) in 24
+    hours; the same tier, global cap and day's counters as a learner's
+    upgraded answer. Nothing is saved: the draft fills the "Bài học mới" form.
     """
     s = svc()
     tier = _tier()
@@ -241,14 +257,13 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
     if refusal:
         s.repo.record_coach(day, refused_global=1)
         raise HTTPException(429, refusal)
-    metering = getattr(s.peers, "metering", None)
-    key = f"lesson-draft-{uuid.uuid4().hex[:12]}"
-    if metering is not None:
-        refused = metering.hold_upgrade(
-            account_id=account.account_id, key=key, action="lesson_draft"
+    if _drafts_left(account) <= 0:
+        s.repo.record_coach(day, refused_user=1)
+        raise HTTPException(
+            429,
+            f"mỗi ngày AI soạn được tối đa {s.settings.coach_draft_daily} bản nháp,"
+            " hãy thử lại sau",
         )
-        if refused:
-            raise HTTPException(402, refused)
     calls = usage.Calls()
     used: dict = {}
     criterion = body.criterion.value if body.criterion else None
@@ -263,18 +278,10 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
             day, account_id=account.account_id, error=str(e), failed=1,
             **_counts(s.settings, tier, calls, used),
         )  # fmt: skip
-        if metering is not None:
-            metering.settle_upgrade(key=key, result=False, action="lesson_draft")
         raise HTTPException(502, str(e)) from e
     s.repo.record_coach(
         day, account_id=account.account_id, drafts=1, **_counts(s.settings, tier, calls, used)
     )
-    if metering is not None:
-        metering.settle_upgrade(
-            key=key,
-            result=True,
-            action="lesson_draft",
-        )
     s.repo.write_audit(account.account_id, "coach.lesson_draft", None, body.band.value)
     count("coach_lesson_draft_total")
     return {"band": body.band.value, "criterion": criterion, **draft.as_dict()}
@@ -283,11 +290,15 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
 # ================================================================= reading passages (D090)
 
 
-def passage_offer() -> dict:
-    """Whether a passage can be written by the model now, and what one costs."""
+def passage_offer(account_id: str | None = None) -> dict:
+    """Whether a passage can be written by the model now, and what the next one costs."""
     metering = getattr(svc().peers, "metering", None)
     available = _provider(_tier()) is not None
-    price = metering.passage_price() if metering is not None and available else None
+    price = (
+        metering.passage_price(account_id=account_id)
+        if metering is not None and available
+        else None
+    )
     return {"available": available, "price": price}
 
 

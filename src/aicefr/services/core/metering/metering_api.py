@@ -64,7 +64,16 @@ def _entry(e: dict, prices: PriceList) -> dict:
         "settled_at": e["settled_at"],
         # D094: one of the day's free lesson recordings.
         "free_slot": bool(e.get("free_slot")),
+        # D107: an AI answer a scored recording's run already paid for.
+        "included": bool(e.get("included")),
     }
+
+
+def _renews_on(period: str) -> str:
+    """D107: the day the free runs of cycle `period` ("YYYY-MM") come back: the next 16th."""
+    year, month = (int(x) for x in period.split("-"))
+    year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return f"{year:04d}-{month:02d}-16"
 
 
 @router.get("/api/v1/me/credits", tags=["student"])
@@ -83,6 +92,7 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
         "price_version": s.prices.version,
         "prices": s.prices.as_dict(),
         "cycle": cycle(),
+        "free_runs_renew_on": _renews_on(cycle()),
         "free_runs_left": as_runs(balance["free_left"]),
         "wallet_runs": as_runs(balance["wallet"]),
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
@@ -157,8 +167,8 @@ class PricesIn(BaseModel):
     first_minute_runs: float = Field(ge=0, le=100)
     extra_minute_runs: float = Field(ge=0, le=100)
     upgrade_runs: float = Field(ge=0, le=100)
-    # D094: defaults, so a dashboard of before keeps working; free since D106.
-    passage_runs: float = Field(default=0, ge=0, le=100)
+    # D094: defaults, so a dashboard of before keeps working. D107: one run.
+    passage_runs: float = Field(default=1, ge=0, le=100)
     lesson_minute_runs: float = Field(default=0, ge=0, le=100)
     lesson_free_per_day: int = Field(default=5, ge=0, le=1000)
     lesson_daily_cap: int = Field(default=30, ge=1, le=1000)

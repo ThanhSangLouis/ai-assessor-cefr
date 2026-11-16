@@ -4,8 +4,8 @@
   prepaid balance up, the free runs used this cycle down; the administrator's
   price list keeps only the whole part of each price; charges already made keep
   what they were, and running it twice changes nothing more;
-* with the default prices a scored recording is one run, and an AI answer, a
-  reading passage or a lesson recording takes nothing and shows no price.
+* a hold taken at an older price is charged today's price (the defaults
+  since D107 are in tests/test_d107_ai_runs.py).
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from aicefr.services.core.metering.facade import MeteringFacade
 from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.db import database
 from aicefr.storage.metering_repository import MeteredAction, MeteringRepository
-from aicefr.storage.migrations import MIGRATIONS, migrate
+from aicefr.storage.migrations import MIGRATIONS
 
 pytestmark = pytest.mark.integration
 
@@ -47,8 +47,8 @@ def test_migration_23_rounds_wallets_and_prices_in_the_learners_favour(tmp_path,
          "packs": [{"runs": 10, "price_vnd": 19000}]}
     )  # fmt: skip
 
-    migrate(target)
-    migrate(target)  # nothing more the second time
+    for _ in range(2):  # nothing more the second time
+        MIGRATIONS[22].apply(db, str(target))
 
     wallets = {w["user_ref"]: (w["balance"], w["free_used"]) for w in db["wallet"].find()}
     assert wallets == {"a": (2000, 1000), "b": (2000, 1000), "c": (0, 0)}
@@ -60,24 +60,14 @@ def test_migration_23_rounds_wallets_and_prices_in_the_learners_favour(tmp_path,
     assert prices["version"] == "price-admin-1"
 
 
-def test_by_default_only_a_scored_recording_costs_a_run(tmp_path):
-    store = MeteringRepository(tmp_path / "metering.db")
-    facade = MeteringFacade(store, AuditLog(tmp_path / "metering.db", "metering"), enabled=True)
-    assert facade.hold(account_id="a1", action="assessment", key="r1", max_seconds=60) is None
-    facade.settle(key="r1", action="assessment", result=True, seconds=48.0)
-    assert store.entry("r1", MeteredAction.ASSESSMENT)["charged"] == 1000
-    assert facade.upgrade_price() is None and facade.passage_price() is None
-    for action in ("upgrade", "drill_passage", "lesson_draft"):
-        assert facade.hold_upgrade(account_id="a1", key=f"{action}-r1", action=action) is None
-        assert store.entry(f"{action}-r1", MeteredAction(action)) is None
-    assert store.balance("a1") == {"wallet": 0, "free_left": 2000}
-
-
 def test_a_hold_taken_at_an_older_price_is_charged_todays(tmp_path):
-    # An AI answer held at 0.3 of a run a moment before D106: charged nothing.
+    # An AI answer held at 0.3 of a run a moment before D106 made it free:
+    # charged nothing.
     store = MeteringRepository(tmp_path / "metering.db")
     store.hold("a1", MeteredAction.UPGRADE, "upgrade-r1", 300)
-    facade = MeteringFacade(store, AuditLog(tmp_path / "metering.db", "metering"), enabled=True)
+    facade = MeteringFacade(
+        store, AuditLog(tmp_path / "metering.db", "metering"), True, PriceList(upgrade_runs=0)
+    )
     facade.settle_upgrade(key="upgrade-r1", result=True)
     entry = store.entry("upgrade-r1", MeteredAction.UPGRADE)
     assert (entry["state"], entry["charged"]) == ("charged", 0)

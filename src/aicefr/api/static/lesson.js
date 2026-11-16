@@ -653,19 +653,19 @@ async function refreshMeter() {
       meterEl.textContent = q.free_locked
         ? "Xác minh email ở trang Tài khoản để học lộ trình miễn phí."
         : q.left_today <= 0
-          ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`
-          : `Bản ghi trong lộ trình miễn phí · hôm nay còn ${q.left_today}/${q.daily_cap}.`;
+          ? `Hôm nay bạn đã ghi âm đủ ${q.daily_cap} lần, mai học tiếp nhé.`
+          : `Luyện trong lộ trình miễn phí · hôm nay còn ${q.left_today}/${q.daily_cap} lần ghi âm.`;
       meterEl.hidden = false;
       return;
     }
-    const price = `${Number(q.minute_runs).toLocaleString("vi-VN")} lượt (${Number(q.minute_idpoint).toLocaleString("vi-VN")} IDPoint) mỗi phút nói`;
+    const price = `${Number(q.minute_runs).toLocaleString("vi-VN")} lượt mỗi phút nói`;
     meterEl.textContent = q.left_today <= 0
-      ? `Hôm nay bạn đã nói đủ ${q.daily_cap} bản ghi, mai học tiếp nhé.`
+      ? `Hôm nay bạn đã ghi âm đủ ${q.daily_cap} lần, mai học tiếp nhé.`
       : q.free_locked
-        ? `Xác minh email ở trang Tài khoản để có ${q.free_per_day} bản ghi miễn phí mỗi ngày. Hiện tính ${price}.`
+        ? `Xác minh email ở trang Tài khoản để có ${q.free_per_day} lần ghi âm miễn phí mỗi ngày. Hiện tính ${price}.`
       : q.free_left_today > 0
-        ? `Hôm nay còn ${q.free_left_today}/${q.free_per_day} bản ghi miễn phí, sau đó ${price}.`
-        : `Đã hết bản ghi miễn phí hôm nay: ${price}, bạn còn ${Number(q.runs_left).toLocaleString("vi-VN")} lượt.`;
+        ? `Hôm nay còn ${q.free_left_today}/${q.free_per_day} lần ghi âm miễn phí, sau đó ${price}.`
+        : `Đã hết lần ghi âm miễn phí hôm nay: ${price}, bạn còn ${Number(q.runs_left).toLocaleString("vi-VN")} lượt.`;
     meterEl.hidden = false;
   } catch {
     meterEl.hidden = true;

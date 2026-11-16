@@ -956,10 +956,13 @@ function paintCoach(card, c) {
       '<div class="coach-upgrade-row"><button type="button" id="coach-upgrade">' +
       `${window.ui.icon("sparkle")}<span>Xem bài của tôi ở band cao hơn</span></button>` +
       // D072: the price is said before the button is pressed, on the metered channel.
-      (c.price && c.price.runs
-        ? `<span class="small-note"><b>${escapeHtml(String(c.price.runs).replace(".", ","))} lượt</b>` +
-          ` (${escapeHtml(Number(c.price.idpoint).toLocaleString("vi-VN"))} IDPoint), trừ khi AI viết xong</span>`
-        : "") +
+      // D107: the rewrite of a recording scored for a run is part of that run.
+      (c.price && c.price.included
+        ? '<span class="small-note">Đã gồm trong lượt chấm bài này</span>'
+        : c.price && c.price.runs
+          ? `<span class="small-note"><b>${escapeHtml(String(c.price.runs).replace(".", ","))} lượt</b>` +
+            ", chỉ trừ khi AI viết xong</span>"
+          : "") +
       "</div>" +
       '<p class="muted small-note">AI viết lại bài của bạn, giữ ý của bạn. Chỉ gửi bản chép lời, không gửi ghi âm.</p>';
   card.innerHTML = h;
