@@ -112,10 +112,11 @@ def test_the_passage_is_read_aloud_with_its_words_highlighted():
 
 
 def test_a_passage_has_its_own_price_kept_in_the_versions():
-    # D106: free by default, whole runs otherwise.
-    assert passage_units(PriceList()) == 0 and PriceList().as_dict()["passage_runs"] == 0.0
-    prices = PriceList(passage_runs=1)
-    assert passage_units(prices) == 1000 and as_idpoint(prices, 1000) == 2000
+    # D107: one run by default; D106: whole runs otherwise.
+    prices = PriceList()
+    assert passage_units(prices) == 1000 and prices.as_dict()["passage_runs"] == 1.0
+    assert as_idpoint(prices, 1000) == 2000
+    assert passage_units(PriceList(passage_runs=0)) == 0
     with pytest.raises(ValueError):
         PriceList(passage_runs=-1)
     book = PriceBook(MeteringRepository(store()), PriceList(passage_runs=2))

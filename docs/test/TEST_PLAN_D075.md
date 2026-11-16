@@ -59,8 +59,8 @@
 | TC-TL-A03 | `test_the_request_names_the_band_and_its_length` | FR-91 | Yêu cầu nêu band, tiêu chí, chủ đề và độ dài theo band |
 | TC-TL-A04 | `test_a_teacher_gets_a_draft_for_the_form` | AC-91.4 | Trả các ô của form, prompt riêng của bản nháp, bộ đếm ngày |
 | TC-TL-A05 | `test_learners_cannot_ask_for_a_draft` | FR-91 | Học viên nhận 403 |
-| TC-TL-A06 | `test_metered_the_teachers_runs_pay_for_the_draft` | AC-91.5 | 0,3 lượt trừ ví giảng viên, có token, có trong lịch sử |
-| TC-TL-A07 | `test_metered_a_failed_draft_costs_nothing` | FR-91 | Mô hình lỗi: hoàn lượt |
+| TC-TL-A06 | `test_metered_a_teachers_draft_is_free_five_a_day` | AC-91.5 | D107: giảng viên không bị trừ lượt; 5 bản nháp trong 24 giờ, bản thứ 6 bị từ chối (429) |
+| TC-TL-A07 | `test_a_failed_draft_does_not_count_against_the_day` | FR-91 | D107: mô hình lỗi thì không tính vào 5 bản của ngày |
 | TC-TL-A08 | `test_the_daily_cap_counts_drafts_too` | FR-91 | Giới hạn ngày đếm cả bản nháp |
 | TC-TL-A09 | `test_without_a_language_model_no_draft_is_offered` | FR-91 | Không có mô hình: không mời, 503 |
 

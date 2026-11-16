@@ -36,6 +36,7 @@ from aicefr.storage.audit_repository import AuditLog
 from aicefr.storage.metering_repository import (
     DailyCapReached,
     InsufficientCredits,
+    LedgerState,
     MeteredAction,
     MeteringRepository,
 )
@@ -91,7 +92,7 @@ class MeteringFacade:
         except InsufficientCredits as e:
             return (
                 f"bạn cần {as_runs(e.needed):g} lượt cho bài này nhưng chỉ còn"
-                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
+                f" {as_runs(e.available):g} lượt. Mua thêm lượt ở trang Lượt của tôi để tiếp tục"
                 + self._locked_hint(free)
             )
         return None
@@ -188,7 +189,7 @@ class MeteringFacade:
             return {
                 "status": 402,
                 "message": f"{spent}ản ghi này cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
-                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để học tiếp"
+                f" {as_runs(e.available):g} lượt. Mua thêm lượt ở trang Lượt của tôi để học tiếp"
                 + self._locked_hint(free),
             }
         return None
@@ -216,38 +217,94 @@ class MeteringFacade:
 
     # ------------------------------------------------------------ upgrades (D072)
 
+    def _run_paid_for(self, response_id: str | None) -> bool:
+        """D107: a run was charged when this recording was scored.
+
+        Its AI rewrite is then part of that run: the model's bill for it is a
+        small part of what the run sold for.
+        """
+        if not response_id:
+            return False
+        entry = self.store.entry(response_id, MeteredAction.ASSESSMENT)
+        return (
+            entry is not None
+            and entry["state"] == LedgerState.CHARGED.value
+            and entry["charged"] > 0
+        )
+
     @exposed
-    def upgrade_price(self) -> dict | None:
-        """What one upgraded answer costs, in runs and IDPoint; None when it is free
-        or nothing is counted."""
+    def upgrade_price(self, response_id: str | None = None) -> dict | None:
+        """What the upgraded answer to `response_id` costs, in runs and IDPoint.
+
+        `{"included": True}` when the recording's own run already paid for it
+        (D107); None when it is free or nothing is counted.
+        """
+        if not self.enabled:
+            return None
+        if self._run_paid_for(response_id):
+            return {"runs": 0, "idpoint": 0, "included": True}
         units = upgrade_units(self.prices)
-        if not self.enabled or units <= 0:
-            return None  # D106: free, so no price is shown
+        if units <= 0:
+            return None
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
+    def _passages_included(self, account_id: str | None) -> int:
+        """D107: the reading passages this account's paid runs still bring, one a run."""
+        if not account_id:
+            return 0
+        paid = self.store.runs_paid(account_id)
+        return max(0, paid - self.store.included_taken(account_id, MeteredAction.DRILL_PASSAGE))
+
     @exposed
-    def passage_price(self) -> dict | None:
-        """What one reading passage costs (D090); None when it is free or nothing is counted."""
+    def passage_price(self, account_id: str | None = None) -> dict | None:
+        """What `account_id`'s next reading passage costs (D090).
+
+        `{"included": True, "left": n}` while a scored recording's run still
+        brings one (D107); None when it is free or nothing is counted.
+        """
+        if not self.enabled:
+            return None
+        left = self._passages_included(account_id)
+        if left:
+            return {"runs": 0, "idpoint": 0, "included": True, "left": left}
         units = passage_units(self.prices)
-        if not self.enabled or units <= 0:
-            return None  # D106: free, so no price is shown
+        if units <= 0:
+            return None
         return {"runs": as_runs(units), "idpoint": as_idpoint(self.prices, units)}
 
     @exposed
-    def hold_upgrade(self, account_id: str, key: str, action: str = "upgrade") -> str | None:
+    def hold_upgrade(
+        self,
+        account_id: str,
+        key: str,
+        action: str = "upgrade",
+        response_id: str | None = None,
+    ) -> str | None:
         """Hold the price of one language-model answer before the model is asked.
 
         `action` is "upgrade", a learner's upgraded answer (D072),
         "lesson_draft", a teacher's lesson draft (D075): one price for both; or
         "drill_passage", a reading passage around the unclear words (D090), at
-        its own lower price. Free runs first, then the wallet, as for a
+        its own price. (Since D107 the lesson-draft service asks for no hold:
+        a teacher's draft is free, five a day.) Free runs first, then the wallet, as for a
         recording. The refusal, or None; settled with `settle_upgrade` once the
         model answered or failed.
+
+        D107: the upgrade of `response_id`, a recording scored for a run, and
+        one reading passage for each such run take nothing: the run paid for
+        them. The ledger still keeps them, marked `included`, so the learner
+        sees them in the history.
         """
         what = MeteredAction(action)
         passage = what is MeteredAction.DRILL_PASSAGE
         units = passage_units(self.prices) if passage else upgrade_units(self.prices)
         if not self.enabled or units <= 0:
+            return None
+        included = (what is MeteredAction.UPGRADE and self._run_paid_for(response_id)) or (
+            passage and self._passages_included(account_id) > 0
+        )
+        if included:
+            self.store.hold(account_id, what, key, 0, included=True)
             return None
         free = self.free_ok(account_id)
         try:
@@ -259,7 +316,7 @@ class MeteringFacade:
             }.get(what, "bản nâng cấp")
             return (
                 f"{thing} cần {as_runs(e.needed):g} lượt nhưng bạn chỉ còn"
-                f" {as_runs(e.available):g} lượt. Nạp thêm IDPoint để tiếp tục"
+                f" {as_runs(e.available):g} lượt. Mua thêm lượt ở trang Lượt của tôi để tiếp tục"
                 + self._locked_hint(free)
             )
         return None

@@ -67,8 +67,13 @@ function paintOffer() {
   } else if (state.daily_left <= 0) {
     note = "Hôm nay AI đã viết đủ số đoạn cho bạn. Ghép từ cụm của bạn, hoặc quay lại ngày mai.";
   } else {
-    const price = o.price ? `${runs(o.price.runs)} (${o.price.idpoint.toLocaleString("vi-VN")} IDPoint)` : "miễn phí";
-    note = `AI viết một đoạn ngắn đúng band của bạn: ${price}, chỉ trừ khi viết xong. Đọc lại đoạn đó bao nhiêu lần cũng không mất thêm. Chỉ các từ và band được gửi đi, không gửi giọng nói.`;
+    // D107: each scored recording's run brings one passage; past those, its price in runs.
+    const price = !o.price
+      ? "miễn phí"
+      : o.price.included
+        ? `đã gồm trong lượt chấm bài của bạn (còn ${o.price.left} đoạn)`
+        : `${runs(o.price.runs)}, chỉ trừ khi viết xong`;
+    note = `AI viết một đoạn ngắn đúng band của bạn: ${price}. Đọc lại đoạn đó bao nhiêu lần cũng không mất thêm. Chỉ các từ và band được gửi đi, không gửi giọng nói.`;
   }
   document.getElementById("passage-offer").textContent = note;
   const allowed = !!o.available && state.daily_left > 0;

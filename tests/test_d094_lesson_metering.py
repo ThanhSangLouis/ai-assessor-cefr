@@ -238,7 +238,7 @@ def test_the_facade_refuses_as_data_with_the_status_to_answer(ledger, tmp_path, 
     refused = poor.hold_lesson(account_id="a2", key="k1", max_seconds=30)
     assert refused["status"] == 402
     assert refused["message"].startswith("Bản ghi này cần 1 lượt")
-    assert "Nạp thêm IDPoint" in refused["message"]
+    assert "Mua thêm lượt" in refused["message"]
     poor.store.grant("a2", MINUTE, "admin", "r", None)
     assert poor.hold_lesson(account_id="a2", key="k2", max_seconds=30) is None
     full = poor.hold_lesson(account_id="a2", key="k3", max_seconds=30)
@@ -381,7 +381,7 @@ def test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on(metered):
     record(student, SAMPLE, KEYWORDS, audio=wav(4.5))  # the day's one free recording
     attempts = len(m.lessons.attempts())
     poor = record(student, SAMPLE, KEYWORDS, audio=wav(4.5), expect=402)
-    assert "Nạp thêm IDPoint" in poor["detail"]
+    assert "Mua thêm lượt" in poor["detail"]
     assert len(m.lessons.attempts()) == attempts
     granted = admin.post(
         "/api/v1/admin/credits/grant",

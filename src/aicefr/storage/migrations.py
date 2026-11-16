@@ -1236,6 +1236,23 @@ def _d106_whole_runs(db: Database, target: str) -> None:
             db["price_list"].update_one({"_id": "current"}, {"$set": whole})
 
 
+def _d107_ai_runs(db: Database, target: str) -> None:
+    """An answer a language model writes costs one run (D107).
+
+    The administrator's price list had the upgraded answer and the reading
+    passage free since D106; a paid model then costs money no run pays for.
+    Each of the two that is still 0 becomes one run; a price the administrator
+    set above 0 stays. The rewrite of a scored recording stays part of its run
+    (`MeteringFacade.hold_upgrade`). Conditional on the 0 it replaces, so
+    running this twice changes nothing more. Approved by the project owner on
+    16/11/2026.
+    """
+    if not _has(db, "price_list"):
+        return
+    for name in ("upgrade_runs", "passage_runs"):
+        db["price_list"].update_one({"_id": "current", name: 0.0}, {"$set": {name: 1.0}})
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -1280,6 +1297,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     ),
     Migration(22, "copies of other fields removed (D105)", _d105_copies),
     Migration(23, "balances and prices in whole runs (D106)", _d106_whole_runs),
+    Migration(24, "an answer a language model writes costs one run (D107)", _d107_ai_runs),
 )
 
 LATEST = MIGRATIONS[-1].version

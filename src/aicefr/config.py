@@ -166,6 +166,8 @@ class Settings:
         default_factory=lambda: _int("AICEFR_PASSAGE_GLOBAL_DAILY", 150)
     )
     passage_daily: int = field(default_factory=lambda: _int("AICEFR_PASSAGE_DAILY", 3))
+    # D107: lesson drafts one teacher may have the model write in 24 hours, free.
+    coach_draft_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_DRAFT_DAILY", 5))
     # On a paid tier: a daily budget in USD replaces the request cap when set,
     # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
     # prices by default; output includes thinking tokens).
@@ -251,7 +253,8 @@ class Settings:
     # D057: the seller's prices, in runs: a recording up to one minute, every
     # further started minute, and what one run is in IDPoint on NetID (team
     # decision 24/10/2026, 1 IDPoint = 1 VND). D106: whole runs only; a scored
-    # recording is one run, everything else free within its daily limit.
+    # recording is one run. D107: an answer a language model writes is one run
+    # (the rewrite of a scored recording is part of its run).
     price_first_minute_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_FIRST_MINUTE_RUNS", 1.0)
     )
@@ -261,11 +264,11 @@ class Settings:
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
     # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
     price_upgrade_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.0)
+        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 1.0)
     )
     # D090: what one reading passage around the unclear words costs, in runs.
     price_passage_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.0)
+        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 1.0)
     )
     # D094: a recording on the lesson path, per started minute of speech, and
     # how many recordings of a Vietnam day are free and measured at most.

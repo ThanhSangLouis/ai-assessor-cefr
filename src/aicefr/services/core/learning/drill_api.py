@@ -197,7 +197,7 @@ def passage_state(account: Account = STUDENT_ONLY) -> dict:
         "min_words": passages.MIN_WORDS,
         "enough": len(chosen) >= passages.MIN_WORDS,
         "passage": kept.view() if kept else None,
-        "offer": svc().peers.assessment.passage_offer(),
+        "offer": svc().peers.assessment.passage_offer(account_id=account.account_id),
         "daily_left": _daily_left(account),
         "pass_streak": PASS_STREAK,
     }

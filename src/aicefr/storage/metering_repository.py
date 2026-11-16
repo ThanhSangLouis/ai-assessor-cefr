@@ -84,6 +84,9 @@ class LedgerEntry:
     # whether it was one of that day's free recordings.
     day: str | None = None
     free_slot: bool | None = None
+    # D107: an AI answer a scored recording's run already paid for (its
+    # rewrite, or the reading passage that run brought): held and charged 0.
+    included: bool | None = None
 
     @classmethod
     def from_doc(cls, doc: dict) -> LedgerEntry:
@@ -348,18 +351,20 @@ class MeteringRepository(MongoStore):
         key: str,
         units: int,
         free_ok: bool = True,
+        included: bool = False,
     ) -> dict:
         """Hold `units` for `key`: free runs first (when `free_ok`), then the wallet.
 
         Idempotent: holding a key held before returns the existing entry and
         takes nothing. Raises InsufficientCredits, holding nothing, when the
-        two together fall short.
+        two together fall short. `included` (D107): a run already paid for it,
+        so nothing is taken and the entry says so.
         """
         existing = self.entry(key, action)
         if existing is not None:
             return existing
         period = cycle()
-        free, rest = self._take(user_ref, period, units, free_ok)
+        free, rest = (0, 0) if included else self._take(user_ref, period, units, free_ok)
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
             user_ref=user_ref,
@@ -371,6 +376,7 @@ class MeteringRepository(MongoStore):
             state=LedgerState.HELD,
             period=period,
             created_at=_now(),
+            included=True if included else None,
         )
         try:
             self.col("ledger").insert_one(entry.to_doc())
@@ -542,6 +548,28 @@ class MeteringRepository(MongoStore):
             if done and done["state"] == LedgerState.RELEASED.value:
                 released.append(row["key"])
         return released
+
+    def runs_paid(self, user_ref: str) -> int:
+        """D107: the scored recordings a run was charged for, ever."""
+        return self.col("ledger").count_documents(
+            {
+                "user_ref": user_ref,
+                "action": MeteredAction.ASSESSMENT.value,
+                "state": LedgerState.CHARGED.value,
+                "charged": {"$gt": 0},
+            }
+        )
+
+    def included_taken(self, user_ref: str, action: MeteredAction) -> int:
+        """D107: the `action` answers a run paid for, held or charged (not released)."""
+        return self.col("ledger").count_documents(
+            {
+                "user_ref": user_ref,
+                "action": action.value,
+                "included": True,
+                "state": {"$ne": LedgerState.RELEASED.value},
+            }
+        )
 
     def history(self, user_ref: str, limit: int = 50) -> list[dict]:
         rows = (

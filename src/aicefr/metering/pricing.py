@@ -1,11 +1,17 @@
-"""The price list of the metered channel: whole runs only (D106).
+"""The price list of the metered channel: whole runs only (D106, D107).
 
 A learner buys runs in whole packs (1, 10, 30, 100), so every price is a whole
 number of runs too: one scored recording is one run, and nothing is ever
-charged as 0.3 or 0.7 of a run. Since D106 the AI-written answer (D072), the
-reading passage (D090) and the recordings on the lesson path (D094) are free,
-held back only by their daily limits; every task is at most a minute, so a
-recording costs its one run whatever it lasted. The seller still sets these
+charged as 0.3 or 0.7 of a run. Every task is at most a minute, so a recording
+costs its one run whatever it lasted.
+
+D107: what a paid language model writes for a learner is paid for by a run,
+so the model's bill is always covered. One run scores a recording and brings
+its AI rewrite (one per recording, kept) and one reading passage (D090);
+beyond that a rewrite or a passage is one run each. A teacher's lesson draft
+(D075) is free, five a day. The recordings on the lesson path (D094) are
+measured on our own server, with no language model, and stay free within
+their daily limit. The seller still sets these
 numbers (`AICEFR_PRICE_*`, `AICEFR_IDPOINT_PER_RUN`), and since D078 an
 administrator on the dashboard, but only as whole runs: a fraction saved
 before D106 counts as its whole part, rounded down, in the learner's favour.
@@ -25,7 +31,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-PRICE_VERSION = "price-v4-whole-runs"
+PRICE_VERSION = "price-v5-ai-runs"
 UNITS_PER_RUN = 1000
 # Three runs a month for everyone before anything is charged.
 FREE_UNITS_PER_CYCLE = 3 * UNITS_PER_RUN
@@ -62,10 +68,12 @@ class PriceList:
     first_minute_runs: float = 1.0  # a scored recording up to one minute
     extra_minute_runs: float = 0.0  # every further started minute (no task is longer)
     idpoint_per_run: int = 2000  # what one run is on NetID (1 IDPoint = 1 VND)
-    # D072: one upgraded answer (D069) written by a language model; 0 is free.
-    upgrade_runs: float = 0.0
-    # D090: one reading passage written around the learner's unclear words.
-    passage_runs: float = 0.0
+    # D072: an upgraded answer (D069) to a recording no run paid for. D107:
+    # the upgrade of a recording scored for a run is part of that run.
+    upgrade_runs: float = 1.0
+    # D090: one reading passage written around the learner's unclear words,
+    # past the one each paid run brings (D107).
+    passage_runs: float = 1.0
     # D094: a recording on the lesson path (a step, a review, a retelling, a
     # word or a passage said again), per started minute of speech; the first
     # `lesson_free_per_day` recordings of a Vietnam day are free, and no more
