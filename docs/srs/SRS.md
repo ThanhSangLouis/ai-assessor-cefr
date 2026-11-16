@@ -45,7 +45,7 @@
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 | **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
-| **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.10), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên | D109 |
+| **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Email báo lời mời cho sinh viên và báo học viên mới cho giảng viên. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.13), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên. Rà mục 4 theo hệ thống đang chạy: thêm UC-37..UC-41 (tự đăng ký và xác minh email, luyện lại từ chưa rõ, đoạn đọc AI, tự xoá tài khoản, theo dõi đơn nạp lượt) có đặc tả; UC-30 thêm Quản trị viên, UC-35 cho mọi vai trò; ba sơ đồ use case theo vai vẽ lại | D109 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
 | **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
 | **1.30** | **08/11/2026** | **D102.** Bỏ hoàn tiền: trang `/payment-terms` nói lượt đã mua không hoàn tiền; trả tiền gặp sự cố (lượt chưa vào ví sau 30 phút, trả hai lần) được bù bằng lượt. Sửa FR-102 mục (4) và AC-102.6 | D102 |
@@ -1519,7 +1519,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-88 — Lớp học (D054, D071, D075, D108, D109)
 
-**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên. D109: học viên vào lớp chỉ bằng việc của chính mình, vì giảng viên của lớp xem được bài của học viên: giảng viên mời theo email và học viên chấp nhận hay từ chối ở trang **Lớp của tôi**, hoặc học viên nhập mã lớp 6 ký tự giảng viên đưa (giảng viên bật, đổi, tắt mã); quản trị viên vẫn thêm thẳng theo email; học viên rời lớp được. Lời mời chưa trả lời không cho giảng viên quyền gì. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá (và mã lớp, D109 đặt lại theo cách mới). D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
+**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên. D109: học viên vào lớp chỉ bằng việc của chính mình, vì giảng viên của lớp xem được bài của học viên: giảng viên mời theo email và học viên chấp nhận hay từ chối ở trang **Lớp của tôi**, hoặc học viên nhập mã lớp 6 ký tự giảng viên đưa (giảng viên bật, đổi, tắt mã); quản trị viên vẫn thêm thẳng theo email; học viên rời lớp được. Lời mời chưa trả lời không cho giảng viên quyền gì. Email: sinh viên được mời nhận thư "Lời mời vào lớp"; khi sinh viên vào lớp, mỗi giảng viên của lớp nhận thư "Học viên mới vào lớp" (chỉ tới email đã xác minh, mỗi sự kiện một thư). Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá (và mã lớp, D109 đặt lại theo cách mới). D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1534,6 +1534,9 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-88.8** — *Given* lớp có mã, *When* học viên nhập mã (không phân biệt hoa thường, dấu cách, gạch nối), *Then* học viên vào lớp; mã đã đổi, đã tắt hay của lớp đã lưu trữ trả 404 (`test_a_student_joins_by_the_class_code_until_it_changes_or_goes`). |
 | **AC-88.9** — *Given* học viên trong lớp, *When* học viên rời lớp, *Then* giảng viên không còn mở được bài của họ; nhật ký có `class.invite`, `class.join`, `class.leave` (`test_a_student_who_leaves_takes_their_work_from_the_teacher`). |
 | **AC-88.10** — *Given* một học viên, *When* nhập sai mã quá 10 lần trong một phút, *Then* 429 (`test_guessing_class_codes_is_limited`). |
+| **AC-88.11** — *Given* giảng viên mời một học viên có email đã xác minh, *When* gửi lời mời, *Then* học viên nhận đúng một email có tên lớp, tên giảng viên và đường tới trang Lớp của tôi; mời lại khi chưa trả lời không gửi thêm (`test_an_invited_student_gets_one_email_with_the_way_to_answer`). |
+| **AC-88.12** — *Given* một lớp, *When* học viên chấp nhận lời mời hoặc nhập mã, *Then* giảng viên của lớp nhận email nêu học viên, cách vào và sĩ số; vào lại khi đã là thành viên không gửi (`test_the_teachers_hear_when_a_student_accepts_or_joins_by_code`). |
+| **AC-88.13** — *Given* bus giao lại cùng một sự kiện, *When* xử lý lần hai, *Then* không có email thứ hai (`test_a_second_delivery_of_an_event_sends_no_second_email`). |
 
 ### FR-89 — Nhắc việc trong ứng dụng (D055)
 
@@ -1789,13 +1792,18 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-27 | Sinh viên nạp lượt qua payOS | Sinh viên | Cổng thanh toán | FR-85, FR-87, FR-91 (D075) | S |
 | UC-28 | Giảng viên nhờ AI soạn nháp bài học | — *(use case mở rộng của UC-20)* | — | FR-91 (D075) | C |
 | UC-29 | Giảng viên quản lý ngân hàng đề theo band | Giảng viên | — | FR-01, D076, D078 | S |
-| UC-30 | Giảng viên quản lý lớp và giao lộ trình band | Giảng viên | — | FR-88 (D054, D071, D075), D074 | S |
+| UC-30 | Giảng viên quản lý lớp và giao lộ trình band | Giảng viên, Quản trị viên | — | FR-88 (D054, D071, D075, D108, D109), D074 | S |
 | UC-31 | Giảng viên xem thống kê lớp theo band | Giảng viên | — | FR-29, FR-76, D078 | S |
 | UC-32 | Quản trị viên đặt giá lượt và gói lượt | Quản trị viên | — | FR-85, FR-87, D078 | S |
 | UC-33 | Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp | Quản trị viên | — | D072, D073 | S |
 | UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
-| UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên | — | FR-92, FR-93 (D079) | S |
+| UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên, Giảng viên, Quản trị viên | — | FR-92, FR-93 (D079) | S |
 | UC-36 | Sinh viên vào lớp bằng mã lớp hoặc lời mời | Sinh viên | Giảng viên | FR-88 (D109) | S |
+| UC-37 | Sinh viên tự đăng ký và xác minh email | Sinh viên | — | FR-93, FR-103 (D079, D101) | S |
+| UC-38 | Sinh viên luyện lại từ máy nghe kém rõ | — *(use case mở rộng của UC-04)* | — | FR-97 (D089) | C |
+| UC-39 | Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở | — *(use case mở rộng của UC-38)* | — | FR-98 (D090, D107) | C |
+| UC-40 | Sinh viên tự xoá tài khoản | Sinh viên | — | FR-104 (D101) | S |
+| UC-41 | Quản trị viên theo dõi đơn nạp lượt và đối soát | Quản trị viên | Cổng thanh toán | FR-102 (D099), FR-101 | S |
 
 > **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Các use case
 > không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-14 (học viên tự xoá; nay chỉ quản trị viên xoá, UC-07), UC-18
@@ -2556,6 +2564,134 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ---
 
+### UC-37 — Sinh viên tự đăng ký và xác minh email *(mới ở bản 1.34: D079, D101)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-37 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Tạo tài khoản sinh viên bằng email (hoặc Google) rồi xác minh email bằng mã 6 số; chỉ email đã xác minh mới nhận lượt miễn phí của tháng và thư nhắc học (FR-93, FR-103) |
+| **Tiền điều kiện** | Chưa có tài khoản với email này |
+| **Kích hoạt** | Người học bấm "Đăng ký" ở trang chủ hoặc trang Đăng nhập |
+
+**Luồng chính:**
+
+1. Người học nhập họ tên, email và mật khẩu.
+2. Hệ thống tạo tài khoản vai trò sinh viên, đăng nhập và gửi mã xác minh tới email.
+3. Sinh viên nhập mã ở trang Tài khoản.
+4. Hệ thống đánh dấu email đã xác minh; lượt miễn phí của tháng mở.
+
+**Luồng thay thế:**
+
+- **1a. Email đã có tài khoản:** Từ chối, gợi ý đăng nhập hoặc quên mật khẩu (UC-35).
+- **1b. Đăng ký bằng Google:** Email của Google coi như đã xác minh (UC-17).
+- **3a. Mã sai hoặc hết hạn:** Từ chối; sinh viên bấm gửi lại mã.
+
+**Hậu điều kiện:** Tài khoản sinh viên có email đã xác minh.
+
+---
+
+### UC-38 — Sinh viên luyện lại từ máy nghe kém rõ *(mới ở bản 1.34: D089)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-38 |
+| **Actor chính** | — *(use case mở rộng của UC-04)* |
+| **Mô tả** | Từ báo cáo, luyện lại tối đa 8 từ máy nghe chưa rõ (tô cam): nghe lại đoạn mình nói, nghe giọng mẫu, đọc mẹo, nói lại cả cụm để máy chấm (FR-97) |
+| **Tiền điều kiện** | Báo cáo có từ tô cam |
+| **Kích hoạt** | Sinh viên bấm "Luyện lại các từ này" trên báo cáo (UC-04) |
+
+**Luồng chính:**
+
+1. Hệ thống chọn tối đa 8 từ kém rõ nhất của bài.
+2. Với mỗi từ, sinh viên nghe lại đoạn mình nói và giọng mẫu, đọc mẹo khi có.
+3. Sinh viên nói lại cả cụm 3–4 từ; máy chấm từ đó.
+4. Máy nghe rõ hai lần liền thì xong từ.
+
+**Luồng thay thế:**
+
+- **4a. Vẫn chưa rõ:** Từ vào ôn ngắt quãng; còn từ 3 từ luyện dở trở lên thì mở được UC-39.
+
+**Hậu điều kiện:** Kết quả từng từ được lưu; trang Tiến độ có tỉ lệ từ chưa rõ.
+
+---
+
+### UC-39 — Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở *(mới ở bản 1.34: D090, D107)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-39 |
+| **Actor chính** | — *(use case mở rộng của UC-38)* |
+| **Mô tả** | Mô hình ngôn ngữ viết một đoạn ngắn theo band chứa 3–5 từ đang luyện dở; sinh viên đọc to, mỗi từ được chấm ở mọi chỗ nó xuất hiện (FR-98) |
+| **Tiền điều kiện** | Có từ 3 từ đang luyện dở trở lên |
+| **Kích hoạt** | Sinh viên bấm "Đọc một đoạn" ở trang Tiến độ |
+
+**Luồng chính:**
+
+1. Hệ thống báo giá: đoạn đã gồm trong một lượt chấm còn dùng được thì miễn phí, đoạn thêm tốn 1 lượt (D107).
+2. Hệ thống gửi các từ và band (không gửi gì khác) cho mô hình, nhận đoạn văn.
+3. Sinh viên đọc to; máy đo như bước đọc to.
+4. Từ máy nghe rõ là một lượt rõ; từ chưa rõ vào ôn ngắt quãng.
+
+**Luồng thay thế:**
+
+- **1a. Hết lượt:** Mời mua thêm lượt (UC-27).
+- **2a. Mô hình không dùng được:** Ghép đoạn từ chính các cụm của sinh viên, miễn phí.
+
+**Hậu điều kiện:** Đoạn được giữ để đọc lại không mất thêm lượt.
+
+---
+
+### UC-40 — Sinh viên tự xoá tài khoản *(mới ở bản 1.34: D101)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-40 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Sinh viên xoá tài khoản và toàn bộ dữ liệu học của mình (FR-104) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò sinh viên |
+| **Kích hoạt** | Thẻ **Xoá tài khoản** ở tab Dữ liệu, trang Tài khoản |
+
+**Luồng chính:**
+
+1. Sinh viên gõ lại đúng email đăng nhập; nút xoá mới bật.
+2. Hệ thống xoá bài nói, ghi âm, báo cáo, bài học, ôn tập, lộ trình, thành tựu, lớp học, thông báo thiết bị, rồi tới tài khoản và mọi phiên.
+3. Đơn hàng và sổ lượt giữ lại để đối soát, chỉ còn mã tài khoản ngẫu nhiên.
+
+**Luồng thay thế:**
+
+- **2a. Dừng giữa chừng:** Tài khoản còn đó để làm lại.
+- **1a. Giảng viên, quản trị viên:** Không tự xoá được (403); quản trị viên xoá dữ liệu người học theo UC-07.
+
+**Hậu điều kiện:** Tài khoản không còn; không đăng nhập được nữa.
+
+---
+
+### UC-41 — Quản trị viên theo dõi đơn nạp lượt và đối soát *(mới ở bản 1.34: D099)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-41 |
+| **Actor chính** | Quản trị viên |
+| **Actor phụ** | Cổng thanh toán (payOS) |
+| **Mô tả** | Xem doanh thu, đơn theo trạng thái và dòng sự kiện của từng đơn; hệ thống tự hỏi lại payOS mỗi hai phút cho đơn còn mở (FR-102) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên; bản triển khai bán lượt |
+| **Kích hoạt** | Quản trị viên mở trang Quản trị → Đơn hàng |
+
+**Luồng chính:**
+
+1. Hệ thống hiện doanh thu hôm nay và 14 ngày, số đơn theo trạng thái.
+2. Quản trị viên mở một đơn và xem dòng sự kiện (tạo, mở link, webhook, đối soát, cộng lượt).
+3. Đơn payOS đã trả mà webhook chưa tới được chốt và cộng lượt khi đối soát.
+
+**Luồng thay thế:**
+
+- **3a. Đã trả mà lượt chưa vào sau 30 phút:** Quản trị viên cộng lượt bù (UC-34), không hoàn tiền (D102).
+
+**Hậu điều kiện:** Mọi khoản tiền đã chuyển đều có lượt tương ứng.
+
+---
+
 # 5. USER STORY VÀ ACCEPTANCE CRITERIA
 
 100% user story dưới đây có acceptance criteria dạng Given/When/Then. Cột "FR" chỉ ra yêu cầu chức năng tương ứng.
@@ -2801,27 +2937,31 @@ REST theo OpenAPI 3.1, tiền tố `/api/v1`. Các endpoint chính đã liệt k
 
 ## 8.9. Sơ đồ thiết kế tham chiếu
 
-Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.md` và ở tab **"Sơ đồ thiết kế"** của tài liệu này. Bảng dưới liệt kê tám sơ đồ cùng phạm vi yêu cầu mà mỗi sơ đồ minh họa.
+Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.md`. Bảng dưới liệt kê các sơ đồ của bản 1.34 cùng phạm vi yêu cầu mà mỗi sơ đồ minh họa. Sơ đồ use case chia theo vai: mỗi vai một hình, ghi đủ use case vai đó làm được trên hệ thống đang chạy.
 
 | Hình | Sơ đồ | Minh họa cho yêu cầu | File nguồn |
 | --- | --- | --- | --- |
-| 1a | Use case cho tác nhân Sinh viên — UC-01, UC-02, UC-03, UC-04 | FR-01 … FR-27, FR-39 | `diagrams/01a_usecase_sinhvien.mmd` |
-| 1b | Use case cho tác nhân Giảng viên đánh giá — UC-05, UC-06, UC-11 | FR-28 … FR-31, FR-38 | `diagrams/01b_usecase_giangvien.mmd` |
-| 1c | Use case cho tác nhân Quản trị viên — UC-07 … UC-10, UC-12 | FR-08, FR-18 … FR-20, FR-32, FR-34 … FR-36 | `diagrams/01c_usecase_quantri.mmd` |
-| 2 | Sơ đồ lớp — mô hình miền: 6 thực thể, 10 đối tượng giá trị, 8 kiểu liệt kê, mọi thành viên ghi đủ kiểu | toàn bộ module M1 … M8 | `diagrams/02_class.drawio` |
-| 2b | Kiến trúc — cổng và bộ chuyển đổi | M1 … M8 | `diagrams/02b_kien_truc.puml` |
-| 3 | Sơ đồ tuần tự luồng nộp bài | FR-01 … FR-27 | `diagrams/03_sequence.mmd` |
-| 4 | Sơ đồ hoạt động kèm nhánh lỗi | FR-06 … FR-23 | `diagrams/04_activity.mmd` |
-| 5 | Sơ đồ thực thể liên kết — phần chấm điểm và vận hành | mục 7 Yêu cầu dữ liệu | `diagrams/05_erd.mmd` |
-| 5c | Sơ đồ thực thể liên kết — định danh và đồng thuận | FR-01, FR-32, FR-35 | `diagrams/05c_erd_identity.mmd` |
-| 5b | Sơ đồ thực thể liên kết — lược đồ nghiên cứu dự kiến, chưa hiện thực | mục 7 Yêu cầu dữ liệu | `diagrams/05b_erd_target.mmd` |
-| 6 | Sơ đồ thành phần và triển khai | NFR-01 … NFR-18 | `diagrams/06_deployment.mmd` |
+| 1a | Use case cho Sinh viên: tài khoản (UC-17, UC-35, UC-37, UC-16, UC-40), học và nộp bài (UC-24, UC-19, UC-01..UC-03), kết quả và luyện tiếp (UC-04, UC-25, UC-38, UC-39, UC-15, UC-26), lượt và lớp (UC-27, UC-36) | FR-01..FR-27, FR-81, FR-85..FR-88, FR-92..FR-98, FR-103, FR-104 | `diagrams/01a_usecase_sinhvien.mmd` |
+| 1b | Use case cho Giảng viên: duyệt và sửa kết quả (UC-05, UC-06), lộ trình và AI soạn nháp (UC-20, UC-28), ngân hàng đề (UC-29), lớp (UC-30), thống kê (UC-31), hồ sơ năng lực (UC-11), tài khoản (UC-17, UC-35) | FR-28..FR-31, FR-38, FR-45..FR-49, FR-82, FR-88, FR-91 | `diagrams/01b_usecase_giangvien.mmd` |
+| 1c | Use case cho Quản trị viên: tài khoản và dữ liệu (UC-10, UC-07), mô hình và QC (UC-08, UC-09, UC-12), lớp (UC-30), lượt, giá và đơn (UC-32, UC-34, UC-41), AI (UC-33), tài khoản (UC-17, UC-35) | FR-08, FR-18..FR-20, FR-32..FR-36, FR-85, FR-87, FR-88, FR-102 | `diagrams/01c_usecase_quantri.mmd` |
+| 2 | Sơ đồ lớp, mô hình miền: 21 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/02_class.drawio` |
+| 2b | Kiến trúc: ba dịch vụ, bus và kho dữ liệu | NFR, D044..D051 | `diagrams/02b_kien_truc.puml` |
+| 2c | Cổng và bộ chuyển đổi | NFR, D044 | `diagrams/02c_cong_va_bo_chuyen_doi.puml` |
+| 3 | Sơ đồ tuần tự: nộp một bài nói, giữ lượt, chấm ở dịch vụ speech, báo trực tiếp, giảng viên duyệt | FR-01..FR-31, FR-85, FR-95, FR-96 | `diagrams/03_sequence.mmd` |
+| 3b | Sơ đồ tuần tự: sinh viên vào lớp bằng lời mời hay mã lớp, email cho sinh viên và giảng viên | FR-88 | `diagrams/11_sequence_vao_lop.mmd` |
+| 4 | Sơ đồ hoạt động: vòng đời một bài nói kèm nhánh lỗi và tính lượt | FR-06..FR-23, FR-85 | `diagrams/04_activity.mmd` |
+| 5 | Sơ đồ thực thể liên kết: phần chấm điểm, lớp và vận hành | mục 7 Yêu cầu dữ liệu | `diagrams/05_erd.mmd` |
+| 5b | Sơ đồ thực thể liên kết: lược đồ nghiên cứu dự kiến, chưa hiện thực | mục 7 Yêu cầu dữ liệu | `diagrams/05b_erd_target.mmd` |
+| 5c | Sơ đồ thực thể liên kết: định danh, phiên, thiết bị nhận thông báo | FR-32, FR-51, FR-92..FR-96 | `diagrams/05c_erd_identity.mmd` |
+| 6 | Sơ đồ triển khai production (EC2, Caddy, ba dịch vụ, dịch vụ ngoài) | NFR, FR-84 | `diagrams/06_deployment.mmd` |
+| 7 | Sơ đồ tuần tự: đăng nhập Google có PKCE | FR-56..FR-59, FR-74 | `diagrams/07_sequence_google_pkce.mmd` |
+| 8 | Sơ đồ tuần tự: mua gói lượt qua payOS | FR-87, FR-100..FR-102 | `diagrams/08_sequence_payos.mmd` |
+| 9 | Sơ đồ lớp phân hệ thanh toán và mẫu thiết kế | FR-100..FR-102 | `diagrams/09_class_thanh_toan.mmd` |
+| 10 | Sơ đồ trạng thái đơn gói lượt | FR-100, FR-102 | `diagrams/10_state_don_hang.mmd` |
 
-Sơ đồ được sinh từ mã nguồn dạng văn bản chứ không vẽ tay, nên khi thiết kế thay đổi thì sơ đồ được cập nhật bằng cách sửa mã và render lại. Cách này bảo đảm sơ đồ luôn khớp với mã nguồn, phục vụ việc đối chiếu ngẫu nhiên khi phản biện.
+Sơ đồ được sinh từ mã nguồn dạng văn bản chứ không vẽ tay, nên khi thiết kế thay đổi thì sơ đồ được cập nhật bằng cách sửa mã và render lại. Kiểm thử `tests/test_diagrams.py` và `tests/test_class_diagram_in_code.py` giữ sơ đồ khớp với mã nguồn: mỗi thuộc tính và thao tác vẽ trên hình 2 phải có chỗ trong code, mỗi use case vẽ phải có trong bảng 4.1, bản dán trong SDD phải giống từng byte tệp nguồn.
 
-**Phạm vi của hình 2.** Hình 2 là **mô hình miền**, chỉ vẽ những khái niệm của bài toán chấm nói. Mỗi hộp mang một khuôn dập cho biết nó có danh tính hay không: «entity» được cấp mã định danh, tra cứu được và sửa được qua thời gian (`Account`, `Consent`, `Review`, `Task`, `Response`, `Assessment`, `Evidence`); «value object» so sánh bằng nội dung, bất biến, và khi đổi thì thay cả cục chứ không sửa từng trường (`QcResult`, `Transcript`, `Word`, `FeatureSet`, `CriterionCoverage`, `AnalysisWindow`, `Comment`, `Priority`).
-
-Bốn lớp hạ tầng — `AuthSession` (FR-32), `ReviewLock` (FR-30), `AuditEntry` (FR-31), `AppConfig` (FR-08, FR-36) — **cố ý không nằm ở hình 2**. Chúng tồn tại vì hệ thống chạy trên máy tính, không vì bài toán chấm nói: một phiên đăng nhập hết hạn sau 8 giờ không phải khái niệm mà giảng viên hay sinh viên nói tới. Cả bốn vẫn là yêu cầu bắt buộc, vẫn là lớp thật trong `src/aicefr/contracts.py`, và được vẽ ở đúng tầng thiết kế của chúng: `auth_sessions` ở hình 5c, còn `review_lock`, `audit_log`, `app_config` ở hình 5.
+**Phạm vi của hình 2.** Hình 2 là **mô hình miền**, chỉ vẽ khái niệm nghiệp vụ: tài khoản, đề, bài nói, lần duyệt, lớp, lộ trình và bài học, luyện từ, lượt và đơn. Cơ chế kỹ thuật (phiên đăng nhập, khoá duyệt, cấu hình, thiết bị nhận thông báo) không nằm ở hình 2 mà ở các ERD 5 và 5c, đúng tầng thiết kế của chúng.
 
 Cổng và bộ chuyển đổi cũng không nằm ở hình 2 mà ở hình 2b, vì chúng trả lời câu hỏi khác: *hệ thống cắm vào thế giới bên ngoài ở đâu*.
 

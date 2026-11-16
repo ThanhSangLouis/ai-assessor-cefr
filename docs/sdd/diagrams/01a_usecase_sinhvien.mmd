@@ -3,33 +3,40 @@
 %% Day la so do THIET KE: no mo ta he thong PHAI LAM GI, khong phai da lam
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
-%% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
-%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua payOS.
-%% Ban 1.34 (D109): sinh vien tu vao lop bang ma lop hoac nhan loi moi (UC-36).
+%% Ban 1.34 (D109): ve lai theo he thong dang chay. Them UC-36 (vao lop),
+%% UC-37 (tu dang ky), UC-38, UC-39 (luyen lai tu, doan doc AI), UC-40 (tu xoa).
 flowchart LR
     SV(("Sinh viên"))
     CTT(("Cổng thanh toán"))
+    GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
+        UC37["UC-37 Sinh viên tự đăng ký và xác minh email"]
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
+        UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
+        UC40["UC-40 Sinh viên tự xoá tài khoản"]
+        UC27["UC-27 Sinh viên nạp lượt qua payOS"]
+        UC36["UC-36 Sinh viên vào lớp bằng mã lớp hoặc lời mời"]
         UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
         UC19["UC-19 Sinh viên học theo lộ trình band"]
         UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
-        UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
-        UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
         UC04["UC-04 Xem báo cáo có bằng chứng"]
-        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
         UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
         UC26["UC-26 Sinh viên ôn sổ cụm từ"]
-        UC27["UC-27 Sinh viên nạp lượt qua payOS"]
-        UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
-        UC36["UC-36 Sinh viên vào lớp bằng mã lớp hoặc lời mời"]
+        UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
+        UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
+        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
+        UC38["UC-38 Sinh viên luyện lại từ máy nghe kém rõ"]
+        UC39["UC-39 Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở"]
     end
 
+    SV --> UC37
     SV --> UC17
     SV --> UC35
+    SV --> UC16
+    SV --> UC40
     SV --> UC24
     SV --> UC19
     SV --> UC01
@@ -37,20 +44,33 @@ flowchart LR
     SV --> UC15
     SV --> UC26
     SV --> UC27
-    SV --> UC16
     SV --> UC36
     UC27 --- CTT
+    UC36 --- GV
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
-    %% case mo rong SAU use case co so de mui ten `extend` tro nguoc ve trai.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: cot 1 la
+    %% tai khoan, luot va lop; cot 2 la hoc va ket qua; use case mo rong va use
+    %% case duoc gop dung ben phai use case goc, cho hinh vua kho A4.
+    UC37 ~~~ UC24
+    UC17 ~~~ UC19
+    UC35 ~~~ UC01
+    UC16 ~~~ UC04
+    UC40 ~~~ UC15
+    UC27 ~~~ UC26
     UC01 ~~~ UC02
+    UC01 ~~~ UC03
     UC04 ~~~ UC25
+    UC04 ~~~ UC38
+    UC38 ~~~ UC39
 
     %% include: tu use case GOC --> use case duoc gop (luon xay ra)
     %% extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
     %% UC-03 khong co tac nhan: no la use case noi bo, chay vi UC-01 include no.
     %% Use case MO RONG khong noi truc tiep voi tac nhan: sinh vien mo bao cao
-    %% (UC-04) roi moi nho AI viet lai (UC-25); nop bai (UC-01) roi moi nop lai.
+    %% (UC-04) roi moi nho AI viet lai (UC-25) hay luyen lai tu chua ro (UC-38);
+    %% doc doan van AI (UC-39) mo duoc khi con tu 3 tu luyen do (UC-38).
     UC01 -. include .-> UC03
     UC02 -. extend .-> UC01
     UC25 -. extend .-> UC04
+    UC38 -. extend .-> UC04
+    UC39 -. extend .-> UC38

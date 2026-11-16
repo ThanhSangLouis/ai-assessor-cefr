@@ -1,0 +1,66 @@
+%% SDD - So do 11: Sequence diagram sinh vien vao lop (D109)
+%% Giang vien moi bang email hoac dua ma lop; sinh vien tu chap nhan hay nhap ma.
+%% Core (assessment) giu lop va phat su kien len bus; dich vu dinh danh giu dia
+%% chi email nen nghe su kien va gui thu qua Resend (cung kieu Observer voi email
+%% thanh toan D096). Ten ham, su kien va endpoint giu nguyen nhu ma nguon.
+sequenceDiagram
+    autonumber
+    actor GV as Giảng viên
+    actor SV as Sinh viên
+    participant API as core · classes_api
+    participant CR as core · ClassroomRepository
+    participant BUS as Redis Streams
+    participant ID as identity · notify.classes
+    participant MAIL as Resend
+
+    rect rgb(255, 243, 224)
+    Note over GV,MAIL: Cách 1 · lời mời
+    GV->>API: POST /api/v1/classes/{id}/members (email sinh viên)
+    API->>CR: invite(class_id, account_id)
+    Note over CR: Một lệnh cập nhật có điều kiện: chưa là thành viên, chưa được mời
+    CR-->>API: "invited"
+    API->>BUS: publish classroom.invited (class_name, account_id, by)
+    API-->>GV: 200 · invited
+    BUS->>ID: on_invited(payload)
+    ID->>ID: email đã xác minh, có hộp thư, chưa gửi cho sự kiện này
+    ID->>MAIL: "Lời mời vào lớp" · nút Xem lời mời
+    MAIL-->>SV: email
+    SV->>API: GET /api/v1/me/classes (trang Lớp của tôi, số trên thanh bên)
+    API->>CR: invitations_of(account_id)
+    API-->>SV: lời mời: tên lớp, giảng viên
+
+    alt Sinh viên bấm Vào lớp
+        SV->>API: POST /api/v1/me/classes/{id}/accept
+        API->>CR: accept · chuyển từ invited sang members (lớp chưa lưu trữ)
+        API->>BUS: publish classroom.joined (via invite, teacher_ids, members)
+        API-->>SV: 200 · joined
+    else Sinh viên bấm Từ chối
+        SV->>API: POST /api/v1/me/classes/{id}/decline
+        API->>CR: decline · bỏ khỏi invited
+        API-->>SV: 200 · giảng viên không có quyền gì
+    end
+    end
+
+    rect rgb(227, 244, 234)
+    Note over GV,MAIL: Cách 2 · mã lớp
+    GV->>API: POST /api/v1/classes/{id}/code
+    API->>CR: set_join_code(on) · 6 ký tự, chỉ mục duy nhất
+    API-->>GV: join_code (đọc cho cả lớp)
+    SV->>API: POST /api/v1/me/classes/join (code)
+    API->>API: giới hạn 10 lần một phút cho mỗi tài khoản
+    API->>CR: join_by_code(code, account_id)
+    alt Mã đúng, lớp đang chạy
+        CR-->>API: lớp, joined
+        API->>BUS: publish classroom.joined (via code, teacher_ids, members)
+        API-->>SV: 200 · đã vào lớp
+    else Mã sai, đã đổi, đã tắt hay lớp đã lưu trữ
+        API-->>SV: 404 · mã lớp không đúng hoặc lớp đã kết thúc
+    end
+    end
+
+    BUS->>ID: on_joined(payload)
+    loop Mỗi giảng viên của lớp có email đã xác minh
+        ID->>MAIL: "Học viên mới vào lớp" · cách vào, sĩ số, nút Mở lớp
+        MAIL-->>GV: email
+    end
+    Note over API,CR: Từ đây teaches(giảng viên, sinh viên) đúng: giảng viên xem và duyệt bài.<br/>Sinh viên rời lớp (POST .../leave) hoặc lớp bị lưu trữ thì quyền mất ngay.
