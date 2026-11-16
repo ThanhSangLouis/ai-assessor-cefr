@@ -27,28 +27,28 @@ Tính theo tháng, máy chủ chạy suốt 24/7. Tỷ giá 26.020 đ/USD.
 | **Cộng A** | | **98,86 USD ≈ 2.572.400 đ** |
 | **B. Chi phí biến đổi mỗi lượt** (mức xấu nhất, mục 3) | | |
 | CPU chấm một bài 60 giây | 0,1197 USD ÷ 3.600 × 60 | 52 đ |
-| AI viết lại bài (đo thật) | 530 token vào, 639 token ra | 46 đ |
+| AI viết lại bài (đo thật, lấy lần cao hơn trong 2 lần đo) | 560 token vào, 754 token ra | 53 đ |
 | Một đoạn đọc AI (trần) | 400 token vào, 1.200 token ra | 81 đ |
-| **Cộng B** | | **179 đ mỗi lượt** |
+| **Cộng B** | | **187 đ mỗi lượt** |
 
-**Tổng chi phí của một lượt = 179 đ + 2.572.400 đ ÷ số lượt bán trong tháng.**
+**Tổng chi phí của một lượt = 187 đ + 2.572.400 đ ÷ số lượt bán trong tháng.**
 
 | Lượt bán mỗi tháng | Chi phí thật của một lượt | So với giá bán |
 | --- | --- | --- |
-| 1.000 | 2.751 đ | Lỗ ở mọi gói |
-| **1.413** | **2.000 đ** | **Hoà vốn ở gói 5 lượt (2.000 đ/lượt)** |
-| 2.000 | 1.465 đ | Có lãi ở mọi gói, kể cả gói 100 lượt (1.490 đ) |
-| 3.000 | 1.036 đ | Có lãi |
-| 5.000 | 693 đ | Có lãi |
+| 1.000 | 2.759 đ | Lỗ ở mọi gói |
+| **1.419** | **2.000 đ** | **Hoà vốn ở gói 5 lượt (2.000 đ/lượt)** |
+| 2.000 | 1.473 đ | Có lãi ở mọi gói, kể cả gói 100 lượt (1.490 đ) |
+| 3.000 | 1.044 đ | Có lãi |
+| 5.000 | 701 đ | Có lãi |
 
 ### 1.2 Vì sao 2.000 đ là hợp lý
 
-1. **Che đủ chi phí biến đổi:** 179 đ mỗi lượt, chỉ chiếm 9–12 % giá bán.
-2. **Hoà vốn ở lượng bán vừa phải:** khoảng 1.400–2.000 lượt mỗi tháng (47–65 lượt mỗi ngày). Giảm còn 1.000 đ thì phải bán khoảng 3.100–4.500 lượt mới hoà vốn.
+1. **Che đủ chi phí biến đổi:** 187 đ mỗi lượt, chỉ chiếm 9–13 % giá bán.
+2. **Hoà vốn ở lượng bán vừa phải:** khoảng 1.400–2.000 lượt mỗi tháng (47–66 lượt mỗi ngày). Giảm còn 1.000 đ thì phải bán khoảng 3.200–4.600 lượt mới hoà vốn.
 3. **Rẻ cho sinh viên:** nói 1 bài mỗi ngày (gói 30 lượt) hết 49.000 đ/tháng.
 4. **Dễ nhớ:** "mỗi bài nói 1 lượt = 2.000 đ", khớp quy ước 1 IDPoint = 1 đồng (D057).
 
-Nếu chỉ bật máy chủ 8 giờ mỗi ngày khi demo, chi phí cố định còn khoảng 40,21 USD ≈ 1.046.300 đ/tháng, và hoà vốn chỉ cần khoảng 575–800 lượt.
+Nếu chỉ bật máy chủ 8 giờ mỗi ngày khi demo, chi phí cố định còn khoảng 40,21 USD ≈ 1.046.300 đ/tháng, và hoà vốn chỉ cần khoảng 580–800 lượt.
 
 ## 2. Một lượt gồm những gì (D107)
 
@@ -73,7 +73,7 @@ Những thứ **không** tính vào giá lượt:
 | Máy chủ m7i-flex.large (2 vCPU, 8 GB), Sydney, theo giờ | 0,1197 USD/giờ | [2] |
 | Gemini 3.5 Flash-Lite | 0,30 USD / 1 triệu token vào; 2,50 USD / 1 triệu token ra | [3]; cũng là giá mặc định trong cấu hình (`AICEFR_COACH_PRICE_*`) |
 | Thời gian chấm một bài trên production | 20 giây cho bài dài 27,9 giây: nộp lúc 04:59:01, có điểm lúc 04:59:21 ngày 16/11/2026 | Đo trên production [7] |
-| Token của một lần AI viết lại | 530 vào, 639 ra, 0,001757 USD | Đo trên production [7] |
+| Token của một lần AI viết lại | Lần 1 (10/11): 530 vào, 639 ra, 0,001757 USD. Lần 2 (16/11): 560 vào, 754 ra, 0,002053 USD | Đo trên production [7] |
 | Giới hạn token ra của một đoạn đọc | 1.200 token | Mã nguồn `coach/passage.py` (`MAX_OUTPUT_TOKENS`) |
 | Phí cổng thanh toán payOS | Gói BIDV-1K miễn phí, 1.000 giao dịch/năm, áp dụng đến 31/12/2026; trang không nêu phí theo giao dịch | [4] |
 
@@ -84,20 +84,20 @@ Mọi phép tính đều lấy mức **xấu nhất**, để giá không bị đ
 | Thành phần | Cách tính | USD | Đồng |
 | --- | --- | --- | --- |
 | CPU máy chủ cho một bài | Bài dài nhất 60 giây; tính 60 giây máy (thực đo: 20 giây cho bài 28 giây). 0,1197 / 3.600 × 60 | 0,00200 | **52** |
-| AI viết lại | Số đo thật: 530 × 0,30/10⁶ + 639 × 2,50/10⁶ | 0,00176 | **46** |
+| AI viết lại | Lần đo cao hơn: 560 × 0,30/10⁶ + 754 × 2,50/10⁶ | 0,00205 | **53** |
 | Đoạn đọc AI | Trần: 400 token vào (ước lượng) + 1.200 token ra (giới hạn trong mã) | 0,00312 | **81** |
 | Lưu ghi âm | Khoảng 1 MB mỗi bài | ≈ 0 | **< 1** |
 | Phí thanh toán | Trong gói miễn phí của payOS | 0 | **0** |
-| **Cộng** | | **≈ 0,0069** | **≈ 180** |
+| **Cộng** | | **≈ 0,0072** | **≈ 187** |
 
 ### 3.3 Lãi gộp mỗi lượt theo gói
 
 | Gói | Giá | Giá mỗi lượt | Lãi gộp mỗi lượt | Tỷ lệ |
 | --- | --- | --- | --- | --- |
-| 5 lượt | 10.000 đ | 2.000 đ | 1.820 đ | 91,0 % |
-| 10 lượt | 19.000 đ | 1.900 đ | 1.720 đ | 90,5 % |
-| 30 lượt | 49.000 đ | 1.633 đ | 1.453 đ | 89,0 % |
-| 100 lượt | 149.000 đ | 1.490 đ | 1.310 đ | 87,9 % |
+| 5 lượt | 10.000 đ | 2.000 đ | 1.813 đ | 90,6 % |
+| 10 lượt | 19.000 đ | 1.900 đ | 1.713 đ | 90,2 % |
+| 30 lượt | 49.000 đ | 1.633 đ | 1.446 đ | 88,5 % |
+| 100 lượt | 149.000 đ | 1.490 đ | 1.303 đ | 87,4 % |
 
 ## 4. Chi phí cố định và điểm hoà vốn
 
@@ -109,13 +109,13 @@ Mọi phép tính đều lấy mức **xấu nhất**, để giá không bị đ
 | Tên miền `.fit`: 45,98 USD/năm khi gia hạn | 3,83 USD ≈ 99.700 đ | [9] |
 | Resend (3.000 thư/tháng), payOS (1.000 giao dịch/năm), GitHub Actions, Kaggle | 0 đ (gói miễn phí) | [4] |
 | **Cộng** | **98,86 USD ≈ 2.572.400 đ** | |
-| Lượt miễn phí: 3 lượt mỗi tài khoản đã xác minh email × 179 đ | ≤ 537 đ mỗi tài khoản | |
+| Lượt miễn phí: 3 lượt mỗi tài khoản đã xác minh email × 187 đ | ≤ 561 đ mỗi tài khoản | |
 | Giảng viên soạn bài AI miễn phí: 5 bản/ngày, khoảng 100–260 đ mỗi bản (ước lượng, chưa đo) | ≤ 1.300 đ mỗi giảng viên mỗi ngày | |
 
 Số lượt cần bán để hoà vốn:
 
-- **Bán theo gói 100 lượt (1.490 đ/lượt):** 2.572.400 / 1.311 ≈ **1.962 lượt/tháng**, khoảng 65 lượt mỗi ngày.
-- **Bán theo gói nhỏ nhất (2.000 đ/lượt):** 2.572.400 / 1.821 ≈ **1.413 lượt/tháng**, khoảng 47 lượt mỗi ngày.
+- **Bán theo gói 100 lượt (1.490 đ/lượt):** 2.572.400 / 1.303 ≈ **1.974 lượt/tháng**, khoảng 66 lượt mỗi ngày.
+- **Bán theo gói nhỏ nhất (2.000 đ/lượt):** 2.572.400 / 1.813 ≈ **1.419 lượt/tháng**, khoảng 47 lượt mỗi ngày.
 
 Bảng này chưa tính công phát triển của nhóm, vì đó là công sức làm đồ án, không phải tiền trả ra ngoài.
 
@@ -123,8 +123,8 @@ Bảng này chưa tính công phát triển của nhóm, vì đó là công sứ
 
 | Phương án | Hệ quả |
 | --- | --- |
-| **1.000 đ/lượt** | Gói rẻ nhất còn khoảng 745 đ/lượt. Khi chi phí lên khoảng 371 đ (kịch bản xấu nhất ở mục 6), lãi gộp chỉ còn khoảng 50 %. Hoà vốn cần khoảng 4.500 lượt/tháng (2.572.400 / 566), gấp hơn 2 lần mức 2.000 đ. |
-| **2.000 đ/lượt (chọn)** | Lãi gộp 88–91 %. Hoà vốn khoảng 1.400–2.000 lượt/tháng. Con số tròn, khớp 1 IDPoint = 1 đồng. |
+| **1.000 đ/lượt** | Gói rẻ nhất còn khoảng 745 đ/lượt. Khi chi phí lên khoảng 387 đ (kịch bản xấu nhất ở mục 6), lãi gộp chỉ còn khoảng 48 %. Hoà vốn cần khoảng 4.600 lượt/tháng (2.572.400 / 558), gấp hơn 2 lần mức 2.000 đ. |
+| **2.000 đ/lượt (chọn)** | Lãi gộp 87–91 %. Hoà vốn khoảng 1.400–2.000 lượt/tháng. Con số tròn, khớp 1 IDPoint = 1 đồng. |
 | **5.000 đ/lượt** | Nói 1 bài mỗi ngày tốn tới 150.000 đ/tháng (gói nhỏ nhất), cao hơn chi phí tháng của ELSA Pro (khoảng 91.000 đ). Sinh viên sẽ ngại luyện đều. |
 
 So sánh với thị trường:
@@ -136,13 +136,13 @@ So sánh với thị trường:
 
 | Kịch bản | Chi phí biến đổi mỗi lượt | Lãi gộp ở gói rẻ nhất (1.490 đ) |
 | --- | --- | --- |
-| Cơ sở (mục 3) | 179 đ | 88,0 % |
-| Tỷ giá lên 27.000 đ/USD | 186 đ | 87,5 % |
-| Giá Gemini tăng gấp đôi | 306 đ | 79,5 % |
-| Bài chấm lâu gấp đôi (120 giây máy) | 231 đ | 84,5 % |
-| Cả ba cùng lúc | 371 đ | 75,1 % |
+| Cơ sở (mục 3) | 187 đ | 87,4 % |
+| Tỷ giá lên 27.000 đ/USD | 194 đ | 87,0 % |
+| Giá Gemini tăng gấp đôi | 321 đ | 78,5 % |
+| Bài chấm lâu gấp đôi (120 giây máy) | 238 đ | 84,0 % |
+| Cả ba cùng lúc | 387 đ | 74,0 % |
 
-Ngay ở kịch bản xấu nhất, mỗi lượt vẫn lãi gộp khoảng 75 %. Vì vậy chưa cần đổi giá khi tỷ giá hay giá API dao động.
+Ngay ở kịch bản xấu nhất, mỗi lượt vẫn lãi gộp khoảng 74 %. Vì vậy chưa cần đổi giá khi tỷ giá hay giá API dao động.
 
 ## 7. Giới hạn của phép tính
 
@@ -162,7 +162,7 @@ Ngay ở kịch bản xấu nhất, mỗi lượt vẫn lãi gộp khoảng 75 %
 - [4] payOS, trang chủ (gói BIDV-1K): https://payos.vn/
 - [5] ELSA Speak Việt Nam, bảng giá trên trang chủ: https://vn.elsaspeak.com/en/homepage
 - [6] Microsoft Learn Q&A, giá Pronunciation Assessment của Azure Speech: https://learn.microsoft.com/en-us/answers/questions/5608069/pricing-and-usage-of-pronunciation-assessment-feat
-- [7] Số đo trên production https://speakup.fit: thời gian chấm bài thử b5a1f5466ee0 (16/11/2026) và số token của AI viết lại trên trang Quản trị → AI viết lại (10/11/2026).
+- [7] Số đo trên production https://speakup.fit: thời gian chấm bài thử b5a1f5466ee0 (16/11/2026) và số token của hai lần AI viết lại trên trang Quản trị → AI viết lại (10/11 và 16/11/2026).
 - [8] AWS News Blog, phí địa chỉ IPv4 công khai 0,005 USD/giờ từ 01/02/2024: https://aws.amazon.com/blogs/aws/new-aws-public-ipv4-address-charge-public-ip-insights
 - [9] Namecheap, giá tên miền .fit (gia hạn 45,98 USD/năm): https://www.namecheap.com/domains/registration/gtld/fit/
 - [10] AWS, bảng giá EBS (gp3 0,08 USD/GB-tháng ở Mỹ; chưa xác nhận giá Sydney): https://aws.amazon.com/ebs/pricing
