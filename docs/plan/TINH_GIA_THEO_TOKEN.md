@@ -4,6 +4,8 @@
 
 **Cập nhật D107 (16/11/2026, chủ dự án duyệt):** phần AI gọi mô hình ngôn ngữ trả phí theo token, nên không để miễn phí. Một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm 1 lượt mỗi đoạn; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint. Đo trên production: một lần AI viết lại tốn khoảng 0,0018 USD (≈ 46 đồng), còn một lượt bán 1.490–2.000 đồng.
 
+**Vì sao 1 lượt = 2.000 đồng** (cộng đủ chi phí cố định và theo lượt, điểm hoà vốn, nguồn): [CHUNG_MINH_GIA_MOT_LUOT.md](CHUNG_MINH_GIA_MOT_LUOT.md).
+
 **Vì sao đổi (D106):**
 - Người học mua lượt theo gói nguyên: 1, 10, 30 hay 100 lượt.
 - Bảng giá cũ trừ 0,3 lượt cho AI viết lại, 0,1 lượt cho đoạn đọc, 0,1 lượt mỗi phút nói trong lộ trình. Số dư vì thế thành 2,4 hay 1,7 lượt, và người học không biết mình tốn lượt khi nào.
