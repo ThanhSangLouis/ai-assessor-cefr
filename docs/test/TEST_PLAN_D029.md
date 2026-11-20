@@ -93,7 +93,7 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PF-I06 | `test_sessions_of_one_account_cannot_be_ended_by_another` | AC-57.2 | Mã phiên của người khác trả 404 |
 | TC-PF-I07 | `test_the_history_shows_sign_ins_failed_attempts_and_changes` | AC-58.1 | Ba sự kiện đúng thứ tự, lý do đăng nhập sai |
 | TC-PF-I08 | `test_what_an_administrator_did_shows_as_an_administrator` | AC-58.2 | Việc của quản trị viên không ghi là "bạn" |
-| TC-PF-I09 | `test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log` | AC-58.3 | Chuỗi lạ ở ô bút danh không vào nhật ký |
+| TC-PF-I09 | `test_an_unknown_email_leaves_nothing_in_the_audit_log` | AC-58.3 | Email không có tài khoản không vào nhật ký |
 | TC-PF-I10 | `test_google_is_off_until_configured` | AC-59.1 | Không cấu hình thì không có nút, luồng trả về thông báo |
 | TC-PF-I11 | `test_start_sends_the_browser_to_google_with_state_nonce_and_pkce` | AC-59.2 | Tham số chuyển hướng và cờ cookie |
 | TC-PF-I12 | `test_linking_then_signing_in_with_google` | AC-59.3 | Liên kết, rồi đăng nhập bằng Google; CSDL không có email |
@@ -102,7 +102,7 @@ Tiêu chí chấp nhận AC-56.1..AC-60.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-PF-I26 | `test_the_login_page_offers_sign_up_only_when_it_is_on` | AC-59.10 | Nút ghi "đăng ký" chỉ khi bật đăng ký |
 | TC-PF-I14 | `test_a_forged_or_stale_round_trip_is_refused` | AC-59.5 | Năm cách giả mạo hay quá hạn |
 | TC-PF-I15 | `test_a_callback_without_its_cookie_or_after_cancel_is_refused` | AC-59.5 | Thiếu cookie, hoặc người dùng huỷ ở Google |
-| TC-PF-I16 | `test_one_google_account_links_to_one_pseudonym` | AC-59.6 | Một tài khoản Google, một bút danh |
+| TC-PF-I16 | `test_one_google_account_links_to_one_account` | AC-59.6 | Một tài khoản Google, một tài khoản |
 | TC-PF-I17 | `test_the_link_must_be_finished_by_the_account_that_started_it` | FR-59 | Đổi phiên giữa chừng thì liên kết bị từ chối |
 | TC-PF-I18 | `test_the_domain_restriction_requires_a_verified_school_account` | AC-59.7 | Giới hạn tên miền trọn vòng, tham số `hd` gửi Google |
 | TC-PF-I19 | `test_a_disabled_account_cannot_sign_in_with_google` | AC-59.8 | Tài khoản đã tắt bị từ chối |

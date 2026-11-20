@@ -30,8 +30,7 @@ counts go to the ledger entry and the day's counters, not into the upgrade.
 
 from __future__ import annotations
 
-import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -40,11 +39,11 @@ from pydantic import BaseModel, Field
 from aicefr.api.deps import ADMIN_ONLY, STAFF_ONLY, require_login
 from aicefr.coach import lesson_draft, passage, phrasebook, usage
 from aicefr.coach.providers import OPENAI_COMPATIBLE, PAID_KEY_ENV, provider_from
-from aicefr.coach.upgrade import PROMPT_VERSION, UpgradeError, parse, user_message
+from aicefr.coach.upgrade import UpgradeError, parse, user_message
 from aicefr.contracts import Band, Criterion, ResponseStatus
 from aicefr.observability import count
 from aicefr.report.next_band import next_band_plan
-from aicefr.services.core.assessment.context import can_view, svc
+from aicefr.services.core.assessment.context import can_view, name_of, svc
 from aicefr.storage.auth_repository import Account
 
 router = APIRouter()
@@ -74,7 +73,9 @@ def _plan(report) -> dict | None:
         model = load_model(a.model_version)
     except Exception:  # noqa: BLE001 - an artifact no longer installed: no targets, not an error
         return None
-    return next_band_plan(model, report.features, a.overall_0_6)
+    # After a review the teacher's band is the one the plan climbs from.
+    band = a.overall_band.value if a.teacher_verified and a.overall_band else None
+    return next_band_plan(model, report.features, a.overall_0_6, band)
 
 
 @router.get("/api/v1/responses/{response_id}/coach", tags=["student"])
@@ -92,7 +93,9 @@ def coach(response_id: str, account: Account = Depends(require_login)) -> dict:
         and report.assessment.overall_band.value in NEXT
     )
     metering = getattr(svc().peers, "metering", None)
-    price = metering.upgrade_price() if metering is not None and can else None
+    price = (
+        metering.upgrade_price(response_id=response_id) if metering is not None and can else None
+    )
     return {"next_band": _plan(report), "upgrade": upgrade, "can_upgrade": can, "price": price}
 
 
@@ -133,7 +136,9 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
     metering = getattr(s.peers, "metering", None)
     key = f"upgrade-{response_id}"
     if metering is not None:
-        refusal = metering.hold_upgrade(account_id=account.account_id, key=key)
+        refusal = metering.hold_upgrade(
+            account_id=account.account_id, key=key, response_id=response_id
+        )
         if refusal:
             raise HTTPException(402, refusal)
     status = s.repo.status_of(response_id) or {}
@@ -168,9 +173,6 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         "upgraded": made.upgraded,
         "changes": made.changes,
         "phrases": made.phrases,
-        "provider": provider.name,
-        "model": provider.model,
-        "prompt_version": PROMPT_VERSION,
         "created_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     s.repo.save_upgrade(response_id, kept)
@@ -184,10 +186,8 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         metering.settle_upgrade(
             key=key,
             result=True,
-            input_tokens=used.get("input_tokens"),
-            output_tokens=used.get("output_tokens"),
         )
-    s.repo.write_audit(account.pseudonym, "coach.upgrade", response_id, provider.name)
+    s.repo.write_audit(account.account_id, "coach.upgrade", response_id, provider.name)
     count("coach_upgrade_total")
     return kept
 
@@ -217,22 +217,35 @@ class DraftIn(BaseModel):
     topic: str = Field(min_length=3, max_length=300)
 
 
+def _drafts_left(account: Account) -> int:
+    """D107: the lesson drafts this teacher may still ask for in the last 24 hours."""
+    s = svc()
+    since = (datetime.now(UTC) - timedelta(days=1)).isoformat(timespec="seconds")
+    return max(0, s.settings.coach_draft_daily - s.repo.drafts_since(account.account_id, since))
+
+
 @router.get("/api/v1/teach/lessons/draft", tags=["teacher"])
 def lesson_draft_offer(account: Account = STAFF_ONLY) -> dict:
-    """Whether a teacher can ask the model for a lesson draft now, and what it costs."""
-    metering = getattr(svc().peers, "metering", None)
+    """Whether a teacher can ask the model for a lesson draft now, and how many are left.
+
+    D107: free for the teacher, `AICEFR_COACH_DRAFT_DAILY` a day (5).
+    """
     available = _provider(_tier()) is not None
-    price = metering.upgrade_price() if metering is not None and available else None
-    return {"available": available, "price": price}
+    return {
+        "available": available,
+        "price": None,
+        "daily": svc().settings.coach_draft_daily,
+        "daily_left": _drafts_left(account),
+    }
 
 
 @router.post("/api/v1/teach/lessons/draft", tags=["teacher"])
 def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
     """A first draft of a lesson by the language model, for the teacher to correct (D075).
 
-    Paid like a learner's upgraded answer: the same price held from the
-    teacher's own runs, the same daily cap and tier, the same day's counters.
-    Nothing is saved: the draft fills the teacher's "Bài học mới" form.
+    D107: free for the teacher, at most `AICEFR_COACH_DRAFT_DAILY` (5) in 24
+    hours; the same tier, global cap and day's counters as a learner's
+    upgraded answer. Nothing is saved: the draft fills the "Bài học mới" form.
     """
     s = svc()
     tier = _tier()
@@ -244,14 +257,13 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
     if refusal:
         s.repo.record_coach(day, refused_global=1)
         raise HTTPException(429, refusal)
-    metering = getattr(s.peers, "metering", None)
-    key = f"lesson-draft-{uuid.uuid4().hex[:12]}"
-    if metering is not None:
-        refused = metering.hold_upgrade(
-            account_id=account.account_id, key=key, action="lesson_draft"
+    if _drafts_left(account) <= 0:
+        s.repo.record_coach(day, refused_user=1)
+        raise HTTPException(
+            429,
+            f"mỗi ngày AI soạn được tối đa {s.settings.coach_draft_daily} bản nháp,"
+            " hãy thử lại sau",
         )
-        if refused:
-            raise HTTPException(402, refused)
     calls = usage.Calls()
     used: dict = {}
     criterion = body.criterion.value if body.criterion else None
@@ -266,21 +278,11 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
             day, account_id=account.account_id, error=str(e), failed=1,
             **_counts(s.settings, tier, calls, used),
         )  # fmt: skip
-        if metering is not None:
-            metering.settle_upgrade(key=key, result=False, action="lesson_draft")
         raise HTTPException(502, str(e)) from e
     s.repo.record_coach(
         day, account_id=account.account_id, drafts=1, **_counts(s.settings, tier, calls, used)
     )
-    if metering is not None:
-        metering.settle_upgrade(
-            key=key,
-            result=True,
-            input_tokens=used.get("input_tokens"),
-            output_tokens=used.get("output_tokens"),
-            action="lesson_draft",
-        )
-    s.repo.write_audit(account.pseudonym, "coach.lesson_draft", None, body.band.value)
+    s.repo.write_audit(account.account_id, "coach.lesson_draft", None, body.band.value)
     count("coach_lesson_draft_total")
     return {"band": body.band.value, "criterion": criterion, **draft.as_dict()}
 
@@ -288,11 +290,15 @@ def write_lesson_draft(body: DraftIn, account: Account = STAFF_ONLY) -> dict:
 # ================================================================= reading passages (D090)
 
 
-def passage_offer() -> dict:
-    """Whether a passage can be written by the model now, and what one costs."""
+def passage_offer(account_id: str | None = None) -> dict:
+    """Whether a passage can be written by the model now, and what the next one costs."""
     metering = getattr(svc().peers, "metering", None)
     available = _provider(_tier()) is not None
-    price = metering.passage_price() if metering is not None and available else None
+    price = (
+        metering.passage_price(account_id=account_id)
+        if metering is not None and available
+        else None
+    )
     return {"available": available, "price": price}
 
 
@@ -356,19 +362,10 @@ def write_passage(account_id: str, band: str | None, words: list[str], key: str)
         metering.settle_upgrade(
             key=key,
             result=True,
-            input_tokens=used.get("input_tokens"),
-            output_tokens=used.get("output_tokens"),
             action="drill_passage",
         )
     count("coach_passage_total")
-    return {
-        "text": made.text,
-        "provider": provider.name,
-        "model": provider.model,
-        "prompt_version": passage.PROMPT_VERSION,
-        "input_tokens": used.get("input_tokens"),
-        "output_tokens": used.get("output_tokens"),
-    }
+    return {"text": made.text}
 
 
 # ================================================================= the dashboard (D072)
@@ -397,7 +394,7 @@ def coach_dashboard() -> dict:
             else None
         ),
         "tier": tier.name,
-        "tier_changed_by": tier.changed_by,
+        "tier_changed_by": name_of(tier.changed_by),
         "tier_changed_at": tier.changed_at,
         "free_ready": free is not None,
         "paid_ready": provider_from(st, paid=True) is not None,
@@ -440,9 +437,9 @@ def set_coach_tier(body: TierIn, account: Account = ADMIN_ONLY) -> dict:
         )
     budget = body.budget_usd if paid else (_tier().budget_usd or 0.0)
     value = usage.tier_value(paid, budget)
-    s.repo.set_config(usage.TIER_KEY, value, body.tier, account.pseudonym)
+    s.repo.set_config(usage.TIER_KEY, value, body.tier, account.account_id)
     detail = f"tier={body.tier} budget_usd={budget}" if paid else "tier=free"
-    s.repo.write_audit(account.pseudonym, "coach.tier", None, detail)
+    s.repo.write_audit(account.account_id, "coach.tier", None, detail)
     return coach_dashboard()
 
 
@@ -454,35 +451,31 @@ class PhraseReview(BaseModel):
     remembered: bool
 
 
-def _phrase_cards(account_id: str) -> tuple[list[dict], list[dict]]:
+def _phrase_cards(account_id: str, today: date) -> list[dict]:
+    """The phrases of the learner's upgrades, each where its review record says (D104)."""
     upgrades = svc().repo.upgrades_of_account(account_id)
-    return upgrades, phrasebook.cards(upgrades, phrasebook.now_utc())
+    states = svc().peers.learning.phrase_reviews(account_id=account_id)
+    return phrasebook.cards(upgrades, states, today)
 
 
 @router.get("/api/v1/me/phrases", tags=["student"])
 def my_phrases(account: Account = Depends(require_login)) -> dict:
-    now = phrasebook.now_utc()
-    _, cards = _phrase_cards(account.account_id)
+    today = phrasebook.today()
+    cards = _phrase_cards(account.account_id, today)
     return {
-        **phrasebook.summary(cards, now),
-        "due": phrasebook.due_today(cards, now),
+        **phrasebook.summary(cards, today),
+        "due": phrasebook.due_today(cards, today),
         "cards": sorted(cards, key=lambda c: (c["box"], c["key"])),
     }
 
 
 @router.post("/api/v1/me/phrases/review", tags=["student"])
 def review_phrase(body: PhraseReview, account: Account = Depends(require_login)) -> dict:
-    now = phrasebook.now_utc()
+    today = phrasebook.today()
     key = phrasebook.key_of(body.key)
-    upgrades, cards = _phrase_cards(account.account_id)
-    card = next((c for c in cards if c["key"] == key), None)
+    card = next((c for c in _phrase_cards(account.account_id, today) if c["key"] == key), None)
     if card is None:
         raise HTTPException(404, "không có cụm từ này trong sổ của bạn")
-    state = phrasebook.reviewed(card, body.remembered, now)
-    # Every upgrade that suggested the phrase carries the same state, so the
-    # card stays one card whichever of them is erased later.
-    for u in upgrades:
-        phrases = u.get("phrases") or []
-        if any(phrasebook.key_of(p.get("phrase") or "") == key for p in phrases):
-            svc().repo.save_upgrade_phrases(u["response_id"], phrasebook.apply(phrases, key, state))
+    state = phrasebook.reviewed(card, body.remembered, today)
+    svc().peers.learning.review_phrase(account_id=account.account_id, key=key, **state)
     return {**card, **state}

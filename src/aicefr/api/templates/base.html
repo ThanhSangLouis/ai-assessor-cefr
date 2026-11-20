@@ -15,6 +15,10 @@
   <link rel="preload" href="/static/fonts/poppins-latin-600.woff2" as="font" type="font/woff2" crossorigin>
   {% endif %}
   <link rel="stylesheet" href="{{ asset('style.css') }}">
+  {#- The staff world (teachers, administrators): its own sheet, scoped to body.staff. -#}
+  {% if account and account.role.value in ("teacher", "admin") %}
+  <link rel="stylesheet" href="{{ asset('staff.css') }}">
+  {% endif %}
   <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
   {#- D088: installable as an app; the colour of the browser's bar on a phone. -#}
   <link rel="manifest" href="/manifest.webmanifest">
@@ -40,7 +44,7 @@
 {%- set role_names = {"student": "Sinh viên", "teacher": "Giảng viên", "admin": "Quản trị"} -%}
 {%- set homes = {"student": "/practice", "teacher": "/review", "admin": "/admin"} -%}
 {%- set here = nav_here | default("") -%}
-<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}" data-icons="{{ asset('icons.svg') }}">
+<body class="role-{{ role }}{% if account %} has-sidebar{% endif %}{% if role in ("teacher", "admin") %} staff{% endif %}" data-icons="{{ asset('icons.svg') }}">
 <a class="skip-link" href="#main">Bỏ qua điều hướng, tới nội dung chính</a>
 {#- D037: the ground behind every page -- contour lines high on the right,
     terraced hills low on the right whose ridges are spoken phrases. Decoration
@@ -75,7 +79,9 @@
       <a href="/practice"{% if here == "practice" %} aria-current="page"{% endif %}>{{ icon("home") }}<span class="nav-label">Lộ trình học</span>{{ badge("reviews_due") }}</a>
       <a href="/"{% if here == "submit" %} aria-current="page"{% endif %}>{{ icon("mic") }}<span class="nav-label">Nộp bài</span></a>
       {#- D068: one entry for the history and the progress, two tabs inside. -#}
-      <a href="/my-progress"{% if here in ("mine", "progress") %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Kết quả</span>{{ badge("results") }}</a>
+      <a href="/my-progress"{% if here in ("mine", "progress") %} aria-current="page"{% endif %}>{{ icon("trend") }}<span class="nav-label">Kết quả</span></a>
+      {#- D109: classes join only by the student's own act; invitations wait here. -#}
+      <a href="/my-classes"{% if here == "my_classes" %} aria-current="page"{% endif %}>{{ icon("users") }}<span class="nav-label">Lớp của tôi</span>{{ badge("class_invites") }}</a>
       {% if metered() %}
       <a href="/credits"{% if here == "credits" %} aria-current="page"{% endif %}>{{ icon("star") }}<span class="nav-label">Lượt của tôi</span></a>
       {% endif %}
@@ -148,17 +154,21 @@
 {% else %}
 <header class="site-header">
   <div class="header-inner">
-    <a class="brand" href="/" aria-label="SpeakUp, về trang chính">
+    {#- The product page has no tab of its own any more: the logo says "you are here". -#}
+    <a class="brand" href="/" aria-label="SpeakUp, về trang chính"{% if here in ("submit", "home") %} aria-current="page"{% endif %}>
       {{ logo() }}
       <span class="brand-text">
         <span class="brand-name">Speak<span class="brand-accent">Up</span></span>
       </span>
     </a>
 
+    {#- The sections of the product page as they are now (D093), and the band
+        page. The logo leads to the top; landing.js marks the section in view. -#}
     <nav class="site-nav" aria-label="Điều hướng chính">
-      <a href="/"{% if here in ("submit", "home") %} aria-current="page"{% endif %}><span>Giới thiệu</span></a>
-      <a href="/#how-it-works"><span>Cách hoạt động</span></a>
-      <a href="/#for-teachers"><span>Cho giảng viên</span></a>
+      <a href="/#how-it-works" data-section="how-it-works"><span>Cách hoạt động</span></a>
+      <a href="/#scaffolding-method" data-section="scaffolding-method"><span>Phương pháp</span></a>
+      <a href="/#for-teachers" data-section="for-teachers"><span>Giảng viên</span></a>
+      <a href="/#faq" data-section="faq"><span>Hỏi đáp</span></a>
       <a href="/bands"{% if here == "bands" %} aria-current="page"{% endif %}><span>Khung CEFR</span></a>
     </nav>
 
@@ -182,6 +192,15 @@
 <div class="notice notice-info contact-missing" id="contact-missing" role="status">
   Tài khoản của bạn chưa có email. <a href="/account#contact">Thêm email và họ tên</a> để đăng nhập
   bằng email hoặc Google{% if account.role.value == "student" %}, và để giảng viên lớp bạn biết bài nào của bạn{% endif %}.
+</div>
+{% endif %}
+{#- D099: once per browser, a word that runs are counted and how many are free; common.js shows it. -#}
+{% if account and role == "student" and metered() %}
+<div class="metering-notice" id="metering-notice" role="status" hidden>
+  {{ icon("star") }}
+  <p>Mỗi tháng có lượt miễn phí để chấm bài nói. <b id="metering-free"></b></p>
+  <a class="button small secondary" href="/credits">Xem lượt</a>
+  <button type="button" class="small" id="metering-ok">Đã hiểu</button>
 </div>
 {% endif %}
 {% block content %}{% endblock %}
@@ -242,9 +261,6 @@
             <h4 class="academic-card-title">Minh bạch trong đánh giá</h4>
           </div>
           <div class="academic-card-body">
-            <p>
-              Kết quả AI là ước lượng tham khảo. <b>Không cấp chứng chỉ</b> theo khung CEFR. <b>Giảng viên quyết định cuối cùng</b> đối với kết quả đánh giá.
-            </p>
             <p class="academic-privacy-note">
               {{ icon("lock") }}
               <span>Dữ liệu bản ghi là dữ liệu cá nhân, chỉ người nộp và giảng viên phụ trách xem được.</span>
@@ -279,6 +295,8 @@
   </div>
 </footer>
 {% endif %}
+{#- D093: inside the app there is no footer line any more; the owner removed
+    the disclaimer and the "Band A1–C2 là gì?" link from every screen. -#}
 
 <!-- Toasts are announced politely so a screen reader hears the outcome of an
      action without the focus being stolen. -->

@@ -177,8 +177,7 @@ def test_locking_and_deciding_tell_the_reviewers_and_the_student(m, recorder):
     student_id, teacher_id = account_id(m, "SV-001"), account_id(m, "GV-01")
     m.repo.save(
         Response(response_id="r-flag", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1",
-                 reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH]),
-        "SV-001", "P3", account_id=student_id,
+                 reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH]), "P3", account_id=student_id,
     )  # fmt: skip
 
     assert teacher.post("/api/v1/review/r-flag/lock").status_code == 200
@@ -201,8 +200,11 @@ def test_a_response_closed_by_the_timeout_sweep_tells_its_owner(m, recorder, mon
 
     login_as(m, "SV-001")
     me = account_id(m, "SV-001")
-    m.repo.save(Response(response_id="r-hung", status=ResponseStatus.QUEUED, config_version="v1"),
-                "SV-001", "P3", account_id=me)  # fmt: skip
+    m.repo.save(
+        Response(response_id="r-hung", status=ResponseStatus.QUEUED, config_version="v1"),
+        "P3",
+        account_id=me,
+    )
     m.repo.mark_running("r-hung")
     later = datetime.now(UTC) + timedelta(seconds=context.svc().settings.job_timeout_s + 60)
     assert scoring.sweep_overdue(now=later) == ["r-hung"]

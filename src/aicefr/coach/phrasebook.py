@@ -2,9 +2,11 @@
 
 Every upgraded answer (D069) comes with a few phrases worth using. Read once on
 a report, they are gone by the next week; said again in a sentence of one's own
-on spaced days, some of them stay. This module keeps no store of its own: the
-phrases and their review state live inside the upgrade they came from
-(`response.coach_upgrade.phrases`), so erasing a response erases its cards.
+on spaced days, some of them stay. A card's words live in the upgrade they came
+from (`response.coach_upgrade.phrases`); where it is in its reviews is a
+`ReviewItem` of kind "phrase" in the learning store (D104), one per phrase, the
+same box-and-due-day record the lesson words use. A phrase whose upgrade is
+erased is no card any more, whatever its record says.
 
 Scheduling is the Leitner system, five boxes with growing gaps. Remembered
 moves a card one box up; forgotten sends it back to the first box, due the
@@ -15,7 +17,9 @@ recording -- and the screen says so.
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import date, datetime, timedelta
+
+from aicefr.practice.streak import LOCAL_TZ
 
 # Days until the next review once a card is in that box. Box 0 is new: due now.
 INTERVAL_DAYS = (0, 1, 3, 7, 16, 35)
@@ -38,15 +42,17 @@ def example_of(phrase: str, upgraded: str) -> str:
     return next((s.strip() for s in _SENTENCE.split(upgraded or "") if k in key_of(s)), "")
 
 
-def _iso(t: datetime) -> str:
-    return t.astimezone(UTC).isoformat(timespec="seconds")
+def _day(stamp: str | None, fallback: date) -> str:
+    """The day part of a stored time, or `fallback` when there is none."""
+    return (stamp or "")[:10] or fallback.isoformat()
 
 
-def cards(upgrades: list[dict], now: datetime) -> list[dict]:
+def cards(upgrades: list[dict], states: dict[str, dict], today: date) -> list[dict]:
     """One card per distinct phrase, from upgrades given oldest first.
 
-    The same phrase suggested twice is one card: the state of the occurrence
-    reviewed most recently wins, the example and meaning of the first stay.
+    The same phrase suggested twice is one card, with the example and meaning
+    of the first. `states` is each reviewed phrase's record by key (box, due
+    day); a phrase never reviewed is in box 0, due from the day it was offered.
     """
     out: dict[str, dict] = {}
     for u in upgrades:
@@ -55,60 +61,42 @@ def cards(upgrades: list[dict], now: datetime) -> list[dict]:
             if not phrase:
                 continue
             k = key_of(phrase)
-            card = out.get(k)
-            if card is None:
-                card = out[k] = {
-                    "key": k,
-                    "phrase": phrase,
-                    "meaning_vi": p.get("meaning_vi") or "",
-                    "example": example_of(phrase, u.get("upgraded") or ""),
-                    "response_id": u["response_id"],
-                    "box": 0,
-                    "due": u.get("created_at") or _iso(now),
-                    "reviews": 0,
-                    "reviewed_at": None,
-                }
-            if (p.get("reviewed_at") or "") > (card["reviewed_at"] or ""):
-                card.update(
-                    box=int(p.get("box") or 0),
-                    due=p.get("due") or card["due"],
-                    reviews=int(p.get("reviews") or 0),
-                    reviewed_at=p["reviewed_at"],
-                )
+            if k in out:
+                continue
+            state = states.get(k) or {}
+            out[k] = {
+                "key": k,
+                "phrase": phrase,
+                "meaning_vi": p.get("meaning_vi") or "",
+                "example": example_of(phrase, u.get("upgraded") or ""),
+                "response_id": u["response_id"],
+                "box": int(state.get("box") or 0),
+                "due": state.get("due") or _day(u.get("created_at"), today),
+            }
     return list(out.values())
 
 
-def due_today(all_cards: list[dict], now: datetime, limit: int = PER_DAY) -> list[dict]:
+def due_today(all_cards: list[dict], today: date, limit: int = PER_DAY) -> list[dict]:
     """At most `limit` cards whose day has come, the longest waiting first."""
-    stamp = _iso(now)
-    due = [c for c in all_cards if (c["due"] or "") <= stamp]
-    return sorted(due, key=lambda c: (c["due"] or "", c["box"]))[:limit]
+    due = [c for c in all_cards if c["due"] <= today.isoformat()]
+    return sorted(due, key=lambda c: (c["due"], c["box"]))[:limit]
 
 
-def reviewed(card: dict, remembered: bool, now: datetime) -> dict:
-    """The card's state after one review."""
+def reviewed(card: dict, remembered: bool, today: date) -> dict:
+    """The card's box and due day after one review."""
     box = min(card["box"] + 1, LAST_BOX) if remembered else 1
-    return {
-        "box": box,
-        "due": _iso(now + timedelta(days=INTERVAL_DAYS[box])),
-        "reviews": card["reviews"] + 1,
-        "reviewed_at": _iso(now),
-    }
+    return {"box": box, "due": (today + timedelta(days=INTERVAL_DAYS[box])).isoformat()}
 
 
-def apply(phrases: list[dict], key: str, state: dict) -> list[dict]:
-    """The phrase list of one upgrade with `state` set on every entry for `key`."""
-    return [{**p, **state} if key_of(p.get("phrase") or "") == key else p for p in phrases]
-
-
-def summary(all_cards: list[dict], now: datetime) -> dict:
+def summary(all_cards: list[dict], today: date) -> dict:
     return {
         "total": len(all_cards),
-        "due_count": sum(1 for c in all_cards if (c["due"] or "") <= _iso(now)),
+        "due_count": sum(1 for c in all_cards if c["due"] <= today.isoformat()),
         "learned": sum(1 for c in all_cards if c["box"] >= LEARNED_BOX),
         "per_day": PER_DAY,
     }
 
 
-def now_utc() -> datetime:
-    return datetime.now(UTC)
+def today() -> date:
+    """The learner's day: Vietnam time, as the lesson reviews count it."""
+    return datetime.now(LOCAL_TZ).date()

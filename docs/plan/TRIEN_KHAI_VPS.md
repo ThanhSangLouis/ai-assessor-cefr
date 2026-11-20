@@ -170,6 +170,6 @@ Nhật ký: `docker compose logs -f --tail=100 caddy core speech` (trên máy ch
 
 - **Chỉ dùng phi thương mại.** Mô hình chấm điểm được huấn luyện trên kho Speak & Improve theo giấy phép nghiên cứu: không bán quyền truy cập, không thu phí dịch vụ dựa trên điểm số này.
 - **Giữ đăng ký đóng.** Tài khoản chỉ do quản trị viên tạo (`accounts_cli them`); không mở trang đăng ký công khai.
-- **Không thu tiền thật.** Stripe chỉ ở chế độ thử (`sk_test_…`), MoMo và VNPay chỉ môi trường thử; để trống `AICEFR_PAYMENTS_LIVE`.
+- **Không thu tiền thật.** payOS chỉ có tiền thật nên không bật; để trống `AICEFR_PAYMENTS_LIVE` (D097 đã gỡ Stripe).
 - Một máy chủ, không dự phòng: máy hỏng thì dịch vụ dừng cho tới khi dựng lại từ sao lưu (mục 8).
 - Sau Caddy, gateway báo cho các dịch vụ rằng yêu cầu đến bằng http (`X-Forwarded-Proto`). Ứng dụng không dựng địa chỉ tuyệt đối từ đó; cookie và chuyển hướng dựa vào `AICEFR_HTTPS_ONLY` và `AICEFR_PUBLIC_URL`, nên không ảnh hưởng.

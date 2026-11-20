@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import pytest
-from dbutil import store
+from dbutil import email_of, store
 from test_d069_coach import scored
 from test_lessons_integration import account_id, login_as, m, submit_assessment, wav  # noqa: F401
 
@@ -42,7 +42,7 @@ def with_words(m, rid: str) -> None:
         text=" ".join(w for w, _ in SPOKEN), words=words, engine="fake", model_version="small"
     )
     store()["response"].update_one(
-        {"response_id": rid}, {"$set": {"report_json": report.model_dump_json()}}
+        {"response_id": rid}, {"$set": {"asr": report.asr.model_dump(mode="json")}}
     )
 
 
@@ -181,7 +181,8 @@ def test_erasing_a_participant_forgets_their_drills(m, heard):
     me = account_id(m, "SV-D08")
     admin = login_as(m, "QT-D01", "admin")
     r = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-D08", "confirm_speaker_id": "SV-D08"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-D08"), "confirm_email": email_of("SV-D08")},
     )
     assert r.status_code == 200
     assert store()["word_drill"].count_documents({"account_id": me}) == 0

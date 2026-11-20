@@ -93,7 +93,7 @@ Tiêu chí chấp nhận AC-75.1..AC-80.6 nằm ở `docs/srs/SRS.md`, mục 3.9
 | TC-LE-I01 | `test_lesson_word_marks_name_the_vietnamese_pattern` | AC-75.5 | Bước nhắc lại: "because" nghe thành "becau" có nhãn `final_consonant` |
 | TC-LE-I02 | `test_learner_profile_counts_errors_against_opportunities` | AC-75.6 | Hai lượt cùng lỗi: âm cuối 2 lỗi, đủ dữ liệu, ví dụ dẫn về bài học |
 | TC-LE-I03 | `test_class_profile_is_for_staff_and_names_nobody` | AC-76.1 | Bản của lớp: 2 người học, ví dụ chỉ có từ và chữ máy nghe, không bút danh; sinh viên 403 |
-| TC-LE-I12 | `test_review_lock_and_decision_leave_a_timed_session` | AC-79.1 | Khoá rồi quyết định: một phiên đã kết thúc, đúng bài, đúng người |
+| TC-LE-I12 | `test_the_review_lock_lives_on_the_response_and_a_decision_clears_it` | AC-79.1 | Khoá rồi quyết định: khoá nằm trong document bài nộp (D104), quyết định gỡ khoá, ghi đúng người duyệt |
 
 ### Tầng 3 — E2E (`tests/e2e/test_learning_evidence_e2e.py`)
 

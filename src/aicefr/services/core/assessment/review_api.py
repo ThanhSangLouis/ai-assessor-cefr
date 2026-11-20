@@ -38,9 +38,18 @@ def review_queue(
     rows = s.repo.queue_with_locks(
         ResponseStatus.REVIEW_REQUIRED, limit, owners=students_in_view(account)
     )
-    owners = [r["account_id"] for r in rows if r.get("account_id")]
-    names = s.peers.identity.display_names(account_ids=owners) if owners else {}
+    people = {r[k] for r in rows for k in ("account_id", "locked_by") if r.get(k)}
+    names = s.peers.identity.display_names(account_ids=sorted(people)) if people else {}
+    for r in rows:
+        if r.get("locked_by"):
+            r["locked_by"] = names.get(r["locked_by"], "giảng viên khác")
     return [QueueItem(**r, student_name=names.get(r.get("account_id") or "")) for r in rows]
+
+
+def _name(account_id: str) -> str:
+    """Who holds a review, as a teacher reads it."""
+    names = svc().peers.identity.display_names(account_ids=[account_id])
+    return names.get(account_id, "giảng viên khác")
 
 
 @router.post("/api/v1/review/{response_id}/lock", tags=["teacher"])
@@ -54,10 +63,9 @@ def lock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
     if repo.status_of(response_id) is None:
         raise HTTPException(404, "không tìm thấy bài này")
     in_view(account, response_id)
-    granted, holder = repo.lock_response(response_id, account.account_id, account.pseudonym)
+    granted, holder = repo.lock_response(response_id, account.account_id)
     if not granted:
-        raise HTTPException(409, f"bài đang được {holder} xem")
-    repo.open_review_session(response_id, account.account_id)  # D041: when review began
+        raise HTTPException(409, f"bài đang được {_name(holder)} xem")
     live_api.queue_changed(repo.owner_of(response_id))  # D086: "đang được duyệt"
     return {"status": "ok"}
 
@@ -66,9 +74,6 @@ def lock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
 def unlock_review(response_id: str, account: Account = STAFF_ONLY) -> dict:
     repo = svc().repo
     repo.unlock_response(response_id, account.account_id)
-    # D041: leaving without a decision ends the session; coming back starts a
-    # new one, so a decision is timed from when the teacher came back to it.
-    repo.close_review_session(response_id, account.account_id, "released")
     live_api.queue_changed(repo.owner_of(response_id))
     return {"status": "ok"}
 
@@ -88,8 +93,8 @@ def submit_review(
     repo = svc().repo
     in_view(account, response_id)
     holder = repo.locked_by(response_id)
-    if holder is not None and holder != account.pseudonym:
-        raise HTTPException(409, f"bài đang được {holder} xem, chưa lưu được")
+    if holder is not None and holder != account.account_id:
+        raise HTTPException(409, f"bài đang được {_name(holder)} xem, chưa lưu được")
     try:
         out = repo.apply_review(
             response_id,
@@ -104,7 +109,6 @@ def submit_review(
         raise HTTPException(409, str(e)) from e
     if out is None:
         raise HTTPException(404, "không tìm thấy bài")
-    repo.close_review_session(response_id, account.account_id, "decision")
     repo.unlock_response(response_id, account.account_id)
     live_api.review_done(response_id)
     return JSONResponse(out.model_dump(mode="json"))
@@ -118,15 +122,14 @@ def close_review(
     repo = svc().repo
     in_view(account, response_id)
     holder = repo.locked_by(response_id)
-    if holder is not None and holder != account.pseudonym:
-        raise HTTPException(409, f"bài đang được {holder} xem, chưa lưu được")
+    if holder is not None and holder != account.account_id:
+        raise HTTPException(409, f"bài đang được {_name(holder)} xem, chưa lưu được")
     try:
         out = repo.close_unscorable(response_id, account.account_id, decision.reason)
     except InvalidStateError as e:
         raise HTTPException(409, str(e)) from e
     if out is None:
         raise HTTPException(404, "không tìm thấy bài")
-    repo.close_review_session(response_id, account.account_id, "closed")
     repo.unlock_response(response_id, account.account_id)
     live_api.review_done(response_id)
     return JSONResponse(out.model_dump(mode="json"))

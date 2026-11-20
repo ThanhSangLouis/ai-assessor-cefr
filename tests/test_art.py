@@ -20,6 +20,7 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_ui_depth import enclosing_media, rule_bodies
 
@@ -51,10 +52,10 @@ def m(tmp_path, monkeypatch):
     return main
 
 
-def signed_in(m, pseudonym: str, role: str) -> TestClient:
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+def signed_in(m, name: str, role: str) -> TestClient:
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     client = TestClient(m.app)
-    r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = client.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return client
 
@@ -116,14 +117,13 @@ def test_every_page_stands_on_the_ground(m):
         assert page.count(GROUND) == 1 and "ground-hills" not in page, url
 
 
-def test_the_product_and_sign_in_pages_carry_the_scene():
+def test_the_sign_in_page_carries_the_scene():
+    # The product page shows the product itself since D093; the scene stays on sign-in.
     from aicefr.api.main import app
 
     client = TestClient(app)
-    for url, holder, cls in (
-        ("/", "lp-hero", "lp-terraces"),
-        ("/login", "auth-split", "auth-terraces"),
-    ):
+    assert "art-terraces" not in client.get("/").text
+    for url, holder, cls in (("/login", "auth-split", "auth-terraces"),):
         page = client.get(url).text
         drawing = scene(page, cls)
         # Inside the part of the page it belongs to, before its words.
@@ -193,7 +193,7 @@ def test_the_art_stays_out_of_the_way():
     assert printed and all(enclosing_media(pos) == "print" for pos, _b in printed)
     rule = CSS[CSS.rindex("@media print") :]
     rule = rule[: rule.index("}")]
-    for selector in (".ground", ".lp-terraces", ".auth-terraces", ".empty-state::after"):
+    for selector in (".ground", ".auth-terraces", ".empty-state::after"):
         assert selector in rule, selector
 
 

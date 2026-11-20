@@ -119,7 +119,7 @@ def readiness() -> JSONResponse:
     The route is public, so a failure is named here and explained only in the
     log: an exception's text can carry hosts, paths or connection strings.
     """
-    from aicefr.scoring.scorer import RidgeScorer
+    from aicefr.scoring.factory import build_scorer
     from aicefr.services.core.assessment.context import active_model_name
 
     checks: dict[str, object] = {}
@@ -132,7 +132,7 @@ def readiness() -> JSONResponse:
         checks["database"] = "failed"
         ok = False
     try:
-        checks["scoring_model"] = RidgeScorer(active_model_name()).model_version
+        checks["scoring_model"] = build_scorer(active_model_name()).model_version
     except Exception:  # noqa: BLE001
         logger.warning("readiness: scoring model failed", exc_info=True)
         checks["scoring_model"] = "failed"

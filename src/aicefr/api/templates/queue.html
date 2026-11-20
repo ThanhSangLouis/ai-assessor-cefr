@@ -5,21 +5,24 @@
 <div class="page-head page-head-row">
   <div>
     <h1><span class="head-icon">{{ icon("inbox") }}</span>Hàng đợi duyệt</h1>
-    <p class="lede">
-      Những bài hệ thống <b>không đủ chắc chắn</b>, bài cũ nhất ở trên. Nghe lại rồi giữ
-      nguyên hoặc sửa kết quả; mọi lần sửa được ghi nhật ký kèm lý do.
-    </p>
+    <p class="lede" id="queue-lede">Bài máy chưa chắc chắn. Mọi lần sửa được ghi lại kèm lý do.</p>
   </div>
-  {#- Enabled by queue.js once it knows which response is free to take. -#}
-  <a class="button" id="next-review" href="/review" aria-disabled="true">Duyệt bài tiếp theo</a>
+  <div class="button-row head-tools">
+    {#- Two views of the same rows: the week sheet places each waiting response
+        on the day it arrived; the table lists them oldest first. -#}
+    <div class="view-switch" role="group" aria-label="Cách xem">
+      <button type="button" data-view="week" aria-pressed="true">Tuần</button>
+      <button type="button" data-view="table" aria-pressed="false">Bảng</button>
+    </div>
+    <button type="button" class="secondary" id="queue-refresh">Tải lại</button>
+    {#- Enabled by queue.js once it knows which response is free to take. -#}
+    <a class="button" id="next-review" href="/review" aria-disabled="true">Duyệt bài tiếp theo</a>
+  </div>
 </div>
 
 <section class="card" aria-labelledby="queue-h">
-  <div class="card-head">
-    <h2 id="queue-h">Hàng đợi chờ duyệt</h2>
-    <span class="muted" id="queue-count"></span>
-    <button type="button" class="secondary small" id="queue-refresh">Tải lại</button>
-  </div>
+  {#- The count lives in the page head; the heading stays for screen readers. -#}
+  <h2 id="queue-h" class="visually-hidden">Bài chờ duyệt <span class="count" id="queue-count"></span></h2>
 
   <div class="filter-bar" id="filters" hidden>
     <div class="filter">

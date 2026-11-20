@@ -91,11 +91,12 @@ class AssessmentFacade:
         }
 
     @exposed
-    def passage_offer(self) -> dict:
-        """Whether the language model can write a reading passage now, and its price (D090)."""
+    def passage_offer(self, account_id: str | None = None) -> dict:
+        """Whether the language model can write a reading passage now, and what
+        `account_id`'s next one costs (D090, D107)."""
         from aicefr.services.core.assessment import coach_api
 
-        return coach_api.passage_offer()
+        return coach_api.passage_offer(account_id)
 
     @exposed
     def write_passage(self, account_id: str, band: str | None, words: list[str], key: str) -> dict:
@@ -118,15 +119,12 @@ class AssessmentFacade:
         return self.repo.assessments_by_account(since, until)
 
     @exposed
-    def student_badges(self, account_id: str) -> dict:
-        """Teacher decisions on this student's responses since they last looked (D028)."""
+    def class_invites(self, account_id: str) -> int:
+        """Invitations to a running class this student has not answered (D109)."""
         from aicefr.services.core.assessment.context import svc
 
-        seen = svc().peers.identity.seen_at(account_id=account_id, marker="results")
-        return {
-            "results": self.repo.count_reviewed_since(account_id, seen),
-            "results_seen_at": seen,
-        }
+        rooms = svc().classrooms
+        return rooms.count_invitations(account_id) if rooms is not None else 0
 
     @exposed
     def staff_badges(self, account_id: str, role: str = "teacher") -> dict:

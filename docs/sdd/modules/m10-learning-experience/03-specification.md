@@ -8,7 +8,7 @@
 - `LearningPath > Unit > Lesson > LessonVersion > Step`; published version immutable.
 - `StepAttempt(id, owner_id, lesson_version, step_id, rules_version, status, measurements, evidence, teacher_override)`.
 - `ReviewItem(owner_id, source_attempt, content_key, box, due_date, status)`.
-- `Achievement(owner_id, code, unlocked_at, seen_at)`; facts không có score/band.
+- `Achievement(owner_id, code, unlocked_at)` (D103 gỡ `seen_at`); facts không có score/band.
 
 `MissionKind` gồm bảy loại rule đã khóa trong catalogue; `StepType` gồm read aloud, listen-repeat, retell, gap, keywords, sentence frame, picture bank, outline, free multi-round.
 

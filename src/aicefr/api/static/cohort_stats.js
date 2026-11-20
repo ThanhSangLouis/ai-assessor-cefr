@@ -91,37 +91,34 @@ function build(d) {
   h += '<h2 style="margin-top:var(--sp-6)">Phân bố band</h2>';
   const bands = d.by_band || {};
   const total = Object.values(bands).reduce((a, b) => a + b, 0) || 1;
-  // D031: the same counts as blocks whose height follows each band's share.
-  h += window.ui.cubes(
-    BAND_ORDER.map((b) => ({
-      label: b,
-      sub: bands[b] || 0,
-      h: 58 + ((bands[b] || 0) / total) * 100,
-      cls: bands[b] ? "" : "is-dim",
-    })),
-    "band-columns"
-  );
-  h += "<table><thead><tr><th>Band</th><th>Số bài</th><th>Tỷ lệ</th></tr></thead><tbody>";
+  // One A1–C2 scale, one colour per band: the same bars on every staff page.
+  // Every band keeps its row, so an empty band reads as empty, not missing.
+  const most = Math.max(1, ...BAND_ORDER.map((b) => bands[b] || 0));
+  h += '<div class="band-bars">';
   for (const b of BAND_ORDER) {
     const n = bands[b] || 0;
-    h += `<tr><td><b>${b}</b></td><td>${n}</td><td>${Math.round((n / total) * 100)}%</td></tr>`;
+    h +=
+      `<div class="band-bar" data-band="${b}"><span class="band-chip">${b}</span>` +
+      `<span class="band-bar-track"><span class="band-bar-fill" style="width:${((n / most) * 100).toFixed(1)}%"></span></span>` +
+      `<span class="band-bar-n"><b>${n}</b> · ${Math.round((n / total) * 100)}%</span></div>`;
   }
-  h += "</tbody></table>";
+  h += "</div>";
   h +=
     '<p class="muted">Band <b>máy ước lượng</b>, chưa phải trình độ thật của lớp.</p>';
 
   // D078: by the band of the prompt answered, where the class landed.
   h += '<h2 style="margin-top:var(--sp-6)">Theo band của đề</h2>';
-  h += "<table><thead><tr><th>Đề band</th><th>Số bài</th><th>Người nộp</th>" +
+  h += '<div class="table-scroll" tabindex="0" role="region" aria-label="Theo band của đề">' +
+    "<table><thead><tr><th>Đề band</th><th>Số bài</th><th>Người nộp</th>" +
     "<th>Đạt đúng band</th><th>Thấp hơn</th><th>Cao hơn</th><th>Chờ duyệt</th></tr></thead><tbody>";
   for (const t of d.by_prompt_band || []) {
     const share = (k) => (t.n ? ` <span class="muted">${Math.round((k / t.n) * 100)}%</span>` : "");
     h +=
-      `<tr><td><b>${window.escapeHtml(t.band)}</b></td><td>${t.n}</td><td>${t.learners}</td>` +
+      `<tr><td><span class="band-chip" data-band="${window.escapeHtml(t.band)}">${window.escapeHtml(t.band)}</span></td><td>${t.n}</td><td>${t.learners}</td>` +
       `<td><b>${t.at}</b>${share(t.at)}</td><td>${t.below}${share(t.below)}</td>` +
       `<td>${t.above}${share(t.above)}</td><td>${t.waiting}</td></tr>`;
   }
-  h += "</tbody></table>";
+  h += "</tbody></table></div>";
   h +=
     '<p class="muted">Bài làm đề band nào thì so với chính band đó. Nhiều bài "thấp hơn" ' +
     "nghĩa là đề đang khó so với lớp.</p>";

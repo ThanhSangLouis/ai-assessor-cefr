@@ -1,7 +1,7 @@
 """Payment gateways (D033, D035, D075): the sandbox inside the app.
 
-Stripe is the one real gateway (`stripe_gateway`); VNPay and MoMo were removed
-in D075. The sandbox stands in for a gateway's page where no money should
+payOS is the one real gateway (`payos_gateway`, D095); VNPay and MoMo were
+removed in D075, Stripe in D097. The sandbox stands in for a gateway's page where no money should
 move: the browser is sent to its page with the order signed into the address,
 and the result comes back signed to a return address and, separately, to the
 notification address. A result is believed only when its signature checks out

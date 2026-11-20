@@ -34,10 +34,10 @@ from test_practice_e2e import (  # noqa: E402, F401  (fixtures are used by name)
 pytestmark = pytest.mark.e2e
 
 
-def login_home(page, server, pseudonym: str, home: str) -> None:
+def login_home(page, server, name: str, home: str) -> None:
     """Log in WITHOUT `?next=`, and wait for the role's own start page."""
     page.goto("/login")
-    page.get_by_label("Email", exact=True).fill(pseudonym)
+    page.get_by_label("Email", exact=True).fill(name)
     page.get_by_label("Mật khẩu", exact=True).fill(server.password)
     page.get_by_role("button", name="Đăng nhập", exact=True).click()
     page.wait_for_url(lambda url: urlparse(url).path == home)
@@ -61,13 +61,15 @@ def recorder_ready(page) -> bool:
         "!document.getElementById('rec-live').hidden"
         " || !document.getElementById('recorder-off').hidden",
     )
-    return page.locator("#rec-live").is_visible()
+    # Hidden by the page's own step (D093) is still switched on.
+    return page.evaluate("!document.getElementById('rec-live').hidden")
 
 
 def submit_assessment(page, live_server) -> str:
     """Upload a file on the submit page, listen-back step, submit; return the id."""
     page.goto("/")
     expect(page.locator(".task")).not_to_have_count(0)
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
     expect(page.locator("#rec-take")).to_contain_text("full-35s.wav")
     page.get_by_role("button", name="Nộp bài và chấm").click()
@@ -130,21 +132,26 @@ def test_recording_waits_for_listen_back_before_anything_is_sent(context, live_s
     sent = []
     page.on("request", lambda r: sent.append(r.url) if "/api/v1/responses" in r.url else None)
 
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.get_by_role("button", name="Bắt đầu ghi âm").click()
     page.wait_for_timeout(1_500)
     page.get_by_role("button", name="Dừng ghi âm").click()
 
     expect(page.locator("#rec-preview")).to_be_visible()
-    expect(page.get_by_role("button", name="Nộp bài và chấm")).to_be_enabled()
+    # Since D092 a take under the shortest length cannot be sent at all.
+    expect(page.get_by_role("button", name="Nộp bài và chấm")).to_be_disabled()
     expect(page.get_by_role("button", name="Ghi lại")).to_be_visible()
-    expect(page.locator("#rec-verdict")).to_contain_text("sẽ bị từ chối vì quá ngắn")
+    expect(page.locator("#rec-verdict")).to_contain_text("Bản ghi quá ngắn")
     # A second press of the space bar must neither discard nor send the take.
     page.mouse.click(5, 400)
     page.keyboard.press("Space")
     expect(page.locator("#rec")).to_have_attribute("data-state", "review")
     assert sent == []
 
+    # Since D093 "Ghi lại" drops the take and waits; the mic starts the next one.
     page.get_by_role("button", name="Ghi lại").click()
+    expect(page.locator("#rec")).to_have_attribute("data-state", "idle")
+    page.get_by_role("button", name="Bắt đầu ghi âm").click()
     expect(page.locator("#rec")).to_have_attribute("data-state", "recording")
     page.get_by_role("button", name="Dừng ghi âm").click()
     expect(page.locator("#rec")).to_have_attribute("data-state", "review")
@@ -153,6 +160,7 @@ def test_recording_waits_for_listen_back_before_anything_is_sent(context, live_s
 
 def test_uploaded_file_is_heard_back_then_submitted_to_a_report(context, live_server):
     page = student_page(context, live_server, "/")
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     page.set_input_files("#audio", str(live_server.files / "full-35s.wav"))
     expect(page.locator("#rec-take")).to_contain_text("full-35s.wav")
     expect(page.locator("#rec-take")).to_contain_text("0:35")
@@ -175,7 +183,9 @@ def test_chosen_prompt_sits_above_the_record_button(context, live_server):
     second = tasks.nth(1)
     prompt = second.locator(".task-prompt").text_content().strip()
     second.click()
+    page.get_by_role("button", name="Nói về đề này").click()  # D093: one step at a time
     expect(page.locator("#chosen-prompt .prompt-text")).to_have_text(prompt)
+    expect(page.get_by_role("button", name="Bắt đầu ghi âm")).to_be_visible()
     expect(page.locator("#task_id")).to_have_value(second.locator("input").get_attribute("value"))
 
 
@@ -210,7 +220,7 @@ def test_teacher_opens_the_next_free_response_and_reads_names_not_codes(context,
     teacher = context.browser.new_context(base_url=live_server.base_url).new_page()
     try:
         gv = live_server.account("teacher")
-        live_server.teach(gv, learner.request.get("/api/v1/me").json()["pseudonym"])
+        live_server.teach(gv, learner.request.get("/api/v1/me").json()["email"])
         login(teacher, live_server, gv, "/review")
         next_button = teacher.get_by_role("link", name="Duyệt bài tiếp theo")
         expect(next_button).not_to_have_attribute("aria-disabled", "true")
@@ -290,11 +300,50 @@ def test_phone_student_pages_keep_a_bottom_tab_bar_and_no_sideways_scroll(
     login(page, live_server, live_server.account(), "/practice")
     page.goto(path)
     page.wait_for_load_state("networkidle")
-    nav = page.locator(".site-nav")
+    # Since Thắng's student navigation (f84b377) the bar is its own element.
+    nav = page.locator(".app-tabbar")
     assert nav.evaluate("n => getComputedStyle(n).position") == "fixed"
     box = nav.bounding_box()
     assert box and abs(box["y"] + box["height"] - 812) < 2
     assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
+
+
+def test_the_band_blocks_fit_a_narrow_phone(context, live_server):
+    """The six 3D band blocks used to be wider than a phone and push the whole
+    page sideways. The band page draws them with the same rules as the
+    report's podium, which a fake-ASR answer (no score) does not reach."""
+    page = context.new_page()
+    page.set_viewport_size({"width": 340, "height": 740})
+    login(page, live_server, live_server.account(), "/practice")
+    page.goto("/bands")
+    expect(page.locator(".cube-stage .cube").first).to_be_visible()
+    assert page.evaluate("document.scrollingElement.scrollWidth <= window.innerWidth")
+    right = page.evaluate(
+        "Math.max(...[...document.querySelectorAll('.cube-stage .cube')]"
+        ".map(c => c.getBoundingClientRect().right))"
+    )
+    assert right <= 340
+
+
+def test_a_header_tab_marks_its_section_and_leaves_its_heading_in_view(context):
+    """The guest bar's tabs used to keep the first one underlined wherever they
+    led, and the sticky header covered the top of the section they jumped to."""
+    page = context.new_page()
+    page.set_viewport_size({"width": 1280, "height": 800})
+    page.goto("/")
+    for name, section in (("Phương pháp", "scaffolding-method"), ("Giảng viên", "for-teachers")):
+        page.locator(".site-nav").get_by_role("link", name=name).click()
+        page.wait_for_url(f"**/#{section}")
+        tab = page.locator(".site-nav a[aria-current]")
+        expect(tab).to_have_count(1)
+        expect(tab).to_have_text(name)
+        header = page.locator(".site-header").bounding_box()
+        heading = page.locator(f"#{section} h2")
+        wait_until(
+            page,
+            f"Math.abs(document.getElementById('{section}').getBoundingClientRect().top - 64) < 4",
+        )
+        assert heading.bounding_box()["y"] >= header["y"] + header["height"]
 
 
 def test_the_progress_page_prints_as_a_report_not_as_the_screen(context, live_server):

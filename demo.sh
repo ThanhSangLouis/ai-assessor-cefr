@@ -56,11 +56,11 @@ if [ "${AICEFR_ASR:-fake}" = "whisper" ]; then
 fi
 
 # --- Tai khoan demo ---------------------------------------------------------
-for a in "SV-001:student" "SV-002:student" "GV-01:teacher" "QT-01:admin"; do
-  $PY -m aicefr.accounts_cli them --but-danh "${a%%:*}" --vai-tro "${a##*:}" \
+for a in "sv-001:student" "sv-002:student" "gv-01:teacher" "qt-01:admin"; do
+  $PY -m aicefr.accounts_cli them --email "${a%%:*}@demo.speakup.fit" --vai-tro "${a##*:}" \
     --mat-khau matkhau123 >/dev/null 2>&1 || true  # da co thi bo qua
 done
-echo "Tai khoan demo: SV-001, SV-002, GV-01, QT-01 -- mat khau matkhau123"
+echo "Tai khoan demo: sv-001, sv-002, gv-01, qt-01 @demo.speakup.fit -- mat khau matkhau123"
 
 if [ -n "${AICEFR_GOOGLE_CLIENT_ID:-}" ] && [ -n "${AICEFR_GOOGLE_CLIENT_SECRET:-}" ]; then
   echo "Dang nhap Google: BAT (callback http://localhost:8000/auth/google/callback)"

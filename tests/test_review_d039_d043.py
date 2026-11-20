@@ -59,8 +59,8 @@ def _completed(rid: str, score: float) -> Response:
 
 def test_the_overdue_sweep_does_not_fail_a_response_that_just_finished(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
-    repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
-    repo.save(_completed("r1", 3.0), "SV-001", "P3", account_id="acc1", must_exist=True)
+    repo.save(_queued("r1"), "P3", account_id="acc1")
+    repo.save(_completed("r1", 3.0), "P3", account_id="acc1", must_exist=True)
 
     changed = repo.set_status(
         "r1", ResponseStatus.FAILED, only_from=(ResponseStatus.QUEUED, ResponseStatus.RUNNING)
@@ -72,7 +72,7 @@ def test_the_overdue_sweep_does_not_fail_a_response_that_just_finished(tmp_path)
 
 def test_the_sweep_still_fails_a_response_that_waits(tmp_path) -> None:
     repo = Repository(tmp_path / "a.db")
-    repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
+    repo.save(_queued("r1"), "P3", account_id="acc1")
     assert repo.set_status(
         "r1", ResponseStatus.FAILED, only_from=(ResponseStatus.QUEUED, ResponseStatus.RUNNING)
     )
@@ -82,10 +82,10 @@ def test_the_sweep_still_fails_a_response_that_waits(tmp_path) -> None:
 def test_a_second_worker_result_does_not_replace_the_first(tmp_path) -> None:
     """A redelivered job: the worker's write lands only on a response still waiting."""
     repo = Repository(tmp_path / "a.db")
-    repo.save(_queued("r1"), "SV-001", "P3", account_id="acc1")
-    assert repo.save(_completed("r1", 3.0), "SV-001", "P3", account_id="acc1", must_exist=True)
+    repo.save(_queued("r1"), "P3", account_id="acc1")
+    assert repo.save(_completed("r1", 3.0), "P3", account_id="acc1", must_exist=True)
 
-    again = repo.save(_completed("r1", 5.0), "SV-001", "P3", account_id="acc1", must_exist=True)
+    again = repo.save(_completed("r1", 5.0), "P3", account_id="acc1", must_exist=True)
 
     assert again is False
     assert repo.get("r1").assessment.overall_0_6 == 3.0

@@ -44,6 +44,11 @@ asr = [
   "faster-whisper>=1.0; sys_platform != 'darwin' or platform_machine != 'arm64'",
 ]
 vad = ["silero-vad>=5.1", "torch>=2.2"]
+# The fusion scorer's text half (aicefr.scoring.text_model): DeBERTa-v3 with a
+# LoRA adapter merged at load time, so peft is not needed. Apache-2.0 (transformers,
+# safetensors, sentencepiece) and BSD (torch). Only the speech service needs it,
+# and only when an administrator activates a fusion artifact.
+text = ["torch>=2.2", "transformers>=4.45", "safetensors>=0.4", "sentencepiece>=0.2"]
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
@@ -86,11 +91,20 @@ aicefr = [
   "api/templates/*.html",
   "api/static/*.css",
   "api/static/*.js",
-  # The icon sprite (D027) and the favicon.
+  # The icon sprite (D027) and the favicons.
   "api/static/*.svg",
+  "api/static/*.png",
+  # The icons of the installed app (PWA) and of its notifications.
+  "api/static/icons/*.svg",
+  "api/static/icons/*.png",
   # The ground's art (D037), drawn by tools/make_art.py.
   "api/static/art/*.svg",
   "api/static/art/*.png",
+  # The roadmap's worlds, scenes and mascots (D093), from tools/build_adventure_*.py.
+  "api/static/art/adventure/*.svg",
+  "api/static/art/adventure/*.png",
+  "api/static/art/adventure/*.webp",
+  "api/static/art/adventure/*.json",
   # Roboto, served by the app itself (D031), and its licence.
   "api/static/fonts/*.woff2",
   "api/static/fonts/*.txt",
@@ -128,6 +142,11 @@ extend-immutable-calls = [
 "tests/e2e/test_lessons_e2e.py" = ["F811"]
 "tests/e2e/test_accounts_e2e.py" = ["F811"]
 "tests/e2e/test_profile_e2e.py" = ["F811"]
+# Thắng's adventure-art tools (f84b377) write SVG and fixture strings whole;
+# breaking them over lines would only make the drawings harder to read.
+"tools/build_adventure_terrain.py" = ["E501"]
+"tools/build_adventure_vectors.py" = ["E501"]
+"tools/check_adventure_browser.py" = ["E501"]
 "tests/e2e/test_pwa_e2e.py" = ["F811"]
 "tests/e2e/test_signup_e2e.py" = ["F811"]
 "tests/e2e/test_ui_depth_e2e.py" = ["F811"]

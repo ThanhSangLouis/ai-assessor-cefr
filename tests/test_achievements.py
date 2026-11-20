@@ -15,6 +15,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from dbutil import email_of
 from test_lessons_integration import (  # noqa: F401  (the fixture `m` is used by name)
     FREE,
     KEYWORDS,
@@ -70,7 +71,7 @@ def test_a_first_recording_is_congratulated_once(m):
     assert first["achievements"][0]["title"] == "Lượt nói đầu tiên"
     assert second["achievements"] == []
     stored = m.lessons.achievements(account_id(m, "SV-001"))
-    assert list(stored) == ["take_1"] and stored["take_1"]["seen_at"] is None
+    assert list(stored) == ["take_1"]
 
 
 def test_the_list_shows_how_far_each_one_is_without_a_score(m, monkeypatch):
@@ -105,24 +106,6 @@ def test_the_list_shows_how_far_each_one_is_without_a_score(m, monkeypatch):
     from fastapi.testclient import TestClient
 
     assert TestClient(m.app).get("/api/v1/me/achievements").status_code == 401
-
-
-def test_new_achievements_are_marked_seen_by_their_owner_only(m):
-    student = login_as(m, "SV-001")
-    other = login_as(m, "SV-002")
-    record(student, SAMPLE, KEYWORDS)
-    record(other, SAMPLE, KEYWORDS)
-    assert items(student)["take_1"]["new"] is True
-
-    r = student.post("/api/v1/me/achievements/seen", json={"codes": ["take_1", "streak_30"]})
-
-    assert r.json() == {"seen": 1}  # only what is stored and not seen yet
-    assert items(student)["take_1"]["new"] is False
-    assert items(other)["take_1"]["new"] is True
-    assert student.post("/api/v1/me/achievements/seen").json() == {"seen": 0}
-    assert other.post("/api/v1/me/achievements/seen").json() == {"seen": 1}
-    too_many = {"codes": [f"c{i}" for i in range(40)]}
-    assert student.post("/api/v1/me/achievements/seen", json=too_many).status_code == 422
 
 
 def test_an_achievement_is_never_taken_back(m):
@@ -221,7 +204,7 @@ def test_assessments_with_a_result_count_towards_the_assessment_achievements(m):
     acc = account_id(m, "SV-001")
     assert items(student)["assessment_1"]["unlocked"] is False
     for k in range(5):
-        m.repo.save(scored(f"as-{k}", Band.B1, [Criterion.RANGE]), "SV-001", "P3", account_id=acc)
+        m.repo.save(scored(f"as-{k}", Band.B1, [Criterion.RANGE]), "P3", account_id=acc)
         if k == 0:
             assert items(student)["assessment_1"]["unlocked"]
 
@@ -254,7 +237,7 @@ def test_the_practice_page_shows_the_record_rest_days_and_last_week(m, monkeypat
     # The card: the first take, three days in a row, and the comeback after
     # the gap; the nearest is the week-long streak, 5 of 7.
     card = body["achievements"]
-    assert (card["unlocked"], card["total"], card["new"]) == (3, 17, 3)
+    assert (card["unlocked"], card["total"]) == (3, 17)
     assert {x["code"] for x in card["recent"]} == {"take_1", "streak_3", "comeback"}
     assert card["next"]["code"] == "streak_7" and card["next"]["value"] == 5
 
@@ -268,11 +251,12 @@ def test_the_personal_export_and_erasure_cover_achievements(m):
     exported = student.get("/api/v1/me/export.json").json()
 
     [item] = exported["achievements"]
-    assert (item["code"], item["title"], item["seen_at"]) == ("take_1", "Lượt nói đầu tiên", None)
+    assert (item["code"], item["title"]) == ("take_1", "Lượt nói đầu tiên")
     assert "achievements" in exported["fields"]
     admin = login_as(m, "AD-01", "admin")
     erased = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert erased.status_code == 200
     assert m.lessons.achievements(account_id(m, "SV-001")) == {}

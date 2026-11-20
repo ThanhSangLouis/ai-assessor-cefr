@@ -23,7 +23,7 @@ That cookie is signed (D036). A cookie can be written by more than this
 server: a sibling subdomain can set one for the parent domain, a network on
 plain HTTP can inject one. Unsigned, such a cookie could pair a person's own
 session with a flow somebody else wrote -- a "link" flow naming their account
-would link a stranger's Google account to their pseudonym. So the cookie
+would link a stranger's Google account to their account. So the cookie
 carries an HMAC-SHA256 under a key only this deployment holds, and a flow that
 does not check out is refused before Google is asked anything.
 

@@ -1,33 +1,55 @@
-%% SDD - Diagram 06: Deployment diagram - sau D044, D048, D050
-%% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
-%% (core, speech, web), MongoDB mot database aicefr, Redis (BullMQ), hai volume. Mot
-%% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
+%% SDD - Diagram 06: Deployment diagram - production https://speakup.fit (ban 1.34)
+%% Ve dung docker-compose.yml + docker-compose.prod.yml va deploy/Caddyfile: Caddy giu
+%% HTTPS, mot gateway nginx, ba dich vu (core, speech, web), MongoDB, Redis (BullMQ,
+%% Streams), hai volume. Mot may EC2; GitHub Actions deploy qua SSH khi main xanh.
+%% Dich vu ngoai: payOS (thanh toan, D095), Resend (email, D079), Gemini (AI viet
+%% lai va soan bai, D072, D073), Google (dang nhap, D036), Web Push (D088).
 flowchart TB
-    subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
+    U(["Trình duyệt · ứng dụng cài trên máy<br/>sinh viên, giảng viên, quản trị viên"])
+    GH(["GitHub Actions<br/>CI xanh trên main thì SSH vào máy và deploy"])
+
+    subgraph HOST["AWS EC2 · m7i-flex.large · docker compose (người dùng aicefr)"]
         direction TB
-        GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đề, bài nộp, duyệt,<br/>lớp, lộ trình band, lượt"]
-        WE["web<br/>trang, tệp tĩnh, số đếm"]
+        CA["caddy · cổng 80/443<br/>chứng chỉ HTTPS tự gia hạn"]
+        GW["gateway · nginx<br/>hỏi core ai đang gọi, chặn /internal/"]
+        CO["core<br/>định danh, đề, bài nộp, duyệt, lớp,<br/>lộ trình band, lượt, thanh toán"]
+        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, chấm điểm<br/>có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
-        MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        MQ[["Redis · BullMQ và Streams<br/>speech.score, assessment.scoring,<br/>sự kiện thanh toán, lớp học"]]
         V1[("Volume uploads<br/>bản ghi âm")]
-        V2[("Volume models<br/>cache model Whisper")]
+        V2[("Volume models<br/>mô hình Whisper và chấm điểm")]
     end
 
+    subgraph EXT["Dịch vụ ngoài · core gọi qua HTTPS bằng khoá trong .env máy chủ"]
+        direction TB
+        PAY["payOS · tạo link VietQR, đối soát<br/>gửi webhook khi đã trả"]
+        RS["Resend · mail.speakup.fit<br/>mã, nhắc học, biên nhận, lời mời lớp"]
+        LLM["Google Gemini<br/>AI viết lại, soạn bài, đoạn đọc"]
+        GO["Google OAuth · PKCE<br/>đăng nhập bằng Google"]
+        WP["Web Push · VAPID<br/>bật khi đã cài khoá"]
+    end
+
+    U -->|"HTTPS"| CA
+    GH -.->|"SSH · docker compose up"| CA
+    CA --> GW
     GW -->|"API + X-Aicefr-Account"| CO
     GW -->|"trang + X-Aicefr-Account"| WE
     WE -->|"HTTP nội bộ"| CO
     CO --> PG
-    CO -->|"gửi việc chấm, hỏi đo bước"| MQ
-    MQ -->|"việc và câu hỏi"| SP
+    CO -->|"việc chấm, sự kiện"| MQ
+    MQ -->|"việc chấm"| SP
     CO --> V1
     SP -->|"chỉ đọc"| V1
     SP --> V2
+    CO -->|"gọi API"| EXT
+    PAY -.->|"webhook đã trả"| CA
 
     classDef data fill:#f8d7da,stroke:#b02a37,color:#000
     classDef app fill:#d1e7dd,stroke:#0f5132,color:#000
     classDef edge fill:#cfe2ff,stroke:#084298,color:#000
+    classDef ext fill:#fff3cd,stroke:#997404,color:#000
     class PG,V1,V2 data
     class CO,WE,SP app
-    class GW,MQ edge
+    class CA,GW,MQ edge
+    class PAY,RS,LLM,GO,WP ext

@@ -105,15 +105,22 @@ def test_the_mark_is_drawn_inline_with_names_of_its_own() -> None:
     assert "prefers-color-scheme: dark" in favicon
 
 
-def test_the_product_page_keeps_its_words_out_of_the_3d_scene() -> None:
+def test_the_product_page_shows_an_example_report_labelled_as_one() -> None:
+    # D093: the hero is a report a visitor can press, not a scene; it says it is an example.
     page = client.get("/").text
-    if '<div class="lp-stage"' in page:
-        stage = page[page.index('<div class="lp-stage"') :]
-        stage = stage[: stage.index("</section>")]
-        assert 'aria-hidden="true"' in stage.split(">", 1)[0]
+    demo = page[page.index('<figure class="hm-demo"') :]
+    demo = demo[: demo.index("</figure>")]
+    assert 'aria-labelledby="demo-cap"' in demo and 'id="demo-cap"' in demo
+    assert '<span class="hm-demo-tag">Ví dụ</span>' in demo
+    words = re.findall(
+        r'<button type="button" class="hm-w (ok|miss|unsure)" data-note="[^"]+">', demo
+    )
+    assert {"ok", "miss", "unsure"} <= set(words)
     assert re.search(r"<h1[^>]*>.*Tiến bộ", page, re.S)
-    assert 'id="how-it-works"' in page
+    for anchor in ("how-it-works", "for-teachers", "principles", "faq"):
+        assert f'id="{anchor}"' in page, anchor
     assert "/static/landing.js?v=" in page
+    assert "/static/landing.css?v=" in page
 
 
 def test_the_blocks_on_other_screens_are_hidden_from_screen_readers() -> None:
@@ -133,11 +140,18 @@ def test_reduced_motion_stops_the_motion() -> None:
         CSS,
     )
     # What moves by itself on scroll or on arrival only does so when motion is welcome.
-    for marker in ("animation-timeline: view();", "main > * { animation: rise-in"):
-        assert enclosing_media(CSS.index(marker)) == "(prefers-reduced-motion: no-preference)"
+    marker = "main > * { animation: rise-in"
+    assert enclosing_media(CSS.index(marker)) == "(prefers-reduced-motion: no-preference)"
+    # The product page's example report (D093) plays only when motion is welcome,
+    # and its entrance lives in the same guard.
+    page_css = (STATIC / "landing.css").read_text(encoding="utf-8")
+    entrance = page_css.index(".hm-hero-copy > * { animation:")
+    assert page_css.rindex(
+        "@media (prefers-reduced-motion: no-preference)", 0, entrance
+    ) > page_css.rindex("}\n\n", 0, entrance)
     script = (STATIC / "landing.js").read_text(encoding="utf-8")
     assert 'matchMedia("(prefers-reduced-motion: reduce)")' in script
-    assert re.search(r"if \(reduced\.matches \|\| !finePointer\.matches\) return;", script)
+    assert re.search(r"if \(reduced\.matches\) \{\s*paint\(1\);", script)
 
 
 def test_the_sidebar_is_frosted_only_where_it_holds_no_fixed_tab_bar() -> None:

@@ -147,7 +147,7 @@ def test_tc_login_01_page_renders_figma_layout_and_elements(tmp_path, monkeypatc
     assert "SpeakUp" in html
 
     # Figma Contract Form Fields
-    assert 'id="pseudonym"' in html
+    assert 'id="email"' in html
     assert 'id="password"' in html
     assert 'id="show-password"' in html
     assert 'id="b"' in html
@@ -373,7 +373,7 @@ def test_tc_login_13_client_validation_and_form_alert_contract(tmp_path, monkeyp
     assert "<form" in html
     assert "novalidate" in html
     assert 'id="auth-alert"' in html
-    assert 'id="pseudonym-error"' in html
+    assert 'id="email-error"' in html
     assert 'id="password-error"' in html
 
     js_r = c.get("/static/login.js")

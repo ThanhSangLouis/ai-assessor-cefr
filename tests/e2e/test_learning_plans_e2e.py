@@ -26,7 +26,7 @@ pytestmark = pytest.mark.e2e
 
 def test_a_learner_follows_the_published_path_without_composing_one(student):
     """D068: learners follow the path teachers publish; composing is the teacher's (below)."""
-    expect(student.locator(".path-trail")).to_be_visible()
+    expect(student.locator(".lesson-node .node-coin").first).to_be_visible()  # D092's trail
     expect(student.locator("#my-plan")).to_have_count(0)
     expect(student.get_by_role("button", name="Ghép lộ trình")).to_have_count(0)
 

@@ -25,7 +25,6 @@ from aicefr.practice.assessment_bank import (
     title_of,
 )
 from aicefr.storage.db import MongoStore, ensure_indexes
-from aicefr.storage.db import now_iso as _now
 
 # One document per task. min_seconds/max_seconds default to 40-60, not 60-180:
 # the scoring model was trained on responses of 26.7-60.7 seconds, and a task
@@ -142,7 +141,6 @@ class TaskRepository(MongoStore):
                         "band": Band.B1.value,
                         "min_seconds": low,
                         "max_seconds": high,
-                        "created_at": _now(),
                     }
                 },
                 upsert=True,
@@ -177,7 +175,6 @@ class TaskRepository(MongoStore):
                         "min_seconds": MIN_SECONDS,
                         "max_seconds": MAX_SECONDS,
                         "topic_keywords": p.topic_keywords,
-                        "created_at": _now(),
                     }
                 },
                 upsert=True,
@@ -195,7 +192,7 @@ class TaskRepository(MongoStore):
         order = {b.value: i for i, b in enumerate(Band)}
         return sorted(out, key=lambda t: (order.get(t["band"] or "", 9), t["task_id"]))
 
-    def add_assessment(self, band: Band, prompt_text: str, topic_keywords: str, by: str) -> str:
+    def add_assessment(self, band: Band, prompt_text: str, topic_keywords: str) -> str:
         """A teacher's new prompt, 40-60 seconds like every assessment prompt."""
         task_id = f"{band.value}-{secrets.token_hex(3).upper()}"
         self.col("task").insert_one(
@@ -209,8 +206,6 @@ class TaskRepository(MongoStore):
                 "min_seconds": MIN_SECONDS,
                 "max_seconds": MAX_SECONDS,
                 "topic_keywords": topic_keywords,
-                "created_by": by,
-                "created_at": _now(),
             }
         )
         return task_id

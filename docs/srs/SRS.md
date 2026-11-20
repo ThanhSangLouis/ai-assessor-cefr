@@ -44,6 +44,18 @@
 | **1.20** | **02/11/2026** | **D089.** +1 FR: FR-97 luyện lại từ máy nghe chưa rõ: mỗi từ tô cam của một bài nói qua bốn bước (nghe lại mình, nghe mẫu, mẹo, nói lại để máy chấm); hai lượt rõ liền là xong, chưa rõ thì vào ôn ngắt quãng; trang Tiến độ có tỉ lệ từ máy nghe chưa rõ qua các bài. Collection `word_drill` (lược đồ phiên bản 18). | D089 (APPROVED) |
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
+| **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
+| **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Email báo lời mời cho sinh viên và báo học viên mới cho giảng viên. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.13), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên. Rà mục 4 theo hệ thống đang chạy: thêm UC-37..UC-41 (tự đăng ký và xác minh email, luyện lại từ chưa rõ, đoạn đọc AI, tự xoá tài khoản, theo dõi đơn nạp lượt) có đặc tả; UC-30 thêm Quản trị viên, UC-35 cho mọi vai trò; ba sơ đồ use case theo vai vẽ lại | D109 |
+| **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
+| **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
+| **1.30** | **08/11/2026** | **D102.** Bỏ hoàn tiền: trang `/payment-terms` nói lượt đã mua không hoàn tiền; trả tiền gặp sự cố (lượt chưa vào ví sau 30 phút, trả hai lần) được bù bằng lượt. Sửa FR-102 mục (4) và AC-102.6 | D102 |
+| **1.29** | **08/11/2026** | **D101.** +2 FR: FR-103 lượt miễn phí của tháng và bản ghi miễn phí trong ngày chỉ dành cho tài khoản đã xác minh email (tài khoản do quản trị viên tạo, không có email, giữ như cũ); lượt đã mua vẫn dùng được. FR-104 sinh viên tự xoá tài khoản ở trang Tài khoản: gõ lại email, xoá bài nói, bản ghi âm, bài học rồi xoá tài khoản và mọi phiên; đơn hàng và sổ lượt giữ lại | D101 |
+| **1.28** | **07/11/2026** | **D099.** +1 FR: FR-102 lưới an toàn khi bán thật: tự đối soát đơn còn mở với payOS mỗi hai phút, tối đa năm đơn chờ trong mười phút cho mỗi người, trang Đơn hàng cho quản trị viên (doanh thu 14 ngày, lọc trạng thái, sự kiện từng đơn), trang điều khoản và hoàn tiền mở cho mọi người và có liên kết ở chỗ mua | D099 |
+| **1.27** | **07/11/2026** | **D097.** Gỡ Stripe: FR-72 và AC-72.x gạch (gỡ bởi D097); AC-71.1, 71.3, 71.6, 71.7 gạch vì chỉ còn một cổng chạy mỗi lúc; AC-71.4 và 71.5 viết lại cho payOS. Đơn Stripe cũ vẫn hiện tên cổng | D097 |
+| **1.26** | **07/11/2026** | **D096.** +1 FR: FR-101 email cho luồng thanh toán: đơn gói lượt kết thúc đã thanh toán thì người mua nhận biên nhận, không thành công thì nhận thông báo; chỉ gửi tới email đã xác minh, mỗi đơn một email. Thanh toán phát sự kiện `billing.order_settled` trên bus, dịch vụ định danh nhận và gửi | D096 |
+| **1.25** | **07/11/2026** | **D095.** +1 FR: FR-100 bán gói lượt qua payOS (chuyển khoản VietQR, Napas 24/7): link thanh toán ký bằng checksum key, trả về được đọc lại từ API payOS, webhook chỉ tin khi chữ ký đúng; payOS không có môi trường thử nên chỉ chạy khi bật tiền thật (`AICEFR_PAYMENTS_LIVE`), khi đó cổng thử tắt. Đơn, gói lượt và luật chốt kết quả không đổi | D095 |
+| **1.24** | **07/11/2026** | **Không thêm FR.** AC-65.10 và AC-66.2 theo trang Lộ trình D092: thành tựu xem ở trang Kết quả; thẻ Mục tiêu hôm nay giữ chuỗi ngày và ngày nghỉ, không hiện kỷ lục và tổng 7 ngày (chủ dự án chốt giữ như giao diện mới). Dữ liệu `today_summary` không đổi | D092 |
+| **1.23** | **07/11/2026** | **D094.** +1 FR: FR-99 tính lượt cho bản ghi trong lộ trình học trên kênh NetID: 5 bản ghi đầu mỗi ngày (giờ Việt Nam) miễn phí, sau đó 0,1 lượt mỗi phút nói đã bắt đầu, tối đa 30 bản ghi mỗi ngày; bản ghi không đo được thì trả lại. `MeteredAction` thêm `LESSON`; `Wallet` thêm số bản ghi trong ngày; `LedgerEntry` thêm ngày và cờ miễn phí; `PriceList` thêm ba con số của bài học. Bản của trường và nghiên cứu không đổi (BR-29, BR-30) | D094 (APPROVED) |
 
 > **Bản 1.3 (07/10/2026).** FR-40..FR-50 đã được ghi vào tài liệu từ ngày 06/10 (D023, D025) nhưng số phiên bản khi đó chưa được nâng; bản 1.3 gom mọi thay đổi kể từ bản 1.2 vào một phiên bản và ghi rõ quyết định đứng sau từng nhóm yêu cầu. Từ bản này, mỗi đợt thêm yêu cầu nâng số phiên bản cùng lúc với nhật ký quyết định.
 >
@@ -263,8 +275,8 @@ Quy tắc nghiệp vụ là những điều hệ thống **phải luôn đúng**
 | BR-13 | Quản trị viên **không thao tác lên chính mình**: không tự tắt, tự cấp lại mật khẩu, tự đổi vai trò hay tự đăng xuất mọi thiết bị | FR-52, FR-60 | 1.3 (D028, D029) | `accounts_api.py` trả 409; `test_an_administrator_changes_a_role_but_not_their_own` |
 | BR-14 | Hồ sơ chỉ nhận giá trị trong danh sách (biểu tượng, màu, mục tiêu ngày); không có trường văn bản tự do nào mời người dùng nhập tên thật | FR-56 | 1.3 (D029) | `AuthRepository.update_profile`; `test_a_profile_takes_only_listed_avatars_and_goals` |
 | BR-15 | Google chỉ đăng nhập cho tài khoản **đã tự liên kết**; Google không tạo tài khoản, không cấp vai trò; hệ thống chỉ giữ **mã băm một chiều** của định danh Google | FR-59 | 1.3 (D029) | `auth/google.py` (`subject_hash`), `google_api.py`; `test_linking_then_signing_in_with_google` |
-| BR-16 | Một tài khoản Google chỉ liên kết với **một** bút danh | FR-59 | 1.3 (D029) | `account_identity` khoá chính (provider, subject_hash); `test_one_google_account_links_to_one_pseudonym` |
-| BR-17 | Nhật ký chỉ ghi lần đăng nhập sai với bút danh **có thật**; chuỗi gõ vào không khớp tài khoản nào không vào nhật ký | FR-58 | 1.3 (D029) | `main.py` (`login`); `test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log` |
+| BR-16 | Một tài khoản Google chỉ liên kết với **một** bút danh | FR-59 | 1.3 (D029) | `account_identity` khoá chính (provider, subject_hash); `test_one_google_account_links_to_one_account` |
+| BR-17 | Nhật ký chỉ ghi lần đăng nhập sai với bút danh **có thật**; chuỗi gõ vào không khớp tài khoản nào không vào nhật ký | FR-58 | 1.3 (D029) | `main.py` (`login`); `test_an_unknown_email_leaves_nothing_in_the_audit_log` |
 | BR-18 | Mỗi bài trong một đợt chấm mù có **đúng hai** giám khảo khác nhau; thứ tự bài xáo riêng cho từng giám khảo; mẫu bài và thứ tự sinh từ **một hạt giống được ghi lại** | FR-61 | 1.3 (D030) | `research/assign.py`; `tests/test_assign_unit.py` |
 | BR-19 | Trong lúc còn phải chấm mù một bài, giám khảo **không thấy** bút danh, mã bài, điểm của máy hay điểm của giám khảo khác — trên phiếu chấm cũng như qua đường vòng (báo cáo, lịch sử, hàng đợi) | FR-62 | 1.3 (D030) | `rating_api.py` (`_sheet`), `main.py` (`_blind`); `test_the_rating_sheet_carries_no_pseudonym_response_id_or_machine_score`, `test_the_machine_result_stays_closed_to_a_rater_until_they_have_rated` |
 | BR-20 | Phiếu chấm: năm tiêu chí và điểm tổng trên thang 0–6 bước 0,5, band A2/B1/B2, một dòng lý do; hoặc "không chấm được" kèm lý do. Nộp **một lần**, không sửa | FR-62 | 1.3 (D030) | `rating_api.py` (`_to_rating`), khoá chính `research_rating`; `test_a_rating_follows_the_rating_sheet_rules` |
@@ -969,7 +981,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 | **AC-51.2** — *Given* năm lần nhập sai mật khẩu hiện tại, *When* đổi lần thứ sáu dù nhập đúng, *Then* nhận 429 và tài khoản tạm khoá như khi đăng nhập sai (`test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`). |
 | **AC-51.3** — *Given* mật khẩu mới ngắn hơn 8 ký tự, trùng bút danh, trùng mật khẩu đang dùng hoặc dài hơn 72 byte, *When* đổi, *Then* nhận 422 kèm lý do cụ thể (`test_the_password_policy_says_what_is_wrong`). |
 | **AC-51.4** — *Given* ba phiên đang mở, *When* chọn đăng xuất khỏi các thiết bị khác, *Then* hai phiên kia kết thúc còn phiên này dùng tiếp (`test_signing_out_other_devices_keeps_this_one`). |
-| **AC-51.5** — *Given* khách chưa đăng nhập, *When* mở `/account`, *Then* được đưa về trang đăng nhập; người đã đăng nhập thấy bút danh của mình và biểu mẫu đổi mật khẩu (`test_the_account_page_needs_a_login_and_shows_the_pseudonym`). |
+| **AC-51.5** — *Given* khách chưa đăng nhập, *When* mở `/account`, *Then* được đưa về trang đăng nhập; người đã đăng nhập thấy email của mình và biểu mẫu đổi mật khẩu (`test_the_account_page_needs_a_login_and_shows_the_email`). |
 
 ### FR-52 — Quản trị viên cấp và quản lý tài khoản trên web
 
@@ -978,11 +990,11 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 | Acceptance Criteria |
 | --- |
-| **AC-52.1** — *Given* đã có SV-007, *When* tạo dãy 3 tài khoản sinh viên, *Then* được SV-008..SV-010, mỗi tài khoản một mật khẩu tạm khác nhau đúng mẫu `xxxx-xxxx-xxxx`, phản hồi `no-store`, danh sách không chứa băm mật khẩu và nhật ký không chứa mật khẩu (`test_a_series_continues_the_numbering_with_one_time_passwords`). |
+| **AC-52.1** — *Given* một danh sách 3 email, *When* tạo tài khoản sinh viên, *Then* mỗi email một tài khoản (D103), email được coi là đã xác minh, mỗi tài khoản một mật khẩu tạm khác nhau đúng mẫu `xxxx-xxxx-xxxx`, phản hồi `no-store`, danh sách không chứa băm mật khẩu và nhật ký không chứa mật khẩu (`test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords`). |
 | **AC-52.2** — *Given* tài khoản vừa được cấp, *When* đăng nhập bằng mật khẩu tạm, *Then* chỉ API đổi mật khẩu dùng được (API khác 403), trang khác chuyển về `/account`; đổi xong thì về trang chính của vai trò và dùng bình thường (`test_a_temporary_password_opens_nothing_but_the_password_change`). |
 | **AC-52.3** — *Given* sinh viên đang đăng nhập, *When* quản trị viên cấp lại mật khẩu tạm, *Then* phiên của sinh viên kết thúc và lần đăng nhập sau phải đổi mật khẩu; quản trị viên không cấp lại cho chính mình được (`test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password`). |
 | **AC-52.4** — *Given* tài khoản đang đăng nhập, *When* bị tắt, *Then* phiên kết thúc và không đăng nhập lại được cho tới khi bật lại (`test_a_disabled_account_is_signed_out_and_cannot_sign_in`). |
-| **AC-52.5** — *Given* bút danh đã có, bút danh chứa ký tự lạ, dạng mã số sinh viên, tiền tố sai hoặc hơn 200 tài khoản, *When* tạo, *Then* bị từ chối và không tài khoản nào được tạo (`test_creating_accounts_is_all_or_nothing_and_checks_names`). |
+| **AC-52.5** — *Given* email đã có tài khoản, email sai dạng, email trùng trong danh sách hoặc hơn 200 email, *When* tạo, *Then* bị từ chối và không tài khoản nào được tạo (`test_creating_accounts_is_all_or_nothing_and_checks_emails`). |
 | **AC-52.6** — *Given* tài khoản sinh viên hoặc giảng viên, *When* gọi bất kỳ API quản lý tài khoản nào, *Then* nhận 403 (`test_only_an_administrator_manages_accounts`). |
 | **AC-52.7** — *Given* tài khoản bị khoá sau năm lần đăng nhập sai, *When* quản trị viên gỡ khoá, *Then* đăng nhập được ngay (`test_an_administrator_lifts_a_lockout`). |
 
@@ -993,7 +1005,7 @@ Năm yêu cầu cho ba vai trò dùng hệ thống hằng ngày mà không cần
 
 | Acceptance Criteria |
 | --- |
-| **AC-53.1** — *Given* giảng viên vừa duyệt một bài của sinh viên, *When* sinh viên xem thanh điều khiển, *Then* có con số 1 ở "Bài của tôi", danh sách bài mang thời điểm quyết định, và sau khi mở danh sách thì con số về 0 (`test_a_teacher_decision_is_new_until_the_student_opens_their_list`). |
+| **AC-53.1** — D103: con số "kết quả mới" của sinh viên bị gỡ cùng `seen_markers`; thanh điều khiển của sinh viên còn số mục ôn tập đến hạn và (D109) số lời mời vào lớp chưa trả lời (`test_a_student_badge_counts_reviews_due_and_class_invitations`). |
 | **AC-53.2** — *Given* có bài chờ duyệt, *When* giảng viên xem thanh điều khiển, *Then* con số bằng số bài trong hàng đợi (`test_a_teacher_sees_how_many_responses_wait_for_review`). |
 | **AC-53.3** — *Given* trang của sinh viên và của giảng viên, *When* hiển thị, *Then* mỗi con số có chỗ của nó trên thanh điều khiển (`test_the_sidebar_carries_a_slot_for_each_count`). |
 
@@ -1052,7 +1064,7 @@ Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý t�
 | --- |
 | **AC-58.1** — *Given* một lần đăng nhập, một lần sai mật khẩu và một lần đổi mật khẩu, *When* xem lịch sử, *Then* có ba dòng theo thứ tự mới nhất trước, dòng đăng nhập sai ghi lý do sai mật khẩu (`test_the_history_shows_sign_ins_failed_attempts_and_changes`). |
 | **AC-58.2** — *Given* quản trị viên đăng xuất mọi phiên của sinh viên, *When* sinh viên xem lịch sử, *Then* dòng đó ghi là do người khác làm (`test_what_an_administrator_did_shows_as_an_administrator`). |
-| **AC-58.3** — *Given* lần đăng nhập với bút danh không tồn tại, *When* xem nhật ký kiểm toán, *Then* không có dòng nào (`test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log`). |
+| **AC-58.3** — *Given* lần đăng nhập với bút danh không tồn tại, *When* xem nhật ký kiểm toán, *Then* không có dòng nào (`test_an_unknown_email_leaves_nothing_in_the_audit_log`). |
 
 ### FR-59 — Đăng nhập bằng Google cho tài khoản đã liên kết
 
@@ -1066,7 +1078,7 @@ Chủ dự án yêu cầu ngày 07/10/2026 làm đầy đủ trang quản lý t�
 | **AC-59.3** — *Given* sinh viên liên kết Google, *When* lần sau đăng nhập bằng chính tài khoản Google đó, *Then* vào đúng bút danh, về đúng trang định tới, phiên ghi cách đăng nhập là Google; CSDL chỉ có mã băm 64 ký tự, không có email (`test_linking_then_signing_in_with_google`). |
 | **AC-59.4** — *Given* tài khoản Google chưa liên kết và đăng ký đã tắt (`AICEFR_GOOGLE_SIGNUP=0`), *When* đăng nhập bằng Google, *Then* bị từ chối, không có phiên và không có tài khoản mới (`test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`). |
 | **AC-59.5** — *Given* `state` giả, nonce khác, audience khác, issuer lạ hoặc token hết hạn, *When* quay về từ Google, *Then* bị từ chối và không có phiên (`test_a_forged_or_stale_round_trip_is_refused`). |
-| **AC-59.6** — *Given* một tài khoản Google đã liên kết với SV-001, *When* SV-002 liên kết cùng tài khoản đó, *Then* bị từ chối (`test_one_google_account_links_to_one_pseudonym`). |
+| **AC-59.6** — *Given* một tài khoản Google đã liên kết với SV-001, *When* SV-002 liên kết cùng tài khoản đó, *Then* bị từ chối (`test_one_google_account_links_to_one_account`). |
 | **AC-59.7** — *Given* giới hạn tên miền, *When* liên kết bằng tài khoản ngoài tên miền hoặc email chưa xác minh, *Then* bị từ chối; đúng tên miền và đã xác minh thì liên kết được (`test_the_domain_restriction_requires_a_verified_school_account`). |
 | **AC-59.8** — *Given* tài khoản đã liên kết rồi bị tắt, *When* đăng nhập bằng Google, *Then* bị từ chối (`test_a_disabled_account_cannot_sign_in_with_google`). |
 | **AC-59.9** — *Given* người dùng hoặc quản trị viên gỡ liên kết, *When* đăng nhập bằng Google, *Then* bị từ chối như tài khoản chưa liên kết khi đăng ký đã tắt (`test_unlinking_google_by_the_person_or_an_administrator`). |
@@ -1154,14 +1166,14 @@ Giữ người học quay lại luyện mà không biến việc luyện thành 
 | --- |
 | **AC-65.1** — *Given* người học chưa có lượt luyện nào, *When* ghi hai lượt liền nhau, *Then* lượt thứ nhất trả về đúng một thành tựu "Lượt nói đầu tiên", lượt thứ hai không trả về thành tựu nào, và thành tựu được lưu là chưa xem (`test_a_first_recording_is_congratulated_once`). |
 | **AC-65.2** — *Given* hai ngày luyện liên tiếp, *When* mở danh sách, *Then* có 17 mục trong năm nhóm, một mục đã đạt, chuỗi 3 ngày ghi 2/3 và chưa đạt, 10 phút ghi theo phút; phản hồi không có điểm, band hay xếp hạng; người chưa đăng nhập nhận 401 (`test_the_list_shows_how_far_each_one_is_without_a_score`). |
-| **AC-65.3** — *Given* hai người học cùng có thành tựu mới, *When* một người đánh dấu đã xem, *Then* chỉ thành tựu của người đó hết "mới", mã không có thật không được tính, danh sách quá 17 mã nhận 422 (`test_new_achievements_are_marked_seen_by_their_owner_only`). |
+| **AC-65.3** — D103: thành tựu không còn dấu "mới" và không còn API đánh dấu đã xem (`seen_at` bị gỡ); người học được báo đúng một lần bằng thông báo ngay lúc đạt (`test_a_first_recording_is_congratulated_once`). |
 | **AC-65.4** — *Given* người học đã đạt "Thử lại và qua", *When* giảng viên sửa lượt qua thành chưa qua và người học xoá lượt chưa qua trước đó, *Then* thành tựu vẫn còn (`test_an_achievement_is_never_taken_back`). |
 | **AC-65.5** — *Given* lượt luyện lúc 00:30 ngày 6/10 giờ Việt Nam (vẫn là 5/10 theo UTC) giữa các ngày 3, 4, 5 và 7/10, *When* mở danh sách, *Then* chuỗi dài nhất là 5 ngày; đổi mục tiêu ngày từ 3 phút xuống 1 phút thì số ngày đủ mục tiêu tăng từ 1 lên 6; luyện lại sau ba ngày không luyện được tính là "Quay lại" (`test_habit_achievements_count_vietnam_days_and_the_learners_goal`). |
 | **AC-65.6** — *Given* chặng đầu của lộ trình mẫu, *When* người học hoàn thành bài thứ nhất rồi mọi bài còn lại, *Then* "Bài học đầu tiên" đạt ngay sau bài thứ nhất, "Xong một chặng" chỉ đạt khi xong cả chặng (`test_completing_a_lesson_and_a_unit_reach_the_path_achievements`). |
 | **AC-65.7** — *Given* một mục ôn đến hạn, *When* người học nói lượt ôn, *Then* phản hồi có danh sách thành tựu và "Mười lượt ôn" ghi 1/10 (`test_review_attempts_count_towards_the_review_achievement`). |
 | **AC-65.8** — *Given* người học có lần lượt năm bài đánh giá có kết quả, *When* mở danh sách sau bài thứ nhất và sau bài thứ năm, *Then* "Bài đánh giá đầu tiên" rồi "Đủ để thấy xu hướng" lần lượt đạt, và trang Tiến độ bắt đầu nói về xu hướng (`test_assessments_with_a_result_count_towards_the_assessment_achievements`). |
 | **AC-65.9** — *Given* hai người học có thành tựu, *When* một người tải dữ liệu cá nhân rồi quản trị viên xoá dữ liệu người đó, *Then* bản xuất có thành tựu kèm tên và mục đích, xoá xong không còn thành tựu nào của người đó, của người kia còn nguyên (`test_the_personal_export_and_erasure_cover_achievements`). |
-| **AC-65.10** — *Given* người học mới trên trình duyệt, *When* nộp lượt nói đầu tiên, mở trang Luyện tập rồi bấm "Xem tất cả", *Then* thấy thông báo "Thành tựu mới: Lượt nói đầu tiên", thẻ ghi "1 mới", ô thành tựu mang nhãn "Mới", ô chưa đạt có thanh tiến độ; tải lại trang thì không còn ô nào "Mới" và trang không có chữ "band" (`test_a_first_recording_is_congratulated_then_listed_as_new_once`). |
+| **AC-65.10** — *Given* người học mới trên trình duyệt, *When* nộp lượt nói đầu tiên rồi mở mục Thành tựu của trang Kết quả (từ D092 trang Lộ trình chỉ nhắc thành tựu cạnh bài cần ôn), *Then* thấy thông báo "Thành tựu mới: Lượt nói đầu tiên", ô thành tựu hiện đã đạt và không mang nhãn "Mới" (D103), ô chưa đạt có thanh tiến độ, trang không có chữ "band" (`test_a_first_recording_is_congratulated_then_listed_as_reached`). |
 
 ### FR-66 — Nhịp luyện của chính mình: kỷ lục, ngày nghỉ được tính, so với tuần trước
 
@@ -1171,7 +1183,7 @@ Giữ người học quay lại luyện mà không biến việc luyện thành 
 | Acceptance Criteria |
 | --- |
 | **AC-66.1** — *Given* chuỗi năm ngày đã qua và chuỗi hiện tại ba ngày có một ngày nghỉ hai hôm trước, *When* mở trang Luyện tập, *Then* API trả chuỗi 3, kỷ lục 5, ngày nghỉ đúng ngày đó, 120 giây bảy ngày qua và 150 giây bảy ngày trước; thẻ Thành tựu có ba thành tựu mới và "Tròn một tuần" 5/7 là cái gần đạt nhất (`test_the_practice_page_shows_the_record_rest_days_and_last_week`). |
-| **AC-66.2** — *Given* lịch sử như AC-66.1 trên trình duyệt, *When* mở trang Luyện tập, *Then* thẻ Hôm nay ghi "3 ngày liên tiếp", "Kỷ lục của bạn: 5 ngày", đúng một ô ngày nghỉ có chú thích "nghỉ, chuỗi vẫn giữ" và "7 ngày qua: 2 phút" (`test_the_week_shows_the_record_and_the_rest_day`). |
+| **AC-66.2** — *Given* lịch sử như AC-66.1 trên trình duyệt, *When* mở trang Luyện tập, *Then* thẻ Mục tiêu hôm nay ghi "3 ngày liên tiếp" và đúng một ô ngày nghỉ có chú thích "nghỉ, chuỗi vẫn giữ"; kỷ lục và tổng 7 ngày vẫn có trong dữ liệu trang nhưng giao diện D092 không hiện (chủ dự án chốt 07/11/2026) (`test_the_week_shows_the_streak_and_the_rest_day`). |
 | **AC-66.3** — *Given* các ngày luyện có một chuỗi bảy ngày và một chuỗi qua ngày nghỉ, *When* tính kỷ lục, *Then* kỷ lục là con số lớn nhất người học từng thấy trên thẻ Hôm nay (`test_the_longest_streak_is_the_best_the_learner_was_ever_shown`). |
 | **AC-66.4** — *Given* chuỗi có một ngày nghỉ, và hai ngày nghỉ cách nhau dưới bảy ngày, *When* tính ngày nghỉ được tính, *Then* chỉ ngày nghỉ chuỗi thật sự dùng được nêu tên (`test_the_rest_days_of_the_current_streak_are_named`). |
 
@@ -1245,37 +1257,41 @@ Chủ dự án muốn thử luồng thanh toán với Stripe vì Stripe có môi
 
 ### FR-71 — Chọn cổng thanh toán cho từng đơn
 
+> **D097 (07/11/2026):** chỉ còn payOS (tiền thật) và cổng thử, không chạy cùng nhau, nên không còn chọn cổng; AC-71.2, 71.4, 71.5 vẫn là luật của mọi cổng.
+
 **Mô tả:** `AICEFR_PAYMENT_GATEWAYS` liệt kê các cổng theo thứ tự hiện — `sandbox` (cổng thử trong ứng dụng), `vnpay`, `stripe`, `momo`. Mỗi cổng dựng từ khoá của chính nó; cổng thiếu khoá, khoá sai dạng hay tên lạ không bật, và tab Gói dịch vụ nói lý do bằng một câu nêu **tên biến** còn thiếu, không bao giờ giá trị khoá. Ô "Thanh toán qua" liệt kê các cổng đang bật với cách người trả trả tiền, nhãn "Thử" và hướng dẫn trả thử của cổng (Stripe: thẻ 4242 4242 4242 4242); cổng đầu được chọn sẵn; nút thanh toán ghi số tiền và tên cổng. Đơn ghi cổng, có tiền thật hay không, và mã phiên của cổng nếu có; bảng đơn hàng và biên nhận ghi cổng. Cổng không mở được thanh toán (khoá sai, số tiền ngoài mức cổng nhận, mất kết nối) thì đơn ghi không thành công kèm lý do và quản trị viên nhận lời nói rõ (502). Cổng thu tiền thật cần `AICEFR_PAYMENTS_LIVE`, và khi có cổng thật thì mọi cổng ở môi trường thử bị bỏ (BR-34); kết quả của cổng này không ghi nhận đơn của cổng khác, của chế độ tiền khác hay của phiên khác (BR-35).
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-71.1** — *Given* cấu hình liệt kê Stripe, MoMo, VNPay và cổng thử nhưng chỉ có khoá bí mật của Stripe, *When* quản trị viên mở tab rồi đặt đơn không nêu cổng, nêu MoMo, nêu cổng thử, *Then* tab liệt kê Stripe rồi Cổng thử, Stripe có ghi chú thẻ thử; tab nói MoMo và VNPay chưa bật và Stripe thiếu khoá webhook, không lộ khoá nào; đơn không nêu cổng đi Stripe, MoMo nhận 422, cổng thử cho địa chỉ trang thử (`test_the_buyer_picks_the_gateway_and_the_problems_are_logged`). |
+| ~~AC-71.1~~ *(gỡ bởi D097)* — *Given* cấu hình liệt kê Stripe, MoMo, VNPay và cổng thử nhưng chỉ có khoá bí mật của Stripe, *When* quản trị viên mở tab rồi đặt đơn không nêu cổng, nêu MoMo, nêu cổng thử, *Then* tab liệt kê Stripe rồi Cổng thử, Stripe có ghi chú thẻ thử; tab nói MoMo và VNPay chưa bật và Stripe thiếu khoá webhook, không lộ khoá nào; đơn không nêu cổng đi Stripe, MoMo nhận 422, cổng thử cho địa chỉ trang thử (`test_the_buyer_picks_the_gateway_and_the_problems_are_logged`). |
 | **AC-71.2** — *Given* danh sách cổng trong cấu hình, *When* dựng các cổng, *Then* cổng đủ khoá bật theo đúng thứ tự; cổng thiếu khoá hay tên lạ được báo một câu nêu tên biến, tên lặp không báo hai lần; Stripe ở chế độ thử thiếu khoá webhook vẫn bật kèm cảnh báo (`test_the_registry_builds_what_the_settings_ask_for`). |
-| **AC-71.3** — *Given* khoá Stripe `sk_live_`, *When* chưa rồi đã bật `AICEFR_PAYMENTS_LIVE`, *Then* lần đầu Stripe không bật và tab nêu biến cần đặt; lần sau Stripe bật ở chế độ thật và cổng thử tự tắt, trang cổng thử trả 404 (`test_real_money_needs_to_be_switched_on`). |
-| **AC-71.4** — *Given* cấu hình thu tiền thật của Stripe và địa chỉ thật của MoMo, *When* chưa bật `AICEFR_PAYMENTS_LIVE`, *Then* không cổng thật nào chạy; bật rồi thì cổng thử bị bỏ khỏi danh sách; Stripe khoá thử đặt cạnh trang thật của VNPay cũng bị bỏ, kèm lời nêu lý do (`test_real_money_is_never_a_default`). |
-| **AC-71.5** — *Given* một đơn đặt qua Stripe, *When* cổng thử gửi kết quả có chữ ký đúng cho đơn đó, *Then* thông báo nhận mã 01, trang trả về không xác nhận, đơn vẫn chờ, sự kiện ghi bị từ chối; kết quả đúng của Stripe cũng bị từ chối khi khoá đã đổi sang chế độ tiền khác với lúc đặt đơn, và được ghi nhận khi trở lại đúng chế độ (`test_one_gateway_cannot_settle_another_gateways_order`). |
-| **AC-71.6** — *Given* quản trị viên trên trình duyệt với Stripe ở chế độ thử và cổng thử, *When* xem tab, chọn cổng thử và thanh toán thành công, *Then* thấy hai lựa chọn có nhãn thử, ghi chú thẻ 4242 và cảnh báo thiếu khoá webhook; nút ghi "qua Stripe" rồi "qua Cổng thử"; bảng đơn ghi "Cổng thử (thử)" (`test_the_buyer_picks_the_gateway_and_pays_through_it`). |
-| **AC-71.7** — *Given* điện thoại 390 px, *When* mở tab Gói dịch vụ, *Then* ô chọn cổng hiện đủ và trang không cuộn ngang (`test_the_gateway_choice_fits_a_phone`). |
+| ~~AC-71.3~~ *(gỡ bởi D097)* — *Given* khoá Stripe `sk_live_`, *When* chưa rồi đã bật `AICEFR_PAYMENTS_LIVE`, *Then* lần đầu Stripe không bật và tab nêu biến cần đặt; lần sau Stripe bật ở chế độ thật và cổng thử tự tắt, trang cổng thử trả 404 (`test_real_money_needs_to_be_switched_on`). |
+| **AC-71.4** — *Given* payOS đủ khoá (cổng chỉ có tiền thật), *When* chưa bật rồi đã bật `AICEFR_PAYMENTS_LIVE`, *Then* lần đầu payOS không chạy và nhật ký nêu biến cần đặt; lần sau payOS chạy và cổng thử tự tắt, để không ai mua lượt thật bằng trang thử (`test_real_money_is_never_a_default`). |
+| **AC-71.5** — *Given* một đơn đặt qua payOS, *When* một kết quả có chữ ký đúng của cổng thử, hoặc của payOS ở chế độ tiền khác, nói đơn đã trả, *Then* đơn không đổi, có sự kiện `rejected`, và chỉ kết quả của đúng cổng, đúng chế độ mới chốt được đơn (`test_one_gateway_cannot_settle_another_gateways_order`). |
+| ~~AC-71.6~~ *(gỡ bởi D097)* — *Given* quản trị viên trên trình duyệt với Stripe ở chế độ thử và cổng thử, *When* xem tab, chọn cổng thử và thanh toán thành công, *Then* thấy hai lựa chọn có nhãn thử, ghi chú thẻ 4242 và cảnh báo thiếu khoá webhook; nút ghi "qua Stripe" rồi "qua Cổng thử"; bảng đơn ghi "Cổng thử (thử)" (`test_the_buyer_picks_the_gateway_and_pays_through_it`). |
+| ~~AC-71.7~~ *(gỡ bởi D097)* — *Given* điện thoại 390 px, *When* mở tab Gói dịch vụ, *Then* ô chọn cổng hiện đủ và trang không cuộn ngang (`test_the_gateway_choice_fits_a_phone`). |
 
-### FR-72 — Stripe Checkout ở chế độ thử
+### FR-72 — Stripe Checkout ở chế độ thử *(gỡ bởi D097)*
+
+> **D097 (07/11/2026):** Stripe không mở tài khoản bán hàng cho doanh nghiệp đặt tại Việt Nam nên đã gỡ khỏi hệ thống; payOS (FR-100) thay chỗ. Phần dưới giữ làm lịch sử.
 
 **Mô tả:** Stripe bật bằng `AICEFR_STRIPE_SECRET_KEY` (khoá `sk_test_…` là môi trường thử của Stripe) và `AICEFR_STRIPE_WEBHOOK_SECRET` (`whsec_…`, của điểm nhận webhook hoặc của `stripe listen`). Đặt đơn qua Stripe, hệ thống gọi API của Stripe mở một Checkout Session: tiền tệ VND, số tiền tính bằng đồng (VND không có đơn vị lẻ), mã đơn ở `client_reference_id` và metadata, khoá chống lặp theo mã đơn, trang tiếng Việt, phiên hết hạn sau 31 phút; trình duyệt đi tới trang Stripe trả về. Trả xong, Stripe đưa trình duyệt về `/billing/return/stripe?session_id=…`. Mã phiên chỉ là lời khai, nên hệ thống đọc lại phiên từ API của Stripe bằng khoá bí mật và chỉ tin `payment_status`, số tiền và tiền tệ của chính phiên đó; hệ thống chỉ hỏi Stripe về phiên do chính nó mở (BR-35). Stripe cũng gửi sự kiện tới `/api/v1/billing/notify/stripe`; sự kiện chỉ được tin khi tiêu đề `Stripe-Signature` là HMAC-SHA256 đúng của đúng các byte nhận được theo khoá webhook, trong vòng năm phút, cùng chế độ thử hay thật với khoá. `checkout.session.completed` (đã trả), `async_payment_succeeded`, `async_payment_failed` và `expired` đổi đơn; sự kiện khác được nhận rồi bỏ qua. Người trả rời trang Stripe khi chưa trả thì về trang nói chưa trừ tiền, đơn chờ tới khi phiên hết hạn. Không hỏi được Stripe thì trang nói chưa xác nhận được, đơn được ghi nhận khi webhook tới. Sự kiện của một phiên khác — cùng tài khoản Stripe, cùng mã đơn, cùng số tiền — không ghi nhận đơn; đơn đã xong thì trang trả về hiện từ CSDL mà không hỏi Stripe nữa; thân thông báo quá 256 KiB bị từ chối trước khi đọc hết; tiêu đề hay chữ ký có ký tự lạ nhận 400 chứ không làm lỗi máy chủ; lời gọi tới Stripe không đi theo chuyển hướng. Hệ thống chỉ giữ mã phiên và mã giao dịch của Stripe — không email, tên hay thẻ của người trả (BR-32). Khoá `sk_live_` cần khoá webhook và `AICEFR_PAYMENTS_LIVE`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-72.1** — *Given* khoá thử của Stripe, *When* mở thanh toán cho đơn 6.000.000 đ, *Then* hệ thống gửi `POST /v1/checkout/sessions` với khoá bí mật, khoá chống lặp theo mã đơn, `currency=vnd`, `unit_amount=6000000`, mã đơn ở `client_reference_id` và metadata, địa chỉ trả về có `{CHECKOUT_SESSION_ID}`, địa chỉ rời trang có `left=1`, hạn sau 31 phút, `locale=vi`; trả địa chỉ trang Stripe và mã phiên (`test_stripe_opens_a_checkout_session_in_dong_for_the_order`). |
-| **AC-72.2** — *Given* Stripe từ chối vì số tiền quá nhỏ, rồi không kết nối được, *When* quản trị viên đặt đơn qua Stripe, *Then* nhận 502 với lời bắt đầu bằng "Stripe: " nêu lý do, đơn ghi không thành công với mã của Stripe, không còn đơn nào chờ, gói không đổi (`test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`). |
-| **AC-72.3** — *Given* đơn Chuẩn 50 sinh viên đặt qua Stripe, *When* người trả trả xong và trình duyệt quay về, rồi webhook tới, rồi trình duyệt quay về lần nữa, *Then* trang báo thành công và môi trường thử của Stripe, phiên được đọc lại từ API, gói Chuẩn có hiệu lực với mã giao dịch của Stripe; webhook nhận `{"received": true}`; lần quay về sau báo thành công mà Stripe không bị hỏi thêm; ba sự kiện được lưu, chỉ lần trả về được áp dụng; biên nhận ghi Stripe ở môi trường thử (`test_paying_through_stripe_is_read_back_and_counted_once`). |
-| **AC-72.4** — *Given* phiên đã trả, chưa trả, đã hết hạn, hoặc tính bằng tiền khác, *When* đọc lại từ Stripe, *Then* lần lượt là đã thanh toán, chưa có kết quả, huỷ, và một số tiền không khớp đơn nào; chỉ giữ mã phiên, không email hay tên; mã phiên sai dạng hay là phiên thật trên khoá thử bị từ chối mà không hỏi Stripe (`test_stripe_return_is_read_back_from_stripe`). |
-| **AC-72.5** — *Given* một sự kiện webhook, *When* chữ ký đúng, đúng nhưng cũ hơn năm phút, sửa một byte, khoá khác, thiếu tiêu đề, nhiều chữ ký v1 khi đổi khoá, sự kiện thật trên khoá thử, *Then* chỉ trường hợp đúng và trường hợp nhiều chữ ký có một chữ ký đúng được tin; thời điểm có ký tự lạ hay dài bất thường và chữ ký không phải ASCII bị từ chối, không gây lỗi; các loại sự kiện ánh xạ đúng kết quả, sự kiện khác được nhận rồi bỏ (`test_stripe_events_count_only_when_signed_and_fresh`). |
-| **AC-72.6** — *Given* người trả đã trả rồi đóng trang, *When* webhook sai khoá, thân rỗng không chữ ký, gọi bằng GET, rồi webhook đúng tới, *Then* ba lần đầu nhận 400, tiêu đề có ký tự lạ nhận 400, thân quá 256 KiB nhận 413, sự kiện có chữ ký của một phiên khác mang mã đơn này nhận 200 nhưng đơn vẫn chờ, và gói không đổi; webhook đúng làm gói Chuẩn có hiệu lực; sự kiện không liên quan được nhận 200 (`test_the_stripe_webhook_alone_credits_the_runs`). |
-| **AC-72.7** — *Given* một đơn qua Stripe, *When* người trả rời trang Stripe khi chưa trả, rồi phiên hết hạn, *Then* trang nói đã rời trang thanh toán, đơn vẫn chờ; sự kiện hết hạn làm đơn thành huỷ và gói không đổi (`test_leaving_stripe_changes_nothing_until_the_session_expires`). |
-| **AC-72.8** — *Given* người trả đã trả, *When* trình duyệt quay về lúc không hỏi được Stripe, rồi tải lại, *Then* lần đầu trang nói chưa xác nhận được với Stripe và đơn vẫn chờ; lần sau báo thành công (`test_a_return_stripe_cannot_confirm_says_so`). |
-| **AC-72.9** — *Given* một đơn đang chờ, *When* trang trả về nhận mã phiên đúng dạng nhưng không phải phiên của đơn nào, hoặc sai dạng, *Then* trang không xác nhận, Stripe không được hỏi lần nào, đơn vẫn chờ (`test_stripe_is_asked_only_about_checkouts_this_system_opened`). |
-| **AC-72.10** — *Given* các loại khoá, *When* dựng cổng Stripe, *Then* `sk_test_` và `rk_test_` là chế độ thử kèm ghi chú thẻ thử; `sk_live_` có khoá webhook là chế độ thật; `sk_live_` thiếu khoá webhook, khoá công khai `pk_` hay khoá webhook sai dạng bị từ chối (`test_stripe_keys_decide_the_mode`). |
-| **AC-72.11** — *Given* trình duyệt, *When* mở địa chỉ rời trang của Stripe, *Then* trang ghi "Bạn đã rời trang thanh toán", dòng môi trường thử của Stripe và nút về trang Gói dịch vụ (`test_coming_back_without_paying_says_nothing_was_charged`). |
+| ~~AC-72.1~~ *(gỡ bởi D097)* — *Given* khoá thử của Stripe, *When* mở thanh toán cho đơn 6.000.000 đ, *Then* hệ thống gửi `POST /v1/checkout/sessions` với khoá bí mật, khoá chống lặp theo mã đơn, `currency=vnd`, `unit_amount=6000000`, mã đơn ở `client_reference_id` và metadata, địa chỉ trả về có `{CHECKOUT_SESSION_ID}`, địa chỉ rời trang có `left=1`, hạn sau 31 phút, `locale=vi`; trả địa chỉ trang Stripe và mã phiên (`test_stripe_opens_a_checkout_session_in_dong_for_the_order`). |
+| ~~AC-72.2~~ *(gỡ bởi D097)* — *Given* Stripe từ chối vì số tiền quá nhỏ, rồi không kết nối được, *When* quản trị viên đặt đơn qua Stripe, *Then* nhận 502 với lời bắt đầu bằng "Stripe: " nêu lý do, đơn ghi không thành công với mã của Stripe, không còn đơn nào chờ, gói không đổi (`test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`). |
+| ~~AC-72.3~~ *(gỡ bởi D097)* — *Given* đơn Chuẩn 50 sinh viên đặt qua Stripe, *When* người trả trả xong và trình duyệt quay về, rồi webhook tới, rồi trình duyệt quay về lần nữa, *Then* trang báo thành công và môi trường thử của Stripe, phiên được đọc lại từ API, gói Chuẩn có hiệu lực với mã giao dịch của Stripe; webhook nhận `{"received": true}`; lần quay về sau báo thành công mà Stripe không bị hỏi thêm; ba sự kiện được lưu, chỉ lần trả về được áp dụng; biên nhận ghi Stripe ở môi trường thử (`test_paying_through_stripe_is_read_back_and_counted_once`). |
+| ~~AC-72.4~~ *(gỡ bởi D097)* — *Given* phiên đã trả, chưa trả, đã hết hạn, hoặc tính bằng tiền khác, *When* đọc lại từ Stripe, *Then* lần lượt là đã thanh toán, chưa có kết quả, huỷ, và một số tiền không khớp đơn nào; chỉ giữ mã phiên, không email hay tên; mã phiên sai dạng hay là phiên thật trên khoá thử bị từ chối mà không hỏi Stripe (`test_stripe_return_is_read_back_from_stripe`). |
+| ~~AC-72.5~~ *(gỡ bởi D097)* — *Given* một sự kiện webhook, *When* chữ ký đúng, đúng nhưng cũ hơn năm phút, sửa một byte, khoá khác, thiếu tiêu đề, nhiều chữ ký v1 khi đổi khoá, sự kiện thật trên khoá thử, *Then* chỉ trường hợp đúng và trường hợp nhiều chữ ký có một chữ ký đúng được tin; thời điểm có ký tự lạ hay dài bất thường và chữ ký không phải ASCII bị từ chối, không gây lỗi; các loại sự kiện ánh xạ đúng kết quả, sự kiện khác được nhận rồi bỏ (`test_stripe_events_count_only_when_signed_and_fresh`). |
+| ~~AC-72.6~~ *(gỡ bởi D097)* — *Given* người trả đã trả rồi đóng trang, *When* webhook sai khoá, thân rỗng không chữ ký, gọi bằng GET, rồi webhook đúng tới, *Then* ba lần đầu nhận 400, tiêu đề có ký tự lạ nhận 400, thân quá 256 KiB nhận 413, sự kiện có chữ ký của một phiên khác mang mã đơn này nhận 200 nhưng đơn vẫn chờ, và gói không đổi; webhook đúng làm gói Chuẩn có hiệu lực; sự kiện không liên quan được nhận 200 (`test_the_stripe_webhook_alone_credits_the_runs`). |
+| ~~AC-72.7~~ *(gỡ bởi D097)* — *Given* một đơn qua Stripe, *When* người trả rời trang Stripe khi chưa trả, rồi phiên hết hạn, *Then* trang nói đã rời trang thanh toán, đơn vẫn chờ; sự kiện hết hạn làm đơn thành huỷ và gói không đổi (`test_leaving_stripe_changes_nothing_until_the_session_expires`). |
+| ~~AC-72.8~~ *(gỡ bởi D097)* — *Given* người trả đã trả, *When* trình duyệt quay về lúc không hỏi được Stripe, rồi tải lại, *Then* lần đầu trang nói chưa xác nhận được với Stripe và đơn vẫn chờ; lần sau báo thành công (`test_a_return_stripe_cannot_confirm_says_so`). |
+| ~~AC-72.9~~ *(gỡ bởi D097)* — *Given* một đơn đang chờ, *When* trang trả về nhận mã phiên đúng dạng nhưng không phải phiên của đơn nào, hoặc sai dạng, *Then* trang không xác nhận, Stripe không được hỏi lần nào, đơn vẫn chờ (`test_stripe_is_asked_only_about_checkouts_this_system_opened`). |
+| ~~AC-72.10~~ *(gỡ bởi D097)* — *Given* các loại khoá, *When* dựng cổng Stripe, *Then* `sk_test_` và `rk_test_` là chế độ thử kèm ghi chú thẻ thử; `sk_live_` có khoá webhook là chế độ thật; `sk_live_` thiếu khoá webhook, khoá công khai `pk_` hay khoá webhook sai dạng bị từ chối (`test_stripe_keys_decide_the_mode`). |
+| ~~AC-72.11~~ *(gỡ bởi D097)* — *Given* trình duyệt, *When* mở địa chỉ rời trang của Stripe, *Then* trang ghi "Bạn đã rời trang thanh toán", dòng môi trường thử của Stripe và nút về trang Gói dịch vụ (`test_coming_back_without_paying_says_nothing_was_charged`). |
 
 ### FR-73 — Ví MoMo
 
@@ -1372,12 +1388,12 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 > **D078 (01/11/2026).** Số đo thời gian giảng viên (thẻ "Hiệu quả cho giảng viên", API `/api/v1/review/kpi`) được gỡ: mốc so sánh của nó là thời gian chấm mù, đã gỡ cùng D030. Hệ thống vẫn ghi lúc giảng viên mở và kết thúc một lần duyệt (AC-79.1) vì lịch sử duyệt cần nó. AC-79.2..AC-79.5 thành lịch sử.
 
-**Mô tả:** Khoá một bài để duyệt mở một phiên (`review_session`), quyết định hay đóng bài thì kết thúc phiên. Thẻ "Hiệu quả cho giảng viên" ở Thống kê lớp so trung vị phút duyệt một bài có máy với trung vị phút chấm mù một bài không có máy (phiếu D030), thời gian tiết kiệm = 1 − tỉ số hai trung vị; phiên quá 30 phút không tính và được đếm riêng; không nêu trung vị dưới 5 mẫu. Kèm tỉ lệ bài máy tự xong (hoàn tất, không cần giảng viên xác nhận, trên số bài đánh giá có điểm) và tỉ lệ giảng viên giữ nguyên mức của máy, cả hai có khoảng Wilson 95 %. `GET /api/v1/review/kpi` cho giảng viên và quản trị viên, theo gói như thống kê lớp.
+**Mô tả:** Khoá một bài để duyệt ghi khoá ngay trong bài nộp (`review_lock`; D104 gộp lại `review_session` của D082), quyết định hay đóng bài thì gỡ khoá. Thẻ "Hiệu quả cho giảng viên" ở Thống kê lớp so trung vị phút duyệt một bài có máy với trung vị phút chấm mù một bài không có máy (phiếu D030), thời gian tiết kiệm = 1 − tỉ số hai trung vị; phiên quá 30 phút không tính và được đếm riêng; không nêu trung vị dưới 5 mẫu. Kèm tỉ lệ bài máy tự xong (hoàn tất, không cần giảng viên xác nhận, trên số bài đánh giá có điểm) và tỉ lệ giảng viên giữ nguyên mức của máy, cả hai có khoảng Wilson 95 %. `GET /api/v1/review/kpi` cho giảng viên và quản trị viên, theo gói như thống kê lớp.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-79.1** — *Given* một bài cần duyệt, *When* giảng viên khoá rồi quyết định, *Then* có đúng một phiên đã kết thúc, hành động `decision`, đúng bài và đúng người duyệt (`test_review_lock_and_decision_leave_a_timed_session`). |
+| **AC-79.1** — *Given* một bài cần duyệt, *When* giảng viên khoá rồi quyết định, *Then* khoá được gỡ và lần duyệt ghi đúng người duyệt; khoá nằm ngay trong bài nộp, không có collection riêng (D104) (`test_the_review_lock_lives_on_the_response_and_a_decision_clears_it`). |
 | ~~AC-79.2~~ *(gỡ bởi D078)* — *Given* một phiên 4 phút, một phiên 60 phút, một phiên chưa xong, *When* tính phút, *Then* giữ 4 phút, 1 phiên bị bỏ vì quá 30 phút (`test_idle_review_sessions_are_left_out_and_counted`). |
 | ~~AC-79.3~~ *(gỡ bởi D078)* — *Given* 8 trên 10, *When* tính khoảng Wilson, *Then* ra [0,490; 0,943]; với 0 trên 0 thì không có khoảng (`test_wilson_interval_matches_the_textbook_value`). |
 | ~~AC-79.4~~ *(gỡ bởi D078)* — *Given* 4 phiên duyệt, rồi 5 phiên 2 phút và 5 phiếu 8 phút, *When* tính, *Then* lần đầu không có trung vị và không có thời gian tiết kiệm; lần sau tiết kiệm 75 % (`test_kpi_reports_time_saved_only_from_enough_samples`). |
@@ -1463,12 +1479,12 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-85 — Tính lượt trên bản triển khai thương mại (kênh NetID)
 
-**Mô tả:** Chỉ khi `AICEFR_METERING=on`, tức bản triển khai cho kênh NetID, mỗi bài nộp bị tính lượt theo bảng giá team chốt ngày 24/10/2026 (D057): bài tới 1 phút là 1 lượt (2.000 IDPoint, quy ước 1 IDPoint = 1 đồng), mỗi phút bắt đầu thêm 0,7 lượt (1.400 IDPoint), tối đa 5 phút; bài luyện tập trả 50%. Người bán đặt các mức này bằng `AICEFR_PRICE_*` và `AICEFR_IDPOINT_PER_RUN`. Mỗi bút toán ghi kèm số token Whisper đã dùng (1.500 token âm thanh cho mỗi cửa sổ 30 giây, thêm một cửa sổ kiểm tra ngôn ngữ, cộng số token chữ) để tính giá vốn và đối soát, không dùng để tính giá. Khi nộp, hệ thống giữ chỗ theo thời lượng tối đa của đề, lấy lượt miễn phí của chu kỳ trước (3 lượt, chu kỳ bắt đầu ngày 16) rồi tới ví; trang Nộp bài báo trước giá tối đa. Bài có kết quả thì thu theo thời lượng thật và trả lại phần thừa; mọi kết cục khác thì hoàn hết. Bản của trường và nghiên cứu không bao giờ giữ, thu hay từ chối gì (BR-29, BR-30), và bản tính lượt không chạy thực nghiệm nghiên cứu. Thiết kế: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+**Mô tả:** Chỉ khi `AICEFR_METERING=on`, tức bản triển khai cho kênh NetID, mỗi bài nộp bị tính lượt. Từ D106 (16/11/2026) **một bài nói được chấm là 1 lượt** (2.000 IDPoint, quy ước 1 IDPoint = 1 đồng), mọi đề đều tối đa 60 giây; mọi giá là số lượt nguyên, không có 0,3 hay 0,7 lượt (bảng giá team chốt ngày 24/10/2026 theo D057 tính thêm 0,7 lượt mỗi phút, nay bỏ). D107: một lượt đã gồm một lần AI viết lại chính bài đó (trang báo cáo ghi "Đã gồm trong lượt chấm bài này") và một đoạn đọc AI; bài không có lượt nào trả thì bản viết lại tốn 1 lượt, đoạn đọc thêm tốn 1 lượt. Người học chỉ thấy lượt; IDPoint chỉ còn ở trang quản trị. Người bán đặt các mức này bằng `AICEFR_PRICE_*` và `AICEFR_IDPOINT_PER_RUN`, chỉ bằng số nguyên. D105: bút toán không còn ghi số token đã dùng; số token của mô hình ngôn ngữ vẫn được đếm theo ngày trên trang AI viết lại (D072). Khi nộp, hệ thống giữ chỗ theo thời lượng tối đa của đề, lấy lượt miễn phí của chu kỳ trước (3 lượt, chu kỳ bắt đầu ngày 16) rồi tới ví; trang Nộp bài báo trước "Chấm bài này: 1 lượt, đã gồm AI viết lại bài, chỉ trừ khi có kết quả". Bài có kết quả thì thu theo thời lượng thật và trả lại phần thừa; mọi kết cục khác thì hoàn hết. Bản của trường và nghiên cứu không bao giờ giữ, thu hay từ chối gì (BR-29, BR-30), và bản tính lượt không chạy thực nghiệm nghiên cứu. Thiết kế: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-85.1** — *Given* bảng giá `price-v3-per-recording`, *When* tính bài 1, 35 và 60 giây, *Then* đều 1 lượt = 2.000 IDPoint (`test_a_recording_up_to_a_minute_is_one_run`); bài 61–120 giây là 3.400 IDPoint, 5 phút trở lên là 7.600 (`test_every_further_minute_adds_seven_tenths_of_a_run_up_to_five`). |
+| **AC-85.1** — *Given* bảng giá `price-v4-whole-runs` (D106), *When* tính bài 1, 35 và 60 giây, *Then* đều 1 lượt = 2.000 IDPoint (`test_a_recording_up_to_a_minute_is_one_run`); bài dài bao nhiêu cũng 1 lượt (`test_a_scored_recording_is_one_run_whatever_it_lasted`); giá lẻ cũ tính phần nguyên, làm tròn xuống (`test_every_price_is_a_whole_run_and_a_fraction_rounds_down`). |
 | **AC-85.2** — *Given* còn lượt miễn phí và có ví, *When* giữ chỗ, *Then* lấy lượt miễn phí trước (`test_free_runs_are_used_before_the_wallet`). |
 | **AC-85.3** — *Given* lượt miễn phí và ví cộng lại không đủ, *When* giữ chỗ, *Then* bị từ chối và không lấy gì (`test_a_hold_beyond_free_and_wallet_is_refused_and_takes_nothing`). |
 | **AC-85.4** — *Given* một bài đã được giữ chỗ, *When* giữ lại cùng bài, *Then* không lấy thêm (`test_holding_the_same_key_twice_takes_once`). |
@@ -1501,16 +1517,26 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-87.2** — *Given* dịch vụ tính lượt không trả lời lúc thanh toán, *When* gọi lại sau, *Then* lượt được cộng (`test_a_pack_paid_while_metering_was_away_is_credited_later`). |
 | **AC-87.3** — *Given* bản không tính lượt, *When* đặt gói, *Then* 409 (`test_no_packs_where_runs_are_not_counted`). |
 
-### FR-88 — Lớp học (D054, D071, D075)
+### FR-88 — Lớp học (D054, D071, D075, D108, D109)
 
-**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên; giảng viên hoặc quản trị viên thêm học viên theo email. Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá và mã tự vào lớp.
+**Mô tả:** Quản trị viên tạo lớp và phân công giảng viên. D109: học viên vào lớp chỉ bằng việc của chính mình, vì giảng viên của lớp xem được bài của học viên: giảng viên mời theo email và học viên chấp nhận hay từ chối ở trang **Lớp của tôi**, hoặc học viên nhập mã lớp 6 ký tự giảng viên đưa (giảng viên bật, đổi, tắt mã); quản trị viên vẫn thêm thẳng theo email; học viên rời lớp được. Lời mời chưa trả lời không cho giảng viên quyền gì. Email: sinh viên được mời nhận thư "Lời mời vào lớp"; khi sinh viên vào lớp, mỗi giảng viên của lớp nhận thư "Học viên mới vào lớp" (chỉ tới email đã xác minh, mỗi sự kiện một thư). Lớp chỉ dùng để giới hạn giảng viên chấm bài của học viên lớp mình (D071) và để nhóm học viên theo band khi giao lộ trình (D074). D075 bỏ giao đề đánh giá (và mã lớp, D109 đặt lại theo cách mới). D108: lớp đã lưu trữ không cho giảng viên quyền nào trên học viên của lớp (xem, duyệt, giao lộ trình, nhận thông báo); kết quả và lịch sử duyệt vẫn giữ, quản trị viên vẫn xem được; giảng viên của lớp hoặc quản trị viên khôi phục lớp thì quyền trở lại. Email của giảng viên hay quản trị viên được báo "không phải tài khoản sinh viên".
 **Ưu tiên:** S
 
 | Acceptance Criteria |
 | --- |
-| **AC-88.1** — *Given* một lớp, *When* giảng viên thêm học viên theo email hoặc mã tài khoản, *Then* học viên có trong danh sách theo họ tên và lớp không còn phần bài đã giao (`test_a_teacher_adds_students_and_sees_them_by_name`). |
-| **AC-88.2** — *Given* một học viên, *When* gọi API vào lớp bằng mã hay xem bài được giao, *Then* 404: không còn hai chức năng này (`test_students_cannot_make_classes_and_nobody_joins_with_a_code`). |
+| **AC-88.1** — *Given* một lớp, *When* quản trị viên thêm học viên theo email, *Then* học viên vào lớp ngay, giảng viên thấy họ theo họ tên và lớp không có phần bài đã giao (`test_an_administrator_adds_students_and_the_teacher_sees_them_by_name`). |
+| **AC-88.2** — *Given* một học viên, *When* tạo lớp, xem danh sách lớp của giảng viên hay xem bài được giao, *Then* 403 hoặc 404 (`test_students_cannot_make_classes_and_classes_set_no_assessments`). |
 | **AC-88.3** — *Given* lớp của giảng viên khác, *When* mở, *Then* 404 (`test_another_teachers_class_is_not_found`). |
+| **AC-88.4** — *Given* học viên trong lớp của giảng viên, *When* lớp bị lưu trữ, *Then* giảng viên nhận 404 khi mở báo cáo và ghi âm, bài không còn trong hàng chờ của họ, danh sách lớp và kết quả vẫn còn; khi khôi phục, giảng viên xem lại được (`test_an_archived_class_gives_its_teachers_no_access_until_restored`). |
+| **AC-88.5** — *Given* thêm học viên, *When* nhập email của một giảng viên, *Then* email đó nằm trong `not_students`, không nằm trong `unknown` (`test_a_staff_address_is_said_not_to_be_a_student`). |
+| **AC-88.6** — *Given* giảng viên mời một học viên, *When* học viên chưa trả lời, *Then* giảng viên không mở được bài của học viên, học viên thấy lời mời và một số trên thanh bên; *When* học viên chấp nhận, *Then* giảng viên mở được bài (`test_an_invited_student_gives_the_teacher_nothing_until_they_accept`). |
+| **AC-88.7** — *Given* lời mời, *When* học viên từ chối hoặc giảng viên huỷ lời mời, *Then* giảng viên không có quyền và lời mời không còn chấp nhận được (`test_a_declined_or_withdrawn_invitation_gives_no_access`). |
+| **AC-88.8** — *Given* lớp có mã, *When* học viên nhập mã (không phân biệt hoa thường, dấu cách, gạch nối), *Then* học viên vào lớp; mã đã đổi, đã tắt hay của lớp đã lưu trữ trả 404 (`test_a_student_joins_by_the_class_code_until_it_changes_or_goes`). |
+| **AC-88.9** — *Given* học viên trong lớp, *When* học viên rời lớp, *Then* giảng viên không còn mở được bài của họ; nhật ký có `class.invite`, `class.join`, `class.leave` (`test_a_student_who_leaves_takes_their_work_from_the_teacher`). |
+| **AC-88.10** — *Given* một học viên, *When* nhập sai mã quá 10 lần trong một phút, *Then* 429 (`test_guessing_class_codes_is_limited`). |
+| **AC-88.11** — *Given* giảng viên mời một học viên có email đã xác minh, *When* gửi lời mời, *Then* học viên nhận đúng một email có tên lớp, tên giảng viên và đường tới trang Lớp của tôi; mời lại khi chưa trả lời không gửi thêm (`test_an_invited_student_gets_one_email_with_the_way_to_answer`). |
+| **AC-88.12** — *Given* một lớp, *When* học viên chấp nhận lời mời hoặc nhập mã, *Then* giảng viên của lớp nhận email nêu học viên, cách vào và sĩ số; vào lại khi đã là thành viên không gửi (`test_the_teachers_hear_when_a_student_accepts_or_joins_by_code`). |
+| **AC-88.13** — *Given* bus giao lại cùng một sự kiện, *When* xử lý lần hai, *Then* không có email thứ hai (`test_a_second_delivery_of_an_event_sends_no_second_email`). |
 
 ### FR-89 — Nhắc việc trong ứng dụng (D055)
 
@@ -1544,7 +1570,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-91.2** — *Given* quản trị viên, *When* tạo 60 tài khoản học viên, *Then* thành công: không có giới hạn chỗ (`test_accounts_are_not_limited_by_seats`). |
 | **AC-91.3** — *Given* bản mới, *When* gọi API gói, báo giá, đặt gói, cài mã giấy phép, *Then* 404 hoặc 405 (`test_the_plan_routes_are_gone`). |
 | **AC-91.4** — *Given* giảng viên, *When* nhờ AI viết nháp bài A2 về một chủ đề, *Then* nhận tên, tóm tắt, đoạn văn mẫu, từ khóa có trong đoạn văn và đề nói tự do, không lưu gì; bộ đếm ngày ghi một bản soạn bài (`test_a_teacher_gets_a_draft_for_the_form`). |
-| **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* trừ 0,3 lượt trong ví của giảng viên kèm số token, lịch sử ghi "Soạn bài bằng AI" (`test_metered_the_teachers_runs_pay_for_the_draft`). |
+| **AC-91.5** — *Given* bản tính lượt, *When* giảng viên nhờ AI viết nháp, *Then* không trừ lượt nào của giảng viên (D107: hệ thống trả tiền mô hình); mỗi giảng viên được tối đa 5 bản nháp trong 24 giờ (`AICEFR_COACH_DRAFT_DAILY`), bản thứ 6 nhận 429; bản mô hình viết lỗi không tính (`test_metered_a_teachers_draft_is_free_five_a_day`). |
 | **AC-91.6** — *Given* trang Lượt của tôi, *When* học viên mua gói 10 lượt qua cổng thử, *Then* trang kết quả báo 10 lượt và có biên nhận (`test_a_learner_buys_a_pack_and_gets_a_receipt`). |
 
 ### FR-92 — Đặt lại mật khẩu bằng mã gửi qua email (D079)
@@ -1620,7 +1646,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-98 — Đoạn đọc viết quanh từ đang luyện dở (D090)
 
-**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Mỗi đoạn mới trừ một số lượt nhỏ (mặc định 0,1 lượt), chỉ khi viết xong; đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
+**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Từ D107 mỗi bài nói đã chấm bằng lượt kèm một đoạn mới; đoạn thêm tốn 1 lượt (người bán đặt được số lượt nguyên, chỉ trừ khi viết xong); đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
@@ -1632,6 +1658,90 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-98.5** — *Given* mô hình ngôn ngữ đang tắt, *When* học viên chọn ghép từ cụm của mình, *Then* đoạn được ghép miễn phí từ các cụm đó (`test_without_the_model_the_learners_phrases_make_a_free_passage`). |
 | **AC-98.6** — *Given* đoạn đọc đã dùng hết phần trong ngày của hệ thống hay của học viên, *When* xin đoạn mới, *Then* bị từ chối (429) với lý do rõ ràng; khi hết giới hạn AI chung, học viên vẫn ghép được đoạn từ cụm của mình (`test_the_caps_keep_the_upgrades_share_and_the_learners_own`). |
 | **AC-98.7** — *Given* quản trị viên xoá dữ liệu một người học, *When* xoá xong, *Then* các đoạn đọc của người đó cũng bị xoá; trước đó bản xuất dữ liệu cá nhân có chúng (`test_erasing_a_participant_forgets_their_passages`). |
+
+### FR-99 — Tính lượt cho bản ghi trong lộ trình học (D094)
+
+**Mô tả:** Trên bản triển khai tính lượt (FR-85, kênh NetID), mỗi bản ghi học viên nói trong lộ trình (bước bài học, ôn tập, kể lại bài, luyện lại từ, đọc đoạn) chiếm một suất trong ngày theo giờ Việt Nam. Các suất đầu của ngày miễn phí (mặc định 5). Từ suất sau, bản ghi giữ giá của thời lượng tối đa của bước rồi chỉ thu theo số giây nói thật đo bằng VAD, mỗi phút đã bắt đầu một mức (mặc định 0 từ D106, tức miễn phí và chỉ giới hạn bởi trần ngày; D107 giữ miễn phí vì bản ghi lộ trình đo bằng Whisper và luật đếm từ, không gọi mô hình ngôn ngữ; người bán đặt được số lượt nguyên, ít nhất một phút); lượt miễn phí của tháng được dùng trước, rồi tới ví. Mỗi ngày đo tối đa một số bản ghi (mặc định 30). Bản ghi máy không đo được hoặc máy đo lỗi thì trả lại cả suất lẫn lượt. Học viên thấy giá và số còn lại hôm nay dưới bộ ghi âm và ở trang Lượt của tôi; quản trị viên đổi ba con số trong bảng giá (D078). Bản xem thử và audio mẫu của giảng viên không tính. Bản của trường và nghiên cứu không tính gì (BR-29, BR-30).
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-99.1** — *Given* hệ thống tính lượt, *When* học viên nộp các bản ghi đầu tiên trong ngày, *Then* chúng không giữ và không trừ lượt nào, sổ lượt ghi là bản miễn phí trong ngày (`test_the_first_recordings_of_a_day_are_free_and_hold_nothing`). |
+| **AC-99.2** — *Given* đã hết bản miễn phí trong ngày, *When* học viên nộp một bản ghi, *Then* bị trừ đúng giá theo phút nói đã bắt đầu, lượt miễn phí của tháng trước rồi tới ví (`test_past_the_free_ones_the_months_free_runs_pay_first_then_the_wallet`). |
+| **AC-99.3** — *Given* học viên đã nộp đủ trần bản ghi trong ngày, *When* nộp thêm, *Then* bị từ chối (429), không đếm và không trừ gì (`test_past_the_cap_nothing_more_is_counted_or_taken`). |
+| **AC-99.4** — *Given* học viên hết bản miễn phí và hết lượt, *When* nộp một bản ghi, *Then* bị từ chối (402), không bản ghi nào được đo hay lưu; nạp thêm lượt thì học tiếp được (`test_no_runs_left_is_a_402_and_a_top_up_lets_the_learner_go_on`). |
+| **AC-99.5** — *Given* một bản ghi bị QC loại hoặc máy đo lỗi, *When* yêu cầu kết thúc, *Then* suất trong ngày và lượt đã giữ được trả lại; suất miễn phí trả lại thì bản sau lại miễn phí (`test_a_recording_with_no_result_gives_its_place_and_runs_back`). |
+| **AC-99.6** — *Given* năm đường nộp bản ghi của lộ trình, *When* rà mã, *Then* đường nào cũng đi qua tính lượt, còn bản xem thử và audio mẫu của giảng viên thì không (`test_every_recording_endpoint_of_the_lesson_path_is_metered`). |
+| **AC-99.7** — *Given* hệ thống tính lượt, *When* học viên mở bài học hay trang Lượt của tôi, *Then* thấy giá mỗi phút nói, số bản miễn phí còn lại hôm nay và trần ngày (`test_the_quote_says_what_is_left_today`). |
+| **AC-99.8** — *Given* bản triển khai không tính lượt, *When* học viên nộp bản ghi vượt mọi con số trên, *Then* không có gì bị giữ, đếm hay từ chối (`test_with_metering_off_lessons_are_never_held_counted_or_refused`). |
+
+### FR-100 — Bán gói lượt qua payOS (D095)
+
+**Mô tả:** Ngoài Stripe và cổng thử (FR về gói lượt, D053/D075), bản triển khai có thể bán gói lượt qua payOS: người mua quét mã VietQR bằng ứng dụng ngân hàng bất kỳ (Napas 24/7). Hệ thống mở link thanh toán bằng API payOS, ký bằng checksum key của kênh thanh toán, không gửi thông tin người trả (BR-32). Trình duyệt quay về chỉ là lời khai: kết quả được đọc lại từ API payOS. Webhook của payOS chỉ được tin khi chữ ký trên phần `data` đúng. Đơn, số tiền, gói lượt và luật chốt kết quả giữ nguyên như các cổng khác: một đơn chỉ cộng lượt một lần, sai số tiền hay link khác thì không cộng. payOS không có môi trường thử, mọi link là tiền thật, nên cổng chỉ chạy khi `AICEFR_PAYMENTS_LIVE` bật và khi đó cổng thử tự tắt.
+**Ưu tiên:** C
+
+| Acceptance Criteria |
+| --- |
+| **AC-100.1** — *Given* payOS được bật, *When* học viên đặt một gói lượt, *Then* hệ thống gửi payOS số tiền, mã đơn dạng số, nội dung chuyển khoản không quá 9 ký tự và chữ ký HMAC-SHA256 đúng công thức payOS, không gửi tên hay liên lạc của người trả (`test_the_payment_link_is_signed_the_way_payos_documents`). |
+| **AC-100.2** — *Given* học viên đã chuyển khoản, *When* payOS đưa trình duyệt quay về, *Then* hệ thống hỏi lại payOS, thấy trang "Thanh toán thành công" và ví được cộng đúng một lần, kể cả khi mở lại địa chỉ đó (`test_paying_through_payos_is_read_back_and_credited_once`). |
+| **AC-100.3** — *Given* học viên trả xong rồi đóng trang, *When* payOS gửi webhook, *Then* chỉ webhook có chữ ký đúng, đúng số tiền và đúng link của đơn mới cộng lượt, và chỉ một lần (`test_the_payos_webhook_alone_credits_the_runs_once`). |
+| **AC-100.4** — *Given* một địa chỉ trả về ghi "PAID" mà payOS chưa nhận tiền, *When* mở địa chỉ đó, *Then* không cộng lượt; link không thuộc đơn nào thì không hỏi payOS; rời trang payOS thì đơn vẫn chờ (`test_a_return_address_alone_proves_nothing`). |
+| **AC-100.5** — *Given* khoá payOS đã điền, *When* `AICEFR_PAYMENTS_LIVE` chưa bật, *Then* payOS không được mời và không đặt được đơn qua payOS; bật lên thì payOS chạy và cổng thử tắt (`test_payos_is_offered_only_when_real_money_is_switched_on`). |
+| **AC-100.6** — *Given* payOS từ chối mở link hoặc không kết nối được, *When* học viên đặt gói, *Then* nhận một câu nói rõ lý do bằng tiếng Việt (`test_payos_refusals_read_as_sentences`). |
+
+### FR-101 — Email cho luồng thanh toán (D096)
+
+**Mô tả:** Khi một đơn gói lượt kết thúc **đã thanh toán**, người mua nhận email biên nhận: gói, số tiền, cổng, mã đơn, mã giao dịch, liên kết tới trang biên nhận. Khi đơn **không thành công**, người mua nhận email báo không có lượt nào bị trừ hay cộng, kèm liên kết đặt lại. Đơn bị huỷ (người mua tự rời trang cổng) hoặc cổng không mở được trang thì không gửi email. Chỉ gửi tới email đã xác minh, kể cả khi người mua đã tắt nhắc học (đây là email giao dịch). Phần thanh toán phát sự kiện `billing.order_settled` một lần cho mỗi đơn; dịch vụ định danh, nơi giữ email, nhận và gửi. Bus giao sự kiện ít nhất một lần nên mỗi đơn chỉ có một email. Email không chứa mật khẩu, số thẻ hay khoá (BR-32). Tắt email (`AICEFR_EMAIL_PROVIDER=off`) thì thanh toán vẫn chạy như cũ.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-101.1** — *Given* người mua có email đã xác minh, *When* đơn gói lượt được thanh toán, *Then* họ nhận đúng một email biên nhận ghi gói, số tiền, cổng, mã đơn và liên kết biên nhận, dù trình duyệt và máy chủ của cổng cùng báo kết quả (`test_a_paid_order_emails_its_buyer_a_receipt_once`). |
+| **AC-101.2** — *Given* người mua có email đã xác minh, *When* thanh toán không thành công, *Then* họ nhận email báo chưa thành công, không có lượt nào bị trừ hay cộng, kèm liên kết đặt lại (`test_a_failed_payment_says_so_and_nothing_was_taken`). |
+| **AC-101.3** — *Given* người mua chưa có email đã xác minh, hoặc tự huỷ trên trang cổng, *When* đơn kết thúc, *Then* không có email nào, còn thanh toán vẫn được ghi nhận bình thường (`test_only_a_verified_address_hears_and_a_cancel_says_nothing`). |
+| **AC-101.4** — *Given* bus giao lại cùng một sự kiện, *When* bộ gửi nhận lần hai, *Then* không có email thứ hai (`test_a_second_delivery_of_the_event_sends_no_second_email`). |
+| **AC-101.5** — *Given* một đơn bất kỳ, *When* soạn email, *Then* email nói rõ đã mua gì và cách báo nếu không phải mình, không chứa mật khẩu, số thẻ hay khoá; thiếu địa chỉ công khai thì không chèn liên kết hỏng (`test_the_payment_email_says_what_was_bought_and_nothing_secret`). |
+| **AC-101.6** — *Given* bản triển khai tắt email, *When* đơn được thanh toán, *Then* đơn vẫn chốt và lượt vẫn vào ví (`test_with_email_off_a_payment_still_settles`). |
+
+### FR-102 — Lưới an toàn khi bán lượt bằng tiền thật (D099)
+
+**Mô tả:** Khi bán lượt bằng tiền thật (payOS), hệ thống không được để mất một khoản tiền đã chuyển, không để một người mở link thanh toán vô hạn, và phải cho quản trị viên thấy tiền. (1) **Tự đối soát:** mỗi hai phút, dịch vụ thanh toán hỏi lại payOS về mọi đơn còn mở (chờ hoặc hết hạn chờ) tạo trong một giờ qua đã mở link; payOS nói đã trả thì đơn được chốt và cộng lượt như khi webhook tới; payOS chưa có lời cuối thì không ghi gì. Cổng không hỏi lại được (cổng thử) thì bỏ qua. (2) **Giới hạn:** một tài khoản có từ năm đơn chờ thanh toán trong mười phút thì đơn thứ sáu bị từ chối (429) và không mở link nào. (3) **Trang Đơn hàng** (quản trị): doanh thu hôm nay và 14 ngày, số đơn theo trạng thái, danh sách đơn mới nhất trước kèm mã người mua, lọc theo trạng thái, mở từng đơn xem các sự kiện cổng đã báo. Chỉ quản trị viên đọc được. (4) **Điều khoản** `/payment-terms`: lượt không hết hạn, trả qua payOS, bài lỗi được trả lượt, không hoàn tiền (D102), trả tiền gặp sự cố thì bù bằng lượt và gửi mã đơn cho ai; mở cho mọi người, trang Lượt của tôi có liên kết ngay dưới các gói.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-102.1** — *Given* người mua đã chuyển khoản trên payOS nhưng webhook không tới và họ đóng trang, *When* vòng đối soát chạy, *Then* đơn được chốt đã thanh toán, lượt vào ví đúng một lần, lần chạy sau không đổi gì (`test_reconcile_credits_a_payment_nobody_reported`). |
+| **AC-102.2** — *Given* link payOS chưa được trả, *When* vòng đối soát chạy, *Then* đơn vẫn chờ và không có sự kiện nào được ghi thêm (`test_reconcile_leaves_an_unpaid_link_waiting`). |
+| **AC-102.3** — *Given* một tài khoản đã có năm đơn chờ trong mười phút, *When* đặt đơn thứ sáu, *Then* nhận 429, không link nào được mở, người khác vẫn đặt được (`test_too_many_waiting_orders_are_refused`). |
+| **AC-102.4** — *Given* có đơn đã trả và đơn đang chờ, *When* quản trị viên mở trang Đơn hàng, *Then* thấy đơn mới nhất trước với mã người mua, số đơn theo trạng thái, doanh thu từng ngày trong 14 ngày, lọc được theo trạng thái và xem được sự kiện của từng đơn (`test_the_administrator_sees_every_order_and_the_money_of_each_day`). |
+| **AC-102.5** — *Given* sinh viên hoặc giảng viên, *When* gọi danh sách đơn hay sự kiện của một đơn, *Then* bị từ chối 403 (`test_only_the_administrator_reads_the_orders`). |
+| **AC-102.6** — *Given* bất kỳ ai, kể cả chưa đăng nhập, *When* mở `/payment-terms`, *Then* thấy dòng không hoàn tiền (D102) và không còn lời hứa hoàn tiền nào, lưu ý biên nhận không phải hoá đơn VAT và email liên hệ đã cấu hình; trang Lượt của tôi có liên kết tới đó (`test_the_terms_are_open_and_linked_from_the_buy_page`). |
+
+### FR-103 — Lượt miễn phí cần email đã xác minh (D101)
+
+**Mô tả:** Trên bản tính lượt (FR-85), lượt miễn phí của tháng (FR-85) và bản ghi miễn phí trong ngày của lộ trình (FR-99) chỉ dành cho tài khoản **đã xác minh email** (mã 6 số, D079, hoặc Google đã xác minh). Tài khoản tự đăng ký luôn có email, nên trước khi xác minh chỉ dùng được lượt đã mua; lời từ chối và các trang Lượt của tôi, Nộp bài, bài học, thông báo đầu trang nhắc xác minh email kèm liên kết tới trang Tài khoản. Tài khoản không có email (do quản trị viên tạo) giữ lượt miễn phí như cũ. Mục đích: một người không lấy được nhiều lượt miễn phí bằng nhiều tài khoản đăng ký bằng email bất kỳ. Bản của trường và nghiên cứu không tính gì nên không đổi (BR-29, BR-30).
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-103.1** — *Given* sinh viên vừa tự đăng ký, chưa xác minh email, chưa mua lượt, *When* xem Lượt của tôi và nộp một bài, *Then* thấy 0 lượt miễn phí kèm cờ chờ xác minh (3 lượt mỗi tháng), bài bị từ chối 402 với lời nhắc xác minh email (`test_an_unverified_email_gets_no_free_runs`). |
+| **AC-103.2** — *Given* sinh viên đó, *When* nhập đúng mã xác minh email, *Then* có lại 3 lượt miễn phí và nộp bài được (`test_verifying_the_email_opens_the_free_runs`). |
+| **AC-103.3** — *Given* sinh viên chưa xác minh nhưng có lượt đã mua, *When* nộp bài, *Then* bài được nhận và chỉ trừ vào lượt đã mua (`test_an_unverified_learner_still_spends_bought_runs`). |
+| **AC-103.4** — *Given* sinh viên chưa xác minh, *When* ghi âm một bước bài học, *Then* không có bản ghi miễn phí nào trong ngày, lời từ chối 402 nhắc xác minh và suất trong ngày được trả lại (`test_no_free_lesson_recording_before_verifying`). |
+| **AC-103.5** — *Given* tài khoản do quản trị viên tạo, không có email, *When* xem lượt và nộp bài, *Then* vẫn có 3 lượt miễn phí (`test_an_account_made_by_an_administrator_keeps_its_free_runs`). |
+
+### FR-104 — Sinh viên tự xoá tài khoản (D101)
+
+**Mô tả:** Tab Dữ liệu ở trang Tài khoản của sinh viên có thẻ **Xoá tài khoản**. Nút chỉ bật khi gõ lại đúng email đăng nhập (không phân biệt hoa thường, bỏ khoảng trắng hai đầu; tài khoản không có email thì gõ mã tài khoản). Xoá theo thứ tự: bài nói, bản ghi âm, báo cáo, bài học, ôn tập, lộ trình, thành tựu, lớp học, thông báo thiết bị (cùng các bước như xoá dữ liệu của quản trị viên, FR-35), rồi tới tài khoản cùng mọi phiên đăng nhập; dừng giữa chừng thì tài khoản còn đó để làm lại. Đơn hàng và sổ lượt giữ lại để đối soát, chỉ còn mã tài khoản ngẫu nhiên; lượt đã mua mất theo tài khoản. Giảng viên và quản trị viên không tự xoá được ở đây (403): bài soạn và lượt duyệt của họ là việc chung, quản trị viên xử lý.
+**Ưu tiên:** S
+
+| Acceptance Criteria |
+| --- |
+| **AC-104.1** — *Given* sinh viên đã nộp bài, *When* gõ đúng mã tài khoản và xoá, *Then* bài nói biến mất, tài khoản không còn, phiên cũ nhận 401 và không đăng nhập lại được (`test_a_learner_deletes_their_own_account`). |
+| **AC-104.2** — *Given* sinh viên có email, *When* xác nhận bằng chữ khác email, *Then* 422 và không gì bị xoá; gõ email khác hoa thường, thừa khoảng trắng vẫn được (`test_the_confirmation_must_match_the_email`). |
+| **AC-104.3** — *Given* giảng viên, *When* gọi xoá tài khoản của mình, *Then* 403 và tài khoản còn nguyên (`test_staff_cannot_delete_themselves_here`). |
+| **AC-104.4** — *Given* bài đã bị tính lượt, *When* sinh viên xoá tài khoản, *Then* dòng sổ lượt của bài đó vẫn còn (`test_payments_and_the_ledger_stay`). |
+| **AC-104.5** — *Given* trang Tài khoản, *When* sinh viên mở, *Then* có thẻ Xoá tài khoản; giảng viên thì không (`test_the_account_page_offers_the_delete_card_to_students_only`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 
@@ -1679,15 +1789,21 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | UC-24 | Sinh viên chọn band bắt đầu và band đích | Sinh viên | — | FR-81, D074 | S |
 | UC-25 | Sinh viên nhờ AI viết lại bài lên band kế | — *(use case mở rộng của UC-04)* | — | D069, D072 | C |
 | UC-26 | Sinh viên ôn sổ cụm từ | Sinh viên | — | D070 | C |
-| UC-27 | Sinh viên nạp lượt qua Stripe | Sinh viên | Cổng thanh toán | FR-85, FR-87, FR-91 (D075) | S |
+| UC-27 | Sinh viên nạp lượt qua payOS | Sinh viên | Cổng thanh toán | FR-85, FR-87, FR-91 (D075) | S |
 | UC-28 | Giảng viên nhờ AI soạn nháp bài học | — *(use case mở rộng của UC-20)* | — | FR-91 (D075) | C |
 | UC-29 | Giảng viên quản lý ngân hàng đề theo band | Giảng viên | — | FR-01, D076, D078 | S |
-| UC-30 | Giảng viên quản lý lớp và giao lộ trình band | Giảng viên | — | FR-88 (D054, D071, D075), D074 | S |
+| UC-30 | Giảng viên quản lý lớp và giao lộ trình band | Giảng viên, Quản trị viên | — | FR-88 (D054, D071, D075, D108, D109), D074 | S |
 | UC-31 | Giảng viên xem thống kê lớp theo band | Giảng viên | — | FR-29, FR-76, D078 | S |
 | UC-32 | Quản trị viên đặt giá lượt và gói lượt | Quản trị viên | — | FR-85, FR-87, D078 | S |
 | UC-33 | Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp | Quản trị viên | — | D072, D073 | S |
 | UC-34 | Quản trị viên cộng lượt cho một tài khoản | Quản trị viên | — | FR-85 (D049) | C |
-| UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên | — | FR-92, FR-93 (D079) | S |
+| UC-35 | Đặt lại mật khẩu bằng mã gửi qua email | Sinh viên, Giảng viên, Quản trị viên | — | FR-92, FR-93 (D079) | S |
+| UC-36 | Sinh viên vào lớp bằng mã lớp hoặc lời mời | Sinh viên | Giảng viên | FR-88 (D109) | S |
+| UC-37 | Sinh viên tự đăng ký và xác minh email | Sinh viên | — | FR-93, FR-103 (D079, D101) | S |
+| UC-38 | Sinh viên luyện lại từ máy nghe kém rõ | — *(use case mở rộng của UC-04)* | — | FR-97 (D089) | C |
+| UC-39 | Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở | — *(use case mở rộng của UC-38)* | — | FR-98 (D090, D107) | C |
+| UC-40 | Sinh viên tự xoá tài khoản | Sinh viên | — | FR-104 (D101) | S |
+| UC-41 | Quản trị viên theo dõi đơn nạp lượt và đối soát | Quản trị viên | Cổng thanh toán | FR-102 (D099), FR-101 | S |
 
 > **Bản 1.16 (D078) — bảng được rà lại theo hệ thống đang chạy.** Các use case
 > không còn trong sản phẩm được gạch: UC-13 (bước đồng thuận gỡ ở D064), UC-14 (học viên tự xoá; nay chỉ quản trị viên xoá, UC-07), UC-18
@@ -2191,7 +2307,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ---
 
-### UC-27 — Sinh viên nạp lượt qua Stripe *(mới ở bản 1.16: D078)*
+### UC-27 — Sinh viên nạp lượt qua payOS *(mới ở bản 1.16: D078)*
 
 | Mục | Nội dung |
 | --- | --- |
@@ -2273,21 +2389,22 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | --- | --- |
 | **Mã** | UC-30 |
 | **Actor chính** | Giảng viên |
-| **Mô tả** | Tạo lớp, thêm học viên bằng email, xem học viên theo band đang học và giao một lộ trình đã xuất bản cho một nhóm band (D054, D071, D074, D075) |
+| **Mô tả** | Tạo lớp, mời học viên bằng email hoặc đưa mã lớp (D109), xem học viên theo band đang học và giao một lộ trình đã xuất bản cho một nhóm band (D054, D071, D074, D075) |
 | **Tiền điều kiện** | Đã đăng nhập với vai trò giảng viên |
 | **Kích hoạt** | Giảng viên mở trang Lớp học |
 
 **Luồng chính:**
 
 1. Giảng viên tạo lớp hoặc mở một lớp của mình.
-2. Giảng viên thêm học viên bằng email.
+2. Giảng viên mời học viên bằng email hoặc bật mã lớp; học viên tự vào lớp (UC-36).
 3. Hệ thống nhóm học viên theo band bắt đầu–band đích họ đang học.
 4. Giảng viên chọn một nhóm và giao một lộ trình đã xuất bản.
 5. Lộ trình đó thay lộ trình riêng của từng học viên trong nhóm, ghi ai giao.
 
 **Luồng thay thế:**
 
-- **2a. Email không có tài khoản:** Báo không tìm thấy, không thêm.
+- **2a. Email không có tài khoản:** Báo không tìm thấy, không mời.
+- **2b. Quản trị viên thêm:** Học viên vào lớp ngay, không cần chấp nhận.
 - **4a. Học viên ngoài lớp của giảng viên:** Từ chối.
 
 **Hậu điều kiện:** Học viên trong nhóm học theo lộ trình được giao.
@@ -2324,7 +2441,7 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | --- | --- |
 | **Mã** | UC-32 |
 | **Actor chính** | Quản trị viên |
-| **Mô tả** | Đặt giá bài nói đến 1 phút, mỗi phút thêm, hệ số bài luyện, giá một lần AI viết lại hoặc soạn bài, IDPoint mỗi lượt, lượt miễn phí mỗi tháng và các gói lượt bán qua Stripe (D078) |
+| **Mô tả** | Đặt giá (số lượt nguyên, D106) bài nói đến 1 phút, mỗi phút thêm, hệ số bài luyện, giá một lần AI viết lại bài không có lượt nào trả (D107), giá một đoạn đọc AI thêm, IDPoint mỗi lượt, lượt miễn phí mỗi tháng và các gói lượt bán qua Stripe (D078) |
 | **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên |
 | **Kích hoạt** | Quản trị viên mở tab Cấu hình, thẻ Giá lượt |
 
@@ -2415,6 +2532,163 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 - **1a. Không nhận được thư:** Xem mục Spam, hoặc nhờ giảng viên hay quản trị viên cấp mật khẩu tạm (D081).
 
 **Hậu điều kiện:** Mật khẩu mới có hiệu lực; mã đã dùng.
+
+---
+
+### UC-36 — Sinh viên vào lớp bằng mã lớp hoặc lời mời *(mới ở bản 1.34: D109)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-36 |
+| **Actor chính** | Sinh viên |
+| **Actor phụ** | Giảng viên (mời, đưa mã) |
+| **Mô tả** | Sinh viên tự vào lớp: chấp nhận lời mời của giảng viên hoặc nhập mã lớp. Giảng viên của lớp xem được bài nói của thành viên, nên chỉ việc của sinh viên mới cho quyền đó (FR-88) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò sinh viên; giảng viên đã mời hoặc đã đưa mã của một lớp đang chạy |
+| **Kích hoạt** | Sinh viên mở trang **Lớp của tôi** (thanh bên có số lời mời, trang Lộ trình có lời nhắc) |
+
+**Luồng chính:**
+
+1. Sinh viên thấy lời mời: tên lớp và giảng viên.
+2. Sinh viên bấm **Vào lớp**.
+3. Hệ thống chuyển sinh viên từ danh sách được mời sang thành viên, ghi `class.join` vào nhật ký.
+4. Giảng viên của lớp xem và duyệt được bài của sinh viên.
+
+**Luồng thay thế:**
+
+- **1a. Vào bằng mã:** Sinh viên nhập mã 6 ký tự; mã đúng của lớp đang chạy thì vào lớp ngay.
+- **2a. Từ chối:** Lời mời mất, giảng viên không có quyền gì.
+- **1b. Mã sai, đã đổi, đã tắt hay lớp đã lưu trữ:** Báo "mã lớp không đúng hoặc lớp đã kết thúc"; sai quá 10 lần một phút thì chờ một phút.
+- **4a. Rời lớp:** Sinh viên bấm **Rời lớp** và xác nhận; giảng viên không còn xem bài của sinh viên.
+
+**Hậu điều kiện:** Sinh viên là thành viên lớp; giảng viên của lớp có quyền trên bài của sinh viên đến khi sinh viên rời lớp hoặc lớp bị lưu trữ.
+
+---
+
+### UC-37 — Sinh viên tự đăng ký và xác minh email *(mới ở bản 1.34: D079, D101)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-37 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Tạo tài khoản sinh viên bằng email (hoặc Google) rồi xác minh email bằng mã 6 số; chỉ email đã xác minh mới nhận lượt miễn phí của tháng và thư nhắc học (FR-93, FR-103) |
+| **Tiền điều kiện** | Chưa có tài khoản với email này |
+| **Kích hoạt** | Người học bấm "Đăng ký" ở trang chủ hoặc trang Đăng nhập |
+
+**Luồng chính:**
+
+1. Người học nhập họ tên, email và mật khẩu.
+2. Hệ thống tạo tài khoản vai trò sinh viên, đăng nhập và gửi mã xác minh tới email.
+3. Sinh viên nhập mã ở trang Tài khoản.
+4. Hệ thống đánh dấu email đã xác minh; lượt miễn phí của tháng mở.
+
+**Luồng thay thế:**
+
+- **1a. Email đã có tài khoản:** Từ chối, gợi ý đăng nhập hoặc quên mật khẩu (UC-35).
+- **1b. Đăng ký bằng Google:** Email của Google coi như đã xác minh (UC-17).
+- **3a. Mã sai hoặc hết hạn:** Từ chối; sinh viên bấm gửi lại mã.
+
+**Hậu điều kiện:** Tài khoản sinh viên có email đã xác minh.
+
+---
+
+### UC-38 — Sinh viên luyện lại từ máy nghe kém rõ *(mới ở bản 1.34: D089)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-38 |
+| **Actor chính** | — *(use case mở rộng của UC-04)* |
+| **Mô tả** | Từ báo cáo, luyện lại tối đa 8 từ máy nghe chưa rõ (tô cam): nghe lại đoạn mình nói, nghe giọng mẫu, đọc mẹo, nói lại cả cụm để máy chấm (FR-97) |
+| **Tiền điều kiện** | Báo cáo có từ tô cam |
+| **Kích hoạt** | Sinh viên bấm "Luyện lại các từ này" trên báo cáo (UC-04) |
+
+**Luồng chính:**
+
+1. Hệ thống chọn tối đa 8 từ kém rõ nhất của bài.
+2. Với mỗi từ, sinh viên nghe lại đoạn mình nói và giọng mẫu, đọc mẹo khi có.
+3. Sinh viên nói lại cả cụm 3–4 từ; máy chấm từ đó.
+4. Máy nghe rõ hai lần liền thì xong từ.
+
+**Luồng thay thế:**
+
+- **4a. Vẫn chưa rõ:** Từ vào ôn ngắt quãng; còn từ 3 từ luyện dở trở lên thì mở được UC-39.
+
+**Hậu điều kiện:** Kết quả từng từ được lưu; trang Tiến độ có tỉ lệ từ chưa rõ.
+
+---
+
+### UC-39 — Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở *(mới ở bản 1.34: D090, D107)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-39 |
+| **Actor chính** | — *(use case mở rộng của UC-38)* |
+| **Mô tả** | Mô hình ngôn ngữ viết một đoạn ngắn theo band chứa 3–5 từ đang luyện dở; sinh viên đọc to, mỗi từ được chấm ở mọi chỗ nó xuất hiện (FR-98) |
+| **Tiền điều kiện** | Có từ 3 từ đang luyện dở trở lên |
+| **Kích hoạt** | Sinh viên bấm "Đọc một đoạn" ở trang Tiến độ |
+
+**Luồng chính:**
+
+1. Hệ thống báo giá: đoạn đã gồm trong một lượt chấm còn dùng được thì miễn phí, đoạn thêm tốn 1 lượt (D107).
+2. Hệ thống gửi các từ và band (không gửi gì khác) cho mô hình, nhận đoạn văn.
+3. Sinh viên đọc to; máy đo như bước đọc to.
+4. Từ máy nghe rõ là một lượt rõ; từ chưa rõ vào ôn ngắt quãng.
+
+**Luồng thay thế:**
+
+- **1a. Hết lượt:** Mời mua thêm lượt (UC-27).
+- **2a. Mô hình không dùng được:** Ghép đoạn từ chính các cụm của sinh viên, miễn phí.
+
+**Hậu điều kiện:** Đoạn được giữ để đọc lại không mất thêm lượt.
+
+---
+
+### UC-40 — Sinh viên tự xoá tài khoản *(mới ở bản 1.34: D101)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-40 |
+| **Actor chính** | Sinh viên |
+| **Mô tả** | Sinh viên xoá tài khoản và toàn bộ dữ liệu học của mình (FR-104) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò sinh viên |
+| **Kích hoạt** | Thẻ **Xoá tài khoản** ở tab Dữ liệu, trang Tài khoản |
+
+**Luồng chính:**
+
+1. Sinh viên gõ lại đúng email đăng nhập; nút xoá mới bật.
+2. Hệ thống xoá bài nói, ghi âm, báo cáo, bài học, ôn tập, lộ trình, thành tựu, lớp học, thông báo thiết bị, rồi tới tài khoản và mọi phiên.
+3. Đơn hàng và sổ lượt giữ lại để đối soát, chỉ còn mã tài khoản ngẫu nhiên.
+
+**Luồng thay thế:**
+
+- **2a. Dừng giữa chừng:** Tài khoản còn đó để làm lại.
+- **1a. Giảng viên, quản trị viên:** Không tự xoá được (403); quản trị viên xoá dữ liệu người học theo UC-07.
+
+**Hậu điều kiện:** Tài khoản không còn; không đăng nhập được nữa.
+
+---
+
+### UC-41 — Quản trị viên theo dõi đơn nạp lượt và đối soát *(mới ở bản 1.34: D099)*
+
+| Mục | Nội dung |
+| --- | --- |
+| **Mã** | UC-41 |
+| **Actor chính** | Quản trị viên |
+| **Actor phụ** | Cổng thanh toán (payOS) |
+| **Mô tả** | Xem doanh thu, đơn theo trạng thái và dòng sự kiện của từng đơn; hệ thống tự hỏi lại payOS mỗi hai phút cho đơn còn mở (FR-102) |
+| **Tiền điều kiện** | Đã đăng nhập với vai trò quản trị viên; bản triển khai bán lượt |
+| **Kích hoạt** | Quản trị viên mở trang Quản trị → Đơn hàng |
+
+**Luồng chính:**
+
+1. Hệ thống hiện doanh thu hôm nay và 14 ngày, số đơn theo trạng thái.
+2. Quản trị viên mở một đơn và xem dòng sự kiện (tạo, mở link, webhook, đối soát, cộng lượt).
+3. Đơn payOS đã trả mà webhook chưa tới được chốt và cộng lượt khi đối soát.
+
+**Luồng thay thế:**
+
+- **3a. Đã trả mà lượt chưa vào sau 30 phút:** Quản trị viên cộng lượt bù (UC-34), không hoàn tiền (D102).
+
+**Hậu điều kiện:** Mọi khoản tiền đã chuyển đều có lượt tương ứng.
 
 ---
 
@@ -2663,27 +2937,31 @@ REST theo OpenAPI 3.1, tiền tố `/api/v1`. Các endpoint chính đã liệt k
 
 ## 8.9. Sơ đồ thiết kế tham chiếu
 
-Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.md` và ở tab **"Sơ đồ thiết kế"** của tài liệu này. Bảng dưới liệt kê tám sơ đồ cùng phạm vi yêu cầu mà mỗi sơ đồ minh họa.
+Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.md`. Bảng dưới liệt kê các sơ đồ của bản 1.34 cùng phạm vi yêu cầu mà mỗi sơ đồ minh họa. Sơ đồ use case chia theo vai: mỗi vai một hình, ghi đủ use case vai đó làm được trên hệ thống đang chạy.
 
 | Hình | Sơ đồ | Minh họa cho yêu cầu | File nguồn |
 | --- | --- | --- | --- |
-| 1a | Use case cho tác nhân Sinh viên — UC-01, UC-02, UC-03, UC-04 | FR-01 … FR-27, FR-39 | `diagrams/01a_usecase_sinhvien.mmd` |
-| 1b | Use case cho tác nhân Giảng viên đánh giá — UC-05, UC-06, UC-11 | FR-28 … FR-31, FR-38 | `diagrams/01b_usecase_giangvien.mmd` |
-| 1c | Use case cho tác nhân Quản trị viên — UC-07 … UC-10, UC-12 | FR-08, FR-18 … FR-20, FR-32, FR-34 … FR-36 | `diagrams/01c_usecase_quantri.mmd` |
-| 2 | Sơ đồ lớp — mô hình miền: 6 thực thể, 10 đối tượng giá trị, 8 kiểu liệt kê, mọi thành viên ghi đủ kiểu | toàn bộ module M1 … M8 | `diagrams/02_class.drawio` |
-| 2b | Kiến trúc — cổng và bộ chuyển đổi | M1 … M8 | `diagrams/02b_kien_truc.puml` |
-| 3 | Sơ đồ tuần tự luồng nộp bài | FR-01 … FR-27 | `diagrams/03_sequence.mmd` |
-| 4 | Sơ đồ hoạt động kèm nhánh lỗi | FR-06 … FR-23 | `diagrams/04_activity.mmd` |
-| 5 | Sơ đồ thực thể liên kết — phần chấm điểm và vận hành | mục 7 Yêu cầu dữ liệu | `diagrams/05_erd.mmd` |
-| 5c | Sơ đồ thực thể liên kết — định danh và đồng thuận | FR-01, FR-32, FR-35 | `diagrams/05c_erd_identity.mmd` |
-| 5b | Sơ đồ thực thể liên kết — lược đồ nghiên cứu dự kiến, chưa hiện thực | mục 7 Yêu cầu dữ liệu | `diagrams/05b_erd_target.mmd` |
-| 6 | Sơ đồ thành phần và triển khai | NFR-01 … NFR-18 | `diagrams/06_deployment.mmd` |
+| 1a | Use case cho Sinh viên: tài khoản (UC-17, UC-35, UC-37, UC-16, UC-40), học và nộp bài (UC-24, UC-19, UC-01..UC-03), kết quả và luyện tiếp (UC-04, UC-25, UC-38, UC-39, UC-15, UC-26), lượt và lớp (UC-27, UC-36) | FR-01..FR-27, FR-81, FR-85..FR-88, FR-92..FR-98, FR-103, FR-104 | `diagrams/01a_usecase_sinhvien.mmd` |
+| 1b | Use case cho Giảng viên: duyệt và sửa kết quả (UC-05, UC-06), lộ trình và AI soạn nháp (UC-20, UC-28), ngân hàng đề (UC-29), lớp (UC-30), thống kê (UC-31), hồ sơ năng lực (UC-11), tài khoản (UC-17, UC-35) | FR-28..FR-31, FR-38, FR-45..FR-49, FR-82, FR-88, FR-91 | `diagrams/01b_usecase_giangvien.mmd` |
+| 1c | Use case cho Quản trị viên: tài khoản và dữ liệu (UC-10, UC-07), mô hình và QC (UC-08, UC-09, UC-12), lớp (UC-30), lượt, giá và đơn (UC-32, UC-34, UC-41), AI (UC-33), tài khoản (UC-17, UC-35) | FR-08, FR-18..FR-20, FR-32..FR-36, FR-85, FR-87, FR-88, FR-102 | `diagrams/01c_usecase_quantri.mmd` |
+| 2 | Sơ đồ lớp, mô hình miền: 21 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/02_class.drawio` |
+| 2b | Kiến trúc: ba dịch vụ, bus và kho dữ liệu | NFR, D044..D051 | `diagrams/02b_kien_truc.puml` |
+| 2c | Cổng và bộ chuyển đổi | NFR, D044 | `diagrams/02c_cong_va_bo_chuyen_doi.puml` |
+| 3 | Sơ đồ tuần tự: nộp một bài nói, giữ lượt, chấm ở dịch vụ speech, báo trực tiếp, giảng viên duyệt | FR-01..FR-31, FR-85, FR-95, FR-96 | `diagrams/03_sequence.mmd` |
+| 3b | Sơ đồ tuần tự: sinh viên vào lớp bằng lời mời hay mã lớp, email cho sinh viên và giảng viên | FR-88 | `diagrams/11_sequence_vao_lop.mmd` |
+| 4 | Sơ đồ hoạt động: vòng đời một bài nói kèm nhánh lỗi và tính lượt | FR-06..FR-23, FR-85 | `diagrams/04_activity.mmd` |
+| 5 | Sơ đồ thực thể liên kết: phần chấm điểm, lớp và vận hành | mục 7 Yêu cầu dữ liệu | `diagrams/05_erd.mmd` |
+| 5b | Sơ đồ thực thể liên kết: lược đồ nghiên cứu dự kiến, chưa hiện thực | mục 7 Yêu cầu dữ liệu | `diagrams/05b_erd_target.mmd` |
+| 5c | Sơ đồ thực thể liên kết: định danh, phiên, thiết bị nhận thông báo | FR-32, FR-51, FR-92..FR-96 | `diagrams/05c_erd_identity.mmd` |
+| 6 | Sơ đồ triển khai production (EC2, Caddy, ba dịch vụ, dịch vụ ngoài) | NFR, FR-84 | `diagrams/06_deployment.mmd` |
+| 7 | Sơ đồ tuần tự: đăng nhập Google có PKCE | FR-56..FR-59, FR-74 | `diagrams/07_sequence_google_pkce.mmd` |
+| 8 | Sơ đồ tuần tự: mua gói lượt qua payOS | FR-87, FR-100..FR-102 | `diagrams/08_sequence_payos.mmd` |
+| 9 | Sơ đồ lớp phân hệ thanh toán và mẫu thiết kế | FR-100..FR-102 | `diagrams/09_class_thanh_toan.mmd` |
+| 10 | Sơ đồ trạng thái đơn gói lượt | FR-100, FR-102 | `diagrams/10_state_don_hang.mmd` |
 
-Sơ đồ được sinh từ mã nguồn dạng văn bản chứ không vẽ tay, nên khi thiết kế thay đổi thì sơ đồ được cập nhật bằng cách sửa mã và render lại. Cách này bảo đảm sơ đồ luôn khớp với mã nguồn, phục vụ việc đối chiếu ngẫu nhiên khi phản biện.
+Sơ đồ được sinh từ mã nguồn dạng văn bản chứ không vẽ tay, nên khi thiết kế thay đổi thì sơ đồ được cập nhật bằng cách sửa mã và render lại. Kiểm thử `tests/test_diagrams.py` và `tests/test_class_diagram_in_code.py` giữ sơ đồ khớp với mã nguồn: mỗi thuộc tính và thao tác vẽ trên hình 2 phải có chỗ trong code, mỗi use case vẽ phải có trong bảng 4.1, bản dán trong SDD phải giống từng byte tệp nguồn.
 
-**Phạm vi của hình 2.** Hình 2 là **mô hình miền**, chỉ vẽ những khái niệm của bài toán chấm nói. Mỗi hộp mang một khuôn dập cho biết nó có danh tính hay không: «entity» được cấp mã định danh, tra cứu được và sửa được qua thời gian (`Account`, `Consent`, `Review`, `Task`, `Response`, `Assessment`, `Evidence`); «value object» so sánh bằng nội dung, bất biến, và khi đổi thì thay cả cục chứ không sửa từng trường (`QcResult`, `Transcript`, `Word`, `FeatureSet`, `CriterionCoverage`, `AnalysisWindow`, `Comment`, `Priority`).
-
-Bốn lớp hạ tầng — `AuthSession` (FR-32), `ReviewLock` (FR-30), `AuditEntry` (FR-31), `AppConfig` (FR-08, FR-36) — **cố ý không nằm ở hình 2**. Chúng tồn tại vì hệ thống chạy trên máy tính, không vì bài toán chấm nói: một phiên đăng nhập hết hạn sau 8 giờ không phải khái niệm mà giảng viên hay sinh viên nói tới. Cả bốn vẫn là yêu cầu bắt buộc, vẫn là lớp thật trong `src/aicefr/contracts.py`, và được vẽ ở đúng tầng thiết kế của chúng: `auth_sessions` ở hình 5c, còn `review_lock`, `audit_log`, `app_config` ở hình 5.
+**Phạm vi của hình 2.** Hình 2 là **mô hình miền**, chỉ vẽ khái niệm nghiệp vụ: tài khoản, đề, bài nói, lần duyệt, lớp, lộ trình và bài học, luyện từ, lượt và đơn. Cơ chế kỹ thuật (phiên đăng nhập, khoá duyệt, cấu hình, thiết bị nhận thông báo) không nằm ở hình 2 mà ở các ERD 5 và 5c, đúng tầng thiết kế của chúng.
 
 Cổng và bộ chuyển đổi cũng không nằm ở hình 2 mà ở hình 2b, vì chúng trả lời câu hỏi khác: *hệ thống cắm vào thế giới bên ngoài ở đâu*.
 
@@ -2796,28 +3074,28 @@ Cột "Module code" ghi **đường dẫn có thật trong repository** tại th
 | FR-48 Ôn tập giãn cách | UC-19 | `test_missed_words_are_scheduled_for_tomorrow`, `test_review_boxes_follow_leitner_intervals` | `src/aicefr/lessons/review.py`, `src/aicefr/api/lessons_api.py` (`_schedule_reviews`, `_review_steps`) |
 | FR-49 Theo dõi và sửa nhận định | UC-20 | `test_teacher_override_updates_the_result_and_is_audited`, `test_lesson_attempts_stay_out_of_queue_and_class_statistics` | `src/aicefr/api/lessons_api.py` (`teach_insights`, `teach_override`), `src/aicefr/storage/lesson_repository.py` (`apply_override`) |
 | FR-50 Tiến độ ngày, bài nên học | UC-19 | `test_daily_goal_counts_seconds_spoken`, `test_next_lesson_follows_the_weakest_criterion` | `src/aicefr/lessons/progress.py` (`today_summary`, `next_lesson`) |
-| FR-51 Đổi mật khẩu, quản lý phiên | UC-17 | `test_password_change_needs_the_current_password_and_ends_other_sessions`, `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`, `test_the_password_policy_says_what_is_wrong`, `test_signing_out_other_devices_keeps_this_one`, `test_the_account_page_needs_a_login_and_shows_the_pseudonym` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`change_password`, `revoke_sessions`), `src/aicefr/auth/passwords.py` (`check_new_password`) |
-| FR-52 Quản lý tài khoản trên web | UC-10 | `test_a_series_continues_the_numbering_with_one_time_passwords`, `test_a_temporary_password_opens_nothing_but_the_password_change`, `test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password`, `test_a_disabled_account_is_signed_out_and_cannot_sign_in`, `test_creating_accounts_is_all_or_nothing_and_checks_names`, `test_only_an_administrator_manages_accounts`, `test_an_administrator_lifts_a_lockout` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`create_with_temporary_passwords`, `set_temporary_password`, `set_disabled`), `src/aicefr/api/deps.py` (`PASSWORD_CHANGE_PATHS`), `src/aicefr/api/static/admin.js` |
-| FR-53 Đếm việc đang chờ | UC-04, UC-05 | `test_a_teacher_decision_is_new_until_the_student_opens_their_list`, `test_a_teacher_sees_how_many_responses_wait_for_review`, `test_the_sidebar_carries_a_slot_for_each_count` | `src/aicefr/api/accounts_api.py` (`my_badges`), `src/aicefr/storage/repository.py` (`seen_marker`, `count_reviewed_since`), `src/aicefr/api/static/common.js` |
+| FR-51 Đổi mật khẩu, quản lý phiên | UC-17 | `test_password_change_needs_the_current_password_and_ends_other_sessions`, `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`, `test_the_password_policy_says_what_is_wrong`, `test_signing_out_other_devices_keeps_this_one`, `test_the_account_page_needs_a_login_and_shows_the_email` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`change_password`, `revoke_sessions`), `src/aicefr/auth/passwords.py` (`check_new_password`) |
+| FR-52 Quản lý tài khoản trên web | UC-10 | `test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords`, `test_a_temporary_password_opens_nothing_but_the_password_change`, `test_a_reset_ends_the_sessions_and_issues_a_new_one_time_password`, `test_a_disabled_account_is_signed_out_and_cannot_sign_in`, `test_creating_accounts_is_all_or_nothing_and_checks_emails`, `test_only_an_administrator_manages_accounts`, `test_an_administrator_lifts_a_lockout` | `src/aicefr/api/accounts_api.py`, `src/aicefr/storage/auth_repository.py` (`create_with_temporary_passwords`, `set_temporary_password`, `set_disabled`), `src/aicefr/api/deps.py` (`PASSWORD_CHANGE_PATHS`), `src/aicefr/api/static/admin.js` |
+| FR-53 Đếm việc đang chờ | UC-04, UC-05 | `test_a_student_badge_counts_reviews_due_and_class_invitations`, `test_a_teacher_sees_how_many_responses_wait_for_review`, `test_the_sidebar_carries_a_slot_for_each_count` | `src/aicefr/api/accounts_api.py` (`my_badges`), `src/aicefr/storage/repository.py` (`seen_marker`, `count_reviewed_since`), `src/aicefr/api/static/common.js` |
 | FR-54 Trang giải thích band | UC-04 | `test_the_band_page_labels_what_the_machine_does_not_measure`, `test_the_report_links_its_band_to_the_band_page` | `src/aicefr/report/bands.py`, `src/aicefr/api/templates/bands.html` |
 | FR-55 Chuẩn bị trước khi nói | UC-01 | `test_the_submit_page_offers_thirty_seconds_of_preparation`, `test_thirty_seconds_of_preparation_then_the_answer_is_recorded` | `src/aicefr/api/static/submit.js`, `src/aicefr/api/static/recorder.js` (`startNow`) |
 | FR-56 Hồ sơ cá nhân | UC-17 | `test_a_profile_takes_only_listed_avatars_and_goals`, `test_the_daily_goal_sets_the_target_on_the_path_page`, `test_the_sidebar_draws_the_chosen_avatar`, `test_the_account_page_has_four_parts_for_a_student_and_three_for_staff` | `src/aicefr/storage/auth_repository.py` (`update_profile`, `AVATAR_ICONS`, `DAILY_GOALS`), `src/aicefr/api/accounts_api.py` (`change_my_profile`), `src/aicefr/api/static/account.js` |
 | FR-57 Phiên đăng nhập | UC-17 | `test_a_person_sees_their_sessions_and_ends_one`, `test_sessions_of_one_account_cannot_be_ended_by_another` | `src/aicefr/storage/auth_repository.py` (`sessions`, `revoke_session`), `src/aicefr/auth/sessions.py` (`device_label`) |
-| FR-58 Lịch sử hoạt động | UC-17 | `test_the_history_shows_sign_ins_failed_attempts_and_changes`, `test_what_an_administrator_did_shows_as_an_administrator`, `test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log` | `src/aicefr/storage/repository.py` (`account_activity`), `src/aicefr/api/main.py` (`login`), `src/aicefr/api/accounts_api.py` (`my_activity`) |
-| FR-59 Đăng nhập Google | UC-17 | `test_google_is_off_until_configured`, `test_start_sends_the_browser_to_google_with_state_nonce_and_pkce`, `test_linking_then_signing_in_with_google`, `test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`, `test_an_unlinked_google_account_signs_up_as_a_student`, `test_a_forged_or_stale_round_trip_is_refused`, `test_one_google_account_links_to_one_pseudonym`, `test_the_domain_restriction_requires_a_verified_school_account`, `test_a_disabled_account_cannot_sign_in_with_google`, `test_unlinking_google_by_the_person_or_an_administrator` | `src/aicefr/auth/google.py`, `src/aicefr/api/google_api.py`, `src/aicefr/storage/auth_repository.py` (`account_identity`, `login_with_identity`) |
+| FR-58 Lịch sử hoạt động | UC-17 | `test_the_history_shows_sign_ins_failed_attempts_and_changes`, `test_what_an_administrator_did_shows_as_an_administrator`, `test_an_unknown_email_leaves_nothing_in_the_audit_log` | `src/aicefr/storage/repository.py` (`account_activity`), `src/aicefr/api/main.py` (`login`), `src/aicefr/api/accounts_api.py` (`my_activity`) |
+| FR-59 Đăng nhập Google | UC-17 | `test_google_is_off_until_configured`, `test_start_sends_the_browser_to_google_with_state_nonce_and_pkce`, `test_linking_then_signing_in_with_google`, `test_with_sign_up_off_an_unlinked_google_account_cannot_sign_in_or_create_one`, `test_an_unlinked_google_account_signs_up_as_a_student`, `test_a_forged_or_stale_round_trip_is_refused`, `test_one_google_account_links_to_one_account`, `test_the_domain_restriction_requires_a_verified_school_account`, `test_a_disabled_account_cannot_sign_in_with_google`, `test_unlinking_google_by_the_person_or_an_administrator` | `src/aicefr/auth/google.py`, `src/aicefr/api/google_api.py`, `src/aicefr/storage/auth_repository.py` (`account_identity`, `login_with_identity`) |
 | FR-60 Quản trị tài khoản đầy đủ | UC-10 | `test_an_administrator_changes_a_role_but_not_their_own`, `test_an_administrator_signs_an_account_out_everywhere`, `test_the_account_detail_shows_sessions_link_and_history` | `src/aicefr/api/accounts_api.py` (`account_detail`, `change_role`, `revoke_account_sessions`, `unlink_account_google`), `src/aicefr/api/static/admin.js` |
 | FR-61 Đợt chấm mù | UC-22 | `test_a_batch_gives_every_eligible_response_two_raters_each_in_their_own_order`, `test_a_batch_needs_two_raters_and_something_to_rate`, `test_a_teacher_who_opened_the_machine_result_is_not_drawn_to_rate_that_response` | `src/aicefr/research/assign.py`, `src/aicefr/storage/rating_repository.py` (`eligible`, `create_batch`, `seen_by`), `src/aicefr/api/rating_api.py` (`create_batch`) |
 | FR-62 Phiếu chấm mù | UC-21 | `test_the_rating_sheet_carries_no_pseudonym_response_id_or_machine_score`, `test_a_rater_cannot_open_another_raters_sheet`, `test_the_machine_result_stays_closed_to_a_rater_until_they_have_rated`, `test_a_rating_follows_the_rating_sheet_rules`, `test_an_unscorable_recording_is_rated_as_such`, `test_open_sheets_are_counted_in_the_sidebar_and_a_closed_batch_takes_no_more`, `test_a_sheet_goes_void_once_its_rater_has_seen_the_machine_result`, `test_an_administrator_who_rates_stays_blind_on_the_administration_screens`, `test_the_waiting_count_leaves_out_what_the_teacher_rates_blind`, `test_a_void_sheet_can_be_handed_to_another_rater` | `src/aicefr/api/rating_api.py` (`_sheet`, `submit_sheet`, `_not_while_owed`, `replace_void_sheets`), `src/aicefr/api/main.py` (`_blind`, `_saw`), `src/aicefr/storage/rating_repository.py` (`machine_seen`), `src/aicefr/api/static/rate_*.js` |
 | FR-63 Phân xử | UC-21, UC-22 | `test_a_disagreement_goes_to_a_third_rater_who_did_not_rate_it`, `test_an_adjudicator_who_opened_the_machine_result_is_passed_over` | `src/aicefr/research/agreement.py` (`needs_adjudication`), `src/aicefr/storage/rating_repository.py` (`add_adjudication`) |
 | FR-64 Báo cáo đồng thuận, bản xuất | UC-22 | `test_the_report_puts_humans_first_and_compares_the_machine_before_any_review`, `test_the_export_lists_every_rating_with_rater_pseudonyms_and_the_machine_score`, `test_erasing_a_participant_erases_what_raters_said_about_them`, `test_the_command_line_report_gives_the_numbers_of_the_screen`, `test_only_an_administrator_runs_batches` | `src/aicefr/research/agreement.py`, `src/aicefr/api/rating_api.py` (`batch_report`, `batch_export`), `tools/agreement_report.py` |
-| FR-65 Thành tựu ghi công sức | UC-15, UC-19 | `test_a_first_recording_is_congratulated_once`, `test_the_list_shows_how_far_each_one_is_without_a_score`, `test_new_achievements_are_marked_seen_by_their_owner_only`, `test_an_achievement_is_never_taken_back`, `test_habit_achievements_count_vietnam_days_and_the_learners_goal`, `test_completing_a_lesson_and_a_unit_reach_the_path_achievements`, `test_review_attempts_count_towards_the_review_achievement`, `test_assessments_with_a_result_count_towards_the_assessment_achievements`, `test_the_personal_export_and_erasure_cover_achievements`, `test_a_first_recording_is_congratulated_then_listed_as_new_once` | `src/aicefr/practice/achievements.py`, `src/aicefr/storage/lesson_repository.py` (`achievement`, `unlock`, `mark_seen`), `src/aicefr/api/lessons_api.py` (`_award`, `my_achievements`, `achievements_seen`), `src/aicefr/api/static/my_progress.js`, `src/aicefr/api/static/practice_path.js` (`achievementsCard`), `src/aicefr/api/static/lesson.js` (`celebrate`) |
-| FR-66 Kỷ lục, ngày nghỉ được tính, so với tuần trước | UC-19 | `test_the_practice_page_shows_the_record_rest_days_and_last_week`, `test_the_week_shows_the_record_and_the_rest_day`, `test_the_longest_streak_is_the_best_the_learner_was_ever_shown`, `test_the_rest_days_of_the_current_streak_are_named` | `src/aicefr/practice/streak.py` (`longest_streak`, `rest_days`), `src/aicefr/lessons/progress.py` (`today_summary`), `src/aicefr/api/static/practice_path.js` (`todayCard`) |
+| FR-65 Thành tựu ghi công sức | UC-15, UC-19 | `test_a_first_recording_is_congratulated_once`, `test_the_list_shows_how_far_each_one_is_without_a_score`, `test_an_achievement_is_never_taken_back`, `test_habit_achievements_count_vietnam_days_and_the_learners_goal`, `test_completing_a_lesson_and_a_unit_reach_the_path_achievements`, `test_review_attempts_count_towards_the_review_achievement`, `test_assessments_with_a_result_count_towards_the_assessment_achievements`, `test_the_personal_export_and_erasure_cover_achievements`, `test_a_first_recording_is_congratulated_then_listed_as_reached` | `src/aicefr/practice/achievements.py`, `src/aicefr/storage/lesson_repository.py` (`achievement`, `unlock`, `mark_seen`), `src/aicefr/api/lessons_api.py` (`_award`, `my_achievements`, `achievements_seen`), `src/aicefr/api/static/my_progress.js`, `src/aicefr/api/static/practice_path.js` (`achievementsCard`), `src/aicefr/api/static/lesson.js` (`celebrate`) |
+| FR-66 Kỷ lục, ngày nghỉ được tính, so với tuần trước | UC-19 | `test_the_practice_page_shows_the_record_rest_days_and_last_week`, `test_the_week_shows_the_streak_and_the_rest_day`, `test_the_longest_streak_is_the_best_the_learner_was_ever_shown`, `test_the_rest_days_of_the_current_streak_are_named` | `src/aicefr/practice/streak.py` (`longest_streak`, `rest_days`), `src/aicefr/lessons/progress.py` (`today_summary`), `src/aicefr/api/static/practice_path.js` (`todayCard`) |
 | FR-67 Thang gói | UC-23 | `test_with_billing_off_nothing_changes`, `test_the_first_look_starts_one_trial_with_everything`, `test_after_the_trial_the_free_plan_closes_staff_tools_but_never_learning`, `test_a_paid_plan_keeps_its_tools_through_grace_then_falls_back_to_free`, `test_each_plan_opens_its_staff_tools`, `test_each_step_up_adds_something_and_none_locks_learning` | `src/aicefr/billing/plans.py`, `src/aicefr/billing/service.py` (`standing`, `require`, `features`, `overview`), `src/aicefr/api/billing_api.py`, `src/aicefr/api/lessons_api.py` (`AUTHORING`, `_plan_allows`), `src/aicefr/api/rating_api.py` (`create_batch`), `src/aicefr/api/static/admin_billing.js` |
 | FR-68 Số sinh viên, bài đánh giá dự kiến | UC-23 | `test_the_plan_limits_new_student_accounts_only`, `test_assessments_over_the_monthly_figure_only_warn` | `src/aicefr/billing/service.py` (`check_new_students`, `usage`), `src/aicefr/api/accounts_api.py` (`_seats`) |
 | FR-69 Mua qua cổng thanh toán | UC-23 | `test_buying_through_the_sandbox_installs_the_plan_once`, `test_a_school_year_is_discounted_and_shown_on_the_receipt`, `test_a_failed_or_cancelled_payment_changes_nothing`, `test_a_forged_or_altered_result_is_refused`, `test_an_upgrade_is_credited_and_a_renewal_waits`, `test_an_upgrade_the_credit_covers_needs_no_payment`, `test_pending_orders_expire_and_a_late_payment_still_counts`, `test_a_new_order_retires_the_one_still_waiting`, `test_vnpay_is_redirected_to_and_its_messages_are_checked`, `test_an_administrator_buys_a_plan_and_gets_a_receipt`, `test_a_cancelled_payment_leaves_the_plan_as_it_was` | `src/aicefr/billing/gateways.py` (`SandboxGateway`, `VnpayGateway`), `src/aicefr/ports.py` (`PaymentGateway`), `src/aicefr/billing/service.py` (`quote`, `place_order`, `settle`), `src/aicefr/storage/billing_repository.py`, `src/aicefr/api/templates/billing_*.html` |
 | FR-70 Mã giấy phép, quyền, nhật ký | UC-23 | `test_a_licence_key_is_installed_once`, `test_without_a_licence_secret_keys_are_refused`, `test_only_an_administrator_deals_with_plans`, `test_plan_actions_are_audited`, `test_the_tab_fits_a_phone_and_students_see_no_plan` | `src/aicefr/billing/keys.py`, `src/aicefr/billing/service.py` (`install_key`), `src/aicefr/api/billing_api.py` |
 | FR-71 Chọn cổng cho từng đơn | UC-23 | `test_the_buyer_picks_the_gateway_and_the_problems_are_logged`, `test_the_registry_builds_what_the_settings_ask_for`, `test_real_money_needs_to_be_switched_on`, `test_real_money_is_never_a_default`, `test_one_gateway_cannot_settle_another_gateways_order`, `test_the_buyer_picks_the_gateway_and_pays_through_it`, `test_the_gateway_choice_fits_a_phone` | `src/aicefr/billing/registry.py`, `src/aicefr/billing/service.py` (`place_order`, `settle`), `src/aicefr/api/billing_api.py`, `src/aicefr/api/static/admin_billing.js` |
-| FR-72 Stripe Checkout | UC-23 | `test_stripe_opens_a_checkout_session_in_dong_for_the_order`, `test_stripe_refusals_read_as_sentences`, `test_stripe_return_is_read_back_from_stripe`, `test_stripe_events_count_only_when_signed_and_fresh`, `test_stripe_keys_decide_the_mode`, `test_paying_through_stripe_is_read_back_and_counted_once`, `test_the_stripe_webhook_alone_credits_the_runs`, `test_leaving_stripe_changes_nothing_until_the_session_expires`, `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`, `test_a_return_stripe_cannot_confirm_says_so`, `test_stripe_is_asked_only_about_checkouts_this_system_opened`, `test_coming_back_without_paying_says_nothing_was_charged` | `src/aicefr/billing/stripe_gateway.py`, `src/aicefr/billing/transport.py`, `src/aicefr/api/billing_api.py` (`billing_notify`, `billing_return`), `src/aicefr/api/templates/billing_result.html` |
+| ~~FR-72 Stripe Checkout~~ (gỡ bởi D097) | UC-23 | test đã gỡ cùng Stripe; luật chung còn ở `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason`, `test_a_return_the_gateway_cannot_confirm_says_so`; payOS ở FR-100 | `src/aicefr/billing/payos_gateway.py`, `src/aicefr/billing/transport.py`, `src/aicefr/services/core/billing/billing_api.py`, `src/aicefr/api/templates/billing_result.html` |
 | FR-73 Ví MoMo | UC-23 | `test_momo_signs_the_create_request_as_documented`, `test_momo_results_map_to_outcomes_and_forgeries_are_refused`, `test_momo_is_paid_through_its_ipn_answered_204` | `src/aicefr/billing/momo_gateway.py` |
 | FR-74 Luồng Google có chữ ký, khung cấu hình | UC-17 | `test_the_flow_cookie_is_signed_and_any_change_breaks_it`, `test_the_pkce_challenge_is_s256_as_rfc_7636_shows`, `test_a_flow_cookie_this_server_did_not_sign_is_ignored`, `test_behind_tls_the_flow_cookie_is_a_host_cookie`, `test_the_signing_key_is_made_once_and_kept`, `test_the_administrator_sees_what_to_register_with_google`, `test_the_config_tab_shows_what_to_register_with_google`, `test_the_google_button_leaves_with_a_pkce_challenge` | `src/aicefr/auth/google.py` (`encode_flow`, `decode_flow`, `cookie_name`), `src/aicefr/api/google_api.py` (`_cookie`, `google_status`), `src/aicefr/storage/auth_repository.py` (`secret`, `count_identities`), `src/aicefr/api/static/admin.js` (`loadGoogleSetup`) |
 

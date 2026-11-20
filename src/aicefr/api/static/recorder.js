@@ -175,11 +175,15 @@
           analyser.getByteTimeDomainData(buf);
           let peak = 0;
           for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-          level.style.width = `${Math.min(100, (peak / 128) * 180)}%`;
+          const value = Math.min(1, (peak / 128) * 1.8);
+          level.style.width = `${value * 100}%`;
+          // The same level as a number, for screens that draw a waveform from it.
+          root.style.setProperty("--level", value.toFixed(2));
           requestAnimationFrame(draw);
         })();
       } catch (err) {
         level.style.width = "0";
+        root.style.setProperty("--level", "0");
       }
     }
 
@@ -187,6 +191,7 @@
       if (audioCtx) audioCtx.close();
       audioCtx = null;
       level.style.width = "0";
+      root.style.setProperty("--level", "0");
     }
 
     function tick() {

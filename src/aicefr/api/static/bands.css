@@ -1,0 +1,122 @@
+/* The band page (D028), drawn again on 07/11/2026: pictures and numbers first,
+   words one click away. Scoped to .bands-page; colours from the site tokens, so
+   the dark theme follows without rules of its own. */
+
+.bands-page {
+  display: grid;
+  gap: clamp(20px, 3vw, 32px);
+  max-width: 1040px;
+  margin-inline: auto;
+}
+.bands-page h2 { margin: 0; font-size: clamp(1.25rem, 2.2vw, 1.5rem); text-wrap: balance; }
+
+/* ------------------------------------------------------------- the head */
+.bands-head { display: grid; gap: 8px; }
+.bands-head h1 { display: flex; align-items: center; gap: 12px; margin: 0; line-height: 1.25; text-wrap: balance; }
+.bands-lede { margin: 0; color: var(--fg-muted); font-size: 1.05rem; }
+
+/* ------------------------------------------------------------ the scale */
+.bands-scale {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 70%),
+    var(--bg-elevated);
+}
+/* The tilted blocks reach below their own box: room so C2 clears the tiles. */
+.bands-scale .cube-stage { padding: 8px 0 34px; }
+.bands-page .band-ladder {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.bands-page .band-ladder li {
+  justify-items: center;
+  gap: 2px;
+  padding: 12px 6px;
+  border-radius: 14px;
+  background: var(--brand-soft);
+  text-align: center;
+}
+.bands-page .band-ladder .band-name { font-size: 1.6rem; line-height: 1.1; color: var(--brand-strong); }
+.band-level { font-weight: 600; font-size: 0.82rem; }
+.band-range { color: var(--fg-muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bands-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--fg-muted);
+  font-size: 0.92rem;
+}
+.bands-note .icon { width: 18px; height: 18px; color: var(--brand-strong); flex: none; }
+
+/* ----------------------------------------------------------- the aspects */
+.bands-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.bands-page .prov-legend { margin: 0; }
+.aspect-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.bands-page .aspect-card {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-elevated);
+}
+.bands-page .aspect-card[data-provenance="not_measured"] { border-style: dashed; }
+.bands-page .aspect-head h3 { margin: 0; font-size: 1.05rem; }
+.aspect-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.aspect-chips li {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.aspect-teacher { display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; color: var(--warn); }
+.aspect-teacher .icon { width: 18px; height: 18px; }
+.aspect-more { border-top: 1px solid var(--border); padding-top: 10px; }
+.aspect-more summary { cursor: pointer; color: var(--fg-muted); font-size: 0.88rem; font-weight: 600; }
+.aspect-more summary:hover { color: var(--brand-strong); }
+.aspect-more p { margin: 8px 0 0; font-size: 0.9rem; color: var(--fg-muted); }
+.bands-page .band-columns { grid-template-columns: 1fr; gap: 8px; margin-top: 10px; }
+.bands-page .band-col { display: grid; grid-template-columns: 2.4em minmax(0, 1fr); gap: 8px; padding: 8px 10px; }
+.bands-page .band-col .band-label { margin: 0; }
+.bands-page .band-col p { font-size: 0.86rem; }
+
+/* ------------------------------------------------------------ the limits */
+.bands-limits { display: grid; gap: 14px; }
+.limit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.limit-grid li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+}
+.limit-grid .icon {
+  grid-row: span 2;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+.limit-grid span { color: var(--fg-muted); font-size: 0.88rem; }
+.bands-source { margin: 0; color: var(--fg-muted); font-size: 0.8rem; }
+
+@media (max-width: 720px) {
+  .bands-page .band-ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 380px) {
+  .bands-page .band-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

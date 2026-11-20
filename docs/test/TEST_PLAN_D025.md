@@ -111,6 +111,7 @@ Tổng 91 test case: 38 unit, 39 integration, 14 E2E. Theo loại: 45 ca thuận
 | TC-LS-U36 | `test_sample_path_runs_by_level_and_topic_with_one_lesson_per_practice_task` | AC-45.3 | Thuận | Lộ trình mẫu đi A2 → B1 → B2, mỗi trình độ ít nhất năm chủ đề khác nhau; 16 bài soạn đủ và một bài cho mỗi nhiệm vụ D023 (D027) |
 | TC-LS-U37 | `test_sample_lessons_raise_no_linter_warnings` | FR-47 | Thuận | Ba mươi mốt bài mẫu không có cảnh báo soát lỗi nào |
 | TC-LS-U38 | `test_passed_reading_with_a_missed_word_names_it_in_the_tip` | FR-46 | Thuận | Bước đọc đạt nhưng thiếu một từ mang nghĩa: gợi ý nêu đúng từ đó (D025-B19) |
+| TC-LS-U39 | `test_access_gate_spans_units_without_mutating_stored_plan` | FR-45 | Biên | Cổng mở khoá tính xuyên các chặng mà không sửa lộ trình đã lưu (Thắng, f84b377) |
 
 Tệp: `tests/test_lessons_unit.py`.
 
@@ -157,6 +158,8 @@ Tệp: `tests/test_lessons_unit.py`.
 | TC-LS-I37 | `test_next_lesson_follows_the_weakest_criterion` | AC-50.2 | Thuận | Band B1, tiêu chí yếu nhất Range: bài nên học là bài chưa xong đầu tiên của chặng Range B1 |
 | TC-LS-I38 | `test_units_carry_their_topic_through_the_api_export_and_import` | FR-47 | Thuận | Chủ đề của chặng đi qua API, sửa được, chủ đề lạ bị từ chối, giữ nguyên khi xuất rồi nhập (D027) |
 | TC-LS-I39 | `test_an_older_sample_path_is_laid_out_by_topic_once` | FR-45 | Biên | Cơ sở dữ liệu có lộ trình mẫu kiểu cũ (chưa có chủ đề) được xếp lại theo chủ đề đúng một lần: lượt luyện giữ nguyên, chặng của giảng viên giữ nguyên, lần khởi động sau không đè thay đổi của giảng viên (D027) |
+| TC-LS-I41 | `test_saving_an_unchanged_draft_leaves_nothing_to_publish` | FR-45 | Hồi quy | D105: "có sửa đổi chưa xuất bản" tính bằng cách so bài nháp với phiên bản đang xuất bản dưới dạng `Lesson`; lưu lại bài không đổi (kể cả khi phiên bản cũ thiếu trường mặc định) không bật nhãn, sửa tên thì bật, xuất bản thì tắt |
+| TC-LS-I40 | `test_band_entry_open_but_later_lessons_require_completion` | FR-45 | Biên | Bài đầu mỗi band mở sẵn, các bài sau khoá; bài khoá trả 403 cả khi xem lẫn khi nộp (chặn trước khi đọc âm thanh); xong bài đầu thì mở đúng bài kế (Thắng, f84b377) |
 
 Tệp: `tests/test_lessons_integration.py`.
 
@@ -164,7 +167,7 @@ Tệp: `tests/test_lessons_integration.py`.
 
 | ID | Hàm test | AC / FR | Loại | Nội dung kiểm |
 | --- | --- | --- | --- | --- |
-| TC-LS-E01 | `test_new_learner_sees_the_path_and_the_first_lesson_next` | FR-50 | Thuận | Sinh viên mới: ba phần A2, B1, B2; bài nên học là bài A2 đầu tiên, có cờ Bắt đầu; 31 bài đều chưa học; mục tiêu 0/180 giây; 0 mục ôn; không có chữ band |
+| TC-LS-E01 | `test_new_learner_sees_the_path_and_the_first_lesson_next` | FR-50 | Thuận | Sinh viên mới: sáu phần A1–C2, 46 bài; bài nên học là bài A1 đầu tiên; mỗi phần mở bài đầu có cờ Bắt đầu, 40 bài còn khoá (D092); mục tiêu 0/180 giây; 0 mục ôn; chọn band A1–A2 |
 | TC-LS-E02 | `test_read_aloud_step_marks_words_and_moves_on` | AC-46.1 | Thuận | Bước đọc to: 6 từ gợi ý tô đậm; nộp file, khung kết quả ghi rõ là kết quả giả lập (máy chủ E2E dùng bộ nhận dạng giả lập), kết luận Đạt, từng từ được tô, không từ nào "máy chưa nghe ra"; Bước tiếp mở bước nhắc lại |
 | TC-LS-E03 | `test_free_step_runs_in_shrinking_rounds_and_compares_them` | AC-46.5 | Thuận | Bước nói tự do: lượt 1 45 giây, lượt 2 35 giây; sau lượt 2 có mục "So với lượt 1" nêu số từ mỗi phút |
 | TC-LS-E04 | `test_completing_a_lesson_marks_it_done_on_the_path` | AC-45.4 | Thuận | Làm đủ bảy bước: trang lộ trình hiện bài đã hoàn thành, 1/31 bài, mục tiêu ngày khác 0, bài nên học chuyển sang bài khác |
@@ -175,7 +178,7 @@ Tệp: `tests/test_lessons_integration.py`.
 | TC-LS-E10 | `test_teacher_corrects_a_word_and_the_learner_sees_the_review` | AC-49.1 | Thuận | Giáo viên mở lượt luyện, đổi nhận định một từ, ghi chú; sinh viên mở lại bài thấy "Giáo viên đã xem lại", ghi chú và từ được đánh dấu |
 | TC-LS-E11 | `test_students_get_no_authoring_rights` | AC-47.3 | Âm | Sinh viên mở trang soạn bài: báo không có quyền; gọi API soạn bài nhận 403 |
 | TC-LS-E12 | `test_teacher_pages_fit_a_phone` | FR-47 | Biên | Màn 375 px: ba trang của giảng viên không tràn ngang |
-| TC-LS-E13 | `test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson` | FR-45 | Thuận | Bấm một bài trên đường đi: hiện thẻ bài, Esc đóng thẻ, nút Bắt đầu mở bài học (D027) |
+| TC-LS-E13 | `test_a_coin_on_the_trail_opens_its_card_and_then_the_lesson` | FR-45 | Thuận | Bấm một bài trên đường đi: hiện thẻ bài, Esc đóng thẻ, nút "Học bài" mở bài học (D027, D092) |
 | TC-LS-E14 | `test_navigation_is_a_sidebar_on_the_left_with_icons` | FR-45 | Thuận | Thanh điều khiển nằm bên trái, nội dung trang bắt đầu sau nó; mỗi mục có icon từ bộ icon của hệ thống, mục hiện tại được đánh dấu (D027) |
 
 Tệp: `tests/e2e/test_lessons_e2e.py`.

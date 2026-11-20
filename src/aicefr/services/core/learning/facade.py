@@ -8,6 +8,7 @@ one account's lesson data, recordings included.
 from __future__ import annotations
 
 import logging
+from datetime import date
 
 from aicefr.platform.rpc import exposed
 from aicefr.ports import BlobStore
@@ -66,7 +67,6 @@ class LearningFacade:
                 "audience": p["audience"],
                 "goal": p["goal"],
                 "lessons": [item["lesson_id"] for u in p["plan"]["units"] for item in u["lessons"]],
-                "model_version": p["model_version"],
                 "active": p["active"],
                 "created_at": p["created_at"],
             }
@@ -94,6 +94,15 @@ class LearningFacade:
                 "path_title": goal.get("path_title"),
             }
         return out
+
+    @exposed
+    def phrase_reviews(self, account_id: str) -> dict[str, dict]:
+        """Where each phrase of one learner's phrase book is (D104): key -> box, due day."""
+        return self.lessons.phrase_reviews(account_id)
+
+    @exposed
+    def review_phrase(self, account_id: str, key: str, box: int, due: str) -> None:
+        self.lessons.review_phrase(account_id, key, box, date.fromisoformat(due))
 
     @exposed
     def reviews_due(self, account_id: str) -> int:

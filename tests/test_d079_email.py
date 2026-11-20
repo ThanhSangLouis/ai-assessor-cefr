@@ -58,6 +58,28 @@ def test_the_messages_say_what_they_are_for():
     assert note.headers["List-Unsubscribe"] == f"<{stop}>" and stop in note.text
 
 
+@pytest.mark.unit
+def test_every_email_is_the_same_branded_card():
+    """Owner, 07/11/2026: the emails looked bare. Codes, reminders and receipts
+    share one card: tables and inline styles only (mail clients drop <style> and
+    classes), the logo linked from the site, a preheader for the inbox line."""
+    site, stop = "https://speakup.fit", "https://speakup.fit/api/v1/email/unsubscribe?t=abc"
+    verify = code_email(EMAIL, "verify", "482913", 10, site, "<i>An</i>")
+    reset = code_email(EMAIL, "reset", "705126", 10)
+    note = reminder_email(EMAIL, "An", ["Chuỗi 3 ngày."], site, stop)
+
+    for email in (verify, reset, note):
+        assert "<style" not in email.html and "class=" not in email.html
+        assert "<table" in email.html and "Speak" in email.html
+    assert "Mã của bạn: 482913" in verify.html  # readable from the inbox list
+    assert f'src="{site}/static/favicon.png"' in verify.html
+    assert "&lt;i&gt;An&lt;/i&gt;" in verify.html and "<i>An</i>" not in verify.html
+    assert "Đặt lại mật khẩu" in reset.html and "<img" not in reset.html  # no site, no logo
+    assert f'href="{site}/practice"' in note.html and f'href="{stop}"' in note.html
+    # The plain-text parts and subjects are those of before.
+    assert verify.subject == "Mã xác minh email: 482913" and "10 phút" in verify.text
+
+
 @pytest.mark.integration
 def test_signing_up_sends_a_code_that_verifies_the_address_once(m):
     c = _signup(m)

@@ -292,6 +292,10 @@ bằng chứng cùng bản chép, trình phát ghim đầu thẻ → các khía 
 thu gọn) → chất lượng bản ghi và nguồn gốc (thu gọn; mở sẵn khi bài bị từ chối).
 Lý do từ chối trích ngưỡng QC đang áp dụng, không chép số cứng vào mã.
 
+D100 (07/11/2026): ít chữ hơn, cùng các ràng buộc trên. Thẻ Kết quả có điểm, band, nhãn khoảng tin cậy, một dòng "ước lượng" và bốn ô số đo (thời lượng, số từ, từ mỗi phút, từ máy nghe chưa rõ); nhận xét dẫn bằng chứng bằng nhãn bấm để nghe đúng mốc; bằng chứng mở sẵn dưới bản chép lời; phần kỹ thuật là "Chi tiết kỹ thuật".
+
+D101 (08/11/2026): trang Tài khoản của sinh viên, tab Dữ liệu, có thẻ **Xoá tài khoản** (viền đỏ): một câu cảnh báo, ô gõ lại email đăng nhập (không có email thì mã tài khoản), nút "Xoá vĩnh viễn" chỉ bật khi gõ khớp; xoá xong về trang chủ với thông báo "Đã xoá tài khoản và dữ liệu của bạn." Câu "báo quản trị viên để xoá" đã bỏ. Tài khoản chưa xác minh email thấy lời nhắc "Xác minh email để nhận N lượt miễn phí mỗi tháng" ở Lượt của tôi, Nộp bài, bài học và thông báo đầu trang, dẫn tới `/account#email-card`.
+
 ### M5 — Hàng đợi duyệt  ·  `/review`  · FR-29
 
 Sắp theo **độ tin cậy tăng dần** — bài máy ít chắc chắn nhất lên đầu. Lọc theo mã
@@ -428,7 +432,6 @@ Thêm 06/10/2026 (D023). Trang chính của chế độ luyện tập, cho sinh 
 | GET | `/api/v1/practice/tasks/{task_id}` | FR-40 (D023) |
 | GET | `/api/v1/practice/attempts/{id}` | FR-41, FR-43 (D023); chỉ chủ bài, bài khác hoặc bài đánh giá trả 404 |
 | GET | `/api/v1/me/achievements` | FR-65 (D032); chỉ của chính người gọi, lưu luôn những thành tựu vừa đạt |
-| POST | `/api/v1/me/achievements/seen` | FR-65 (D032); thân `{"codes": [...]}` hoặc rỗng là mọi thành tựu mới |
 | GET | `/api/v1/plan` | FR-67 (D034); giảng viên và quản trị viên |
 | GET, POST, PATCH | `/api/v1/admin/billing`, `/quote`, `/orders`, `/license`, `/organization` | FR-67..FR-70 (D034); quản trị viên |
 | GET | `/api/v1/billing/notify/{gateway}` | FR-69 (D034); máy chủ của cổng gọi, chữ ký là thứ xác thực |
@@ -454,7 +457,7 @@ sẽ hỏng và phải sửa theo, không được nới lỏng test để nó x
 
 Bảng `response` thêm `account_id`.
 
-D032: bảng `achievement(account_id, code, unlocked_at, seen_at)`, khoá chính
+D032: bảng `achievement(account_id, code, unlocked_at)` (D103 gỡ `seen_at`), khoá chính
 `(account_id, code)`; `GET /api/v1/learn` trả thêm `today.best_streak`, `today.rest_days`,
 `today.week_seconds`, `today.last_week_seconds` và khối `achievements`; hai API lượt luyện
 trả thêm `achievements` (những thành tựu lượt đó vừa đạt).
@@ -822,6 +825,16 @@ Thắng thiết kế lại giao diện theo Figma (PR #119); chủ dự án ch�
 - **Đăng nhập và đăng ký.** Hai cột: ảnh minh hoạ bên trái, biểu mẫu bên phải; kiểm tra từng ô ngay trên trình duyệt, thông báo lỗi dạng toast. Chữ bằng tiếng Việt; không có ô "Ghi nhớ đăng nhập" (D091). Sau đăng nhập chỉ chuyển tới đường dẫn của chính trang (`sitePath` trong `common.js`, chặn cả `/\evil.example`).
 - **Lộ trình học (`/practice`).** Vẽ lại theo mockup của Thắng trong `docs/design/student/practice/` (sáng, tối, cả trang A1–C2, điện thoại): lời chào kèm linh vật, thanh "Học theo band", mỗi band một phần với đường uốn lượn qua các chốt (đã xong: tích xanh; bài nên học: đồng vàng, cờ "Bắt đầu" và thẻ bài; còn lại: ổ khoá, vẫn mở được), cú và cảnh trang trí, cúp ở cuối đường; cột phải: Nên học tiếp, Mục tiêu hôm nay, Tiến độ khóa học, Tổng quan cấp độ. Mỗi band có một linh vật đứng cạnh đường (cú của mockup; robot, cáo, mèo, cánh cụt, thỏ vẽ bằng SVG trong `practice_mascots.js`) kèm một mẹo luyện nói, hiện khi phần đó cuộn tới hoặc khi rê chuột; bấm vào thì linh vật nhảy lên. Chiều sâu kiểu 3D (gờ, bóng, đổ bóng) chỉ bằng CSS; chuyển động tắt khi người dùng chọn giảm chuyển động. Có lộ trình theo band (D074) thì đường học vẽ đúng lộ trình đó; thẻ ôn tập chỉ hiện khi có mục đến hạn. CSS riêng `practice_path.css`; phần CSS và ảnh cũ của trang đã gỡ khỏi `style.css` và `static/art/`. Mục điều hướng đổi tên "Lộ trình học".
 
+### Đợt 19 — Trang chủ và trang Nộp bài làm lại (D093) — **xong**
+
+Chủ dự án yêu cầu đổi hẳn giao diện hai trang ở `/`, giữ màu cam SpeakUp, bớt chữ. Thiết kế theo quy trình của bộ kỹ năng Impeccable (`PRODUCT.md` ở gốc repo ghi sự thật sản phẩm dùng cho các lần thiết kế sau).
+
+- **Trang chủ (khách).** Bỏ cảnh 3D khối A1–C2, dải thông số và các khối thẻ cũ. Đầu trang là tiêu đề, một câu giới thiệu, nút "Đăng ký miễn phí" và một **báo cáo mẫu** ghi rõ "Ví dụ": sóng âm có đánh dấu quãng ngập ngừng, các từ là nút bấm (bấm thì hiện nhận xét), thang A1–C2, dòng "Giảng viên đã xác nhận". Báo cáo tự phát một lần khi hiện ra; người chọn giảm chuyển động thấy ngay bản đã xong. Tiếp theo: ba bước, "Gợi ý ít dần" (cùng một câu với gợi ý giảm 100 → 60 → 25 → 0 %), phần giảng viên kèm hàng đợi mẫu, "Minh bạch về công nghệ" (`#principles`: bốn thẻ Năng lực thực tế, Giảng viên đồng hành, Công bằng ngôn ngữ, Quyền riêng tư, mỗi thẻ có một ví dụ nhỏ ghi rõ "Ví dụ"), câu hỏi thường gặp với ngưỡng đang áp dụng, dải kêu gọi màu cam. Cảnh ruộng bậc thang (D037) chỉ còn ở trang đăng nhập. CSS riêng `landing.css`; toàn bộ CSS `.lp-*` cũ đã gỡ khỏi `style.css`.
+- **Nộp bài (sinh viên)** theo mockup B "Từng bước tự tin" của Thắng (`docs/design/student/submit/`): header phong cảnh theo vùng của band đề (A1 rừng xanh … C2 đồng hoa; ngày/đêm theo giao diện) kèm linh vật và lời nhắc của vùng; ba bước Chọn đề → Chuẩn bị & nói → Nghe lại & nộp, mỗi lúc chỉ một thẻ ở giữa. Bước 1 là band và ba đề (radio thật), nút "Nói về đề này"; link `?task=` vào thẳng bước 2. Bước 2 là đề chữ lớn, chuẩn bị 30 giây và bộ ghi âm: nút cam "Bắt đầu ghi âm", khi ghi chuyển đỏ "Dừng ghi âm", sóng âm vẽ từ mức micro thật (`--level` do `recorder.js` đặt), thanh thời lượng có vùng khuyến nghị. Đổi đề khi đã có bản ghi phải xác nhận; chọn tệp hay ghi xong luôn đưa về thẻ nói. CSS `student_stage.css` (dùng chung) và `submit.css`.
+- **Bài học (sinh viên)** theo mockup C "Sân khấu luyện nói" của Thắng (`docs/design/student/lesson/`): cùng header phong cảnh của band với linh vật; các bước nằm một hàng có thanh tiến độ (cuộn ngang khi nhiều bước); thẻ bước rộng với chữ cần nói trong khung mềm, từ gợi ý tô màu của vùng; nút Bước trước / Bước sau; thẻ "Bỏ túi" bên phải liệt kê từ khoá, từ gợi ý hoặc từ nối của bước (ẩn khi màn hẹp, mọi thứ vẫn có trong thẻ chính). Ôn tập và xem thử của giảng viên dùng cùng bố cục. Dữ liệu, mở khoá và chấm giữ nguyên; CSS `lesson_stage.css`.
+- **Bỏ dòng tuyên bố.** Theo quyết định của chủ dự án, không trang nào còn dòng "Không cấp chứng chỉ… Giảng viên quyết định cuối cùng" và liên kết "Band A1–C2 là gì?": chân trang trong ứng dụng bỏ hẳn, khung "Minh bạch trong đánh giá" ở chân trang của khách chỉ còn ghi chú dữ liệu cá nhân. Lệnh cấm các chuỗi mang nghĩa chứng chỉ hay kết quả chính thức (SRS §11.3) vẫn giữ; câu tuyên bố trong tệp hồ sơ xuất ra (FR-38) không đổi. Trang `/bands` vẫn mở được từ chân trang của khách ("Khung năng lực").
+- **Sửa lỗi chung.** Trên điện thoại, mọi trang có thanh bên bị ép còn khoảng 86 px chiều rộng (giới hạn `max-width` tính cả thanh bên đang ẩn); ngăn kéo menu đóng không còn đổ bóng lên mép trái trang.
+
 ### Ngoài phạm vi tài liệu này nhưng phải lên lịch
 
 Đóng gói Docker và triển khai staging. Mốc ký cam kết sản phẩm cuối là **hết tuần 7**,
@@ -835,7 +848,7 @@ và cam kết đó cần một bản chạy được cho giảng viên hướng 
 | --- | --- |
 | Đơn vị | Băm mật khẩu, kiểm phiên, kiểm vai trò, đếm lần đăng nhập sai |
 | Hợp đồng API | Mã trạng thái, hình dạng dữ liệu, 403 vai trò sai, 404 bài người khác, 202 khi nhận bài |
-| Template | Render được; có tuyên bố bắt buộc; **không chứa chuỗi cấm** theo SRS §11.3; không lộ thông tin định danh |
+| Template | Render được; **không chứa chuỗi cấm** theo SRS §11.3; không lộ thông tin định danh (dòng tuyên bố ở chân trang đã bỏ theo D093) |
 | Luồng | Nộp → QUEUED → RUNNING → xong → xem báo cáo → khóa → duyệt → lịch sử |
 | Thủ công | Danh mục 12 thao tác trên Chrome, Edge, Firefox ở 1366×768 |
 

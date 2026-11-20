@@ -6,6 +6,7 @@ Moi test tai hien dung kich ban da gay loi truoc khi sua.
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 
 from aicefr.contracts import (
     Assessment,
@@ -67,7 +68,7 @@ def _report(rid: str, status: ResponseStatus = ResponseStatus.COMPLETED) -> Resp
 
 def test_retention_also_removes_the_speech_quoted_in_evidence(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1"), "SV-001", "P3")
+    repo.save(_report("r1"), "P3")
     apply_retention(repo, days=-1, dry_run=False)
     ev = repo.get("r1").assessment.evidence
     assert all(e.snippet is None for e in ev)
@@ -83,7 +84,6 @@ def test_retention_clears_the_audio_pointer_of_a_rejected_recording(tmp_path) ->
     audio.write_bytes(b"RIFF")
     repo.save(
         Response(response_id="r1", status=ResponseStatus.REJECTED, config_version="v1"),
-        "SV-001",
         "P3",
         audio_path=str(audio),
     )
@@ -101,7 +101,7 @@ def test_a_relative_audio_path_is_not_mistaken_for_an_orphan(tmp_path, monkeypat
     uploads.mkdir()
     (uploads / "live.wav").write_bytes(b"RIFF")
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1"), "SV-001", "P3", audio_path="uploads/live.wav")  # tuong doi
+    repo.save(_report("r1"), "P3", audio_path="uploads/live.wav")  # tuong doi
     assert orphaned_recordings(repo, uploads.resolve()) == []
 
 
@@ -120,7 +120,7 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
     repo = Repository(tmp_path / "t.db")
     for i in range(30):
-        repo.save(_report(f"r{i}", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
+        repo.save(_report(f"r{i}", ResponseStatus.REVIEW_REQUIRED), "P3")
 
     def decide(args):
         rid, who = args
@@ -143,7 +143,7 @@ def test_two_concurrent_decisions_cannot_both_win(tmp_path) -> None:
 
 def test_a_score_and_a_band_that_disagree_are_refused(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1", ResponseStatus.REVIEW_REQUIRED), "SV-001", "P3")
+    repo.save(_report("r1", ResponseStatus.REVIEW_REQUIRED), "P3")
     with pytest.raises(InvalidStateError):
         repo.apply_review("r1", "gv1", 5.5, "A2", "diem cao ma band thap")
     assert repo.get("r1").status is ResponseStatus.REVIEW_REQUIRED
@@ -168,7 +168,6 @@ def test_a_repetition_loop_is_logged_without_the_words(tmp_path, caplog) -> None
     engine = FakeAsrEngine(transcript="hello " + " ".join([secret] * 12))
     req = ProcessingRequest(
         response_id="r1",
-        speaker_id="SV-001",
         task_id="P3",
         audio_path="x",
         prompt_version="v1",
@@ -195,7 +194,6 @@ def test_no_practice_priorities_are_given_when_the_machine_did_not_score(tmp_pat
 
     req = ProcessingRequest(
         response_id="r1",
-        speaker_id="SV-001",
         task_id="P3",
         audio_path="x",
         prompt_version="v7",
@@ -234,9 +232,9 @@ def test_the_model_list_hides_the_calibration_artifact(tmp_path) -> None:
     from aicefr.storage.auth_repository import Role
 
     importlib.reload(m)
-    m.app.state.auth_repo.create_account("QT-01", PASSWORD, Role.ADMIN)
+    m.app.state.auth_repo.create_account(email_of("QT-01"), PASSWORD, Role.ADMIN)
     c = TestClient(m.app)
-    c.post("/api/v1/auth/login", json={"pseudonym": "QT-01", "password": PASSWORD})
+    c.post("/api/v1/auth/login", json={"email": email_of("QT-01"), "password": PASSWORD})
     names = {x["name"] for x in c.get("/api/v1/admin/models").json()}
     assert "conformal_resp_v2" not in names and "ridge_resp_v2" in names
 

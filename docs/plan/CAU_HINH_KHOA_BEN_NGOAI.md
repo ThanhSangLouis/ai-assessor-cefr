@@ -1,6 +1,8 @@
-# Cài khoá cho dịch vụ bên ngoài: Google, Stripe
+# Cài khoá cho dịch vụ bên ngoài: Google, payOS, Resend
 
 > **D075 (01/11/2026):** hệ thống phục vụ một trung tâm, học viên (và giảng viên, cho bản soạn bài bằng AI) mua **gói lượt** qua **Stripe**; không còn gói dịch vụ của trường. VNPay và MoMo đã gỡ khỏi mã: mục 3 và 4 chỉ còn làm lịch sử.
+
+> **D097 (07/11/2026):** Stripe đã gỡ khỏi mã (không mở tài khoản bán hàng cho doanh nghiệp tại Việt Nam); gói lượt bán qua **payOS** (mục 2a). Mục 2 chỉ còn làm lịch sử; các biến `AICEFR_STRIPE_*` không còn được đọc.
 
 Tài liệu này dành cho người vận hành một bản triển khai: lấy khoá ở đâu, đặt vào đâu, và kiểm tra thế nào là đã đúng. Mã đã làm sẵn cả bốn dịch vụ (D029, D034, D035, D036); **mọi dịch vụ đều tắt cho tới khi có khoá**, và mọi cổng thanh toán mặc định chạy ở môi trường thử của chính nó.
 
@@ -9,7 +11,7 @@ Các bước dưới đây đã được đối chiếu với tài liệu chính
 ## 0. Ba nguyên tắc
 
 1. **Khoá chỉ nằm trong `.env` hoặc biến môi trường của máy chủ.** Tệp `.env` đã có trong `.gitignore`; sao `.env.example` thành `.env` rồi điền. `demo.sh` tự đọc `.env` nếu có; chạy cách khác thì nạp bằng `set -a; . ./.env; set +a`. Không commit `.env`, không dán client secret hay khoá bí mật vào chat, issue hay ảnh chụp màn hình.
-2. **Không có tiền thật trong đồ án.** Cổng thu tiền thật — khoá Stripe `sk_live_`, địa chỉ thật của VNPay hay MoMo — chỉ chạy khi đặt `AICEFR_PAYMENTS_LIVE=on` (khi đó mọi cổng ở môi trường thử tự tắt, để không ai mua gói thật bằng thẻ thử), và việc đó cần một pháp nhân, hợp đồng với cổng, và giải quyết giấy phép dữ liệu huấn luyện (xem `DE_XUAT_GOI_DICH_VU.md`). Trong đồ án, không đặt biến này.
+2. **Không có tiền thật trong đồ án.** Cổng thu tiền thật — payOS (không có môi trường thử) — chỉ chạy khi đặt `AICEFR_PAYMENTS_LIVE=on` (khi đó mọi cổng ở môi trường thử tự tắt, để không ai mua gói thật bằng thẻ thử), và việc đó cần một pháp nhân, hợp đồng với cổng, và giải quyết giấy phép dữ liệu huấn luyện (xem `DE_XUAT_GOI_DICH_VU.md`). Trong đồ án, không đặt biến này.
 3. **Kiểm tra trên chính ứng dụng.** Sau khi đặt khoá và khởi động lại, đăng nhập bằng tài khoản quản trị: tab **Cấu hình** có khung "Đăng nhập bằng Google", trang **Lượt của tôi** của học viên liệt kê các cổng đang bật; cổng nào còn thiếu khoá thì nhật ký của dịch vụ `core` ghi rõ tên biến, không bao giờ ghi giá trị.
 
 ## 1. Đăng nhập bằng Google (OAuth 2.0, luồng mã uỷ quyền có PKCE)
@@ -59,7 +61,9 @@ Các bước dưới đây đã được đối chiếu với tài liệu chính
 
 Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (developers.google.com/identity/protocols/oauth2/web-server) và tài liệu discovery `accounts.google.com/.well-known/openid-configuration`.
 
-## 2. Stripe (chế độ thử)
+## 2. Stripe (đã gỡ bởi D097)
+
+Phần dưới giữ làm lịch sử: mã không còn đọc khoá Stripe. Dùng payOS ở mục 2a.
 
 **Đã làm sẵn.** Mở Checkout Session bằng API (VND, mã đơn trong `client_reference_id`), trang trả về đọc lại phiên từ API, webhook kiểm `Stripe-Signature` (HMAC-SHA256, năm phút). Sơ đồ: hình 8 của SDD, mục 4.16.
 
@@ -92,6 +96,39 @@ Tài liệu gốc: Google, "Using OAuth 2.0 for Web Server Applications" (develo
 **Số tiền.** Stripe tính VND bằng đúng số đồng (không nhân 100). Mỗi lần trả phải đạt mức tối thiểu của Stripe — 0,50 USD quy đổi theo tiền tệ thanh toán của tài khoản — nên gói lượt quá rẻ có thể bị từ chối; khi đó trang báo lý do.
 
 Tài liệu gốc: docs.stripe.com/api/checkout/sessions/create, docs.stripe.com/webhooks (mục "Verify webhook signatures manually"), docs.stripe.com/currencies.
+
+## 2a. payOS — chuyển khoản VietQR (D095)
+
+**Đã làm sẵn.** Mở link thanh toán bằng API payOS (VND, mã đơn đổi sang số nguyên, nội dung chuyển khoản `SU` + 6 ký tự của đơn); trang trả về đọc lại link từ API payOS, không tin trạng thái ghi trong địa chỉ; webhook chỉ được tin khi chữ ký HMAC-SHA256 trên phần `data` đúng với checksum key. Người mua quét mã VietQR bằng ứng dụng ngân hàng bất kỳ.
+
+**Giới hạn cần biết.**
+
+- **payOS không có môi trường thử.** Mọi link là tiền thật chuyển vào tài khoản ngân hàng gắn với kênh thanh toán. Vì vậy cổng chỉ chạy khi `AICEFR_PAYMENTS_LIVE=on`, và khi đó cổng thử tự tắt.
+- **Bán thật vẫn vướng giấy phép.** Mô hình chấm học từ dữ liệu Speak & Improve chỉ được dùng phi thương mại. Chủ dự án chốt ngày 07/11/2026 giữ chế độ thử trên production, nên **không bật payOS trên speakup.fit** khi chưa giải quyết giấy phép. Muốn thử luồng thì chạy trên máy mình và chuyển khoản số tiền nhỏ cho chính mình.
+
+**Lấy khoá:**
+
+1. **Tạo tài khoản:** vào <https://my.payos.vn>, bấm **Đăng ký**, điền thông tin rồi bấm **Tạo tài khoản**, sau đó mở email payOS gửi và bấm **Xác thực**.
+2. **Xác thực tổ chức:** chọn **Tài khoản cá nhân/Hộ kinh doanh** (cá nhân được, không cần giấy phép kinh doanh), nhập số CCCD và họ tên, bấm **Kiểm tra**. Sau đó quét mã QR để chuyển đúng số tiền và nội dung payOS yêu cầu, **từ tài khoản ngân hàng đứng tên bạn** (không dùng ví điện tử). Không tra được CCCD thì gửi email tới verify@payos.vn để xác thực tay.
+3. **Kết nối tài khoản ngân hàng nhận tiền:** mục **Kênh thu** → chọn ngân hàng của bạn → làm theo hướng dẫn của ngân hàng đó.
+4. **Tạo kênh thanh toán:** mục **Kênh thanh toán** → **Tạo kênh thanh toán** → chọn tài khoản ngân hàng vừa kết nối, đặt tên (ví dụ `SpeakUp`) → **Tạo**. Mở kênh vừa tạo, chép ba khoá: **Client ID**, **API Key**, **Checksum Key**. Ba khoá này giữ kín như mật khẩu: không gửi qua chat, không commit.
+5. **Webhook** (cần địa chỉ `https` công khai): trong kênh thanh toán, ô **Webhook URL**, điền `https://<tên-miền-của-bạn>/api/v1/billing/notify/payos` rồi lưu. payOS gửi thử một thông báo mẫu có chữ ký; hệ thống trả 200 thì payOS nhận địa chỉ. Chạy trên máy mình không có `https` thì bỏ qua bước này: đơn vẫn được ghi nhận khi trình duyệt quay về, nhưng người trả đóng trang sớm thì phải đối soát tay.
+6. **Điền `.env`:**
+
+   ```bash
+   AICEFR_BILLING=on
+   AICEFR_METERING=1
+   AICEFR_PAYMENT_GATEWAYS=payos
+   AICEFR_PAYMENTS_LIVE=on
+   AICEFR_PAYOS_CLIENT_ID=...
+   AICEFR_PAYOS_API_KEY=...
+   AICEFR_PAYOS_CHECKSUM_KEY=...
+   ```
+
+   Thiếu `AICEFR_PAYMENTS_LIVE=on` thì payOS không hiện, và nhật ký ghi rõ lý do. Thiếu khoá nào thì nhật ký ghi tên biến còn thiếu.
+7. **Thử:** đăng nhập học viên → **Lượt của tôi** → **Mua gói này** → trang payOS → quét QR bằng app ngân hàng → về trang kết quả "Thanh toán thành công", ví được cộng lượt. Muốn tốn ít tiền khi thử, quản trị viên tạm đặt một gói rẻ trên trang Giá (ví dụ `1` lượt giá `2.000` đồng) rồi đặt lại sau.
+
+Tài liệu gốc: payos.vn/docs/api (tạo và đọc link thanh toán), payos.vn/docs/tich-hop-webhook/kiem-tra-du-lieu-voi-signature, payos.vn/docs/huong-dan-su-dung/xac-thuc-to-chuc, payos.vn/docs/moi-truong-test (truy cập 07/11/2026).
 
 ## 2b. Email qua Resend (D079)
 

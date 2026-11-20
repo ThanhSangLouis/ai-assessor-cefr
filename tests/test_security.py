@@ -11,16 +11,17 @@ from __future__ import annotations
 
 import io
 import pathlib
+import re
 import subprocess
 import time
 
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import email_of
 from fastapi.testclient import TestClient
 
 from aicefr.audio.decoder import MAX_DECODE_SECONDS, FirstMatchDecoder, ffmpeg_available, sniff
-from aicefr.auth.pseudonyms import validate_pseudonym
 from aicefr.storage.auth_repository import Role
 
 PASSWORD = "matkhau-kiem-thu"
@@ -37,10 +38,10 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+def login_as(app, name: str, role: str) -> TestClient:
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     c = TestClient(app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200
     return c
 
@@ -82,22 +83,10 @@ def test_an_inbound_request_id_is_kept(app) -> None:
 # ---------------------------------------------------------------- XSS
 
 
-def test_pseudonyms_cannot_carry_markup() -> None:
-    """The pseudonym reaches a teacher screen, so it must not open a tag.
-
-    An allowlist, not a blocklist: a blocklist of forbidden substrings has to
-    anticipate every spelling of every identifier, and lets markup straight
-    through.
-    """
-    for payload in ("<svg onload=alert(1)>", '"><script>x</script>', "a'b", "x y"):
-        with pytest.raises(ValueError):
-            validate_pseudonym(payload)
-
-
 def test_queue_screen_escapes_every_user_value() -> None:
     """The review queue was the one screen missing escaping."""
     source = pathlib.Path("src/aicefr/api/static/queue.js").read_text(encoding="utf-8")
-    for field in ("speaker_id", "locked_by", "overall_band"):
+    for field in ("student_name", "locked_by", "overall_band"):
         assert f"escapeHtml(r.{field}" in source, f"{field} chua duoc escape"
     # D078: the prompt is shown by its band title, escaped like the rest.
     assert "escapeHtml(titles[r.task_id]" in source
@@ -301,15 +290,15 @@ def test_a_decompression_bomb_is_capped(tmp_path) -> None:
 def test_unknown_and_known_accounts_take_similar_time(app) -> None:
     """Response time must not reveal whether a pseudonym exists.
 
-    Without the dummy verification, an unknown pseudonym answered in about 5 ms
+    Without the dummy verification, an unknown name answered in about 5 ms
     and a known one in about 300 ms, because bcrypt only ran in the second case.
     """
     login_as(app, "SV-001", "student")
     c = TestClient(app)
 
-    def elapsed(pseudonym: str) -> float:
+    def elapsed(name: str) -> float:
         start = time.perf_counter()
-        c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": "wrong"})
+        c.post("/api/v1/auth/login", json={"email": email_of(name), "password": "wrong"})
         return time.perf_counter() - start
 
     known = min(elapsed("SV-001") for _ in range(3))
@@ -325,7 +314,9 @@ def test_too_many_logins_from_one_address_are_throttled(app) -> None:
     """
     c = TestClient(app)
     codes = [
-        c.post("/api/v1/auth/login", json={"pseudonym": f"SV-{i:03d}", "password": "x"}).status_code
+        c.post(
+            "/api/v1/auth/login", json={"email": email_of(f"SV-{i:03d}"), "password": "x"}
+        ).status_code
         for i in range(15)
     ]
     assert 429 in codes
@@ -357,3 +348,26 @@ def test_runtime_assets_are_declared_as_package_data() -> None:
     # The scoring artifacts are the opposite: corpus statistics that must never
     # ship (W7-S01). They are read from AICEFR_MODEL_DIR at run time.
     assert "scoring/models" not in config
+
+
+def test_every_template_and_static_file_ships_in_the_wheel() -> None:
+    """Each file under api/static and api/templates matches a package-data glob.
+
+    Checking a few patterns by name missed the roadmap's art (D093): it lives
+    in a folder of its own, nothing declared it, and production served 404s
+    for every scene and mascot while every test passed.
+    """
+    config = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+    data = config[config.index("[tool.setuptools.package-data]") :]
+    data = data[: data.index("]", data.index("aicefr = ["))]
+    package = pathlib.Path("src/aicefr")
+    shipped: set[pathlib.Path] = set()
+    for pattern in re.findall(r'^\s*"([^"]+)"', data, re.MULTILINE):
+        shipped.update(package.glob(pattern))
+    left_out = [
+        str(path.relative_to(package))
+        for folder in ("api/static", "api/templates")
+        for path in sorted((package / folder).rglob("*"))
+        if path.is_file() and not path.name.startswith(".") and path not in shipped
+    ]
+    assert not left_out, f"thiếu trong package-data: {left_out[:10]}"

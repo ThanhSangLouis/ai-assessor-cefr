@@ -1,19 +1,26 @@
 """The prices in force (D078): the administrator's latest version, else the settings'.
 
 An administrator sets them on the dashboard -- what a recording and an
-upgraded answer and (D090) a reading passage cost, what a run is in IDPoint, the free runs
-each month and the run packs on sale -- and every change is a new version
+upgraded answer and (D090) a reading passage cost, (D094) what a recording on
+the lesson path costs and how many of them a day are free or allowed, what a
+run is in IDPoint, the free runs each month and the run packs on sale -- and
+every change is a new version
 (`price-admin-N`). A charge keeps the version it was held under, so changing
 the prices never rewrites what was already paid. Until the first change the
 settings (`AICEFR_PRICE_*`, `AICEFR_CREDIT_PACKS`) stand.
+
+D106: every price and the free runs of the month are whole runs. A new version
+with a fraction is refused; one saved before D106 is read as its whole part.
 """
 
 from __future__ import annotations
 
-from aicefr.metering.pricing import UNITS_PER_RUN, PriceList
+from aicefr.metering.pricing import RUN_PRICES, UNITS_PER_RUN, PriceList, is_whole
 from aicefr.storage.metering_repository import MeteringRepository
 
-FIELDS = ("first_minute_runs", "extra_minute_runs", "upgrade_runs", "passage_runs")
+FIELDS = RUN_PRICES
+# D094: counts, not prices.
+COUNTS = ("lesson_free_per_day", "lesson_daily_cap")
 
 
 class PriceBook:
@@ -31,9 +38,11 @@ class PriceBook:
         doc = self.store.price_list()
         if not doc:
             return self.defaults
-        # A version saved before a price existed (D090's passage) keeps the default.
+        # A version saved before a price existed (D090's passage, D094's lesson
+        # recordings) keeps the default.
         return PriceList(
             **{f: float(doc.get(f, getattr(self.defaults, f))) for f in FIELDS},
+            **{f: int(doc.get(f, getattr(self.defaults, f))) for f in COUNTS},
             idpoint_per_run=int(doc["idpoint_per_run"]),
             version=doc["version"],
         )
@@ -51,18 +60,21 @@ class PriceBook:
             "free_runs": self.store.free_units / UNITS_PER_RUN,
             "packs": [{"runs": r, "price_vnd": p} for r, p in self.packs()],
             "from_settings": not doc,
-            "changed_by": doc.get("changed_by"),
             "changed_at": doc.get("changed_at"),
             "history": [
-                {k: h.get(k) for k in ("version", "changed_by", "changed_at")}
-                for h in self.store.price_history()
+                {k: h.get(k) for k in ("version", "changed_at")} for h in self.store.price_history()
             ],
         }
 
-    def set(self, values: dict, by: str) -> dict:
+    def set(self, values: dict) -> dict:
         """Save a new version; ValueError when a price is impossible."""
+        # D106: a learner buys whole runs, so every price is a whole run too.
+        if not all(is_whole(float(values[f])) for f in (*FIELDS, "free_runs")):
+            raise ValueError("giá và lượt miễn phí phải là số lượt nguyên: 0, 1, 2…")
         PriceList(
-            **{f: float(values[f]) for f in FIELDS}, idpoint_per_run=int(values["idpoint_per_run"])
+            **{f: float(values[f]) for f in FIELDS},
+            **{f: int(values[f]) for f in COUNTS},
+            idpoint_per_run=int(values["idpoint_per_run"]),
         )
         packs = sorted({int(p["runs"]): int(p["price_vnd"]) for p in values["packs"]}.items())
         if any(r <= 0 or v <= 0 for r, v in packs):
@@ -72,9 +84,9 @@ class PriceBook:
         return self.store.set_price_list(
             {
                 **{f: float(values[f]) for f in FIELDS},
+                **{f: int(values[f]) for f in COUNTS},
                 "idpoint_per_run": int(values["idpoint_per_run"]),
                 "free_runs": float(values["free_runs"]),
                 "packs": [{"runs": r, "price_vnd": v} for r, v in packs],
-            },
-            by,
+            }
         )

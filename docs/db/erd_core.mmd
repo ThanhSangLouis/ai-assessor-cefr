@@ -1,4 +1,4 @@
-%% ERD - các collection sau D060, D075, D078, D081..D085, D088..D090 (lược đồ phiên bản 19): một aggregate root
+%% ERD - các collection sau D060, D075, D078, D081..D090, D103, D104 (lược đồ phiên bản 21): một aggregate root
 %% của sơ đồ lớp là một collection; phần hợp thành nằm trong document của gốc
 %% và được ghi bằng trường kiểu mảng. Đường liền: tham chiếu trong cùng một
 %% database; đường nét đứt: tham chiếu sang database khác (D051) hoặc qua
@@ -17,7 +17,6 @@ erDiagram
     account ||--o{ order : "mua"
 
     task ||--o{ response : "đề của"
-    response ||--o| review_session : "việc duyệt (D082)"
 
     path ||--o{ lesson : "chặng gồm bài"
     lesson ||--o{ attempt : "lượt nói"
@@ -27,18 +26,15 @@ erDiagram
     account ||..o{ drill_passage : "đọc đoạn văn (D090)"
     drill_passage }o--|{ word_drill : "viết quanh 3-5 từ"
     learning_plan }o--o{ lesson : "gợi ý"
-    learning_plan |o--o| path : "lưu thành"
 
-    order ||--|| payment : "thanh toán (D084)"
     wallet ||--o{ ledger : "bút toán"
     ledger ||..|| response : "tính lượt cho"
 
     account {
         string account_id PK
-        string pseudonym UK
+        string email UK "khoá đăng nhập (D103)"
         string role
         array identities "liên kết Google (băm)"
-        object seen_markers
     }
     session {
         string token_hash PK
@@ -59,15 +55,10 @@ erDiagram
         string account_id
         string task_id
         string status
-        float overall_0_6
-        string overall_band
+        object assessment "điểm, band, đã xác nhận (D104: không chép ra ngoài)"
+        object review_lock "D104"
         array reviews "Review"
         array replay_labels
-    }
-    review_session {
-        string response_id UK
-        object lock
-        array visits
     }
     classroom {
         string class_id PK
@@ -77,12 +68,12 @@ erDiagram
     path {
         string path_id PK
         string status
-        int built_in "D085"
         array units "Unit"
     }
     lesson {
         string lesson_id PK
         string unit_id
+        object draft
         int published_version
         array versions
         array media
@@ -92,10 +83,12 @@ erDiagram
         string account_id
         string lesson_id
         int lesson_version
+        object result
     }
     review_item {
         string item_id PK
         string account_id
+        string kind "word, talk, phrase (D104)"
         string due_date
         string drill_id "D089, rỗng với từ của bài học"
     }
@@ -124,18 +117,14 @@ erDiagram
         string plan_id PK
         string account_id
         string audience
-        string path_id
+        object goal
+        object plan "các chặng và bài (D104: document, không còn chuỗi JSON)"
     }
     order {
         string order_id PK
-        string kind
         string status
         int runs
-    }
-    payment {
-        string order_id UK
-        string gateway
-        string checkout_ref
+        string checkout_ref "phần cổng thanh toán (D104 gộp Payment)"
         array events
     }
     wallet {

@@ -13,7 +13,8 @@ import threading
 from datetime import UTC, datetime
 
 from aicefr.config import Settings
-from aicefr.notify import reminders
+from aicefr.contracts import CLASS_INVITED, CLASS_JOINED, ORDER_SETTLED
+from aicefr.notify import classes, payments, reminders
 from aicefr.notify.email import sender_from
 from aicefr.platform.bus import MessageBus
 from aicefr.platform.callers import SessionCallers
@@ -53,6 +54,29 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
             auth=auth, audit_log=audit_log, sender=sender, secret=bytes.fromhex(secret)
         )
     )
+    if sender is not None:
+        # D096: the buyer hears how a run-pack payment ended. Billing announces
+        # it on the bus and does not know who listens (an Observer).
+        bus.subscribe(
+            ORDER_SETTLED,
+            "identity-payment-email",
+            lambda payload: payments.on_order_settled(
+                payload, auth, sender, (settings.public_url or "").rstrip("/")
+            ),
+        )
+        # D109: the invited student, and the teachers of a class a student
+        # joined, hear of it; the assessment service announces both.
+        site = (settings.public_url or "").rstrip("/")
+        bus.subscribe(
+            CLASS_INVITED,
+            "identity-class-email",
+            lambda payload: classes.on_invited(payload, auth, sender, site),
+        )
+        bus.subscribe(
+            CLASS_JOINED,
+            "identity-class-email",
+            lambda payload: classes.on_joined(payload, auth, sender, site),
+        )
     stop = threading.Event()
 
     def send_reminders() -> int:

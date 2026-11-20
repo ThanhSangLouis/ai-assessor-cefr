@@ -2,6 +2,8 @@
 
 > **D075 (01/11/2026):** chỉ còn Stripe và cổng thử; VNPay, MoMo và các test của chúng (TC-CT-U06, U07, I08; AC-73.x) đã gỡ. Người mua là học viên hay giảng viên mua gói lượt, không còn quản trị viên mua gói của trường: TC-CT-I02, I09, E01 đổi tên theo đó.
 
+> **D097 (07/11/2026):** Stripe đã gỡ khỏi hệ thống; payOS (D095) là cổng thật duy nhất. Test của riêng Stripe (TC-CT-U01..U05, I01..I03, I06, I10) và e2e chọn cổng (TC-CT-E01..E03) đã gỡ, cùng AC-71.1, 71.3, 71.6, 71.7 và AC-72.x. Các luật chung của mọi cổng (TC-CT-U08, U09, U10, I04, I05, I07, I09) chạy với payOS.
+
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Tính năng | D035: nhiều cổng thanh toán cùng lúc, quản trị viên chọn cổng cho từng đơn; Stripe Checkout ở chế độ thử (mở phiên bằng API, đọc lại phiên, webhook có chữ ký); ví MoMo ở môi trường thử (yêu cầu, kết quả và IPN có chữ ký); tiền thật phải bật riêng (FR-71..FR-73, BR-34, BR-35, UC-23) |
@@ -23,7 +25,7 @@
 | --- | --- | --- | --- | --- | --- |
 | 1. Unit | Yêu cầu mở phiên Stripe, cách đọc lại phiên, chữ ký webhook, chế độ theo khoá; yêu cầu và kết quả MoMo; dựng các cổng từ cấu hình | pytest | Không ứng dụng, không CSDL, không mạng: mỗi bộ chuyển đổi nhận một `transport` giả | Máy và CI | `pytest tests/test_gateways_unit.py` |
 | 2. Integration | Trọn vòng Stripe qua API giả (trả về, webhook, rời trang, hết hạn, không mở được, không xác nhận được, chỉ hỏi phiên của mình); trọn vòng MoMo qua IPN; chọn cổng; tiền thật; một cổng không ghi nhận đơn của cổng khác | pytest, FastAPI TestClient | SQLite thật trên tệp tạm; `FakeStripe` giữ phiên như API của Stripe, `FakeMomo` trả lời như điểm tạo giao dịch của MoMo; sự kiện và IPN ký trong test theo cách mỗi cổng công bố | Máy và CI | `pytest tests/test_gateways.py` |
-| 3. E2E | Ô "Thanh toán qua", biểu ngữ, mua qua cổng được chọn, cột Cổng trong bảng đơn, trang rời trang thanh toán, điện thoại | Playwright + Chromium | Máy chủ uvicorn riêng với Stripe (khoá có dạng khoá thử nhưng không phải khoá thật) và cổng thử | **Chỉ trên máy**; CI tự bỏ qua | `pytest -m e2e tests/e2e/test_gateways_e2e.py` |
+| 3. E2E | Đã gỡ bởi D097 (chỉ còn một cổng chạy mỗi lúc) | — | — | — | — |
 
 **Không test nào gọi Stripe hay MoMo thật.** Cần khoá của chủ dự án, và test phải chạy không có mạng (AGENTS.md). Các chi tiết của hai cổng đã đối chiếu với tài liệu chính thức ngày 07/10/2026 — với Stripe: tham số Checkout Session (`expires_at` 30 phút tới 24 giờ, `locale=vi`, `{CHECKOUT_SESSION_ID}` trong `success_url`), cách ký webhook (`t`, `v1`, HMAC-SHA256 trên `<t>.<thân>`, dung sai năm phút, bỏ mọi lược đồ khác `v1`), VND không có đơn vị lẻ; với MoMo: đường dẫn `/v2/gateway/api/create`, thứ tự trường của hai chuỗi ký, mức 1.000–50.000.000 đ, bảng mã kết quả, trả lời IPN bằng 204 trong 15 giây. Test tính lại chữ ký bằng thư viện chuẩn theo đúng mô tả đó thay vì tin bộ chuyển đổi. Chạy với khoá thử thật là bước của chủ dự án theo `docs/plan/CAU_HINH_KHOA_BEN_NGOAI.md`.
 
@@ -44,24 +46,9 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Tiêu chí chấp nhận | Test case |
 | --- | --- |
-| AC-71.1 | TC-CT-I09 |
 | AC-71.2 | TC-CT-U08 |
-| AC-71.3 | TC-CT-I10 |
 | AC-71.4 | TC-CT-U09 |
 | AC-71.5 | TC-CT-I07 |
-| AC-71.6 | TC-CT-E01 |
-| AC-71.7 | TC-CT-E03 |
-| AC-72.1 | TC-CT-U01 |
-| AC-72.2 | TC-CT-I04, TC-CT-U02 |
-| AC-72.3 | TC-CT-I01 |
-| AC-72.4 | TC-CT-U03 |
-| AC-72.5 | TC-CT-U04 |
-| AC-72.6 | TC-CT-I02 |
-| AC-72.7 | TC-CT-I03 |
-| AC-72.8 | TC-CT-I05 |
-| AC-72.9 | TC-CT-I06 |
-| AC-72.10 | TC-CT-U05 |
-| AC-72.11 | TC-CT-E02 |
 
 ## 6. Danh mục test case
 
@@ -69,43 +56,29 @@ Tiêu chí chấp nhận AC-71.1..AC-73.3 nằm ở `docs/srs/SRS.md`, mục 3.9
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-CT-U01 | `test_stripe_opens_a_checkout_session_in_dong_for_the_order` | AC-72.1 | `POST /v1/checkout/sessions` với khoá bí mật, khoá chống lặp theo mã đơn, VND bằng đúng số đồng, mã đơn ở `client_reference_id` và metadata, `{CHECKOUT_SESSION_ID}`, `left=1`, hạn 31 phút, `locale=vi` |
-| TC-CT-U02 | `test_stripe_refusals_read_as_sentences` | FR-72 | Số tiền quá nhỏ, khoá sai (401), Stripe lỗi (500), mất kết nối, địa chỉ trang không phải `https`, chuyển hướng 302 — mỗi trường hợp một câu tiếng Việt và mã đúng; bộ gọi HTTPS không đi theo chuyển hướng |
-| TC-CT-U03 | `test_stripe_return_is_read_back_from_stripe` | AC-72.4 | Đã trả, chưa trả, hết hạn, tiền khác; chỉ giữ mã phiên; mã sai dạng, đường dẫn chèn, phiên thật trên khoá thử bị từ chối mà không hỏi Stripe; mất kết nối thành `GatewayError` |
-| TC-CT-U04 | `test_stripe_events_count_only_when_signed_and_fresh` | AC-72.5 | Chữ ký đúng; 299 và 301 giây; sửa một byte; khoá khác; thiếu tiêu đề; nhiều `v1` khi đổi khoá; sự kiện thật trên khoá thử; thời điểm có ký tự lạ hay dài bất thường, chữ ký không phải ASCII; ánh xạ bốn loại sự kiện; sự kiện khác; thiếu khoá webhook; mã trả lời 200, 400, 500 |
-| TC-CT-U05 | `test_stripe_keys_decide_the_mode` | AC-72.10 | `sk_test_`, `rk_test_` là thử kèm ghi chú thẻ; `sk_live_` có khoá webhook là thật; ba cách cấu hình sai bị từ chối |
-| TC-CT-U08 | `test_the_registry_builds_what_the_settings_ask_for` | AC-71.2 | Danh sách trống trong `.env` là cổng thử, danh sách viết lộn xộn được chuẩn hoá; bốn cổng đủ khoá bật đúng thứ tự; thiếu khoá và tên lạ thành một câu mỗi cổng; tên lặp không báo hai lần; Stripe thiếu khoá webhook vẫn bật kèm cảnh báo |
-| TC-CT-U09 | `test_real_money_is_never_a_default` | AC-71.4 | Khoá live của Stripe và địa chỉ thật của MoMo không bật khi chưa đặt `AICEFR_PAYMENTS_LIVE`; đặt rồi thì cổng thử bị bỏ; Stripe khoá thử cạnh trang thật của VNPay bị bỏ |
+| TC-CT-U08 | `test_the_registry_builds_what_the_settings_ask_for` | AC-71.2 | Dòng trống trong `.env` là mặc định (`sandbox`); tên viết hoa, khoảng trắng được chuẩn hoá; thiếu khoá payOS nêu tên biến; `stripe`, `momo`, `vnpay` là tên lạ (D075, D097); tên lặp chỉ báo một lần |
+| TC-CT-U09 | `test_real_money_is_never_a_default` | AC-71.4 | payOS đủ khoá nhưng chưa bật `AICEFR_PAYMENTS_LIVE`: chỉ còn cổng thử, có câu nhắc biến; bật: chỉ payOS, cổng thử tắt |
+| TC-CT-U10 | `test_a_gateway_call_never_follows_a_redirect` | FR-71 | Bộ gọi HTTPS trả chuyển hướng về chứ không đi theo (khoá của cổng không bị mang tới máy khác); chỉ gọi `https://` (D035-B12) |
 
 ### Tầng 2 — Integration (`tests/test_gateways.py`)
 
 | Mã | Test | Truy vết | Kiểm điều gì |
 | --- | --- | --- | --- |
-| TC-CT-I01 | `test_paying_through_stripe_is_read_back_and_counted_once` | AC-72.3 | Trọn vòng Stripe; đơn ghi cổng, chế độ thử, mã phiên; trang trả về đọc lại phiên; webhook rồi trả về lần hai không đổi gì, và lần hai không hỏi Stripe; ba sự kiện, một lần áp dụng; biên nhận |
-| TC-CT-I02 | `test_the_stripe_webhook_alone_credits_the_runs` | AC-72.6 | Khoá khác, không chữ ký, GET, tiêu đề có ký tự lạ đều 400; thân quá 256 KiB 413; phiên khác mang mã đơn này 200 mà đơn vẫn chờ; webhook đúng một mình cài gói; sự kiện khác 200 |
-| TC-CT-I03 | `test_leaving_stripe_changes_nothing_until_the_session_expires` | AC-72.7 | Rời trang Stripe: đơn vẫn chờ; sự kiện hết hạn làm đơn thành huỷ |
-| TC-CT-I04 | `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason` | AC-72.2 | Stripe từ chối, rồi mất kết nối: 502 có lời, đơn không thành công với mã của Stripe, không còn đơn chờ |
-| TC-CT-I05 | `test_a_return_stripe_cannot_confirm_says_so` | AC-72.8 | Không hỏi được Stripe: "Chưa xác nhận được với Stripe", đơn vẫn chờ; hỏi lại được thì thành công |
-| TC-CT-I06 | `test_stripe_is_asked_only_about_checkouts_this_system_opened` | AC-72.9 | Ba mã phiên không phải của đơn nào: không xác nhận, Stripe không được hỏi lần nào |
-| TC-CT-I07 | `test_one_gateway_cannot_settle_another_gateways_order` | AC-71.5 | Kết quả có chữ ký của cổng thử cho đơn Stripe: mã 01, đơn vẫn chờ, sự kiện bị từ chối; trang cổng thử không mở cho đơn Stripe; kết quả của Stripe khi khoá đã đổi chế độ tiền bị từ chối, trở lại đúng chế độ thì được ghi nhận |
-| TC-CT-I09 | `test_the_buyer_picks_the_gateway_and_the_problems_are_logged` | AC-71.1 | Danh sách cổng, ghi chú thẻ thử, câu nói cổng chưa bật; khoá không lộ; MoMo 422; cổng mặc định; cổng thử |
-| TC-CT-I10 | `test_real_money_needs_to_be_switched_on` | AC-71.3 | Khoá `sk_live_`: chưa bật thì không có Stripe; bật thì Stripe thật và cổng thử tắt, trang cổng thử 404 |
+| TC-CT-I04 | `test_a_gateway_that_will_not_open_fails_the_order_with_a_reason` | FR-71 | payOS từ chối mở link (mã 231), rồi không kết nối được: 502 với câu nêu tên cổng đúng một lần, đơn thành không thành công với mã của cổng, không đơn nào còn chờ |
+| TC-CT-I05 | `test_a_return_the_gateway_cannot_confirm_says_so` | FR-71 | Trình duyệt quay về lúc không hỏi được payOS: "Chưa xác nhận được với payOS", đơn vẫn chờ; hỏi lại được thì thành công |
+| TC-CT-I07 | `test_one_gateway_cannot_settle_another_gateways_order` | AC-71.5 | Kết quả có chữ ký của cổng thử cho một đơn payOS: không có địa chỉ thông báo của cổng thử cạnh tiền thật, `settle` trả `not_found`, đơn vẫn chờ và có sự kiện `rejected`; cùng payOS nhưng khác chế độ tiền cũng không chốt |
+| TC-CT-I09 | `test_the_problems_of_the_gateways_are_logged` | FR-71 | Cấu hình `stripe, momo, payos, sandbox` không có khoá: chỉ còn cổng thử; nhật ký nêu `stripe`, `momo` là tên lạ và payOS thiếu `AICEFR_PAYOS_CLIENT_ID`; đặt qua `stripe` bị từ chối (422); đơn không nêu cổng đi cổng đầu tiên |
 
-### Tầng 3 — E2E (`tests/e2e/test_gateways_e2e.py`)
+### Tầng 3 — E2E
 
-| Mã | Test | Truy vết | Kiểm điều gì |
-| --- | --- | --- | --- |
-| TC-CT-E01 | `test_the_buyer_picks_the_gateway_and_pays_through_it` | AC-71.6 | Biểu ngữ môi trường thử và cảnh báo thiếu khoá webhook; hai thẻ cổng, Stripe chọn sẵn; nút "qua Stripe" rồi "qua Cổng thử"; trả xong, bảng đơn ghi "Cổng thử (thử)" |
-| TC-CT-E02 | `test_coming_back_without_paying_says_nothing_was_charged` | AC-72.11 | Trang rời trang thanh toán của Stripe |
-| TC-CT-E03 | `test_the_gateway_choice_fits_a_phone` | AC-71.7 | 390 px, không cuộn ngang |
+Đã gỡ bởi D097: ba test chọn cổng và rời trang Stripe không còn ý nghĩa khi chỉ một cổng chạy mỗi lúc. Trang kết quả và biên nhận vẫn có e2e ở `tests/e2e/test_billing_e2e.py`.
 
 ## 7. Kết quả chạy
 
 | Lệnh | Kết quả |
 | --- | --- |
-| `pytest tests/test_gateways_unit.py` | 9 test qua |
-| `pytest tests/test_gateways.py` | 10 test qua |
-| `pytest -m e2e tests/e2e/test_gateways_e2e.py` | 3 test qua |
+| `pytest tests/test_gateways_unit.py` (sau D097) | 3 test qua |
+| `pytest tests/test_gateways.py` (sau D097, với payOS giả) | 4 test qua |
 | `pytest tests/test_billing_unit.py tests/test_billing.py` (D034, sau khi cổng đổi hình) | 36 test qua |
 | `pytest -m "not e2e and not slow"` (hồi quy, có đo độ phủ, cùng lần với D036, sau các sửa của lần rà bảo mật) | 1149 test: 1139 qua, 10 bỏ qua theo thiết kế (kiểm tra sơ đồ chỉ áp cho một loại hình); độ phủ toàn bộ 93%; `billing/registry.py`, `billing/payments.py` 100%, `storage/billing_repository.py` 99%, `billing/stripe_gateway.py` 98%, `billing/service.py` 96%, `billing/gateways.py` 96%, `billing/momo_gateway.py` 93%, `api/billing_api.py` 93%; `billing/transport.py` 63% — phần còn lại là lời gọi mạng thật, không test nào được chạm |
 | `pytest -m e2e tests/e2e` (hồi quy, cùng lần với D036) | 65 test qua (60 sẵn có, 3 của D035, 2 của D036) |

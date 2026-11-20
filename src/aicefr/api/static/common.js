@@ -245,17 +245,17 @@ if (mainEl && "MutationObserver" in window) {
   // without a name would surface as SCORE_AGGREGATED in the middle of a sentence.
   const REASON_NAMES = {
     SCORE_NEAR_BOUNDARY: "Điểm sát ranh giới band",
-    FEATURE_NOT_COMPUTABLE: "Thiếu phép đo",
-    OUT_OF_DISTRIBUTION: "Ngoài phân bố huấn luyện",
+    FEATURE_NOT_COMPUTABLE: "Máy đo thiếu vài chỉ số",
+    OUT_OF_DISTRIBUTION: "Bài khác xa các bài máy từng học",
     TOO_FEW_WORDS: "Quá ít từ",
     ASR_LOW_CONFIDENCE: "Máy nghe không rõ",
     ASR_FAILED: "Nhận dạng thất bại",
     ASR_EMPTY_TRANSCRIPT: "Bản chép rỗng",
-    MODEL_VERSION_MISSING: "Thiếu mô hình",
+    MODEL_VERSION_MISSING: "Chưa có mô hình chấm",
     HIGH_SILENCE_RATIO: "Quá nhiều khoảng lặng",
     CLIPPING_DETECTED: "Âm bị méo",
     LOW_SNR: "Nhiễu nền lớn",
-    WRONG_SAMPLE_RATE: "Sai tần số mẫu",
+    WRONG_SAMPLE_RATE: "Âm thanh sai chuẩn ghi",
     AUDIO_TOO_SHORT: "Bản ghi quá ngắn",
     AUDIO_TOO_LONG: "Bản ghi quá dài",
     AUDIO_TOO_LARGE: "File quá lớn",
@@ -265,9 +265,9 @@ if (mainEl && "MutationObserver" in window) {
     // carries this code, and they are the ones most worth a teacher's time,
     // because the way window scores are combined has not been validated.
     SCORE_AGGREGATED: "Điểm gộp từ nhiều đoạn",
-    ASR_HALLUCINATION: "Máy sinh ra chữ không có trong tiếng",
-    ASR_VERSION_MISMATCH: "Khác bộ nhận dạng lúc huấn luyện",
-    VAD_VERSION_MISMATCH: "Khác bộ tách tiếng lúc huấn luyện",
+    ASR_HALLUCINATION: "Bản chép có chữ không ai nói",
+    ASR_VERSION_MISMATCH: "Bộ chép lời đã đổi phiên bản",
+    VAD_VERSION_MISMATCH: "Bộ tách tiếng đã đổi phiên bản",
     LANGUAGE_NOT_ENGLISH: "Không phải tiếng Anh",
     OFF_TOPIC_SUSPECTED: "Nghi lạc đề",
     PROMPT_COPY_SUSPECTED: "Nghi đọc lại đề bài",
@@ -516,14 +516,14 @@ document.querySelectorAll("details.account-menu").forEach((menu) => {
 }
 
 // ---------------------------------------------------------------- badges
-// How many things wait behind a sidebar item (D028): teacher decisions a
-// student has not seen, reviews due today, the review queue. A
-// number for the eye and a sentence for a screen reader; nothing at zero.
+// How many things wait behind a sidebar item (D028): reviews due today, the
+// review queue. A number for the eye and a sentence for a screen reader;
+// nothing at zero.
 {
   const BADGE_WORDS = {
-    results: "kết quả mới được giảng viên xác nhận",
     reviews_due: "mục ôn tập hôm nay",
     queue: "bài chờ duyệt",
+    class_invites: "lời mời vào lớp",
   };
   const setBadge = (name, count) => {
     document.querySelectorAll(`.nav-badge[data-badge="${name}"]`).forEach((el) => {
@@ -898,3 +898,44 @@ document.addEventListener("DOMContentLoaded", () => {
   window.enhanceSelects();
 });
 
+
+// ---------------------------------------------------------------- D099: metering, said once
+// Where runs are counted, a learner is told once, per browser, how many free
+// runs are left this month. "Đã hiểu" keeps it from coming back.
+{
+  const box = document.getElementById("metering-notice");
+  const KEY = "su-metering-notice-v1";
+  let seen = null;
+  try {
+    seen = localStorage.getItem(KEY);
+  } catch (err) {
+    seen = "unavailable"; // no storage: never nag on every page
+  }
+  if (box && !seen && !location.pathname.startsWith("/credits")) {
+    fetch("/api/v1/me/credits", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d || !d.metering) return;
+        const free = Number(d.free_runs_left).toLocaleString("vi-VN", { maximumFractionDigits: 1 });
+        document.getElementById("metering-free").textContent = d.free_locked
+          ? "Xác minh email ở trang Tài khoản để nhận lượt miễn phí mỗi tháng."
+          : `Tháng này bạn còn ${free} lượt.`;
+        box.hidden = false;
+      })
+      .catch(() => {});
+    document.getElementById("metering-ok").addEventListener("click", () => {
+      try {
+        localStorage.setItem(KEY, "seen");
+      } catch (err) {
+        /* hidden for this page only */
+      }
+      box.remove();
+    });
+  }
+}
+
+// D101: back home after deleting the account.
+if (new URLSearchParams(location.search).get("deleted") === "1" && window.toast) {
+  window.toast("Đã xoá tài khoản và dữ liệu của bạn.", "ok");
+  history.replaceState(null, "", location.pathname);
+}

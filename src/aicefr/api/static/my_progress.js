@@ -277,9 +277,7 @@ function dayOf(iso) {
 }
 
 function achievementTile(a) {
-  const cls = ["ach", a.unlocked ? "is-unlocked" : "is-locked", a.new ? "is-new" : ""]
-    .filter(Boolean)
-    .join(" ");
+  const cls = `ach ${a.unlocked ? "is-unlocked" : "is-locked"}`;
   const value = Number(a.value) || 0;
   const target = Math.max(1, Number(a.target) || 1);
   const state = a.unlocked
@@ -292,9 +290,7 @@ function achievementTile(a) {
     `<li class="${cls}">` +
     `<span class="ach-medal" aria-hidden="true">${window.ui.icon(a.icon)}</span>` +
     '<div class="ach-body">' +
-    `<b class="ach-title">${window.escapeHtml(a.title)}` +
-    (a.new ? ' <span class="ach-fresh">Mới</span>' : "") +
-    "</b>" +
+    `<b class="ach-title">${window.escapeHtml(a.title)}</b>` +
     `<span class="ach-desc">${window.escapeHtml(a.description)}</span>` +
     state +
     "</div></li>"
@@ -330,14 +326,6 @@ const achievementsDone = fetch("/api/v1/me/achievements")
     achPanel.innerHTML = achievementList(d);
     report.achievements = d;
     paintReport();
-    const fresh = d.items.filter((i) => i.new).map((i) => i.code);
-    if (fresh.length) {
-      fetch("/api/v1/me/achievements/seen", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codes: fresh }),
-      }).catch(() => {});
-    }
   })
   .catch(() => {
     window.clearBusy(achPanel);

@@ -112,12 +112,14 @@ def test_the_passage_is_read_aloud_with_its_words_highlighted():
 
 
 def test_a_passage_has_its_own_price_kept_in_the_versions():
+    # D107: one run by default; D106: whole runs otherwise.
     prices = PriceList()
-    assert passage_units(prices) == 100 and as_idpoint(prices, 100) == 200
-    assert prices.as_dict()["passage_runs"] == 0.1
+    assert passage_units(prices) == 1000 and prices.as_dict()["passage_runs"] == 1.0
+    assert as_idpoint(prices, 1000) == 2000
+    assert passage_units(PriceList(passage_runs=0)) == 0
     with pytest.raises(ValueError):
         PriceList(passage_runs=-1)
-    book = PriceBook(MeteringRepository(store()), PriceList(passage_runs=0.2))
+    book = PriceBook(MeteringRepository(store()), PriceList(passage_runs=2))
     # A version saved before D090 has no passage price: the default stands.
     book.store.col("price_list").insert_one(
         {
@@ -131,10 +133,11 @@ def test_a_passage_has_its_own_price_kept_in_the_versions():
         }
     )
     current = book.current()
+    # Its fractions count as their whole part (D106): 0.5 of a run is nothing.
     assert (current.version, current.upgrade_runs, current.passage_runs) == (
         "price-admin-1",
-        0.5,
-        0.2,
+        0.0,
+        2.0,
     )
 
 
@@ -171,10 +174,8 @@ def test_the_provider_is_asked_to_write_little(monkeypatch):
 
 def test_passages_are_found_again_for_the_same_words_and_erased():
     repo = DrillRepository(store())
-    a = repo.save_passage(
-        DrillPassage("p-1", "acc-1", "B1", WORDS, ["d1", "d2", "d3"], TEXT, "model")
-    )
-    repo.save_passage(DrillPassage("p-2", "acc-1", "B1", WORDS[:2], ["d1", "d2"], "x", "phrases"))
+    a = repo.save_passage(DrillPassage("p-1", "acc-1", WORDS, ["d1", "d2", "d3"], TEXT, "model"))
+    repo.save_passage(DrillPassage("p-2", "acc-1", WORDS[:2], ["d1", "d2"], "x", "phrases"))
     assert repo.passage_for("acc-1", ["d3", "d1", "d2"]).passage_id == a.passage_id
     assert repo.passage_for("acc-1", ["d1", "d2", "d4"]) is None
     assert repo.passage_for("acc-2", ["d1", "d2", "d3"]) is None

@@ -266,7 +266,22 @@ def page_bands(request: Request, account: Account | None = Depends(optional_acco
         "bands",
         rows=page_rows(),
         spans=spans,
-        model_version=lim["model_version"],
+    )
+
+
+@router.get("/payment-terms", response_class=HTMLResponse, tags=["web"])
+def page_payment_terms(request: Request, account: Account | None = Depends(optional_account)):
+    """What a run pack is and how it is paid; no refunds (D099, D102). Open to all."""
+    from aicefr.billing.payments import PENDING_MINUTES
+    from aicefr.config import get_settings
+
+    return _page(
+        request,
+        "payment_terms.html",
+        account,
+        "credits",
+        support_email=get_settings().support_email,
+        pending_minutes=PENDING_MINUTES,
     )
 
 
@@ -337,6 +352,16 @@ def page_my_progress(request: Request, account: Account | None = Depends(optiona
 def page_my_assignments_gone():
     """Classes set no assessments any more (D075): the old address goes to the path."""
     return RedirectResponse("/practice", status_code=301)
+
+
+@router.get("/my-classes", response_class=HTMLResponse, tags=["web"])
+def page_my_classes(request: Request, account: Account | None = Depends(optional_account)):
+    """A student's classes and invitations, and the join code box (D109)."""
+    if (gate := _login_gate(request, account)) is not None:
+        return gate
+    if account.role is not Role.STUDENT:
+        return RedirectResponse("/teach/classes", status_code=303)
+    return _page(request, "my_classes.html", account, "my_classes")
 
 
 @router.get("/teach/classes", response_class=HTMLResponse, tags=["web"])

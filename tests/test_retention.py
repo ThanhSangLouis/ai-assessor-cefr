@@ -7,8 +7,6 @@ keeps.
 
 from __future__ import annotations
 
-import json
-
 import pytest
 
 from aicefr.contracts import Assessment, Band, Response, ResponseStatus, Transcript, Word
@@ -38,7 +36,7 @@ def repo_with_recording(tmp_path):
     repo = Repository(tmp_path / "t.db")
     audio = tmp_path / "old.wav"
     audio.write_bytes(b"RIFF" + b"x" * 2048)
-    repo.save(_report("old1"), "SV-001", "P3", account_id="acc", audio_path=str(audio))
+    repo.save(_report("old1"), "P3", account_id="acc", audio_path=str(audio))
     return repo, audio
 
 
@@ -95,15 +93,13 @@ def test_a_sweep_clears_rows_written_before_the_field_was_renamed(tmp_path) -> N
     repo = Repository(tmp_path / "t.db")
     audio = tmp_path / "legacy.wav"
     audio.write_bytes(b"RIFF" + b"x" * 2048)
-    repo.save(_report("legacy1"), "SV-002", "P3", account_id="acc", audio_path=str(audio))
+    repo.save(_report("legacy1"), "P3", account_id="acc", audio_path=str(audio))
 
     # Rewrite the stored row the way the pre-rename code wrote it.
     responses = repo.col("response")
-    raw = json.loads(responses.find_one({"response_id": "legacy1"})["report_json"])
-    raw["asr"]["transcript"] = raw["asr"].pop("text")
-    responses.update_one(
-        {"response_id": "legacy1"}, {"$set": {"report_json": json.dumps(raw, ensure_ascii=False)}}
-    )
+    asr = responses.find_one({"response_id": "legacy1"})["asr"]
+    asr["transcript"] = asr.pop("text")
+    responses.update_one({"response_id": "legacy1"}, {"$set": {"asr": asr}})
 
     # The alias keeps the old row readable...
     assert repo.get("legacy1").asr.text == "i think online learning is flexible"
@@ -140,7 +136,7 @@ def test_orphaned_recordings_are_found(tmp_path) -> None:
     known = uploads / "known.wav"
     known.write_bytes(b"RIFF")
     (uploads / "orphan.wav").write_bytes(b"RIFF")
-    repo.save(_report("r1"), "SV-001", "P3", audio_path=str(known))
+    repo.save(_report("r1"), "P3", audio_path=str(known))
 
     found = orphaned_recordings(repo, uploads)
     assert [p.name for p in found] == ["orphan.wav"]
@@ -149,7 +145,7 @@ def test_orphaned_recordings_are_found(tmp_path) -> None:
 def test_backup_produces_a_readable_copy(tmp_path) -> None:
     """A backup is only worth something once it has been restored and read."""
     repo = Repository(tmp_path / "t.db")
-    repo.save(_report("r1"), "SV-001", "P3")
+    repo.save(_report("r1"), "P3")
 
     copy = backup(repo, tmp_path / "backups" / "aicefr.json")
     assert copy.is_file()
@@ -160,8 +156,8 @@ def test_backup_produces_a_readable_copy(tmp_path) -> None:
         restore_backup(repo, copy)  # never merged into a store holding data
 
 
-def test_report_json_stays_valid_after_a_sweep(repo_with_recording) -> None:
+def test_the_report_stays_readable_after_a_sweep(repo_with_recording) -> None:
     repo, _audio = repo_with_recording
     apply_retention(repo, days=-1, dry_run=False)
-    raw = repo.col("response").find_one({"response_id": "old1"})
-    json.loads(raw["report_json"])  # phải phân tích được
+    report = repo.get("old1")  # D104: the stored fields still make a report
+    assert report is not None and report.asr.text == ""

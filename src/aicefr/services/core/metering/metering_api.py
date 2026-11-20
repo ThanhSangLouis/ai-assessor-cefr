@@ -62,10 +62,18 @@ def _entry(e: dict, prices: PriceList) -> dict:
         "charged_idpoint": as_idpoint(prices, e["charged"]),
         "created_at": e["created_at"],
         "settled_at": e["settled_at"],
-        "input_tokens": e.get("input_tokens"),
-        "output_tokens": e.get("output_tokens"),
-        "usage_estimated": e.get("usage_estimated"),
+        # D094: one of the day's free lesson recordings.
+        "free_slot": bool(e.get("free_slot")),
+        # D107: an AI answer a scored recording's run already paid for.
+        "included": bool(e.get("included")),
     }
+
+
+def _renews_on(period: str) -> str:
+    """D107: the day the free runs of cycle `period` ("YYYY-MM") come back: the next 16th."""
+    year, month = (int(x) for x in period.split("-"))
+    year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+    return f"{year:04d}-{month:02d}-16"
 
 
 @router.get("/api/v1/me/credits", tags=["student"])
@@ -74,17 +82,23 @@ def my_credits(account: Account = Depends(require_login)) -> dict:
     s = svc()
     if not s.enabled:
         return {"metering": False}
-    balance = s.store.balance(account.account_id)
+    locked = s.peers.metering.free_runs_locked(account_id=account.account_id)
+    balance = s.store.balance(account.account_id, free=not locked)
     return {
         "metering": True,
+        # D101: the free runs wait for a verified email.
+        "free_locked": locked,
+        "free_runs_per_cycle": as_runs(s.store.free_units),
         "price_version": s.prices.version,
         "prices": s.prices.as_dict(),
         "cycle": cycle(),
+        "free_runs_renew_on": _renews_on(cycle()),
         "free_runs_left": as_runs(balance["free_left"]),
         "wallet_runs": as_runs(balance["wallet"]),
         "wallet_idpoint": as_idpoint(s.prices, balance["wallet"]),
         # What a one-minute recording costs, for people to read (D057).
         "one_minute": {"assessment": as_runs(hold_for(s.prices, 60.0))},
+        "lesson": s.peers.metering.lesson_quote(account_id=account.account_id),
         "history": [_entry(e, s.prices) for e in s.store.history(account.account_id, limit=20)],
     }
 
@@ -99,17 +113,26 @@ def quote(
     if not s.enabled:
         return {"metering": False}
     units = hold_for(s.prices, seconds)
+    locked = s.peers.metering.free_runs_locked(account_id=account.account_id)
     return {
         "metering": True,
         "runs": as_runs(units),
         "idpoint": as_idpoint(s.prices, units),
-        "free_runs_left": as_runs(s.store.free_left(account.account_id)),
+        "free_locked": locked,
+        "free_runs_left": as_runs(s.store.free_left(account.account_id, free=not locked)),
         "wallet_runs": as_runs(s.store.wallet(account.account_id)),
     }
 
 
+@router.get("/api/v1/me/credits/lesson", tags=["student"])
+def lesson_quote(account: Account = Depends(require_login)) -> dict:
+    """What a lesson recording costs me now (D094): the free ones left today, the cap, the price."""
+    quote = svc().peers.metering.lesson_quote(account_id=account.account_id)
+    return {"metering": False} if quote is None else {"metering": True, **quote}
+
+
 class GrantIn(BaseModel):
-    pseudonym: str = Field(min_length=1, max_length=40)
+    email: str = Field(min_length=3, max_length=254)
     runs: int = Field(ge=1, le=10_000)
     # What the top-up answers to: a NetID statement line, a receipt number.
     reference: str = Field(min_length=1, max_length=80)
@@ -121,7 +144,7 @@ def grant_credits(body: GrantIn, account: Account = ADMIN_ONLY) -> dict:
     s = svc()
     if not s.enabled:
         raise HTTPException(409, "bản triển khai này không tính lượt (AICEFR_METERING=off)")
-    who = s.peers.identity.by_pseudonym(pseudonym=body.pseudonym)
+    who = s.peers.identity.by_email(email=body.email)
     if who is None:
         raise HTTPException(404, "không có tài khoản này")
     credited = s.store.grant(
@@ -144,7 +167,11 @@ class PricesIn(BaseModel):
     first_minute_runs: float = Field(ge=0, le=100)
     extra_minute_runs: float = Field(ge=0, le=100)
     upgrade_runs: float = Field(ge=0, le=100)
-    passage_runs: float = Field(default=0.1, ge=0, le=100)
+    # D094: defaults, so a dashboard of before keeps working. D107: one run.
+    passage_runs: float = Field(default=1, ge=0, le=100)
+    lesson_minute_runs: float = Field(default=0, ge=0, le=100)
+    lesson_free_per_day: int = Field(default=5, ge=0, le=1000)
+    lesson_daily_cap: int = Field(default=30, ge=1, le=1000)
     idpoint_per_run: int = Field(ge=0, le=10_000_000)
     free_runs: float = Field(ge=0, le=1000)
     packs: list[PackIn] = Field(min_length=1, max_length=10)
@@ -162,7 +189,7 @@ def set_prices(body: PricesIn, account: Account = ADMIN_ONLY) -> dict:
     """A new version of the prices; charges already made keep theirs."""
     s = svc()
     try:
-        saved = s.book.set(body.model_dump(), account.account_id)
+        saved = s.book.set(body.model_dump())
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     s.audit.write(account.account_id, "metering.prices", None, saved["version"])

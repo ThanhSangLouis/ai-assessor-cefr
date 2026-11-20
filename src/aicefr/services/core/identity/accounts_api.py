@@ -12,9 +12,8 @@ Two rules shape the administrator's side:
 * **A password an administrator has seen is temporary.** Accounts created or
   reset here get a one-time password, shown once and printable as a slip, and
   can do nothing but choose their own (`deps.PASSWORD_CHANGE_PATHS`).
-* **Pseudonyms only.** The slip has a blank line for a name, filled in by hand
-  and kept on paper outside the system, which is how FR-33 keeps the link
-  between a pseudonym and a person.
+* **Accounts are made by email.** The administrator types the addresses; each
+  person signs in with theirs and the printed one-time password.
 
 Part of the identity service (D043). What waits for a person -- the sidebar's
 counts -- comes from other services and is answered by the web service
@@ -45,7 +44,6 @@ from aicefr.storage.auth_repository import (
     AVATAR_COLORS,
     AVATAR_ICONS,
     DAILY_GOALS,
-    DEFAULT_PREFIX,
     Account,
     AccountLocked,
     AuthRepository,
@@ -131,7 +129,6 @@ def my_account(
     linked = auth.identity(account.account_id, google.PROVIDER)
     settings = get_settings()
     return {
-        "pseudonym": row["pseudonym"],
         "role": row["role"],
         # D071: how the person signs in, and the name a teacher reads.
         "email": row["email"],
@@ -189,7 +186,7 @@ def change_my_profile(
         raise HTTPException(422, str(e)) from e
     changed = sorted(k for k, v in body.model_dump().items() if v is not None)
     if changed:
-        svc().audit(account.pseudonym, "account.profile", account.account_id, " ".join(changed))
+        svc().audit(account.account_id, "account.profile", account.account_id, " ".join(changed))
     row = auth.get(account.account_id)
     return {
         "avatar_icon": row["avatar_icon"],
@@ -251,7 +248,7 @@ def change_my_contact(
         raise HTTPException(422, str(e)) from e
     changed = sorted(k for k in ("email", "full_name") if getattr(body, k) is not None)
     if changed:
-        svc().audit(account.pseudonym, "account.contact", account.account_id, " ".join(changed))
+        svc().audit(account.account_id, "account.contact", account.account_id, " ".join(changed))
     return _contact_view(row)
 
 
@@ -278,7 +275,7 @@ def end_my_session(
         raise HTTPException(404, "không có phiên này")
     here = auth.session_hash(request.cookies.get(COOKIE_NAME))[:16]
     current = bool(here) and here == session_id
-    svc().audit(account.pseudonym, "account.session_revoked", account.account_id, None)
+    svc().audit(account.account_id, "account.session_revoked", account.account_id, None)
     return {"revoked": True, "current": current}
 
 
@@ -286,8 +283,8 @@ def end_my_session(
 def my_activity(account: Account = Depends(require_login)) -> list[dict]:
     """Sign-ins, failed attempts and account changes, newest first.
 
-    Who acted is "you" or "an administrator": the administrator's pseudonym is
-    not the person's business, and an attempt nobody made is worth noticing.
+    Who acted is "you" or "an administrator": which administrator is not the
+    person's business, and an attempt nobody made is worth noticing.
     """
     rows = svc().audit_log.about(account.account_id, ACTIVITY_ACTIONS)
     return [
@@ -295,7 +292,7 @@ def my_activity(account: Account = Depends(require_login)) -> list[dict]:
             "action": r["action"],
             "detail": r["detail"],
             "created_at": r["created_at"],
-            "by_self": r["actor_id"] == account.pseudonym,
+            "by_self": r["actor_id"] == account.account_id,
         }
         for r in rows
     ]
@@ -308,7 +305,7 @@ def unlink_my_google(
 ) -> dict:
     if not auth.unlink_identity(account.account_id, google.PROVIDER):
         raise HTTPException(404, "tài khoản chưa liên kết Google")
-    svc().audit(account.pseudonym, "account.google_unlink", account.account_id, None)
+    svc().audit(account.account_id, "account.google_unlink", account.account_id, None)
     return {"linked": False}
 
 
@@ -334,7 +331,7 @@ def change_my_password(
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
     svc().audit(
-        account.pseudonym, "account.password_change", account.account_id, f"sessions_ended={ended}"
+        account.account_id, "account.password_change", account.account_id, f"sessions_ended={ended}"
     )
     return {"status": "ok", "sessions_ended": ended, "home": ROLE_HOME.get(account.role, "/")}
 
@@ -347,7 +344,9 @@ def revoke_my_other_sessions(
 ) -> dict:
     """Sign out everywhere except here: a phone left in a lab, a shared computer."""
     ended = auth.revoke_sessions(account.account_id, keep_token=request.cookies.get(COOKIE_NAME))
-    svc().audit(account.pseudonym, "account.sessions_revoked", account.account_id, f"count={ended}")
+    svc().audit(
+        account.account_id, "account.sessions_revoked", account.account_id, f"count={ended}"
+    )
     return {"revoked": ended}
 
 
@@ -355,12 +354,10 @@ def revoke_my_other_sessions(
 
 
 class AccountCreate(BaseModel):
-    """Either one named pseudonym or a numbered series (SV-001, SV-002, ...)."""
+    """The emails of the accounts to make, all of one role."""
 
     role: Role
-    count: int = Field(1, ge=1, le=MAX_BATCH)
-    prefix: str | None = Field(None, max_length=6)
-    pseudonym: str | None = Field(None, max_length=32)
+    emails: list[str] = Field(min_length=1, max_length=MAX_BATCH)
 
 
 def _target(auth: AuthRepository, account_id: str):
@@ -386,23 +383,18 @@ def create_accounts(
 ) -> dict:
     """Create accounts with one-time passwords, shown in this response and nowhere else."""
     try:
-        if body.pseudonym:
-            names = [body.pseudonym.strip()]
-        else:
-            names = auth.next_pseudonyms(body.prefix or DEFAULT_PREFIX[body.role], body.count)
-        created = auth.create_with_temporary_passwords(names, body.role)
+        created = auth.create_with_temporary_passwords(body.emails, body.role)
     except ValueError as e:
-        status = 409 if "đã tồn tại" in str(e) else 422
+        status = 409 if "đã có tài khoản" in str(e) else 422
         raise HTTPException(status, str(e)) from e
-    for aid, name, _ in created:
-        detail = f"pseudonym={name} role={body.role.value}"
-        svc().audit(account.pseudonym, "account.create", aid, detail)
+    for aid, _, _ in created:
+        svc().audit(account.account_id, "account.create", aid, f"role={body.role.value}")
     response.headers.update(NO_STORE)
     return {
         "role": body.role.value,
         "created": [
-            {"account_id": aid, "pseudonym": name, "temporary_password": temporary}
-            for aid, name, temporary in created
+            {"account_id": aid, "email": email, "temporary_password": temporary}
+            for aid, email, temporary in created
         ],
     }
 
@@ -419,11 +411,11 @@ def reset_password(
         raise HTTPException(409, "mật khẩu của chính bạn thì đổi ở trang Tài khoản")
     row = _target(auth, account_id)
     temporary = auth.set_temporary_password(account_id)
-    svc().audit(account.pseudonym, "account.reset_password", account_id, None)
+    svc().audit(account.account_id, "account.reset_password", account_id, None)
     response.headers.update(NO_STORE)
     return {
         "account_id": account_id,
-        "pseudonym": row["pseudonym"],
+        "email": row["email"],
         "role": row["role"],
         "temporary_password": temporary,
     }
@@ -443,7 +435,7 @@ def disable_account(
         raise HTTPException(409, "không tự tắt tài khoản đang dùng")
     _target(auth, account_id)
     auth.set_disabled(account_id, True)
-    svc().audit(account.pseudonym, "account.disable", account_id, None)
+    svc().audit(account.account_id, "account.disable", account_id, None)
     return {"account_id": account_id, "disabled": True}
 
 
@@ -453,7 +445,7 @@ def enable_account(
 ) -> dict:
     _target(auth, account_id)  # 404 for an account that does not exist
     auth.set_disabled(account_id, False)
-    svc().audit(account.pseudonym, "account.enable", account_id, None)
+    svc().audit(account.account_id, "account.enable", account_id, None)
     return {"account_id": account_id, "disabled": False}
 
 
@@ -464,7 +456,7 @@ def unlock_account(
     """Lift a lockout (NFR-07) without waiting the fifteen minutes."""
     _target(auth, account_id)
     auth.unlock(account_id)
-    svc().audit(account.pseudonym, "account.unlock", account_id, None)
+    svc().audit(account.account_id, "account.unlock", account_id, None)
     return {"account_id": account_id, "locked_until": None}
 
 
@@ -511,7 +503,7 @@ def change_account_contact(
         raise HTTPException(409, "email này đã có tài khoản khác") from e
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
-    svc().audit(account.pseudonym, "account.contact", account_id, "admin")
+    svc().audit(account.account_id, "account.contact", account_id, "admin")
     return _contact_view(row)
 
 
@@ -529,7 +521,7 @@ def change_role(
     _target(auth, account_id)  # 404 for an account that does not exist
     before = auth.set_role(account_id, body.role)
     svc().audit(
-        account.pseudonym,
+        account.account_id,
         "account.role_change",
         account_id,
         f"from={before} to={body.role.value}",
@@ -546,7 +538,7 @@ def revoke_account_sessions(
         raise HTTPException(409, "phiên của chính bạn thì đăng xuất ở trang Tài khoản")
     _target(auth, account_id)
     ended = auth.revoke_sessions(account_id)
-    svc().audit(account.pseudonym, "account.sessions_revoked", account_id, f"count={ended}")
+    svc().audit(account.account_id, "account.sessions_revoked", account_id, f"count={ended}")
     return {"account_id": account_id, "revoked": ended}
 
 
@@ -558,5 +550,5 @@ def unlink_account_google(
     _target(auth, account_id)
     if not auth.unlink_identity(account_id, google.PROVIDER):
         raise HTTPException(404, "tài khoản chưa liên kết Google")
-    svc().audit(account.pseudonym, "account.google_unlink", account_id, None)
+    svc().audit(account.account_id, "account.google_unlink", account_id, None)
     return {"account_id": account_id, "google_linked": False}

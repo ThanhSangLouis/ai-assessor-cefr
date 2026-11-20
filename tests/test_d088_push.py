@@ -16,6 +16,7 @@ import base64
 import json
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 from test_billing import boot
 from test_lessons_integration import account_id, login_as, submit_assessment
@@ -145,10 +146,15 @@ def test_a_teachers_decision_reaches_the_learners_devices(m, sent):
     subscribe(student)
     teacher = login_as(m, "GV-01", "teacher")
     m.repo.save(
-        Response(response_id="r-flag", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1",
-                 reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH]),
-        "SV-001", "P3", account_id=account_id(m, "SV-001"),
-    )  # fmt: skip
+        Response(
+            response_id="r-flag",
+            status=ResponseStatus.REVIEW_REQUIRED,
+            config_version="v1",
+            reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
+        ),
+        "P3",
+        account_id=account_id(m, "SV-001"),
+    )
     teacher.post("/api/v1/review/r-flag/lock")
     r = teacher.post("/api/v1/review/r-flag/close", json={"reason": "nói tiếng Việt, mời nộp lại"})
     assert r.status_code == 200
@@ -161,7 +167,8 @@ def test_erasing_a_participant_forgets_their_browsers(m):
     subscribe(student)
     admin = login_as(m, "QT-01", "admin")
     r = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert r.status_code == 200
     assert context.svc().push.store.of(account_id(m, "SV-001")) == []

@@ -6,9 +6,9 @@ Three audiences, three kinds of route:
   gateway picked (`/api/v1/me/credit-...`);
 * the buyer's browser coming back from the gateway: the return page, which
   applies the result it stands for -- signed into the address (the sandbox)
-  or read back from the gateway (Stripe) -- and says what happened, and the
+  or read back from the gateway (payOS) -- and says what happened, and the
   receipt;
-* the gateway's own server: the notification address, POST for Stripe's
+* the gateway's own server: the notification address, POST for payOS's
   webhook and GET for the sandbox. No session there: the signature is the
   only credential, and the answer is in the shape each gateway expects;
 
@@ -23,8 +23,9 @@ from __future__ import annotations
 
 import hmac
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from urllib.parse import quote, urlencode
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -33,17 +34,20 @@ from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from aicefr.api.deps import (
+    ADMIN_ONLY,
     optional_account,
     require_login,
 )
 from aicefr.api.web import templates
 from aicefr.billing.gateways import SandboxGateway
-from aicefr.billing.payments import SETTLEABLE, Ack, GatewayError, Incoming, OrderStatus
+from aicefr.billing.order_state import state_of
+from aicefr.billing.payments import Ack, GatewayError, Incoming, OrderStatus
 from aicefr.billing.service import (
     BillingOff,
     BillingService,
     OrderError,
     PaymentUnavailable,
+    TooManyOrders,
 )
 from aicefr.config import get_settings
 from aicefr.practice.streak import LOCAL_TZ
@@ -78,6 +82,9 @@ templates.env.filters["vn_time"] = _when
 @dataclass
 class Services:
     billing: BillingService
+    # D099: account ids -> names, from the identity service; for the
+    # administrator's order list. None: the ids are shown as they are.
+    display_names: Callable[[list[str]], dict[str, str]] | None = None
 
 
 _services: Services | None = None
@@ -141,18 +148,70 @@ def my_credit_order(
         order, url = billing.place_credit_order(
             body.runs,
             account.account_id,
-            account.pseudonym,
             _site(request),
             request.client.host if request.client else "127.0.0.1",
             body.gateway,
         )
     except BillingOff:
         raise HTTPException(409, "bản triển khai này không bán gói lượt") from None
+    except TooManyOrders as e:
+        raise HTTPException(429, str(e)) from e
     except OrderError as e:
         raise HTTPException(422, str(e)) from e
     except PaymentUnavailable as e:
         raise HTTPException(502, str(e)) from e
     return {"order": billing.order_view(order), "checkout_url": url}
+
+
+# ================================================================= the administrator's side (D099)
+
+ADMIN_DAYS = 14
+ADMIN_ORDER_LIMIT = 200
+
+
+@router.get("/api/v1/admin/credit-orders", tags=["admin"])
+def admin_credit_orders(status: str = "", account: Account = ADMIN_ONLY) -> dict:
+    """Every run pack, newest first, how many are in each status, and the money of each day."""
+    billing = _billing()
+    if not billing.enabled:
+        return {"on_sale": False}
+    if status and status not in {s.value for s in OrderStatus}:
+        raise HTTPException(422, "trạng thái không hợp lệ")
+    billing.store.expire_pending(billing._stamp())
+    today = billing.today()
+    first = today - timedelta(days=ADMIN_DAYS - 1)
+    # A day starts at midnight in Vietnam; a day earlier in UTC covers it.
+    since = (first - timedelta(days=1)).isoformat()
+    days = {(first + timedelta(days=i)).isoformat(): [0, 0] for i in range(ADMIN_DAYS)}
+    for order in billing.store.paid_since(since):
+        day = datetime.fromisoformat(order["created_at"]).astimezone(LOCAL_TZ).date().isoformat()
+        if day in days:
+            days[day][0] += 1
+            days[day][1] += int(order["amount_vnd"])
+    rows = billing.store.recent(ADMIN_ORDER_LIMIT, status or None)
+    lookup = svc().display_names
+    ids = sorted({o["created_by"] for o in rows})
+    names = lookup(ids) if lookup and ids else {}
+    return {
+        "on_sale": billing.sells_credits,
+        "live": any(g.live for g in billing.gateways.values()),
+        "counts": billing.store.count_by_status(),
+        "days": [{"date": d, "paid": n, "revenue_vnd": v} for d, (n, v) in days.items()],
+        "orders": [
+            billing.order_view(o) | {"buyer": names.get(o["created_by"], o["created_by"])}
+            for o in rows
+        ],
+    }
+
+
+@router.get("/api/v1/admin/credit-orders/{order_id}/events", tags=["admin"])
+def admin_credit_order_events(order_id: str, account: Account = ADMIN_ONLY) -> dict:
+    """What the gateway said about one order, in order: for a dispute or a refund."""
+    billing = _billing()
+    order = billing.store.order(order_id) if billing.enabled else None
+    if order is None:
+        raise HTTPException(404, "không có đơn này")
+    return {"order": billing.order_view(order), "events": billing.store.events(order_id)}
 
 
 # ================================================================= the gateway's side
@@ -198,7 +257,7 @@ def _notified(gw, message: Incoming) -> Response:
 async def billing_notify(gateway: str, request: Request) -> Response:
     """The gateway's server reports a result. The signature is the only credential.
 
-    POST for Stripe's webhook, GET for the sandbox (D075: one real gateway); each
+    POST for payOS's webhook, GET for the sandbox (D097: one real gateway); each
     adapter reads the part its gateway signs, and answers the way it expects.
     """
     gw = _gateway_or_404(gateway)
@@ -233,7 +292,7 @@ def billing_return(
     person was paying must not lose the payment. The page shows only what the
     gateway vouched for, and the plan it bought. `left=1` is this system's own
     mark on the address of a payer who left the gateway's page without paying
-    (Stripe's cancel address): nothing is settled, the payment simply expires.
+    (payOS's cancel address): nothing is settled, the payment simply expires.
     """
     gw = _gateway_or_404(gateway)
     billing = _billing()
@@ -251,18 +310,16 @@ def billing_return(
         return templates.TemplateResponse(request, "billing_result.html", context)
     reference = gw.return_reference(query)
     if reference is not None:
-        known = billing.store.order_by_checkout(gw.name, reference)
+        known = billing.store.order_by_checkout(reference)
         if known is None:
             # Not a checkout of ours: the gateway is not asked about it, so a
-            # stranger cannot spend this system's allowance of calls to Stripe.
+            # stranger cannot spend this system's allowance of calls to payOS.
             context["state"] = "invalid"
             return templates.TemplateResponse(request, "billing_result.html", context)
-        if OrderStatus(known["status"]) not in SETTLEABLE:
+        if state_of(known["status"]).final:
             # Settled already: the page says so from the database, and nobody
             # replaying this address makes the system call the gateway again.
-            context.update(
-                state=known["status"], order=billing.order_view(known), test=not known["live"]
-            )
+            context.update(state=known["status"], order=billing.order_view(known))
             return templates.TemplateResponse(request, "billing_result.html", context)
     try:
         result = gw.verify_return(query)
@@ -285,7 +342,6 @@ def billing_return(
             state=order["status"],
             order=billing.order_view(order),
             message=result.message,
-            test=not order["live"],
         )
     return templates.TemplateResponse(request, "billing_result.html", context)
 
@@ -297,7 +353,7 @@ def _sandbox_order(order_id: str, token: str) -> tuple[SandboxGateway, dict]:
     billing = _billing()
     gw = billing.gateway("sandbox")
     order = billing.store.order(order_id) if billing.enabled else None
-    if not isinstance(gw, SandboxGateway) or order is None or order["gateway"] != gw.name:
+    if not isinstance(gw, SandboxGateway) or order is None:
         raise HTTPException(404, "không có đơn này")
     if not hmac.compare_digest(gw.token(order_id, order["amount_vnd"]), token):
         raise HTTPException(404, "không có đơn này")
@@ -316,7 +372,7 @@ def sandbox_page(order_id: str, request: Request, t: str = ""):
             "account": None,
             "order": billing.order_view(order),
             "token": t,
-            "payable": OrderStatus(order["status"]) in SETTLEABLE,
+            "payable": state_of(order["status"]).settleable,
         },
     )
 
@@ -365,6 +421,6 @@ def billing_receipt(
             "account": account,
             "nav_here": "credits",
             "order": billing.order_view(order),
-            "test": not order["live"] and order["gateway"] != "none",
+            "test": not billing.order_view(order)["live"],
         },
     )

@@ -71,9 +71,9 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
     """
     s = svc()
     # D029: an account's own history shows its sign-ins and failed attempts.
-    # Only for pseudonyms that exist: a typed string that matches no account
-    # is attacker input, and the audit log is not a place to keep it.
-    known = s.auth.by_sign_in_name(info.identifier)
+    # Only for emails that have an account: a typed string that matches no
+    # account is attacker input, and the audit log is not a place to keep it.
+    known = s.auth.get_by_email(info.identifier)
     try:
         token = s.auth.login(
             info.identifier, info.password, device_label(request.headers.get("user-agent"))
@@ -81,17 +81,17 @@ def login(info: LoginRequest, request: Request, response: HttpResponse) -> dict:
     except AccountLocked as e:
         if known is not None:
             s.audit_log.write(
-                known["pseudonym"], "auth.login_failed", known["account_id"], "locked"
+                known["account_id"], "auth.login_failed", known["account_id"], "locked"
             )
         # NFR-07: the sixth attempt returns 429, not 401.
         raise HTTPException(429, f"tài khoản tạm khóa đến {e.args[0]}, thử lại sau") from e
     if token is None:
         if known is not None:
             s.audit_log.write(
-                known["pseudonym"], "auth.login_failed", known["account_id"], "wrong_password"
+                known["account_id"], "auth.login_failed", known["account_id"], "wrong_password"
             )
         raise HTTPException(401, "email hoặc mật khẩu không đúng")
-    s.audit_log.write(known["pseudonym"], "auth.login", known["account_id"], "method=password")
+    s.audit_log.write(known["account_id"], "auth.login", known["account_id"], "method=password")
 
     set_session_cookie(response, token)
     # Where this role starts its work. A temporary password goes to the
@@ -113,8 +113,7 @@ NO_STORE = {"Cache-Control": "no-store"}
 def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dict:
     """Open a student account with an email, a full name and a password; sign it in.
 
-    D065, D071. The email is how the person signs in from now on; the
-    pseudonym is the system's choice and stays inside. A forgotten password is
+    D065, D071. The email is how the person signs in from now on. A forgotten password is
     replaced with a code sent to the email (D079). Only students sign
     themselves up; a teacher or an administrator is given their role by
     somebody with authority (FR-32).
@@ -123,7 +122,7 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
         raise HTTPException(404, "máy chủ này không cho tự đăng ký")
     s = svc()
     try:
-        aid, pseudonym, token = s.auth.signup(
+        aid, token = s.auth.signup(
             info.email,
             info.full_name,
             info.password,
@@ -135,7 +134,7 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
         ) from e
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
-    s.audit_log.write(pseudonym, "account.signup", aid, "method=password")
+    s.audit_log.write(aid, "account.signup", aid, "method=password")
     set_session_cookie(response, token)
     response.headers.update(NO_STORE)
     row = s.auth.get(aid)
@@ -146,7 +145,6 @@ def signup(info: SignupRequest, request: Request, response: HttpResponse) -> dic
     except HTTPException:
         verification = "error"
     return {
-        "pseudonym": pseudonym,
         "email": row["email"],
         "home": ROLE_HOME[Role.STUDENT],
         "email_verification": verification,
@@ -165,7 +163,6 @@ def logout(request: Request, response: HttpResponse) -> dict:
 def me(account: Account = Depends(require_login)) -> dict:
     return {
         "account_id": account.account_id,
-        "pseudonym": account.pseudonym,
         "role": account.role.value,
         "email": account.email,
         "full_name": account.full_name,

@@ -633,7 +633,7 @@ CLASSES = [
             "- source: LicenseSource",
         ],
     ),
-    # Stripe, MoMo, VNPay and the sandbox are implementations of this one port.
+    # payOS and the sandbox implement this one port (D097 removed Stripe).
     (
         "Gateway",
         "«interface»" + BR + "PaymentGateway",

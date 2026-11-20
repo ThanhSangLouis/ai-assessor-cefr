@@ -27,7 +27,6 @@ def _load(path: str) -> tuple[np.ndarray, int]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Chấm sơ bộ một bài nói theo CEFR")
     ap.add_argument("audio", help="đường dẫn tệp âm thanh")
-    ap.add_argument("--speaker", default="SV-000", help="mã tài khoản, không dùng MSSV")
     ap.add_argument("--task", default="P1", help="mã đề bài")
     ap.add_argument("--engine", choices=["fake", "whisper"], default="fake")
     ap.add_argument("--model", default="mlx-community/whisper-small-mlx")
@@ -53,7 +52,6 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     req = ProcessingRequest(
         response_id="cli-1",
-        speaker_id=args.speaker,
         task_id=args.task,
         audio_path=args.audio,
         prompt_version="v1",

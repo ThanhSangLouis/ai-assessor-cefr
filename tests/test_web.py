@@ -9,6 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from dbutil import email_of
 from fastapi.testclient import TestClient
 
 from aicefr.api.main import app
@@ -51,11 +52,14 @@ def test_every_page_renders(url: str) -> None:
 
 
 @pytest.mark.parametrize("url", PAGES)
-def test_every_page_carries_required_disclaimer(url: str) -> None:
-    """A study-support tool, no certificate issued, the teacher has the final say."""
+def test_no_page_repeats_the_disclaimer_line(url: str) -> None:
+    """D093: the owner removed the footer disclaimer and its "Band A1–C2 là gì?" link.
+
+    The ban on certificate wording above still holds; only the repeated line went.
+    """
     t = client.get(url).text
-    assert "Không cấp chứng chỉ" in t
-    assert "Giảng viên quyết định cuối cùng" in t
+    assert "Giảng viên quyết định cuối cùng" not in t
+    assert "Band A1–C2 là gì?</a>" not in t
 
 
 @pytest.mark.parametrize("path", sorted(Path(TEMPLATE_DIR).glob("*.html")))
@@ -79,9 +83,9 @@ def test_displayed_thresholds_match_qc_module() -> None:
     from aicefr.storage.auth_repository import Role
 
     importlib.reload(main)  # this test's own store, as conftest prepared it
-    main.app.state.auth_repo.create_account("SV-QC1", "matkhau-kiem-thu", Role.STUDENT)
+    main.app.state.auth_repo.create_account(email_of("SV-QC1"), "matkhau-kiem-thu", Role.STUDENT)
     student = TestClient(main.app)
-    body = {"pseudonym": "SV-QC1", "password": "matkhau-kiem-thu"}
+    body = {"email": email_of("SV-QC1"), "password": "matkhau-kiem-thu"}
     assert student.post("/api/v1/auth/login", json=body).status_code == 200
     t = student.get("/").text
     assert f"{int(audio_qc.MIN_DURATION_S)} đến {int(audio_qc.MAX_DURATION_S)} giây" in t
@@ -105,7 +109,7 @@ def test_no_external_resources_embedded() -> None:
         assert "https://" not in t
 
 
-def _signed_in(pseudonym: str, role: str) -> TestClient:
+def _signed_in(name: str, role: str) -> TestClient:
     """A client signed in on this test's own store: these screens send a visitor to log in."""
     import importlib
 
@@ -113,9 +117,9 @@ def _signed_in(pseudonym: str, role: str) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
     importlib.reload(main)
-    main.app.state.auth_repo.create_account(pseudonym, "matkhau-kiem-thu", Role(role))
+    main.app.state.auth_repo.create_account(email_of(name), "matkhau-kiem-thu", Role(role))
     c = TestClient(main.app)
-    body = {"pseudonym": pseudonym, "password": "matkhau-kiem-thu"}
+    body = {"email": email_of(name), "password": "matkhau-kiem-thu"}
     assert c.post("/api/v1/auth/login", json=body).status_code == 200
     return c
 

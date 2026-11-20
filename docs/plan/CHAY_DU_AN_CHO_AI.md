@@ -65,7 +65,7 @@ Script tự làm, theo thứ tự:
 3. tìm artifact ở `AICEFR_MODEL_DIR` (mặc định `../aicefr-models`); không có thì
    chuyển sang `tests/fixtures/models` kèm `AICEFR_MODEL_PINS` và in `CANH BAO`;
 4. tạo 4 tài khoản demo, mật khẩu `matkhau123` (đã có thì bỏ qua):
-   `SV-001`, `SV-002` (student), `GV-01` (teacher), `QT-01` (admin);
+   `sv-001@demo.speakup.fit`, `sv-002@demo.speakup.fit` (student), `gv-01@demo.speakup.fit` (teacher), `qt-01@demo.speakup.fit` (admin);
 5. chạy `uvicorn aicefr.api.main:app --reload --port 8000`.
 
 Kiểm tra (terminal khác):
@@ -74,7 +74,7 @@ Kiểm tra (terminal khác):
 curl -s localhost:8000/readyz
 # {"status":"ready","checks":{"database":"ok","scoring_model":"ridge_resp_v2","asr_engine":"fake",...}}
 curl -s -o /dev/null -w "%{http_code}\n" -H 'content-type: application/json' \
-  -d '{"pseudonym":"SV-001","password":"matkhau123"}' localhost:8000/api/v1/auth/login   # 200
+  -d '{"email":"sv-001@demo.speakup.fit","password":"matkhau123"}' localhost:8000/api/v1/auth/login   # 200
 ```
 
 Mở http://localhost:8000. Đăng nhập xong là nộp bài được ngay: không còn bước đồng ý
@@ -131,7 +131,7 @@ python3 -c "import secrets; print(secrets.token_hex(32))"
 docker compose up -d --build
 docker compose ps                       # mọi dịch vụ healthy
 curl -s localhost:8000/readyz
-docker compose exec core python -m aicefr.accounts_cli them --but-danh SV-001 --vai-tro student --mat-khau matkhau123
+docker compose exec core python -m aicefr.accounts_cli them --email sv-001@demo.speakup.fit --vai-tro student --mat-khau matkhau123
 ```
 
 Thiếu biến nào `docker compose` từ chối chạy và nói tên biến đó. Chấm thật:
@@ -161,7 +161,7 @@ docker stop aicefr-test-mongo aicefr-test-redis     # luôn tắt container th�
 
 | Triệu chứng | Nguyên nhân | Cách xử lý |
 |---|---|---|
-| Đăng nhập báo "bút danh hoặc mật khẩu không đúng" với tài khoản demo | Chạy server không có `AICEFR_DB` (kho bộ nhớ) | Dùng `./demo.sh`, hoặc đặt `AICEFR_DB=mongodb://...` cho **cả** lệnh tạo tài khoản lẫn server |
+| Đăng nhập báo "email hoặc mật khẩu không đúng" với tài khoản demo | Chạy server không có `AICEFR_DB` (kho bộ nhớ) | Dùng `./demo.sh`, hoặc đặt `AICEFR_DB=mongodb://...` cho **cả** lệnh tạo tài khoản lẫn server |
 | `Can Docker dang chay de dung MongoDB` | Docker chưa chạy | Mở Docker Desktop, chạy lại |
 | `CANH BAO: khong thay artifact that` | Không có `../aicefr-models` | Bình thường trên máy teammate; xin thư mục từ Sang nếu cần điểm thật. **Không** chép artifact vào repo |
 | `/readyz` 503, `scoring_model: failed: SHA-256 ...` | Artifact bị sửa hoặc sai phiên bản | Lấy lại bản gốc; không sửa giá trị ghim trong `artifacts.py` |

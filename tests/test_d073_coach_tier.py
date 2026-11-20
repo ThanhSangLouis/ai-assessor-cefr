@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import pytest
+from dbutil import email_of
 from test_billing import boot
 from test_d069_coach import answer, scored
 from test_lessons_integration import login_as, submit_assessment
@@ -49,8 +50,8 @@ def models(monkeypatch):
     return state
 
 
-def ready(m, pseudonym: str):
-    student = login_as(m, pseudonym)
+def ready(m, name: str):
+    student = login_as(m, name)
     rid = submit_assessment(student)
     scored(m, rid)
     return student, rid
@@ -91,7 +92,7 @@ def test_when_the_free_quota_runs_out_the_administrator_opens_the_paid_tier(
     assert (d["tier"], d["free_used_up"]) == ("free", True)  # shown, not switched
 
     d = switch(admin, tier="paid", budget_usd=2).json()
-    assert (d["tier"], d["budget_usd"], d["tier_changed_by"]) == ("paid", 2.0, "QT-T2")
+    assert (d["tier"], d["budget_usd"], d["tier_changed_by"]) == ("paid", 2.0, email_of("QT-T2"))
     assert (d["used_today"], d["cap_today"]) == (0, 2.0)
     assert second.post(f"/api/v1/responses/{rid2}/upgrade").status_code == 200
     assert models["log"] == ["free", "paid"]

@@ -37,7 +37,7 @@ def _temperature(name: str) -> float | None:
 
 
 def _names(name: str, default: str) -> tuple[str, ...]:
-    """A comma-separated list, lower-cased, blanks dropped: "Stripe, x" -> (stripe, x)."""
+    """A comma-separated list, lower-cased, blanks dropped: "payOS, x" -> (payos, x)."""
     # Set but empty (a blank line in .env) means the same as not set.
     raw = (os.getenv(name) or "").strip() or default
     return tuple(n.strip().lower() for n in raw.split(",") if n.strip())
@@ -139,7 +139,7 @@ class Settings:
         default_factory=lambda: os.getenv("AICEFR_GOOGLE_DOMAIN") or None
     )
     # D063: a Google account linked to no account signs up as a new student
-    # with a random pseudonym. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
+    # with the email Google vouched for. AICEFR_GOOGLE_SIGNUP=0 keeps sign-in to linked
     # accounts only; AICEFR_GOOGLE_DOMAIN limits who can sign up at all.
     google_signup: bool = field(default_factory=lambda: _flag("AICEFR_GOOGLE_SIGNUP", True))
     # D065: a student opens an account with a password from /signup; a
@@ -166,6 +166,8 @@ class Settings:
         default_factory=lambda: _int("AICEFR_PASSAGE_GLOBAL_DAILY", 150)
     )
     passage_daily: int = field(default_factory=lambda: _int("AICEFR_PASSAGE_DAILY", 3))
+    # D107: lesson drafts one teacher may have the model write in 24 hours, free.
+    coach_draft_daily: int = field(default_factory=lambda: _int("AICEFR_COACH_DRAFT_DAILY", 5))
     # On a paid tier: a daily budget in USD replaces the request cap when set,
     # spent at these prices per million tokens (Gemini 3.5 Flash-Lite's list
     # prices by default; output includes thinking tokens).
@@ -192,6 +194,8 @@ class Settings:
     resend_api_key: str = field(default_factory=lambda: os.getenv("AICEFR_RESEND_API_KEY", ""))
     # e.g. "SpeakUp <no-reply@ten-mien-cua-ban.vn>", on the verified domain.
     email_from: str = field(default_factory=lambda: os.getenv("AICEFR_EMAIL_FROM", ""))
+    # D099: where a buyer writes about a payment or a refund, on the terms page.
+    support_email: str = field(default_factory=lambda: os.getenv("AICEFR_SUPPORT_EMAIL", ""))
     # When the daily study reminder goes out, Vietnam time (hour 0-23); -1 is off.
     reminder_hour: int = field(
         default_factory=lambda: int(os.getenv("AICEFR_REMINDER_HOUR", "19") or 19)
@@ -201,22 +205,30 @@ class Settings:
     # The payment gateways that sell run packs. Off by default: nothing is
     # sold until a deployment opts in. No service plans any more (D075).
     billing_enabled: bool = field(default_factory=lambda: _flag("AICEFR_BILLING"))
-    # The gateways offered, in the order the buyer sees them (D035, D075):
-    # "stripe" with the keys below, and "sandbox", a payment page inside the
-    # app where no money moves. See aicefr.billing.registry for the rules.
+    # The gateways offered, in the order the buyer sees them (D035, D095, D097):
+    # "payos" with the keys below, and "sandbox", a payment page inside the
+    # app where no money moves. Stripe was removed in D097. See
+    # aicefr.billing.registry for the rules.
     payment_gateways: tuple[str, ...] = field(
         default_factory=lambda: _names("AICEFR_PAYMENT_GATEWAYS", "sandbox")
     )
     # A gateway that moves real money runs only with this on.
     payments_live: bool = field(default_factory=lambda: _flag("AICEFR_PAYMENTS_LIVE"))
-    # Stripe: the secret key (sk_test_... for test mode) and the signing secret
-    # of the webhook endpoint (whsec_...), from Stripe's dashboard or
-    # `stripe listen`.
-    stripe_secret_key: str = field(
-        default_factory=lambda: os.getenv("AICEFR_STRIPE_SECRET_KEY", "").strip()
+    # payOS (D095): the three keys of a payment channel at my.payos.vn. payOS
+    # has no test environment, so it runs only with AICEFR_PAYMENTS_LIVE on.
+    payos_client_id: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_CLIENT_ID", "").strip()
     )
-    stripe_webhook_secret: str = field(
-        default_factory=lambda: os.getenv("AICEFR_STRIPE_WEBHOOK_SECRET", "").strip()
+    payos_api_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_API_KEY", "").strip()
+    )
+    payos_checksum_key: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_CHECKSUM_KEY", "").strip()
+    )
+    # D099: payOS's API address. Empty means payOS itself; only the end-to-end
+    # tests set it, to a fake payOS on this machine (http://127.0.0.1:...).
+    payos_api_url: str = field(
+        default_factory=lambda: os.getenv("AICEFR_PAYOS_API_URL", "").strip().rstrip("/")
     )
 
     # --- services (D043, D044) ---
@@ -239,23 +251,32 @@ class Settings:
     # on; labels are analysed only for learners who accepted the terms (D058).
     guided_replay: bool = field(default_factory=lambda: _flag("AICEFR_GUIDED_REPLAY"))
     # D057: the seller's prices, in runs: a recording up to one minute, every
-    # further started minute, the share a practice attempt pays, and what one
-    # run is in IDPoint on NetID (team decision 24/10/2026, 1 IDPoint = 1 VND).
+    # further started minute, and what one run is in IDPoint on NetID (team
+    # decision 24/10/2026, 1 IDPoint = 1 VND). D106: whole runs only; a scored
+    # recording is one run. D107: an answer a language model writes is one run
+    # (the rewrite of a scored recording is part of its run).
     price_first_minute_runs: float = field(
         default_factory=lambda: _float("AICEFR_PRICE_FIRST_MINUTE_RUNS", 1.0)
     )
     price_extra_minute_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.7)
+        default_factory=lambda: _float("AICEFR_PRICE_EXTRA_MINUTE_RUNS", 0.0)
     )
     idpoint_per_run: int = field(default_factory=lambda: _int("AICEFR_IDPOINT_PER_RUN", 2000))
     # D072: what one upgraded answer (D069) costs on the metered channel, in runs.
     price_upgrade_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 0.3)
+        default_factory=lambda: _float("AICEFR_PRICE_UPGRADE_RUNS", 1.0)
     )
     # D090: what one reading passage around the unclear words costs, in runs.
     price_passage_runs: float = field(
-        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 0.1)
+        default_factory=lambda: _float("AICEFR_PRICE_PASSAGE_RUNS", 1.0)
     )
+    # D094: a recording on the lesson path, per started minute of speech, and
+    # how many recordings of a Vietnam day are free and measured at most.
+    price_lesson_minute_runs: float = field(
+        default_factory=lambda: _float("AICEFR_PRICE_LESSON_MINUTE_RUNS", 0.0)
+    )
+    lesson_free_per_day: int = field(default_factory=lambda: _int("AICEFR_LESSON_FREE_PER_DAY", 5))
+    lesson_daily_cap: int = field(default_factory=lambda: _int("AICEFR_LESSON_DAILY_CAP", 30))
     # Run packs a learner buys on the metered channel (D053): runs and price in
     # VND. Paid through the billing gateways, credited to the learner's wallet.
     credit_packs: tuple[tuple[int, int], ...] = field(

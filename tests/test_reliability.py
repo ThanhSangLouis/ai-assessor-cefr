@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 from conftest import feature_set
-from dbutil import one_school
+from dbutil import email_of, one_school
 from fastapi.testclient import TestClient
 
 import aicefr
@@ -42,13 +42,13 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    one_school(pseudonym, role)
+def login_as(app, name: str, role: str) -> TestClient:
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
+    one_school(name, role)
     c = TestClient(app)
     assert (
         c.post(
-            "/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD}
+            "/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD}
         ).status_code
         == 200
     )
@@ -163,7 +163,7 @@ def test_only_a_response_awaiting_review_can_be_decided(app, status) -> None:
     rid = submit(student).json()["response_id"]
     report = m.repo.get(rid)
     report.status = status
-    m.repo.save(report, "SV-001", "P3")
+    m.repo.save(report, "P3")
 
     with pytest.raises(InvalidStateError):
         m.repo.apply_review(rid, "gv", None, None, "thu duyet bai sai trang thai")
@@ -176,7 +176,7 @@ def test_the_api_answers_409_for_an_undecidable_response(app) -> None:
     rid = submit(student).json()["response_id"]
     report = m.repo.get(rid)
     report.status = ResponseStatus.REJECTED
-    m.repo.save(report, "SV-001", "P3")
+    m.repo.save(report, "P3")
 
     teacher = login_as(app, "GV-01", "teacher")
     r = teacher.post(f"/api/v1/review/{rid}", json={"reason": "thu duyet bai da bi tu choi"})
@@ -221,7 +221,7 @@ def test_a_verified_result_is_never_overwritten_by_a_later_job(app) -> None:
     stale = m.repo.get(rid)
     stale.assessment.teacher_verified = False
     stale.assessment.overall_0_6 = 1.0
-    m.repo.save(stale, "SV-001", "P3")
+    m.repo.save(stale, "P3")
 
     after = m.repo.get(rid)
     assert after.assessment.teacher_verified is True
@@ -237,7 +237,7 @@ def test_saving_again_keeps_the_submission_time(app) -> None:
     first = m.repo.status_of(rid)["created_at"]
 
     report = m.repo.get(rid)
-    m.repo.save(report, "SV-001", "P3")
+    m.repo.save(report, "P3")
     assert m.repo.status_of(rid)["created_at"] == first
 
 
@@ -254,7 +254,7 @@ def test_saving_without_the_owner_does_not_erase_it(app) -> None:
     rid = submit(student).json()["response_id"]
     owner_before = m.repo.owner_of(rid)
 
-    m.repo.save(m.repo.get(rid), "SV-001", "P3")  # no account_id passed
+    m.repo.save(m.repo.get(rid), "P3")  # no account_id passed
     assert m.repo.owner_of(rid) == owner_before
 
 
@@ -271,7 +271,6 @@ def test_only_one_teacher_wins_a_contested_lock(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
     repo.save(
         Response(response_id="r1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1"),
-        "SV-001",
         "P3",
     )
 
@@ -280,7 +279,7 @@ def test_only_one_teacher_wins_a_contested_lock(tmp_path) -> None:
 
     def claim(who: str) -> None:
         barrier.wait()
-        results.append(repo.lock_response("r1", who, who.upper()))
+        results.append(repo.lock_response("r1", who))
 
     threads = [threading.Thread(target=claim, args=(w,)) for w in ("gv1", "gv2")]
     for t in threads:
@@ -295,11 +294,10 @@ def test_an_expired_lock_is_reclaimed(tmp_path) -> None:
     repo = Repository(tmp_path / "t.db")
     repo.save(
         Response(response_id="r1", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1"),
-        "SV-001",
         "P3",
     )
-    repo.lock_response("r1", "gv1", "GV1", minutes=-1)
-    granted, holder = repo.lock_response("r1", "gv2", "GV2")
+    repo.lock_response("r1", "gv1", minutes=-1)
+    granted, holder = repo.lock_response("r1", "gv2")
     assert granted and holder is None
 
 
@@ -328,7 +326,6 @@ def test_a_missing_audio_file_does_not_leave_the_job_running(app) -> None:
 
     request = ProcessingRequest(
         response_id=rid,
-        speaker_id="SV-001",
         task_id="P3",
         audio_path=audio,
         prompt_version="v1",

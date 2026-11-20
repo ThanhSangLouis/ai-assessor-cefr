@@ -21,7 +21,8 @@ def main():
                 base_url="http://localhost:8000", device_scale_factor=density
             )
             assert context.request.post(
-                "/api/v1/auth/login", data={"identifier": "SV-001", "password": "matkhau123"}
+                "/api/v1/auth/login",
+                data={"identifier": "sv-001@demo.speakup.fit", "password": "matkhau123"},
             ).ok
             original = context.request.get("/api/v1/learn").json()
             bands = context.request.get("/api/v1/learn/bands").json()

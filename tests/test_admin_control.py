@@ -13,6 +13,7 @@ import io
 import numpy as np
 import pytest
 import soundfile as sf
+from dbutil import email_of
 from fastapi.testclient import TestClient
 
 PASSWORD = "matkhau-kiem-thu"
@@ -27,14 +28,14 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
+def login_as(app, name: str, role: str) -> TestClient:
     from aicefr.storage.auth_repository import Role
 
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     c = TestClient(app)
     assert (
         c.post(
-            "/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD}
+            "/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD}
         ).status_code
         == 200
     )
@@ -81,7 +82,7 @@ def test_xuat_du_lieu_ca_nhan_khong_lan_sang_nguoi_khac(app) -> None:
     body = b.get("/api/v1/me/export.json").json()
     assert body["response_count"] == 1
     assert all(r["response_id"] != "" for r in body["responses"])
-    assert body["speaker_id"] == "SV-002"
+    assert "speaker_id" not in body  # D103: an export names no speaker code
 
 
 def test_moi_truong_du_lieu_deu_co_giai_thich_muc_dich(app) -> None:
@@ -95,7 +96,7 @@ def test_moi_truong_du_lieu_deu_co_giai_thich_muc_dich(app) -> None:
     body = c.get("/api/v1/me/export.json").json()
 
     fields = body["fields"]
-    for key in ("speaker_id", "transcript", "features", "review_history"):
+    for key in ("account_id", "transcript", "features", "review_history"):
         assert key in fields and fields[key].strip()
 
 
@@ -171,7 +172,7 @@ def test_doi_nguong_qc_thi_bump_phien_ban_va_ghi_nguoi_doi(app) -> None:
 
     cfg = admin.get("/api/v1/admin/config").json()
     assert cfg["duration_s"]["reject_below"] == 15.0
-    assert cfg["changed_by"] == "QT-01"
+    assert cfg["changed_by"] == email_of("QT-01")  # the name, else the email
     assert cfg["changed_at"]
 
 

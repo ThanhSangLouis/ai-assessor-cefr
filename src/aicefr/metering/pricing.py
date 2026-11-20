@@ -1,24 +1,29 @@
-"""The price list of the metered channel: priced by the recording, measured in tokens (D057).
+"""The price list of the metered channel: whole runs only (D106, D107).
 
-What the learner pays is fixed by the recording, as every worker on NetID is
-priced (team decision, 24/10/2026): the first minute is one run (2,000 IDPoint
-at the agreed 1 IDPoint = 1 VND), every further started minute 0.7 run, up to
-five minutes. The seller sets these numbers (`AICEFR_PRICE_*`,
-`AICEFR_IDPOINT_PER_RUN`), and since D078 an administrator on the dashboard.
+A learner buys runs in whole packs (5, 10, 30, 100), so every price is a whole
+number of runs too: one scored recording is one run, and nothing is ever
+charged as 0.3 or 0.7 of a run. Every task is at most a minute, so a recording
+costs its one run whatever it lasted.
 
-What a recording really used is measured in tokens and kept with each charge,
-for the cost per request and the reconciliation with NetID -- the recogniser is
-a token model too:
+D107: what a paid language model writes for a learner is paid for by a run,
+so the model's bill is always covered. One run scores a recording and brings
+its AI rewrite (one per recording, kept) and one reading passage (D090);
+beyond that a rewrite or a passage is one run each. A teacher's lesson draft
+(D075) is free, five a day. The recordings on the lesson path (D094) are
+measured on our own server, with no language model, and stay free within
+their daily limit. The seller still sets these
+numbers (`AICEFR_PRICE_*`, `AICEFR_IDPOINT_PER_RUN`), and since D078 an
+administrator on the dashboard, but only as whole runs: a fraction saved
+before D106 counts as its whole part, rounded down, in the learner's favour.
 
-* **input tokens** are Whisper's audio tokens: 1500 per started 30-second
-  window, and one more window for the language check (D022);
-* **output tokens** are the text tokens the decoder produced, counted by the
-  recogniser (`Transcript.output_tokens`), or estimated from the words where
-  it cannot count them, and marked so.
+D057 (team decision, 24/10/2026) set the first minute at one run, 2,000
+IDPoint at the agreed 1 IDPoint = 1 VND. D105: the tokens a recording or a
+model call used are not kept with each charge any more; nothing read them.
 
-Charges are kept in thousandths of a run, integers so no sum ever rounds. A hold
-is taken for the longest recording a task allows and settled on what the
-recording really lasted.
+Charges are kept in thousandths of a run (the ledger's unit since D049), so a
+charge made before D106 still reads as it was; every charge since is a whole
+thousand. A hold is taken for the longest recording a task allows and settled
+on what the recording really lasted.
 """
 
 from __future__ import annotations
@@ -26,40 +31,76 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass
 
-PRICE_VERSION = "price-v3-per-recording"
+PRICE_VERSION = "price-v5-ai-runs"
 UNITS_PER_RUN = 1000
 # Three runs a month for everyone before anything is charged.
 FREE_UNITS_PER_CYCLE = 3 * UNITS_PER_RUN
 
-WINDOW_S = 30.0
-AUDIO_TOKENS_PER_WINDOW = 1500
-LANGUAGE_CHECK_WINDOWS = 1
-# English text in Whisper's tokenizer: about four tokens for every three words.
-TOKENS_PER_WORD = 4 / 3
 # The longest recording the price covers; QC refuses anything longer anyway.
 MAX_MINUTES = 5
 MAX_SECONDS = MAX_MINUTES * 60.0
+
+
+def whole_runs(runs: float) -> int:
+    """`runs` rounded down to a whole run; a hair under one is float noise, not less."""
+    return math.floor(round(runs, 6))
+
+
+def is_whole(runs: float) -> bool:
+    """True for 0, 1, 2...: the only prices a learner can count with (D106)."""
+    return runs >= 0 and round(runs, 6) == whole_runs(runs)
+
+
+# The prices in runs (D106: each a whole number of runs).
+RUN_PRICES = (
+    "first_minute_runs",
+    "extra_minute_runs",
+    "upgrade_runs",
+    "passage_runs",
+    "lesson_minute_runs",
+)
 
 
 @dataclass(frozen=True)
 class PriceList:
     """What the seller charges, in runs. Read from the settings (`AICEFR_PRICE_*`)."""
 
-    first_minute_runs: float = 1.0  # a recording up to one minute
-    extra_minute_runs: float = 0.7  # every further started minute
+    first_minute_runs: float = 1.0  # a scored recording up to one minute
+    extra_minute_runs: float = 0.0  # every further started minute (no task is longer)
     idpoint_per_run: int = 2000  # what one run is on NetID (1 IDPoint = 1 VND)
-    # D072: one upgraded answer (D069) written by a language model; 0 is free.
-    upgrade_runs: float = 0.3
-    # D090: one reading passage written around the learner's unclear words.
-    passage_runs: float = 0.1
+    # D072: an upgraded answer (D069) to a recording no run paid for. D107:
+    # the upgrade of a recording scored for a run is part of that run.
+    upgrade_runs: float = 1.0
+    # D090: one reading passage written around the learner's unclear words,
+    # past the one each paid run brings (D107).
+    passage_runs: float = 1.0
+    # D094: a recording on the lesson path (a step, a review, a retelling, a
+    # word or a passage said again), per started minute of speech; the first
+    # `lesson_free_per_day` recordings of a Vietnam day are free, and no more
+    # than `lesson_daily_cap` are measured in a day. Free since D106.
+    lesson_minute_runs: float = 0.0
+    lesson_free_per_day: int = 5
+    lesson_daily_cap: int = 30
     version: str = PRICE_VERSION
 
     def __post_init__(self) -> None:
         lowest = min(
-            self.first_minute_runs, self.extra_minute_runs, self.upgrade_runs, self.passage_runs
+            self.first_minute_runs,
+            self.extra_minute_runs,
+            self.upgrade_runs,
+            self.passage_runs,
+            self.lesson_minute_runs,
         )
         if lowest < 0 or self.idpoint_per_run < 0:
             raise ValueError("giá không được âm")
+        # D106: whole runs only. A fraction from an older price list or the
+        # settings counts as its whole part, in the learner's favour.
+        for name in RUN_PRICES:
+            object.__setattr__(self, name, float(whole_runs(getattr(self, name))))
+        if self.lesson_daily_cap < 1:
+            raise ValueError("trần bản ghi bài học mỗi ngày phải từ 1 trở lên")
+        if not 0 <= self.lesson_free_per_day <= self.lesson_daily_cap:
+            raise ValueError("số bản ghi miễn phí mỗi ngày phải từ 0 tới trần mỗi ngày")
 
     def as_dict(self) -> dict:
         return {
@@ -69,35 +110,14 @@ class PriceList:
             "idpoint_per_run": self.idpoint_per_run,
             "upgrade_runs": self.upgrade_runs,
             "passage_runs": self.passage_runs,
+            "lesson_minute_runs": self.lesson_minute_runs,
+            "lesson_free_per_day": self.lesson_free_per_day,
+            "lesson_daily_cap": self.lesson_daily_cap,
             "max_minutes": MAX_MINUTES,
         }
 
 
 DEFAULT_PRICES = PriceList()
-
-
-@dataclass(frozen=True)
-class TokenUsage:
-    input_tokens: int
-    output_tokens: int
-    estimated: bool = False  # the output count came from words, not the recogniser
-
-
-def windows(seconds: float) -> int:
-    """Started 30-second windows, at least one, up to the longest priced recording."""
-    return max(1, math.ceil(min(max(0.0, seconds), MAX_SECONDS) / WINDOW_S))
-
-
-def input_tokens(seconds: float) -> int:
-    return AUDIO_TOKENS_PER_WINDOW * (windows(seconds) + LANGUAGE_CHECK_WINDOWS)
-
-
-def usage_of(seconds: float, output_tokens: int | None, words: int | None = None) -> TokenUsage:
-    """What one recording used: counted output tokens, or an estimate from its words."""
-    if output_tokens is not None:
-        return TokenUsage(input_tokens(seconds), max(0, int(output_tokens)))
-    estimate = math.ceil(max(0, words or 0) * TOKENS_PER_WORD)
-    return TokenUsage(input_tokens(seconds), estimate, estimated=True)
 
 
 def minutes(seconds: float) -> int:
@@ -120,6 +140,15 @@ def upgrade_units(prices: PriceList) -> int:
 def passage_units(prices: PriceList) -> int:
     """The charge for one reading passage (D090), in thousandths of a run."""
     return math.ceil(round(prices.passage_runs * UNITS_PER_RUN, 6))
+
+
+def lesson_units(prices: PriceList, seconds: float) -> int:
+    """The charge for one recording on the lesson path (D094), in thousandths of a run.
+
+    Priced by the started minutes of SPEECH the recording held (`StepResult.speaking_s`,
+    measured by VAD), at least one: a five-second step is one minute's price.
+    """
+    return math.ceil(round(prices.lesson_minute_runs * minutes(seconds) * UNITS_PER_RUN, 6))
 
 
 def hold_for(prices: PriceList, max_seconds: float) -> int:

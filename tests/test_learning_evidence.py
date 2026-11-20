@@ -31,8 +31,9 @@ MISHEARD = "I like my neighborhood becau the people are friendly"
 def _with_feedback(response_id: str, score: float = 3.4) -> None:
     """Give a submitted response a score and every kind of feedback the report carries."""
     responses = store()["response"]
-    report = json.loads(responses.find_one({"response_id": response_id})["report_json"])
-    a = report.get("assessment") or {"model_version": "test"}
+    a = responses.find_one({"response_id": response_id}).get("assessment") or {
+        "model_version": "test"
+    }
     a.update(
         overall_0_6=score,
         overall_band="B1",
@@ -41,11 +42,7 @@ def _with_feedback(response_id: str, score: float = 3.4) -> None:
         weakest_criteria=["fluency"],
         evidence=[{"criterion": "fluency", "kind": "pause", "note": "ngắt 2 giây"}],
     )
-    report["assessment"] = a
-    responses.update_one(
-        {"response_id": response_id},
-        {"$set": {"overall_0_6": score, "overall_band": "B1", "report_json": json.dumps(report)}},
-    )
+    responses.update_one({"response_id": response_id}, {"$set": {"assessment": a}})
 
 
 # ================================================================= D039
@@ -94,7 +91,7 @@ def test_class_profile_is_for_staff_and_names_nobody(m):
 # ================================================================= D041
 
 
-def test_review_lock_and_decision_leave_a_timed_session(m):
+def test_the_review_lock_lives_on_the_response_and_a_decision_clears_it(m):
     student = login_as(m, "SV-001")
     rid = submit_assessment(student)
     _with_feedback(rid)
@@ -104,13 +101,9 @@ def test_review_lock_and_decision_leave_a_timed_session(m):
     assert teacher.post(f"/api/v1/review/{rid}/lock").status_code == 200
     r = teacher.post(f"/api/v1/review/{rid}", json={"new_band": "B1", "reason": "đúng mức"})
     assert r.status_code == 200, r.text
-    # D082: the lock and the visits are the response's review session, apart.
-    session = store()["review_session"].find_one({"response_id": rid})
-    visits = session["visits"]
-    assert [v["reviewer_id"] for v in visits] == [account_id(m, "GV-01")]
-    assert visits[0]["action"] == "decision" and visits[0]["decided_at"]
-    assert session["lock"] is None  # cleared by the decision
+    # D104: the lock is part of the response's document again, no collection apart.
     response = store()["response"].find_one({"response_id": rid})
-    assert "review_lock" not in response and "review_visits" not in response
-    # The decision carries when the teacher opened the response (D041, D060).
-    assert m.repo.review_history(rid)[0].opened_at == visits[0]["opened_at"]
+    assert response["review_lock"] is None  # cleared by the decision
+    assert "review_session" not in store().list_collection_names()
+    [decision] = m.repo.review_history(rid)
+    assert decision.reviewer_id == account_id(m, "GV-01")

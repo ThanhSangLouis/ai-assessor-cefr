@@ -4,10 +4,7 @@
 {% block content %}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
-  <p class="lede">
-    Tài khoản, hiện vật mô hình, ngưỡng kiểm tra chất lượng, xoá dữ liệu cá nhân, mô hình
-    ngôn ngữ và tình trạng vận hành.
-  </p>
+  <p class="lede">Tài khoản, mô hình, giá, đơn hàng, dữ liệu và vận hành.</p>
 </div>
 
 <div class="tabs" role="tablist" aria-label="Khu vực quản trị">
@@ -17,6 +14,8 @@
           aria-selected="false" aria-controls="panel-models">Mô hình</button>
   <button id="tab-config" data-panel="panel-config" role="tab"
           aria-selected="false" aria-controls="panel-config">Cấu hình</button>
+  <button id="tab-orders" data-panel="panel-orders" role="tab"
+          aria-selected="false" aria-controls="panel-orders">Đơn hàng</button>
   <button id="tab-erase" data-panel="panel-erase" role="tab"
           aria-selected="false" aria-controls="panel-erase">Dữ liệu</button>
   <button id="tab-coach" data-panel="panel-coach" role="tab"
@@ -26,20 +25,15 @@
 </div>
 
 {#- D028, D071. Accounts handed out ready-made are created and looked after
-    here instead of through the command line on the server: a code and a
+    here instead of through the command line on the server: an email and a
     one-time password, shown once on a slip meant to be printed and replaced at
-    the first login; the person then adds an email and a full name and signs
-    in with the email. -#}
+    the first login. -#}
 <section id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" tabindex="0">
   <div class="card" aria-labelledby="acc-create-h">
     <h2 id="acc-create-h">{{ icon("user-plus") }} Tạo tài khoản</h2>
     <p class="muted">
-      Dùng cho tài khoản bạn cấp sẵn (giảng viên, cả lớp chưa có email). Tạo theo dãy mã
-      (SV-001, SV-002, …) hoặc một mã cụ thể; mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một
-      lần</b> ngay dưới đây. Lần đầu đăng nhập bằng mã và mật khẩu tạm, người dùng đặt mật khẩu
-      riêng rồi thêm email và họ tên ở trang Tài khoản (bạn cũng điền giúp được trong chi tiết tài
-      khoản); từ đó họ đăng nhập bằng email. Người tự đăng ký hoặc đăng nhập bằng Google không cần
-      tạo ở đây.
+      Dán email, mỗi dòng một người. Mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một lần</b>
+      ngay dưới đây; lần đầu đăng nhập, người dùng đặt mật khẩu riêng.
     </p>
     <form id="acc-form" class="inline-form" novalidate>
       <div class="field">
@@ -50,24 +44,10 @@
           <option value="admin">Quản trị</option>
         </select>
       </div>
-      <div class="field">
-        <label for="acc-mode">Cách tạo</label>
-        <select id="acc-mode">
-          <option value="series">Theo dãy số</option>
-          <option value="one">Một mã</option>
-        </select>
-      </div>
-      <div class="field" data-mode="series">
-        <label for="acc-count">Số tài khoản</label>
-        <input id="acc-count" type="number" min="1" max="200" value="10" inputmode="numeric">
-      </div>
-      <div class="field" data-mode="series">
-        <label for="acc-prefix">Tiền tố</label>
-        <input id="acc-prefix" type="text" maxlength="6" placeholder="SV" autocomplete="off">
-      </div>
-      <div class="field" data-mode="one" hidden>
-        <label for="acc-pseudonym">Mã tài khoản</label>
-        <input id="acc-pseudonym" type="text" maxlength="32" placeholder="Ví dụ: GV-NN-01" autocomplete="off">
+      <div class="field field-wide">
+        <label for="acc-emails">Email</label>
+        <textarea id="acc-emails" rows="4" autocomplete="off" spellcheck="false"
+                  placeholder="an@truong.edu.vn&#10;binh@truong.edu.vn"></textarea>
       </div>
       <div class="button-row">
         <button type="submit" id="acc-create">{{ icon("user-plus") }} Tạo tài khoản</button>
@@ -135,11 +115,7 @@
 </section>
 
 <section id="panel-config" role="tabpanel" aria-labelledby="tab-config" tabindex="0" hidden>
-  <div class="notice">
-    Ngưỡng kiểm tra chất lượng âm thanh (QC) đang áp dụng. Sửa ở đây thì hệ thống
-    <b>tạo một phiên bản ngưỡng mới</b> (<code>qc_config_version</code>), ghi vào nhật
-    ký kiểm toán, và mọi báo cáo chấm sau đó ghi lại phiên bản đã dùng.
-  </div>
+  <p class="muted">Ngưỡng kiểm tra chất lượng âm thanh đang áp dụng. Mỗi lần sửa tạo một phiên bản mới và được ghi nhật ký.</p>
   <div class="card" id="config-body" aria-busy="true" aria-live="polite">
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-row"></div>
@@ -152,6 +128,17 @@
   <section class="card" id="google-setup" aria-labelledby="google-setup-h" hidden></section>
 </section>
 
+{#- D099. Run-pack orders: the money of each day, every order, what the gateway said. -#}
+<section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders" tabindex="0" hidden>
+  <div id="orders-body" aria-busy="true" aria-live="polite">
+    <div class="card">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>
+  </div>
+</section>
+
 <section id="panel-erase" role="tabpanel" aria-labelledby="tab-erase" tabindex="0" hidden>
   <div class="notice notice-danger">
     Thao tác xoá dữ liệu cá nhân <b>không hoàn tác được</b>. Bản ghi âm, kết quả
@@ -160,16 +147,16 @@
   </div>
   <div class="card">
     <h2>Xoá dữ liệu của một người học</h2>
-    <label for="speaker-id">Mã tài khoản của người học</label>
-    <p class="field-hint">Mã ghi trong chi tiết tài khoản; nút "Xoá dữ liệu…" ở đó điền sẵn ô này.</p>
-    <input id="speaker-id" type="text" placeholder="Ví dụ: SV-001" autocomplete="off">
+    <label for="erase-email">Email của người học</label>
+    <p class="field-hint">Nút "Xoá dữ liệu…" trong chi tiết tài khoản điền sẵn ô này.</p>
+    <input id="erase-email" type="email" placeholder="an@truong.edu.vn" autocomplete="off">
     <div class="button-row">
       <button id="preview-button" type="button" class="secondary">Xem trước</button>
     </div>
     <div id="preview-body" aria-live="polite"></div>
     <div id="confirm-body" hidden>
-      <label for="speaker-id-again">Nhập lại mã tài khoản để xác nhận</label>
-      <input id="speaker-id-again" type="text" placeholder="Nhập lại đúng mã ở trên"
+      <label for="erase-email-again">Nhập lại email để xác nhận</label>
+      <input id="erase-email-again" type="email" placeholder="Nhập lại đúng email ở trên"
              autocomplete="off" aria-describedby="erase-hint">
       <div class="button-row">
         <button id="erase-button" type="button" class="danger" disabled>Xác nhận xóa</button>
@@ -214,5 +201,6 @@
 {% block scripts %}
 <script src="{{ asset('admin_coach.js') }}"></script>
 <script src="{{ asset('admin_prices.js') }}"></script>
+<script src="{{ asset('admin_orders.js') }}"></script>
 <script src="{{ asset('admin.js') }}"></script>
 {% endblock %}

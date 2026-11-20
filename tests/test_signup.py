@@ -1,7 +1,7 @@
 """Self sign-up with an email and a password (D065, D071); no recovery code (D081).
 
 A student signs up with the email they sign in with, their full name and a
-password; the system draws a pseudonym that stays inside. A forgotten password
+password; the email is the account (D103). A forgotten password
 is replaced with a code sent by email (D079, `test_d079_email.py`); the
 one-time recovery code of D065 is gone, with its routes and its stored hash.
 These tests run the real application through TestClient on its own store.
@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import importlib
 import itertools
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -20,7 +19,6 @@ from aicefr.storage.auth_repository import Role
 
 # Written as words so a secret scanner does not take it for a key.
 PASSWORD = "-".join(["mot", "cau", "de", "nho", "123"])
-PSEUDONYM = re.compile(r"^SV-[0-9A-F]{6}$")
 
 
 def make_app(monkeypatch, tmp_path, signup: bool = True, rate: int | None = None):
@@ -76,16 +74,13 @@ def actions(m) -> list[str]:
 
 def test_a_student_signs_up_with_a_password_and_is_signed_in(m) -> None:
     c, body = signup(m)
-    assert PSEUDONYM.match(body["pseudonym"])
-    assert "recovery_code" not in body
+    assert "pseudonym" not in body and "recovery_code" not in body
     assert body["home"] == "/practice"
     me = c.get("/api/v1/me").json()
-    assert me == {**me, "pseudonym": body["pseudonym"], "role": "student"}
+    assert me["role"] == "student" and "pseudonym" not in me
     assert me["email"] == body["email"] and me["full_name"] == "Nguyễn Văn An"
     assert login(m, body["email"], PASSWORD) == 200
-    # The pseudonym is an internal code now, not a second way in.
-    assert login(m, body["pseudonym"], PASSWORD) == 401
-    row = m.app.state.auth_repo.get_by_pseudonym(body["pseudonym"])
+    row = m.app.state.auth_repo.get_by_email(body["email"])
     assert "recovery_hash" not in row and "recovery_issued_at" not in row
     assert "account.signup" in actions(m)
 
@@ -103,16 +98,12 @@ def test_a_short_password_opens_no_account(m) -> None:
     assert len(m.app.state.auth_repo.list_accounts()) == before
 
 
-def test_sign_up_chooses_no_pseudonym_and_no_role(m) -> None:
-    """Extra fields are ignored: the pseudonym is drawn, the role is student."""
-    r = TestClient(m.app).post(
-        "/api/v1/auth/signup", json=form(pseudonym="NguyenVanA", role="admin")
-    )
+def test_sign_up_chooses_no_role(m) -> None:
+    """Extra fields are ignored: the role is student."""
+    r = TestClient(m.app).post("/api/v1/auth/signup", json=form(role="admin"))
     assert r.status_code == 200
-    assert PSEUDONYM.match(r.json()["pseudonym"])
-    row = m.app.state.auth_repo.get_by_pseudonym(r.json()["pseudonym"])
+    row = m.app.state.auth_repo.get_by_email(r.json()["email"])
     assert row["role"] == Role.STUDENT.value
-    assert m.app.state.auth_repo.get_by_pseudonym("NguyenVanA") is None
 
 
 def test_sign_up_can_be_turned_off(tmp_path, monkeypatch) -> None:

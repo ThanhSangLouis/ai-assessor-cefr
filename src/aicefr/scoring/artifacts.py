@@ -33,6 +33,11 @@ PINNED_SHA256: dict[str, str] = {
     "ridge_resp_v2_cal": "e19a59779e2933bae8922db8e75774ead2780fd017c784b4636f284cb2f92a1f",
     "conformal_resp_v2": "3c09d2583a26e8cc057c0cf36dfb7637d15dfdc901cf00c4e25faef9ce6ef885",
     "conformal_resp_v2_cal": "6c9879d910c0901a151bb88828847eb348fe5823a1495725b57a8799b745a6fb",
+    # tools/build_fusion_artifact.py (15/11): Ridge v4 on the app's own
+    # features, and the fusion of Ridge v4 with DeBERTa-v3 LoRA. The fusion
+    # artifact pins the text model's files itself (`text_model`).
+    "ridge_resp_v4": "c60b4210979af2bac67dc42794efe13042ec1fe0f02ab2a58b29e6d21746fdcf",
+    "fusion_resp_v4": "b6eed94c1b6648c7002c64c4060ee698e3b0dc9eb12c3c2f93bdd9e01edc4ce5",
 }
 
 

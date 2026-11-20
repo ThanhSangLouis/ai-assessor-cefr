@@ -4,70 +4,78 @@
 {% block content %}
 {#- D033, D035. Where the gateway sends the browser back. The route has applied
     the result the gateway vouched for already; this page says what the
-    order's state now is. -#}
-{#- D075: every order is a pack of runs; its buyer goes back to their runs. -#}
-{%- set back = "/credits" -%}
-{%- set back_label = "Về trang Lượt của tôi" -%}
-<div class="pay-page">
-  {% if test %}
-  <div class="notice notice-warn pay-banner" role="note">
-    <b>Môi trường thử{% if gateway %} của {{ gateway }}{% endif %}.</b> Không có tiền thật nào được chuyển.
-  </div>
-  {% endif %}
-  <section class="card pay-card pay-{{ state }}" aria-labelledby="result-h">
+    order's state now is. D075: every order is a pack of runs.
+    Drawn on the student stage (D093): one card, a mark, a number, two
+    buttons -- the owner asked for pictures and numbers over sentences. -#}
+<link rel="stylesheet" href="{{ asset('student_stage.css') }}">
+<link rel="stylesheet" href="{{ asset('pay_stage.css') }}">
+<div class="st-page pay-page pay-stage pay-{{ state }}">
+  <section class="pay-card" aria-labelledby="result-h">
+    {% if test %}<p class="pay-test">{{ icon("info") }}Môi trường thử{% if gateway %} · {{ gateway }}{% endif %} · không có tiền thật</p>{% endif %}
+
     {% if state == "paid" %}
-      <div class="pay-mark ok" aria-hidden="true">{{ icon("check-circle") }}</div>
+      <div class="pay-hero">
+        <img class="pay-mascot" src="/static/art/speakup_mascot.png" alt="" width="132" height="118">
+        <span class="pay-mark ok" aria-hidden="true">{{ icon("check") }}</span>
+      </div>
       <h1 id="result-h">Thanh toán thành công</h1>
       <p class="pay-lede">
-        <b>{{ order.runs }} lượt</b> {% if order.credited %}đã được cộng vào ví của bạn.{% else %}sẽ được cộng vào ví trong ít phút.{% endif %}
-        Lượt mua không hết hạn theo chu kỳ; lượt miễn phí của chu kỳ vẫn được dùng trước.
+        <span class="visually-hidden">{{ order.runs }} lượt {% if order.credited %}đã vào ví{% else %}đang vào ví{% endif %}</span>
+        <span class="pay-gain" aria-hidden="true"><b>+{{ order.runs }}</b> lượt</span>
+        <span class="pay-gain-note" aria-hidden="true">{% if order.credited %}đã vào ví{% else %}đang vào ví{% endif %}</span>
       </p>
-      <dl class="pay-facts">
-        <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
-        <dt>Đã thanh toán</dt><dd>{{ order.amount_vnd | vnd }}</dd>
-        <dt>Mã giao dịch</dt><dd><code>{{ order.reference or "—" }}</code></dd>
-        <dt>Lúc</dt><dd>{{ order.settled_at | vn_time }}</dd>
-      </dl>
-      <div class="button-row">
-        <a class="button" href="{{ back }}">{{ back_label }}</a>
-        <a class="button secondary" href="/billing/orders/{{ order.order_id }}/receipt">Xem biên nhận</a>
+      <div class="pay-ticket">
+        <dl class="pay-facts">
+          <div><dt>Số tiền</dt><dd class="pay-money">{{ order.amount_vnd | vnd }}</dd></div>
+          <div><dt>Cổng</dt><dd>{{ order.gateway_title }}</dd></div>
+          <div><dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd></div>
+          <div><dt>Lúc</dt><dd>{{ order.settled_at | vn_time }}</dd></div>
+        </dl>
       </div>
+      <div class="pay-actions">
+        <a class="pay-cta" href="/practice">{{ icon("mic") }}<span>Luyện nói ngay</span></a>
+        <a class="pay-ghost" href="/billing/orders/{{ order.order_id }}/receipt">{{ icon("printer") }}<span>Xem biên nhận</span></a>
+      </div>
+      <a class="pay-back" href="/credits">Lượt của tôi</a>
+
     {% elif state in ("failed", "cancelled", "expired") %}
-      <div class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</div>
+      <div class="pay-hero"><span class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</span></div>
       <h1 id="result-h">{% if state == "cancelled" %}Đã huỷ giao dịch{% elif state == "expired" %}Đơn đã hết hạn chờ{% else %}Thanh toán không thành công{% endif %}</h1>
-      {% if message %}<p class="pay-lede">{{ message }}</p>{% endif %}
-      <p>Ví lượt không thay đổi và không có khoản nào bị ghi nhận. Có thể đặt lại đơn.</p>
-      <dl class="pay-facts">
-        <dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd>
-        <dt>Số tiền</dt><dd>{{ order.amount_vnd | vnd }}</dd>
-      </dl>
-      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
+      <p class="pay-lede">Ví lượt không thay đổi.</p>
+      <div class="pay-ticket">
+        <dl class="pay-facts">
+          <div><dt>Số tiền</dt><dd class="pay-money">{{ order.amount_vnd | vnd }}</dd></div>
+          <div><dt>Mã đơn</dt><dd><code>{{ order.order_id }}</code></dd></div>
+        </dl>
+      </div>
+      <div class="pay-actions"><a class="pay-cta" href="/credits">{{ icon("refresh") }}<span>Đặt lại gói</span></a></div>
+
     {% elif state == "pending" %}
-      <div class="pay-mark" aria-hidden="true">{{ icon("hourglass") }}</div>
-      <h1 id="result-h">Đang chờ cổng thanh toán xác nhận</h1>
-      {% if message %}<p class="pay-lede">{{ message }}</p>{% endif %}
-      <p>Đơn <code>{{ order.order_id }}</code> chưa có kết quả. Trang sẽ cập nhật khi cổng báo về.</p>
-      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
+      <div class="pay-hero"><span class="pay-mark wait" aria-hidden="true">{{ icon("hourglass") }}</span></div>
+      <h1 id="result-h">Đang chờ cổng xác nhận</h1>
+      <p class="pay-lede">Đơn <code>{{ order.order_id }}</code> sẽ tự cập nhật khi cổng báo về.</p>
+      <div class="pay-actions"><a class="pay-cta" href="/credits">{{ icon("star") }}<span>Lượt của tôi</span></a></div>
+
     {% elif state == "left" %}
-      <div class="pay-mark" aria-hidden="true">{{ icon("info") }}</div>
+      <div class="pay-hero"><span class="pay-mark wait" aria-hidden="true">{{ icon("info") }}</span></div>
       <h1 id="result-h">Bạn đã rời trang thanh toán</h1>
-      <p class="pay-lede">Chưa có khoản nào được trả qua {{ gateway }}, và không có gì thay đổi.</p>
-      <p>Phiên thanh toán tự hết hạn sau ít phút. Muốn mua, hãy đặt lại đơn.</p>
-      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
+      <p class="pay-lede">Chưa trả gì qua {{ gateway }}. Đơn tự hết hạn sau ít phút.</p>
+      <div class="pay-actions"><a class="pay-cta" href="/credits">{{ icon("refresh") }}<span>Đặt lại gói</span></a></div>
+
     {% elif state == "unconfirmed" %}
-      <div class="pay-mark" aria-hidden="true">{{ icon("hourglass") }}</div>
+      <div class="pay-hero"><span class="pay-mark wait" aria-hidden="true">{{ icon("hourglass") }}</span></div>
       <h1 id="result-h">Chưa xác nhận được với {{ gateway }}</h1>
-      <p class="pay-lede">Hệ thống chưa hỏi được {{ gateway }} về khoản thanh toán này.</p>
-      <p>Nếu bạn đã trả, đơn sẽ được ghi nhận khi {{ gateway }} báo về. Xem lại sau ít phút.</p>
-      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
+      <p class="pay-lede">Nếu bạn đã trả, đơn sẽ được ghi nhận khi {{ gateway }} báo về.</p>
+      <div class="pay-actions"><a class="pay-cta" href="/credits">{{ icon("star") }}<span>Lượt của tôi</span></a></div>
+
     {% else %}
-      <div class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</div>
+      <div class="pay-hero"><span class="pay-mark bad" aria-hidden="true">{{ icon("alert") }}</span></div>
       <h1 id="result-h">Không xác nhận được kết quả thanh toán</h1>
-      <p>
-        {% if state == "amount" %}Số tiền cổng báo về không khớp với đơn, nên kết quả không được ghi nhận.
-        {% else %}Địa chỉ trả về không có chữ ký hợp lệ hoặc không khớp đơn nào, nên không có gì thay đổi.{% endif %}
+      <p class="pay-lede">
+        {% if state == "amount" %}Số tiền cổng báo về không khớp với đơn.{% else %}Địa chỉ trả về không hợp lệ.{% endif %}
+        Không có gì thay đổi.
       </p>
-      <div class="button-row"><a class="button" href="{{ back }}">{{ back_label }}</a></div>
+      <div class="pay-actions"><a class="pay-cta" href="/credits">{{ icon("star") }}<span>Lượt của tôi</span></a></div>
     {% endif %}
   </section>
 </div>

@@ -47,7 +47,6 @@ def dispatch(request: ProcessingRequest, audio_key: str, task: Task, account_id:
             "task": task_message(task),
             "qc": {"thresholds": asdict(thresholds), "version": qc_version},
             "model": active_model_name(),
-            "speaker_id": request.speaker_id,
             "task_id": request.task_id,
             "account_id": account_id,
             # D050: BullMQ runs a lower priority first; every recording is an
@@ -80,16 +79,7 @@ def settle_charge(rid: str) -> None:
             and report.assessment is not None
         )
         seconds = report.qc.duration_ms / 1000 if report.qc else None
-        # D057: the tokens the recogniser used, counted by it where it can.
-        asr = report.asr
-        metering.settle(
-            key=rid,
-            action="assessment",
-            result=result,
-            seconds=seconds,
-            output_tokens=asr.output_tokens if asr else None,
-            words=len(asr.words) if asr else None,
-        )
+        metering.settle(key=rid, action="assessment", result=result, seconds=seconds)
     except Exception:  # noqa: BLE001 - see the docstring
         logger.exception("could not settle the charge of %s", rid)
 
@@ -113,7 +103,6 @@ def on_scoring(message: dict) -> None:
         # must_exist: a response deleted while it was scored is not re-created.
         repo.save(
             report,
-            message["speaker_id"],
             message["task_id"],
             account_id=message["account_id"],
             must_exist=True,

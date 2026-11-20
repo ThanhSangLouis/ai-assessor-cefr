@@ -334,7 +334,6 @@ def _process(seconds: float, sr: int = 16_000):
     return ResponseProcessor(asr_engine=engine, vad=EnergyVad()).process(
         ProcessingRequest(
             response_id="r-dai",
-            speaker_id="SV-001",
             task_id="P5",
             audio_path="dai.wav",
             prompt_version="v1",

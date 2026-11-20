@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 import pytest
+from dbutil import email_of
 from test_lessons_integration import (
     KEYWORD_TEXT,
     KEYWORDS,
@@ -166,7 +167,7 @@ def test_erasing_a_response_deletes_its_object(on_objects):
     student = login_as(m, "SV-001")
     rid = submit_assessment(student)
     admin = login_as(m, "QT-01", "admin")
-    body = {"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+    body = {"email": email_of("SV-001"), "confirm_email": email_of("SV-001")}
     assert admin.post("/api/v1/admin/erase", json=body).status_code == 200  # D078: admin only
     assert not m.store.exists(f"{rid}.wav")
     assert student.get(f"/api/v1/responses/{rid}/audio").status_code == 404
@@ -213,7 +214,8 @@ def test_the_learning_part_writes_its_own_database_and_is_erased_there(tmp_path,
 
     admin = login_as(main, "QT-01", "admin")
     erased = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert erased.status_code == 200 and erased.json()["lesson_attempts"] == 1
     assert LessonRepository(learning_db, seed=False).count_attempts(who) == 0

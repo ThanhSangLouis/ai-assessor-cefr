@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from aicefr.api.deps import ROLE_HOME, require_login, set_session_cookie
 from aicefr.api.schemas import SIGN_IN_NAME
 from aicefr.auth.sessions import device_label
+from aicefr.config import get_settings
 from aicefr.notify.email import EmailError, EmailSender
 from aicefr.notify.messages import code_email, read_unsubscribe_token
 from aicefr.storage.audit_repository import AuditLog
@@ -76,10 +77,16 @@ def send_code(row: dict, purpose: str) -> str:
     if code is None:
         return "wait"
     try:
-        s.sender.send(code_email(row["email"], purpose, code, EMAIL_CODE_MINUTES))
+        # The card's logo and links point at the public address; the greeting
+        # uses the name the person gave, when there is one.
+        site = (get_settings().public_url or "").rstrip("/")
+        email = code_email(
+            row["email"], purpose, code, EMAIL_CODE_MINUTES, site, row.get("full_name") or ""
+        )
+        s.sender.send(email)
     except EmailError as e:
         raise HTTPException(502, f"chưa gửi được email: {e}") from e
-    s.audit_log.write(row["pseudonym"], f"email.code_{purpose}", row["account_id"], None)
+    s.audit_log.write(row["account_id"], f"email.code_{purpose}", row["account_id"], None)
     return "sent"
 
 
@@ -102,7 +109,7 @@ def forgot_by_email(body: ForgotEmailIn) -> dict:
     s = svc()
     if s.sender is None:
         raise HTTPException(503, OFF)
-    row = s.auth.by_sign_in_name(body.email.strip())
+    row = s.auth.get_by_email(body.email.strip())
     if row is not None and row.get("email") and not row["disabled"]:
         send_code(row, "reset")
     return {
@@ -130,10 +137,10 @@ def reset_by_email(body: ForgotResetIn, request: Request, response: HttpResponse
     if done is None:
         raise HTTPException(401, "email hoặc mã không đúng, hoặc mã đã hết hạn")
     token, row = done
-    s.audit_log.write(row["pseudonym"], "account.reset_by_email", row["account_id"], None)
+    s.audit_log.write(row["account_id"], "account.reset_by_email", row["account_id"], None)
     set_session_cookie(response, token)
     response.headers.update(NO_STORE)
-    return {"pseudonym": row["pseudonym"], "home": ROLE_HOME.get(Role(row["role"]), "/")}
+    return {"email": row["email"], "home": ROLE_HOME.get(Role(row["role"]), "/")}
 
 
 # ================================================================= the account's own email
@@ -179,7 +186,7 @@ def send_verification(account: Account = Depends(require_login)) -> dict:
 def verify(body: CodeIn, account: Account = Depends(require_login)) -> dict:
     if not svc().auth.verify_email(account.account_id, body.code):
         raise HTTPException(422, "mã không đúng hoặc đã hết hạn; bấm gửi lại để nhận mã mới")
-    svc().audit_log.write(account.pseudonym, "email.verified", account.account_id, None)
+    svc().audit_log.write(account.account_id, "email.verified", account.account_id, None)
     return {"verified": True}
 
 

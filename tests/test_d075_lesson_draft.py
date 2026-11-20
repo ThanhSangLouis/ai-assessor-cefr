@@ -1,10 +1,10 @@
-"""A teacher asks the language model for a lesson draft, paid like a learner's AI call (D075).
+"""A teacher asks the language model for a lesson draft (D075), free, five a day (D107).
 
 * the draft fills the "Bài học mới" form -- title, summary, model text, key
   words, free prompt -- and saves nothing; the teacher corrects and creates it;
 * key words the model claims but that are not in its own text are dropped;
-* on a metered deployment the teacher's own runs pay: the upgrade's price,
-  held before the model is asked, charged when it answered, released when not;
+* D107: the teacher pays nothing, on a metered deployment too, and may ask
+  for five drafts in 24 hours; a draft the model failed does not count;
 * the same daily cap and day's counters as the learners' upgrades;
 * learners cannot ask for one.
 """
@@ -90,7 +90,8 @@ def test_the_request_names_the_band_and_its_length():
 def test_a_teacher_gets_a_draft_for_the_form(tmp_path, monkeypatch, model):
     m = boot(tmp_path, monkeypatch)
     teacher = login_as(m, "GV-01", "teacher")
-    assert teacher.get(DRAFT_URL).json() == {"available": True, "price": None}
+    offer = {"available": True, "price": None, "daily": 5, "daily_left": 5}
+    assert teacher.get(DRAFT_URL).json() == offer
 
     r = teacher.post(DRAFT_URL, json=BODY)
 
@@ -112,31 +113,32 @@ def test_learners_cannot_ask_for_a_draft(tmp_path, monkeypatch, model):
     assert student.get(DRAFT_URL).status_code == 403
 
 
-def test_metered_the_teachers_runs_pay_for_the_draft(tmp_path, monkeypatch, model):
-    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
+def test_metered_a_teachers_draft_is_free_five_a_day(tmp_path, monkeypatch, model):
+    # D107: the system pays the model; the teacher's wallet is never touched.
+    m = boot(tmp_path, monkeypatch, AICEFR_METERING="on", AICEFR_PRICE_UPGRADE_RUNS="1")
     teacher = login_as(m, "GV-01", "teacher")
-    assert teacher.get(DRAFT_URL).json()["price"] == {"runs": 0.3, "idpoint": 600}
+    assert teacher.get(DRAFT_URL).json()["price"] is None
+    before = teacher.get("/api/v1/me/credits").json()["free_runs_left"]
 
-    assert teacher.post(DRAFT_URL, json=BODY).status_code == 200
+    for _ in range(5):
+        assert teacher.post(DRAFT_URL, json=BODY).status_code == 200
+    r = teacher.post(DRAFT_URL, json=BODY)
 
+    assert r.status_code == 429 and "tối đa 5 bản nháp" in r.json()["detail"]
+    assert teacher.get(DRAFT_URL).json()["daily_left"] == 0
     ledger = m.core_parts.state["metering"].history(account_id(m, "GV-01"))
-    entry = next(e for e in ledger if e["action"] == "lesson_draft")
-    assert (entry["state"], entry["charged"]) == ("charged", 300)
-    assert (entry["input_tokens"], entry["output_tokens"]) == (300, 220)
-    history = teacher.get("/api/v1/me/credits").json()["history"]
-    assert any(h["action"] == "lesson_draft" for h in history)
+    assert not any(e["action"] == "lesson_draft" for e in ledger)
+    assert teacher.get("/api/v1/me/credits").json()["free_runs_left"] == before
 
 
-def test_metered_a_failed_draft_costs_nothing(tmp_path, monkeypatch, model):
+def test_a_failed_draft_does_not_count_against_the_day(tmp_path, monkeypatch, model):
     m = boot(tmp_path, monkeypatch, AICEFR_METERING="on")
     teacher = login_as(m, "GV-01", "teacher")
     model.fail = True
 
     assert teacher.post(DRAFT_URL, json=BODY).status_code == 502
 
-    ledger = m.core_parts.state["metering"].history(account_id(m, "GV-01"))
-    entry = next(e for e in ledger if e["action"] == "lesson_draft")
-    assert (entry["state"], entry["charged"]) == ("released", 0)
+    assert teacher.get(DRAFT_URL).json()["daily_left"] == 5
 
 
 def test_the_daily_cap_counts_drafts_too(tmp_path, monkeypatch, model):
@@ -150,5 +152,5 @@ def test_the_daily_cap_counts_drafts_too(tmp_path, monkeypatch, model):
 def test_without_a_language_model_no_draft_is_offered(tmp_path, monkeypatch):
     m = boot(tmp_path, monkeypatch, AICEFR_COACH_PROVIDER="off")
     teacher = login_as(m, "GV-01", "teacher")
-    assert teacher.get(DRAFT_URL).json() == {"available": False, "price": None}
+    assert teacher.get(DRAFT_URL).json()["available"] is False
     assert teacher.post(DRAFT_URL, json=BODY).status_code == 503

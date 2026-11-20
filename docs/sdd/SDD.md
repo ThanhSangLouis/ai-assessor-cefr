@@ -179,31 +179,40 @@ File: `docs/sdd/diagrams/01a_usecase_sinhvien.mmd`
 %% Day la so do THIET KE: no mo ta he thong PHAI LAM GI, khong phai da lam
 %% duoc toi dau. Trang thai hien thuc la thong tin khac loai, nam o bang
 %% "Do phu hien thuc cua use case" trong bao cao tuan.
-%% Ban 1.16 (D078): moi viec cua sinh vien di theo band -- chon band, hoc lo
-%% trinh band, nop bai theo de cua band, xem diem kem band; nap luot qua Stripe.
+%% Ban 1.34 (D109): ve lai theo he thong dang chay. Them UC-36 (vao lop),
+%% UC-37 (tu dang ky), UC-38, UC-39 (luyen lai tu, doan doc AI), UC-40 (tu xoa).
 flowchart LR
     SV(("Sinh viên"))
     CTT(("Cổng thanh toán"))
+    GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
+        UC37["UC-37 Sinh viên tự đăng ký và xác minh email"]
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
         UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
+        UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
+        UC40["UC-40 Sinh viên tự xoá tài khoản"]
+        UC27["UC-27 Sinh viên nạp lượt qua payOS"]
+        UC36["UC-36 Sinh viên vào lớp bằng mã lớp hoặc lời mời"]
         UC24["UC-24 Sinh viên chọn band bắt đầu và band đích"]
         UC19["UC-19 Sinh viên học theo lộ trình band"]
         UC01["UC-01 Nộp bài nói theo band và nhận kết quả"]
-        UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
-        UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
         UC04["UC-04 Xem báo cáo có bằng chứng"]
-        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
         UC15["UC-15 Sinh viên xem kết quả theo thời gian"]
         UC26["UC-26 Sinh viên ôn sổ cụm từ"]
-        UC27["UC-27 Sinh viên nạp lượt qua Stripe"]
-        UC16["UC-16 Sinh viên xuất dữ liệu cá nhân và hồ sơ năng lực"]
+        UC02["UC-02 Nộp lại bài khi bị từ chối vì chất lượng"]
+        UC03["UC-03 Xử lý bài nói qua pipeline chấm điểm"]
+        UC25["UC-25 Sinh viên nhờ AI viết lại bài lên band kế"]
+        UC38["UC-38 Sinh viên luyện lại từ máy nghe kém rõ"]
+        UC39["UC-39 Sinh viên đọc đoạn văn AI viết quanh từ đang luyện dở"]
     end
 
+    SV --> UC37
     SV --> UC17
     SV --> UC35
+    SV --> UC16
+    SV --> UC40
     SV --> UC24
     SV --> UC19
     SV --> UC01
@@ -211,22 +220,36 @@ flowchart LR
     SV --> UC15
     SV --> UC26
     SV --> UC27
-    SV --> UC16
+    SV --> UC36
     UC27 --- CTT
+    UC36 --- GV
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: dat use
-    %% case mo rong SAU use case co so de mui ten `extend` tro nguoc ve trai.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: cot 1 la
+    %% tai khoan, luot va lop; cot 2 la hoc va ket qua; use case mo rong va use
+    %% case duoc gop dung ben phai use case goc, cho hinh vua kho A4.
+    UC37 ~~~ UC24
+    UC17 ~~~ UC19
+    UC35 ~~~ UC01
+    UC16 ~~~ UC04
+    UC40 ~~~ UC15
+    UC27 ~~~ UC26
     UC01 ~~~ UC02
+    UC01 ~~~ UC03
     UC04 ~~~ UC25
+    UC04 ~~~ UC38
+    UC38 ~~~ UC39
 
     %% include: tu use case GOC --> use case duoc gop (luon xay ra)
     %% extend : tu use case MO RONG --> use case goc (chi xay ra co dieu kien)
     %% UC-03 khong co tac nhan: no la use case noi bo, chay vi UC-01 include no.
     %% Use case MO RONG khong noi truc tiep voi tac nhan: sinh vien mo bao cao
-    %% (UC-04) roi moi nho AI viet lai (UC-25); nop bai (UC-01) roi moi nop lai.
+    %% (UC-04) roi moi nho AI viet lai (UC-25) hay luyen lai tu chua ro (UC-38);
+    %% doc doan van AI (UC-39) mo duoc khi con tu 3 tu luyen do (UC-38).
     UC01 -. include .-> UC03
     UC02 -. extend .-> UC01
     UC25 -. extend .-> UC04
+    UC38 -. extend .-> UC04
+    UC39 -. extend .-> UC38
 ```
 
 ![Hình 1a. Use case Sinh viên](images/01a_usecase_sinhvien.png)
@@ -244,12 +267,15 @@ File: `docs/sdd/diagrams/01b_usecase_giangvien.mmd`
 %% Ban 1.16 (D078): giang vien duyet va cham lai bai, soan lo trinh theo band
 %% (co the nho AI soan nhap), giu ngan hang de theo band, xep lop va giao lo
 %% trinh band, xem thong ke lop theo band.
+%% Ban 1.34 (D109): lop chi them sinh vien bang loi moi hay ma lop (UC-30, sinh
+%% vien tu vao o UC-36); quen mat khau (UC-35) dung cho moi vai tro.
 flowchart LR
     GV(("Giảng viên<br/>đánh giá"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
         UC05["UC-05 Giảng viên duyệt bài trong hàng đợi"]
         UC06["UC-06 Giảng viên sửa kết quả AI"]
         UC20["UC-20 Giảng viên soạn lộ trình theo band và theo dõi lượt luyện"]
@@ -261,6 +287,7 @@ flowchart LR
     end
 
     GV --> UC17
+    GV --> UC35
     GV --> UC05
     GV --> UC20
     GV --> UC29
@@ -293,12 +320,16 @@ File: `docs/sdd/diagrams/01c_usecase_quantri.mmd`
 %% Day la so do THIET KE: mo ta he thong PHAI LAM GI, khong phai tien do.
 %% Ban 1.16 (D078): mot trung tam, hoc vien tra theo luot -- quan tri vien dat
 %% gia luot va goi luot, theo doi AI viet lai; khong con goi dich vu (D075).
+%% Ban 1.34: tao lop va phan cong giang vien (UC-30, D071), theo doi don nap
+%% luot va doi soat voi payOS (UC-41, D099), quen mat khau (UC-35).
 flowchart LR
     QT(("Quản trị viên"))
+    CTT(("Cổng thanh toán"))
 
     subgraph SYS["Hệ thống AI Assessor CEFR"]
         direction TB
         UC17["UC-17 Đăng nhập và kết thúc phiên"]
+        UC35["UC-35 Đặt lại mật khẩu bằng mã gửi qua email"]
         UC10["UC-10 Quản trị viên tạo tài khoản và phân vai trò"]
         UC07["UC-07 Quản trị viên xoá dữ liệu của một người học"]
         UC08["UC-08 Quản trị viên cấu hình ngưỡng QC"]
@@ -307,6 +338,8 @@ flowchart LR
         UC32["UC-32 Quản trị viên đặt giá lượt và gói lượt"]
         UC34["UC-34 Quản trị viên cộng lượt cho một tài khoản"]
         UC33["UC-33 Quản trị viên theo dõi AI viết lại và chọn gói nhà cung cấp"]
+        UC30["UC-30 Giảng viên quản lý lớp và giao lộ trình band"]
+        UC41["UC-41 Quản trị viên theo dõi đơn nạp lượt và đối soát"]
     end
 
     QT --> UC17
@@ -318,13 +351,20 @@ flowchart LR
     QT --> UC34
     QT --> UC33
     QT --> UC07
+    QT --> UC35
+    QT --> UC30
+    QT --> UC41
+    UC41 --- CTT
 
-    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia chin
-    %% use case thanh hai cot (tai khoan va mo hinh; luot va AI) cho hinh vua A4.
+    %% Lien ket VO HINH, chi de xep bo cuc -- KHONG phai quan he UML: chia muoi
+    %% hai use case thanh hai cot (tai khoan, lop va mo hinh; luot, don va AI)
+    %% cho hinh vua A4.
     UC17 ~~~ UC12
     UC10 ~~~ UC32
     UC07 ~~~ UC34
     UC08 ~~~ UC33
+    UC35 ~~~ UC41
+    UC30 ~~~ UC09
 ```
 
 ![Hình 1c. Use case Quản trị viên](images/01c_usecase_quantri.png)
@@ -487,7 +527,7 @@ một bài nộp thì có bản ghi âm và có thời điểm nộp, bất kể
    giữa hai cái tên chính là ranh giới giữa hai hình.
 
    Trường đổi tên vì `transcript.transcript` là một cái tên lắp. Những hàng ghi
-   trước lúc đổi vẫn còn khoá cũ trong `report_json`, nên `Transcript.text`
+   trước lúc đổi vẫn còn khoá cũ trong `asr` (trước D104 là `report_json`), nên `Transcript.text`
    nhận cả hai tên khi đọc (`AliasChoices`). Hai chỗ làm việc trên JSON thô
    phải sửa tay vì chúng không đi qua model: `retention.py` xoá bản chép theo
    cả hai khoá — tìm một khoá thì nửa số hàng không bao giờ được xoá, và đó là
@@ -643,7 +683,7 @@ với kết hợp, và không nhìn ra được nếu bảng thuộc tính im l�
 | --- | --- | --- |
 | Thể **chứa** bộ phận | `test_every_composition_has_a_real_containing_field` | 10/10 có trường chứa thật |
 | Bộ phận thuộc **đúng một** thể, không dùng chung | `test_every_composition_part_has_exactly_one_owner` | 10/10 chỉ có một lớp chứa |
-| Vòng đời **trùng nhau** — xoá thể là mất bộ phận | Phần xét đoán, ghi bằng chữ ở đây | Cả 10 bộ phận đều được tuần tự hoá vào cột `report_json` của chính bài nộp; xoá dòng `response` là mất theo |
+| Vòng đời **trùng nhau** — xoá thể là mất bộ phận | Phần xét đoán, ghi bằng chữ ở đây | Cả 10 bộ phận đều là trường của chính document `response` (D104; trước là chuỗi `report_json`); xoá bài nộp là mất theo |
 
 Điều kiện thứ nhất là **cần chứ chưa đủ**: một lớp chứa lớp khác cũng có thể là
 **kết hợp** (hình thoi **rỗng**) nếu bộ phận sống độc lập hoặc bị dùng chung.
@@ -786,126 +826,166 @@ Ghi ở đây thay vì để hội đồng tự tìm. Chi tiết và số dòng 
 File: `docs/sdd/diagrams/03_sequence.mmd`
 
 ```mermaid
-%% SDD - So do 03: Sequence diagram
-%% Luong that trong ma: POST /api/v1/responses -> 202 ngay -> cham o hang doi viec
-%% Ten lop, ten port, ten endpoint va ten trang thai giu nguyen tieng Anh nhu trong ma nguon.
+%% SDD - So do 03: Sequence diagram nop mot bai noi va nhan ket qua
+%% Ve lai ban 1.34 (D109) theo luong that sau D044, D049, D050, D086, D088, D106:
+%% core nhan bai, giu truoc 1 luot, gui viec qua Redis toi dich vu speech; speech
+%% bao lai qua hang assessment.scoring; core luu, tinh luot, bao truc tiep cho
+%% trinh duyet (SSE) va may cua nguoi hoc (Web Push).
+%% Ten lop, ten ham, ten hang doi, endpoint va trang thai giu nguyen tieng Anh nhu ma nguon.
 sequenceDiagram
     autonumber
     actor SV as Sinh viên
     participant UI as Web UI
-    participant API as FastAPI Router
-    participant REPO as Repository
-    participant JQ as JobQueue
-    participant DEC as FirstMatchDecoder
-    participant RP as ResponseProcessor
-    participant QC as AudioQualityChecker
-    participant VAD as VoiceActivityDetector
-    participant ASR as AsrEngine
-    participant FE as FeatureExtractor
-    participant SC as Scorer
-    participant RR as ReviewRouter
+    participant API as core · responses_api
+    participant MET as core · MeteringFacade
+    participant REPO as core · Repository
+    participant BUS as Redis · BullMQ
+    participant SP as speech · ResponseProcessor
+    participant SC as core · scoring.on_scoring
+    participant LIVE as core · Live (SSE, Web Push)
     actor GV as Giảng viên
 
-    SV->>UI: Ghi âm hoặc chọn tệp rồi bấm Nộp bài
+    SV->>UI: Ghi âm theo đề của band rồi bấm Nộp bài
     UI->>API: POST /api/v1/responses (audio, task_id)
-    Note over API: speaker_id lấy từ phiên đăng nhập, form không có trường định danh
+    Note over API: account_id lấy từ phiên qua gateway, form không có trường định danh
     API->>API: sniff(head) · giới hạn 25 MiB · kiểm tra task_id
 
     alt Không nhận ra định dạng audio
         API-->>UI: 415 kèm hướng dẫn ghi âm lại
-        UI-->>SV: Hiện lỗi, mời nộp lại
     else Nhận được tệp
-        API->>REPO: save(Response, status QUEUED)
-        API->>JQ: enqueue(_score_response)
-        API-->>UI: 202 Accepted (response_id, status QUEUED)
-        UI-->>SV: Chuyển sang trang tiến trình
+        API->>MET: hold(account_id, "assessment", key=response_id)
+        alt Hết lượt (D049, D106)
+            MET-->>API: lời từ chối
+            API-->>UI: 402 · mời mua thêm lượt ở trang Lượt của tôi
+        else Giữ được 1 lượt
+            API->>REPO: save(Response, status QUEUED)
+            API->>BUS: send("speech.score", audio_key, task, qc, model)
+            API-->>UI: 202 Accepted (response_id, QUEUED)
+            UI->>LIVE: GET /api/v1/me/events (luồng SSE giữ mở)
+            UI-->>SV: Trang tiến trình
 
-        JQ->>REPO: set_status(RUNNING)
-        JQ->>DEC: decode(bytes, audio_path)
-        Note over DEC: Giải mã chạy ở nền chứ không trước khi trả 202: ffmpeg chuyển mã WebM mất vài giây
+            BUS->>SP: việc chấm (ưu tiên 1)
+            SP-->>BUS: status RUNNING
+            BUS->>SC: assessment.scoring
+            SC->>REPO: mark_running(response_id)
+            SP->>SP: giải mã ffmpeg · QC · VAD cắt im lặng · Whisper chép lời<br/>trích đặc trưng · chấm 0–6 và band · ReviewRouter
+            Note over SP: Không giữ khoá, không đọc DB: mọi thứ cần đều nằm trong việc gửi tới
 
-        alt DecodeError hoặc OSError
-            DEC-->>JQ: DecodeError
-            JQ->>REPO: set_status(FAILED, AUDIO_UNSUPPORTED)
-        else Giải mã được
-            DEC-->>JQ: PCM mono kèm sample rate
-            JQ->>RP: process(ProcessingRequest, pcm, sr)
-            RP->>QC: check(pcm, sr, channels, size_bytes)
-            QC-->>RP: QcResult (PASS / REVIEW / REJECT)
-
-            alt QcStatus REJECT
-                RP-->>JQ: Response status REJECTED
-            else QcStatus PASS hoặc REVIEW
-                RP->>VAD: segments(pcm, sr)
-                VAD-->>RP: Danh sách đoạn nói
-                RP->>RP: trim_to_speech · cắt im lặng hai đầu
-                Note over RP,ASR: VAD chạy TRƯỚC nhận dạng - cắt im lặng là cắt nguyên nhân gây lặp token
-                RP->>ASR: transcribe(pcm, sr)
-
-                alt AsrError
-                    ASR-->>RP: AsrError
-                    RP-->>JQ: Response status FAILED (ASR_FAILED)
-                else Bản chép rỗng
-                    ASR-->>RP: Transcript rỗng
-                    RP-->>JQ: Response status REVIEW_REQUIRED (ASR_EMPTY_TRANSCRIPT)
-                else Có bản chép
-                    ASR-->>RP: Transcript kèm mốc thời gian từng từ
-                    RP->>RP: detect_repetition · cắt vòng lặp, gắn ASR_HALLUCINATION
-                    RP->>FE: extract(words, segments, duration)
-                    FE-->>RP: FeatureSet
-                    RP->>SC: score(features)
-
-                    alt ModelNotFoundError
-                        SC-->>RP: ModelNotFoundError
-                        RP-->>JQ: Response status REVIEW_REQUIRED (MODEL_VERSION_MISSING)
-                    else Đặc trưng ngoài phân bố huấn luyện
-                        SC-->>RP: Assessment score None (SCORE_OUT_OF_DISTRIBUTION)
-                        RP-->>JQ: Response status REVIEW_REQUIRED
-                    else Chấm được
-                        SC-->>RP: Assessment (điểm 0-6 và band)
-                        RP->>RP: so phiên bản ASR và VAD với trained_with<br/>gắn ASR_VERSION_MISMATCH nếu lệch
-                        RP->>RR: route(qc, assessment, features)
-                        RR-->>RP: ReviewDecision
-                        RP-->>JQ: Response status COMPLETED hoặc REVIEW_REQUIRED
-                    end
-                end
+            alt Lỗi giải mã hoặc nhận dạng
+                SP-->>BUS: failed (AUDIO_UNSUPPORTED / ASR_FAILED)
+                BUS->>SC: assessment.scoring
+                SC->>REPO: set_status(FAILED)
+            else Có báo cáo
+                SP-->>BUS: report (COMPLETED, REVIEW_REQUIRED hoặc REJECTED)
+                BUS->>SC: assessment.scoring
+                SC->>REPO: save(report, must_exist)
             end
-            JQ->>REPO: save(Response) với status cuối cùng
+            SC->>MET: settle(key, result, seconds)
+            Note over MET: Có kết quả thì trừ 1 lượt (đã gồm AI viết lại bài đó, D107),<br/>lỗi hay bị từ chối vì chất lượng thì trả lượt
+            SC->>LIVE: response_finished(response_id)
+            LIVE-->>UI: sự kiện response.finished (SSE)
+            LIVE-->>SV: thông báo đẩy trên máy đã cài (D088)
+            UI->>API: GET /api/v1/responses/{response_id}
+            API-->>UI: 200 · band, điểm, bằng chứng, trạng thái duyệt
+            UI-->>SV: Trang báo cáo
         end
     end
 
-    loop Trang tiến trình hỏi lại vài giây một lần
-        UI->>API: GET /api/v1/responses/{response_id}/status
-        API->>REPO: status_of(response_id)
-        REPO-->>API: status và is_pending
-        API-->>UI: 200 OK
-    end
-
-    alt status REVIEW_REQUIRED
+    opt status REVIEW_REQUIRED · bài của sinh viên trong lớp đang chạy (D071, D108, D109)
+        LIVE-->>GV: hàng đợi đổi (SSE), số trên thanh bên tăng
         GV->>API: GET /api/v1/review/queue
-        API->>REPO: queue_with_locks(REVIEW_REQUIRED)
-        REPO-->>API: Danh sách bài chờ kèm ai đang giữ khóa
-        API-->>GV: Hàng đợi duyệt
+        API->>REPO: queue của học viên trong lớp mình
         GV->>API: POST /api/v1/review/{response_id}/lock
-        API->>REPO: lock_response(response_id, reviewer_id)
-        REPO-->>API: 200 nếu giành được khóa, 409 nếu người khác đang giữ
-        GV->>API: POST /api/v1/review/{response_id}
-        API->>REPO: apply_review(...) và ghi audit_log
-        REPO-->>API: Báo cáo với teacher_verified true
-        API-->>GV: 200 OK
+        API->>REPO: lock_response · 409 nếu người khác đang giữ
+        GV->>API: POST /api/v1/review/{response_id} (giữ hoặc sửa band, lý do)
+        API->>REPO: apply_review · ghi audit_log
+        API->>LIVE: review_done(response_id)
+        LIVE-->>SV: "Giảng viên đã xác nhận" (SSE và thông báo đẩy)
     end
-
-    SV->>UI: Mở trang kết quả
-    UI->>API: GET /api/v1/responses/{response_id}
-    API->>REPO: get(response_id)
-    REPO-->>API: Response
-    API-->>UI: 200 OK kèm báo cáo
-    UI-->>SV: Hiện band, điểm, bằng chứng và trạng thái duyệt
 ```
 
 ![Hình 3. Sơ đồ tuần tự](images/03_sequence.png)
 
 *Hình 3. Sơ đồ tuần tự. File nguồn: `diagrams/03_sequence.mmd`*
+
+### 3.3b. Sơ đồ tuần tự: sinh viên vào lớp (D109)
+
+Lớp cho giảng viên quyền xem và duyệt bài của thành viên, nên chỉ việc của sinh viên mới đưa sinh viên vào lớp: chấp nhận lời mời hoặc nhập mã lớp. Lớp học nằm ở core; địa chỉ email nằm ở dịch vụ định danh. Vì vậy core chỉ phát sự kiện `classroom.invited` và `classroom.joined` lên bus, còn dịch vụ định danh nghe và gửi thư. Đây là cùng kiểu Observer với email thanh toán (D096). Thư chỉ gửi tới email đã xác minh và có hộp thư thật; mỗi sự kiện gửi đúng một lần dù bus giao lại.
+
+File: `docs/sdd/diagrams/11_sequence_vao_lop.mmd`
+
+```mermaid
+%% SDD - So do 11: Sequence diagram sinh vien vao lop (D109)
+%% Giang vien moi bang email hoac dua ma lop; sinh vien tu chap nhan hay nhap ma.
+%% Core (assessment) giu lop va phat su kien len bus; dich vu dinh danh giu dia
+%% chi email nen nghe su kien va gui thu qua Resend (cung kieu Observer voi email
+%% thanh toan D096). Ten ham, su kien va endpoint giu nguyen nhu ma nguon.
+sequenceDiagram
+    autonumber
+    actor GV as Giảng viên
+    actor SV as Sinh viên
+    participant API as core · classes_api
+    participant CR as core · ClassroomRepository
+    participant BUS as Redis Streams
+    participant ID as identity · notify.classes
+    participant MAIL as Resend
+
+    rect rgb(255, 243, 224)
+    Note over GV,MAIL: Cách 1 · lời mời
+    GV->>API: POST /api/v1/classes/{id}/members (email sinh viên)
+    API->>CR: invite(class_id, account_id)
+    Note over CR: Một lệnh cập nhật có điều kiện: chưa là thành viên, chưa được mời
+    CR-->>API: "invited"
+    API->>BUS: publish classroom.invited (class_name, account_id, by)
+    API-->>GV: 200 · invited
+    BUS->>ID: on_invited(payload)
+    ID->>ID: email đã xác minh, có hộp thư, chưa gửi cho sự kiện này
+    ID->>MAIL: "Lời mời vào lớp" · nút Xem lời mời
+    MAIL-->>SV: email
+    SV->>API: GET /api/v1/me/classes (trang Lớp của tôi, số trên thanh bên)
+    API->>CR: invitations_of(account_id)
+    API-->>SV: lời mời: tên lớp, giảng viên
+
+    alt Sinh viên bấm Vào lớp
+        SV->>API: POST /api/v1/me/classes/{id}/accept
+        API->>CR: accept · chuyển từ invited sang members (lớp chưa lưu trữ)
+        API->>BUS: publish classroom.joined (via invite, teacher_ids, members)
+        API-->>SV: 200 · joined
+    else Sinh viên bấm Từ chối
+        SV->>API: POST /api/v1/me/classes/{id}/decline
+        API->>CR: decline · bỏ khỏi invited
+        API-->>SV: 200 · giảng viên không có quyền gì
+    end
+    end
+
+    rect rgb(227, 244, 234)
+    Note over GV,MAIL: Cách 2 · mã lớp
+    GV->>API: POST /api/v1/classes/{id}/code
+    API->>CR: set_join_code(on) · 6 ký tự, chỉ mục duy nhất
+    API-->>GV: join_code (đọc cho cả lớp)
+    SV->>API: POST /api/v1/me/classes/join (code)
+    API->>API: giới hạn 10 lần một phút cho mỗi tài khoản
+    API->>CR: join_by_code(code, account_id)
+    alt Mã đúng, lớp đang chạy
+        CR-->>API: lớp, joined
+        API->>BUS: publish classroom.joined (via code, teacher_ids, members)
+        API-->>SV: 200 · đã vào lớp
+    else Mã sai, đã đổi, đã tắt hay lớp đã lưu trữ
+        API-->>SV: 404 · mã lớp không đúng hoặc lớp đã kết thúc
+    end
+    end
+
+    BUS->>ID: on_joined(payload)
+    loop Mỗi giảng viên của lớp có email đã xác minh
+        ID->>MAIL: "Học viên mới vào lớp" · cách vào, sĩ số, nút Mở lớp
+        MAIL-->>GV: email
+    end
+    Note over API,CR: Từ đây teaches(giảng viên, sinh viên) đúng: giảng viên xem và duyệt bài.<br/>Sinh viên rời lớp (POST .../leave) hoặc lớp bị lưu trữ thì quyền mất ngay.
+```
+
+![Hình 3b. Sinh viên vào lớp bằng lời mời hoặc mã lớp](images/11_sequence_vao_lop.png)
+
+*Hình 3b. Sinh viên vào lớp bằng lời mời hoặc mã lớp, kèm email cho sinh viên và giảng viên. File nguồn: `diagrams/11_sequence_vao_lop.mmd`*
 
 **Cách đọc.** Trục dọc là thời gian, chảy từ trên xuống. Mỗi cột là một đối tượng tham gia. Mũi tên đặc là lời gọi đồng bộ, mũi tên nét đứt là giá trị trả về. Số thứ tự do `autonumber` sinh ra giúp hội đồng chỉ đúng bước cần hỏi. Các khối `alt/else` lồng nhau là những điểm rẽ nhánh quan trọng: khối ngoài cùng tách audio không giải mã được khỏi audio giải mã được; bên trong lần lượt là ba mức `QcStatus` (REJECT dừng hẳn, PASS và REVIEW đều chấm tiếp), rồi ASR lỗi / bản chép rỗng / có bản chép, rồi nhánh không nạp được mô hình. Điểm thiết kế cần nhấn: `submit_response` **không** giải mã audio trước khi trả lời — nó chỉ đoán định dạng từ byte đầu tệp, lưu báo cáo ở `QUEUED` và trả `202 Accepted` **ngay**, rồi đẩy việc chấm qua cổng `JobQueue`. Giải mã nằm ở nền vì `ffmpeg` chuyển mã một bản WebM dài mất vài giây, đủ để phá cam kết 202 trong 300 ms; nền chuyển `QUEUED → RUNNING` rồi ghi trạng thái cuối (`COMPLETED`, `REVIEW_REQUIRED`, `REJECTED` hoặc `FAILED`). Vì vậy sinh viên không phải chờ, và khối `loop` cho thấy trang tiến trình hỏi lại bằng `GET /api/v1/responses/{response_id}/status`. Khối `alt` áp chót là nhánh cờ chuyển giảng viên: chỉ sau khi giảng viên gửi quyết định thì `teacher_verified` mới thành `true`.
 
@@ -921,6 +1001,8 @@ File: `docs/sdd/diagrams/04_activity.mmd`
 %% SDD - So do 04: Activity diagram - vong doi mot bai noi
 %% Khop may trang thai that: QUEUED -> RUNNING -> COMPLETED / REVIEW_REQUIRED / REJECTED / FAILED
 %% Ba muc QC: PASS / REVIEW / REJECT (aicefr/qc/audio_qc.py). Chi tiet ma ly do xem enum ReasonCode muc 4.0.
+%% Ban 1.34: giu luot truoc khi nhan (D049, D106), cham o dich vu speech qua Redis (D050),
+%% band A1..C2 (D076), tinh luot theo ket qua (D107).
 flowchart TD
     A0(["Nhận POST /api/v1/responses"]) --> A1["Kiểm tra phiên đăng nhập, task_id<br/>và kích thước tối đa 25 MiB"]
     A1 --> D1{"Hợp lệ?"}
@@ -930,8 +1012,10 @@ flowchart TD
     A2 --> D2{"Nhận ra định dạng?"}
     D2 -- Không --> E2["415 · không nhận ra định dạng audio"]
 
-    D2 -- Có --> A3["Lưu báo cáo status QUEUED, trả 202 Accepted ngay;<br/>JobQueue.enqueue đặt status RUNNING"]
-    A3 --> A3b["FirstMatchDecoder.decode ở nền<br/>SoundFileDecoder hoặc FfmpegDecoder"]
+    D2 -- Có --> D2a{"Giữ được 1 lượt?<br/>MeteringFacade.hold"}
+    D2a -- Không --> E1b["402 · hết lượt, mời mua thêm"]
+    D2a -- Có --> A3["Lưu báo cáo status QUEUED, trả 202 Accepted ngay;<br/>gửi việc speech.score qua Redis, speech báo RUNNING"]
+    A3 --> A3b["Dịch vụ speech: FirstMatchDecoder.decode<br/>SoundFileDecoder hoặc FfmpegDecoder"]
     A3b --> D2b{"Giải mã được?"}
     D2b -- Không --> E2b["status FAILED · AUDIO_UNSUPPORTED"]
 
@@ -952,7 +1036,7 @@ flowchart TD
     D5 -- ModelNotFoundError --> E6["status REVIEW_REQUIRED · MODEL_VERSION_MISSING"]
     D5 -- "Ngoài phân bố huấn luyện" --> E6b["status REVIEW_REQUIRED · SCORE_OUT_OF_DISTRIBUTION"]
 
-    D5 -- Có --> A7["Quy điểm 0-6 về band A2 B1 B2 · EvidenceBuilder sinh bằng chứng ·<br/>so phiên bản ASR/VAD với trained_with · ReviewRouter gắn cờ"]
+    D5 -- Có --> A7["Quy điểm 0-6 về band A1 … C2 · EvidenceBuilder sinh bằng chứng ·<br/>so phiên bản ASR/VAD với trained_with · ReviewRouter gắn cờ"]
     A7 --> D6{"Có cờ REVIEW nào<br/>kể cả cờ QC?"}
     D6 -- Không --> Z1(["status COMPLETED<br/>teacher_verified false"])
     D6 -- Có --> Z3(["status REVIEW_REQUIRED<br/>vào hàng đợi giảng viên"])
@@ -962,12 +1046,16 @@ flowchart TD
     E6b --> Z3
     Z3 --> A8["Giảng viên khóa bài, duyệt hoặc sửa điểm;<br/>Repository.apply_review ghi audit_log, teacher_verified true"]
 
+    Z9["scoring.settle_charge: có kết quả thì trừ 1 lượt,<br/>FAILED hay REJECTED thì trả lượt; báo trực tiếp qua SSE và Web Push"]
+    E2b --> Z9
+    E3 --> Z9
+    E4 --> Z9
+    Z1 --> Z9
+    Z3 --> Z9
     E1 --> Z4(["Trả báo cáo kèm mã lý do qua<br/>GET /api/v1/responses/{id}"])
+    E1b --> Z4
     E2 --> Z4
-    E2b --> Z4
-    E3 --> Z4
-    E4 --> Z4
-    Z1 --> Z4
+    Z9 --> Z4
     A8 --> Z4
 ```
 
@@ -987,13 +1075,13 @@ File: `docs/sdd/diagrams/05_erd.mmd`
 %% SDD - Diagram 05: ERD - phan cham diem va van hanh (MongoDB, database core)
 %% Sau D060 moi aggregate root cua so do lop la mot collection; phan hop thanh
 %% nam trong document cua goc, ghi bang truong kieu mang. Tach ba hinh cho ty le
-%% in A4: hinh 5c ve dinh danh; viec duyet tach thanh review_session (D082).
+%% in A4: hinh 5c ve dinh danh. D104: khoa duyet nam lai trong response, bao cao
+%% la chinh cac truong cua response (khong con chuoi JSON).
 %% Duong lien: tham chieu do ma giu (MongoDB khong ep khoa ngoai).
 erDiagram
     account ||--o{ response : "nộp · account_id"
     task ||--o{ response : "đề bài · task_id"
-    response ||--o| review_session : "việc duyệt · response_id (D082)"
-    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071)"
+    account }o--o{ classroom : "dạy · teacher_ids, học · members (D071), được mời · invited (D109)"
     account ||--o{ audit_log : "ghi · actor_id"
 
     account {
@@ -1017,25 +1105,24 @@ erDiagram
         string account_id
         string task_id
         string status "QUEUED · RUNNING · COMPLETED · REVIEW_REQUIRED · REJECTED · FAILED"
-        float overall_0_6 "null khi chưa chấm được"
-        string overall_band "A1 … C2 (D059)"
-        int teacher_verified
-        string report_json "toàn bộ báo cáo, nguồn sự thật"
-        array reviews "Review: giảng viên, điểm và band cũ mới, lý do, mở lúc, quyết lúc"
+        object qc "kiểm tra chất lượng âm thanh"
+        object asr "bản chép lời và từng từ"
+        object features "các phép đo"
+        object assessment "điểm 0–6, band A1 … C2, tiêu chí, giảng viên đã xác nhận (D104)"
+        array reasons "vì sao bị từ chối hay chuyển giảng viên"
+        object review_lock "ai đang giữ bài để duyệt, tới lúc nào (D104)"
+        array reviews "Review: giảng viên, điểm và band cũ mới, lý do, quyết lúc"
         array replay_labels "tự nghe lại (D056)"
         object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
-    }
-
-    review_session {
-        string response_id UK "mỗi bài một phiên"
-        object lock "ai đang giữ bài để duyệt, tới lúc nào"
-        array visits "mở bài, kết thúc, hành động (D041)"
     }
 
     classroom {
         string class_id PK
         array teacher_ids "giảng viên phụ trách, một hay nhiều (D071)"
-        array members "mã tài khoản theo thứ tự vào lớp"
+        array members "mã tài khoản theo thứ tự vào lớp; chỉ vào khi sinh viên tự đồng ý (D109)"
+        array invited "giảng viên mời, sinh viên chưa trả lời; chưa cho quyền xem (D109)"
+        string join_code UK "mã vào lớp 6 ký tự; không có trường này là tắt mã (D109)"
+        bool archived "lưu trữ thì giảng viên mất quyền xem, khôi phục thì có lại (D108)"
     }
 
     audit_log {
@@ -1068,7 +1155,8 @@ File: `docs/sdd/diagrams/05c_erd_identity.mmd`
 
 ```mermaid
 %% SDD - Diagram 5c: ERD - dinh danh (MongoDB, database core, D060)
-%% Lien ket Google va dau "da xem" nam trong document cua tai khoan; phien dang
+%% Ban 1.34: tai khoan la email (D103 bo but danh va dau "da xem").
+%% Lien ket Google nam trong document cua tai khoan; phien dang
 %% nhap la collection rieng vi can chi muc TTL tu xoa phien het han; trinh
 %% duyet nhan thong bao day (D088) cung rieng, mot tai khoan nhieu trinh duyet.
 erDiagram
@@ -1077,21 +1165,22 @@ erDiagram
 
     account {
         string account_id PK
-        string pseudonym UK "mã tài khoản (SV-001…), dữ liệu nghiên cứu chỉ mang mã này"
-        string email UK "D071: đăng nhập, viết thường; trống ở tài khoản cũ"
-        int email_verified "D071: Google đã xác minh"
+        string email UK "đăng nhập, viết thường; tài khoản là email (D103)"
+        int email_verified "mã qua email hay Google đã xác minh; cần cho lượt miễn phí (D101)"
         string full_name "D071: giảng viên lớp thấy"
         string password_hash "scrypt"
         string role "student · teacher · admin"
         int failed_attempts
         string locked_until
+        string created_at
+        string last_login_at
+        string password_changed_at
         int disabled
         int must_change_password "D028"
         string avatar_icon "D029"
         string avatar_color "D029"
         int daily_goal_s "D029"
         array identities "provider, băm subject, liên kết lúc (D029); email Google vào account.email (D071)"
-        object seen_markers "tên dấu → lúc xem (D028)"
         object email_codes "mã gửi qua email, chỉ lưu băm (D079)"
         int email_reminders "nhắc học qua email (D079)"
         string reminder_sent_on "ngày đã gửi thư nhắc (D079)"
@@ -1350,39 +1439,61 @@ erDiagram
 File: `docs/sdd/diagrams/06_deployment.mmd`
 
 ```mermaid
-%% SDD - Diagram 06: Deployment diagram - sau D044, D048, D050
-%% Ve dung docker-compose.yml va Dockerfile: mot gateway nginx, ba dich vu
-%% (core, speech, web), MongoDB mot database aicefr, Redis (BullMQ), hai volume. Mot
-%% may chay tat ca (aicefr.api.main) van dung duoc cho phat trien va kiem thu.
+%% SDD - Diagram 06: Deployment diagram - production https://speakup.fit (ban 1.34)
+%% Ve dung docker-compose.yml + docker-compose.prod.yml va deploy/Caddyfile: Caddy giu
+%% HTTPS, mot gateway nginx, ba dich vu (core, speech, web), MongoDB, Redis (BullMQ,
+%% Streams), hai volume. Mot may EC2; GitHub Actions deploy qua SSH khi main xanh.
+%% Dich vu ngoai: payOS (thanh toan, D095), Resend (email, D079), Gemini (AI viet
+%% lai va soan bai, D072, D073), Google (dang nhap, D036), Web Push (D088).
 flowchart TB
-    subgraph HOST["Docker host - docker compose up · ba dịch vụ chạy bằng người dùng aicefr"]
+    U(["Trình duyệt · ứng dụng cài trên máy<br/>sinh viên, giảng viên, quản trị viên"])
+    GH(["GitHub Actions<br/>CI xanh trên main thì SSH vào máy và deploy"])
+
+    subgraph HOST["AWS EC2 · m7i-flex.large · docker compose (người dùng aicefr)"]
         direction TB
-        GW["gateway · nginx<br/>cổng 8000 duy nhất ra ngoài<br/>hỏi core ai đang gọi"]
-        CO["core<br/>tài khoản, đề, bài nộp, duyệt,<br/>lớp, lộ trình band, lượt"]
-        WE["web<br/>trang, tệp tĩnh, số đếm"]
+        CA["caddy · cổng 80/443<br/>chứng chỉ HTTPS tự gia hạn"]
+        GW["gateway · nginx<br/>hỏi core ai đang gọi, chặn /internal/"]
+        CO["core<br/>định danh, đề, bài nộp, duyệt, lớp,<br/>lộ trình band, lượt, thanh toán"]
+        WE["web<br/>trang, tệp tĩnh, số đếm thanh bên"]
         SP["speech<br/>QC, Whisper, chấm điểm<br/>có ffmpeg, không giữ khoá"]
         PG[("MongoDB 7.0<br/>database aicefr")]
-        MQ[["Redis · BullMQ, Streams<br/>speech.score, assessment.scoring,<br/>speech.step, speech.probe"]]
+        MQ[["Redis · BullMQ và Streams<br/>speech.score, assessment.scoring,<br/>sự kiện thanh toán, lớp học"]]
         V1[("Volume uploads<br/>bản ghi âm")]
-        V2[("Volume models<br/>cache model Whisper")]
+        V2[("Volume models<br/>mô hình Whisper và chấm điểm")]
     end
 
+    subgraph EXT["Dịch vụ ngoài · core gọi qua HTTPS bằng khoá trong .env máy chủ"]
+        direction TB
+        PAY["payOS · tạo link VietQR, đối soát<br/>gửi webhook khi đã trả"]
+        RS["Resend · mail.speakup.fit<br/>mã, nhắc học, biên nhận, lời mời lớp"]
+        LLM["Google Gemini<br/>AI viết lại, soạn bài, đoạn đọc"]
+        GO["Google OAuth · PKCE<br/>đăng nhập bằng Google"]
+        WP["Web Push · VAPID<br/>bật khi đã cài khoá"]
+    end
+
+    U -->|"HTTPS"| CA
+    GH -.->|"SSH · docker compose up"| CA
+    CA --> GW
     GW -->|"API + X-Aicefr-Account"| CO
     GW -->|"trang + X-Aicefr-Account"| WE
     WE -->|"HTTP nội bộ"| CO
     CO --> PG
-    CO -->|"gửi việc chấm, hỏi đo bước"| MQ
-    MQ -->|"việc và câu hỏi"| SP
+    CO -->|"việc chấm, sự kiện"| MQ
+    MQ -->|"việc chấm"| SP
     CO --> V1
     SP -->|"chỉ đọc"| V1
     SP --> V2
+    CO -->|"gọi API"| EXT
+    PAY -.->|"webhook đã trả"| CA
 
     classDef data fill:#f8d7da,stroke:#b02a37,color:#000
     classDef app fill:#d1e7dd,stroke:#0f5132,color:#000
     classDef edge fill:#cfe2ff,stroke:#084298,color:#000
+    classDef ext fill:#fff3cd,stroke:#997404,color:#000
     class PG,V1,V2 data
     class CO,WE,SP app
-    class GW,MQ edge
+    class CA,GW,MQ edge
+    class PAY,RS,LLM,GO,WP ext
 ```
 
 ![Hình 6. Sơ đồ thành phần và triển khai](images/06_deployment.png)
@@ -1979,9 +2090,9 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 **Bất biến 1 — mật khẩu tạm không mở gì ngoài việc đổi mật khẩu (FR-52).** Tài khoản do quản trị viên tạo hoặc cấp lại mang `must_change_password = 1`. `AuthRepository.account_for_token` đọc cờ này cùng với phiên, và `require_login` trả 403 cho mọi đường dẫn ngoài `PASSWORD_CHANGE_PATHS`: `/api/v1/me`, `/api/v1/me/account`, `/api/v1/me/password`, `/api/v1/auth/logout`. Vì `require_role` dựng trên `require_login`, mọi endpoint có kiểm vai trò — kể cả của `lessons_api` và `rating_api` — thừa hưởng cổng này mà không phải viết lại. Trang HTML không đi qua `require_login` (chúng dùng `optional_account`), nên được chặn bằng cách khác: `templates/base.html` chèn thẻ `<meta http-equiv="refresh">` về `/account?first=1` cho mọi trang trừ trang tài khoản, còn dữ liệu của trang vẫn lấy qua API đã bị chặn. Đăng nhập bằng mật khẩu trả `home = /account?first=1`; đăng nhập bằng Google cũng chuyển về đó (mục 4.12). Chỉ `change_password` đặt cờ về 0. Test: `test_a_temporary_password_opens_nothing_but_the_password_change`, `test_a_temporary_password_still_has_to_be_replaced_after_google`.
 
-**Bất biến 2 — mật khẩu tạm chỉ tồn tại ở dạng rõ trong đúng một phản hồi.** `temporary_password()` sinh 12 ký tự từ bảng 31 ký hiệu đã bỏ `i`, `l`, `o`, `0`, `1` — những ký tự dễ đọc nhầm trên giấy — theo dạng `xxxx-xxxx-xxxx`. CSDL chỉ giữ băm bcrypt; giá trị rõ chỉ có trong kết quả trả về của `create_with_temporary_passwords` và `set_temporary_password`, và hai endpoint trả nó gắn `Cache-Control: no-store` để trình duyệt và proxy không giữ lại. Dòng kiểm toán `account.create` ghi bút danh và vai trò, `account.reset_password` không ghi chi tiết; không dòng nào chứa mật khẩu. Phiếu in có một dòng trống để **ghi tay** họ tên và được cất ngoài hệ thống — đó là chỗ FR-33 đặt mối nối giữa bút danh và người thật. Test: `test_a_series_continues_the_numbering_with_one_time_passwords`, `test_temporary_passwords_avoid_characters_people_confuse`.
+**Bất biến 2 — mật khẩu tạm chỉ tồn tại ở dạng rõ trong đúng một phản hồi.** `temporary_password()` sinh 12 ký tự từ bảng 31 ký hiệu đã bỏ `i`, `l`, `o`, `0`, `1` — những ký tự dễ đọc nhầm trên giấy — theo dạng `xxxx-xxxx-xxxx`. CSDL chỉ giữ băm bcrypt; giá trị rõ chỉ có trong kết quả trả về của `create_with_temporary_passwords` và `set_temporary_password`, và hai endpoint trả nó gắn `Cache-Control: no-store` để trình duyệt và proxy không giữ lại. Dòng kiểm toán `account.create` ghi bút danh và vai trò, `account.reset_password` không ghi chi tiết; không dòng nào chứa mật khẩu. Phiếu in có một dòng trống để **ghi tay** họ tên và được cất ngoài hệ thống — đó là chỗ FR-33 đặt mối nối giữa bút danh và người thật. Test: `test_accounts_are_made_from_a_list_of_emails_with_one_time_passwords`, `test_temporary_passwords_avoid_characters_people_confuse`.
 
-**Bất biến 3 — tạo theo dãy là tất cả hoặc không.** `create_with_temporary_passwords` kiểm từng bút danh bằng `validate_pseudonym`, từ chối danh sách có tên trùng nhau, rồi trong cùng một kết nối từ chối nếu bất kỳ bút danh nào đã tồn tại — trước khi chèn dòng nào. Một lần tạo tối đa 200 tài khoản (`MAX_BATCH`). `next_pseudonyms` đánh số tiếp sau số lớn nhất đang có của tiền tố — `SV`, `GV`, `QT` theo vai trò, hoặc một tiền tố 1–6 chữ cái do quản trị viên nhập. Băm bcrypt cost 12 chạy song song trên tối đa tám luồng để quản trị viên không phải chờ cả lớp được băm lần lượt. Test: `test_creating_accounts_is_all_or_nothing_and_checks_names`.
+**Bất biến 3 — tạo theo dãy là tất cả hoặc không.** `create_with_temporary_passwords` kiểm từng bút danh bằng `validate_pseudonym`, từ chối danh sách có tên trùng nhau, rồi trong cùng một kết nối từ chối nếu bất kỳ bút danh nào đã tồn tại — trước khi chèn dòng nào. Một lần tạo tối đa 200 tài khoản (`MAX_BATCH`). `next_pseudonyms` đánh số tiếp sau số lớn nhất đang có của tiền tố — `SV`, `GV`, `QT` theo vai trò, hoặc một tiền tố 1–6 chữ cái do quản trị viên nhập. Băm bcrypt cost 12 chạy song song trên tối đa tám luồng để quản trị viên không phải chờ cả lớp được băm lần lượt. Test: `test_creating_accounts_is_all_or_nothing_and_checks_emails`.
 
 **Bất biến 4 — đổi mật khẩu cần mật khẩu hiện tại, và đổi xong thì mọi phiên khác kết thúc (FR-51).** `change_password` kiểm mật khẩu hiện tại; sai thì gọi `_record_failure` như một lần đăng nhập sai (NFR-07) — nếu không, một phiên bị lấy cắp thành đường đoán mật khẩu không giới hạn — và đang bị khoá thì báo `AccountLocked` (429). Mật khẩu mới phải qua `check_new_password`: từ 8 ký tự, không quá 72 byte (bcrypt chỉ đọc 72 byte đầu), không trùng bút danh, khác mật khẩu đang dùng; sai luật nào thì 422 kèm câu nói rõ luật đó. Cố ý không có luật thành phần kiểu "một chữ hoa, một ký hiệu". Xong thì `revoke_sessions(account_id, keep_token)` xoá mọi phiên trừ phiên đang gọi. Test: `test_password_change_needs_the_current_password_and_ends_other_sessions`, `test_a_wrong_current_password_is_refused_and_counts_towards_the_lockout`, `test_the_password_policy_says_what_is_wrong`.
 
@@ -1993,11 +2104,11 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 **Bất biến 8 — phiên xem được và kết thúc được, nhưng danh sách không mở được phiên nào (FR-57).** `sessions()` trả mỗi phiên với `session_id` là 16 ký tự hex đầu của băm token — đủ để phân biệt và kết thúc, vô dụng để mở phiên. `revoke_session(account_id, session_id)` chỉ xoá trong đúng tài khoản đang gọi, nên mã phiên của tài khoản khác trả 404. Cột `device` giữ nhãn thô "trình duyệt · hệ điều hành" do `device_label` suy từ user-agent; chuỗi user-agent đầy đủ không được lưu, để danh sách phiên không thành dấu vân tay thiết bị. Cột `method` ghi `password` hoặc `google`. Test: `test_a_person_sees_their_sessions_and_ends_one`, `test_sessions_of_one_account_cannot_be_ended_by_another`, `test_a_session_gets_a_coarse_device_name_not_a_fingerprint`.
 
-**Bất biến 9 — lịch sử chỉ ghi sự kiện về bút danh có thật (FR-58).** `/api/v1/me/activity` đọc `audit_log` theo `target_id` với 14 hành động liệt kê trong `ACTIVITY_ACTIONS`, và chỉ trả cờ `by_self` chứ không trả bút danh của quản trị viên đã thao tác. Hàm `login` trong `main.py` chỉ ghi `auth.login_failed` khi bút danh gõ vào khớp một tài khoản: chuỗi không khớp tài khoản nào là dữ liệu do người tấn công gõ và không được vào nhật ký. Test: `test_the_history_shows_sign_ins_failed_attempts_and_changes`, `test_what_an_administrator_did_shows_as_an_administrator`, `test_an_unknown_pseudonym_leaves_nothing_in_the_audit_log`.
+**Bất biến 9 — lịch sử chỉ ghi sự kiện về bút danh có thật (FR-58).** `/api/v1/me/activity` đọc `audit_log` theo `target_id` với 14 hành động liệt kê trong `ACTIVITY_ACTIONS`, và chỉ trả cờ `by_self` chứ không trả bút danh của quản trị viên đã thao tác. Hàm `login` trong `main.py` chỉ ghi `auth.login_failed` khi bút danh gõ vào khớp một tài khoản: chuỗi không khớp tài khoản nào là dữ liệu do người tấn công gõ và không được vào nhật ký. Test: `test_the_history_shows_sign_ins_failed_attempts_and_changes`, `test_what_an_administrator_did_shows_as_an_administrator`, `test_an_unknown_email_leaves_nothing_in_the_audit_log`.
 
 **Ba phần nhỏ đi cùng D028.**
 
-- *Con số việc đang chờ (FR-53).* `GET /api/v1/me/badges` trả cho sinh viên số bài có quyết định của giảng viên sau mốc `seen_marker(account_id, 'results')` (`count_reviewed_since`, chỉ bài đánh giá) và số mục ôn đến hạn hôm nay (`lessons_api.reviews_due`); cho giảng viên và quản trị viên, số bài đánh giá đang chờ duyệt (`count_waiting_review`) và số phiếu chấm mù chưa nộp trong đợt đang mở (`ratings_open`, nối tới `RatingRepository.open_count` ở D030). Mở "Bài của tôi" gọi `POST /api/v1/me/badges/results/seen`, ghi đè mốc bằng `INSERT … ON CONFLICT … DO UPDATE`. Đây chỉ là con số trên thanh điều khiển; không gửi thư, không gửi gì ra ngoài. Test: `test_a_teacher_decision_is_new_until_the_student_opens_their_list`, `test_a_teacher_sees_how_many_responses_wait_for_review`.
+- *Con số việc đang chờ (FR-53).* `GET /api/v1/me/badges` trả cho sinh viên số bài có quyết định của giảng viên sau mốc `seen_marker(account_id, 'results')` (`count_reviewed_since`, chỉ bài đánh giá) và số mục ôn đến hạn hôm nay (`lessons_api.reviews_due`); cho giảng viên và quản trị viên, số bài đánh giá đang chờ duyệt (`count_waiting_review`) và số phiếu chấm mù chưa nộp trong đợt đang mở (`ratings_open`, nối tới `RatingRepository.open_count` ở D030). Mở "Bài của tôi" gọi `POST /api/v1/me/badges/results/seen`, ghi đè mốc bằng `INSERT … ON CONFLICT … DO UPDATE`. Đây chỉ là con số trên thanh điều khiển; không gửi thư, không gửi gì ra ngoài. Test: `test_a_student_badge_counts_reviews_due_and_class_invitations`, `test_a_teacher_sees_how_many_responses_wait_for_review`.
 - *Thông báo trực tiếp (FR-95, D086).* Mỗi tab đã đăng nhập mở một `EventSource` tới `GET /api/v1/me/events` ở `core` (`services/core/assessment/live_api.py`). `platform/live.py` giữ các luồng của tiến trình (`LiveHub`, mỗi luồng một hàng đợi 64 khung, mỗi tài khoản tối đa 8 luồng) và kênh chuyển sự kiện tới mọi tiến trình: Redis pub/sub (`aicefr:live`) cạnh bus Redis, trong tiến trình khi bus là `inline`. `scoring.on_scoring` và `sweep_overdue` báo `response.finished` cho chủ bài; khoá, nhả khoá, quyết định và đóng bài trong `review_api` báo `queue.changed` cho giảng viên các lớp có học viên đó (`ClassroomRepository.teachers_of`) và vai trò quản trị viên; quyết định và đóng bài báo thêm `review.done` cho chủ bài. Sự kiện không mang điểm hay tên: trang nhận sự kiện gọi lại API thường nên quyền xem D071 giữ nguyên. Luồng tự đóng sau `AICEFR_LIVE_MAX_SECONDS` (900 giây) để phiên đã kết thúc không còn nhận gì, gửi chú thích `: ping` mỗi `AICEFR_LIVE_HEARTBEAT` (20 giây), và đóng ngay khi tiến trình nhận SIGTERM. Gateway có riêng `location = /api/v1/me/events` tắt đệm, chờ đọc 1 giờ. Mọi việc ở đây là cố gắng hết sức (`Live.notify` không bao giờ ném lỗi); không có luồng thì trang chờ chấm vẫn hỏi trạng thái 2 giây một lần, hàng chờ vẫn có nút Tải lại. Test: `tests/test_d086_live_unit.py`, `tests/test_d086_live_events.py` (TEST_PLAN_D086).
 - *Cài như ứng dụng và thông báo đẩy (FR-96, D088).* Dịch vụ web phục vụ `/manifest.webmanifest` và `/sw.js` từ gốc trang (`Service-Worker-Allowed: /`, không lưu đệm); mọi trang gắn manifest. Service worker (`static/sw.js`) chỉ làm ba việc: trả trang báo mất kết nối khi mở trang lúc mất mạng (không lưu đệm trang hay API), biến thông báo đẩy thành thông báo của hệ điều hành, và mở đúng báo cáo khi bấm vào (chỉ đường dẫn cùng trang). `push_api.py` lưu đăng ký của trình duyệt vào `push_subscription` (`PushRepository`), chỉ nhận `endpoint` trên dịch vụ push của trình duyệt (`PUSH_HOSTS`, HTTPS cổng 443) và khoá đúng dạng (điểm P-256 65 byte, bí mật 16 byte). `live_api.response_finished` và `review_done` gọi `push_api.tell_device`, chỉ gửi khi tài khoản không mở luồng D086 nào trong tiến trình. `notify/push.py` (`PushSender`) ký VAPID và mã hoá aes128gcm bằng `pywebpush` trên hai luồng riêng, TTL 24 giờ; trả lời 404/410 thì xoá đăng ký. Trang Tài khoản (chỉ học viên) có công tắc; đăng xuất gỡ đăng ký của trình duyệt. Test: `tests/test_d088_push_unit.py`, `tests/test_d088_push.py` (TEST_PLAN_D088).
 - *Luyện lại từ máy nghe chưa rõ (FR-97, D089).* Trang `/drill/{response_id}` (dịch vụ web, `templates/drill.html`, `static/drill.js`) mở từ bản chép lời của báo cáo. `services/core/learning/drill_api.py` hỏi phần đánh giá bản chép lời qua `AssessmentFacade.drill_source` (chỉ chủ bài, chỉ bài đã có điểm), rồi `lessons/drill.py` chọn từ: `Word.is_uncertain`, từ chữ cái thường, mỗi chính tả một lần, tối đa `MAX_WORDS = 8`, kém rõ nhất trước; cụm là `BEFORE = 1` từ trước, `AFTER = 2` từ sau, không vắt qua quãng ngừng dài hơn `MAX_GAP_S = 1.0`; mẹo là mẫu lỗi đầu tiên chính tả cho phép theo `pronunciation.vietnamese.opportunities`. Danh sách từ không lưu, tính lại mỗi lần từ bản chép lời. Một lượt nói lại đi qua `_measure` như bước đọc to (`step_for`: `READ_ALOUD`, `hint_words` là từ đó; bản ghi không giữ); `judge` đọc `WordMark` ở vị trí của từ trong cụm: `HEARD` là rõ. `DrillRepository` (collection `word_drill`, migration 18) giữ `WordDrill` kèm tối đa 20 lượt; `streak` đạt `PASS_STREAK = 2` thì `passed`, và đã xong thì giữ xong. Lượt chưa rõ gọi `LessonRepository.schedule(kind="word", lesson_id="", step_id="", drill_id=...)`: từ vào ôn ngắt quãng của D025 và quay lại như một bước dùng từ trong câu mới. Trang Tiến độ: `Repository.unsure_series` đọc bản chép lời đã lưu, `habits.clarity_series` thành một đường thói quen "Từ máy nghe chưa rõ" (phần trăm, thấp hơn là tốt); `GET /api/v1/learn/drill` cho mục "Từ cần luyện". Không đổi đặc trưng, rubric hay mô hình chấm. Bản xuất dữ liệu cá nhân có `word_drills` (`LearningFacade.drills_of`); `LearningFacade.erase_account` xoá cả `word_drill`.
@@ -2015,7 +2126,7 @@ Router không import `main`: nó nhận một `Services` (hàm ghi kiểm toán,
 
 **Bất biến 2 — không lưu email, tên hay ảnh.** *(Thay bởi D071 ngày 31/10/2026: email Google đã xác minh là email đăng nhập của tài khoản, tên Google điền vào họ tên còn trống; ảnh vẫn không lấy. Đoạn dưới giữ làm lịch sử.)* Thứ duy nhất được lưu là `subject_hash`, SHA-256 của chuỗi `google|<sub>`, trong đó `sub` là định danh ổn định mà Google cấp cho tài khoản: đủ để nhận lại đúng tài khoản Google đó, vô dụng để liên lạc với ai. Trường `email` có được giải mã vào `GoogleIdentity.email`, nhưng `google_api` không dùng và không ghi nó vào CSDL hay nhật ký; `email_verified` chỉ được đọc khi có giới hạn tên miền. Test: `test_a_good_token_gives_a_hash_of_the_subject_and_the_verified_email`, `test_linking_then_signing_in_with_google`.
 
-**Bất biến 3 — một tài khoản Google ứng với một bút danh.** Khoá chính (`provider`, `subject_hash`) cộng `UNIQUE (account_id, provider)`: một danh tính Google chỉ thuộc một tài khoản, một tài khoản có nhiều nhất một liên kết Google. `link_identity` báo `IdentityTaken` (mã `taken`) khi danh tính đã thuộc tài khoản khác — nếu không, một người có thể nói với tư cách hai người tham gia. Liên kết lại từ chính tài khoản đó thì thay liên kết cũ. Test: `test_one_google_account_links_to_one_pseudonym`.
+**Bất biến 3 — một tài khoản Google ứng với một bút danh.** Khoá chính (`provider`, `subject_hash`) cộng `UNIQUE (account_id, provider)`: một danh tính Google chỉ thuộc một tài khoản, một tài khoản có nhiều nhất một liên kết Google. `link_identity` báo `IdentityTaken` (mã `taken`) khi danh tính đã thuộc tài khoản khác — nếu không, một người có thể nói với tư cách hai người tham gia. Liên kết lại từ chính tài khoản đó thì thay liên kết cũ. Test: `test_one_google_account_links_to_one_account`.
 
 **Bất biến 4 — vòng khứ hồi không giả được và không bị dẫn đi nơi khác.** `state` chứng minh lần quay về thuộc một luồng mà chính trình duyệt này đã bắt đầu; `nonce` chứng minh ID token được cấp cho luồng đó; bộ xác minh PKCE bảo đảm chỉ người bắt đầu luồng mới đổi được mã. Cookie quá 600 giây bị bỏ (`decode_flow`). Ở chế độ `link`, người kết thúc phải là đúng tài khoản đã bắt đầu (`flow.account_id`), không thì trả mã `signin`. Tham số `next` chỉ giữ đường dẫn cùng trang (`safe_next` bỏ `//…` và đường có `\`). Test: `test_a_forged_or_stale_round_trip_is_refused`, `test_a_callback_without_its_cookie_or_after_cancel_is_refused`, `test_the_link_must_be_finished_by_the_account_that_started_it`, `test_only_same_site_paths_are_kept_as_where_to_go_next`.
 
@@ -2199,6 +2310,8 @@ sequenceDiagram
 
 ### 4.16. Nhiều cổng thanh toán: Stripe và MoMo — hiện thực FR-71…FR-73 (D035)
 
+> **D097 (07/11/2026):** Stripe đã gỡ; payOS (D095, FR-100) là cổng thật duy nhất, cổng thử giữ cho môi trường không có tiền thật. Phần về Stripe và MoMo dưới đây là lịch sử; các bất biến 6–10 vẫn đúng với payOS. Hình 8 nay là luồng payOS, hình 9 là sơ đồ lớp của phân hệ.
+
 **Vì sao có mục này.** Chủ dự án muốn dùng Stripe vì Stripe có môi trường thử đầy đủ, và để ngỏ MoMo, VNPay "cho đa dạng". Stripe khác VNPay ở chỗ cốt lõi: không có gì được ký vào địa chỉ của trình duyệt. Hệ thống phải gọi API của Stripe để **mở** phiên thanh toán, và khi trình duyệt quay về chỉ mang theo mã phiên — một lời khai, không phải bằng chứng — nên phải gọi API lần nữa để **đọc lại** phiên. Cổng `PaymentGateway` của D034 (`checkout_url` trả chuỗi, `verify` đọc tham số địa chỉ) không chứa được cách làm đó, nên được đổi hình. D034 chưa phát hành, nên đổi thẳng, không giữ tên cũ.
 
 **Cổng `PaymentGateway` sau D035.**
@@ -2216,8 +2329,9 @@ sequenceDiagram
 
 | Bộ chuyển đổi | Tệp | Cách làm |
 | --- | --- | --- |
-| `StripeGateway` | `src/aicefr/billing/stripe_gateway.py` | `POST /v1/checkout/sessions` dạng form: `mode=payment`, một dòng hàng `price_data` VND với `unit_amount` bằng đúng số đồng (VND không có đơn vị lẻ), mã đơn ở `client_reference_id`, `metadata[order_id]` và metadata của PaymentIntent, `success_url` có `{CHECKOUT_SESSION_ID}`, `cancel_url` có `left=1`, `expires_at` sau 31 phút (Stripe nhận 30 phút tới 24 giờ), `locale=vi`, `Idempotency-Key: aicefr-<mã đơn>`. Đọc lại: `GET /v1/checkout/sessions/{id}`, chỉ tin `payment_status`, `amount_total`, `currency` của phiên. Webhook: tách `t` và mọi `v1` của `Stripe-Signature`, HMAC-SHA256 trên `<t>.<thân>` theo khoá `whsec_`, so bằng `compare_digest` với từng `v1`, lệch giờ tối đa 300 giây, bỏ sự kiện có `livemode` khác chế độ của khoá |
+| ~~`StripeGateway`~~ *(gỡ bởi D097)* | ~~`src/aicefr/billing/stripe_gateway.py`~~ | `POST /v1/checkout/sessions` dạng form: `mode=payment`, một dòng hàng `price_data` VND với `unit_amount` bằng đúng số đồng (VND không có đơn vị lẻ), mã đơn ở `client_reference_id`, `metadata[order_id]` và metadata của PaymentIntent, `success_url` có `{CHECKOUT_SESSION_ID}`, `cancel_url` có `left=1`, `expires_at` sau 31 phút (Stripe nhận 30 phút tới 24 giờ), `locale=vi`, `Idempotency-Key: aicefr-<mã đơn>`. Đọc lại: `GET /v1/checkout/sessions/{id}`, chỉ tin `payment_status`, `amount_total`, `currency` của phiên. Webhook: tách `t` và mọi `v1` của `Stripe-Signature`, HMAC-SHA256 trên `<t>.<thân>` theo khoá `whsec_`, so bằng `compare_digest` với từng `v1`, lệch giờ tối đa 300 giây, bỏ sự kiện có `livemode` khác chế độ của khoá |
 | `MomoGateway` | `src/aicefr/billing/momo_gateway.py` | `POST /v2/gateway/api/create` dạng JSON, `requestType=captureWallet`, chữ ký HMAC-SHA256 trên chuỗi `accessKey=…&amount=…&extraData=…&ipnUrl=…&orderId=…&orderInfo=…&partnerCode=…&redirectUrl=…&requestId=…&requestType=…`; số tiền ngoài 1.000–50.000.000 đ bị từ chối trước khi gọi. Kết quả (địa chỉ trả về và IPN) ký trên `accessKey … transId` theo thứ tự MoMo công bố; kiểm thêm mã đối tác |
+| `PayosGateway` (D095, FR-100) | `src/aicefr/billing/payos_gateway.py` | `POST /v2/payment-requests` dạng JSON với `x-client-id`, `x-api-key`; chữ ký HMAC-SHA256 bằng checksum key trên `amount&cancelUrl&description&orderCode&returnUrl` xếp theo tên. `orderCode` là số nguyên đổi từ mã đơn (`ngày × 16⁶ + số hex`, đổi ngược được, không thêm cột); nội dung chuyển khoản `SU` + 6 ký tự; `paymentLinkId` lưu ở `checkout_ref`. Trả về: đọc lại `GET /v2/payment-requests/{id}`, trạng thái và số tiền của payOS quyết định. Webhook: HMAC-SHA256 trên `data` xếp theo tên, trả 200, 400 khi sai chữ ký, 500 khi hệ thống lỗi. Không có môi trường thử nên luôn `live` |
 | Gọi HTTPS | `src/aicefr/billing/transport.py` | `urllib.request`, hết giờ 15 giây, chỉ `https://`, **không đi theo chuyển hướng** (urllib sẽ mang `Authorization: Bearer sk_…` tới bất cứ máy nào chuyển hướng chỉ tới); mã lỗi HTTP và mã 3xx là một câu trả lời, không phải ngoại lệ; mất kết nối là `Unreachable`. Bộ chuyển đổi nhận `transport` qua hàm dựng, nên test thay bằng hàm giả mà không chạm mạng |
 | Dựng từ cấu hình | `src/aicefr/billing/registry.py` (`build_gateways`) | Đọc `AICEFR_PAYMENT_GATEWAYS` theo thứ tự; mỗi cổng thiếu khoá, sai dạng hay tên lạ thành một câu lý do hiện trên tab; tên lặp bỏ qua; cổng `live` cần `AICEFR_PAYMENTS_LIVE`; có cổng thật thì bỏ mọi cổng ở môi trường thử |
 
@@ -2231,58 +2345,77 @@ sequenceDiagram
 
 **Bất biến 9 — không giữ gì của người trả.** Stripe giữ email và tên người trả trong `customer_details` của phiên; `StripeGateway` không đọc trường đó, `PaymentResult.details` chỉ có mã phiên. MoMo chỉ để lại `payType` và `responseTime` (BR-32). Test: `test_stripe_return_is_read_back_from_stripe`.
 
-File: `docs/sdd/diagrams/08_sequence_stripe.mmd`
+File: `docs/sdd/diagrams/08_sequence_payos.mmd` (D097 thay sơ đồ Stripe cũ)
 
 ```mermaid
-%% SDD - So do 08: thanh toan qua Stripe Checkout, che do thu (D035)
+%% SDD - So do 08: mua goi luot qua payOS, chuyen khoan VietQR (D095, D096, D097)
 %% Ten ham, ten endpoint va ten su kien giu nguyen tieng Anh nhu trong ma nguon.
 sequenceDiagram
     autonumber
-    actor QT as Quản trị viên
+    actor HV as Học viên
     participant TD as Trình duyệt
     participant API as billing_api.py
     participant BS as BillingService
-    participant SG as StripeGateway
-    participant ST as Stripe
+    participant PG as PayosGateway
+    participant PO as payOS
+    participant BUS as MessageBus
+    participant ID as Identity (email)
 
-    QT->>TD: Chọn gói, số sinh viên, cổng Stripe, bấm Thanh toán
-    TD->>API: POST /api/v1/admin/billing/orders
-    API->>BS: place_order(..., gateway="stripe")
-    BS->>SG: checkout(order_id, amount, return_url)
-    SG->>ST: POST /v1/checkout/sessions (vnd, client_reference_id, Idempotency-Key)
-    ST-->>SG: id cs_test_…, url
-    SG-->>BS: Checkout(url, cs_test_…)
-    BS-->>API: đơn chờ, checkout_ref = cs_test_…
+    HV->>TD: Chọn gói lượt, bấm Mua gói này
+    TD->>API: POST /api/v1/me/credit-orders
+    API->>BS: place_credit_order(runs, gateway="payos")
+    BS->>PG: checkout(order_id, amount, return_url)
+    PG->>PO: POST /v2/payment-requests (orderCode, amount, signature HMAC)
+    PO-->>PG: checkoutUrl, paymentLinkId
+    PG-->>BS: Checkout(url, paymentLinkId)
+    BS-->>API: đơn chờ, checkout_ref = paymentLinkId
     API-->>TD: checkout_url
-    TD->>ST: Trang thanh toán của Stripe
-    QT->>ST: Nhập thẻ thử 4242 4242 4242 4242
+    TD->>PO: Trang VietQR của payOS
+    HV->>PO: Quét mã bằng app ngân hàng, chuyển khoản
 
     par Trình duyệt quay về
-        ST-->>TD: 303 /billing/return/stripe?session_id=cs_test_…
-        TD->>API: GET /billing/return/stripe?session_id=…
-        API->>BS: store.order_by_checkout("stripe", session_id)
-        Note over API,BS: Không phải phiên của hệ thống: không hỏi Stripe
-        API->>SG: verify_return(session_id)
-        SG->>ST: GET /v1/checkout/sessions/{id}
-        ST-->>SG: payment_status, amount_total, currency
-        SG-->>API: PaymentResult
-        API->>BS: settle(result, "return", "stripe")
-        API-->>TD: Trang kết quả
-    and Máy chủ Stripe báo
-        ST->>API: POST /api/v1/billing/notify/stripe (Stripe-Signature)
-        API->>SG: verify_notification: HMAC-SHA256 của t.body, trong 5 phút
-        SG-->>API: PaymentResult
-        API->>BS: settle(result, "notify", "stripe")
-        API-->>ST: 200 received
+        PO-->>TD: /billing/return/payos?id=…&status=PAID
+        TD->>API: GET /billing/return/payos?id=…
+        API->>BS: store.order_by_checkout("payos", id)
+        Note over API,BS: Link không phải của đơn nào: không hỏi payOS
+        API->>PG: verify_return(id)
+        PG->>PO: GET /v2/payment-requests/{id}
+        PO-->>PG: status, amount, amountPaid
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "return", "payos")
+        API-->>TD: Trang Thanh toán thành công
+    and Máy chủ payOS báo
+        PO->>API: POST /api/v1/billing/notify/payos (data, signature)
+        API->>PG: verify_notification: HMAC-SHA256 của data xếp theo tên
+        PG-->>API: PaymentResult
+        API->>BS: settle(result, "notify", "payos")
+        API-->>PO: 200
     end
-    Note over BS: settle chỉ áp một lần, đúng cổng, đúng số tiền. Lần sau chỉ ghi sự kiện
+    Note over BS: settle chỉ đổi đơn một lần, đúng cổng, đúng số tiền, rồi cộng lượt
+    BS-)BUS: publish billing.order_settled
+    BUS-)ID: on_order_settled (ít nhất một lần)
+    ID->>HV: Email biên nhận (email đã xác minh, một lần mỗi đơn)
 ```
 
-![Hình 8. Thanh toán qua Stripe Checkout](images/08_sequence_stripe.png)
+![Hình 8. Mua gói lượt qua payOS](images/08_sequence_payos.png)
 
-*Hình 8. Thanh toán qua Stripe Checkout ở chế độ thử. File nguồn: `diagrams/08_sequence_stripe.mmd`*
+*Hình 8. Mua gói lượt qua payOS (chuyển khoản VietQR), kèm email biên nhận. File nguồn: `diagrams/08_sequence_payos.mmd`*
 
-**Cách đọc.** Bước 4–8 khác VNPay: hệ thống gọi Stripe **trước** khi chuyển trình duyệt, và giữ mã phiên vào đơn. Khối `par` là hai đường báo kết quả chạy độc lập, đường nào tới trước cũng được: trình duyệt quay về với mã phiên (bước 12–20; ghi chú ở bước 14 là bất biến chỉ-hỏi-phiên-của-mình), và webhook có chữ ký (bước 21–25). Ghi chú cuối là bất biến 3 của mục 4.15 cộng bất biến 6 ở trên: `settle` áp một lần, đúng cổng, đúng số tiền; lần sau chỉ thêm sự kiện.
+**Cách đọc.** Hệ thống gọi payOS **trước** khi chuyển trình duyệt và giữ `paymentLinkId` vào đơn. Khối `par` là hai đường báo kết quả chạy độc lập: trình duyệt quay về (hệ thống hỏi lại payOS, không tin trạng thái trong địa chỉ; link lạ thì không hỏi) và webhook có chữ ký. `settle` chỉ đổi đơn một lần; sau đó sự kiện `billing.order_settled` đi qua bus tới dịch vụ định danh để gửi email (D096).
+
+![Hình 9. Lớp của phân hệ thanh toán](images/09_class_thanh_toan.png)
+
+*Hình 9. Lớp của phân hệ thanh toán sau D097 và D099, và các mẫu thiết kế: Adapter và Strategy (`PaymentGateway`), Template Method (`SignedRedirect`), Factory (`build_gateways`), Repository, Value Object, Observer (`billing.order_settled`), State (`OrderState`). File nguồn: `diagrams/09_class_thanh_toan.mmd`*
+
+**Cách đọc hình 9.** Đọc từ giữa ra. `BillingService` là nơi duy nhất đổi trạng thái đơn; nó không biết cổng nào đang chạy, chỉ giữ một danh sách `PaymentGateway` (Strategy) do `build_gateways` dựng từ cấu hình (Factory). Mỗi cổng là một bộ chuyển đổi (Adapter) đưa API riêng của nhà cung cấp về cùng năm thao tác; cổng thử và payOS khác nhau hoàn toàn bên trong (chữ ký trong địa chỉ so với gọi API đọc lại) nhưng dịch vụ gọi y như nhau. `PayosGateway` nhận `Transport` từ ngoài (tiêm phụ thuộc), nên test thay payOS bằng bản giả mà không đổi một dòng mã. Mọi kết quả đi về dịch vụ dưới dạng `PaymentResult` (Value Object, bất biến); trước khi chốt, dịch vụ hỏi `OrderState` của đơn (State, hình 10). Chốt xong, dịch vụ phát `billing.order_settled` lên bus và không biết ai nghe (Observer): dịch vụ định danh nghe để gửi email. D099 thêm hai đường: `reconcile()` mỗi hai phút hỏi lại payOS bằng `look_up` về các đơn còn mở trong một giờ (webhook lạc và người mua đóng tab vẫn được cộng lượt), và `pending_count` chặn quá năm đơn chờ trong mười phút cho một tài khoản.
+
+![Hình 10. Vòng đời đơn gói lượt](images/10_state_don_hang.png)
+
+*Hình 10. Vòng đời đơn gói lượt theo mẫu State (D098): mỗi trạng thái là một lớp trong `billing/order_state.py`; đơn hết hạn vẫn nhận tiền đến muộn, ba trạng thái cuối không chuyển được nữa. Test giữ sơ đồ khớp với `transitions()`. File nguồn: `diagrams/10_state_don_hang.mmd`*
+
+**Cách đọc hình 10.** Hai trạng thái mở (`Chờ thanh toán`, `Hết hạn chờ`) và ba trạng thái cuối. Mũi tên nào có trên hình thì có một phương thức trả về đích đó trong lớp trạng thái nguồn; không có mũi tên nghĩa là phương thức ném `TransitionRefused`. Đơn hết hạn vẫn đi được sang `Đã thanh toán`: tiền đã chuyển thì phải ghi nhận, dù trễ. Cùng một bảng chuyển trạng thái được dùng hai lần: dịch vụ hỏi trạng thái trước khi chốt, và kho dữ liệu đặt điều kiện `status ∈ sources(đích)` vào **một** lệnh cập nhật nguyên tử, nên trình duyệt quay về, webhook và vòng đối soát (D099) có chạy cùng lúc thì đơn vẫn chỉ đổi một lần.
+
+**Sơ đồ không thể lệch khỏi mã.** `tests/test_d098_order_state.py` đọc tệp `10_state_don_hang.mmd`, lấy mọi mũi tên `A --> B`, rồi so với `transitions()` tính từ các lớp trạng thái. Thêm một trạng thái hay một bước chuyển vào mã mà không vẽ (hoặc vẽ mà không làm) thì test đỏ và CI chặn merge. Đây là cách nhóm giữ cam kết "sơ đồ là nguồn chuẩn" mà không phải đối chiếu bằng mắt.
 
 ### 4.17. Bằng chứng học tập — hiện thực FR-75…FR-80 (D039–D042)
 
@@ -2359,7 +2492,7 @@ sequenceDiagram
 - **Dịch vụ `metering`** (`services/core/metering`): facade `hold` / `settle` / `is_enabled`, trang `GET /api/v1/me/credits`, `POST /api/v1/admin/credits/grant`. Kho riêng theo `AICEFR_METERING_DB`, mặc định dùng kho của `core`.
 - **Sổ lượt** (`storage/metering_repository.py`): `usage_ledger` duy nhất theo (`key`, `action`); `credit_wallet`; `free_quota` theo chu kỳ; `credit_grant` duy nhất theo (`source`, `ref`). Không có giao dịch nhiều document. Lượt miễn phí lấy bằng so-sánh-rồi-ghi trên số đã dùng; ví trừ bằng cập nhật có điều kiện `balance >= cần`. Chuyển `held` sang trạng thái khác bằng một cập nhật có điều kiện, nên chốt hai lần không đổi gì.
 - **Móc vào `assessment`:** giữ chỗ sau khi tệp ghi âm qua kiểm định dạng, trước khi lưu bài; hết lượt thì 402 và xoá tệp tạm. `scoring.settle_charge` chạy sau mọi kết cục (có kết quả, lỗi, quá hạn) và không bao giờ làm hỏng việc lưu kết quả. Một vòng quét hoàn các chỗ giữ cũ hơn hai lần thời gian chạy tối đa của job.
-- **Bảng giá** (`metering/pricing.py`): từ D057 là `price-v3-per-recording`, theo bài và phút, đo kèm token Whisper (mục 4.30); đơn vị là 1/1000 lượt, mỗi bút toán ghi phiên bản giá và số token.
+- **Bảng giá** (`metering/pricing.py`): từ D107 là `price-v5-ai-runs`, một bài nói được chấm là 1 lượt và đã gồm một lần AI viết lại bài đó, mọi giá là số lượt nguyên (mục 4.30; D057 trước đó tính theo bài và phút). Sổ vẫn tính bằng 1/1000 lượt nên bút toán cũ đọc như cũ; mỗi bút toán ghi phiên bản giá.
 
 **Chưa làm:** adapter API IDPoint của NetID, đối soát mỗi ngày, tính lượt cho bước luyện trong bài học và lộ trình, lối vào API riêng cho NetID, Redis/BullMQ.
 
@@ -2395,6 +2528,10 @@ Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình 
 
 Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
 
+**Lưu trữ lớp là thu lại quyền (D108).** `ClassroomRepository.teaches`, `students_of`, `teachers_of` lọc thêm `archived != true` (hằng `ACTIVE`), nên mọi chỗ kiểm quyền của giảng viên (`context.can_view`, hàng chờ và thống kê qua `students_of`, giao lộ trình qua `facade.teaches`, thông báo trực tiếp qua `teachers_of`) đều bỏ qua lớp đã lưu trữ mà không phải sửa từng nơi. `set_archived` trả `False` khi lớp đã ở trạng thái đó, để chỉ ghi nhật ký `class.archive` / `class.restore` khi thật sự đổi. `POST /api/v1/classes/{id}/restore` dùng cùng `_owned` như lưu trữ: giảng viên của lớp hoặc quản trị viên. `add_members` tách `not_students` khỏi `unknown`.
+
+**Sinh viên tự vào lớp (D109).** Lớp cho giảng viên quyền trên bài của thành viên, nên chỉ việc của sinh viên mới thêm sinh viên vào `members`. `classroom` có thêm `invited` (mã tài khoản được mời, chưa trả lời) và `join_code` (6 ký tự trong bảng chữ không có 0/O, 1/I/L; không có trường là tắt mã; chỉ mục duy nhất có điều kiện `join_code` tồn tại, migration 25). Mọi bước là một lệnh cập nhật có điều kiện trên một document: `invite` thêm vào `invited` khi chưa là thành viên và chưa được mời; `accept` chuyển từ `invited` sang `members` khi lớp chưa lưu trữ; `join_by_code` chuẩn hoá mã (bỏ hoa thường, dấu cách, gạch nối) rồi `add_member`, đồng thời gỡ lời mời cũ. `teaches`, `students_of`, `teachers_of` không đổi: chỉ đọc `members`, nên lời mời chưa trả lời không cho quyền gì. API: giảng viên `POST /api/v1/classes/{id}/members` thành mời (trả `invited`, `pending`, `already`, `not_students`, `unknown`), quản trị viên vẫn thêm thẳng (`added`); `DELETE /api/v1/classes/{id}/invites/{account_id}`; `POST`/`DELETE /api/v1/classes/{id}/code`. Sinh viên: `GET /api/v1/me/classes`, `POST /api/v1/me/classes/join` (mười lần một phút cho mỗi tài khoản), `POST /api/v1/me/classes/{id}/accept|decline|leave`; sinh viên không bao giờ thấy mã của lớp. Thanh bên của sinh viên có số `class_invites` (`/api/v1/me/badges`, qua `AssessmentFacade.class_invites`), trang Lộ trình có lời nhắc tới `/my-classes`. Nhật ký: `class.invite`, `class.join` (chi tiết `code` hay `invite`), `class.decline`, `class.leave`, `class.code`. **Email (hình 3b):** `classes_api` phát `classroom.invited` và `classroom.joined` (`contracts.py`) qua `bus.publish`; lỗi bus chỉ được ghi log, không làm hỏng yêu cầu. Dịch vụ định danh đăng ký `notify.classes.on_invited` và `on_joined`, dựng thư bằng `messages.class_invite_email` và `class_joined_email` (cùng khung thẻ thương hiệu với thư thanh toán), giữ khoá `class_email:<loại>:<lớp>:<tài khoản>:<lúc>` bằng `setting_once` để bus giao lại không gửi hai lần. `email.has_mailbox` loại địa chỉ ở `demo.speakup.fit`, dùng chung cho nhắc học và biên nhận.
+
 ### 4.28. Nhắc việc — D055 (đề xuất)
 
 `GET /api/v1/me/nudges` ở dịch vụ web (gateway chuyển như `/api/v1/me/badges`), gom số liệu từ `assessment` (bài được giao, mục tiêu hôm nay), `learning` (ôn tập) và `metering` (lượt còn lại), rồi áp quy tắc thuần `practice/nudges.py`.
@@ -2411,6 +2548,34 @@ Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment
 - **Chốt:** `scoring.settle_charge` gửi thời lượng, `Transcript.output_tokens` và số từ. Facade thu theo thời lượng thật và ghi `input_tokens`, `output_tokens`, `usage_estimated` vào bút toán, dùng để tính giá vốn và đối soát với NetID.
 
 Chi tiết và cơ sở giá: `docs/plan/TINH_GIA_THEO_TOKEN.md`.
+
+**Bản ghi trong lộ trình (D094, FR-99).** `PriceList` thêm `lesson_minute_runs` (0,1), `lesson_free_per_day` (5), `lesson_daily_cap` (30), đọc từ `AICEFR_PRICE_LESSON_MINUTE_RUNS`, `AICEFR_LESSON_FREE_PER_DAY`, `AICEFR_LESSON_DAILY_CAP` và đổi được trên dashboard (D078; bảng giá lưu trước D094 lấy giá trị của cấu hình). Năm endpoint ghi âm của `learning` gọi `_metered`: trước khi đo, `MeteringFacade.hold_lesson` lấy một suất của ngày giờ Việt Nam trong `wallet` (`lesson_day`, `lesson_used`, `lesson_free_used`) bằng cập nhật có điều kiện `lesson_used < trần`, rồi một cập nhật có điều kiện nữa cho suất miễn phí; suất trả phí giữ `lesson_units` của thời lượng tối đa của bước qua `_take` (lượt miễn phí tháng rồi ví). Từ chối trả về dạng dữ liệu `{"status", "message"}` (429, 402) và endpoint không đo gì. Đo xong, `settle_lesson` thu theo `StepResult.speaking_s`, mỗi phút đã bắt đầu, ít nhất một phút; `measured = false` hay lỗi thì thả bút toán, trả lượt và suất (`_give_back_slot`, chỉ trong đúng ngày đó). Bút toán `lesson` ghi `day` và `free_slot`. Bản xem thử và audio mẫu của giảng viên không đi qua `_metered`. Tắt tính lượt thì facade trả `None` và không ghi gì.
+
+**Lượt miễn phí cần email đã xác minh (D101, FR-103).** `MeteringFacade` nhận `free_ok(account_id)`; `metering/app.py` dựng hàm này từ `peers.identity.account` (facade định danh trả thêm `email_verified`): có email mà chưa xác minh thì `False`, không có email (quản trị viên tạo) thì `True`. `hold`, `hold_lesson`, `hold_upgrade` truyền `free_ok` xuống `MeteringRepository._take` (bỏ `_take_free`) và `hold_lesson` (bỏ suất miễn phí trong ngày); `balance`, `free_left`, `available` trả 0 lượt miễn phí khi bị khoá. Lời từ chối thêm câu nhắc xác minh; ba API của học viên trả `free_locked`. Settle không đổi: bút toán chỉ lấy từ ví thì trả lại vào ví.
+
+**Tính nguyên lượt (D106, 16/11/2026).** Người học mua lượt theo gói nguyên, nên mọi giá cũng là số lượt nguyên.
+- **Mặc định:** một bài nói được chấm là 1 lượt. `extra_minute_runs`, `upgrade_runs`, `passage_runs`, `lesson_minute_runs` đều bằng 0: AI viết lại, soạn bài, đoạn đọc và bản ghi lộ trình miễn phí, chỉ giới hạn bởi ngân sách mô hình mỗi ngày (D072) và trần 30 bản ghi mỗi ngày (D094).
+- **Lấy phần nguyên:** `PriceList.__post_init__` lấy phần nguyên của mọi giá trong `RUN_PRICES` (`whole_runs`, làm tròn xuống), nên giá lẻ từ cấu hình hay bảng giá đã lưu không bao giờ thành số lẻ.
+- **Từ chối giá lẻ:** `PriceBook.set` từ chối giá hay lượt miễn phí không nguyên (`is_whole`), nên `PUT /api/v1/admin/prices` trả 422.
+- **Giá miễn phí không hiện:** `upgrade_price` và `passage_price` trả `None` khi giá bằng 0, nên giao diện không hiện giá. `hold_upgrade` không ghi bút toán khi giá bằng 0.
+- **Chốt theo giá hiện hành:** `settle_upgrade` thu theo giá hiện hành, không quá chỗ đã giữ. Một chỗ giữ 0,3 lượt từ trước D106 vì thế thu 0.
+- **Giữ D101:** khi bản ghi lộ trình miễn phí mà tài khoản có email chưa xác minh, `hold_lesson` trả 402 kèm câu nhắc xác minh và không lấy suất của ngày.
+- **Migration 23** làm tròn ví có lợi cho người học: `balance` làm tròn lên, `free_used` làm tròn xuống, mỗi lệnh có điều kiện trên giá trị cũ. Bảng giá đã lưu giữ phần nguyên. Bút toán cũ giữ nguyên.
+
+**Phần AI tính bằng lượt (D107, 16/11/2026).** AI viết lại, soạn bài và đoạn đọc gọi mô hình ngôn ngữ trả phí theo token, nên không để miễn phí như D106 (2).
+- **Mặc định:** `upgrade_runs = passage_runs = 1`; `extra_minute_runs` và `lesson_minute_runs` vẫn 0.
+- **Một lượt gồm bản viết lại và một đoạn đọc:** `MeteringFacade._run_paid_for(response_id)` đúng khi bút toán `assessment` của bài ở trạng thái `charged` và `charged > 0`; khi đó `hold_upgrade(..., response_id)` ghi một bút toán `included = true`, giữ 0, thu 0. `_passages_included(account_id)` = `runs_paid` (bài chấm đã thu lượt) trừ `included_taken` (đoạn đã gồm, chưa bị trả lại); còn suất thì đoạn đọc cũng ghi `included`. `upgrade_price(response_id)` và `passage_price(account_id)` trả `{"included": true}` (đoạn đọc kèm `left`) để giao diện ghi "đã gồm". Mỗi bài chỉ có một bản viết lại (`repo.upgrade_of`).
+- **Còn lại 1 lượt mỗi lần:** bản viết lại của bài không có lượt nào trả, đoạn đọc vượt số suất; giữ trước khi gọi mô hình, thu khi viết xong, trả lại khi lỗi.
+- **Giảng viên soạn bài miễn phí:** `write_lesson_draft` không gọi metering; `_drafts_left` đếm `coach.lesson_draft` trong `audit_log` 24 giờ qua (`repo.drafts_since`), tối đa `AICEFR_COACH_DRAFT_DAILY` (5), quá thì 429. Bản mô hình viết lỗi không ghi audit nên không tính.
+- **Bản ghi lộ trình giữ miễn phí:** đo bằng Whisper và `StepChecker`, không qua mô hình chấm hay mô hình ngôn ngữ; trần 30 lần ghi âm mỗi ngày.
+- **Màn của người học không còn IDPoint:** `credits.js`, `submit.js`, `report.js`, `passage.js`, `lesson.js` chỉ ghi lượt; lời từ chối khi thiếu lượt chỉ tới trang Lượt của tôi. `/api/v1/me/credits` thêm `free_runs_renew_on` (ngày 16 kế tiếp) và `included` cho mỗi dòng lịch sử.
+- **Migration 24** đổi `upgrade_runs`, `passage_runs` đang bằng 0 trong bảng giá đã lưu thành 1, có điều kiện trên giá trị 0.
+
+**Sinh viên tự xoá tài khoản (D101, FR-104).** `POST /api/v1/me/delete-account` ở `assessment/admin_api.py`: các bước xoá của FR-35 tách thành `erase_everywhere(pseudonym, who, actor)` dùng chung với quản trị viên (bài nói và audio, `learning.erase_account`, lớp, nghe lại, thông báo thiết bị), rồi `identity.delete_account` xoá document `account` (email, họ tên, mật khẩu, liên kết Google, mã email nằm trên đó) và mọi `session`, ghi `account.delete`. Xoá dữ liệu trước, tài khoản sau, nên lỗi giữa chừng để lại tài khoản để làm lại. `order`, `wallet`, `ledger` giữ lại để đối soát.
+
+**Email thanh toán (D096, FR-101).** `BillingService.settle` phát `billing.order_settled` lên bus một lần khi đơn chốt đã thanh toán hoặc không thành công; dịch vụ định danh nhận, kiểm email đã xác minh, chặn gửi trùng bằng `setting_once`, rồi gửi biên nhận qua bộ gửi D079.
+
+**Mẫu thiết kế.** Các mẫu đang dùng (Ports and Adapters, Adapter, Strategy, Factory, Template Method, Observer, State, Facade, Remote Proxy, Repository, Idempotent Receiver…) và nơi dùng từng mẫu được tổng hợp ở [DESIGN_PATTERNS.md](DESIGN_PATTERNS.md); ví dụ đầy đủ nhất là các cổng thanh toán ở mục 4.16.
 
 ## 5. Thiết kế cơ sở dữ liệu
 
@@ -2471,7 +2636,7 @@ Khác 5.1 và 5.2 — lược đồ nghiên cứu dự kiến của hình 5b —
 | `rating_assignment` (mới, D030) | `assignment_id` | `batch_id → rating_batch`, `response_id → response`, cả hai `ON DELETE CASCADE` | `UNIQUE (batch_id, response_id, slot)`, `UNIQUE (batch_id, response_id, rater_id)`; `rater_id` là `account_id`, không ràng buộc FK |
 | `machine_seen` (mới, D030) | (`account_id`, `response_id`) | `response_id → response`, `ON DELETE CASCADE` | ghi lần đầu bằng `INSERT OR IGNORE … SELECT … FROM response`, nên không có dòng cho bài không tồn tại; `via` là `report`, `history` hoặc `review`; `account_id` không ràng buộc FK |
 | `research_rating` (mới, D030) | `assignment_id` | `assignment_id → rating_assignment`, `ON DELETE CASCADE` | khoá chính trùng khoá ngoại: mỗi phiếu tối đa một lần chấm. Thang 0–6 bước 0,5, đủ năm tiêu chí và luật "không chấm được thì không có điểm" giữ ở tầng ứng dụng (`_to_rating`, `Rating`), không bằng `CHECK` |
-| `achievement` (mới, D032) | (`account_id`, `code`) | — (`account_id` không ràng buộc FK) | `unlocked_at TEXT NOT NULL`, `seen_at` NULL tới khi người học mở danh sách; ghi bằng `INSERT OR IGNORE` nên một mã chỉ có một ngày đạt; `code` là mã trong `CATALOG`, mã đã bỏ khỏi danh mục vẫn nằm trong bảng nhưng không hiện. Không có cột nào chứa bản ghi, bản chép hay điểm |
+| `achievement` (mới, D032) | (`account_id`, `code`) | — (`account_id` không ràng buộc FK) | `unlocked_at TEXT NOT NULL` (D103 gỡ `seen_at`); ghi bằng `INSERT OR IGNORE` nên một mã chỉ có một ngày đạt; `code` là mã trong `CATALOG`, mã đã bỏ khỏi danh mục vẫn nằm trong bảng nhưng không hiện. Không có cột nào chứa bản ghi, bản chép hay điểm |
 | `billing_license` (mới, D034) | `license_id` | — | `plan`, `seats`, `valid_from`, `valid_to`, `source` (`trial`, `order`, `key`), `order_id`, `value_vnd` (giá trị đã chiết khấu, dùng tính phần trừ khi nâng cấp), `license_key` khi cài từ mã; không xoá dòng nào — giấy phép sau thay giấy phép trước theo ngày bắt đầu và thứ tự cài |
 | `billing_order` (mới, D034; thêm cột D035) | `order_id` | — | `list_vnd`, `discount_vnd`, `gross_vnd`, `credit_vnd`, `amount_vnd`; `status` đổi bằng `UPDATE … WHERE status IN ('pending','expired')` trong cùng giao dịch với lần cài giấy phép; `reference`, `result_code` của cổng; `created_by` là mã tài khoản quản trị; chỉ mục theo `created_at`. D035: `gateway` nhận `none`, `sandbox`, `vnpay`, `stripe`, `momo`; `live INTEGER NOT NULL DEFAULT 0` ghi có tiền thật hay không lúc đặt; `checkout_ref` là mã của cổng cho lần thanh toán (Checkout Session của Stripe), có chỉ mục `idx_billing_order_checkout`; hai cột thêm bằng `ALTER TABLE` cho CSDL cũ |
 | `billing_event` (mới, D034; thêm cột D035) | `event_id` | — | mọi thông điệp có chữ ký của cổng về một đơn kèm `applied`; chỉ mã kết quả, mã giao dịch, mã ngân hàng, thời điểm. D035: `fingerprint` (nội dung trừ `applied`), `repeats`, `last_at`, chỉ mục duy nhất `idx_billing_event_once` trên (`order_id`, `kind`, `fingerprint`) — thông điệp lặp y hệt tăng `repeats` bằng `INSERT … ON CONFLICT DO UPDATE` thay vì thêm dòng; dòng cũ không có `fingerprint` không bao giờ trùng |
@@ -2579,6 +2744,8 @@ Bảng gồm **28 endpoint** thiết kế, vượt yêu cầu tối thiểu 10; 
 | POST | `/api/v1/learn/passage` | Lấy hoặc viết đoạn đọc (`source`: `model` hoặc `phrases`, `fresh`: viết đoạn khác) | 402 thiếu lượt, 409 dưới 3 từ, 429 hết phần trong ngày, 502 mô hình lỗi hay thiếu từ, 503 mô hình tắt | D090 |
 | POST | `/api/v1/learn/passage/{passage_id}/takes` | Gửi một lần đọc đoạn (`audio`); trả từng từ rõ hay chưa, máy nghe thành gì, ngày ôn | 404, 415 | D090 |
 | GET | `/passage` | Trang đọc đoạn văn có từ đang luyện | — | D090 |
+| GET | `/api/v1/me/credits/lesson` | Giá một bản ghi trong lộ trình: lượt và IDPoint mỗi phút nói, số bản miễn phí còn lại hôm nay, trần ngày, lượt còn lại; `metering: false` khi không tính lượt | 401 | D094 |
+| POST | năm endpoint ghi âm của lộ trình (`/api/v1/learn/lessons/{lesson_id}/steps/{step_id}/attempts`, `/api/v1/learn/review/attempts`, `/api/v1/learn/retell/{response_id}/rounds`, `/api/v1/learn/drill/{response_id}/takes`, `/api/v1/learn/passage/{passage_id}/takes`) | Như trước; trên bản tính lượt thêm hai mã từ chối trước khi đo | 402 hết lượt, 429 đủ trần ngày | D094 |
 
 Hai đường dẫn cũ đổi hành vi. `POST /api/v1/auth/login` nay trả thêm `must_change_password`, trả `home = /account?first=1` cho tài khoản dùng mật khẩu tạm, ghi `auth.login` hoặc `auth.login_failed` cho bút danh có thật, và ghi tên thiết bị thô vào phiên mới. Trang `/login` có nút Google khi tính năng được bật.
 
@@ -2608,7 +2775,6 @@ Hai trang HTML chỉ dựng khung; dữ liệu lấy qua các API có kiểm vai
 | Method | Đường dẫn | Mục đích | Lỗi đáng chú ý |
 | --- | --- | --- | --- |
 | GET | `/api/v1/me/achievements` | 17 thành tựu theo nhóm, mỗi cái có `value`, `target`, `unit`, `unlocked`, `unlocked_at`, `new`; lưu luôn những cái vừa đạt; `best_streak` | 401 khi chưa đăng nhập |
-| POST | `/api/v1/me/achievements/seen` | Đánh dấu đã xem: thân `{"codes": [...]}` (tối đa 17 mã) hoặc rỗng là mọi cái mới; trả `seen` | 422 khi quá 17 mã |
 
 Ba đường dẫn cũ trả thêm dữ liệu, không đổi hành vi: `GET /api/v1/learn` có `today.best_streak`, `today.rest_days`, `today.week_seconds`, `today.last_week_seconds` và khối `achievements` (đã đạt, tổng, số mới, ba cái gần nhất, cái gần đạt nhất); hai API lượt luyện có `achievements`, danh sách những gì lượt đó vừa đạt; `GET /api/v1/me/export.json` có `achievements`.
 
@@ -2746,7 +2912,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | 81 | Dịch vụ thanh toán | — | `BillingService` trong `src/aicefr/billing/service.py` | FR-67…FR-70 |
 | 82 | Bảng gói và đơn | — | `src/aicefr/storage/billing_repository.py` | FR-69, FR-70; chưa có hình ERD |
 | 83 | API, trang và chỗ áp gói | 01c | `src/aicefr/api/billing_api.py`; `_seats`, `AUTHORING`, `create_batch`, `cohort_stats`; `static/admin_billing.js`, `templates/billing_*.html` | FR-67…FR-70; `UC-23` |
-| 84 | Bộ chuyển đổi Stripe | 02b, 08 | `StripeGateway` trong `src/aicefr/billing/stripe_gateway.py` | FR-72; BR-32, BR-35; ADR-12 |
+| 84 | ~~Bộ chuyển đổi Stripe~~ (gỡ bởi D097; xem `PayosGateway`) | 02b, 08 | `StripeGateway` trong `src/aicefr/billing/stripe_gateway.py` | FR-72; BR-32, BR-35; ADR-12 |
 | 85 | Bộ chuyển đổi MoMo | 02b | `MomoGateway` trong `src/aicefr/billing/momo_gateway.py` | FR-73; BR-32; ADR-12 |
 | 86 | Dựng các cổng từ cấu hình | — | `build_gateways` trong `src/aicefr/billing/registry.py`; `payment_gateways`, `payments_live`, `stripe_*`, `momo_*` trong `src/aicefr/config.py` | FR-71; BR-34 |
 | 87 | Gọi HTTPS tới cổng | — | `https`, `Reply`, `Unreachable` trong `src/aicefr/billing/transport.py` | FR-72, FR-73; ADR-12 |
@@ -2952,7 +3118,9 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/05b_erd_target.mmd` | ERD dự kiến | Mermaid `erDiagram` |
 | `docs/sdd/diagrams/06_deployment.mmd` | Component/Deployment | Mermaid `flowchart TB` |
 | `docs/sdd/diagrams/07_sequence_google_pkce.mmd` | Sequence: đăng nhập Google có PKCE (D029, D036) | Mermaid `sequenceDiagram` |
-| `docs/sdd/diagrams/08_sequence_stripe.mmd` | Sequence: thanh toán qua Stripe Checkout (D035) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/08_sequence_payos.mmd` | Sequence: mua gói lượt qua payOS và email biên nhận (D095–D097) | Mermaid `sequenceDiagram` |
+| `docs/sdd/diagrams/09_class_thanh_toan.mmd` | Lớp: phân hệ thanh toán và các mẫu thiết kế (D097, D099) | Mermaid `classDiagram` |
+| `docs/sdd/diagrams/10_state_don_hang.mmd` | Trạng thái: vòng đời đơn gói lượt, mẫu State (D098) | Mermaid `stateDiagram-v2` |
 
 Thư mục hiện có mười một tệp `.mmd` (D078 bỏ sơ đồ 5d), và ngày 07/10/2026 cả mười một đều kết xuất được bằng mermaid-cli 11.17.0 (mermaid 11.17.2); hai tệp 07 và 08 được thêm ở bản 1.6. Ba tệp 05, 05c và 05d được kết xuất lại vào `docs/sdd/images/` hôm đó, với cấu hình chung của thư mục, chạy từ gốc kho mã:
 

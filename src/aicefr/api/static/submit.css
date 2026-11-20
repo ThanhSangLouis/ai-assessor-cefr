@@ -1,0 +1,161 @@
+/* The submission screen (D093) on the student stage (student_stage.css):
+   the task chooser, the chosen prompt and the preparation line. One card is
+   shown at a time, centred, so no column stands empty. */
+
+.sb-stage { display: grid; justify-items: center; min-width: 0; }
+.sb-choose, .sb-speak { width: min(100%, 820px); display: grid; gap: 20px; }
+.sb-choose[hidden], .sb-speak[hidden] { display: none; }
+.sb-choose h2 { font-size: clamp(1.3rem, 1.1rem + 0.6vw, 1.6rem); font-weight: 700; letter-spacing: -0.01em; }
+
+/* Band tabs. */
+.sb-page .task-bands {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--st-soft);
+  border: 1px solid var(--st-line);
+}
+.sb-page .task-band-chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  margin: 0;
+  border-radius: 10px;
+  font: 600 0.9rem/1 var(--st-display);
+  color: var(--st-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.sb-page .task-band-chip input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.sb-page .task-band-chip:hover { color: var(--st-ink); }
+.sb-page .task-band-chip.on { background: var(--st-surface); color: var(--st-green); box-shadow: 0 1px 0 var(--st-line), 0 2px 6px -2px rgba(0, 0, 0, 0.12); }
+.sb-page .task-band-chip:has(input:focus-visible) { outline: 3px solid var(--st-green); outline-offset: 1px; }
+
+/* Tasks: real radios, one card each. */
+.sb-page .task-grid { display: grid; gap: 10px; margin-top: 14px; counter-reset: task; }
+.sb-page .task {
+  counter-increment: task;
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1.5px solid var(--st-line);
+  background: var(--st-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+}
+.sb-page .task::before {
+  content: counter(task);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font: 700 1rem/1 var(--st-display);
+  color: var(--st-green);
+  background: var(--st-green-soft);
+}
+.sb-page .task:hover:not(.chosen) { border-color: color-mix(in srgb, var(--st-green) 40%, var(--st-line)); transform: translateY(-1px); }
+.sb-page .task input[type="radio"] { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.sb-page .task:has(input:focus-visible) { outline: 3px solid var(--st-green); outline-offset: 2px; }
+.sb-page .task.chosen { border-color: var(--st-cta-top); background: color-mix(in srgb, var(--st-cta-top) 7%, var(--st-surface)); }
+.sb-page .task.chosen::before { color: #ffffff; background: var(--st-cta-top); }
+.sb-page .task-card-main { min-width: 0; }
+.sb-page .task-meta { font-size: 0.8rem; font-weight: 600; color: var(--st-muted); font-variant-numeric: tabular-nums; }
+.sb-page .task-prompt { margin: 3px 0 0; font-size: 1rem; line-height: 1.5; font-weight: 500; color: var(--st-ink); overflow-wrap: anywhere; }
+.sb-page .task-card-indicator { display: grid; place-items: center; }
+.sb-page .radio-indicator { display: block; width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--st-line); }
+.sb-page .task-check-icon { display: none; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: #ffffff; background: var(--st-cta-top); }
+.sb-page .task.chosen .task-check-icon { display: grid; }
+.sb-page .task.chosen .radio-indicator { display: none; }
+
+.sb-go-row { display: flex; justify-content: flex-end; }
+.sb-page .sb-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: auto;
+  min-height: 52px;
+  margin: 0;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 16px;
+  background: linear-gradient(180deg, var(--st-cta-top), var(--st-cta));
+  color: var(--st-cta-ink);
+  font: 700 1rem/1 var(--st-display);
+  box-shadow: 0 4px 0 var(--st-cta-rim);
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.sb-page .sb-go:hover:not(:disabled) { transform: translateY(-1px); }
+.sb-page .sb-go:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--st-cta-rim); }
+.sb-page .sb-go .icon { transition: transform 0.15s ease; }
+.sb-page .sb-go:hover .icon { transform: translateX(3px); }
+
+/* The chosen prompt, large: it is read while speaking. */
+.sb-prompt { min-width: 0; }
+.sb-page .prompt-header-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sb-page .prompt-band-badge { padding: 4px 9px; border-radius: 8px; font: 700 0.8rem/1.2 var(--st-display); color: #ffffff; background: #2c7550; }
+.sb-page .prompt-time { font-size: 0.88rem; font-weight: 500; color: var(--st-muted); font-variant-numeric: tabular-nums; }
+.sb-page .prompt-question {
+  margin-top: 12px;
+  font-size: clamp(1.3rem, 1.05rem + 0.9vw, 1.75rem);
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.sb-page .prompt-question:focus { outline: none; }
+.sb-page #price-note { margin: 10px 0 0; color: var(--st-muted); }
+
+/* Preparation: one line, a ring that fills as the seconds pass. */
+.sb-page .sb-prep {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--st-line);
+  background: var(--st-surface);
+}
+.sb-page .sb-prep[hidden] { display: none; }
+.sb-page .sb-prep[data-state="running"] { border-color: var(--st-cta-top); background: color-mix(in srgb, var(--st-cta-top) 6%, var(--st-surface)); }
+.sb-prep-ring {
+  --p: 0;
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: conic-gradient(var(--st-cta-top) calc(var(--p) * 360deg), var(--st-line) 0);
+  font: 700 1rem/1 var(--st-display);
+  font-variant-numeric: tabular-nums;
+  color: var(--st-cta);
+}
+.sb-prep-ring::before { content: ""; position: absolute; inset: 4px; border-radius: 50%; background: var(--st-surface); }
+.sb-prep-ring span { position: relative; }
+.sb-prep-text { flex: 1; min-width: 0; }
+.sb-prep-title { font-weight: 600; font-size: 0.95rem; color: var(--st-ink); }
+.sb-prep-sub { margin-top: 2px !important; font-size: 0.85rem; color: var(--st-muted); }
+.sb-prep-actions { display: flex; align-items: center; gap: 6px; flex: none; }
+.sb-page .sb-prep-actions .link-button { width: auto; margin: 0; padding: 0 8px; }
+
+@media (max-width: 760px) {
+  .sb-choose, .sb-speak { gap: 16px; }
+  .sb-page .task { grid-template-columns: 36px minmax(0, 1fr) 22px; gap: 12px; padding: 14px; }
+  .sb-page .task::before { width: 36px; height: 36px; border-radius: 12px; }
+  .sb-go-row .sb-go { width: 100%; justify-content: center; }
+  .sb-page .sb-prep { flex-wrap: wrap; }
+  .sb-prep-actions { width: 100%; }
+  .sb-page .sb-prep-actions .st-link-button { flex: 1; justify-content: center; }
+}

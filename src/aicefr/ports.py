@@ -74,7 +74,15 @@ class Scorer(Protocol):
 
     model_version: str
 
-    def score(self, features: FeatureSet) -> Assessment: ...
+    def score(self, features: FeatureSet, text: str | None = None) -> Assessment:
+        """Score one response.
+
+        `text` is the transcript of exactly the audio `features` describe. A
+        scorer that reads only the measurements ignores it; one that also reads
+        the words (`DebertaScorer`) falls back to its measurement-only model
+        when it is None, rather than guessing.
+        """
+        ...
 
     def contributions(self, features: FeatureSet) -> dict[str, float]:
         """How many points each measurement added to or took from the score.
@@ -171,7 +179,7 @@ class ResponseStore(Protocol):
       mot Response. Nguoi goi ba phuong thuc nay la tang web.
     * `api/main.py` khoi tao `repo = Repository()` bang kieu CU THE, va goi
       hon hai muoi phuong thuc khac khong nam trong cong nay: apply_review,
-      queue_with_locks, cohort_stats, erase_speaker, write_audit...
+      queue_with_locks, cohort_stats, erase_account_data, write_audit...
 
     Nghia la doi kho du lieu khong phai "viet mot bo chuyen doi ba phuong thuc"
     ma la viet lai gan nhu toan bo `Repository` -- dung nhu D048 da lam khi
@@ -185,7 +193,6 @@ class ResponseStore(Protocol):
     def save(
         self,
         report: Response,
-        speaker_id: str,
         task_id: str,
         account_id: str | None = None,
         audio_path: str | None = None,
@@ -200,19 +207,19 @@ class ResponseStore(Protocol):
 
 @runtime_checkable
 class PaymentGateway(Protocol):
-    """Where an institution pays for a plan (D033, D035).
+    """Where a run pack is paid for (D035, D075).
 
-    Four adapters: `SandboxGateway`, a page inside the app where no money
-    moves; `VnpayGateway` and `MomoGateway`, the Vietnamese gateways, which
-    sign their results into an address; `StripeGateway`, whose page is opened
-    through its API and whose events come signed to a webhook. A deployment may
-    offer several at once and the buyer picks one per order. Another gateway
+    Two adapters: `SandboxGateway`, a page inside the app where no money moves
+    and whose result is signed into an address; `PayosGateway` (D095), whose
+    page is opened through its API, read back on return and whose webhook
+    comes signed (VNPay and MoMo were removed in D075, Stripe in D097). A
+    deployment may offer several at once and the buyer picks one per order. Another gateway
     is one more adapter: the order, the runs it buys and the checks on the
     result do not change.
     """
 
-    name: str  # in addresses and on each order: "stripe"
-    title: str  # what the buyer reads: "Stripe"
+    name: str  # in addresses and on each order: "payos"
+    title: str  # what the buyer reads: "payOS"
     methods: str  # how the payer pays there, in a few words
     live: bool  # True when real money moves
     note: str  # how to pay in the gateway's test environment; "" when live
@@ -234,7 +241,7 @@ class PaymentGateway(Protocol):
         ...
 
     def return_reference(self, query: Mapping[str, str]) -> str | None:
-        """The checkout a return address names, when its result must be asked for (Stripe).
+        """The checkout a return address names, when its result must be asked for (payOS).
 
         None when the address carries the signed result itself. The service
         asks the gateway only about a checkout one of its orders opened.
@@ -244,7 +251,7 @@ class PaymentGateway(Protocol):
     def verify_return(self, query: Mapping[str, str]) -> PaymentResult | None:
         """The result the browser's return address stands for; None when it is not the gateway's.
 
-        May ask the gateway (Stripe) and raise GatewayError when it cannot.
+        May ask the gateway (payOS) and raise GatewayError when it cannot.
         """
         ...
 

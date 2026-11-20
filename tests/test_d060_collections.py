@@ -8,6 +8,7 @@ the result -- and run it a second time, which must change nothing.
 
 from __future__ import annotations
 
+import json
 import uuid
 
 import pytest
@@ -255,3 +256,16 @@ def test_d082_moves_the_lock_and_the_visits_into_a_review_session(db):
     assert db["review_session"].count_documents({"response_id": "r2"}) == 0  # never opened
     for r in db["response"].find():
         assert "review_lock" not in r and "review_visits" not in r
+
+
+def test_d104_keeps_only_the_reports_own_fields(db):
+    """A report from before D083 also held `practice`: it must not become a field."""
+    from aicefr.contracts import Response
+
+    assert set(migrations.D104_REPORT_KEYS) == set(Response.model_fields) - {"reviews", "upgrade"}
+    report = {"response_id": "r1", "status": "COMPLETED", "config_version": "v1", "practice": None}
+    db["response"].insert_one({"response_id": "r1", "report_json": json.dumps(report),
+                               "overall_0_6": 3.0, "teacher_verified": 0})  # fmt: skip
+    _twice(lambda d: migrations._d104_documents(d, "mongomock://x"), db)
+    row = db["response"].find_one({"response_id": "r1"}, {"_id": 0})
+    assert row == {"response_id": "r1", "status": "COMPLETED", "config_version": "v1"}

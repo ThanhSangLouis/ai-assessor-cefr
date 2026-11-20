@@ -127,7 +127,7 @@ def test_the_account_header_round_trips_and_rejects_garbage():
         ("/api/v1/learn", "core"),
         ("/api/v1/learn/review", "core"),
         ("/api/v1/plan", "core"),
-        ("/billing/return/stripe", "core"),
+        ("/billing/return/payos", "core"),
         ("/auth/google/callback", "core"),
         ("/api/v1/admin/accounts/x/role", "core"),
         ("/api/v1/admin/erase", "core"),

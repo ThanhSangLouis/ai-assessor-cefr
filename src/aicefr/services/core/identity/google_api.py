@@ -165,7 +165,7 @@ def google_callback(
         except IdentityTaken:
             return _back("/account", "taken")
         auth.fill_contact(account.account_id, identity.email, identity.name)
-        audit(account.pseudonym, "account.google_link", account.account_id, None)
+        audit(account.account_id, "account.google_link", account.account_id, None)
         return _back("/account", "linked")
 
     device = device_label(request.headers.get("user-agent"))
@@ -187,12 +187,15 @@ def google_callback(
             # None: the account left this address meanwhile; nothing was joined,
             # so this sign-in goes on as a Google account of its own.
             if reset is not None:
-                audit(same["pseudonym"], "account.google_adopt", same["account_id"],
+                audit(same["account_id"], "account.google_adopt", same["account_id"],
                       "reset" if reset else None)  # fmt: skip
                 opened = auth.login_with_identity(google.PROVIDER, identity.subject_hash, device)
     if opened is None:
         if not get_settings().google_signup:
             return _back("/login", "not_linked")
+        if not identity.email:
+            # D103: an account is its email; one Google has not verified makes none.
+            return _back("/login", "unverified")
         # D063: first time this Google account is seen, it becomes a student.
         try:
             aid = auth.create_with_identity(
@@ -208,9 +211,9 @@ def google_callback(
             return _back("/login", "not_linked")
         signed_up = aid is not None
         if signed_up:
-            audit(opened[1]["pseudonym"], "account.google_signup", aid, None)
+            audit(opened[1]["account_id"], "account.google_signup", aid, None)
     token, row = opened
-    audit(row["pseudonym"], "auth.login", row["account_id"], "method=google")
+    audit(row["account_id"], "auth.login", row["account_id"], "method=google")
     if row["must_change_password"]:
         # Google proves who is signing in; it does not make a password an
         # administrator has seen any less known. The D028 rule still applies.

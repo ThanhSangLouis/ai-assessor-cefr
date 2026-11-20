@@ -14,7 +14,6 @@ from aicefr.pipeline import ResponseProcessor
 def request_obj() -> ProcessingRequest:
     return ProcessingRequest(
         response_id="r1",
-        speaker_id="SV-001",
         task_id="P3",
         audio_path="khong-dung-den.wav",
         prompt_version="v1",
@@ -118,7 +117,6 @@ def test_moc_thoi_gian_tu_nam_tren_dong_ho_cua_ban_ghi_goc(sr) -> None:
     report = ResponseProcessor(asr_engine=FakeAsrEngine(), vad=EnergyVad()).process(
         ProcessingRequest(
             response_id="r-lech",
-            speaker_id="SV-001",
             task_id="P3",
             audio_path="x.wav",
             prompt_version="v1",
@@ -159,7 +157,6 @@ def test_do_tre_truoc_khi_noi_khong_bi_phan_cat_lam_phang(sr) -> None:
     report = ResponseProcessor(asr_engine=FakeAsrEngine(), vad=EnergyVad()).process(
         ProcessingRequest(
             response_id="r-tre",
-            speaker_id="SV-001",
             task_id="P3",
             audio_path="x.wav",
             prompt_version="v1",

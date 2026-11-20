@@ -39,9 +39,9 @@ def test_assessment_api_registers_the_migrated_response_review_admin_and_class_r
     assert "/api/v1/review/queue" in paths
     assert "/api/v1/admin/models" in paths
     assert "/api/v1/classes/{class_id}/members" in paths
-    # D075: classes set no assessments and nobody joins with a code.
+    # D075: classes set no assessments. D109: a student joins by code or invitation.
     assert "/api/v1/classes/{class_id}/assignments" not in paths
-    assert "/api/v1/me/classes/join" not in paths
+    assert "/api/v1/me/classes/join" in paths
 
 
 def test_band_descriptors_distinguish_unmeasured_and_out_of_scope_aspects():
@@ -153,7 +153,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
         assessment=assessment,
         config_version="v1",
     )
-    context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
+    context.svc().repo.save(report, "P3", account_id="student-1")
 
     student = Account("student-1", "SV-001", Role.STUDENT)
     with TestClient(asgi(parts, settings)) as client:
@@ -179,7 +179,7 @@ def test_review_queue_includes_pending_response_and_its_reviewer_can_lock_it(ass
         ),
         config_version="v1",
     )
-    context.svc().repo.save(report, "SV-001", "P3", account_id="student-1")
+    context.svc().repo.save(report, "P3", account_id="student-1")
     teacher = Account("teacher-1", "GV-01", Role.TEACHER)
     admin = Account("admin-1", "QT-01", Role.ADMIN)
 

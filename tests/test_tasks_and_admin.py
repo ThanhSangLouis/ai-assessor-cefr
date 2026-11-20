@@ -11,7 +11,7 @@ import subprocess
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import one_school
+from dbutil import email_of, one_school
 from fastapi.testclient import TestClient
 
 from aicefr.audio.decoder import DecodeError, FfmpegDecoder, FirstMatchDecoder, ffmpeg_available
@@ -33,11 +33,11 @@ def app(tmp_path, monkeypatch):
     return m.app
 
 
-def login_as(app, pseudonym: str, role: str) -> TestClient:
-    app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
-    one_school(pseudonym, role)
+def login_as(app, name: str, role: str) -> TestClient:
+    app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
+    one_school(name, role)
     c = TestClient(app)
-    r = c.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = c.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return c
 
@@ -53,7 +53,7 @@ def submit(c, speaker="SV-001", task="P3", name="bai.wav", data=None):
     return c.post(
         "/api/v1/responses",
         files={"audio": (name, data or wav(), "audio/wav")},
-        data={"speaker_id": speaker, "task_id": task},
+        data={"task_id": task},
     )
 
 
@@ -182,14 +182,12 @@ def test_profile_names_what_to_practise_next(app) -> None:
 def test_profile_row_reads_the_weakest_criterion_from_the_stored_report(
     assessment, weak, has_hint
 ) -> None:
-    import json
-
     from aicefr.contracts import Criterion
     from aicefr.report.comments import NEXT_TASK_HINTS
     from aicefr.storage.repository import _profile_row
 
-    row = _profile_row({"response_id": "r1", "report_json": json.dumps({"assessment": assessment})})
-    assert "report_json" not in row
+    row = _profile_row({"response_id": "r1", "assessment": assessment})
+    assert "assessment" not in row
     assert row["weakest_criteria"] == weak
     expected = NEXT_TASK_HINTS[Criterion.FLUENCY] if has_hint else None
     assert row["next_task_hint"] == expected
@@ -227,7 +225,7 @@ def test_erasure_preview_changes_nothing(app) -> None:
     submit(student)
     admin = login_as(app, "QT-01", "admin")
 
-    preview = admin.get("/api/v1/admin/erase/SV-001").json()
+    preview = admin.get("/api/v1/admin/erase", params={"email": email_of("SV-001")}).json()
     assert preview["responses"] == 1
     assert len(student.get("/api/v1/me/responses").json()) == 1, "xem truoc khong duoc xoa gi"
 
@@ -237,7 +235,7 @@ def test_erasure_requires_the_id_twice_and_they_must_match(app) -> None:
     admin = login_as(app, "QT-01", "admin")
     r = admin.post(
         "/api/v1/admin/erase",
-        json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-002"},
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-002")},
     )
     assert r.status_code == 422
 
@@ -255,7 +253,7 @@ def test_erasure_removes_rows_and_the_audio_file(app) -> None:
     admin = login_as(app, "QT-01", "admin")
     admin.post(
         "/api/v1/admin/erase",
-        json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"},
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert not Path(audio).is_file(), "xoa ma de lai tep audio thi loi khai bao la sai su that"
     assert m.repo.get(rid) is None
@@ -263,10 +261,11 @@ def test_erasure_removes_rows_and_the_audio_file(app) -> None:
 
 def test_erasure_states_the_model_cutoff(app) -> None:
     """AC-35.4: never promise to remove data from an already published model."""
+    login_as(app, "SV-001", "student")
     admin = login_as(app, "QT-01", "admin")
     body = admin.post(
         "/api/v1/admin/erase",
-        json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"},
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     ).json()
     assert "KHÔNG bị gỡ khỏi mô hình" in body["cutoff_note"]
 
@@ -277,7 +276,7 @@ def test_erasure_is_written_to_the_audit_log(app) -> None:
     admin = login_as(app, "QT-01", "admin")
     admin.post(
         "/api/v1/admin/erase",
-        json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"},
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     actions = [e["action"] for e in admin.get("/api/v1/audit").json()]
     assert "ERASE_PARTICIPANT" in actions
@@ -287,7 +286,7 @@ def test_only_an_admin_may_erase(app) -> None:
     teacher = login_as(app, "GV-01", "teacher")
     r = teacher.post(
         "/api/v1/admin/erase",
-        json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"},
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     )
     assert r.status_code == 403
 
@@ -411,8 +410,8 @@ def test_a_recording_submitted_through_the_api_is_scored(app, tmp_path) -> None:
 def test_approving_a_review_does_not_orphan_the_report(app) -> None:
     """Regression: approving used to erase who the report belonged to.
 
-    `apply_review` wrote the report back with the response id in the speaker_id
-    slot, an empty task id and no account id. The row stayed in the table, so
+    `apply_review` wrote the report back with the response id as its owner, an
+    empty task id and no account id. The row stayed in the table, so
     nothing failed loudly, but the student lost access to their own report, it
     disappeared from "my responses", and it never reached the exported profile.
     """
@@ -425,7 +424,7 @@ def test_approving_a_review_does_not_orphan_the_report(app) -> None:
     from aicefr.api import main as m
 
     row = m.repo.col("response").find_one({"response_id": rid})
-    assert row["speaker_id"] == "SV-001"
+    assert "speaker_id" not in row  # D103: the account id says whose it is
     assert row["task_id"] == "P4"
     assert row["account_id"] is not None
 

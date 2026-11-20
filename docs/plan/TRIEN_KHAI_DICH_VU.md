@@ -34,7 +34,7 @@ Volume: `uploads` (bản ghi âm — dữ liệu cá nhân; `core` ghi, `speech`
 3. Tạo quản trị viên đầu tiên (mật khẩu nhập kín):
 
    ```bash
-   docker compose exec core python -m aicefr.accounts_cli them --but-danh QT-01 --vai-tro admin
+   docker compose exec core python -m aicefr.accounts_cli them --email qt-01@demo.speakup.fit --vai-tro admin
    ```
 
 4. Mở `http://localhost:8000`. Kiểm tra toàn hệ thống:

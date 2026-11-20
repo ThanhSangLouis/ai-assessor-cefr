@@ -224,3 +224,12 @@ Lịch sử Git còn các số này; theo kế hoạch W4, không viết lại l
 - PR `port/m03-m05-m09-cham` vào nhánh tích hợp `migrate/w7-repo-goc`, xếp trên PR nền `port/m16-nen-w7` (W7-T01). Người làm: Sang. Chưa có verdict.
 - Kết quả test ghi trong mô tả PR. Lý do: trên riêng nhánh tích hợp, test chưa chạy được cho tới khi mọi module đã chuyển, nên kết quả được đo bằng cách phủ tạm phần của người khác từ repo gốc.
 - Không có số đo Speak & Improve trong code, test hay tài liệu của PR.
+
+## Mô hình ghép Ridge v4 + DeBERTa LoRA (15/11/2026)
+
+- Thêm adapter `DebertaScorer` (`src/aicefr/scoring/fusion.py`) cho cổng `Scorer`, bộ nạp `DebertaTextModel` (`text_model.py`, gộp LoRA lúc nạp, không cần peft) và `build_scorer` (`factory.py`) chọn adapter theo artifact. Người làm: Sang (Claude hỗ trợ). Chưa có verdict.
+- Cổng `Scorer.score` nhận thêm tham số tuỳ chọn `text` (bản chép lời); pipeline truyền bản chép của cả bài hoặc của từng cửa sổ. `RidgeScorer` bỏ qua tham số này, hành vi không đổi.
+- Khi thiếu bản chép hoặc mô hình văn bản lỗi, `DebertaScorer` chấm bằng Ridge v4 và ghi `model_version = ridge_resp_v4`, nên báo cáo không nhận nhầm mô hình.
+- **Mặc định không đổi:** bài mới vẫn chấm bằng `ridge_resp_v2` cho tới khi admin kích hoạt `fusion_resp_v4`. Kích hoạt bị từ chối (409) nếu máy chủ thiếu tệp mô hình văn bản. Image speech cài extra `.[text]` (build-arg `TEXT=1` trong `docker-compose.yml`, torch bản CPU; CI kiểm image không có thư viện CUDA). Trọng số không nằm trong image: chép `deberta-v3-base/`, `deberta_lora_s42/` vào `AICEFR_MODEL_DIR` của máy chủ.
+- Artifact sinh bằng `tools/build_fusion_artifact.py`, ghim SHA-256 trong `artifacts.py`. Số đo nằm trong artifact và chương Thực nghiệm nội bộ, không nằm trong repo (W7-S01).
+- Test: `tests/test_deberta_scorer.py` chạy trên artifact giả và mô hình văn bản giả, không cần torch.

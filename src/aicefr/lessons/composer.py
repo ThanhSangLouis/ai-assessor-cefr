@@ -510,7 +510,6 @@ class Plan:
     def as_dict(self) -> dict:
         g = self.goal
         return {
-            "model_version": COMPOSER_VERSION,
             "goal": goal_dict(g),
             "candidates": self.candidates,
             "order_model": self.order.describe(),

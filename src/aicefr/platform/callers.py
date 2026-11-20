@@ -36,13 +36,12 @@ def encode_account(account: Account | None) -> str:
         return ""
     data = {
         "account_id": account.account_id,
-        "pseudonym": account.pseudonym,
         "role": account.role.value,
         "must_change_password": account.must_change_password,
         "avatar_icon": account.avatar_icon,
         "avatar_color": account.avatar_color,
         "daily_goal_s": account.daily_goal_s,
-        # D071: the pages greet the person by name and ask for a missing email.
+        # D071: the pages greet the person by name.
         "email": account.email,
         "full_name": account.full_name,
     }
@@ -56,13 +55,12 @@ def decode_account(value: str | None) -> Account | None:
         data = json.loads(base64.urlsafe_b64decode(value.encode()))
         return Account(
             data["account_id"],
-            data["pseudonym"],
+            data["email"],
             Role(data["role"]),
             must_change_password=bool(data.get("must_change_password")),
             avatar_icon=data.get("avatar_icon"),
             avatar_color=data.get("avatar_color"),
             daily_goal_s=int(data.get("daily_goal_s") or DEFAULT_DAILY_GOAL),
-            email=data.get("email"),
             full_name=data.get("full_name"),
         )
     except (ValueError, KeyError, TypeError):

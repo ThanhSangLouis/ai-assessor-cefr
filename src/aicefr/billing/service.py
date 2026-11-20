@@ -17,27 +17,30 @@ import secrets
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 
+from aicefr.billing.order_state import TransitionRefused, state_of
 from aicefr.billing.payments import (
-    ORDER_STATUS_NAMES,
     PENDING_MINUTES,
-    SETTLEABLE,
     GatewayError,
     OrderStatus,
     PaymentResult,
 )
+from aicefr.contracts import ORDER_SETTLED
 from aicefr.practice.streak import LOCAL_TZ
 
 logger = logging.getLogger(__name__)
 
-# An order's gateway by name, for orders whose gateway is no longer offered
-# (VNPay and MoMo orders made before D075 among them).
-GATEWAY_TITLES = {
-    "none": "Không cần thanh toán",
-    "sandbox": "Cổng thử",
-    "vnpay": "VNPay",
-    "stripe": "Stripe",
-    "momo": "MoMo",
-}
+# D096: the outcomes announced on the bus as `ORDER_SETTLED`, for whoever tells
+# the buyer (the identity service emails them). The publisher does not know who
+# listens; a payload names the order, never the payer's email.
+ANNOUNCED = frozenset({OrderStatus.PAID, OrderStatus.FAILED})
+
+# D099: at most this many orders still waiting for payment, per buyer, opened
+# within the window -- each one opens a payment link at the gateway.
+OPEN_ORDER_LIMIT = 5
+OPEN_ORDER_WINDOW = timedelta(minutes=10)
+# D099: how far back reconciliation asks the gateway about orders still open.
+# A payOS link lives PENDING_MINUTES + 1; an hour covers it with room to spare.
+RECONCILE_WINDOW = timedelta(hours=1)
 
 
 class BillingOff(Exception):
@@ -46,6 +49,10 @@ class BillingOff(Exception):
 
 class OrderError(ValueError):
     """An order that cannot be placed; the message says why, for the person."""
+
+
+class TooManyOrders(OrderError):
+    """The buyer already has OPEN_ORDER_LIMIT orders waiting; nothing was opened (D099)."""
 
 
 class PaymentUnavailable(Exception):
@@ -67,6 +74,8 @@ class BillingService:
         # D078: the run packs on sale, as an administrator set them; the
         # settings' packs where nothing is metered.
         packs: Callable[[], tuple[tuple[int, int], ...]] | None = None,
+        # D096: where a settled order is announced (the message bus); None: nowhere.
+        publish: Callable[[str, dict], None] | None = None,
     ) -> None:
         self.store = store
         self.settings = settings
@@ -77,6 +86,7 @@ class BillingService:
         self._clock = clock
         self._credit = credit
         self._packs = packs or (lambda: tuple(self.settings.credit_packs))
+        self._publish = publish
 
     # ------------------------------------------------------------ basics
 
@@ -87,6 +97,16 @@ class BillingService:
     def gateway(self, name: str):
         """The gateway of that name if this deployment offers it, else None."""
         return self.gateways.get(name)
+
+    @property
+    def active(self):
+        """The one gateway this deployment runs (D103), or None.
+
+        The registry never runs a test gateway beside one that moves real
+        money, so an order's gateway and money mode are the deployment's: they
+        are not kept on each payment.
+        """
+        return next(iter(self.gateways.values()), None)
 
     def now(self) -> datetime:
         return self._clock()
@@ -144,7 +164,10 @@ class BillingService:
             # Nothing was opened, so nothing can be paid: the order ends here.
             refused = PaymentResult(order_id, OrderStatus.FAILED, amount, "", e.code, str(e))
             self.settle(refused, "checkout", gateway.name)
-            raise PaymentUnavailable(f"{gateway.title}: {e}") from e
+            # Named once: "payOS không mở được…", not "payOS: payOS không mở được…".
+            reason = str(e)
+            said = reason if reason.startswith(gateway.title) else f"{gateway.title}: {reason}"
+            raise PaymentUnavailable(said) from e
         if checkout.reference:
             self.store.set_checkout_ref(order_id, checkout.reference)
         return checkout.url
@@ -165,7 +188,6 @@ class BillingService:
         self,
         runs: int,
         by_account: str,
-        by_pseudonym: str,
         site: str,
         client_ip: str,
         gateway_name: str | None = None,
@@ -183,6 +205,9 @@ class BillingService:
         gateway = self._chosen_gateway(gateway_name)
         now = self.now()
         self.store.expire_pending(self._stamp())
+        since = (now - OPEN_ORDER_WINDOW).astimezone(UTC).isoformat(timespec="seconds")
+        if self.store.pending_count(by_account, since) >= OPEN_ORDER_LIMIT:
+            raise TooManyOrders("Bạn đang có nhiều đơn chờ thanh toán. Đợi vài phút rồi thử lại.")
         order_id = self._new_order_id("DL", now)
         self.store.create_order(
             {
@@ -190,15 +215,13 @@ class BillingService:
                 "runs": runs,
                 "amount_vnd": price,
                 "status": OrderStatus.PENDING.value,
-                "gateway": gateway.name,
-                "live": bool(gateway.live),
                 "created_by": by_account,
                 "created_at": self._stamp(),
                 "expires_at": self._expiry(now),
             }
         )
         self.store.add_event(order_id, "created", {"amount": price, "runs": runs})
-        self._audit(by_pseudonym, "billing.credit_order", order_id, f"runs={runs} amount={price}")
+        self._audit(by_account, "billing.credit_order", order_id, f"runs={runs} amount={price}")
         url = self._open_checkout(
             gateway,
             order_id,
@@ -237,16 +260,47 @@ class BillingService:
         """Credit every paid run pack that has not reached its wallet yet."""
         return [o["order_id"] for o in self.store.uncredited() if self.credit_order(o)]
 
+    def reconcile(self) -> list[str]:
+        """Ask the gateway about every order still open, and settle what it says (D099).
+
+        For the payment whose webhook never arrived and whose payer closed the
+        page before coming back: the money moved, and nobody told this system.
+        Only gateways that can be asked about a checkout (`look_up`, payOS) are
+        asked, only about orders of the last RECONCILE_WINDOW that opened one,
+        and only a final word is applied. Returns the orders it moved.
+        """
+        if not self.enabled:
+            return []
+        self.store.expire_pending(self._stamp())
+        since = (self.now() - RECONCILE_WINDOW).astimezone(UTC).isoformat(timespec="seconds")
+        moved = []
+        gateway = self.active
+        look_up = getattr(gateway, "look_up", None)
+        for order in self.store.open_since(since):
+            if look_up is None or not order["checkout_ref"]:
+                continue
+            try:
+                result = look_up(order["checkout_ref"])
+            except GatewayError as e:
+                logger.warning("billing: reconcile %s: %s", order["order_id"], e)
+                continue
+            if result is None or result.outcome is OrderStatus.PENDING:
+                continue  # no final word yet: nothing to keep, asked again next time
+            if self.settle(result, "reconcile", gateway.name) == "ok":
+                moved.append(order["order_id"])
+        self.credit_pending()
+        return moved
+
     def settle(self, result: PaymentResult, via: str, gateway: str) -> str:
         """Apply a verified result from `gateway` once. Returns what happened, in VNPay's terms.
 
         "ok" the order moved; "already" it had been settled; "pending" the
         gateway has no final word yet and nothing changes; "amount" the amount
         is not the order's and nothing changes (BR-33); "not_found", also for a
-        result that is not this order's to settle (BR-35): from another
-        gateway, from the same gateway in the other money mode -- a test card
-        never pays for a real order, nor the other way round -- or about
-        another checkout than the one the order opened. Every message about a
+        result that is not this order's to settle (BR-35): from a gateway this
+        deployment does not run -- a test card never pays for a real order, nor
+        the other way round -- or about another checkout than the one the order
+        opened. Every message about a
         known order is kept as an event; an identical repeat is counted, not
         stored again.
         """
@@ -254,14 +308,8 @@ class BillingService:
         if order is None:
             return "not_found"
         said = {"outcome": result.outcome.value, "code": result.code, "reference": result.reference}
-        current = self.gateways.get(gateway)
-        if order["gateway"] != gateway or (
-            gateway != "none"
-            and (
-                current is None
-                or bool(current.live) != bool(order["live"])
-                or (order["checkout_ref"] and result.checkout != order["checkout_ref"])
-            )
+        if self.gateways.get(gateway) is None or (
+            order["checkout_ref"] and result.checkout != order["checkout_ref"]
         ):
             said |= {"via": via, "from": gateway, "checkout": result.checkout}
             self.store.add_event(order["order_id"], "rejected", said)
@@ -276,50 +324,79 @@ class BillingService:
                 order["order_id"], "rejected", said | {"via": via, "amount": result.amount_vnd}
             )
             return "amount"
+        # D098: the order's state says whether the gateway's word may still move
+        # it, and where to; the store's update is guarded by the same table.
         changed = False
-        if OrderStatus(order["status"]) in SETTLEABLE:
-            changed = self.store.settle(
-                order["order_id"], result.outcome, result.reference, result.code
-            )
+        state = state_of(order["status"])
+        if state.settleable:
+            try:
+                target = state.settle(result.outcome)
+            except TransitionRefused:
+                self.store.add_event(order["order_id"], "rejected", said | {"via": via})
+                return "already"
+            changed = self.store.settle(order["order_id"], target, result.reference)
         self.store.add_event(
             order["order_id"], via, said | dict(result.details) | {"applied": changed}
         )
         if not changed:
             return "already"
         self._audit(
-            f"gateway:{order['gateway']}",
+            f"gateway:{gateway}",
             f"billing.{result.outcome.value}",
             order["order_id"],
             f"amount={result.amount_vnd} ref={result.reference} code={result.code}",
         )
         if result.outcome is OrderStatus.PAID:
             self.credit_order(self.store.order(order["order_id"]))
+        # A gateway that would not even open its page ("checkout") failed in
+        # front of the buyer, who reads why on the screen: no email for that.
+        if result.outcome in ANNOUNCED and via != "checkout":
+            self._announce(self.store.order(order["order_id"]))
         return "ok"
+
+    def _announce(self, order: dict) -> None:
+        """Tell whoever listens that this order was settled; never fails the settlement."""
+        if self._publish is None:
+            return
+        payload = {
+            "order_id": order["order_id"],
+            "account_id": order["created_by"],
+            "status": order["status"],
+            "runs": int(order["runs"]),
+            "amount_vnd": int(order["amount_vnd"]),
+            "gateway_title": self._gateway_title(),
+            "reference": order["reference"] or "",
+            "live": self._live(),
+            "settled_at": order["settled_at"] or self._stamp(),
+        }
+        try:
+            self._publish(ORDER_SETTLED, payload)
+        except Exception:  # noqa: BLE001 - the money moved; an email must not undo that
+            logger.exception("billing: could not announce order %s", order["order_id"])
 
     # ------------------------------------------------------------ what the screens read
 
     def order_view(self, order: dict) -> dict:
-        status = OrderStatus(order["status"])
+        state = state_of(order["status"])
         return {
             "order_id": order["order_id"],
             "plan_name": f"Gói {order['runs']} lượt",
             "runs": order["runs"],
             "credited": bool(order.get("credited_at")),
             "amount_vnd": order["amount_vnd"],
-            "status": status.value,
-            "status_name": ORDER_STATUS_NAMES[status],
-            "gateway": order["gateway"],
-            "gateway_title": self._gateway_title(order["gateway"]),
-            "live": bool(order["live"]),
+            "status": state.status.value,
+            "status_name": state.name,
+            "gateway_title": self._gateway_title(),
+            "live": self._live(),
             "reference": order["reference"],
-            "result_code": order["result_code"],
             "created_at": order["created_at"],
             "settled_at": order["settled_at"],
         }
 
-    def _gateway_title(self, name: str) -> str:
-        """The name a buyer reads for an order's gateway, offered now or not."""
-        gateway = self.gateways.get(name)
-        if gateway is not None:
-            return gateway.title
-        return GATEWAY_TITLES.get(name, name)
+    def _gateway_title(self) -> str:
+        """The name a buyer reads for the deployment's gateway."""
+        return self.active.title if self.active is not None else "Chưa có cổng thanh toán"
+
+    def _live(self) -> bool:
+        """Whether the deployment's gateway moves real money."""
+        return bool(self.active is not None and self.active.live)

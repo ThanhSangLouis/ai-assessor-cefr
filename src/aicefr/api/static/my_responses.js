@@ -18,10 +18,6 @@ const NO_SCORE_STATUSES = ["REJECTED", "FAILED"];
 
 let allRows = [];
 let titles = {};
-// When the student last opened this list (D028). A teacher decision after it
-// is marked "new" on its row; opening the list then moves the mark forward.
-let seenAt = null;
-const isNewDecision = (r) => !!r.reviewed_at && (!seenAt || r.reviewed_at > seenAt);
 
 // Task titles make the list readable; the task id alone means nothing to a
 // student. If the call fails we simply keep showing the id.
@@ -73,7 +69,6 @@ function item(r) {
         <a class="response-title" href="${hrefFor(r)}">${escapeHtml(title)}</a>
         <p class="response-meta">
           <span>${escapeHtml(window.ui.localTime(r.created_at))}</span>
-          ${isNewDecision(r) ? '<span class="new-chip">Mới xác nhận</span>' : ""}
           ${badgeFor(r)}
           ${result ? `<span>${result}</span>` : ""}
         </p>
@@ -102,28 +97,6 @@ function render() {
   listEl.innerHTML = `<ul class="response-list">${allRows.map(item).join("")}</ul>`;
 }
 
-// Read the mark first, show the list against it, then move it to now: the
-// rows stay marked for this visit and the sidebar count clears.
-function loadSeen() {
-  return fetch("/api/v1/me/badges")
-    .then((r) => (r.ok ? r.json() : {}))
-    .then((b) => b.results_seen_at || null)
-    .catch(() => null);
-}
-
-// The body is read even though only the status matters: Chromium keeps a
-// response whose body nobody reads open, and the page never goes idle.
-function markSeen() {
-  fetch("/api/v1/me/badges/results/seen", { method: "POST" })
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => {
-      if (d) window.ui.setBadge("results", 0);
-    })
-    .catch(() => {});
-}
-
-let firstLoad = true;
-
 function load() {
   Promise.all([
     fetch("/api/v1/me/responses").then((r) => {
@@ -131,9 +104,8 @@ function load() {
       return r.json();
     }),
     loadTaskTitles(),
-    firstLoad ? loadSeen() : Promise.resolve(seenAt),
   ])
-    .then(([rows, taskTitles, seen]) => {
+    .then(([rows, taskTitles]) => {
       if (rows === null) return;
       window.clearBusy(listEl);
       if (!Array.isArray(rows)) {
@@ -142,10 +114,7 @@ function load() {
       }
       allRows = rows;
       titles = taskTitles;
-      seenAt = seen;
       render();
-      if (firstLoad) markSeen();
-      firstLoad = false;
     })
     .catch(() => {
       window.clearBusy(listEl);

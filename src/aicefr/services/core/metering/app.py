@@ -37,9 +37,19 @@ def build(settings: Settings, peers: Peers, bus: MessageBus) -> Parts:
         idpoint_per_run=settings.idpoint_per_run,
         upgrade_runs=settings.price_upgrade_runs,
         passage_runs=settings.price_passage_runs,
+        lesson_minute_runs=settings.price_lesson_minute_runs,
+        lesson_free_per_day=settings.lesson_free_per_day,
+        lesson_daily_cap=settings.lesson_daily_cap,
     )
     book = PriceBook(store, prices, settings.credit_packs)
-    facade = MeteringFacade(store, audit_log, enabled, book)
+
+    def free_ok(account_id: str) -> bool:
+        # D101: free runs need a verified email. An account an administrator
+        # made counts as verified: the administrator vouched for the address (D103).
+        who = peers.identity.account(account_id=account_id)
+        return who is None or bool(who.get("email_verified"))
+
+    facade = MeteringFacade(store, audit_log, enabled, book, free_ok)
     metering_api.configure(
         metering_api.Services(store=store, audit=audit_log, peers=peers, enabled=enabled, book=book)
     )

@@ -47,15 +47,13 @@
 
           {#- Email field with mail icon & neutral underline -#}
           <div class="figma-field">
-            <label for="pseudonym">Email</label>
+            <label for="email">Email</label>
             <div class="figma-input-wrap is-email">
               <svg class="figma-input-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <input id="pseudonym" name="email" type="text" inputmode="email" autocomplete="email"
-                     required autocapitalize="none" spellcheck="false" placeholder="Nhập email của bạn"
-                     aria-describedby="pseudonym-hint">
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="email"
+                     required autocapitalize="none" spellcheck="false" placeholder="Nhập email của bạn">
             </div>
-            <div class="auth-field-error" id="pseudonym-error" role="alert" aria-live="polite" style="display: none;"></div>
-            <p class="field-hint" id="pseudonym-hint" style="display: none;">Tài khoản cũ chưa có email thì nhập mã tài khoản, ví dụ SV-001.</p>
+            <div class="auth-field-error" id="email-error" role="alert" aria-live="polite" style="display: none;"></div>
           </div>
 
           {#- Password field with lock icon, black underline & eye toggle -#}

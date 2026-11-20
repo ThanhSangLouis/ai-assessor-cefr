@@ -12,7 +12,7 @@ import re
 import uuid
 from enum import Enum
 
-from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from aicefr.contracts import Band, Criterion, Mission, MissionHit, ReasonCode
 
@@ -241,8 +241,6 @@ class Lesson(BaseModel):
     steps: list[Step] = Field(default_factory=list, max_length=12)
     # Share of steps that must pass, besides the free step being done.
     pass_ratio: float = Field(default=0.8, ge=0.3, le=1.0)
-    # Shipped with the system (D085). Versions saved before call it `sample`.
-    built_in: bool = Field(default=False, validation_alias=AliasChoices("built_in", "sample"))
 
     @field_validator("keywords")
     @classmethod

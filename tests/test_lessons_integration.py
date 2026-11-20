@@ -28,7 +28,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import soundfile as sf
-from dbutil import one_school
+from dbutil import email_of, one_school
 from fastapi.testclient import TestClient
 
 from aicefr.asr.fake import FakeAsrEngine
@@ -129,21 +129,21 @@ def freeze(monkeypatch, moment: datetime) -> None:
 
 
 def login_as(
-    m, pseudonym: str, role: str = "student", raise_errors: bool = True, school: bool = True
+    m, name: str, role: str = "student", raise_errors: bool = True, school: bool = True
 ) -> TestClient:
     """`school`: every test teacher teaches every test student (D071), unless the
     test is about classes themselves."""
-    m.app.state.auth_repo.create_account(pseudonym, PASSWORD, Role(role))
+    m.app.state.auth_repo.create_account(email_of(name), PASSWORD, Role(role))
     if school:
-        one_school(pseudonym, role)
+        one_school(name, role)
     client = TestClient(m.app, raise_server_exceptions=raise_errors)
-    r = client.post("/api/v1/auth/login", json={"pseudonym": pseudonym, "password": PASSWORD})
+    r = client.post("/api/v1/auth/login", json={"email": email_of(name), "password": PASSWORD})
     assert r.status_code == 200, r.text
     return client
 
 
-def account_id(m, pseudonym: str) -> str:
-    return m.app.state.auth_repo.get_by_pseudonym(pseudonym)["account_id"]
+def account_id(m, name: str) -> str:
+    return m.app.state.auth_repo.get_by_email(email_of(name))["account_id"]
 
 
 def record(
@@ -196,12 +196,33 @@ def audit_entries(m, target_id: str) -> list[dict]:
 # ================================================================= paths and versions (FR-45)
 
 
+def test_saving_an_unchanged_draft_leaves_nothing_to_publish(m, tmp_path):
+    """D105: "changed since published" is worked out, as lessons and not as documents.
+
+    A version published before a field was added to `Lesson` lacks its default;
+    saving the same lesson again must not mark it changed.
+    """
+    repo = LessonRepository(tmp_path / "drafts.db")
+    lesson, meta = repo.draft(SAMPLE)
+    assert meta["published_version"] >= 1 and meta["draft_changed"] is False
+    row = repo.col("lesson").find_one({"lesson_id": SAMPLE})
+    old = [{**v, "lesson": {k: x for k, x in v["lesson"].items() if k != "pass_ratio"}}
+           for v in row["versions"]]  # fmt: skip
+    repo.col("lesson").update_one({"lesson_id": SAMPLE}, {"$set": {"versions": old}})
+    repo.save_draft(SAMPLE, lesson)
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is False
+    repo.save_draft(SAMPLE, lesson.model_copy(update={"title": lesson.title + " (sửa)"}))
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is True
+    repo.publish(SAMPLE)
+    assert repo.draft(SAMPLE)[1]["draft_changed"] is False
+
+
 def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     repo = LessonRepository(tmp_path / "fresh.db")
     LessonRepository(tmp_path / "fresh.db")  # a restart must not seed it twice
 
     [path] = repo.paths(published_only=True)
-    assert path["path_id"] == SAMPLE_PATH_ID and path["built_in"] == 1
+    assert path["path_id"] == SAMPLE_PATH_ID and "built_in" not in path  # D103
     assert "chờ giảng viên" not in path["description"]  # D078: approved content, no label
     units = repo.outline(SAMPLE_PATH_ID)
     # Six levels in order (D059), each through units on different topics.
@@ -214,11 +235,10 @@ def test_fresh_install_seeds_the_sample_path(m, tmp_path):
     items = [item for u in units for item in u["lessons"]]
     assert len(items) == 46
     assert all(item["published_version"] == 1 for item in items)
-    assert all(item["lesson"].built_in for item in items)
     assert all(item["lesson"].steps[-1].kind is StepKind.FREE for item in items)
 
     home = login_as(m, "SV-001").get("/api/v1/learn").json()
-    assert home["path"]["path_id"] == SAMPLE_PATH_ID and home["path"]["built_in"] is True
+    assert home["path"]["path_id"] == SAMPLE_PATH_ID
     assert home["path"]["lessons_total"] == 46 and home["path"]["lessons_completed"] == 0
     assert home["next"]["lesson_id"] == "lesson-pr-flu-a1" and home["next"]["basis"] == "path_order"
 
@@ -776,12 +796,12 @@ def _old_sample_path(db: Path) -> LessonRepository:
     by_band = {"A2": "unit-sample-a2", "B1": "unit-sample-b1", "B2": "unit-sample-b2"}
     for uid, ids in OLD_SAMPLE_LESSONS.items():
         for lid in ids:
-            repo.add_lesson(uid, every[lid], by="system")
-            repo.publish(lid, by="system")
+            repo.add_lesson(uid, every[lid])
+            repo.publish(lid)
     for lid, lesson in every.items():
         if lid.startswith("lesson-pr-") and Band(lesson.band).value in by_band:
-            repo.add_lesson(by_band[Band(lesson.band).value], lesson, by="system")
-            repo.publish(lid, by="system")
+            repo.add_lesson(by_band[Band(lesson.band).value], lesson)
+            repo.publish(lid)
     return repo
 
 
@@ -904,10 +924,11 @@ def test_teacher_override_updates_the_result_and_is_audited(m):
     assert mark["teacher"] == "heard" and mark["status"] == "missed"  # both views are kept
     assert seen["teacher_reviewed"] is True and seen["teacher_note"] == "Em đọc rõ từ này."
     view = teacher.get(f"/api/v1/teach/attempts/{attempt['attempt_id']}").json()
-    assert view["overridden_by"] == "GV-01"
+    assert view["overridden_by"] == email_of("GV-01")  # the name, else the email
     assert view["override"]["words"] == {str(are["index"]): "heard"}
     entries = audit_entries(m, attempt["attempt_id"])
-    assert [(e["actor_id"], e["action"]) for e in entries] == [("GV-01", "lesson.override")]
+    teacher_id = account_id(m, "GV-01")
+    assert [(e["actor_id"], e["action"]) for e in entries] == [(teacher_id, "lesson.override")]
 
 
 def test_passed_steps_and_the_teacher_view_respect_overrides(m):
@@ -1042,7 +1063,7 @@ def test_orphan_cleanup_keeps_lesson_recordings_and_teacher_media(tmp_path):
     unit = lessons.add_unit(lessons.create_path("P"), "U")
     lesson = next(iter(sample_lessons().values()))[0].model_copy(update={"lesson_id": "l1"})
     lessons.add_lesson(unit, lesson)
-    lessons.add_media("l1", "image", "image/png", "lesson-media-l1-s1-x.png", "GV-01")
+    lessons.add_media("l1", "image", "image/png", "lesson-media-l1-s1-x.png")
     for name in ("lesson-audio-a1.wav", "lesson-media-l1-s1-x.png", "nobody.wav"):
         (uploads / name).write_bytes(b"RIFF")
 
@@ -1118,9 +1139,15 @@ def test_personal_export_and_erasure_cover_lesson_attempts(m):
     assert item["result"]["transcript"] == MISSING_TWO
 
     admin = login_as(m, "AD-01", "admin")
-    assert admin.get("/api/v1/admin/erase/SV-001").json()["lesson_attempts"] == 1
+    assert (
+        admin.get("/api/v1/admin/erase", params={"email": email_of("SV-001")}).json()[
+            "lesson_attempts"
+        ]
+        == 1
+    )
     erased = admin.post(
-        "/api/v1/admin/erase", json={"speaker_id": "SV-001", "confirm_speaker_id": "SV-001"}
+        "/api/v1/admin/erase",
+        json={"email": email_of("SV-001"), "confirm_email": email_of("SV-001")},
     ).json()
 
     assert erased["lesson_attempts"] == 1
@@ -1194,7 +1221,7 @@ def test_next_lesson_follows_the_weakest_criterion(m):
     before = student.get(f"/api/v1/learn?path_id={path_id}").json()["next"]
     assert (before["lesson_id"], before["basis"]) == (first_fluency, "path_order")
 
-    m.repo.save(scored("as-1", Band.B1, [Criterion.RANGE]), "SV-001", "P3", account_id=acc)
+    m.repo.save(scored("as-1", Band.B1, [Criterion.RANGE]), "P3", account_id=acc)
     after = student.get(f"/api/v1/learn?path_id={path_id}").json()["next"]
 
     # A weak criterion must not skip the unfinished prerequisite in this band.

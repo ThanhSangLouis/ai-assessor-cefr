@@ -12,10 +12,12 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
 
 from aicefr.api.deps import ADMIN_ONLY, require_login
 from aicefr.api.schemas import EraseRequest, QueueItem
+from aicefr.auth.sessions import COOKIE_NAME
 from aicefr.observability import count
 from aicefr.platform.bus import BusTimeout
 from aicefr.platform.rpc import RemoteError
@@ -27,10 +29,11 @@ from aicefr.services.core.assessment.context import (
     QC_EDITABLE,
     active_model_name,
     active_qc,
+    name_of,
     scorable_duration,
     svc,
 )
-from aicefr.storage.auth_repository import Account
+from aicefr.storage.auth_repository import Account, Role
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -58,7 +61,8 @@ def stats_summary(account: Account = ADMIN_ONLY) -> dict:
 def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
     """Scoring artifacts on disk, with the metrics each one reports. FR-36."""
     from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer, load_model
+    from aicefr.scoring.factory import build_scorer
+    from aicefr.scoring.scorer import IncompatibleModelError, load_model
 
     active = active_model_name()
     out = []
@@ -76,8 +80,9 @@ def list_models(account: Account = ADMIN_ONLY) -> list[dict]:
         # fitted on whole exam sittings and reports a higher correlation for a
         # different task. Saying so stops an administrator activating it.
         try:
-            RidgeScorer(stem)
-            compatible, why = True, None
+            missing = getattr(build_scorer(stem), "missing_files", lambda: [])()
+            compatible = not missing
+            why = f"thiếu tệp mô hình văn bản: {missing}" if missing else None
         except IncompatibleModelError as e:
             compatible, why = False, str(e)
         out.append(
@@ -108,21 +113,27 @@ def activate_model(name: str, account: Account = ADMIN_ONLY) -> dict:
     the new pipeline on the next job, since every job names its model.
     """
     from aicefr.scoring import artifacts
-    from aicefr.scoring.scorer import IncompatibleModelError, RidgeScorer
+    from aicefr.scoring.factory import build_scorer
+    from aicefr.scoring.scorer import IncompatibleModelError
 
     if name not in artifacts.available():
         raise HTTPException(404, f"không có tệp mô hình tên {name!r}")
     try:
-        scorer = RidgeScorer(name)
+        scorer = build_scorer(name)
     except IncompatibleModelError as e:
         raise HTTPException(409, f"mô hình không dùng được cho hệ thống này: {e}") from e
     except Exception as e:  # noqa: BLE001 - a broken artifact must be reported, not raised raw
         raise HTTPException(422, f"không nạp được mô hình: {e}") from e
+    # A fusion model whose text weights are not on this machine would score
+    # every response with Ridge alone while the admin believes otherwise.
+    missing = getattr(scorer, "missing_files", lambda: [])()
+    if missing:
+        raise HTTPException(409, f"thiếu tệp mô hình văn bản trên máy chủ: {missing}")
 
     repo = svc().repo
     before = active_model_name()
-    repo.set_config(ACTIVE_MODEL_KEY, name, scorer.model_version, account.pseudonym)
-    repo.write_audit(account.pseudonym, "model.activate", name, f"truoc={before} sau={name}")
+    repo.set_config(ACTIVE_MODEL_KEY, name, scorer.model_version, account.account_id)
+    repo.write_audit(account.account_id, "model.activate", name, f"truoc={before} sau={name}")
     count("model_activations_total")
     return {
         "active_model": name,
@@ -146,7 +157,7 @@ def read_config(account: Account = ADMIN_ONLY) -> dict:
         "editable_here": True,
         "editable_fields": {k: {"min": lo, "max": hi} for k, (lo, hi) in QC_EDITABLE.items()},
         "candidate_thresholds": True,
-        "changed_by": row.updated_by if row else None,
+        "changed_by": name_of(row.updated_by) if row else None,
         "changed_at": row.updated_at if row else None,
         "duration_s": {
             "reject_below": t.min_duration_s,
@@ -201,9 +212,9 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
 
     version = f"qc-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
     repo = svc().repo
-    repo.set_config(QC_CONFIG_KEY, json.dumps(merged, sort_keys=True), version, account.pseudonym)
+    repo.set_config(QC_CONFIG_KEY, json.dumps(merged, sort_keys=True), version, account.account_id)
     repo.write_audit(
-        account.pseudonym,
+        account.account_id,
         "qc.config",
         version,
         " ".join(f"{k}={changes[k]}" for k in sorted(changes)),
@@ -215,15 +226,21 @@ def update_config(changes: dict[str, float], account: Account = ADMIN_ONLY) -> d
 # ================================================================= erasure (FR-35)
 
 
-@router.get("/api/v1/admin/erase/{speaker_id}", tags=["admin"])
-def preview_erasure(speaker_id: str, account: Account = ADMIN_ONLY) -> dict:
+def _person(email: str) -> dict:
+    who = svc().peers.identity.by_email(email=email.strip())
+    if who is None:
+        raise HTTPException(404, "không có tài khoản nào dùng email này")
+    return who
+
+
+@router.get("/api/v1/admin/erase", tags=["admin"])
+def preview_erasure(email: str, account: Account = ADMIN_ONLY) -> dict:
     """What an erasure would remove. Changes nothing. FR-35."""
     s = svc()
-    preview = s.repo.erasure_preview(speaker_id)
-    who = s.peers.identity.by_pseudonym(pseudonym=speaker_id)
-    preview["lesson_attempts"] = (
-        s.peers.learning.count_attempts(account_id=who["account_id"]) if who else 0
-    )
+    who = _person(email)
+    preview = s.repo.erasure_preview(who["account_id"])
+    preview["email"] = who["email"]
+    preview["lesson_attempts"] = s.peers.learning.count_attempts(account_id=who["account_id"])
     return preview
 
 
@@ -231,39 +248,82 @@ def preview_erasure(speaker_id: str, account: Account = ADMIN_ONLY) -> dict:
 def erase_participant(body: EraseRequest, account: Account = ADMIN_ONLY) -> dict:
     """Delete one participant's recordings and reports. Irreversible. FR-35.
 
-    The id has to be sent twice and the two have to match: this deletes audio
-    from disk and cannot be undone.
+    The email has to be sent twice and the two have to match: this deletes
+    audio from disk and cannot be undone.
     """
-    if body.speaker_id != body.confirm_speaker_id:
-        raise HTTPException(422, "hai lần nhập mã không khớp")
-    s = svc()
-    result = s.repo.erase_speaker(body.speaker_id, account.account_id)
-    who = s.peers.identity.by_pseudonym(pseudonym=body.speaker_id)
-    result["lesson_attempts"] = 0
-    if who:
-        # Lesson attempts (D025) live in the learning service; erase them there,
-        # recordings included.
-        try:
-            result["lesson_attempts"] = s.peers.learning.erase_account(account_id=who["account_id"])
-        except RemoteError as e:
-            logger.error("erasure did not reach the learning service: %s", e)
-            raise HTTPException(
-                502,
-                "đã xoá bài đánh giá nhưng chưa xoá được bài học: dịch vụ bài học không trả lời."
-                " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
-            ) from e
-        if s.classrooms is not None:
-            s.classrooms.forget_account(who["account_id"])
-        if s.replays is not None:
-            s.replays.forget_account(who["account_id"])
-        if s.push is not None:  # D088: the browsers that took their notifications
-            s.push.store.forget_account(who["account_id"])
+    if body.email.strip().lower() != body.confirm_email.strip().lower():
+        raise HTTPException(422, "hai lần nhập email không khớp")
+    who = _person(body.email)
+    result = erase_everywhere(who, account.account_id)
     result["cutoff_note"] = (
         "Đã xóa bản ghi và báo cáo. Dữ liệu đã dùng để huấn luyện các mô hình phát hành "
         "trước thời điểm này KHÔNG bị gỡ khỏi mô hình đó; việc gỡ chỉ áp dụng cho các "
         "lần huấn luyện sau."
     )
     return result
+
+
+def erase_everywhere(who: dict, actor_id: str) -> dict:
+    """Erase one person's recordings, reports and lessons wherever they are (FR-35).
+
+    Shared by the administrator's erasure and the learner's own account
+    deletion (D101). Raises a 502 when the learning service cannot be reached,
+    so nothing is reported erased that is not.
+    """
+    s = svc()
+    aid = who["account_id"]
+    result = s.repo.erase_account_data(aid, actor_id)
+    # Lesson attempts (D025) live in the learning service; erase them there,
+    # recordings included.
+    try:
+        result["lesson_attempts"] = s.peers.learning.erase_account(account_id=aid)
+    except RemoteError as e:
+        logger.error("erasure did not reach the learning service: %s", e)
+        raise HTTPException(
+            502,
+            "đã xoá bài đánh giá nhưng chưa xoá được bài học: dịch vụ bài học không trả lời."
+            " Chạy lại thao tác xoá khi dịch vụ đã chạy.",
+        ) from e
+    if s.classrooms is not None:
+        s.classrooms.forget_account(aid)
+    if s.replays is not None:
+        s.replays.forget_account(aid)
+    if s.push is not None:  # D088: the browsers that took their notifications
+        s.push.store.forget_account(aid)
+    return result
+
+
+class DeleteMeRequest(BaseModel):
+    # The sign-in email, typed again.
+    confirm: str = Field(min_length=1, max_length=254)
+
+
+@router.post("/api/v1/me/delete-account", tags=["student"])
+def delete_my_account(
+    body: DeleteMeRequest, response: Response, account: Account = Depends(require_login)
+) -> dict:
+    """Delete my account and everything of mine, for good (D101, FR-103).
+
+    Students only: a teacher's lessons and reviews are other people's work too,
+    so an administrator removes those accounts. The person types their email
+    again. The data goes first, then the account, so a failure
+    half way leaves an account that can try again. Payments and the run ledger
+    stay, as accounts must; they keep only the random account id.
+    """
+    if account.role is not Role.STUDENT:
+        raise HTTPException(403, "tài khoản giảng viên hoặc quản trị viên do quản trị viên xoá")
+    s = svc()
+    who = s.peers.identity.account(account_id=account.account_id)
+    if who is None:
+        raise HTTPException(404, "không còn tài khoản này")
+    if body.confirm.strip().lower() != who["email"]:
+        raise HTTPException(422, "gõ lại đúng email đăng nhập của bạn để xác nhận")
+    result = erase_everywhere(who, account.account_id)
+    s.peers.identity.delete_account(account_id=account.account_id)
+    count("accounts_self_deleted_total")
+    response.delete_cookie(COOKIE_NAME, path="/")
+    return {"deleted": True, "responses": result.get("responses", 0),
+            "lesson_attempts": result.get("lesson_attempts", 0)}  # fmt: skip
 
 
 # ================================================================= health

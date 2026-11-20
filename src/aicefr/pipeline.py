@@ -172,7 +172,7 @@ class ResponseProcessor:
                 w.duration_s,
             )
             try:
-                part = self.scorer.score(feats)
+                part = self.scorer.score(feats, text=" ".join(x.text for x in words))
             except ModelNotFoundError:
                 raise
             except Exception:  # noqa: BLE001 - one bad window must not lose the rest
@@ -204,7 +204,7 @@ class ResponseProcessor:
 
         # Provenance comes from a real scoring run, so the report cannot end up
         # claiming a model version that never touched this audio.
-        base = self.scorer.score(whole) if not values else None
+        base = self.scorer.score(whole, text=asr.text) if not values else None
         if base is not None:
             base.windows = scored
             base.reasons = [*base.reasons, ReasonCode.SCORE_AGGREGATED]
@@ -214,7 +214,7 @@ class ResponseProcessor:
         spread = max(values) - min(values)
         thresholds = thresholds_of(getattr(self.scorer, "band_thresholds", None))
 
-        merged = self.scorer.score(whole)
+        merged = self.scorer.score(whole, text=asr.text)
         merged.overall_0_6 = round(median, 2)
         merged.overall_band = to_band(median, thresholds)
         merged.windows = scored
@@ -358,7 +358,7 @@ class ResponseProcessor:
                     assessment = self._score_windows(asr, segments, windows, features)
             else:
                 with timed("pipeline_stage_seconds", stage="scoring"):
-                    assessment = self.scorer.score(features)
+                    assessment = self.scorer.score(features, text=asr.text)
         except ModelNotFoundError:
             return Response(
                 **base,

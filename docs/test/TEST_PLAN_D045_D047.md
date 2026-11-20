@@ -91,6 +91,7 @@
 | TC-LP-I05 | `test_a_teacher_saves_the_kept_lessons_as_a_draft_path_of_copies` | AC-82.5 | Lưu 4/6 bài thành lộ trình nháp gồm bản sao; lần hai 409; nhật ký |
 | TC-LP-I06 | `test_only_staff_compose_and_only_the_author_saves` | AC-82.6 | Sinh viên 403; giảng viên khác 403; giữ bài lạ 422 |
 | TC-LP-I07 | `test_plans_are_in_the_export_and_go_with_erasure` | AC-81.7 | Có trong bản xuất cá nhân; xoá dữ liệu là xoá lộ trình |
+| TC-LP-I08 | `test_active_band_plan_enforces_its_order_on_reads_and_attempts` | FR-81 | Lộ trình theo band đang dùng áp thứ tự bài cho cả lúc xem và lúc nộp (Thắng, f84b377) |
 
 ### Tầng 3 — E2E (`tests/e2e/test_learning_plans_e2e.py`)
 

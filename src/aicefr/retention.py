@@ -19,7 +19,6 @@ evidence. That is the trade the policy is meant to make.
 
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -66,7 +65,7 @@ class RetentionReport:
 
 
 # Hai ten khoa, mot y nghia. `Transcript.text` truoc day ten la `transcript`;
-# nhung hang ghi truoc luc doi ten van con khoa cu trong `report_json`. Cho nay
+# nhung hang ghi truoc luc doi ten van con khoa cu trong `asr`. Cho nay
 # lam viec tren JSON tho nen khong duoc huong alias cua Pydantic. Chi tim mot
 # khoa thi nhung hang do khong bao gio duoc xoa ban chep -- va do la loi rieng
 # tu, khong phai loi hien thi.
@@ -98,7 +97,8 @@ def apply_retention(
     responses = repo.col("response")  # retention is part of the storage layer
     rows = list(
         responses.find(
-            {"created_at": {"$lt": cutoff}}, {"response_id": 1, "audio_path": 1, "report_json": 1}
+            {"created_at": {"$lt": cutoff}},
+            {"response_id": 1, "audio_path": 1, "asr": 1, "assessment": 1},
         )
     )
 
@@ -112,7 +112,7 @@ def apply_retention(
             if not dry_run:
                 _drop_recording(blobs, row.get("audio_path"))
 
-        report = json.loads(row["report_json"])
+        report = {"asr": row.get("asr"), "assessment": row.get("assessment")}  # D104: stored as is
         changed = False
         asr = report.get("asr")
         if asr and (any(asr.get(k) for k in TEXT_KEYS) or asr.get("words")):
@@ -142,7 +142,8 @@ def apply_retention(
                 {"response_id": row["response_id"]},
                 {
                     "$set": {
-                        "report_json": json.dumps(report, ensure_ascii=False),
+                        "asr": report["asr"],
+                        "assessment": report["assessment"],
                         "audio_path": None,
                     }
                 },

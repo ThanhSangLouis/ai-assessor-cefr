@@ -1,4 +1,4 @@
-"""The D028..D090 test plans and their test code must name the same test cases.
+"""The D028..D101 test plans and their test code must name the same test cases.
 
 Same rule as for D023 and D025: each plan maps every case to an acceptance
 criterion or a requirement, and this check keeps that map honest in both
@@ -95,10 +95,11 @@ PLANS = [
         {
             "TC-CT-U": ROOT / "tests" / "test_gateways_unit.py",
             "TC-CT-I": ROOT / "tests" / "test_gateways.py",
-            "TC-CT-E": ROOT / "tests" / "e2e" / "test_gateways_e2e.py",
         },
         "7[1-3]",
-        18,  # AC-73.1..AC-73.3 (MoMo) removed with D075
+        # MoMo's AC-73.x went with D075; Stripe's AC-72.x and the gateway
+        # choice (AC-71.1, 71.3, 71.6, 71.7) with D097.
+        3,
     ),
     Plan(
         "D036",
@@ -185,6 +186,51 @@ PLANS = [
         },
         "98",
         7,
+    ),
+    Plan(
+        "D094",
+        ROOT / "docs" / "test" / "TEST_PLAN_D094.md",
+        {
+            "TC-LM-U": ROOT / "tests" / "test_d094_lesson_metering_unit.py",
+            "TC-LM-I": ROOT / "tests" / "test_d094_lesson_metering.py",
+        },
+        "99",
+        8,
+    ),
+    Plan(
+        "D095",
+        ROOT / "docs" / "test" / "TEST_PLAN_D095.md",
+        {
+            "TC-PO-U": ROOT / "tests" / "test_d095_payos_unit.py",
+            "TC-PO-I": ROOT / "tests" / "test_d095_payos.py",
+        },
+        "100",
+        6,
+    ),
+    Plan(
+        "D096",
+        ROOT / "docs" / "test" / "TEST_PLAN_D096.md",
+        {"TC-PE-I": ROOT / "tests" / "test_d096_payment_email.py"},
+        "101",
+        6,
+    ),
+    Plan(
+        "D099",
+        ROOT / "docs" / "test" / "TEST_PLAN_D099.md",
+        {
+            "TC-PG-U": ROOT / "tests" / "test_d099_payment_safety_unit.py",
+            "TC-PG-I": ROOT / "tests" / "test_d099_payment_safety.py",
+            "TC-PG-E": ROOT / "tests" / "e2e" / "test_d099_payos_e2e.py",
+        },
+        "102",
+        6,
+    ),
+    Plan(
+        "D101",
+        ROOT / "docs" / "test" / "TEST_PLAN_D101.md",
+        {"TC-FD-I": ROOT / "tests" / "test_d101_free_runs_and_delete.py"},
+        "10[34]",
+        10,
     ),
 ]
 LAYERS = [(plan, prefix) for plan in PLANS for prefix in plan.layers]

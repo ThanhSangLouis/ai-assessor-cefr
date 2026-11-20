@@ -233,10 +233,11 @@ const messageEl = document.getElementById("pw-message");
 function checkRules() {
   const value = newEl.value;
   const min = (me && me.min_password_length) || Number(newEl.getAttribute("minlength")) || 8;
-  const pseudonym = me ? me.pseudonym : "";
+  const email = ((me && me.email) || "").trim().toLowerCase();
+  const typed = value.trim().toLowerCase();
   const rules = {
     length: value.length >= min,
-    pseudonym: !!value && value.trim().toLowerCase() !== pseudonym.trim().toLowerCase(),
+    email: !!value && typed !== email && typed !== email.split("@")[0],
     different: !!value && value !== currentEl.value,
   };
   document.querySelectorAll("#pw-rules [data-rule]").forEach((li) => {
@@ -467,7 +468,7 @@ const DETAIL = {
 function activityItem(a) {
   const [iconName, text] = ACTIVITY[a.action] || ["info", a.action];
   const detail = DETAIL[a.detail] ? " " + DETAIL[a.detail] : "";
-  // A failed attempt carries the pseudonym it was made against, not who made
+  // A failed attempt carries the account it was made against, not who made
   // it: calling it "you" would hide exactly the attempt worth noticing.
   const who =
     a.action === "auth.login_failed" ? "Không rõ ai thử" : a.by_self ? "Bạn" : "Quản trị viên";
@@ -517,6 +518,38 @@ if (exportAll) {
       window.toast("Không tải được dữ liệu. Hãy thử lại sau.", "error");
     } finally {
       exportAll.disabled = false;
+    }
+  });
+}
+
+// D101: delete my account. The button wakes only when the email is typed again exactly.
+const deleteForm = document.getElementById("delete-form");
+if (deleteForm) {
+  const input = document.getElementById("delete-confirm");
+  const button = document.getElementById("delete-button");
+  const message = document.getElementById("delete-message");
+  const expected = () => ((me && me.email) || "").trim().toLowerCase();
+  input.addEventListener("input", () => {
+    button.disabled = !expected() || input.value.trim().toLowerCase() !== expected();
+  });
+  deleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    message.textContent = "";
+    try {
+      const r = await fetch("/api/v1/me/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: input.value }),
+      });
+      if (window.redirectToLoginIfExpired(r)) return;
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.detail || "Không xoá được tài khoản. Hãy thử lại sau.");
+      location.replace("/?deleted=1");
+    } catch (err) {
+      message.innerHTML = `<p class="notice notice-danger">${escapeHtml(err.message)}</p>`;
+      button.disabled = false;
     }
   });
 }

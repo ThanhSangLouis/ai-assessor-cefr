@@ -136,7 +136,7 @@ def test_a_learner_buys_a_pack_and_gets_a_receipt(context, live_server):
     page.wait_for_url(re.compile(r"/receipt$"))
     expect(page.locator(".receipt-lines tfoot")).to_contain_text("49.000")
     expect(page.locator(".receipt-note")).to_contain_text("không phải hoá đơn")
-    page.get_by_role("link", name="← Lượt của tôi").click()
+    page.locator(".receipt-tools").get_by_role("link", name="Lượt của tôi").click()
     expect(page.locator("#orders")).to_contain_text("Đã thanh toán")
 
 

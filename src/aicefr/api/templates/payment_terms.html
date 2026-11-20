@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_icons.html" import icon %}
+{% block title %}Điều khoản mua lượt · SpeakUp{% endblock %}
+{% block content %}
+{#- D099. What a run pack is and how it is paid. D102: no refunds; a payment
+    gone wrong is put right in runs. Owner, 07/11/2026: pictures and numbers
+    first, few words. Open to visitors: a buyer reads it before paying. -#}
+<link rel="stylesheet" href="{{ asset('pay_stage.css') }}">
+<div class="terms-page">
+  <header class="page-head">
+    <h1><span class="head-icon">{{ icon("scale") }}</span>Điều khoản mua lượt</h1>
+    <p class="lede">Ngắn gọn: bạn trả tiền cho lượt chấm bài nói. Lượt không hết hạn và không hoàn tiền.</p>
+  </header>
+
+  <ul class="terms-tiles">
+    <li>
+      <span class="terms-mark">{{ icon("mic") }}</span>
+      <b>1 bài nói = 1 lượt</b>
+      <span>Mỗi bài nói được chấm trừ đúng 1 lượt, đã gồm AI viết lại bài đó. Mỗi đoạn đọc AI cũng 1 lượt. Bản ghi trong lộ trình miễn phí trong giới hạn mỗi ngày.</span>
+    </li>
+    <li>
+      <span class="terms-mark">{{ icon("star") }}</span>
+      <b>Lượt không hết hạn</b>
+      <span>Lượt mua nằm trong ví đến khi bạn dùng. Lượt miễn phí làm mới mỗi tháng.</span>
+    </li>
+    <li>
+      <span class="terms-mark">{{ icon("lock") }}</span>
+      <b>Trả qua payOS</b>
+      <span>Chuyển khoản VietQR. SpeakUp không giữ số thẻ hay số tài khoản của bạn.</span>
+    </li>
+    <li>
+      <span class="terms-mark">{{ icon("refresh") }}</span>
+      <b>Lỗi chấm, trả lượt</b>
+      <span>Bài không ra kết quả thì lượt đã giữ được trả lại hết.</span>
+    </li>
+    <li>
+      <span class="terms-mark">{{ icon("x") }}</span>
+      <b>Không hoàn tiền</b>
+      <span>Lượt đã mua không đổi lại thành tiền. Xem kỹ gói trước khi trả.</span>
+    </li>
+  </ul>
+
+  <section class="card terms-card" aria-labelledby="trouble-h">
+    <h2 id="trouble-h">{{ icon("info") }} Trả tiền gặp sự cố</h2>
+    <ul class="terms-list">
+      <li class="yes">{{ icon("check") }}Đã trả nhưng lượt chưa vào ví sau 30 phút: cộng đủ lượt của gói.</li>
+      <li class="yes">{{ icon("check") }}Trả hai lần cho cùng một gói: lần trả thừa được cộng thành lượt.</li>
+    </ul>
+    <p class="terms-how">
+      Gửi <b>mã đơn</b> (trên biên nhận){% if support_email %} tới
+      <a href="mailto:{{ support_email }}">{{ support_email }}</a>{% else %} cho quản trị viên{% endif %}.
+    </p>
+  </section>
+
+  <section class="card terms-card" aria-labelledby="fine-h">
+    <h2 id="fine-h">{{ icon("file-check") }} Cần biết</h2>
+    <ul class="terms-list">
+      <li>{{ icon("clock") }}Link thanh toán mở trong {{ pending_minutes }} phút; quá hạn thì đặt lại.</li>
+      <li>{{ icon("printer") }}Biên nhận xác nhận đã trả, không phải hoá đơn VAT.</li>
+      <li>{{ icon("user") }}Lượt thuộc tài khoản đã mua, không chuyển nhượng, không đổi ra tiền.</li>
+      <li>{{ icon("shield") }}Thấy giao dịch lạ? Báo ngay để khoá và kiểm tra.</li>
+    </ul>
+  </section>
+
+  <p class="terms-back"><a class="button secondary" href="/credits">{{ icon("arrow-right") }}<span>Về Lượt của tôi</span></a></p>
+</div>
+{% endblock %}

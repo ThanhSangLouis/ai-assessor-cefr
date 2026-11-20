@@ -10,8 +10,6 @@
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from dbutil import store
 from test_lessons_integration import (  # noqa: F401  (the fixture `m` is used by name)
@@ -25,20 +23,13 @@ from aicefr.scoring.band_map import DEFAULT_THRESHOLDS, position
 
 def _score(response_id: str, score: float, band: str) -> None:
     responses = store()["response"]
-    report = json.loads(responses.find_one({"response_id": response_id})["report_json"])
-    a = report.get("assessment") or {"model_version": "test"}
+    a = responses.find_one({"response_id": response_id}).get("assessment") or {
+        "model_version": "test"
+    }
     a.update(overall_0_6=score, overall_band=band)
-    report["assessment"] = a
+    # D104: the stored response is its report; the score lives in its assessment only.
     responses.update_one(
-        {"response_id": response_id},
-        {
-            "$set": {
-                "status": "COMPLETED",
-                "overall_0_6": score,
-                "overall_band": band,
-                "report_json": json.dumps(report),
-            }
-        },
+        {"response_id": response_id}, {"$set": {"status": "COMPLETED", "assessment": a}}
     )
 
 
