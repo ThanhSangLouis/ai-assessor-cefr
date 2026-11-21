@@ -7,7 +7,7 @@ hỏi giảng viên hay hỏi kèm câu trả lời — **bao gồm cả những
 chuẩn**, vì bị hỏi trúng chỗ yếu mà chưa chuẩn bị thì mọi phần trước cũng mất
 giá.
 
-Hình: `docs/sdd/images/02_class.png` — nguồn: `docs/sdd/diagrams/02_class.drawio`
+Hình: `docs/sdd/images/02_class.png` — nguồn: `docs/sdd/diagrams/class/detailed/02_class.drawio`
 
 Số liệu hiện tại: **24 hộp** (6 «entity», 10 «value object», 8 «enumeration»),
 **34 quan hệ** (11 hợp thành, 6 liên kết, 17 phụ thuộc).

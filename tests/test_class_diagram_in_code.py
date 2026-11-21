@@ -2,7 +2,7 @@
 
 `tests/test_diagrams.py` checks that every class drawn exists. This goes one
 level down: every attribute and operation drawn on an entity of
-`docs/sdd/diagrams/02_class.drawio` must be found in the code, in one of three
+`docs/sdd/diagrams/class/detailed/02_class.drawio` must be found in the code, in one of three
 ways:
 
 1. **the same name** on the entity's code class, in snake case
@@ -35,7 +35,8 @@ pytestmark = pytest.mark.unit
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "aicefr"
-DIAGRAM = ROOT / "docs" / "sdd" / "diagrams" / "02_class.drawio"
+CLASS_DIR = ROOT / "docs" / "sdd" / "diagrams" / "class"
+DIAGRAM = CLASS_DIR / "detailed" / "02_class.drawio"
 SNAPSHOT = ROOT / "docs" / "db" / "schema_core.json"
 
 # The code class of each entity drawn, by module.
@@ -188,9 +189,9 @@ def members_of(name: str, module: str | None = None) -> set[str] | None:
 
 
 @cache
-def drawn() -> dict[str, list[str]]:
+def drawn(diagram: pathlib.Path = DIAGRAM) -> dict[str, list[str]]:
     """Each entity drawn and the names of its attributes and operations."""
-    cells = list(ET.parse(DIAGRAM).getroot().iter("mxCell"))
+    cells = list(ET.parse(diagram).getroot().iter("mxCell"))
     out: dict[str, list[str]] = {}
     for box in cells:
         title = box.get("value") or ""
@@ -203,11 +204,11 @@ def drawn() -> dict[str, list[str]]:
     return out
 
 
-def found(entity: str, attribute: str) -> bool:
+def found(entity: str, attribute: str, elsewhere: dict | None = None) -> bool:
     own = members_of(entity, ENTITY_CLASS[entity]) or set()
     if snake(attribute) in own:
         return True
-    where = ELSEWHERE.get((entity, attribute))
+    where = (ELSEWHERE if elsewhere is None else elsewhere).get((entity, attribute))
     if where is None:
         return False
     if ":" in where:
@@ -284,3 +285,155 @@ def test_every_box_drawn_matches_the_generator_spec():
     assert sorted(spec) == sorted(boxes), "sơ đồ và bộ sinh không cùng các thực thể"
     differ = {e: (spec[e], boxes[e]) for e in spec if spec[e] != boxes[e]}
     assert not differ, f"hộp trên sơ đồ khác đặc tả trong bộ sinh: {differ}"
+
+
+def _page(diagram: pathlib.Path) -> tuple[dict[str, list[str]], list[tuple[str, str, str]]]:
+    """Each box's rows as drawn, and each edge as (source, target, style without ports)."""
+    cells = list(ET.parse(diagram).getroot().iter("mxCell"))
+    name = {
+        c.get("id"): (c.get("value") or "").split("<br>")[-1]
+        for c in cells
+        if "swimlane" in (c.get("style") or "")
+    }
+    rows: dict[str, list[str]] = {}
+    for c in cells:
+        if c.get("parent") in name and c.get("vertex") == "1":
+            rows.setdefault(name[c.get("parent")], []).append(c.get("value") or "")
+    edges = []
+    for c in cells:
+        if c.get("edge") == "1":
+            style = ";".join(
+                p
+                for p in (c.get("style") or "").split(";")
+                if p and not p.startswith(("exit", "entry"))
+            )
+            edges.append((name[c.get("source")], name[c.get("target")], style))
+    return rows, edges
+
+
+def test_the_core_page_is_a_subset_of_the_detailed_page():
+    """The report's compact page keeps the main attributes of the detailed one.
+
+    Both are derived from Nguyên's A4 layout by `tools/derive_class_diagram.py`.
+    The core page may leave rows out, but every row it draws is a row of the
+    detailed page, word for word, and it draws the very same relations.
+    """
+    core_rows, core_edges = _page(CORE)
+    full_rows, full_edges = _page(DETAILED)
+    assert sorted(core_rows) == sorted(full_rows), "hai trang không cùng các hộp"
+    extra = {b: [r for r in rs if r not in full_rows[b]] for b, rs in core_rows.items()}
+    extra = {b: rs for b, rs in extra.items() if rs}
+    assert not extra, f"trang gọn có dòng không có ở trang chi tiết: {extra}"
+    assert sorted(core_edges) == sorted(full_edges), "hai trang phải vẽ cùng các quan hệ"
+
+
+# ---------------------------------------------------------------- detailed page
+# `02_class_detailed.drawio`: Nguyên's A4 layout at the detailed level, derived
+# by `tools/derive_class_diagram.py`. Same entities; its new names below.
+DETAILED = CLASS_DIR / "detailed" / "02_class_detailed.drawio"
+CORE = CLASS_DIR / "02_class_core.drawio"
+DETAILED_ELSEWHERE = {
+    **ELSEWHERE,
+    ("DrillPassage", "drills"): "drill_ids",
+    ("StepAttempt", "reviewItem"): "review_item_id",
+    ("ReviewItem", "step"): "step_id",
+    ("Response", "criterionIndicators"): "Assessment.indicators",
+}
+
+
+def test_every_attribute_on_the_detailed_page_is_in_the_code():
+    page = drawn(DETAILED)
+    assert sorted(page) == sorted(ENTITY_CLASS), "trang chi tiết và ENTITY_CLASS lệch nhau"
+    missing = [
+        f"{e}.{a}"
+        for e, attrs in page.items()
+        for a in attrs
+        if not found(e, a, DETAILED_ELSEWHERE)
+    ]
+    assert not missing, f"trang chi tiết vẽ thứ code không có: {missing}"
+
+
+@pytest.mark.parametrize("page", [DETAILED, CORE], ids=lambda p: p.name)
+def test_relationships_follow_the_rules(page: pathlib.Path):
+    """Each edge is the kind its attribute says it is.
+
+    Composition: a part that lives and dies with its whole, held by the whole.
+    Aggregation: the holder gathers MANY independent parts, a `List` of them.
+    Association: the holder keeps ONE attribute typed with the other class
+    (an enum included: it is stored, so it is not a dependency).
+    Dependency: only for a type used but not stored -- none on this page.
+    One edge per attribute typed with an entity; one edge per enum used.
+    """
+    import html
+
+    cells = list(ET.parse(page).getroot().iter("mxCell"))
+    name, enums, attrs = {}, set(), {}
+    for c in cells:
+        if "swimlane" in (c.get("style") or ""):
+            title = c.get("value") or ""
+            name[c.get("id")] = title.split("<br>")[-1]
+            if "enumeration" in title:
+                enums.add(name[c.get("id")])
+    for c in cells:
+        if c.get("parent") in name and c.get("vertex") == "1":
+            attrs.setdefault(name[c.get("parent")], []).append(html.unescape(c.get("value") or ""))
+    typed = re.compile(r":\s*(List<)?(\w+)>?\s*$")
+
+    def held(owner: str, target: str) -> list[str]:
+        return [a for a in attrs.get(owner, []) if (m := typed.search(a)) and m.group(2) == target]
+
+    def kind(style: str) -> str:
+        d = dict(p.split("=", 1) for p in style.split(";") if "=" in p)
+        if d.get("startArrow", "").startswith("diamond") or d.get("endArrow", "").startswith(
+            "diamond"
+        ):
+            return "composition" if d.get("startFill", d.get("endFill")) == "1" else "aggregation"
+        if d.get("dashed") == "1":
+            return "dependency"
+        if d.get("endArrow") == "block":
+            return "generalization"
+        return "association"
+
+    edges: dict[tuple[str, str], list[str]] = {}
+    for c in cells:
+        if c.get("edge") == "1":
+            pair = (name[c.get("source")], name[c.get("target")])
+            edges.setdefault(pair, []).append(kind(c.get("style") or ""))
+    bad = []
+    for (s, t), kinds in edges.items():
+        lines = held(s, t)
+        if not lines:
+            bad.append(f"{s}->{t}: {kinds} nhưng {s} không có thuộc tính kiểu {t}")
+        for k in kinds:
+            many = any("List<" in a for a in lines)
+            if k == "aggregation" and (not many or t in enums):
+                bad.append(f"{s}->{t}: aggregation phải gom nhiều {t} độc lập (List<{t}>)")
+            if k == "association" and many:
+                bad.append(
+                    f"{s}->{t}: giữ List<{t}> là aggregation/composition, không phải association"
+                )
+            if k in ("dependency", "generalization"):
+                bad.append(f"{s}->{t}: {k} nhưng {t} được lưu thành thuộc tính")
+    for owner in attrs:
+        for t in set(name.values()):
+            n_attr, n_edge = len(held(owner, t)), len(edges.get((owner, t), []))
+            want = (1 if n_attr else 0) if t in enums else n_attr
+            if n_edge != want:
+                bad.append(f"{owner}: {n_attr} thuộc tính kiểu {t}, {n_edge} đường (cần {want})")
+    assert not bad, bad
+
+
+@pytest.mark.parametrize("page", [DETAILED, CORE], ids=lambda p: p.name)
+def test_every_line_starts_and_ends_on_its_box(page: pathlib.Path):
+    """A port is a fraction of its box: outside 0..1 the line starts in empty space.
+
+    It happened once: on the core page `ReviewItem` is shorter than on the
+    detailed one, and the `ReviewItem -> Step` port fell below its box.
+    """
+    bad = []
+    for c in ET.parse(page).getroot().iter("mxCell"):
+        if c.get("edge") == "1":
+            for key, value in re.findall(r"(exit[XY]|entry[XY])=([-\d.]+)", c.get("style") or ""):
+                if not 0.0 <= float(value) <= 1.0:
+                    bad.append(f"{c.get('id')}: {key}={value}")
+    assert not bad, f"đầu đường nằm ngoài hộp: {bad}"

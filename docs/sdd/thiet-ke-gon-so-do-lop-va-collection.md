@@ -8,7 +8,7 @@
 - Hai bên được giữ khớp bằng `tests/test_diagrams.py` và `tests/test_class_diagram_in_code.py` (mục 5).
 
 **Người soạn:** Sang.
-**Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
+**Sơ đồ:** [`diagrams/class/detailed/02_class.drawio`](diagrams/class/detailed/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
 
 ## 1. Quyết định của chủ dự án
 
