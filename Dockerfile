@@ -9,7 +9,7 @@
 # Both run as an unprivileged user: the speech image hands files that arrive
 # from the internet to ffmpeg.
 
-FROM python:3.12-slim AS builder
+FROM python:3.15-slim AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
 WORKDIR /build
@@ -40,7 +40,7 @@ RUN /opt/venv/bin/pip install ".[services,asr]" \
 
 # ---------------------------------------------------------------------------
 
-FROM python:3.12-slim AS base
+FROM python:3.15-slim AS base
 
 # Nothing installs packages at run time, and pip carries its own copies of
 # urllib3, msgpack and setuptools, older than ours and with known CVEs (Trivy
