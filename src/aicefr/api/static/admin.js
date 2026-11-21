@@ -398,6 +398,13 @@ accountsEl.addEventListener("click", (e) => {
 
 const accountDialog = document.getElementById("account-dialog");
 const accountDialogBody = document.getElementById("account-dialog-body");
+// "Xoá vĩnh viễn" stays off until the account's email is typed again.
+accountDialogBody.addEventListener("input", (e) => {
+  if (e.target.id !== "delete-confirm") return;
+  const expected = e.target.dataset.expected;
+  document.getElementById("delete-account").disabled =
+    !expected || e.target.value.trim().toLowerCase() !== expected;
+});
 const ACTIVITY_NAMES = {
   "auth.login": "Đăng nhập",
   "auth.login_failed": "Đăng nhập sai",
@@ -407,6 +414,7 @@ const ACTIVITY_NAMES = {
   "account.sessions_revoked": "Đăng xuất mọi thiết bị",
   "account.session_revoked": "Đăng xuất một phiên",
   "account.disable": "Tắt tài khoản",
+  "account.delete": "Xoá tài khoản",
   "account.enable": "Bật tài khoản",
   "account.unlock": "Gỡ khoá",
   "account.role_change": "Đổi vai trò",
@@ -448,7 +456,18 @@ function detailHtml(d) {
         <div class="field"><label for="contact-name">Họ và tên</label><input id="contact-name" maxlength="80" value="${escapeHtml(d.full_name || "")}"></div>
         <div class="field"><label for="contact-email">Email đăng nhập</label><input id="contact-email" type="email" maxlength="254" value="${escapeHtml(d.email || "")}"></div>
         <div class="button-row"><button type="button" class="secondary" id="contact-save">Lưu họ tên và email</button></div>
-      </div>`;
+      </div>
+      <details class="danger-zone">
+        <summary>${window.ui.icon("alert")} Xoá tài khoản</summary>
+        <p>Xoá vĩnh viễn tài khoản cùng bài nói, bản ghi âm và tiến độ học của người này. Không khôi phục được.
+          ${d.role === "student" ? "Lượt đã mua cũng mất; hồ sơ thanh toán vẫn được giữ." : "Bài học đã soạn và các lần duyệt bài vẫn giữ; tài khoản rời khỏi mọi lớp."}</p>
+        <div class="inline-form role-form">
+          <div class="field"><label for="delete-confirm">Gõ lại ${d.email ? "email" : "mã tài khoản"} <b>${escapeHtml(d.email || d.account_id)}</b> để xác nhận</label>
+            <input id="delete-confirm" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="254"
+              data-expected="${escapeHtml((d.email || d.account_id).toLowerCase())}"></div>
+          <div class="button-row"><button type="button" class="danger" id="delete-account" disabled>Xoá vĩnh viễn</button></div>
+        </div>
+      </details>`;
   const sessions = d.sessions.length
     ? `<table><thead><tr><th>Thiết bị</th><th>Cách đăng nhập</th><th>Bắt đầu</th><th>Hết hạn</th></tr></thead><tbody>${d.sessions
         .map(
@@ -521,6 +540,23 @@ accountDialogBody.addEventListener("click", async (e) => {
   const button = e.target.closest("[data-account-action]");
   if (button) {
     runAccountAction(button);
+    return;
+  }
+  if (e.target.closest("#delete-account")) {
+    const button = e.target.closest("#delete-account");
+    const id = accountDialogBody.querySelector("[data-account]").dataset.account;
+    const a = accounts.find((x) => x.account_id === id);
+    const confirm = document.getElementById("delete-confirm").value;
+    if (!a || button.disabled) return;
+    button.disabled = true;
+    const d = await postJson(`/api/v1/admin/accounts/${encodeURIComponent(id)}/delete`, { confirm });
+    if (!d) {
+      button.disabled = false;
+      return;
+    }
+    accountDialog.close();
+    window.toast("Đã xoá tài khoản " + nameOf(a) + ".", "ok");
+    await loadAccounts();
     return;
   }
   if (e.target.closest("#contact-save")) {
@@ -604,19 +640,19 @@ async function loadModels() {
 
   // Four columns instead of ten, so the action is on screen: what the
   // artifact is, how it was evaluated, its state, and what can be done with it.
-  let h = `<h2>Hiện vật mô hình</h2>
+  let h = `<h2>Mô hình chấm</h2>
     <table class="models-table">
       <thead><tr><th>Mô hình</th><th>Kiểm định chéo</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
       <tbody>`;
 
   let hasUnusable = false;
-  let hasUncalibrated = false;
+  const units = new Set();
 
   models.forEach((m) => {
     const usable = m.usable !== false;
     if (!usable) hasUnusable = true;
+    else units.add(m.unit_of_inference ?? "");
     const calibration = m.calibration_version;
-    if (calibration === "chua-hieu-chuan") hasUncalibrated = true;
     const compatible = usable && m.compatible !== false;
 
     let state = "";
@@ -643,48 +679,35 @@ async function loadModels() {
       action = `<button type="button" class="small secondary" data-activate="${escapeHtml(m.name)}">Kích hoạt</button>`;
     }
 
+    // One line under the name: the feature set and the calibration. The model
+    // version equals the artifact name, so it is not repeated.
+    const calib = !calibration
+      ? ""
+      : calibration === "chua-hieu-chuan"
+        ? " · chưa hiệu chuẩn"
+        : ` · hiệu chuẩn <code>${escapeHtml(calibration)}</code>`;
+    const sub = usable
+      ? `<span class="cell-sub">Đặc trưng <code>${escapeHtml(m.feature_version ?? "—")}</code>${calib}</span>`
+      : "";
     h += `<tr class="${m.active ? "row-active" : usable ? "" : "row-broken"}">
-      <td><b>${escapeHtml(m.name ?? m.model_version ?? "—")}</b>
-        <span class="cell-sub">Mô hình <code>${escapeHtml(m.model_version ?? "—")}</code> ·
-          đặc trưng <code>${escapeHtml(m.feature_version ?? "—")}</code></span>
-        <span class="cell-sub">Hiệu chuẩn <code>${escapeHtml(calibration ?? "—")}</code></span></td>
+      <td><b>${escapeHtml(m.name ?? m.model_version ?? "—")}</b>${sub}</td>
       <td>PCC <b>${numberOrDash(m.cv_pcc, 3)}</b> · RMSE ${numberOrDash(m.cv_rmse, 3)}
-        <span class="cell-sub">Đơn vị: ${escapeHtml(unitName(m.unit_of_inference))} ·
-          ${m.train_n == null ? "—" : escapeHtml(m.train_n)} mẫu</span></td>
+        <span class="cell-sub">${m.train_n == null ? "—" : escapeHtml(m.train_n)} mẫu</span></td>
       <td>${state}</td>
       <td class="action-cell">${action}</td>
     </tr>`;
   });
   h += "</tbody></table>";
 
-  if (hasUncalibrated) {
-    h += `<div class="notice">
-      <b>Về hiệu chuẩn.</b> Giá trị <code>chua-hieu-chuan</code>
-      <b>không phải là tên một phiên bản hiệu chuẩn</b>. Nó có nghĩa là mô hình
-      <b>chưa qua hiệu chuẩn xác suất</b>: điểm mô hình trả về chưa được chỉnh
-      để phản ánh đúng mức độ chắc chắn, nên không được đọc như một xác suất.
-    </div>`;
-  }
   if (hasUnusable) {
-    h += `<div class="notice notice-danger">
-      <b>Có hiện vật không nạp được</b>, thường là do thiếu tệp trọng số hoặc tệp
-      hỏng. Những phiên bản này <b>không thể kích hoạt</b>. Cần bổ sung đủ tệp
-      hiện vật rồi kiểm tra lại trước khi dùng.
-    </div>`;
+    h += '<div class="notice notice-danger">Có mô hình thiếu tệp hoặc tệp hỏng: không kích hoạt được.</div>';
   }
-  // The artifacts on disk are not all trained at the same unit: a whole-exam
-  // model reports a much higher PCC than a single-response one simply because a
-  // five-minute exam carries more signal. Putting them in one table without
-  // this warning invites exactly the comparison the SDD says not to make.
-  h += `<div class="notice">
-    <b>Đừng so trực tiếp PCC và RMSE giữa các dòng.</b> Hai chỉ số này chỉ so được
-    với nhau khi <b>cùng đơn vị suy luận</b>. Mô hình chấm cả bài thi luôn có PCC
-    cao hơn mô hình chấm từng bài nói, chỉ vì bài thi dài hơn nên mang nhiều
-    thông tin hơn, chứ không phải vì nó tốt hơn cho bài toán này.
-  </div>`;
-  h += `<p class="muted">Kích hoạt chỉ đổi mô hình chấm các bài nộp từ lúc đó. Báo cáo
-    đã lưu giữ nguyên phiên bản mô hình đã chấm chúng, và mỗi lần đổi được ghi
-    vào nhật ký kiểm toán.</p>`;
+  // Only when the table mixes units: a whole-exam model reports a higher PCC
+  // than a single-response one because an exam carries more signal, not
+  // because it is better here (the comparison the SDD says not to make).
+  if (units.size > 1) {
+    h += '<div class="notice">Có mô hình khác đơn vị suy luận: đừng so PCC, RMSE giữa các dòng đó.</div>';
+  }
   window.clearBusy(el);
   el.innerHTML = h;
   el.querySelectorAll("[data-activate]").forEach((b) =>
@@ -784,9 +807,6 @@ async function loadConfig() {
   const rows = EDITABLE.filter(([key]) => fields[key]);
   if (data.editable_here && rows.length) {
     h += '<h2 class="block-title">Sửa ngưỡng</h2>';
-    h +=
-      '<p class="muted">Mỗi lần lưu tạo một phiên bản ngưỡng mới; báo cáo chấm sau đó ghi ' +
-      "phiên bản này. Máy chủ kiểm tra khoảng cho phép và thứ tự giữa các ngưỡng.</p>";
     h += '<form id="config-form" class="config-grid">';
     rows.forEach(([key, group, sub, label]) => {
       const now = (data[group] || {})[sub];
@@ -829,7 +849,6 @@ async function loadGoogleSetup() {
   const row = (label, value) => `<tr><th scope="row">${label}</th><td>${value}</td></tr>`;
   box.innerHTML =
     `<div class="card-head"><h2 id="google-setup-h">Đăng nhập bằng Google</h2>${state}</div>` +
-    '<p class="muted">OAuth 2.0, luồng mã uỷ quyền với PKCE (S256), state và nonce. Hệ thống chỉ giữ mã băm một chiều của tài khoản Google, không giữ email hay tên.</p>' +
     problems +
     '<table class="kv google-kv"><tbody>' +
     row(
@@ -839,12 +858,10 @@ async function loadGoogleSetup() {
     ) +
     row("Client ID", g.client_id ? `<code>${escapeHtml(g.client_id)}</code>` : "Chưa đặt") +
     row("Client secret", g.secret_set ? "Đã đặt (không bao giờ hiển thị)" : "Chưa đặt") +
-    row("Phạm vi xin", `<code>${escapeHtml(g.scopes)}</code>`) +
     row("Chỉ nhận tài khoản thuộc", g.allowed_domain ? escapeHtml(g.allowed_domain) : "Mọi tài khoản Google") +
-    row("Cookie của luồng", `<code>${escapeHtml(g.flow_cookie)}</code>, có chữ ký`) +
     row("Tài khoản đã liên kết", String(Number(g.linked_accounts))) +
     "</tbody></table>" +
-    '<p class="muted">Cách tạo OAuth client trong Google Cloud Console và nơi đặt khoá: <code>docs/plan/CAU_HINH_KHOA_BEN_NGOAI.md</code>.</p>';
+    (g.enabled ? "" : '<p class="muted">Hướng dẫn: <code>docs/plan/CAU_HINH_KHOA_BEN_NGOAI.md</code>.</p>');
   box.hidden = false;
   if (!googleSetupWired) {
     googleSetupWired = true;
@@ -946,11 +963,7 @@ document.getElementById("preview-button").addEventListener("click", async () => 
         data.review_actions ?? 0
       )}</b></td></tr>
     </table>`;
-  h += ids.length
-    ? `<p>Mã các bài sẽ bị xoá:</p><p><code>${ids.map(escapeHtml).join("</code> <code>")}</code></p>`
-    : '<p class="muted">Tài khoản này chưa có bài nói nào.</p>';
-  h += `<div class="notice notice-danger">Bấm xác nhận là xoá ngay và
-    <b>không hoàn tác được</b>.</div>`;
+  if (!ids.length) h += '<p class="muted">Tài khoản này chưa có bài nói nào.</p>';
   previewBody.innerHTML = h;
 
   previewedEmail = data.email ?? email;
@@ -1005,8 +1018,7 @@ eraseButton.addEventListener("click", async () => {
       ${escapeHtml(data.responses ?? 0)} bài nói,
       ${escapeHtml(data.audio_files ?? 0)} tệp ghi âm,
       ${escapeHtml(data.review_actions ?? 0)} lần duyệt.</p>
-    <div class="notice notice-danger"><b>Lưu ý về phạm vi xoá.</b>
-      ${escapeHtml(cutoffNote)}</div>`;
+    <p class="muted">${escapeHtml(cutoffNote)}</p>`;
   previewedEmail = null;
   previewBody.innerHTML = "";
   confirmBody.hidden = true;
@@ -1022,15 +1034,6 @@ async function loadOps() {
   await loadAudit();
 }
 
-// The model artifacts write this sentence without diacritics; the screen says
-// it in Vietnamese. An unknown sentence is still shown as written.
-const UNIT_NAMES = {
-  "mot bai noi (mot file audio), khong phai ca bai thi": "Một bài nói (một tệp âm thanh), không phải cả bài thi",
-};
-function unitName(v) {
-  return v == null ? "—" : UNIT_NAMES[v] || v;
-}
-
 function yesNo(v) {
   return v ? '<span class="badge COMPLETED">có</span>' : '<span class="badge FAILED">không</span>';
 }
@@ -1040,33 +1043,25 @@ async function loadHealth() {
   const d = await getJson("/api/v1/health", el);
   if (!d) return;
 
+  const asr = `<code>${escapeHtml(d.asr_engine)}</code>` +
+    (d.asr_is_real === false ? ' <span class="badge FAILED">giả lập</span>' : "");
   let h = `<h2>Tình trạng hệ thống</h2>
-    <table>
-      <tr><th>Mục</th><th>Giá trị</th></tr>
+    <table class="kv"><tbody>
       <tr><td>Trạng thái</td><td>${
         d.status === "ok"
           ? '<span class="badge COMPLETED">Hoạt động bình thường</span>'
           : `<span class="badge FAILED">${escapeHtml(d.status)}</span>`
       }</td></tr>
-      <tr><td>Engine nhận dạng tiếng nói</td><td><code>${escapeHtml(
-        d.asr_engine
-      )}</code></td></tr>
-      <tr><td>Engine ASR là engine thật</td><td>${yesNo(d.asr_is_real)}</td></tr>
-      <tr><td>Cho phép ghi âm ngay trên trình duyệt</td><td>${yesNo(
-        d.recording_enabled
-      )}</td></tr>
-      <tr><td>Phiên bản mô hình</td><td><code>${escapeHtml(d.model_version)}</code></td></tr>
+      <tr><td>Nhận dạng tiếng nói</td><td>${asr}</td></tr>
+      <tr><td>Ghi âm trên trình duyệt</td><td>${yesNo(d.recording_enabled)}</td></tr>
+      <tr><td>Mô hình đang chấm</td><td><code>${escapeHtml(d.model_version)}</code></td></tr>
       <tr><td>Phiên bản cấu hình</td><td><code>${escapeHtml(d.config_version)}</code></td></tr>
-      <tr><td>Đơn vị suy luận</td><td>${escapeHtml(unitName(d.unit_of_inference))}</td></tr>
-      <tr><td>PCC (kiểm định chéo)</td><td>${numberOrDash(d.cv_pcc, 4)}</td></tr>
-    </table>`;
+    </tbody></table>`;
   if (d.asr_is_real === false) {
-    h += `<div class="notice notice-danger">Hệ thống đang chạy engine ASR <b>giả lập</b>.
-      Kết quả chấm chỉ dùng để thử giao diện, <b>không dùng để đánh giá người học</b>.</div>`;
+    h += '<div class="notice notice-danger">ASR giả lập: điểm chỉ để thử giao diện.</div>';
   }
   if (d.recording_enabled === false) {
-    h += `<div class="notice">Không tìm thấy ffmpeg trên máy chủ, nên nút ghi âm bị ẩn ở
-      màn hình nộp bài. Người học vẫn tải tệp lên được.</div>`;
+    h += '<div class="notice">Thiếu ffmpeg: nút ghi âm bị ẩn, vẫn tải tệp lên được.</div>';
   }
   window.clearBusy(el);
   el.innerHTML = h;

@@ -45,6 +45,7 @@
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 | **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
+| **1.35** | **21/11/2026** | **Mở rộng D101.** FR-104 thêm đường quản trị viên xoá tài khoản mọi vai trò ở trang quản trị: gõ lại email (hoặc mã tài khoản), không tự xoá mình, nhật ký `by=admin`; thêm AC-104.6..AC-104.10 | D101 |
 | **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Email báo lời mời cho sinh viên và báo học viên mới cho giảng viên. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.13), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên. Rà mục 4 theo hệ thống đang chạy: thêm UC-37..UC-41 (tự đăng ký và xác minh email, luyện lại từ chưa rõ, đoạn đọc AI, tự xoá tài khoản, theo dõi đơn nạp lượt) có đặc tả; UC-30 thêm Quản trị viên, UC-35 cho mọi vai trò; ba sơ đồ use case theo vai vẽ lại | D109 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
 | **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
@@ -1730,9 +1731,11 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-103.4** — *Given* sinh viên chưa xác minh, *When* ghi âm một bước bài học, *Then* không có bản ghi miễn phí nào trong ngày, lời từ chối 402 nhắc xác minh và suất trong ngày được trả lại (`test_no_free_lesson_recording_before_verifying`). |
 | **AC-103.5** — *Given* tài khoản do quản trị viên tạo, không có email, *When* xem lượt và nộp bài, *Then* vẫn có 3 lượt miễn phí (`test_an_account_made_by_an_administrator_keeps_its_free_runs`). |
 
-### FR-104 — Sinh viên tự xoá tài khoản (D101)
+### FR-104 — Sinh viên tự xoá tài khoản; quản trị viên xoá tài khoản (D101)
 
 **Mô tả:** Tab Dữ liệu ở trang Tài khoản của sinh viên có thẻ **Xoá tài khoản**. Nút chỉ bật khi gõ lại đúng email đăng nhập (không phân biệt hoa thường, bỏ khoảng trắng hai đầu; tài khoản không có email thì gõ mã tài khoản). Xoá theo thứ tự: bài nói, bản ghi âm, báo cáo, bài học, ôn tập, lộ trình, thành tựu, lớp học, thông báo thiết bị (cùng các bước như xoá dữ liệu của quản trị viên, FR-35), rồi tới tài khoản cùng mọi phiên đăng nhập; dừng giữa chừng thì tài khoản còn đó để làm lại. Đơn hàng và sổ lượt giữ lại để đối soát, chỉ còn mã tài khoản ngẫu nhiên; lượt đã mua mất theo tài khoản. Giảng viên và quản trị viên không tự xoá được ở đây (403): bài soạn và lượt duyệt của họ là việc chung, quản trị viên xử lý.
+
+Quản trị viên xoá tài khoản của **mọi vai trò** trong khung chi tiết tài khoản ở trang quản trị (`POST /api/v1/admin/accounts/{id}/delete`): cùng các bước xoá như trên, cũng phải gõ lại email của tài khoản đó (không có email thì mã tài khoản). Bài học giảng viên đã soạn và các lần duyệt bài giữ lại; tài khoản rời khỏi mọi lớp. Không tự xoá tài khoản đang dùng (409), nên luôn còn ít nhất một quản trị viên. Nhật ký ghi `account.delete` với người xoá và `by=admin`.
 **Ưu tiên:** S
 
 | Acceptance Criteria |
@@ -1742,6 +1745,11 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 | **AC-104.3** — *Given* giảng viên, *When* gọi xoá tài khoản của mình, *Then* 403 và tài khoản còn nguyên (`test_staff_cannot_delete_themselves_here`). |
 | **AC-104.4** — *Given* bài đã bị tính lượt, *When* sinh viên xoá tài khoản, *Then* dòng sổ lượt của bài đó vẫn còn (`test_payments_and_the_ledger_stay`). |
 | **AC-104.5** — *Given* trang Tài khoản, *When* sinh viên mở, *Then* có thẻ Xoá tài khoản; giảng viên thì không (`test_the_account_page_offers_the_delete_card_to_students_only`). |
+| **AC-104.6** — *Given* sinh viên đã nộp bài, *When* quản trị viên gõ đúng email (khác hoa thường vẫn được) và xoá tài khoản đó, *Then* bài nói và tài khoản không còn, phiên cũ nhận 401, sổ lượt còn, nhật ký ghi `account.delete` với người xoá và `by=admin` (`test_an_administrator_deletes_a_learner_and_their_data`). |
+| **AC-104.7** — *Given* tài khoản giảng viên, *When* quản trị viên xoá, *Then* tài khoản không còn (`test_an_administrator_deletes_a_teacher`). |
+| **AC-104.8** — *Given* quản trị viên, *When* xác nhận bằng email khác email của tài khoản, *Then* 422 và tài khoản còn nguyên (`test_the_administrator_must_type_the_accounts_email`). |
+| **AC-104.9** — *Given* quản trị viên, *When* xoá chính tài khoản đang dùng, *Then* 409 và tài khoản còn nguyên (`test_an_administrator_cannot_delete_their_own_account`). |
+| **AC-104.10** — *Given* giảng viên, *When* gọi xoá tài khoản người khác, *Then* 403; mã tài khoản không tồn tại thì 404 (`test_only_an_administrator_deletes_other_accounts`). |
 
 ## 3.10. Yêu cầu xác nhận KHÔNG cài đặt (Won't)
 

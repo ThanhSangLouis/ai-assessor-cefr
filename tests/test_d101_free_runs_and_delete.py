@@ -167,3 +167,62 @@ def test_the_account_page_offers_the_delete_card_to_students_only(m):
     page = login_as(m, "SV-104").get("/account").text
     assert 'id="delete-form"' in page and "Xoá vĩnh viễn" in page
     assert 'id="delete-form"' not in login_as(m, "GV-104", "teacher").get("/account").text
+
+
+# ================================================================= deletion by an administrator
+
+
+def _admin_delete(admin: TestClient, who: str, confirm: str):
+    return admin.post(f"/api/v1/admin/accounts/{who}/delete", json={"confirm": confirm})
+
+
+def test_an_administrator_deletes_a_learner_and_their_data(m):
+    student = login_as(m, "SV-201")
+    who = account_id(m, "SV-201")
+    rid = submit_assessment(student)
+    admin = login_as(m, "QT-201", "admin")
+    r = _admin_delete(admin, who, email_of("SV-201").upper())
+    assert r.status_code == 200, r.text
+    assert r.json()["deleted"] is True and r.json()["responses"] == 1
+    assert m.repo.list_by_account(who) == []
+    assert m.app.state.auth_repo.get(who) is None
+    assert student.get("/api/v1/me/account").status_code == 401  # signed out everywhere
+    # Payments and the run ledger stay, as for a learner's own deletion.
+    assert m.core_parts.state["metering"].entry(rid, MeteredAction.ASSESSMENT) is not None
+    audit = admin.get("/api/v1/audit").json()
+    entry = next(x for x in audit if x["action"] == "account.delete" and x["target_id"] == who)
+    assert entry["actor_id"] == account_id(m, "QT-201") and entry["detail"] == "by=admin"
+
+
+def test_an_administrator_deletes_a_teacher(m):
+    login_as(m, "GV-201", "teacher")
+    who = account_id(m, "GV-201")
+    admin = login_as(m, "QT-202", "admin")
+    assert _admin_delete(admin, who, email_of("GV-201")).status_code == 200
+    assert m.app.state.auth_repo.get(who) is None
+
+
+def test_the_administrator_must_type_the_accounts_email(m):
+    login_as(m, "SV-202")
+    who = account_id(m, "SV-202")
+    admin = login_as(m, "QT-203", "admin")
+    r = _admin_delete(admin, who, email_of("QT-203"))
+    assert r.status_code == 422 and "email" in r.json()["detail"]
+    assert m.app.state.auth_repo.get(who) is not None
+
+
+def test_an_administrator_cannot_delete_their_own_account(m):
+    admin = login_as(m, "QT-204", "admin")
+    me = account_id(m, "QT-204")
+    assert _admin_delete(admin, me, email_of("QT-204")).status_code == 409
+    assert m.app.state.auth_repo.get(me) is not None
+
+
+def test_only_an_administrator_deletes_other_accounts(m):
+    login_as(m, "SV-203")
+    who = account_id(m, "SV-203")
+    teacher = login_as(m, "GV-202", "teacher")
+    assert _admin_delete(teacher, who, email_of("SV-203")).status_code == 403
+    admin = login_as(m, "QT-205", "admin")
+    assert _admin_delete(admin, "khong-co-tai-khoan-nay", "x@example.edu.vn").status_code == 404
+    assert m.app.state.auth_repo.get(who) is not None

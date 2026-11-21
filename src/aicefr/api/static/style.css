@@ -6181,6 +6181,23 @@ tr.row-muted td { color: var(--fg-muted); }
   background: color-mix(in srgb, var(--avatar) 16%, var(--bg-elevated));
   color: var(--avatar);
 }
+/* The small avatar (account lists, the account sheet): a round chip with its
+   icon centred. Without this it rendered as a square with the icon stuck in
+   the top-left corner. Sizes per place are set further down. */
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+}
+/* No colour chosen yet: a neutral chip, not the brand orange, which on a
+   long list of untouched accounts read as a column of pink warnings. */
+.avatar.avatar-none {
+  background: var(--bg-sunken);
+  color: var(--fg-muted);
+}
 .avatar-lg {
   width: 64px;
   height: 64px;
@@ -6317,6 +6334,24 @@ fieldset.picker legend { font-size: var(--t-sm); font-weight: 650; margin-bottom
 #account-dialog h3 { margin: var(--sp-5) 0 var(--sp-2); font-size: var(--t-lg); }
 #account-dialog .facts { margin-top: var(--sp-2); }
 .role-form { margin-top: var(--sp-4); }
+/* Deleting an account: folded away at the bottom of the sheet, so it is never
+   one stray click from the everyday actions above it. */
+.danger-zone {
+  margin-top: var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
+  border-radius: var(--radius, 8px);
+}
+.danger-zone summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--danger);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+.danger-zone summary .icon { width: 18px; height: 18px; }
+.danger-zone p { margin: var(--sp-3) 0 0; }
 .toolbar-controls .button,
 .toolbar-controls button { margin-top: 0; }
 
@@ -6540,7 +6575,7 @@ body::before {
 
 .app-sidebar .site-nav a .icon { transition: transform var(--dur-med) var(--ease-out); }
 .app-sidebar .site-nav a:hover .icon { transform: translateX(2px); }
-.avatar { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--brand) 18%, transparent); }
+.avatar { box-shadow: inset 0 0 0 1px var(--border); }
 
 /* --- icon tiles: the page's icon and the empty state's mark, tinted and
    matte with a hairline edge, like the product page's. */
