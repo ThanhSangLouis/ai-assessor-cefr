@@ -56,7 +56,15 @@ async function load() {
   );
   document.querySelectorAll("button[data-leave]").forEach((b) =>
     b.addEventListener("click", async () => {
-      if (!window.confirm(`Rời lớp “${b.dataset.name}”? Giảng viên của lớp sẽ không còn xem bài của bạn.`)) return;
+      const sure = await window.ui.confirm({
+        title: `Rời lớp “${b.dataset.name}”?`,
+        message: "Giảng viên của lớp sẽ không còn xem và duyệt bài của bạn. Muốn quay lại, bạn cần mã lớp hoặc lời mời.",
+        ok: "Rời lớp",
+        cancel: "Ở lại",
+        danger: true,
+        icon: "logout",
+      });
+      if (!sure) return;
       if (await post(`${base(b.dataset.leave)}/leave`)) {
         window.toast("Đã rời lớp.", "ok");
         done();
