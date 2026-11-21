@@ -12,7 +12,7 @@ Tệp: `02_class_v3.drawio`. Sinh bằng:
 
 | Tệp | Vai trò | Kiểm bằng |
 | --- | --- | --- |
-| `../02_class.drawio` | **Hiện trạng**: mô tả đúng mã đang chạy trong repo này | `tests/test_diagrams.py`: lớp vẽ ra phải có trong mã, giá trị enum và bội số phải khớp mã |
+| `../class/detailed/02_class.drawio` | **Hiện trạng**: mô tả đúng mã đang chạy trong repo này | `tests/test_diagrams.py`: lớp vẽ ra phải có trong mã, giá trị enum và bội số phải khớp mã |
 | `target/02_class_v3.drawio` | **Thiết kế đích**: mã phải chuyển theo | `tests/test_target_design.py`: đúng cú pháp UML, kiểu nào được nhắc tên thì phải được vẽ, mỗi bộ phận của hợp thành chỉ có một thể sở hữu, tệp đúng là đầu ra của bộ sinh |
 
 Thiết kế là nguồn chuẩn, mã đi theo. Khi mã đã chuyển xong sang v3 thì v3 thay `02_class.drawio`, đặc tả v3 thành đặc tả mặc định của bộ sinh, và thư mục này được xóa.

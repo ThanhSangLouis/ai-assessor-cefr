@@ -27,10 +27,19 @@ SRC = pathlib.Path("src/aicefr")
 # Hai dinh dang, mot ly do. So do lop nam o `.drawio` vi day la hinh ma nguoi
 # ta phai keo tha sap xep lai bang tay -- PlantUML tu dat vi tri, khong sua duoc.
 # So do kien truc van la `.puml` vi no nho va bo cuc tu dong dung roi.
+# The class diagrams live together in `class/` (shown) and `class/detailed/`.
+# Nguyên's A4 page there is the layout the two figures are derived from
+# (`tools/derive_class_diagram.py`), not a figure of its own: it is left out.
+LAYOUT_SOURCE = "02_class_a4_ngang.drawio"
 DIAGRAMS = sorted(
     [
         *pathlib.Path("docs/sdd/diagrams").glob("02*.puml"),
         *pathlib.Path("docs/sdd/diagrams").glob("02*.drawio"),
+        *(
+            p
+            for p in pathlib.Path("docs/sdd/diagrams/class").rglob("02*.drawio")
+            if p.name != LAYOUT_SOURCE
+        ),
     ]
 )
 

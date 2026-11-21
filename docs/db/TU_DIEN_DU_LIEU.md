@@ -19,7 +19,7 @@
 
 ## 2. Collection theo phần
 
-Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs/sdd/diagrams/02_class.drawio`). Phần hợp thành nằm trong document của gốc, ghi ở cột "Phần nhúng".
+Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs/sdd/diagrams/class/detailed/02_class.drawio`). Phần hợp thành nằm trong document của gốc, ghi ở cột "Phần nhúng".
 
 ### 2.1. Tài khoản (`identity`)
 

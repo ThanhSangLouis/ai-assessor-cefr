@@ -259,29 +259,57 @@
 }
 
 /* ------------------------------------------------------------------ D099: the terms of a run pack */
-.terms-page { max-width: 760px; display: grid; gap: var(--sp-4); }
+.terms-page { max-width: 760px; display: grid; gap: var(--sp-5); }
 .terms-page .page-head { margin-bottom: 0; }
-.terms-tiles {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--sp-3);
-}
-.terms-tiles li {
-  display: grid; gap: 6px; align-content: start;
-  padding: var(--sp-4); border: 1px solid var(--border); border-radius: 14px;
+
+/* The three things to remember: one ruled strip, like the face of a receipt.
+   Columns split by hairlines, not three cards. */
+.terms-rules {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
   background: var(--bg-elevated);
 }
-.terms-tiles b { font-size: 1.02rem; line-height: 1.3; }
-.terms-tiles span:not(.terms-mark) { color: var(--fg-muted); font-size: var(--t-sm); line-height: 1.45; }
-.terms-mark {
-  display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: 12px;
-  background: var(--brand-soft); color: var(--brand-strong);
+.terms-rule { display: grid; align-content: start; gap: var(--sp-2); padding: var(--sp-5) var(--sp-4); }
+.terms-rule + .terms-rule { border-left: 1px solid var(--border); }
+.terms-rule p { margin: 0; color: var(--fg-muted); font-size: var(--t-sm); line-height: 1.5; }
+.terms-rule .terms-rule-head {
+  color: var(--fg);
+  font-size: var(--t-lg);
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
-.terms-mark .icon { width: 22px; height: 22px; }
-.terms-card h2 { display: flex; align-items: center; gap: var(--sp-2); font-size: 1.05rem; margin: 0 0 var(--sp-3); }
+.terms-rule-head b { color: var(--brand); font-weight: 700; }
+.terms-rule-icon { color: var(--brand); }
+.terms-rule-icon .icon { width: 22px; height: 22px; }
+/* The firm rule stands out by weight in plain ink: red would read as an
+   error, and the dark theme's red turns pink. */
+.terms-rule.is-firm .terms-rule-icon,
+.terms-rule.is-firm .terms-rule-head b { color: var(--fg); }
+
+/* One sheet, two parts: what is put right, then the small print. */
+.terms-sheet { display: grid; gap: var(--sp-5); }
+.terms-part + .terms-part { padding-top: var(--sp-5); border-top: 1px solid var(--border); }
+.terms-part h2 {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin: 0 0 var(--sp-3); font-size: 1.05rem;
+}
+.terms-part h2 .icon { width: 20px; height: 20px; color: var(--brand); }
 .terms-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-.terms-list li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; }
+.terms-list li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; max-width: 68ch; }
 .terms-list .icon { flex: none; width: 18px; height: 18px; margin-top: 2px; color: var(--fg-muted); }
 .terms-list .yes .icon { color: var(--ok); }
-.terms-list .no .icon { color: var(--danger); }
-.terms-how { margin: var(--sp-3) 0 0; padding-top: var(--sp-3); border-top: 1px solid var(--border); }
+.terms-how {
+  margin: var(--sp-4) 0 0; padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-md, 10px); background: var(--bg-sunken);
+}
 .terms-back { margin: 0; }
+
+@media (max-width: 640px) {
+  .terms-rules { grid-template-columns: 1fr; }
+  .terms-rule { grid-template-columns: auto 1fr; column-gap: var(--sp-3); padding: var(--sp-4); }
+  .terms-rule .terms-rule-icon { grid-row: span 2; padding-top: 2px; }
+  .terms-rule + .terms-rule { border-left: 0; border-top: 1px solid var(--border); }
+}
