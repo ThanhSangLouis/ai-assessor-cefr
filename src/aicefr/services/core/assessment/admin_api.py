@@ -326,6 +326,39 @@ def delete_my_account(
             "lesson_attempts": result.get("lesson_attempts", 0)}  # fmt: skip
 
 
+@router.post("/api/v1/admin/accounts/{account_id}/delete", tags=["admin"])
+def delete_account_as_admin(
+    account_id: str, body: DeleteMeRequest, account: Account = ADMIN_ONLY
+) -> dict:
+    """An administrator deletes an account of any role, for good.
+
+    The same path as a learner's own deletion (D101): the person's recordings,
+    reports and lesson attempts go first, then the account and its sessions.
+    The administrator types the account's email again, or its id when it has
+    no email (FR-104). Payments and the run
+    ledger stay with the random account id. What a teacher made for others
+    (lessons, review decisions) stays; the account leaves every class.
+
+    Not one's own account: whoever asks is an administrator, so the last
+    administrator can never be deleted.
+    """
+    if account_id == account.account_id:
+        raise HTTPException(409, "không tự xoá tài khoản đang dùng")
+    s = svc()
+    who = s.peers.identity.account(account_id=account_id)
+    if who is None:
+        raise HTTPException(404, "không tìm thấy tài khoản")
+    expected = (who["email"] or who["account_id"]).lower()
+    if body.confirm.strip().lower() != expected:
+        raise HTTPException(422, "gõ lại đúng email của tài khoản này để xác nhận")
+    result = erase_everywhere(who, account.account_id)
+    s.peers.identity.delete_account(account_id=account_id, actor_id=account.account_id)
+    count("accounts_deleted_by_admin_total")
+    return {"deleted": True, "account_id": account_id, "email": who["email"],
+            "responses": result.get("responses", 0),
+            "lesson_attempts": result.get("lesson_attempts", 0)}  # fmt: skip
+
+
 # ================================================================= health
 
 

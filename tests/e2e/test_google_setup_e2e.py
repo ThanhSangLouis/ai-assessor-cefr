@@ -68,7 +68,7 @@ def test_the_config_tab_shows_what_to_register_with_google(context, live_server)
     expect(card).to_contain_text(f"{live_server.base_url}/auth/google/callback")
     expect(card).to_contain_text(CLIENT_ID)
     expect(card).to_contain_text("Đã đặt (không bao giờ hiển thị)")
-    expect(card).to_contain_text("PKCE (S256)")
+    expect(card).to_contain_text("Tài khoản đã liên kết")
     assert CLIENT_SECRET not in page.content()
     expect(card.get_by_role("button", name="Sao chép")).to_be_visible()
 
