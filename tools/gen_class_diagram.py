@@ -56,7 +56,7 @@ import sys
 # Chay `python tools/gen_class_diagram.py` tu mot thu muc khac thi duong dan
 # tuong doi se tro ra ngoai repo -- hoac bao loi, hoac te hon la ghi nham cho.
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs/sdd/diagrams/02_class.drawio"
+OUT = ROOT / "docs/sdd/diagrams/class/detailed/02_class.drawio"
 
 # `--no-stereotypes`: bo cac nhan «entity» / «value object» / «enumeration» khoi
 # tieu de hop. Khong the chi xoa chu: tieu de tut tu hai dong xuong mot dong nen

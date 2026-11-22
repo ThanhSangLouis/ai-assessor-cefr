@@ -392,6 +392,41 @@ if (mainEl && "MutationObserver" in window) {
       const p = (n) => String(n).padStart(2, "0");
       return `${p(t.getDate())}/${p(t.getMonth() + 1)}/${t.getFullYear()} ${p(t.getHours())}:${p(t.getMinutes())}`;
     },
+    // A confirm sheet in the app's own look, instead of the browser's grey
+    // `window.confirm` box. Resolves true when the person confirms; Esc, a click
+    // on the scrim or the cancel button resolve false. Texts are set as text,
+    // never as HTML. The cancel button has the focus: a slip of Enter keeps you.
+    confirm({ title, message = "", ok = "Đồng ý", cancel = "Huỷ", danger = false, icon = "alert" }) {
+      return new Promise((resolve) => {
+        const d = document.createElement("dialog");
+        d.className = "sheet confirm-sheet";
+        d.setAttribute("aria-labelledby", "confirm-sheet-h");
+        d.setAttribute("aria-describedby", "confirm-sheet-p");
+        d.innerHTML =
+          `<div class="confirm-mark${danger ? " danger" : ""}">${this.icon(icon)}</div>` +
+          '<h2 id="confirm-sheet-h"></h2><p id="confirm-sheet-p" class="confirm-text"></p>' +
+          '<div class="button-row confirm-actions">' +
+          '<button type="button" class="secondary" value="cancel"></button>' +
+          `<button type="button"${danger ? ' class="danger"' : ""} value="ok"></button></div>`;
+        d.querySelector("h2").textContent = title;
+        d.querySelector("p").textContent = message;
+        d.querySelector('[value="cancel"]').textContent = cancel;
+        d.querySelector('[value="ok"]').textContent = ok;
+        let answer = false;
+        d.addEventListener("click", (e) => {
+          const button = e.target.closest("button[value]");
+          if (button) answer = button.value === "ok";
+          if (button || e.target === d) d.close();
+        });
+        d.addEventListener("close", () => {
+          resolve(answer);
+          setTimeout(() => d.remove(), 400); // after the closing fade
+        });
+        document.body.appendChild(d);
+        d.showModal();
+        d.querySelector('[value="cancel"]').focus();
+      });
+    },
     // An icon of the sprite (D027), the same markup as the template macro in
     // _icons.html. Decorative: the text beside it carries the meaning.
     icon(name, cls = "icon") {

@@ -2952,7 +2952,7 @@ Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.
 | 1a | Use case cho Sinh viên: tài khoản (UC-17, UC-35, UC-37, UC-16, UC-40), học và nộp bài (UC-24, UC-19, UC-01..UC-03), kết quả và luyện tiếp (UC-04, UC-25, UC-38, UC-39, UC-15, UC-26), lượt và lớp (UC-27, UC-36) | FR-01..FR-27, FR-81, FR-85..FR-88, FR-92..FR-98, FR-103, FR-104 | `diagrams/01a_usecase_sinhvien.mmd` |
 | 1b | Use case cho Giảng viên: duyệt và sửa kết quả (UC-05, UC-06), lộ trình và AI soạn nháp (UC-20, UC-28), ngân hàng đề (UC-29), lớp (UC-30), thống kê (UC-31), hồ sơ năng lực (UC-11), tài khoản (UC-17, UC-35) | FR-28..FR-31, FR-38, FR-45..FR-49, FR-82, FR-88, FR-91 | `diagrams/01b_usecase_giangvien.mmd` |
 | 1c | Use case cho Quản trị viên: tài khoản và dữ liệu (UC-10, UC-07), mô hình và QC (UC-08, UC-09, UC-12), lớp (UC-30), lượt, giá và đơn (UC-32, UC-34, UC-41), AI (UC-33), tài khoản (UC-17, UC-35) | FR-08, FR-18..FR-20, FR-32..FR-36, FR-85, FR-87, FR-88, FR-102 | `diagrams/01c_usecase_quantri.mmd` |
-| 2 | Sơ đồ lớp, mô hình miền: 21 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/02_class.drawio` |
+| 2 | Sơ đồ lớp, mô hình miền: 21 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/class/detailed/02_class.drawio` |
 | 2b | Kiến trúc: ba dịch vụ, bus và kho dữ liệu | NFR, D044..D051 | `diagrams/02b_kien_truc.puml` |
 | 2c | Cổng và bộ chuyển đổi | NFR, D044 | `diagrams/02c_cong_va_bo_chuyen_doi.puml` |
 | 3 | Sơ đồ tuần tự: nộp một bài nói, giữ lượt, chấm ở dịch vụ speech, báo trực tiếp, giảng viên duyệt | FR-01..FR-31, FR-85, FR-95, FR-96 | `diagrams/03_sequence.mmd` |
