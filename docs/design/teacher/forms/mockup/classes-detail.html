@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tiếng Anh 2 · nhóm 03 · SpeakUp</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../../../../../src/aicefr/api/static/style.css">
+  <link rel="stylesheet" href="../../../../../src/aicefr/api/static/staff.css">
+  <link rel="stylesheet" href="forms-staff.css">
+  <script>if (new URLSearchParams(location.search).get('theme') === 'dark') document.documentElement.dataset.theme = 'dark';</script>
+</head>
+<body class="role-teacher has-sidebar staff">
+<a class="skip-link" href="#main">Bỏ qua điều hướng, tới nội dung chính</a>
+<aside class="app-sidebar" id="app-sidebar" aria-label="Thanh điều khiển">
+  <div class="sidebar-head">
+<a class="brand" href="classes-list.html" aria-label="SpeakUp, về trang chính">
+<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+<path class="logo-bubble" d="M23 1a6.5 6.5 0 0 1 6.5 6.5c0 3-2 5.5-4.8 6.3l-2.4 2c-.4.3-.9 0-.8-.5l.2-2a6.5 6.5 0 0 1-5.2-5.8A6.5 6.5 0 0 1 23 1z"/>
+<rect class="logo-bar logo-bar-1" x="20" y="5" width="1.3" height="5" rx="0.65"/>
+<rect class="logo-bar logo-bar-2" x="22.4" y="3.2" width="1.3" height="8.6" rx="0.65"/>
+<rect class="logo-bar" x="24.8" y="4.8" width="1.3" height="5.4" rx="0.65"/>
+<circle cx="11" cy="3.5" r="2" fill="#ff5722"/>
+<rect x="10.2" y="5.2" width="1.6" height="3" rx="0.8" fill="#ff5722"/>
+<rect x="1" y="13.5" width="3" height="8.5" rx="1.5" fill="#ff5722"/>
+<rect x="19.5" y="13.5" width="3" height="8.5" rx="1.5" fill="#ff5722"/>
+<rect class="mascot-casing" x="3" y="8" width="17.5" height="17.5" rx="6.5" fill="#ffffff" stroke="#ff5722" stroke-width="2.2"/>
+<rect class="mascot-screen" x="5.5" y="11.5" width="12.5" height="10.5" rx="4" fill="#4a1c0d"/>
+<path class="mascot-eye" d="M7.8 17a1.6 1.6 0 0 1 2.6 0" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+<path class="mascot-eye" d="M12.8 17a1.6 1.6 0 0 1 2.6 0" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+</svg>
+<span class="brand-text">
+<span class="brand-name">Speak<span class="brand-accent">Up</span>
+</span>
+</span>
+</a>
+</div>
+  <nav class="site-nav" aria-label="Điều hướng chính">
+<a href="#main">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-inbox">
+</use>
+</svg>
+<span class="nav-label">Hàng đợi duyệt</span>
+</a>
+<a href="classes-list.html" aria-current="page">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-users">
+</use>
+</svg>
+<span class="nav-label">Lớp học</span>
+</a>
+<a href="path-dialog.html">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-layers">
+</use>
+</svg>
+<span class="nav-label">Lộ trình luyện</span>
+</a>
+<a href="tasks.html">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-mic">
+</use>
+</svg>
+<span class="nav-label">Đề đánh giá</span>
+</a>
+<a href="#main">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-chart">
+</use>
+</svg>
+<span class="nav-label">Thống kê</span>
+</a>
+</nav>
+  <div class="sidebar-foot">
+<details class="account-menu">
+<summary class="account-button" aria-label="Tài khoản demo">
+<span class="avatar avatar-none" aria-hidden="true">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-user">
+</use>
+</svg>
+</span>
+<span class="who">
+<span class="who-name">gv-01@demo.speakup.fit</span>
+<span class="who-role">Giảng viên</span>
+</span>
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-chevron-down">
+</use>
+</svg>
+</summary>
+<div class="account-panel">
+<div class="account-panel-user">
+<span class="account-panel-name">Tài khoản demo</span>
+<span class="account-panel-email">gv-01@demo.speakup.fit</span>
+</div>
+</div>
+</details>
+</div>
+</aside>
+<header class="mobile-topbar" aria-label="Thanh công cụ di động">
+  <button type="button" class="mobile-drawer-toggle" aria-label="Mở menu điều hướng" aria-expanded="false" aria-controls="app-sidebar">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-menu">
+</use>
+</svg>
+</button>
+  <a class="brand mobile-brand" href="classes-list.html" aria-label="SpeakUp, về trang chính">
+<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+<path class="logo-bubble" d="M23 1a6.5 6.5 0 0 1 6.5 6.5c0 3-2 5.5-4.8 6.3l-2.4 2c-.4.3-.9 0-.8-.5l.2-2a6.5 6.5 0 0 1-5.2-5.8A6.5 6.5 0 0 1 23 1z"/>
+<rect class="logo-bar logo-bar-1" x="20" y="5" width="1.3" height="5" rx="0.65"/>
+<rect class="logo-bar logo-bar-2" x="22.4" y="3.2" width="1.3" height="8.6" rx="0.65"/>
+<rect class="logo-bar" x="24.8" y="4.8" width="1.3" height="5.4" rx="0.65"/>
+<circle cx="11" cy="3.5" r="2" fill="#ff5722"/>
+<rect x="10.2" y="5.2" width="1.6" height="3" rx="0.8" fill="#ff5722"/>
+<rect x="1" y="13.5" width="3" height="8.5" rx="1.5" fill="#ff5722"/>
+<rect x="19.5" y="13.5" width="3" height="8.5" rx="1.5" fill="#ff5722"/>
+<rect class="mascot-casing" x="3" y="8" width="17.5" height="17.5" rx="6.5" fill="#ffffff" stroke="#ff5722" stroke-width="2.2"/>
+<rect class="mascot-screen" x="5.5" y="11.5" width="12.5" height="10.5" rx="4" fill="#4a1c0d"/>
+<path class="mascot-eye" d="M7.8 17a1.6 1.6 0 0 1 2.6 0" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+<path class="mascot-eye" d="M12.8 17a1.6 1.6 0 0 1 2.6 0" fill="none" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round"/>
+</svg>
+<span class="brand-text">
+<span class="brand-name">Speak<span class="brand-accent">Up</span>
+</span>
+</span>
+</a>
+</header>
+<main id="main" tabindex="-1">
+<div class="page-head">
+<h1 id="page-title">Tiếng Anh 2 · nhóm 03</h1>
+<p class="lede" id="page-lede">
+<a href="classes-list.html">Tất cả lớp</a>
+</p>
+</div>
+<div id="classes-root" data-role="teacher" data-class-id="demo-class-03" aria-live="polite">
+<section class="card" aria-labelledby="members-h">
+<div class="card-head">
+<h2 id="members-h">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-users">
+</use>
+</svg> Sinh viên (3)</h2>
+</div>
+<form id="members-form" class="inline-form one-line" novalidate>
+<div class="field field-list">
+<label for="member-list">Thêm sinh viên theo email, cách nhau bằng dấu phẩy</label>
+<input id="member-list" name="list" placeholder="sv-001@demo.speakup.fit, sv-002@demo.speakup.fit" autocomplete="off">
+</div>
+<div class="button-row">
+<button class="button secondary" type="submit">Thêm</button>
+</div>
+</form>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên">
+<table class="members-table">
+<thead>
+<tr>
+<th scope="col">Sinh viên</th>
+<th scope="col">Học theo band</th>
+<th scope="col">
+<span class="visually-hidden">Thao tác</span>
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sinh viên Demo 01<span class="cell-sub">sv-001@demo.speakup.fit</span>
+</td>
+<td>
+<span class="band-chip" data-band="A2">A2</span> → <span class="band-chip" data-band="B1">B1</span>
+</td>
+<td>
+<div class="row-actions">
+<button type="button" class="danger small" data-remove="sv-001" aria-label="Xoá Sinh viên Demo 01 khỏi lớp">Xoá khỏi lớp</button>
+</div>
+</td>
+</tr>
+<tr>
+<td>Sinh viên Demo 02<span class="cell-sub">sv-002@demo.speakup.fit</span>
+</td>
+<td>
+<span class="band-chip" data-band="A2">A2</span> → <span class="band-chip" data-band="B1">B1</span>
+</td>
+<td>
+<div class="row-actions">
+<button type="button" class="danger small" data-remove="sv-002" aria-label="Xoá Sinh viên Demo 02 khỏi lớp">Xoá khỏi lớp</button>
+</div>
+</td>
+</tr>
+<tr>
+<td>Sinh viên Demo 03<span class="cell-sub">sv-003@demo.speakup.fit</span>
+</td>
+<td>
+<span class="band-chip" data-band="B1">B1</span> → <span class="band-chip" data-band="B2">B2</span>
+</td>
+<td>
+<div class="row-actions">
+<button type="button" class="danger small" data-remove="sv-003" aria-label="Xoá Sinh viên Demo 03 khỏi lớp">Xoá khỏi lớp</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section class="card" aria-labelledby="teachers-h">
+<div class="card-head">
+<h2 id="teachers-h">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-user">
+</use>
+</svg> Giảng viên (1)</h2>
+</div>
+<ul class="plain-list">
+<li class="assign-row">
+<span>Giảng viên Demo 01<span class="cell-sub">gv-01@demo.speakup.fit</span>
+</span>
+</li>
+</ul>
+</section>
+<section class="card" aria-labelledby="bands-h">
+<div class="card-head">
+<h2 id="bands-h">
+<svg class="icon" aria-hidden="true" focusable="false">
+<use href="../../../../../src/aicefr/api/static/icons.svg#i-layers">
+</use>
+</svg> Nhóm theo band mục tiêu</h2>
+</div>
+<p class="muted">Sinh viên tự chọn band trên trang Lộ trình. Giao lộ trình cho một nhóm sẽ thay lộ trình riêng của từng người trong nhóm.</p>
+<div class="band-groups">
+<div class="band-group" data-target="B1">
+<span class="band-chip" data-band="B1">B1</span>
+<div class="who">
+<b>2 sinh viên</b> nhắm tới B1, đang từ A2</div>
+<a class="button secondary small" href="path-dialog.html">Soạn lộ trình cho nhóm</a>
+<label class="visually-hidden" for="assign-B1">Lộ trình giao cho nhóm B1</label>
+<div class="c-dropdown" data-for="assign-B1">
+      <button type="button" class="c-dropdown-trigger" aria-label="Lộ trình giao cho nhóm B1" aria-haspopup="listbox" aria-expanded="false">
+<span class="c-dropdown-label">Chọn lộ trình đã xuất bản…</span>
+<span class="c-dropdown-arrow">
+<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="m4 6 4 4 4-4"/>
+</svg>
+</span>
+</button>
+      <div class="c-dropdown-menu" role="listbox" aria-label="Lộ trình giao cho nhóm B1">
+<div class="c-dropdown-item is-selected" role="option" data-value="">
+<span class="c-dropdown-item-text">Chọn lộ trình đã xuất bản…</span>
+<span class="c-dropdown-check">
+<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/>
+</svg>
+</span>
+</div>
+<div class="c-dropdown-item" role="option" data-value="demo">
+<span class="c-dropdown-item-text">Giao tiếp trong cuộc sống</span>
+<span class="c-dropdown-check">
+<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/>
+</svg>
+</span>
+</div>
+</div>
+      <select hidden class="c-select-hidden" data-enhanced="true" id="assign-B1">
+<option value="" selected>Chọn lộ trình đã xuất bản…</option>
+<option value="demo">Giao tiếp trong cuộc sống</option>
+</select>
+    </div>
+<button type="button" class="small" data-assign="B1">Giao cho nhóm</button>
+</div>
+<div class="band-group" data-target="B2">
+<span class="band-chip" data-band="B2">B2</span>
+<div class="who">
+<b>1 sinh viên</b> nhắm tới B2, đang từ A2</div>
+<a class="button secondary small" href="path-dialog.html">Soạn lộ trình cho nhóm</a>
+<label class="visually-hidden" for="assign-B2">Lộ trình giao cho nhóm B2</label>
+<div class="c-dropdown" data-for="assign-B2">
+      <button type="button" class="c-dropdown-trigger" aria-label="Lộ trình giao cho nhóm B2" aria-haspopup="listbox" aria-expanded="false">
+<span class="c-dropdown-label">Chọn lộ trình đã xuất bản…</span>
+<span class="c-dropdown-arrow">
+<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="m4 6 4 4 4-4"/>
+</svg>
+</span>
+</button>
+      <div class="c-dropdown-menu" role="listbox" aria-label="Lộ trình giao cho nhóm B2">
+<div class="c-dropdown-item is-selected" role="option" data-value="">
+<span class="c-dropdown-item-text">Chọn lộ trình đã xuất bản…</span>
+<span class="c-dropdown-check">
+<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/>
+</svg>
+</span>
+</div>
+<div class="c-dropdown-item" role="option" data-value="demo">
+<span class="c-dropdown-item-text">Giao tiếp trong cuộc sống</span>
+<span class="c-dropdown-check">
+<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="3.5 8.5 6.5 11.5 12.5 4.5"/>
+</svg>
+</span>
+</div>
+</div>
+      <select hidden class="c-select-hidden" data-enhanced="true" id="assign-B2">
+<option value="" selected>Chọn lộ trình đã xuất bản…</option>
+<option value="demo">Giao tiếp trong cuộc sống</option>
+</select>
+    </div>
+<button type="button" class="small" data-assign="B2">Giao cho nhóm</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+
+</body>
+</html>

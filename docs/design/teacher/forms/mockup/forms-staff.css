@@ -1,0 +1,123 @@
+/* Form — dán cuối staff.css; kích thước theo brief S1–S16. */
+
+/* S13: mọi thẻ có cùng lề trong, kể cả ngân hàng đề. */
+body.staff .card { padding: var(--sp-5); min-width: 0; }
+
+/* S1: ô một dòng và nút form/thanh công cụ cùng cao 40px. */
+body.staff input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+body.staff .c-dropdown button.c-dropdown-trigger,
+body.staff :is(.inline-form, .toolbar-controls, dialog.sheet) :is(button, .button) {
+  box-sizing: border-box;
+  height: calc(var(--sp-5) + var(--sp-4));
+  min-height: 0;
+  margin-top: 0;
+  padding: 0 var(--sp-3);
+  border-radius: var(--sp-2);
+}
+
+/* V2: nút giữ đệm ngang 16px; ô nhập vẫn dùng 12px. */
+body.staff .c-dropdown button.c-dropdown-trigger,
+body.staff :is(form, .toolbar-controls, dialog.sheet) :is(button, .button):not(.icon-only) {
+  padding-left: var(--sp-4);
+  padding-right: var(--sp-4);
+}
+
+/* S2/S3: mỗi cụm giữ nhãn sát ô 8px; bỏ lề nhãn kế thừa. */
+body.staff .field { display: flex; flex-direction: column; gap: var(--sp-2); min-width: 0; }
+/* V7: giữ weight và cỡ chữ nhãn của Admin trong style.css. */
+body.staff .field > label { margin: 0; color: var(--fg); font-weight: 650; }
+
+/* S4: gợi ý trong cụm hưởng gap 8px, không cộng thêm margin. */
+body.staff .field > .field-hint { margin: 0; color: var(--fg-muted); font-size: var(--t-sm); }
+
+/* S1: dropdown dùng nền ô nhập theo token, áp được cả giao diện tối. */
+body.staff .c-dropdown { min-width: 0; }
+body.staff .c-dropdown button.c-dropdown-trigger {
+  background: var(--bg-elevated);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  font-size: var(--t-md);
+  font-weight: 600;
+}
+
+/* S5: form một ô căn đáy; hàng nút không chiếm hàng riêng trên desktop. */
+body.staff .inline-form.one-line { align-items: flex-end; gap: var(--sp-3); margin-bottom: 0; }
+body.staff .inline-form.one-line .button-row { flex: 0 0 auto; margin: 0; }
+
+/* V4: khoảng form → bảng đặt ở bảng, không để dư đáy thẻ tạo nhanh. */
+body.staff .inline-form.one-line + .table-scroll { margin-top: var(--sp-4); }
+body.staff .card .table-scroll:last-child { margin-bottom: 0; }
+
+/* S6/S7/S8: tên lớp cố định, email co giãn đủ chỗ cho gợi ý. */
+body.staff .inline-form.one-line .field-name { flex: 0 0 360px; width: 360px; }
+body.staff .inline-form.one-line .field-list { flex: 1 1 360px; min-width: 360px; max-width: 640px; }
+
+/* S9: thanh đề một hàng, tìm kiếm co giãn, nút chính sát phải. */
+body.staff .task-bank .list-toolbar { display: block; }
+body.staff .task-bank .toolbar-controls { flex-wrap: nowrap; align-items: center; width: 100%; }
+body.staff .task-bank .toolbar-controls > input { flex: 1 1 0; min-width: 0; max-width: 420px; }
+body.staff .task-bank .toolbar-controls > .c-dropdown { flex: 0 0 160px; width: 160px; }
+body.staff .task-bank .toolbar-controls > #bank-add { margin-left: auto; flex: 0 0 auto; }
+
+/* S10/S11: hộp thoại dùng cụm field, tuyệt đối không cộng nhịp stack. */
+/* V6: không ghi đè bo góc 14px sẵn có của dialog.sheet. */
+body.staff dialog.sheet { background: var(--bg-elevated); border: 1px solid var(--border); }
+body.staff dialog.sheet form { display: flex; flex-direction: column; gap: var(--sp-4); margin: 0; }
+/* V1: hộp thoại ngoài main vẫn có tiêu đề cam đậm như h2 của thẻ. */
+body.staff dialog.sheet form > h2 { margin: 0; font-family: var(--font-display); color: var(--heading); font-weight: 700; }
+body.staff dialog.sheet .field-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); margin: 0; }
+
+/* S12: 16px của form + 8px ở hàng nút = 24px sau cụm cuối. */
+body.staff dialog.sheet .button-row { margin: var(--sp-2) 0 0; gap: var(--sp-3); }
+
+/* S14: nút theo hàng nhỏ 32px, giữ viền đỏ và tên thao tác trên một dòng. */
+body.staff .row-actions { align-items: center; gap: var(--sp-2); }
+/* V3: mọi nút theo hàng cao 32px, nút biểu tượng vuông và không có đệm. */
+body.staff .row-actions button { box-sizing: border-box; height: var(--sp-6); margin-top: 0; white-space: nowrap; }
+body.staff .row-actions button.icon-only { width: var(--sp-6); min-width: 0; padding: 0; flex: 0 0 var(--sp-6); }
+
+/* S15/S16: bảng tự cuộn bên trong, không đẩy chiều rộng trang. */
+body.staff .table-scroll { max-width: 100%; min-width: 0; overflow-x: auto; }
+body.staff .classes-table { min-width: 640px; }
+body.staff .members-table { min-width: 640px; }
+body.staff .bank-table { min-width: 640px; }
+body.staff main { min-width: 0; }
+
+/* S16: viền focus luôn thấy được cả trên ô và dropdown. */
+body.staff :is(input, textarea, button, a, .table-scroll):focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Chỉ bản tĩnh: thay ::backdrop của showModal(), không cần JavaScript. */
+body.staff .mockup-backdrop { position: fixed; inset: 0; z-index: 90; background: var(--scrim); backdrop-filter: blur(3px); }
+body.staff dialog.sheet.mockup-dialog[open] { position: fixed; inset: 0; z-index: 100; margin: auto; max-height: calc(100dvh - var(--sp-6)); }
+
+@media (max-width: 720px) {
+  /* S1: tăng cả ba loại điều khiển lên 44px trên điện thoại. */
+  body.staff input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  body.staff .c-dropdown button.c-dropdown-trigger,
+  body.staff :is(.inline-form, .toolbar-controls, dialog.sheet) :is(button, .button) { height: calc(var(--sp-6) + var(--sp-3)); }
+
+  /* S13/S16: khung 390px cho vùng nhập 324px, bảng chỉ cuộn trong thẻ. */
+  body.staff main { padding-left: var(--sp-4); padding-right: var(--sp-4); }
+  body.staff .card { padding: var(--sp-4); }
+
+  /* S5/S6/S7: form một ô xếp dọc, ô và nút rộng hết, cách 12px. */
+  body.staff .inline-form.one-line { flex-direction: column; align-items: stretch; gap: var(--sp-3); }
+  body.staff .inline-form.one-line :is(.field-name, .field-list) { flex: 0 0 auto; min-width: 0; max-width: none; width: 100%; }
+  body.staff .inline-form.one-line .button-row { width: 100%; }
+  body.staff .inline-form.one-line .button-row > button { width: 100%; }
+
+  /* S9: thanh công cụ xếp dọc với nhịp 8px. */
+  body.staff .task-bank .toolbar-controls { flex-direction: column; align-items: stretch; gap: var(--sp-2); }
+  body.staff .task-bank .toolbar-controls > input,
+  body.staff .task-bank .toolbar-controls > .c-dropdown,
+  body.staff .task-bank .toolbar-controls > #bank-add { flex: 0 0 auto; width: 100%; max-width: none; margin-left: 0; }
+
+  /* S10/S11/S12: hộp thoại một cột, giữ nhịp cụm và nút rộng 100%. */
+  body.staff dialog.sheet { padding: var(--sp-4); }
+  body.staff dialog.sheet .field-row { grid-template-columns: minmax(0, 1fr); }
+  body.staff dialog.sheet .button-row { flex-direction: column; align-items: stretch; }
+  body.staff dialog.sheet .button-row > button { width: 100%; }
+
+  /* Admin: giữ form nhiều ô hiện tại, chỉ xuống cột khi màn hình hẹp. */
+  body.staff .inline-form:not(.one-line) > .field { flex: 1 1 100%; width: 100%; min-width: 0; }
+}

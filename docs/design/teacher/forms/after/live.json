@@ -1,0 +1,728 @@
+{
+ "classes-list 1440 light": {
+  "S15": [
+   {
+    "ok": false,
+    "actual": {
+     "headings": [
+      "Lớp",
+      "Sinh viên",
+      "Giảng viên",
+      "Trạng thái"
+     ],
+     "rows": 1,
+     "frame": {
+      "x": 329,
+      "y": 379.484375,
+      "w": 1038,
+      "h": 94.1875,
+      "b": 473.671875,
+      "r": 1367
+     },
+     "table": {
+      "x": 330,
+      "y": 380.484375,
+      "w": 1036,
+      "h": 92.1875,
+      "b": 472.671875,
+      "r": 1366
+     }
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "new-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "list-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-detail 1440 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "members-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "teachers-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "bands-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks 1440 light": {
+  "S10": [
+   {
+    "ok": false,
+    "actual": {
+     "width": 0,
+     "formWidth": 0
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks-dialog 1440 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "path-dialog 1440 light": {
+  "V7": [
+   {
+    "ok": false,
+    "actual": {
+     "label": "unit-jump-0",
+     "fontWeight": "600",
+     "fontSize": "13px",
+     "expectedFontSize": "13px"
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Lộ trình luyện nói",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "path-h-0",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "admin 1440 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Quản trị",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "acc-create-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "Danh sách tài khoản",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-list 1440 dark": {
+  "S15": [
+   {
+    "ok": false,
+    "actual": {
+     "headings": [
+      "Lớp",
+      "Sinh viên",
+      "Giảng viên",
+      "Trạng thái"
+     ],
+     "rows": 1,
+     "frame": {
+      "x": 329,
+      "y": 379.484375,
+      "w": 1038,
+      "h": 94.1875,
+      "b": 473.671875,
+      "r": 1367
+     },
+     "table": {
+      "x": 330,
+      "y": 380.484375,
+      "w": 1036,
+      "h": 92.1875,
+      "b": 472.671875,
+      "r": 1366
+     }
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "new-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "list-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-detail 1440 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "members-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "teachers-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "bands-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks 1440 dark": {
+  "S10": [
+   {
+    "ok": false,
+    "actual": {
+     "width": 0,
+     "formWidth": 0
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks-dialog 1440 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "path-dialog 1440 dark": {
+  "V7": [
+   {
+    "ok": false,
+    "actual": {
+     "label": "unit-jump-0",
+     "fontWeight": "600",
+     "fontSize": "13px",
+     "expectedFontSize": "13px"
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Lộ trình luyện nói",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "path-h-0",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "admin 1440 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Quản trị",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "acc-create-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "Danh sách tài khoản",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-list 390 light": {
+  "S15": [
+   {
+    "ok": false,
+    "actual": {
+     "headings": [
+      "Lớp",
+      "Sinh viên",
+      "Giảng viên",
+      "Trạng thái"
+     ],
+     "rows": 1,
+     "frame": {
+      "x": 33,
+      "y": 485.875,
+      "w": 324,
+      "h": 94.1875,
+      "b": 580.0625,
+      "r": 357
+     },
+     "table": {
+      "x": 34,
+      "y": 486.875,
+      "w": 640,
+      "h": 92.1875,
+      "b": 579.0625,
+      "r": 674
+     }
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "new-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "list-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-detail 390 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "members-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "teachers-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "bands-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks 390 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks-dialog 390 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "path-dialog 390 light": {
+  "V7": [
+   {
+    "ok": false,
+    "actual": {
+     "label": "unit-jump-0",
+     "fontWeight": "600",
+     "fontSize": "13px",
+     "expectedFontSize": "13px"
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Lộ trình luyện nói",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "path-h-0",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "admin 390 light": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Quản trị",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "acc-create-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "Danh sách tài khoản",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-list 390 dark": {
+  "S15": [
+   {
+    "ok": false,
+    "actual": {
+     "headings": [
+      "Lớp",
+      "Sinh viên",
+      "Giảng viên",
+      "Trạng thái"
+     ],
+     "rows": 1,
+     "frame": {
+      "x": 33,
+      "y": 485.875,
+      "w": 324,
+      "h": 94.1875,
+      "b": 580.0625,
+      "r": 357
+     },
+     "table": {
+      "x": 34,
+      "y": 486.875,
+      "w": 640,
+      "h": 92.1875,
+      "b": 579.0625,
+      "r": 674
+     }
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "new-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "list-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "classes-detail 390 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "page-title",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "members-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "teachers-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "bands-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks 390 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "tasks-dialog 390 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Đề đánh giá theo band",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "path-dialog 390 dark": {
+  "V7": [
+   {
+    "ok": false,
+    "actual": {
+     "label": "unit-jump-0",
+     "fontWeight": "600",
+     "fontSize": "13px",
+     "expectedFontSize": "13px"
+    }
+   }
+  ],
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Lộ trình luyện nói",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "path-h-0",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ },
+ "admin 390 dark": {
+  "W1": [
+   {
+    "ok": false,
+    "actual": {
+     "element": "Quản trị",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "acc-create-h",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   },
+   {
+    "ok": false,
+    "actual": {
+     "element": "Danh sách tài khoản",
+     "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+     "baselineFontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif"
+    }
+   }
+  ]
+ }
+}

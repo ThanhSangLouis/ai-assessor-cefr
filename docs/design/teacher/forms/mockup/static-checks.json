@@ -1,0 +1,693 @@
+{
+  "status": "OK",
+  "checks": [
+    {
+      "ok": true,
+      "description": "classes-list: doctype"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: body"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-user-plus"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: label class-name"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: email demo"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "classes-list: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: doctype"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: body"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: label member-list"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: label assign-B1"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: label assign-B2"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: email demo"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "classes-detail: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks: doctype"
+    },
+    {
+      "ok": true,
+      "description": "tasks: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "tasks: body"
+    },
+    {
+      "ok": true,
+      "description": "tasks: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "tasks: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "tasks: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "tasks: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "tasks: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "tasks: label bank-search"
+    },
+    {
+      "ok": true,
+      "description": "tasks: label bank-state"
+    },
+    {
+      "ok": true,
+      "description": "tasks: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-plus"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks: email demo"
+    },
+    {
+      "ok": true,
+      "description": "tasks: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: doctype"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: body"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: label bank-search"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: label bank-state"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-plus"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: SVG i-pencil"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: label task-band"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: label task-text"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: label task-keywords"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: email demo"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "tasks-dialog: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: doctype"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: body"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: SVG i-plus"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: label path-title"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: label path-description"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: label path-band-from"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: label path-band-to"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: email demo"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "path-dialog: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: doctype"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: lang=vi"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: body"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: id duy nhất"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: thứ tự CSS"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: chỉ script theme"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: không form.stack"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: novalidate"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-inbox"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-layers"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-mic"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-chart"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-shield"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-user"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-chevron-down"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-menu"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-user-plus"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: label acc-role"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: label acc-emails"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-user-plus"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-users"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: SVG i-download"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: label acc-search"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: label acc-filter"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: select gốc ẩn"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: email demo"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: tài nguyên ../../../../../src/aicefr/api/static/style.css"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: tài nguyên ../../../../../src/aicefr/api/static/staff.css"
+    },
+    {
+      "ok": true,
+      "description": "admin-accounts: tài nguyên forms-staff.css"
+    },
+    {
+      "ok": true,
+      "description": "CSS: mọi luật dưới body.staff"
+    },
+    {
+      "ok": true,
+      "description": "CSS: không mã màu mới"
+    },
+    {
+      "ok": true,
+      "description": "CSS: mọi token đã tồn tại"
+    },
+    {
+      "ok": true,
+      "description": "CSS: không nhắm select"
+    }
+  ]
+}

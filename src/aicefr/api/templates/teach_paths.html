@@ -7,7 +7,7 @@
     only once it is published, and a lesson only in its last published version. -#}
 <div class="page-head teach-head">
   <div>
-    <h1><span class="head-icon">{{ icon("layers") }}</span>Lộ trình luyện nói</h1>
+    <h1>Lộ trình luyện nói</h1>
     <p class="lede">Sinh viên chỉ thấy bản đã xuất bản, cho tới khi bạn xuất bản lại.</p>
   </div>
   <div class="button-row teach-tools">
@@ -27,21 +27,25 @@
 </div>
 
 <dialog class="sheet" id="path-dialog" aria-labelledby="path-dialog-h">
-  <form id="path-form" method="dialog">
+  <form id="path-form" method="dialog" novalidate>
     <h2 id="path-dialog-h">Lộ trình mới</h2>
-    <label for="path-title">Tên lộ trình</label>
-    <input id="path-title" name="title" required maxlength="160" autocomplete="off">
-    <label for="path-description">Mô tả cho sinh viên</label>
-    <textarea id="path-description" name="description" maxlength="1000"
-              placeholder="Lộ trình này dành cho ai, đi từ đâu tới đâu."></textarea>
+    <div class="field">
+      <label for="path-title">Tên lộ trình</label>
+      <input id="path-title" name="title" required maxlength="160" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="path-description">Mô tả cho sinh viên</label>
+      <textarea id="path-description" name="description" maxlength="1000"
+                placeholder="Lộ trình này dành cho ai, đi từ đâu tới đâu."></textarea>
+    </div>
     <div class="field-row">
-      <div>
+      <div class="field">
         <label for="path-band-from">Từ band</label>
         <select id="path-band-from" name="band_from">
           <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
         </select>
       </div>
-      <div>
+      <div class="field">
         <label for="path-band-to">Đến band</label>
         <select id="path-band-to" name="band_to">
           <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2" selected>C2</option>
@@ -56,22 +60,26 @@
 </dialog>
 
 <dialog class="sheet" id="unit-dialog" aria-labelledby="unit-dialog-h">
-  <form id="unit-form" method="dialog">
+  <form id="unit-form" method="dialog" novalidate>
     <h2 id="unit-dialog-h">Chặng mới</h2>
-    <label for="unit-title">Tên chặng</label>
-    <input id="unit-title" name="title" required maxlength="160" autocomplete="off"
-           placeholder="Ví dụ: Kể chuyện và nêu ý kiến">
-    <label for="unit-function">Chức năng giao tiếp</label>
-    <input id="unit-function" name="function" maxlength="300" autocomplete="off"
-           placeholder="Ví dụ: Kể một trải nghiệm theo trình tự, có cảm xúc">
+    <div class="field">
+      <label for="unit-title">Tên chặng</label>
+      <input id="unit-title" name="title" required maxlength="160" autocomplete="off"
+             placeholder="Ví dụ: Kể chuyện và nêu ý kiến">
+    </div>
+    <div class="field">
+      <label for="unit-function">Chức năng giao tiếp</label>
+      <input id="unit-function" name="function" maxlength="300" autocomplete="off"
+             placeholder="Ví dụ: Kể một trải nghiệm theo trình tự, có cảm xúc">
+    </div>
     <div class="field-row">
-      <div>
+      <div class="field">
         <label for="unit-band">Band</label>
         <select id="unit-band" name="band">
           <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
         </select>
       </div>
-      <div>
+      <div class="field">
         <label for="unit-topic">Chủ đề</label>
         <select id="unit-topic" name="topic">
           <option value="">Không gắn chủ đề</option>
@@ -89,8 +97,8 @@
       </div>
     </div>
     <div class="field-row">
-      <div>
-        <label for="unit-criterion">Tiêu chí luyện (không bắt buộc)</label>
+      <div class="field">
+        <label for="unit-criterion">Tiêu chí luyện <span class="muted">(không bắt buộc)</span></label>
         <select id="unit-criterion" name="criterion">
           <option value="">Không gắn tiêu chí</option>
           <option value="fluency">Độ trôi chảy (Fluency)</option>
@@ -99,10 +107,10 @@
           <option value="accuracy">Ngữ pháp (Accuracy)</option>
           <option value="phonology">Phát âm dễ nghe (Phonology)</option>
         </select>
+        <p class="field-hint">Chặng gắn tiêu chí được gợi ý cho sinh viên có tiêu chí đó yếu nhất
+          trong bài đánh giá gần nhất, ở đúng band.</p>
       </div>
     </div>
-    <p class="field-hint">Chặng gắn tiêu chí được gợi ý cho sinh viên có tiêu chí đó yếu nhất
-      trong bài đánh giá gần nhất, ở đúng band.</p>
     <div class="button-row">
       <button type="submit">Lưu</button>
       <button type="button" class="secondary" data-close="unit-dialog">Huỷ</button>
@@ -111,7 +119,7 @@
 </dialog>
 
 <dialog class="sheet wide" id="lesson-dialog" aria-labelledby="lesson-dialog-h">
-  <form id="lesson-form" method="dialog">
+  <form id="lesson-form" method="dialog" novalidate>
     <h2 id="lesson-dialog-h">Bài học mới</h2>
     <p class="muted">Viết một đoạn văn mẫu và chọn vài từ khóa: hệ thống dựng sẵn các bước theo
       luật cố định (đọc to, nhắc lại, chỗ trống, đọc rồi nói lại, từ khóa, dàn ý, nói tự do). Bạn
@@ -126,17 +134,19 @@
       </div>
       <p class="field-hint" id="ai-draft-hint">AI điền các ô bên dưới theo band và tiêu chí đã chọn; bạn đọc lại và sửa trước khi tạo.</p>
     </div>
-    <label for="lesson-title">Tên bài học</label>
-    <input id="lesson-title" name="title" required maxlength="160" autocomplete="off">
+    <div class="field">
+      <label for="lesson-title">Tên bài học</label>
+      <input id="lesson-title" name="title" required maxlength="160" autocomplete="off">
+    </div>
     <div class="field-row">
-      <div>
+      <div class="field">
         <label for="lesson-band">Band <span class="muted">(theo chặng)</span></label>
         <select id="lesson-band" name="band" disabled>
           <option value="A1">A1</option><option value="A2">A2</option><option value="B1">B1</option><option value="B2">B2</option><option value="C1">C1</option><option value="C2">C2</option>
         </select>
       </div>
-      <div>
-        <label for="lesson-criterion">Tiêu chí luyện (không bắt buộc)</label>
+      <div class="field">
+        <label for="lesson-criterion">Tiêu chí luyện <span class="muted">(không bắt buộc)</span></label>
         <select id="lesson-criterion" name="criterion">
           <option value="">Theo chặng</option>
           <option value="fluency">Độ trôi chảy (Fluency)</option>
@@ -147,20 +157,28 @@
         </select>
       </div>
     </div>
-    <label for="lesson-summary">Tóm tắt cho sinh viên</label>
-    <input id="lesson-summary" name="summary" maxlength="600" autocomplete="off"
-           placeholder="Một câu: bài này luyện nói về điều gì.">
-    <label for="lesson-text">Đoạn văn mẫu (tiếng Anh)</label>
-    <textarea id="lesson-text" name="model_text" maxlength="3000" lang="en" rows="6"
-              placeholder="I live in a small apartment near the city center..."></textarea>
-    <p class="field-hint">Viết số bằng chữ (twenty, không viết 20) và dùng cách viết Mỹ: máy
-      nghe khớp tốt hơn. Bộ soát lỗi sẽ nhắc khi bạn mở bài.</p>
-    <label for="lesson-keywords">Từ khóa, cách nhau bằng dấu phẩy</label>
-    <input id="lesson-keywords" name="keywords" maxlength="600" lang="en" autocomplete="off"
-           placeholder="apartment, quiet, nearby, friendly">
-    <label for="lesson-prompt">Đề nói tự do (bước cuối)</label>
-    <textarea id="lesson-prompt" name="free_prompt" maxlength="600" rows="2"
-              placeholder="Tả một nơi bạn hay đến. Nó ở đâu, có gì, vì sao bạn thích?"></textarea>
+    <div class="field">
+      <label for="lesson-summary">Tóm tắt cho sinh viên</label>
+      <input id="lesson-summary" name="summary" maxlength="600" autocomplete="off"
+             placeholder="Một câu: bài này luyện nói về điều gì.">
+    </div>
+    <div class="field">
+      <label for="lesson-text">Đoạn văn mẫu <span class="muted">(tiếng Anh)</span></label>
+      <textarea id="lesson-text" name="model_text" maxlength="3000" lang="en" rows="6"
+                placeholder="I live in a small apartment near the city center..."></textarea>
+      <p class="field-hint">Viết số bằng chữ (twenty, không viết 20) và dùng cách viết Mỹ: máy
+        nghe khớp tốt hơn. Bộ soát lỗi sẽ nhắc khi bạn mở bài.</p>
+    </div>
+    <div class="field">
+      <label for="lesson-keywords">Từ khóa <span class="muted">(cách nhau bằng dấu phẩy)</span></label>
+      <input id="lesson-keywords" name="keywords" maxlength="600" lang="en" autocomplete="off"
+             placeholder="apartment, quiet, nearby, friendly">
+    </div>
+    <div class="field">
+      <label for="lesson-prompt">Đề nói tự do <span class="muted">(bước cuối)</span></label>
+      <textarea id="lesson-prompt" name="free_prompt" maxlength="600" rows="2"
+                placeholder="Tả một nơi bạn hay đến. Nó ở đâu, có gì, vì sao bạn thích?"></textarea>
+    </div>
     <div class="button-row">
       <button type="submit">Tạo và mở trình soạn</button>
       <button type="button" class="secondary" data-close="lesson-dialog">Huỷ</button>
@@ -170,7 +188,7 @@
 
 {#- D046: the path model proposes, the teacher keeps what they want and saves a draft. -#}
 <dialog class="sheet wide" id="compose-dialog" aria-labelledby="compose-h">
-  <form id="compose-form">
+  <form id="compose-form" novalidate>
     <h2 id="compose-h">Ghép lộ trình từ bài có sẵn</h2>
     <p class="muted">Model chọn trong các bài đã xuất bản của mọi lộ trình, xếp thứ tự theo cách các
       lộ trình hiện có đang xếp, và nói lý do chọn từng bài. Bạn bỏ bớt bài, đặt tên, rồi lưu thành
@@ -181,10 +199,12 @@
       <button type="button" class="secondary" data-close="compose-dialog">Đóng</button>
     </div>
   </form>
-  <form id="compose-save" hidden>
+  <form id="compose-save" hidden novalidate>
     <div id="compose-result" aria-live="polite"></div>
-    <label for="compose-title">Tên lộ trình</label>
-    <input id="compose-title" name="title" required maxlength="160" autocomplete="off">
+    <div class="field">
+      <label for="compose-title">Tên lộ trình</label>
+      <input id="compose-title" name="title" required maxlength="160" autocomplete="off">
+    </div>
     <div class="button-row">
       <button type="submit">Lưu thành lộ trình nháp</button>
       <button type="button" class="secondary" id="compose-back">Sửa mục tiêu</button>

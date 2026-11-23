@@ -7318,16 +7318,10 @@ span.drill-word { cursor: default; }
 .bank-tabs { margin: 0 0 var(--sp-3); }
 .tab-count { display: inline-grid; place-items: center; min-width: 1.6rem; margin-left: 4px; padding: 0 6px; border-radius: var(--r-pill); background: var(--bg-sunken); color: var(--fg-muted); font-size: var(--t-xs, 0.75rem); font-variant-numeric: tabular-nums; }
 .bank-tabs button.chosen .tab-count { background: var(--brand-soft); color: var(--brand); }
-.bank-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-3); }
-.bank-toolbar input[type="search"] { flex: 1 1 16rem; margin: 0; }
-.bank-toolbar select { width: auto; margin: 0; }
-.bank-toolbar button { margin-top: 0; }
 .bank-table { width: 100%; }
 .bank-table td { vertical-align: middle; }
 .bank-table .bank-text { max-width: 0; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bank-table tr.off td { opacity: 0.55; }
-.bank-actions { white-space: nowrap; text-align: right; }
-.bank-actions button { margin: 0 0 0 var(--sp-1); }
 .bank-empty { padding: var(--sp-4) 0; text-align: center; }
 
 /* D078: the prices of the runs, set by an administrator. */

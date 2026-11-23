@@ -1,0 +1,2002 @@
+{
+ "admin_acc_form@1440": {
+  "form": [
+   329,
+   269,
+   1038,
+   177
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Vai trò",
+    "box": [
+     329,
+     327,
+     150,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Email",
+    "box": [
+     495,
+     269,
+     872,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "select",
+    "name": "acc-role",
+    "box": [
+     328,
+     355,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "textarea",
+    "name": "acc-emails",
+    "box": [
+     495,
+     298,
+     872,
+     94
+    ],
+    "height": "94px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Sinh viên",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     329,
+     356,
+     150,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Tạo tài khoản",
+    "cls": "",
+    "box": [
+     329,
+     408,
+     144,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "div",
+   "cls": "card",
+   "box": [
+    304,
+    172,
+    1088,
+    299
+   ],
+   "paddingTop": "24px",
+   "paddingLeft": "24px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "1088px"
+  },
+  "h2": {
+   "text": "Tạo tài khoản",
+   "box": [
+    329,
+    197,
+    1038,
+    24
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ },
+ "classes_new@1440": {
+  "form": [
+   329,
+   168,
+   1038,
+   72
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tên lớp",
+    "box": [
+     329,
+     168,
+     179,
+     64
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "grid"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "name",
+    "box": [
+     329,
+     189,
+     179,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Tạo lớp",
+    "cls": "button",
+    "box": [
+     524,
+     202,
+     81,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "16px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card",
+   "box": [
+    304,
+    105,
+    1088,
+    160
+   ],
+   "paddingTop": "24px",
+   "paddingLeft": "24px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "1088px"
+  },
+  "h2": {
+   "text": "Tạo lớp mới",
+   "box": [
+    329,
+    130,
+    94,
+    23
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "0px"
+  },
+  "overflowX": false
+ },
+ "classes_members@1440": {
+  "form": [
+   329,
+   168,
+   1038,
+   72
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Thêm sinh viên theo email, cách nhau bằn",
+    "box": [
+     329,
+     168,
+     308,
+     64
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "grid"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "list",
+    "box": [
+     329,
+     189,
+     308,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Thêm",
+    "cls": "button secondary",
+    "box": [
+     653,
+     202,
+     70,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "16px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card",
+   "box": [
+    304,
+    105,
+    1088,
+    327
+   ],
+   "paddingTop": "24px",
+   "paddingLeft": "24px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "1088px"
+  },
+  "h2": {
+   "text": "Sinh viên (2)",
+   "box": [
+    329,
+    130,
+    99,
+    23
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "0px"
+  },
+  "overflowX": false
+ },
+ "tasks_toolbar@1440": {
+  "form": [
+   329,
+   169,
+   1038,
+   133
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "8px",
+   "rowGap": "8px",
+   "columnGap": "8px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tìm đề",
+    "box": [
+     328,
+     235,
+     1,
+     1
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "-1px",
+    "display": "block"
+   },
+   {
+    "text": "Trạng thái",
+    "box": [
+     328,
+     235,
+     1,
+     1
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "bank-search",
+    "box": [
+     329,
+     169,
+     1038,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "select",
+    "name": "bank-state",
+    "box": [
+     328,
+     219,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Đang dùng",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     329,
+     220,
+     1038,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Thêm đề",
+    "cls": "",
+    "box": [
+     329,
+     264,
+     114,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card task-bank",
+   "box": [
+    304,
+    105,
+    1088,
+    695
+   ],
+   "paddingTop": "8px",
+   "paddingLeft": "24px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "1088px"
+  },
+  "overflowX": false
+ },
+ "tasks_dialog@1440": {
+  "form": [
+   353,
+   215,
+   734,
+   469
+  ],
+  "form_style": {
+   "display": "block",
+   "gap": "normal",
+   "rowGap": "normal",
+   "columnGap": "normal",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Band",
+    "box": [
+     353,
+     259,
+     734,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Đề bài (tiếng Việt; học viên nói tiếng A",
+    "box": [
+     353,
+     356,
+     734,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Từ khóa tiếng Anh (cách nhau bằng dấu ph",
+    "box": [
+     353,
+     514,
+     734,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "select",
+    "name": "band",
+    "box": [
+     352,
+     303,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "textarea",
+    "name": "prompt_text",
+    "box": [
+     353,
+     400,
+     734,
+     90
+    ],
+    "height": "90px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "16px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "input",
+    "name": "topic_keywords",
+    "box": [
+     353,
+     559,
+     734,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "16px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "A1",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     353,
+     304,
+     734,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Lưu",
+    "cls": "",
+    "box": [
+     353,
+     647,
+     58,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Huỷ",
+    "cls": "secondary",
+    "box": [
+     423,
+     647,
+     59,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "dialog",
+   "cls": "sheet wide",
+   "box": [
+    320,
+    182,
+    800,
+    535
+   ],
+   "paddingTop": "32px",
+   "paddingLeft": "32px",
+   "borderRadius": "14px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "800px"
+  },
+  "h2": {
+   "text": "Thêm đề",
+   "box": [
+    353,
+    215,
+    734,
+    28
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "22px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ },
+ "path_dialog@1440": {
+  "form": [
+   473,
+   262,
+   494,
+   377
+  ],
+  "form_style": {
+   "display": "block",
+   "gap": "normal",
+   "rowGap": "normal",
+   "columnGap": "normal",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tên lộ trình",
+    "box": [
+     473,
+     305,
+     494,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Mô tả cho sinh viên",
+    "box": [
+     473,
+     393,
+     494,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Từ band",
+    "box": [
+     473,
+     519,
+     239,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Đến band",
+    "box": [
+     728,
+     519,
+     239,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "title",
+    "box": [
+     473,
+     334,
+     494,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "textarea",
+    "name": "description",
+    "box": [
+     473,
+     422,
+     494,
+     90
+    ],
+    "height": "90px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "select",
+    "name": "band_from",
+    "box": [
+     472,
+     547,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "select",
+    "name": "band_to",
+    "box": [
+     727,
+     547,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "A1",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     473,
+     548,
+     239,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "C2",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     728,
+     548,
+     239,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Lưu",
+    "cls": "",
+    "box": [
+     473,
+     600,
+     58,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Huỷ",
+    "cls": "secondary",
+    "box": [
+     543,
+     600,
+     59,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "dialog",
+   "cls": "sheet",
+   "box": [
+    440,
+    229,
+    560,
+    443
+   ],
+   "paddingTop": "32px",
+   "paddingLeft": "32px",
+   "borderRadius": "14px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "560px"
+  },
+  "h2": {
+   "text": "Lộ trình mới",
+   "box": [
+    473,
+    262,
+    494,
+    28
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "22px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ },
+ "admin_acc_form@390": {
+  "form": [
+   33,
+   351,
+   324,
+   266
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Vai trò",
+    "box": [
+     33,
+     351,
+     150,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Email",
+    "box": [
+     33,
+     427,
+     324,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "select",
+    "name": "acc-role",
+    "box": [
+     32,
+     378,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "textarea",
+    "name": "acc-emails",
+    "box": [
+     33,
+     456,
+     324,
+     94
+    ],
+    "height": "94px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Sinh viên",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     33,
+     379,
+     150,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Tạo tài khoản",
+    "cls": "",
+    "box": [
+     33,
+     566,
+     324,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "div",
+   "cls": "card",
+   "box": [
+    16,
+    220,
+    358,
+    414
+   ],
+   "paddingTop": "16px",
+   "paddingLeft": "16px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "358px"
+  },
+  "h2": {
+   "text": "Tạo tài khoản",
+   "box": [
+    33,
+    237,
+    324,
+    24
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ },
+ "classes_new@390": {
+  "form": [
+   33,
+   239,
+   324,
+   138
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tên lớp",
+    "box": [
+     33,
+     239,
+     179,
+     64
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "grid"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "name",
+    "box": [
+     33,
+     260,
+     179,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Tạo lớp",
+    "cls": "button",
+    "box": [
+     33,
+     339,
+     324,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "16px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card",
+   "box": [
+    16,
+    183,
+    358,
+    210
+   ],
+   "paddingTop": "16px",
+   "paddingLeft": "16px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "358px"
+  },
+  "h2": {
+   "text": "Tạo lớp mới",
+   "box": [
+    33,
+    200,
+    94,
+    23
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "0px"
+  },
+  "overflowX": false
+ },
+ "classes_members@390": {
+  "form": [
+   33,
+   216,
+   324,
+   138
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "12px 16px",
+   "rowGap": "12px",
+   "columnGap": "16px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Thêm sinh viên theo email, cách nhau bằn",
+    "box": [
+     33,
+     216,
+     308,
+     64
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "grid"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "list",
+    "box": [
+     33,
+     237,
+     308,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Thêm",
+    "cls": "button secondary",
+    "box": [
+     33,
+     316,
+     324,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "16px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card",
+   "box": [
+    16,
+    161,
+    358,
+    445
+   ],
+   "paddingTop": "16px",
+   "paddingLeft": "16px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "358px"
+  },
+  "h2": {
+   "text": "Sinh viên (2)",
+   "box": [
+    33,
+    178,
+    99,
+    23
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "18px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "0px"
+  },
+  "overflowX": false
+ },
+ "tasks_toolbar@390": {
+  "form": [
+   33,
+   247,
+   324,
+   133
+  ],
+  "form_style": {
+   "display": "flex",
+   "gap": "8px",
+   "rowGap": "8px",
+   "columnGap": "8px",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tìm đề",
+    "box": [
+     32,
+     314,
+     1,
+     1
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "-1px",
+    "display": "block"
+   },
+   {
+    "text": "Trạng thái",
+    "box": [
+     32,
+     313,
+     1,
+     1
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "bank-search",
+    "box": [
+     33,
+     247,
+     324,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "select",
+    "name": "bank-state",
+    "box": [
+     32,
+     297,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "Đang dùng",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     33,
+     298,
+     324,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Thêm đề",
+    "cls": "",
+    "box": [
+     33,
+     342,
+     324,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "section",
+   "cls": "card task-bank",
+   "box": [
+    16,
+    183,
+    358,
+    687
+   ],
+   "paddingTop": "8px",
+   "paddingLeft": "16px",
+   "borderRadius": "10px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "358px"
+  },
+  "overflowX": false
+ },
+ "tasks_dialog@390": {
+  "form": [
+   36,
+   142,
+   318,
+   561
+  ],
+  "form_style": {
+   "display": "block",
+   "gap": "normal",
+   "rowGap": "normal",
+   "columnGap": "normal",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Band",
+    "box": [
+     36,
+     185,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Đề bài (tiếng Việt; học viên nói tiếng A",
+    "box": [
+     36,
+     282,
+     318,
+     42
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Từ khóa tiếng Anh (cách nhau bằng dấu ph",
+    "box": [
+     36,
+     461,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "select",
+    "name": "band",
+    "box": [
+     35,
+     229,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "textarea",
+    "name": "prompt_text",
+    "box": [
+     36,
+     348,
+     318,
+     90
+    ],
+    "height": "90px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "16px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "input",
+    "name": "topic_keywords",
+    "box": [
+     36,
+     506,
+     318,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "16px",
+    "marginBottom": "0px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "A1",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     36,
+     230,
+     318,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Lưu",
+    "cls": "",
+    "box": [
+     36,
+     614,
+     318,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Huỷ",
+    "cls": "secondary",
+    "box": [
+     36,
+     664,
+     318,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "dialog",
+   "cls": "sheet wide",
+   "box": [
+    19,
+    125,
+    352,
+    595
+   ],
+   "paddingTop": "16px",
+   "paddingLeft": "16px",
+   "borderRadius": "14px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "352px"
+  },
+  "h2": {
+   "text": "Thêm đề",
+   "box": [
+    36,
+    142,
+    318,
+    27
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "22px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ },
+ "path_dialog@390": {
+  "form": [
+   36,
+   176,
+   318,
+   492
+  ],
+  "form_style": {
+   "display": "block",
+   "gap": "normal",
+   "rowGap": "normal",
+   "columnGap": "normal",
+   "padding": "0px"
+  },
+  "labels": [
+   {
+    "text": "Tên lộ trình",
+    "box": [
+     36,
+     220,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Mô tả cho sinh viên",
+    "box": [
+     36,
+     307,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "16px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Từ band",
+    "box": [
+     36,
+     434,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   },
+   {
+    "text": "Đến band",
+    "box": [
+     36,
+     499,
+     318,
+     21
+    ],
+    "fontSize": "13px",
+    "fontWeight": "650",
+    "color": "rgb(29, 36, 51)",
+    "marginTop": "0px",
+    "marginBottom": "8px",
+    "display": "block"
+   }
+  ],
+  "controls": [
+   {
+    "tag": "input",
+    "name": "title",
+    "box": [
+     36,
+     248,
+     318,
+     43
+    ],
+    "height": "43px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "textarea",
+    "name": "description",
+    "box": [
+     36,
+     336,
+     318,
+     90
+    ],
+    "height": "90px",
+    "paddingTop": "12px",
+    "paddingLeft": "12px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(182, 189, 203)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "0px",
+    "marginBottom": "0px"
+   },
+   {
+    "tag": "select",
+    "name": "band_from",
+    "box": [
+     35,
+     462,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   },
+   {
+    "tag": "select",
+    "name": "band_to",
+    "box": [
+     35,
+     526,
+     1,
+     1
+    ],
+    "height": "1px",
+    "paddingTop": "0px",
+    "paddingLeft": "0px",
+    "fontSize": "14px",
+    "borderRadius": "8px",
+    "borderColor": "rgb(29, 36, 51)",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "marginTop": "-1px",
+    "marginBottom": "-1px"
+   }
+  ],
+  "buttons": [
+   {
+    "text": "A1",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     36,
+     463,
+     318,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "C2",
+    "cls": "c-dropdown-trigger",
+    "box": [
+     36,
+     527,
+     318,
+     36
+    ],
+    "height": "36px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(238, 240, 244)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(214, 218, 226)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Lưu",
+    "cls": "",
+    "box": [
+     36,
+     579,
+     318,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(201, 64, 15)",
+    "color": "rgb(255, 255, 255)",
+    "borderColor": "rgba(0, 0, 0, 0)",
+    "marginTop": "0px"
+   },
+   {
+    "text": "Huỷ",
+    "cls": "secondary",
+    "box": [
+     36,
+     630,
+     318,
+     38
+    ],
+    "height": "38.1875px",
+    "paddingTop": "9px",
+    "paddingLeft": "16px",
+    "fontSize": "14px",
+    "fontWeight": "650",
+    "borderRadius": "8px",
+    "backgroundColor": "rgb(255, 255, 255)",
+    "color": "rgb(29, 36, 51)",
+    "borderColor": "rgb(182, 189, 203)",
+    "marginTop": "0px"
+   }
+  ],
+  "container": {
+   "tag": "dialog",
+   "cls": "sheet",
+   "box": [
+    19,
+    159,
+    352,
+    526
+   ],
+   "paddingTop": "16px",
+   "paddingLeft": "16px",
+   "borderRadius": "14px",
+   "borderColor": "rgb(214, 218, 226)",
+   "backgroundColor": "rgb(255, 255, 255)",
+   "width": "352px"
+  },
+  "h2": {
+   "text": "Lộ trình mới",
+   "box": [
+    36,
+    176,
+    318,
+    28
+   ],
+   "fontFamily": "Roboto, \"Roboto Fallback\", system-ui, -apple-system, \"Segoe UI\", \"Helvetica Neue\", Arial, \"Noto Sans\", sans-serif",
+   "fontSize": "22px",
+   "fontWeight": "700",
+   "color": "rgb(201, 64, 15)",
+   "marginBottom": "16px"
+  },
+  "overflowX": false
+ }
+}

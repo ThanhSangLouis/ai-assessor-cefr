@@ -192,8 +192,15 @@ function openPath(id) {
 
 $("path-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const titleInput = $("path-title");
+  const title = titleInput.value.trim();
+  if (!title) {
+    window.toast("Hãy nhập tên lộ trình.", "error");
+    titleInput.focus();
+    return;
+  }
   const body = {
-    title: $("path-title").value.trim(),
+    title,
     description: $("path-description").value.trim(),
     band_from: $("path-band-from").value,
     band_to: $("path-band-to").value,
@@ -235,8 +242,15 @@ function openUnit(pathId, unitId) {
 
 $("unit-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const titleInput = $("unit-title");
+  const title = titleInput.value.trim();
+  if (!title) {
+    window.toast("Hãy nhập tên chặng.", "error");
+    titleInput.focus();
+    return;
+  }
   const body = {
-    title: $("unit-title").value.trim(),
+    title,
     function: $("unit-function").value.trim(),
     band: $("unit-band").value,
     topic: $("unit-topic").value || null,
@@ -309,10 +323,17 @@ $("ai-draft-go").addEventListener("click", async () => {
 
 $("lesson-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const titleInput = $("lesson-title");
+  const title = titleInput.value.trim();
+  if (!title) {
+    window.toast("Hãy nhập tên bài học.", "error");
+    titleInput.focus();
+    return;
+  }
   const submit = e.target.querySelector('button[type="submit"]');
   submit.disabled = true;
   const body = {
-    title: $("lesson-title").value.trim(),
+    title,
     band: $("lesson-band").value,
     criterion: $("lesson-criterion").value || null,
     summary: $("lesson-summary").value.trim(),
@@ -328,6 +349,16 @@ $("lesson-form").addEventListener("submit", async (e) => {
     location.href = `/teach/lessons/${encodeURIComponent(d.lesson_id)}`;
   } catch (err) {
     submit.disabled = false;
+  }
+});
+
+$("compose-save").addEventListener("submit", (e) => {
+  const titleInput = $("compose-title");
+  if (!titleInput.value.trim()) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    window.toast("Hãy nhập tên lộ trình.", "error");
+    titleInput.focus();
   }
 });
 

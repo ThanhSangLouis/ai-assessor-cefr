@@ -3,6 +3,7 @@
 // for each group. Classes set no assessments any more (D075). An
 // administrator sees every class and assigns its teachers.
 const escapeHtml = window.escapeHtml;
+const icon = (name) => window.ui.icon(name);
 const root = document.getElementById("classes-root");
 const classId = root.dataset.classId;
 const isAdmin = root.dataset.role === "admin";
@@ -46,18 +47,18 @@ function bandGroups(c) {
   const rows = groups
     .map(
       (g) => `<div class="band-group" data-target="${escapeHtml(g.target)}">
-        <span class="band-badge">${escapeHtml(g.target)}</span>
+        <span class="band-chip" data-band="${escapeHtml(g.target)}">${escapeHtml(g.target)}</span>
         <div class="who"><b>${g.people.length} sinh viên</b> nhắm tới ${escapeHtml(g.target)}, đang từ ${escapeHtml(g.from)}
           <div class="muted small">${g.people.map((p) => escapeHtml(p.name)).join(", ")}</div></div>
         <a class="button secondary small" href="/teach?compose=1&band_from=${encodeURIComponent(g.from)}&band_to=${encodeURIComponent(g.target)}">Soạn lộ trình cho nhóm</a>
         <label class="visually-hidden" for="assign-${escapeHtml(g.target)}">Lộ trình giao cho nhóm ${escapeHtml(g.target)}</label>
         <select id="assign-${escapeHtml(g.target)}" data-paths><option value="">Chọn lộ trình đã xuất bản…</option></select>
-        <button class="button small" data-assign="${escapeHtml(g.target)}">Giao cho nhóm</button>
+        <button type="button" class="small" data-assign="${escapeHtml(g.target)}">Giao cho nhóm</button>
       </div>`,
     )
     .join("");
   return `<section class="card" aria-labelledby="bands-h">
-    <div class="card-head"><h2 id="bands-h">Nhóm theo band mục tiêu</h2></div>
+    <div class="card-head"><h2 id="bands-h">${icon("layers")} Nhóm theo band mục tiêu</h2></div>
     <p class="muted">Sinh viên tự chọn band trên trang Lộ trình. Giao lộ trình cho một nhóm sẽ thay lộ trình riêng của từng người trong nhóm.</p>
     ${groups.length ? `<div class="band-groups">${rows}</div>` : '<p class="muted">Chưa sinh viên nào chọn band.</p>'}
     ${none ? `<p class="muted small">${none} sinh viên chưa chọn band.</p>` : ""}
@@ -67,10 +68,14 @@ function bandGroups(c) {
 async function wireGroups(c) {
   const selects = root.querySelectorAll("select[data-paths]");
   if (!selects.length) return;
+  if (window.enhanceSelects) window.enhanceSelects(root);
   const paths = await window.apiJson("/api/v1/teach/paths");
   const published = (paths || []).filter((p) => p.status === "published");
   const opts = published.map((p) => `<option value="${escapeHtml(p.path_id)}">${escapeHtml(p.title)} (${escapeHtml(p.band_from)}–${escapeHtml(p.band_to)})</option>`).join("");
-  selects.forEach((s) => s.insertAdjacentHTML("beforeend", opts));
+  selects.forEach((s) => {
+    s.insertAdjacentHTML("beforeend", opts);
+    s.dispatchEvent(new Event("change"));
+  });
   const groups = groupsOf(c);
   root.querySelectorAll("button[data-assign]").forEach((b) =>
     b.addEventListener("click", async () => {
@@ -95,35 +100,55 @@ async function listView() {
   if (!classes) return;
   root.innerHTML = `
     <section class="card" aria-labelledby="new-h">
-      <div class="card-head"><h2 id="new-h">Tạo lớp mới</h2></div>
-      <form id="new-class" class="inline-form">
-        <label class="field"><span>Tên lớp</span><input name="name" maxlength="80" required placeholder="Ví dụ: Tiếng Anh 2 · nhóm 03"></label>
+      <div class="card-head"><h2 id="new-h">${icon("user-plus")} Tạo lớp mới</h2></div>
+      <p class="muted">Tạo lớp để quản lý sinh viên và theo dõi bài nói.</p>
+      <form id="new-class" class="inline-form one-line" novalidate>
+        <div class="field field-name">
+          <label for="class-name">Tên lớp</label>
+          <input id="class-name" name="name" maxlength="80" required placeholder="Ví dụ: Tiếng Anh 2 · nhóm 03" autocomplete="off">
+        </div>
         ${
           isAdmin
-            ? '<label class="field"><span>Email giảng viên, cách nhau bằng dấu phẩy</span><input name="teachers" placeholder="gv.an@truong.edu.vn"></label>'
+            ? `<div class="field field-list">
+          <label for="class-teachers">Email giảng viên, cách nhau bằng dấu phẩy</label>
+          <input id="class-teachers" name="teachers" placeholder="gv-01@demo.speakup.fit, gv-02@demo.speakup.fit" autocomplete="off">
+        </div>`
             : ""
         }
-        <button class="button" type="submit">Tạo lớp</button>
+        <div class="button-row">
+          <button class="button" type="submit">Tạo lớp</button>
+        </div>
       </form>
     </section>
     <section class="card" aria-labelledby="list-h">
-      <div class="card-head"><h2 id="list-h">${isAdmin ? "Tất cả lớp" : "Lớp của tôi"}</h2></div>
+      <div class="list-toolbar">
+        <h2 id="list-h">${icon("users")} ${isAdmin ? "Tất cả lớp" : "Lớp của tôi"}</h2>
+        <span class="muted">${classes.length} lớp</span>
+      </div>
       ${
         classes.length
-          ? `<ul class="plain-list">${classes
+          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách lớp"><table class="classes-table"><thead><tr><th scope="col">Lớp</th><th scope="col">Sinh viên</th><th scope="col">Giảng viên</th><th scope="col">Trạng thái</th></tr></thead><tbody>${classes
               .map(
-                (c) => `<li class="assign-row"><div><a href="/teach/classes/${encodeURIComponent(c.class_id)}"><b>${escapeHtml(c.name)}</b></a>
-                  <div class="muted small">${c.members} sinh viên${c.archived ? " · đã lưu trữ" : ""}</div>
-                  <div class="muted small">Giảng viên: ${teacherNames(c) || "chưa phân công"}</div></div></li>`,
+                (c) => `<tr><td><a href="/teach/classes/${encodeURIComponent(c.class_id)}"><b>${escapeHtml(c.name)}</b></a></td>
+                  <td>${c.members}</td>
+                  <td>${teacherNames(c) || "chưa phân công"}</td>
+                  <td>${c.archived ? '<span class="badge">Lưu trữ</span>' : '<span class="badge COMPLETED">Đang dùng</span>'}</td></tr>`,
               )
-              .join("")}</ul>`
+              .join("")}</tbody></table></div>`
           : '<p class="muted">Chưa có lớp nào.</p>'
       }
     </section>`;
   document.getElementById("new-class").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const body = { name: e.target.name.value };
-    if (isAdmin) body.teachers = list(e.target.teachers.value);
+    const nameInput = e.target.elements.name;
+    const name = nameInput.value.trim();
+    if (!name) {
+      window.toast("Hãy nhập tên lớp.", "error");
+      nameInput.focus();
+      return;
+    }
+    const body = { name };
+    if (isAdmin) body.teachers = list(e.target.elements.teachers.value);
     const made = await post("/api/v1/classes", body);
     if (made) window.location.assign(`/teach/classes/${encodeURIComponent(made.class_id)}`);
   });
@@ -137,31 +162,36 @@ async function detailView() {
     `${c.archived ? "Lớp đã lưu trữ. " : ""}<a href="/teach/classes">Tất cả lớp</a>`;
   root.innerHTML = `
     <section class="card" aria-labelledby="members-h">
-      <div class="card-head"><h2 id="members-h">Sinh viên (${c.members.length})</h2></div>
-      <form id="members-form" class="inline-form">
-        <label class="field"><span>Thêm sinh viên theo email, cách nhau bằng dấu phẩy</span><input name="list" placeholder="an.nguyen@truong.edu.vn, binh.tran@truong.edu.vn"></label>
-        <button class="button secondary" type="submit">Thêm</button>
+      <div class="card-head"><h2 id="members-h">${icon("users")} Sinh viên (${c.members.length})</h2></div>
+      <form id="members-form" class="inline-form one-line" novalidate>
+        <div class="field field-list">
+          <label for="member-list">Thêm sinh viên theo email, cách nhau bằng dấu phẩy</label>
+          <input id="member-list" name="list" placeholder="sv-001@demo.speakup.fit, sv-002@demo.speakup.fit" autocomplete="off">
+        </div>
+        <div class="button-row">
+          <button class="button secondary" type="submit">Thêm</button>
+        </div>
       </form>
       ${
         c.members.length
-          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table><thead><tr><th>Sinh viên</th><th>Học theo band</th><th></th></tr></thead><tbody>${c.members
+          ? `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách sinh viên"><table class="members-table"><thead><tr><th scope="col">Sinh viên</th><th scope="col">Học theo band</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>${c.members
               .map(
                 (m) => `<tr><td>${escapeHtml(m.name)}${m.email && m.email !== m.name ? `<span class="cell-sub">${escapeHtml(m.email)}</span>` : ""}</td>
                   <td>${bandText(m.bands)}</td>
-                  <td><button class="button secondary small" data-remove="${escapeHtml(m.account_id)}">Xoá khỏi lớp</button></td></tr>`,
+                  <td><div class="row-actions"><button type="button" class="danger small" data-remove="${escapeHtml(m.account_id)}" data-name="${escapeHtml(m.name)}" aria-label="Xoá ${escapeHtml(m.name)} khỏi lớp">Xoá khỏi lớp</button></div></td></tr>`,
               )
               .join("")}</tbody></table></div>`
           : '<p class="muted">Chưa có ai.</p>'
       }
     </section>
     <section class="card" aria-labelledby="teachers-h">
-      <div class="card-head"><h2 id="teachers-h">Giảng viên (${c.teachers.length})</h2></div>
+      <div class="card-head"><h2 id="teachers-h">${icon("user")} Giảng viên (${c.teachers.length})</h2></div>
       <ul class="plain-list">${
         c.teachers
           .map(
-            (t) => `<li class="assign-row"><span>${escapeHtml(t.name)}</span>${
+            (t) => `<li class="assign-row"><span>${escapeHtml(t.name)}${t.email && t.email !== t.name ? `<span class="cell-sub">${escapeHtml(t.email)}</span>` : ""}</span>${
               isAdmin
-                ? `<button class="button secondary small" data-unteach="${escapeHtml(t.account_id)}">Bỏ phân công</button>`
+                ? `<div class="row-actions"><button type="button" class="danger small" data-unteach="${escapeHtml(t.account_id)}" data-name="${escapeHtml(t.name)}" aria-label="Bỏ phân công ${escapeHtml(t.name)}">Bỏ phân công</button></div>`
                 : ""
             }</li>`,
           )
@@ -169,9 +199,14 @@ async function detailView() {
       }</ul>
       ${
         isAdmin
-          ? `<form id="teachers-form" class="inline-form">
-        <label class="field"><span>Phân công giảng viên theo email</span><input name="email" type="email" placeholder="gv.an@truong.edu.vn" required></label>
-        <button class="button secondary" type="submit">Phân công</button>
+          ? `<form id="teachers-form" class="inline-form one-line" novalidate>
+        <div class="field field-list">
+          <label for="teacher-email">Phân công giảng viên theo email</label>
+          <input id="teacher-email" name="email" type="email" placeholder="gv-01@demo.speakup.fit" required autocomplete="off">
+        </div>
+        <div class="button-row">
+          <button class="button secondary" type="submit">Phân công</button>
+        </div>
       </form>`
           : ""
       }
@@ -181,6 +216,8 @@ async function detailView() {
   wireGroups(c);
   root.querySelectorAll("button[data-remove]").forEach((b) =>
     b.addEventListener("click", async () => {
+      const name = b.dataset.name || b.dataset.remove;
+      if (!window.confirm(`Xoá ${name} khỏi lớp?`)) return;
       const r = await window.apiJson(
         `/api/v1/classes/${encodeURIComponent(classId)}/members/${encodeURIComponent(b.dataset.remove)}`,
         { method: "DELETE" },
@@ -190,6 +227,8 @@ async function detailView() {
   );
   root.querySelectorAll("button[data-unteach]").forEach((b) =>
     b.addEventListener("click", async () => {
+      const name = b.dataset.name || b.dataset.unteach;
+      if (!window.confirm(`Bỏ phân công ${name} khỏi lớp này?`)) return;
       const r = await window.apiJson(
         `/api/v1/classes/${encodeURIComponent(classId)}/teachers/${encodeURIComponent(b.dataset.unteach)}`,
         { method: "DELETE" },
@@ -201,8 +240,15 @@ async function detailView() {
   if (teachersForm)
     teachersForm.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const emailInput = e.target.elements.email;
+      const email = emailInput.value.trim();
+      if (!email) {
+        window.toast("Hãy nhập email giảng viên.", "error");
+        emailInput.focus();
+        return;
+      }
       const d = await post(`/api/v1/classes/${encodeURIComponent(classId)}/teachers`, {
-        email: e.target.email.value.trim(),
+        email,
       });
       if (d) {
         window.toast(d.added ? "Đã phân công giảng viên." : "Giảng viên này đã dạy lớp.", "ok");
@@ -211,8 +257,13 @@ async function detailView() {
     });
   document.getElementById("members-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const people = list(e.target.list.value);
-    if (!people.length) return;
+    const listInput = e.target.elements.list;
+    const people = list(listInput.value);
+    if (!people.length) {
+      window.toast("Hãy nhập ít nhất một email sinh viên.", "error");
+      listInput.focus();
+      return;
+    }
     const d = await post(`/api/v1/classes/${encodeURIComponent(classId)}/members`, { people });
     if (!d) return;
     const parts = [`Đã thêm ${d.added.length}`];

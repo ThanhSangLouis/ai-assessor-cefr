@@ -55,19 +55,19 @@
       el.innerHTML = `<p class="muted bank-empty">Không có đề nào ${$("bank-search").value ? "khớp tìm kiếm" : "ở band " + band}.</p>`;
       return;
     }
-    el.innerHTML = `<table class="bank-table"><thead><tr><th scope="col">Đề bài</th>
+    el.innerHTML = `<div class="table-scroll" tabindex="0" role="region" aria-label="Danh sách đề"><table class="bank-table"><thead><tr><th scope="col">Đề bài</th>
       <th scope="col">Từ khóa</th><th scope="col">Bản</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>${rows
       .map(
-        (t) => `<tr class="${t.active ? "" : "off"}">
-          <td class="bank-text" title="${escapeHtml(t.prompt_text)}">${escapeHtml(t.prompt_text)}</td>
+        (t, i) => `<tr class="${t.active ? "" : "off"}">
+          <td class="bank-text"><span title="${escapeHtml(t.prompt_text)}">${escapeHtml(t.prompt_text)}</span></td>
           <td class="num">${(t.topic_keywords || []).length}</td>
           <td class="num">${escapeHtml(t.prompt_version)}</td>
-          <td class="bank-actions">
-            <button type="button" class="icon-only" data-edit="${escapeHtml(t.task_id)}" aria-label="Sửa đề" title="Sửa">${icon("pencil")}</button>
+          <td><div class="row-actions">
+            <button type="button" class="icon-only" data-edit="${escapeHtml(t.task_id)}" aria-label="Sửa đề ${i + 1}" title="Sửa">${icon("pencil")}</button>
             <button type="button" class="secondary small" data-toggle="${escapeHtml(t.task_id)}">${t.active ? "Tắt" : "Bật"}</button>
-          </td></tr>`,
+          </div></td></tr>`,
       )
-      .join("")}</tbody></table>`;
+      .join("")}</tbody></table></div>`;
     el.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => open(b.dataset.edit)));
     el.querySelectorAll("[data-toggle]").forEach((b) =>
       b.addEventListener("click", async () => {
@@ -86,6 +86,7 @@
     f.reset();
     $("task-dialog-h").textContent = editing ? "Sửa đề" : "Thêm đề";
     f.band.value = editing ? editing.band : band;
+    f.band.dispatchEvent(new Event("change"));
     f.prompt_text.value = editing ? editing.prompt_text : "";
     f.topic_keywords.value = editing ? (editing.topic_keywords || []).join(", ") : "";
     $("task-dialog").showModal();
@@ -97,6 +98,7 @@
     const f = e.target;
     if (f.prompt_text.value.trim().length < 10) {
       window.toast("Đề bài cần ít nhất 10 ký tự.", "error");
+      f.prompt_text.focus();
       return;
     }
     const body = {
