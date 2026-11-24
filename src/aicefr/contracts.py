@@ -796,7 +796,7 @@ class CoachUpgrade(BaseModel):
     Part of the response (`Response ◆ CoachUpgrade`): it is made from the
     response's transcript and goes with it. Which model wrote it is not kept
     (D103): the audit log names the provider. `upgrade_id` is its own
-    identifier (D110), given when it is made.
+    identifier (D111), given when it is made.
     """
 
     upgrade_id: str

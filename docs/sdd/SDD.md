@@ -1118,7 +1118,7 @@ erDiagram
         object review_lock "ai đang giữ bài để duyệt, tới lúc nào (D104)"
         array reviews "Review: giảng viên, điểm và band cũ mới, lý do, quyết lúc"
         array replay_labels "tự nghe lại (D056)"
-        object coach_upgrade "bản AI viết lại một band cao hơn (mã upgrade_id, D110), cụm từ ôn (D069, D070)"
+        object coach_upgrade "bản AI viết lại một band cao hơn (mã upgrade_id, D111), cụm từ ôn (D069, D070)"
     }
 
     classroom {

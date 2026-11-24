@@ -58,7 +58,7 @@ def test_every_identifier_a_table_had_as_key_is_unique():
         "ledger": ["key", "action"],
         "system": ["key"],
     }
-    keys["wallet_id"] = ["wallet_id"]  # D111: the wallet's own id too
+    keys["wallet_id"] = ["wallet_id"]  # D112: the wallet's own id too
     for name, key in keys.items():
         collection = "wallet" if name == "wallet_id" else name
         assert any(i["keys"] == key and i["unique"] for i in shape[collection]), name

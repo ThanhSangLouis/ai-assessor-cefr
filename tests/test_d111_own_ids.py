@@ -1,4 +1,4 @@
-"""D110: an achievement and an upgraded answer carry their own identifier.
+"""D111: an achievement and an upgraded answer carry their own identifier.
 
 * a new achievement is stored with `achievement_id`; the pair learner + rule
   code stays unique, so a learner still reaches each rule once;

@@ -178,7 +178,7 @@ Sơ đồ là thiết kế mà code theo. Các kiểm tra sau chạy trong CI:
    - bội số khớp giới hạn code ép.
 3. **`tests/test_class_diagram_in_code.py`** đối chiếu tới từng thuộc tính. Mỗi thuộc tính và thao tác vẽ trên một thực thể phải tìm được trong code theo một trong ba cách:
    - **cùng tên**, viết kiểu snake case, trên lớp của thực thể (`dailyGoalS` → `Account.daily_goal_s`);
-   - **tham chiếu lưu bằng mã**: sơ đồ vẽ `learner: Account`, code giữ `account_id`; `wallet: Wallet` là `wallet_id` (D111);
+   - **tham chiếu lưu bằng mã**: sơ đồ vẽ `learner: Account`, code giữ `account_id`; `wallet: Wallet` là `wallet_id` (D112);
    - **thành viên của phần mà thực thể được lưu thành**:
      - `Lesson.publishedVersion` là `LessonMeta.published_version`, giữ cạnh nội dung bài;
      - `Response.transcript` là `Transcript.text` trong báo cáo chấm;

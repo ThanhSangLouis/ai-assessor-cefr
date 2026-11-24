@@ -1273,8 +1273,8 @@ def _d109_join_code(db: Database, target: str) -> None:
     )
 
 
-def _d110_own_ids(db: Database, target: str) -> None:
-    """An achievement and an upgraded answer get their own identifier (D110).
+def _d111_own_ids(db: Database, target: str) -> None:
+    """An achievement and an upgraded answer get their own identifier (D111).
 
     `achievement.achievement_id` ("ac" + 10 hex) for every achievement reached
     so far, under a unique index; the pair (`account_id`, `code`) stays unique.
@@ -1303,16 +1303,16 @@ def _d110_own_ids(db: Database, target: str) -> None:
             )
 
 
-# The indexes under the names D111 gave.
-D111_INDEXES = {
+# The indexes under the names D112 gave.
+D112_INDEXES = {
     "response": [(("reviews.decided_at",), False)],
     "wallet": [(("account_id",), True), (("wallet_id",), True)],
     "ledger": [(("wallet_id", "created_at"), False)],
 }
 
 
-def _d111_names(db: Database, target: str) -> None:
-    """Stored names follow the class diagram; wallet and price list get their own id (D111).
+def _d112_names(db: Database, target: str) -> None:
+    """Stored names follow the class diagram; wallet and price list get their own id (D112).
 
     * `response.reviews[].created_at` -> `decided_at`; `response.reasons` ->
       `reason_codes`; `response.assessment.comments` -> `assessment.feedback`;
@@ -1389,7 +1389,7 @@ def _d111_names(db: Database, target: str) -> None:
             {"price_list_id": {"$exists": False}},
             {"$set": {"price_list_id": "pl" + uuid.uuid4().hex[:10]}},
         )
-    ensure_indexes(db, D111_INDEXES, "migration-27")
+    ensure_indexes(db, D112_INDEXES, "migration-27")
 
 
 MIGRATIONS: tuple[Migration, ...] = (
@@ -1440,9 +1440,9 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(
         25, "classroom.join_code: a student joins by code or invitation (D109)", _d109_join_code
     ),
-    Migration(26, "achievement and upgraded answer get their own id (D110)", _d110_own_ids),
+    Migration(26, "achievement and upgraded answer get their own id (D111)", _d111_own_ids),
     Migration(
-        27, "stored names follow the class diagram; wallet and price list ids (D111)", _d111_names
+        27, "stored names follow the class diagram; wallet and price list ids (D112)", _d112_names
     ),
 )
 

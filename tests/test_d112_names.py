@@ -1,4 +1,4 @@
-"""D111: stored names follow the class diagram; wallet and price list get their own id.
+"""D112: stored names follow the class diagram; wallet and price list get their own id.
 
 * a teacher's decision keeps `decided_at`, a response `reason_codes`, its
   report `feedback`, a learning plan `lessons`;

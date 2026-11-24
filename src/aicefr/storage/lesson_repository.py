@@ -263,7 +263,7 @@ class ReviewItem:
 class Achievement:
     """One achievement of the catalogue (`AchievementRule`) one learner reached.
 
-    `achievement_id` is its own identifier (D110); `code` names which rule of the
+    `achievement_id` is its own identifier (D111); `code` names which rule of the
     catalogue was reached, and a learner reaches each rule once.
     """
 

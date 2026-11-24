@@ -23,7 +23,7 @@ the report's two figures look alike; only the content changes:
     composition (filled) when the part lives and dies with its whole; a
     field typed by an enum is a dashed line with an open arrow at the enum;
     association is kept for a relation with no attribute (a ledger entry and
-    the response it paid for, D111). The lock edge removed; three relations the
+    the response it paid for, D112). The lock edge removed; three relations the
     code has added.
 
 Ports keep their absolute position; a port that falls off a shrunk box moves
@@ -93,7 +93,7 @@ REPLACE = {
     ("Lesson", "title"): ["- title: str", "- summary: str", "- keywords: List<str>"],
     ("LessonPath", "title"): ["- title: str", "- description: str"],
     ("LedgerEntry", "state"): ["- state: LedgerState", "- period: str"],
-    # D111: what the entry paid for -- a response, its upgrade ("upgrade-<id>"),
+    # D112: what the entry paid for -- a response, its upgrade ("upgrade-<id>"),
     # a lesson recording, a draft or a passage -- so a key, not a Response.
     ("LedgerEntry", "response"): ["- key: str"],
     ("ReviewItem", "drill"): ["- drill: WordDrill", "- step: Step"],
@@ -152,7 +152,7 @@ CORE_ROWS = {
 # The identifier each class's collection is keyed by (`account_id`, `response_id`...),
 # drawn on top of the box under its name in the code (camel case, like every other
 # attribute: `class_id` -> `classId`). Achievement and CoachUpgrade got theirs in
-# D110, Wallet and PriceList in D111: every class drawn has one.
+# D111, Wallet and PriceList in D112: every class drawn has one.
 ID_FIELD = {
     "Account": "accountId: str", "Task": "taskId: str", "Response": "responseId: str",
     "Review": "reviewId: int", "Classroom": "classId: str", "LessonPath": "pathId: str",

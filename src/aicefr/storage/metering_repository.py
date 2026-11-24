@@ -3,7 +3,7 @@
 Three collections (D060, D078), as the class diagram has them:
 
 * `wallet` -- one document per account (`Wallet`, its own `wallet_id` since
-  D111, its owner `account_id`): what it has paid for in
+  D112, its owner `account_id`): what it has paid for in
   advance (on the NetID channel, what NetID reports as prepaid IDPoint), the
   free runs used in the current monthly cycle, the lesson recordings of the
   current Vietnam day (D094: how many were measured, how many of them free),
@@ -13,9 +13,9 @@ Three collections (D060, D078), as the class diagram has them:
   recording came in, what was charged when it had a result, or that it was
   released. Unique on (key, action), so a retried submission or a duplicated
   event never charges twice. Entries grow with every recording, so they are
-  documents of their own, pointing at their wallet by its `wallet_id` (D111);
+  documents of their own, pointing at their wallet by its `wallet_id` (D112);
 * `price_list` -- one document (`_id` "current"; its `price_list_id` is new
-  with each version, D111), the prices an administrator set on the
+  with each version, D112), the prices an administrator set on the
   dashboard (D078): what a recording, a practice attempt and an upgraded
   answer cost, the free runs each month and the run packs on sale, with every
   earlier version and who set it. Absent until the first change: the settings
@@ -143,7 +143,7 @@ class Wallet:
 
 
 def new_wallet_id() -> str:
-    """A wallet's own identifier (D111): "wa" and 10 hex digits."""
+    """A wallet's own identifier (D112): "wa" and 10 hex digits."""
     return "wa" + uuid.uuid4().hex[:10]
 
 
