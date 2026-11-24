@@ -273,7 +273,7 @@ function detailCard(d, a, open) {
 }
 
 function rejectionBlock(d) {
-  const reasons = (d.reasons || [])
+  const reasons = (d.reason_codes || [])
     .map((r) => escapeHtml(HINTS[r] || window.ui.reasonName(r)))
     .join(" ");
   const again = isStudent
@@ -333,7 +333,7 @@ const OUT_OF_RANGE_TEXT = {
 
 function whyNotScored(d, a) {
   const items = a.out_of_range || [];
-  const reasons = d.reasons || [];
+  const reasons = d.reason_codes || [];
   let h = "";
 
   if (items.length) {
@@ -391,7 +391,7 @@ function intervalBlock(a) {
 
 // Cờ lạc đề / đọc lại đề: điểm vẫn giữ nguyên, chỉ báo để giảng viên nghe lại.
 function flagBlock(d) {
-  const reasons = d.reasons || [];
+  const reasons = d.reason_codes || [];
   let h = "";
   if (reasons.includes("OFF_TOPIC_SUSPECTED")) {
     h +=
@@ -660,7 +660,7 @@ function aspectBlock(a) {
 // is rendered -- not kept in the payload where nobody would ever check it. A
 // reader who cannot trace a claim has no way to tell measurement from filler.
 function commentBlock(a) {
-  const cs = a.comments || [];
+  const cs = a.feedback || [];
   if (!cs.length) return "";
   // D100: a citation is a chip that plays the moment it cites, not an id to look up.
   const byId = new Map((a.evidence || []).map((e) => [e.evidence_id, e]));

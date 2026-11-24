@@ -1273,6 +1273,125 @@ def _d109_join_code(db: Database, target: str) -> None:
     )
 
 
+def _d110_own_ids(db: Database, target: str) -> None:
+    """An achievement and an upgraded answer get their own identifier (D110).
+
+    `achievement.achievement_id` ("ac" + 10 hex) for every achievement reached
+    so far, under a unique index; the pair (`account_id`, `code`) stays unique.
+    `response.coach_upgrade.upgrade_id` ("up" + 10 hex) for every upgrade kept.
+    Only documents without one are given one, so running this twice changes
+    nothing more. Approved by the project owner on 24/11/2026.
+    """
+    import uuid
+
+    if _has(db, "achievement"):
+        for row in db["achievement"].find({"achievement_id": {"$exists": False}}, {"_id": 1}):
+            db["achievement"].update_one(
+                {"_id": row["_id"], "achievement_id": {"$exists": False}},
+                {"$set": {"achievement_id": "ac" + uuid.uuid4().hex[:10]}},
+            )
+        ensure_indexes(db, {"achievement": [(("achievement_id",), True)]}, "migration-26")
+    if _has(db, "response"):
+        missing = {
+            "coach_upgrade": {"$type": "object"},
+            "coach_upgrade.upgrade_id": {"$exists": False},
+        }
+        for row in db["response"].find(missing, {"_id": 1}):
+            db["response"].update_one(
+                {"_id": row["_id"], **missing},
+                {"$set": {"coach_upgrade.upgrade_id": "up" + uuid.uuid4().hex[:10]}},
+            )
+
+
+# The indexes under the names D111 gave.
+D111_INDEXES = {
+    "response": [(("reviews.decided_at",), False)],
+    "wallet": [(("account_id",), True), (("wallet_id",), True)],
+    "ledger": [(("wallet_id", "created_at"), False)],
+}
+
+
+def _d111_names(db: Database, target: str) -> None:
+    """Stored names follow the class diagram; wallet and price list get their own id (D111).
+
+    * `response.reviews[].created_at` -> `decided_at`; `response.reasons` ->
+      `reason_codes`; `response.assessment.comments` -> `assessment.feedback`;
+    * `learning_plan.plan` -> `lessons`;
+    * `wallet.user_ref` -> `account_id`, and every wallet a `wallet_id`
+      ("wa" + 10 hex); a ledger entry points at its wallet by `wallet_id`
+      instead of the owner (`user_ref`), a wallet made for an owner that had
+      entries but none;
+    * the price list in force gets a `price_list_id` ("pl" + 10 hex).
+
+    The indexes move with the names. Only documents still under an old name, or
+    still without an id, are changed, so running this twice changes nothing
+    more. Approved by the project owner on 24/11/2026.
+    """
+    import uuid
+
+    if _has(db, "response"):
+        responses = db["response"]
+        old = {"reviews": {"$elemMatch": {"created_at": {"$exists": True}}}}
+        for row in responses.find(old, {"reviews": 1}):
+            reviews = [
+                {("decided_at" if k == "created_at" else k): v for k, v in r.items()}
+                for r in row["reviews"]
+            ]
+            responses.update_one({"_id": row["_id"]}, {"$set": {"reviews": reviews}})
+        responses.update_many(
+            {"reasons": {"$exists": True}}, {"$rename": {"reasons": "reason_codes"}}
+        )
+        # One document at a time: the test double cannot rename a nested field.
+        old = {"assessment.comments": {"$exists": True}}
+        for row in responses.find(old, {"assessment.comments": 1}):
+            responses.update_one(
+                {"_id": row["_id"]},
+                {
+                    "$set": {"assessment.feedback": row["assessment"]["comments"]},
+                    "$unset": {"assessment.comments": ""},
+                },
+            )
+        _drop_index(db, "response", "i_reviews.created_at")
+    if _has(db, "learning_plan"):
+        db["learning_plan"].update_many(
+            {"plan": {"$exists": True}}, {"$rename": {"plan": "lessons"}}
+        )
+    if _has(db, "wallet"):
+        wallets = db["wallet"]
+        wallets.update_many(
+            {"user_ref": {"$exists": True}}, {"$rename": {"user_ref": "account_id"}}
+        )
+        _drop_index(db, "wallet", "u_user_ref")
+    if _has(db, "ledger"):
+        ledger = db["ledger"]
+        for owner in ledger.distinct("user_ref"):
+            if not db["wallet"].find_one({"account_id": owner}):
+                db["wallet"].insert_one(
+                    {"account_id": owner, "balance": 0, "period": "", "free_used": 0, "grants": []}
+                )
+    if _has(db, "wallet"):
+        for row in db["wallet"].find({"wallet_id": {"$exists": False}}, {"_id": 1}):
+            db["wallet"].update_one(
+                {"_id": row["_id"], "wallet_id": {"$exists": False}},
+                {"$set": {"wallet_id": "wa" + uuid.uuid4().hex[:10]}},
+            )
+    if _has(db, "ledger"):
+        ledger = db["ledger"]
+        for owner in ledger.distinct("user_ref"):
+            wallet = db["wallet"].find_one({"account_id": owner}, {"wallet_id": 1})
+            ledger.update_many(
+                {"user_ref": owner},
+                {"$set": {"wallet_id": wallet["wallet_id"]}, "$unset": {"user_ref": ""}},
+            )
+        _drop_index(db, "ledger", "i_user_ref_created_at")
+    if _has(db, "price_list"):
+        db["price_list"].update_many(
+            {"price_list_id": {"$exists": False}},
+            {"$set": {"price_list_id": "pl" + uuid.uuid4().hex[:10]}},
+        )
+    ensure_indexes(db, D111_INDEXES, "migration-27")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -1320,6 +1439,10 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(24, "an answer a language model writes costs one run (D107)", _d107_ai_runs),
     Migration(
         25, "classroom.join_code: a student joins by code or invitation (D109)", _d109_join_code
+    ),
+    Migration(26, "achievement and upgraded answer get their own id (D110)", _d110_own_ids),
+    Migration(
+        27, "stored names follow the class diagram; wallet and price list ids (D111)", _d111_names
     ),
 )
 

@@ -110,15 +110,16 @@ erDiagram
         array takes "lần đọc, tối đa 20"
     }
     achievement {
-        string account_id PK
-        string code PK
+        string achievement_id PK "D110"
+        string account_id
+        string code "mỗi người đạt một lần"
     }
     learning_plan {
         string plan_id PK
         string account_id
         string audience
         object goal
-        object plan "các chặng và bài (D104: document, không còn chuỗi JSON)"
+        object lessons "các chặng và bài (D104: document; D111: tên cũ plan)"
     }
     order {
         string order_id PK
@@ -128,14 +129,16 @@ erDiagram
         array events
     }
     wallet {
-        string user_ref PK
+        string wallet_id PK "D111"
+        string account_id UK "chủ ví (D111: tên cũ user_ref)"
         int balance
         int free_used
         array grants
     }
     ledger {
         string entry_id PK
-        string key UK "bài nói"
+        string wallet_id FK "D111"
+        string key UK "bài nói, bản nâng cấp, bản ghi lộ trình, đoạn đọc"
         string action
         string state
     }

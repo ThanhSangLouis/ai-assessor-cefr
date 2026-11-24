@@ -46,6 +46,7 @@
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 | **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
 | **1.35** | **21/11/2026** | **Mở rộng D101.** FR-104 thêm đường quản trị viên xoá tài khoản mọi vai trò ở trang quản trị: gõ lại email (hoặc mã tài khoản), không tự xoá mình, nhật ký `by=admin`; thêm AC-104.6..AC-104.10 | D101 |
+| **1.36** | **24/11/2026** | **Mở rộng D090, sơ đồ lớp.** FR-98: đoạn đọc gom **mọi** từ đang luyện dở, cần ít nhất 1 từ (trước là 3–5); độ dài đoạn tăng theo số từ (mỗi từ quá 5 thêm 12 chữ), không còn từ chối khi có nhiều từ. AC-98.1, UC-38 4a, UC-39 sửa theo. Sơ đồ lớp: 20 thực thể (bỏ nhật ký kỹ thuật `audit_log`), mỗi lớp có định danh đúng tên trong code, Order đổi `createdBy` thành `buyer` (khoá lưu `created_by` giữ nguyên, không migration), quan hệ theo quy ước: lớp giữ thuộc tính kiểu lớp kia là aggregation hoặc composition, thuộc tính kiểu liệt kê vẽ nét đứt mũi tên mở, association chỉ khi không có thuộc tính. Bỏ bản sơ đồ hiện trạng cũ `02_class.drawio`; Hình 2c là nguồn để rã xuống mã. **D110:** thành tựu (`achievement_id`) và bản AI viết lại (`upgrade_id`) có mã định danh riêng; migration 26 cấp mã cho dữ liệu đã có. **D111:** tên trong code theo sơ đồ lớp (`decided_at`, `reason_codes`, `feedback`, `lessons`, ví theo `account_id`), ví (`wallet_id`) và bảng giá (`price_list_id`) có mã riêng, bút toán trỏ tới ví bằng `wallet_id`; migration 27 đổi tên dữ liệu đã có | D090, D110, D111 |
 | **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Email báo lời mời cho sinh viên và báo học viên mới cho giảng viên. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.13), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên. Rà mục 4 theo hệ thống đang chạy: thêm UC-37..UC-41 (tự đăng ký và xác minh email, luyện lại từ chưa rõ, đoạn đọc AI, tự xoá tài khoản, theo dõi đơn nạp lượt) có đặc tả; UC-30 thêm Quản trị viên, UC-35 cho mọi vai trò; ba sơ đồ use case theo vai vẽ lại | D109 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
 | **1.31** | **16/11/2026** | **D106.** Tính nguyên lượt: một bài nói được chấm là 1 lượt; bỏ +0,7 lượt mỗi phút thêm, 0,3 lượt cho AI viết lại hoặc soạn bài, 0,1 lượt cho đoạn đọc AI và 0,1 lượt mỗi phút nói trong lộ trình (miễn phí trong giới hạn ngày). Mọi giá và lượt miễn phí là số nguyên; giá lẻ bị từ chối; ví đang lẻ được làm tròn có lợi cho người học. Sửa FR-85, AC-85.1, AC-91.5, FR-98, FR-99 và màn đặt giá | D106 |
@@ -1647,12 +1648,12 @@ Bốn yêu cầu này trả lời bốn câu hỏi mà một hệ thống chấm
 
 ### FR-98 — Đoạn đọc viết quanh từ đang luyện dở (D090)
 
-**Mô tả:** Khi còn từ 3 từ đang luyện dở trở lên (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của 3–5 từ đó; chỉ các từ và band được gửi đi. Từ D107 mỗi bài nói đã chấm bằng lượt kèm một đoạn mới; đoạn thêm tốn 1 lượt (người bán đặt được số lượt nguyên, chỉ trừ khi viết xong); đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
+**Mô tả:** Khi còn ít nhất một từ đang luyện dở (FR-97), học viên mở trang đọc đoạn văn từ trang Tiến độ. Mô hình ngôn ngữ viết một đoạn ngắn theo band của học viên, chứa đúng dạng của mọi từ đang luyện dở (một hoặc nhiều; từ thứ sáu trở đi, độ dài đoạn tăng 12 chữ mỗi từ); chỉ các từ và band được gửi đi. Từ D107 mỗi bài nói đã chấm bằng lượt kèm một đoạn mới; đoạn thêm tốn 1 lượt (người bán đặt được số lượt nguyên, chỉ trừ khi viết xong); đoạn được giữ lại và đọc lại không mất thêm. Khi mô hình không dùng được, học viên ghép đoạn từ chính các cụm của mình, miễn phí. Mỗi lần đọc được đo như bước đọc to; mỗi từ máy nghe rõ ở mọi chỗ nó xuất hiện là một lượt rõ của từ đó, từ chưa rõ vào ôn ngắt quãng. Giới hạn theo ngày giữ phần hạn mức miễn phí cho bản nâng cấp.
 **Ưu tiên:** C
 
 | Acceptance Criteria |
 | --- |
-| **AC-98.1** — *Given* học viên có ít hơn 3 từ đang luyện dở, *When* xin đoạn đọc, *Then* bị từ chối (409) và mô hình không được hỏi; giảng viên không mở được trang này (`test_a_passage_needs_three_open_words_and_is_for_learners`). |
+| **AC-98.1** — *Given* học viên không có từ nào đang luyện dở, *When* xin đoạn đọc, *Then* bị từ chối (409) và mô hình không được hỏi; một từ là đủ; giảng viên không mở được trang này (`test_a_passage_needs_an_open_word_and_is_for_learners`). |
 | **AC-98.2** — *Given* học viên có đủ từ, *When* xin đoạn đọc, *Then* mô hình nhận band, các từ và độ dài, viết một đoạn chứa mọi từ; xin lại cho cùng các từ trả đúng đoạn đó mà không hỏi mô hình lần nữa (`test_the_model_writes_a_passage_once_and_it_is_read_again_for_free`). |
 | **AC-98.3** — *Given* hệ thống tính lượt, *When* mô hình viết xong một đoạn, *Then* học viên bị trừ đúng giá đoạn đọc kèm số token; đoạn thiếu từ hay mô hình lỗi thì lượt được trả lại (`test_metered_a_passage_costs_its_own_price_and_a_failure_nothing`). |
 | **AC-98.4** — *Given* học viên đọc to đoạn văn, *When* máy đo xong, *Then* mỗi từ là một lượt: rõ thì tính vào chuỗi hai lượt rõ, chưa rõ thì vào ôn ngắt quãng kèm điều máy nghe thành (`test_a_reading_is_one_take_of_each_word`). |
@@ -2618,7 +2619,7 @@ Quản trị viên xoá tài khoản của **mọi vai trò** trong khung chi ti
 
 **Luồng thay thế:**
 
-- **4a. Vẫn chưa rõ:** Từ vào ôn ngắt quãng; còn từ 3 từ luyện dở trở lên thì mở được UC-39.
+- **4a. Vẫn chưa rõ:** Từ vào ôn ngắt quãng; còn từ luyện dở thì mở được UC-39.
 
 **Hậu điều kiện:** Kết quả từng từ được lưu; trang Tiến độ có tỉ lệ từ chưa rõ.
 
@@ -2630,8 +2631,8 @@ Quản trị viên xoá tài khoản của **mọi vai trò** trong khung chi ti
 | --- | --- |
 | **Mã** | UC-39 |
 | **Actor chính** | — *(use case mở rộng của UC-38)* |
-| **Mô tả** | Mô hình ngôn ngữ viết một đoạn ngắn theo band chứa 3–5 từ đang luyện dở; sinh viên đọc to, mỗi từ được chấm ở mọi chỗ nó xuất hiện (FR-98) |
-| **Tiền điều kiện** | Có từ 3 từ đang luyện dở trở lên |
+| **Mô tả** | Mô hình ngôn ngữ viết một đoạn ngắn theo band chứa mọi từ đang luyện dở; sinh viên đọc to, mỗi từ được chấm ở mọi chỗ nó xuất hiện (FR-98) |
+| **Tiền điều kiện** | Có ít nhất một từ đang luyện dở |
 | **Kích hoạt** | Sinh viên bấm "Đọc một đoạn" ở trang Tiến độ |
 
 **Luồng chính:**
@@ -2952,7 +2953,7 @@ Toàn bộ sơ đồ thiết kế được đặt ở tài liệu `docs/sdd/SDD.
 | 1a | Use case cho Sinh viên: tài khoản (UC-17, UC-35, UC-37, UC-16, UC-40), học và nộp bài (UC-24, UC-19, UC-01..UC-03), kết quả và luyện tiếp (UC-04, UC-25, UC-38, UC-39, UC-15, UC-26), lượt và lớp (UC-27, UC-36) | FR-01..FR-27, FR-81, FR-85..FR-88, FR-92..FR-98, FR-103, FR-104 | `diagrams/01a_usecase_sinhvien.mmd` |
 | 1b | Use case cho Giảng viên: duyệt và sửa kết quả (UC-05, UC-06), lộ trình và AI soạn nháp (UC-20, UC-28), ngân hàng đề (UC-29), lớp (UC-30), thống kê (UC-31), hồ sơ năng lực (UC-11), tài khoản (UC-17, UC-35) | FR-28..FR-31, FR-38, FR-45..FR-49, FR-82, FR-88, FR-91 | `diagrams/01b_usecase_giangvien.mmd` |
 | 1c | Use case cho Quản trị viên: tài khoản và dữ liệu (UC-10, UC-07), mô hình và QC (UC-08, UC-09, UC-12), lớp (UC-30), lượt, giá và đơn (UC-32, UC-34, UC-41), AI (UC-33), tài khoản (UC-17, UC-35) | FR-08, FR-18..FR-20, FR-32..FR-36, FR-85, FR-87, FR-88, FR-102 | `diagrams/01c_usecase_quantri.mmd` |
-| 2 | Sơ đồ lớp, mô hình miền: 21 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/class/detailed/02_class.drawio` |
+| 2 | Sơ đồ lớp, mô hình miền: 20 thực thể, 9 kiểu liệt kê, mọi thành viên ghi đủ kiểu, quan hệ ghi bội số | toàn bộ module | `diagrams/class/detailed/02_class_detailed.drawio` |
 | 2b | Kiến trúc: ba dịch vụ, bus và kho dữ liệu | NFR, D044..D051 | `diagrams/02b_kien_truc.puml` |
 | 2c | Cổng và bộ chuyển đổi | NFR, D044 | `diagrams/02c_cong_va_bo_chuyen_doi.puml` |
 | 3 | Sơ đồ tuần tự: nộp một bài nói, giữ lượt, chấm ở dịch vụ speech, báo trực tiếp, giảng viên duyệt | FR-01..FR-31, FR-85, FR-95, FR-96 | `diagrams/03_sequence.mmd` |

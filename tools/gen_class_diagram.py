@@ -56,7 +56,10 @@ import sys
 # Chay `python tools/gen_class_diagram.py` tu mot thu muc khac thi duong dan
 # tuong doi se tro ra ngoai repo -- hoac bao loi, hoac te hon la ghi nham cho.
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs/sdd/diagrams/class/detailed/02_class.drawio"
+# Ban hien trang cu (02_class.drawio) da go ngay 24/11/2026: so do lop chinh thuc
+# nay dung bang tools/derive_class_diagram.py tu ban A4 cua Nguyen. Mac dinh ghi ra
+# thu muc tam de lenh chay khong tham so khong tao lai tep cu trong repo.
+OUT = ROOT / "build/02_class_legacy.drawio"
 
 # `--no-stereotypes`: bo cac nhan «entity» / «value object» / «enumeration» khoi
 # tieu de hop. Khong the chi xoa chu: tieu de tut tu hai dong xuong mot dong nen

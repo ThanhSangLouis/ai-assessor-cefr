@@ -407,9 +407,8 @@ nào*, đúng tầng thiết kế của chúng.
 
 | Khung nhìn | Tệp nguồn | Định dạng | Nội dung |
 | --- | --- | --- | --- |
-| Lớp | `docs/sdd/diagrams/class/detailed/02_class.drawio` | draw.io | Mô hình nghiệp vụ đầy đủ (cập nhật 17/11/2026, tới D109): 21 thực thể, 9 kiểu liệt kê, 46 quan hệ, sinh bằng `tools/gen_class_diagram.py`. Ánh xạ thực thể → 19 collection nghiệp vụ: [`thiet-ke-gon-so-do-lop-va-collection.md`](thiet-ke-gon-so-do-lop-va-collection.md); `tests/test_class_diagram_in_code.py` đối chiếu từng thuộc tính với code |
-| Lớp — bản gọn | `docs/sdd/diagrams/class/02_class_core.drawio` | draw.io | Bố cục bản A4 của Nguyên, chỉ thuộc tính chính (Hình 2a): 21 thực thể, 9 kiểu liệt kê, 48 quan hệ như Hình 2c, dựng bằng `tools/derive_class_diagram.py --level core`; `tests/test_class_diagram_in_code.py` kiểm bản gọn là tập con của bản chi tiết và kiểm loại quan hệ theo năm quy tắc |
-| Lớp — chi tiết | `docs/sdd/diagrams/class/detailed/02_class_detailed.drawio` | draw.io | Bố cục bản A4 của Nguyên, nội dung mức thiết kế chi tiết (Hình 2c): 21 thực thể, 9 kiểu liệt kê, 48 quan hệ (5 composition, 5 aggregation, 38 association), dựng bằng `tools/derive_class_diagram.py`; `tests/test_class_diagram_in_code.py` kiểm từng thuộc tính với code và kiểm loại quan hệ theo năm quy tắc |
+| Lớp — bản gọn | `docs/sdd/diagrams/class/02_class_core.drawio` | draw.io | Hình 2a, trình bày: bố cục bản A4 của Nguyên, chỉ thuộc tính chính; 20 thực thể, 9 kiểu liệt kê, 47 quan hệ (5 composition, 24 aggregation, 17 nét đứt tới kiểu liệt kê, 1 association), mỗi lớp có định danh đúng tên trong code (`accountId`, `classId`, `walletId`…); dựng bằng `tools/derive_class_diagram.py --level core` |
+| Lớp — chi tiết | `docs/sdd/diagrams/class/detailed/02_class_detailed.drawio` | draw.io | Hình 2c, nguồn để rã xuống mã: cùng bố cục, đủ trường nghiệp vụ; dựng bằng `tools/derive_class_diagram.py`. `tests/test_class_diagram_in_code.py` kiểm từng thuộc tính với mã, loại quan hệ theo quy ước của nhóm, bản gọn là tập con của bản chi tiết |
 | Lớp — thiết kế đích v3, bản gọn | `docs/sdd/diagrams/target/02_class_v3_overview.drawio` | draw.io | Mô hình đối tượng để rã xuống mã: 25 lớp (một lớp trừu tượng `Actor` với ba lớp con theo vai trò, một interface `PaymentGateway`), 3 kiểu liệt kê, 29 quan hệ; là trang "So do lop v3" trên Drive |
 | Lớp — thiết kế đích v3, bản đầy đủ | `docs/sdd/diagrams/target/02_class_v3.drawio` | draw.io | Đủ thuộc tính: 78 hộp, 115 quan hệ; mỗi lớp của bản gọn là một lớp ở đây; mã chưa chuyển theo, xem `diagrams/target/README.md` (D021, D022, D023, bổ sung D025–D036) |
 | Kiến trúc tổng thể | `docs/sdd/diagrams/02b_kien_truc.puml` | PlantUML | Ba dịch vụ sau gateway nginx, năm phần của core (mỗi phần một facade), bus Redis, ba database MongoDB, kho bản ghi âm, cổng thanh toán, giám sát |
@@ -645,17 +644,13 @@ nhau mà không ai biết. Nay nó là một `computed_field` trên `Word`, ra t
 và giao diện chỉ đọc. Tương tự với `Assessment.is_calibrated`, vốn là bản sao
 thứ hai của một biểu thức chính quy trong `report.js`.
 
-![Hình 2. Sơ đồ lớp](images/02_class.png)
-
-*Hình 2. Các đối tượng nghiệp vụ. Nguồn: `diagrams/class/detailed/02_class.drawio`*
-
 ![Hình 2a. Sơ đồ lớp nghiệp vụ, bản gọn](images/02_class_core.png)
 
-*Hình 2a. Sơ đồ lớp nghiệp vụ, bản gọn cho người đọc: cùng bố cục, vị trí hộp và đường nối với Hình 2c (bố cục bản A4 do Nguyên sửa), cùng 21 lớp, 9 kiểu liệt kê và 48 quan hệ theo năm quy tắc; mỗi lớp chỉ giữ thuộc tính chính: thuộc tính thể hiện quan hệ, trạng thái nghiệp vụ và trường mà một luật dựa vào. Mọi dòng trên hình đều là dòng của Hình 2c. Nguồn: `diagrams/class/02_class_core.drawio`, dựng bằng `tools/derive_class_diagram.py --level core`*
+*Hình 2a. Sơ đồ lớp nghiệp vụ, bản trình bày: 20 lớp, 9 kiểu liệt kê, 47 quan hệ, mỗi lớp chỉ giữ thuộc tính chính và định danh đúng tên trong code (`classId` ↔ `class_id`). Quy ước quan hệ của nhóm: lớp giữ thuộc tính kiểu lớp kia là aggregation ◇ (kim cương ở lớp giữ), hoặc composition ◆ khi bộ phận sống chết theo toàn thể; thuộc tính kiểu liệt kê vẽ nét đứt, mũi tên mở trỏ vào kiểu liệt kê; association chỉ dùng cho quan hệ không có thuộc tính. Nhật ký `audit_log` là bản ghi kỹ thuật, không vẽ. Mọi dòng trên hình đều là dòng của Hình 2c. Nguồn: `diagrams/class/02_class_core.drawio`, dựng bằng `tools/derive_class_diagram.py --level core`*
 
 ![Hình 2c. Sơ đồ lớp chi tiết](images/02_class_detailed.png)
 
-*Hình 2c. Sơ đồ lớp chi tiết, dùng để rã xuống code: giữ nguyên bố cục, vị trí hộp và đường nối của bản A4 do Nguyên sửa (`diagrams/class/detailed/02_class_a4_ngang.drawio`), chỉ đổi nội dung. Đủ trường nghiệp vụ, bỏ chi tiết kỹ thuật thuần (mã tự sinh, mốc thời gian không luật nào dựa vào, mã tham chiếu cổng thanh toán, mã OTP, khoá duyệt). Quan hệ theo năm quy tắc: composition ◆ khi bộ phận sống chết theo toàn thể; aggregation ◇ khi lớp giữ gom nhiều đối tượng độc lập (`List`); association ─▶ cho mọi tham chiếu đơn, kể cả thuộc tính kiểu enum; không có dependency vì mọi kiểu ở đây đều được lưu thành thuộc tính. Nguồn: `diagrams/class/detailed/02_class_detailed.drawio`, dựng bằng `tools/derive_class_diagram.py`*
+*Hình 2c. Sơ đồ lớp chi tiết, nguồn để rã xuống mã: cùng bố cục, vị trí hộp và đường nối với Hình 2a (bố cục bản A4 do Nguyên sửa, `diagrams/class/detailed/02_class_a4_ngang.drawio`), đủ trường nghiệp vụ, bỏ chi tiết kỹ thuật thuần (mốc thời gian không luật nào dựa vào, mã tham chiếu cổng thanh toán, mã OTP, khoá duyệt). Nguồn: `diagrams/class/detailed/02_class_detailed.drawio`, dựng bằng `tools/derive_class_diagram.py`*
 
 ![Hình 2b. Kiến trúc tổng thể](images/02b_kien_truc.png)
 
@@ -1119,11 +1114,11 @@ erDiagram
         object asr "bản chép lời và từng từ"
         object features "các phép đo"
         object assessment "điểm 0–6, band A1 … C2, tiêu chí, giảng viên đã xác nhận (D104)"
-        array reasons "vì sao bị từ chối hay chuyển giảng viên"
+        array reason_codes "vì sao bị từ chối hay chuyển giảng viên"
         object review_lock "ai đang giữ bài để duyệt, tới lúc nào (D104)"
         array reviews "Review: giảng viên, điểm và band cũ mới, lý do, quyết lúc"
         array replay_labels "tự nghe lại (D056)"
-        object coach_upgrade "bản AI viết lại một band cao hơn, cụm từ ôn (D069, D070)"
+        object coach_upgrade "bản AI viết lại một band cao hơn (mã upgrade_id, D110), cụm từ ôn (D069, D070)"
     }
 
     classroom {
@@ -3118,7 +3113,6 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 | `docs/sdd/diagrams/01a_usecase_sinhvien.mmd` | Use case a | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/01b_usecase_giangvien.mmd` | Use case b | Mermaid `flowchart LR` |
 | `docs/sdd/diagrams/01c_usecase_quantri.mmd` | Use case c | Mermaid `flowchart LR` |
-| `docs/sdd/diagrams/class/detailed/02_class.drawio` | Sơ đồ lớp | draw.io |
 | `docs/sdd/diagrams/class/02_class_core.drawio` | Sơ đồ lớp nghiệp vụ, bản gọn | draw.io |
 | `docs/sdd/diagrams/class/detailed/02_class_detailed.drawio` | Sơ đồ lớp chi tiết (bố cục A4) | draw.io |
 | `docs/sdd/diagrams/02b_kien_truc.puml` | Kiến trúc tổng thể | PlantUML |

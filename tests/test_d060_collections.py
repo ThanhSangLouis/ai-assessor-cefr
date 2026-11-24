@@ -262,7 +262,9 @@ def test_d104_keeps_only_the_reports_own_fields(db):
     """A report from before D083 also held `practice`: it must not become a field."""
     from aicefr.contracts import Response
 
-    assert set(migrations.D104_REPORT_KEYS) == set(Response.model_fields) - {"reviews", "upgrade"}
+    # D111 renamed `reasons` to `reason_codes` afterwards (migration 27).
+    then = set(migrations.D104_REPORT_KEYS) - {"reasons"} | {"reason_codes"}
+    assert then == set(Response.model_fields) - {"reviews", "upgrade"}
     report = {"response_id": "r1", "status": "COMPLETED", "config_version": "v1", "practice": None}
     db["response"].insert_one({"response_id": "r1", "report_json": json.dumps(report),
                                "overall_0_6": 3.0, "teacher_verified": 0})  # fmt: skip

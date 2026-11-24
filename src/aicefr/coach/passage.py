@@ -25,9 +25,13 @@ from aicefr.coach.upgrade import UpgradeError
 from aicefr.lessons.text import normalize_word, split_words
 
 PROMPT_VERSION = "passage-v1"
-# Words per passage: fewer than three is better said in the phrases of D089,
-# more than five makes a passage that is about the words, not a text.
-MIN_WORDS, MAX_WORDS = 3, 5
+# Words per passage: one or more, every open word of the learner (owner, 24/11:
+# the passage gathers "many" words, no fixed count). The band lengths below fit
+# up to BASE_WORDS target words; each further word lengthens the passage by
+# EXTRA_PER_WORD written words, so that a learner with many open words still gets
+# a passage that holds them all instead of an error.
+MIN_WORDS = 1
+BASE_WORDS, EXTRA_PER_WORD = 5, 12
 # The passage's length for each band: short at A1, never long.
 LENGTH = {"A1": (40, 60), "A2": (50, 70), "B1": (60, 90), "B2": (70, 100),
           "C1": (80, 110), "C2": (80, 110)}  # fmt: skip
@@ -69,8 +73,15 @@ def band_of(band: str | None) -> str:
     return band if band in LENGTH else DEFAULT_BAND
 
 
-def user_message(band: str, words: list[str]) -> str:
+def length_for(band: str | None, n_words: int) -> tuple[int, int]:
+    """The passage's length in written words: the band's, longer for many target words."""
     lo, hi = LENGTH[band_of(band)]
+    extra = max(0, n_words - BASE_WORDS) * EXTRA_PER_WORD
+    return lo + extra, hi + extra
+
+
+def user_message(band: str, words: list[str]) -> str:
+    lo, hi = length_for(band, len(words))
     return json.dumps({"band": band_of(band), "words": words, "length_words": f"{lo}-{hi}"})
 
 
@@ -86,13 +97,14 @@ def places(text: str, words: list[str]) -> dict[str, list[int]]:
 
 def check(text: str, words: list[str], band: str | None) -> Passage:
     """The passage if it can be read for these words, or UpgradeError worded for the learner."""
-    text = " ".join(str(text or "").split())[:MAX_CHARS]
+    extra = max(0, len(words) - BASE_WORDS) * EXTRA_PER_WORD
+    text = " ".join(str(text or "").split())[: MAX_CHARS + 16 * extra]
     if not text:
         raise UpgradeError("mô hình chưa viết được đoạn đọc")
     missing = [w for w, at in places(text, words).items() if not at]
     if missing:
         raise UpgradeError("đoạn mô hình viết thiếu từ " + ", ".join(missing))
-    _, hi = LENGTH[band_of(band)]
+    _, hi = length_for(band, len(words))
     if len(split_words(text)) > 2 * hi:
         raise UpgradeError("đoạn mô hình viết quá dài")
     return Passage(text=text, words=list(words))

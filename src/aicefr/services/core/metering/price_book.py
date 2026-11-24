@@ -45,6 +45,9 @@ class PriceBook:
             **{f: int(doc.get(f, getattr(self.defaults, f))) for f in COUNTS},
             idpoint_per_run=int(doc["idpoint_per_run"]),
             version=doc["version"],
+            price_list_id=doc.get("price_list_id"),
+            free_runs=doc.get("free_runs"),
+            packs=self.packs(),
         )
 
     def packs(self) -> tuple[tuple[int, int], ...]:

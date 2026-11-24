@@ -192,7 +192,7 @@ def _view(stored: dict, account: Account) -> dict:
         "plan_id": stored["plan_id"],
         "created_at": stored["created_at"],
         # D105: the goal is kept once, beside the plan, and shown with it.
-        **_with_progress({**stored["plan"], "goal": stored["goal"]}, account),
+        **_with_progress({**stored["lessons"], "goal": stored["goal"]}, account),
     }
 
 
@@ -383,7 +383,7 @@ def save_composed_path(plan_id: str, body: SaveIn, account: Account = STAFF_ONLY
         raise HTTPException(409, "đề xuất này đã được lưu thành lộ trình")
     keep = set(body.lesson_ids) if body.lesson_ids is not None else None
     units = []
-    for u in stored["plan"]["units"]:
+    for u in stored["lessons"]["units"]:
         ids = [i["lesson_id"] for i in u["lessons"] if keep is None or i["lesson_id"] in keep]
         if ids:
             units.append((u, ids))

@@ -133,7 +133,7 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
         overall_band=Band.B1,
         criteria=[CriterionCoverage(criterion=c, coverage=1.0) for c in Criterion],
         evidence=evidence,
-        comments=comments,
+        feedback=comments,
         priorities=priorities,
         model_version="v1",
     )
@@ -161,8 +161,8 @@ def test_report_endpoint_returns_traceable_comments_and_evidence(assessment_serv
     assert result.status_code == 200, result.text
     assessment_json = result.json()["assessment"]
     ids = {row["evidence_id"] for row in assessment_json["evidence"]}
-    assert assessment_json["comments"]
-    assert all(set(row["evidence_refs"]) <= ids for row in assessment_json["comments"])
+    assert assessment_json["feedback"]
+    assert all(set(row["evidence_refs"]) <= ids for row in assessment_json["feedback"])
     assert assessment_json["priorities"][0]["feature_name"] == "ttr"
 
 

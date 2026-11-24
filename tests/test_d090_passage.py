@@ -108,15 +108,16 @@ def read(client, passage_id: str):
     )
 
 
-def test_a_passage_needs_three_open_words_and_is_for_learners(tmp_path, monkeypatch, model):
+def test_a_passage_needs_an_open_word_and_is_for_learners(tmp_path, monkeypatch, model):
     m = boot(tmp_path, monkeypatch)
     student = login_as(m, "SV-P01")
-    open_words(m, "SV-P01", OPEN[:2])
     d = student.get(URL).json()
-    assert (d["enough"], d["min_words"], len(d["words"])) == (False, 3, 2)
+    assert (d["enough"], d["min_words"], len(d["words"])) == (False, 1, 0)
     r = student.post(URL, json={"source": "model"})
-    assert r.status_code == 409 and "ít nhất 3 từ" in r.json()["detail"]
+    assert r.status_code == 409 and "ít nhất 1 từ" in r.json()["detail"]
     assert model.asked == []
+    open_words(m, "SV-P01", OPEN[:1])
+    assert student.get(URL).json()["enough"] is True  # one open word is enough
     teacher = login_as(m, "GV-P01", "teacher")
     assert teacher.get(URL).status_code == 403
     assert 'id="passage"' in student.get("/passage").text

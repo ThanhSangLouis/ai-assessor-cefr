@@ -82,6 +82,11 @@ class PriceList:
     lesson_free_per_day: int = 5
     lesson_daily_cap: int = 30
     version: str = PRICE_VERSION
+    # D111: an administrator's version has its own id, the free runs of the
+    # month and the run packs on sale; None and () while the settings stand.
+    price_list_id: str | None = None
+    free_runs: float | None = None
+    packs: tuple[tuple[int, int], ...] = ()
 
     def __post_init__(self) -> None:
         lowest = min(

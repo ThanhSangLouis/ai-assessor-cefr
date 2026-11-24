@@ -123,7 +123,7 @@ def run(root: Path, processor, task_id: str = "P4") -> dict:
                     "status": r.status.value,
                     "scored": scored,
                     "issued": r.status is ResponseStatus.COMPLETED and scored,
-                    "reasons": [x.value for x in r.reasons],
+                    "reasons": [x.value for x in r.reason_codes],
                 }
             )
 

@@ -59,13 +59,13 @@ def test_broken_audio_rejected_without_calling_asr(request_obj, sr):
 def test_asr_error_reports_failure(request_obj, tone, sr):
     r = ResponseProcessor(BrokenAsr(), vad=EnergyVad()).process(request_obj, tone, sr)
     assert r.status is ResponseStatus.FAILED
-    assert ReasonCode.ASR_FAILED in r.reasons
+    assert ReasonCode.ASR_FAILED in r.reason_codes
 
 
 def test_empty_transcript_goes_to_teacher(request_obj, tone, sr):
     r = ResponseProcessor(EmptyAsr(), vad=EnergyVad()).process(request_obj, tone, sr)
     assert r.status is ResponseStatus.REVIEW_REQUIRED
-    assert ReasonCode.ASR_EMPTY_TRANSCRIPT in r.reasons
+    assert ReasonCode.ASR_EMPTY_TRANSCRIPT in r.reason_codes
 
 
 def test_never_returns_teacher_verified_true(request_obj, tone, sr):

@@ -68,13 +68,16 @@ class Order:
 
     The account is the buyer -- a learner, or a teacher for their lesson drafts
     -- and the runs go to that account's wallet once the payment is settled.
+    The class names it `buyer`, its role in the purchase; the stored document
+    keeps the key `created_by` (indexed, and read by every order view), so the
+    name changes without a migration of the payment records.
     """
 
     order_id: str
     runs: int
     amount_vnd: int
     status: OrderStatus
-    created_by: str
+    buyer: str
     created_at: str
     expires_at: str | None = None
     credited_at: str | None = None
@@ -86,12 +89,15 @@ class Order:
     @classmethod
     def from_doc(cls, doc: dict) -> Order:
         found = _known(cls, doc)
+        found["buyer"] = doc["created_by"]
         found["runs"] = int(doc["runs"])
         found["status"] = OrderStatus(doc["status"])
         return cls(**found)
 
     def to_doc(self) -> dict:
-        return {**asdict(self), "status": self.status.value}
+        doc = {**asdict(self), "status": self.status.value}
+        doc["created_by"] = doc.pop("buyer")
+        return doc
 
 
 def _view(order: dict | None) -> dict | None:

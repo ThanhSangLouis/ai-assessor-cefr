@@ -53,12 +53,15 @@ def test_every_identifier_a_table_had_as_key_is_unique():
         "lesson": ["lesson_id"],
         "attempt": ["attempt_id"],
         "learning_plan": ["plan_id"],
-        "wallet": ["user_ref"],
+        "achievement": ["achievement_id"],
+        "wallet": ["account_id"],
         "ledger": ["key", "action"],
         "system": ["key"],
     }
+    keys["wallet_id"] = ["wallet_id"]  # D111: the wallet's own id too
     for name, key in keys.items():
-        assert any(i["keys"] == key and i["unique"] for i in shape[name]), name
+        collection = "wallet" if name == "wallet_id" else name
+        assert any(i["keys"] == key and i["unique"] for i in shape[collection]), name
 
 
 def test_migrate_is_idempotent_and_records_every_version(tmp_path):

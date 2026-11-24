@@ -16,12 +16,15 @@ the report's two figures look alike; only the content changes:
     two fixes (`DrillPassage.drills`, `Response.criterionIndicators`).
   * `--level core` (Hình 2a): the main attributes only -- every attribute
     that holds a relation, the business state, the fields a rule depends on.
-  * Both: end markers set by the relationship rules -- composition (a part
-    lives and dies with its whole) a filled diamond; aggregation (the holder
-    gathers MANY independent parts in a List) a hollow diamond at the holder;
-    every other reference, an enum-typed attribute included, an association
-    arrow from the holder; no dependency, since every one of those types is
-    stored. The lock edge removed; three relations the code has added.
+  * Both: every class keyed by an identifier shows it on top under its code name; the
+    audit log is left out (a technical record); `Order.buyer`; a passage
+    holds 1..* words. End markers by the owner's rule: an attribute of
+    another class is an aggregation (hollow diamond at the holder), or a
+    composition (filled) when the part lives and dies with its whole; a
+    field typed by an enum is a dashed line with an open arrow at the enum;
+    association is kept for a relation with no attribute (a ledger entry and
+    the response it paid for, D111). The lock edge removed; three relations the
+    code has added.
 
 Ports keep their absolute position; a port that falls off a shrunk box moves
 up and a short jog beside the box takes the line back to its old height, so
@@ -47,7 +50,6 @@ TITLE, ROW = 46, 22
 
 DROP = {
     "Account": ["accountId", "identities", "emailCodes", "reminderSentOn", "isStaff"],
-    "AuditEntry": ["id", "service"],
     "Achievement": ["unlockedAt"],
     "Classroom": ["classId"],
     "CoachUpgrade": ["createdAt"],
@@ -85,11 +87,15 @@ DROP = {
 # Replace one row with one or more rows, in place.
 REPLACE = {
     ("DrillPassage", "words"): ["- drills: List<WordDrill>", "- words: List<str>"],
+    ("Order", "createdBy"): ["- buyer: Account"],
     ("Response", "criterionScores"): ["- criterionIndicators: List<float>"],
     ("Response", "modelVersion"): ["- modelVersion: str", "- configVersion: str"],
     ("Lesson", "title"): ["- title: str", "- summary: str", "- keywords: List<str>"],
     ("LessonPath", "title"): ["- title: str", "- description: str"],
     ("LedgerEntry", "state"): ["- state: LedgerState", "- period: str"],
+    # D111: what the entry paid for -- a response, its upgrade ("upgrade-<id>"),
+    # a lesson recording, a draft or a passage -- so a key, not a Response.
+    ("LedgerEntry", "response"): ["- key: str"],
     ("ReviewItem", "drill"): ["- drill: WordDrill", "- step: Step"],
     ("ReviewItem", "dueDate"): ["- dueDate: date", "- done: bool"],
     ("StepAttempt", "result"): [
@@ -109,15 +115,10 @@ STEP_ROWS = [
     "- modelAudio: str", "- image: str", "- tip: str",
 ]  # fmt: skip
 
-# Relationship rules. Composition stays; aggregation = the holder gathers MANY
-# independent parts (a List of them); every other reference is an association
-# (holder -> referenced); an enum-typed attribute is stored, so it is an
-# association too, not a dependency.
 # `--level core`: the main attributes of each class, every relation kept.
 CORE_ROWS = {
     "Account": ["- email: str", "- emailVerified: bool", "- fullName: str", "- role: Role",
                 "- dailyGoalS: int"],
-    "AuditEntry": ["- actor: Account", "- action: str", "- targetId: str", "- createdAt: datetime"],
     "Task": ["- title: str", "- promptText: str", "- topicKeywords: List<str>", "- band: Band"],
     "Response": ["- speaker: Account", "- task: Task", "- status: ResponseStatus",
                  "- transcript: str", "- overall06: float", "- overallBand: Band",
@@ -141,14 +142,38 @@ CORE_ROWS = {
     "Achievement": ["- code: str", "- learner: Account"],
     "LearningPlan": ["- owner: Account", "- goal: str", "- audience: Role",
                      "- lessons: List<Lesson>"],
-    "Order": ["- runs: int", "- amountVnd: int", "- status: OrderStatus", "- createdBy: Account"],
+    "Order": ["- runs: int", "- amountVnd: int", "- status: OrderStatus", "- buyer: Account"],
     "Wallet": ["- owner: Account", "- balance: int", "+ available(): int"],
     "PriceList": ["- version: str", "- freeRuns: float", "- packs: List<str>"],
-    "LedgerEntry": ["- wallet: Wallet", "- response: Response", "- action: MeteredAction",
+    "LedgerEntry": ["- wallet: Wallet", "- key: str", "- action: MeteredAction",
                     "- charged: int", "- state: LedgerState"],
 }  # fmt: skip
 
-AGGREGATION = {("Classroom", "Account"), ("LearningPlan", "Lesson"), ("DrillPassage", "WordDrill")}
+# The identifier each class's collection is keyed by (`account_id`, `response_id`...),
+# drawn on top of the box under its name in the code (camel case, like every other
+# attribute: `class_id` -> `classId`). Achievement and CoachUpgrade got theirs in
+# D110, Wallet and PriceList in D111: every class drawn has one.
+ID_FIELD = {
+    "Account": "accountId: str", "Task": "taskId: str", "Response": "responseId: str",
+    "Review": "reviewId: int", "Classroom": "classId: str", "LessonPath": "pathId: str",
+    "Unit": "unitId: str", "Lesson": "lessonId: str", "Step": "stepId: str",
+    "StepAttempt": "attemptId: str", "WordDrill": "drillId: str",
+    "DrillPassage": "passageId: str", "ReviewItem": "itemId: str",
+    "LearningPlan": "planId: str", "Order": "orderId: str", "LedgerEntry": "entryId: str",
+    "Achievement": "achievementId: str", "CoachUpgrade": "upgradeId: str",
+    "Wallet": "walletId: str", "PriceList": "priceListId: str",
+}  # fmt: skip
+# Related with no attribute in either class (owner's rule: association). A
+# ledger entry names what it paid for by its key; for a scored recording or its
+# upgrade, that is a response.
+ASSOCIATION = {("LedgerEntry", "Response")}
+# Not drawn: the audit log is a technical record (who did what), like the sessions.
+NOT_DRAWN = {"AuditEntry"}
+# A relation drawn with a stored attribute of the other class is an aggregation
+# (hollow diamond at the class that holds it), or a composition (filled) when
+# the part lives and dies with its whole. Owner's rule, 24/11/2026: association
+# is kept for a relation with no attribute (`ASSOCIATION`). A field
+# typed by an enum is drawn as a dashed line with an open arrow at the enum.
 
 tree = ET.parse(SRC)
 root = tree.getroot()
@@ -162,9 +187,12 @@ def text(c):
 
 
 boxes = {}  # id -> name
+enum_ids = set()
 for cid, c in cells.items():
     if "swimlane" in (c.get("style") or ""):
         boxes[cid] = text(c).replace("«entity»", "").replace("«enumeration»", "").strip()
+        if "«enumeration»" in text(c):
+            enum_ids.add(cid)
 by_name = {n: i for i, n in boxes.items()}
 
 
@@ -184,6 +212,26 @@ def new_row(template, value, n):
     r.set("value", html.escape(value))
     return r
 
+
+for bid in [b for b, n in boxes.items() if n in NOT_DRAWN]:
+    gone = {bid} | {c.get("id") for c in model_root if c.get("parent") == bid}
+    edges = {
+        c.get("id")
+        for c in model_root
+        if c.get("edge") == "1" and bid in (c.get("source"), c.get("target"))
+    }
+    for c in list(model_root):
+        if c.get("id") in gone | edges or c.get("parent") in edges:
+            model_root.remove(c)
+    del boxes[bid]
+by_name = {n: i for i, n in boxes.items()}
+
+# The words of a passage are many (owner, 24/11/2026): 1..*, no fixed count.
+for c in [x for x in model_root if x.get("edge") == "1"]:
+    if (boxes.get(c.get("source")), boxes.get(c.get("target"))) == ("DrillPassage", "WordDrill"):
+        for lab in [x for x in model_root if x.get("parent") == c.get("id")]:
+            if (lab.get("value") or "").strip() == "3..5":
+                lab.set("value", "1..*")
 
 old_h = {bid: float(cells[bid].find("mxGeometry").get("height")) for bid in boxes}
 serial = 0
@@ -209,6 +257,8 @@ for bid, name in boxes.items():
                     out.append(new_row(template, v, serial))
             else:
                 out.append(r)
+    if name in ID_FIELD:
+        out.insert(0, new_row(template, f"- {ID_FIELD[name]}", (serial := serial + 1)))
     for r in rows:
         model_root.remove(r)
     insert_at = list(model_root).index(cells[bid]) + 1
@@ -314,8 +364,31 @@ for c in [x for x in model_root if x.get("edge") == "1"]:
     s, t = boxes.get(c.get("source")), boxes.get(c.get("target"))
     if d.get("startArrow") == "diamondThin" and d.get("startFill") == "1":
         pass  # composition stays
-    elif (s, t) in AGGREGATION:
+    elif c.get("target") in enum_ids:  # a field typed by an enum: dashed, open arrow
         d.pop("strokeWidth", None)
+        d.pop("endSize", None)
+        d.update(
+            {
+                "dashed": "1",
+                "startArrow": "none",
+                "startFill": "0",
+                "endArrow": "open",
+                "endFill": "0",
+                # Routes run 10 points beside Band and Role: a short head and no
+                # jump arcs keep the arrow clear of the lines it crosses there.
+                "endSize": "8",
+                "jumpStyle": "none",
+            }
+        )
+        d.pop("startSize", None)
+    elif (s, t) in ASSOCIATION:  # related, but no attribute holds the other: a plain line
+        for k in ("strokeWidth", "dashed", "endSize", "startSize"):
+            d.pop(k, None)
+        d.update({"startArrow": "none", "startFill": "0", "endArrow": "none", "endFill": "0"})
+    else:  # the holder keeps an attribute of the other class: aggregation
+        d.pop("strokeWidth", None)
+        d.pop("dashed", None)
+        d.pop("endSize", None)
         d.update(
             {
                 "startArrow": "diamondThin",
@@ -325,12 +398,6 @@ for c in [x for x in model_root if x.get("edge") == "1"]:
                 "endFill": "0",
             }
         )
-    else:  # association, including the attribute typed with an enum
-        d.pop("dashed", None)
-        d.pop("strokeWidth", None)
-        d.update({"startArrow": "none", "endArrow": "open", "endSize": "10"})
-        d.pop("startFill", None)
-        d.pop("startSize", None)
     c.set("style", style_str(d))
 
 # --- three new relations, routed in free space
@@ -456,6 +523,12 @@ for c in model_root:
 
 for d in root.iter("diagram"):
     d.set("name", "So do lop gon" if LEVEL == "core" else "So do lop chi tiet")
+# draw.io draws a jump arc on the edge drawn later: put the enum edges last so
+# no arc lands on their arrow heads beside Band and Role.
+for c in [x for x in model_root if x.get("edge") == "1" and x.get("target") in enum_ids]:
+    model_root.remove(c)
+    model_root.append(c)
+
 tree.write(OUT, encoding="utf-8", xml_declaration=False)
 print(
     "written",

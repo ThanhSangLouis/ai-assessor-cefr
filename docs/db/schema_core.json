@@ -31,6 +31,13 @@
         "code"
       ],
       "unique": true
+    },
+    {
+      "name": "u_achievement_id",
+      "keys": [
+        "achievement_id"
+      ],
+      "unique": true
     }
   ],
   "attempt": [
@@ -155,9 +162,9 @@
       "unique": false
     },
     {
-      "name": "i_user_ref_created_at",
+      "name": "i_wallet_id_created_at",
       "keys": [
-        "user_ref",
+        "wallet_id",
         "created_at"
       ],
       "unique": false
@@ -289,9 +296,9 @@
       "unique": false
     },
     {
-      "name": "i_reviews.created_at",
+      "name": "i_reviews.decided_at",
       "keys": [
-        "reviews.created_at"
+        "reviews.decided_at"
       ],
       "unique": false
     },
@@ -382,9 +389,16 @@
   ],
   "wallet": [
     {
-      "name": "u_user_ref",
+      "name": "u_account_id",
       "keys": [
-        "user_ref"
+        "account_id"
+      ],
+      "unique": true
+    },
+    {
+      "name": "u_wallet_id",
+      "keys": [
+        "wallet_id"
       ],
       "unique": true
     }

@@ -2,18 +2,18 @@
 
 `tests/test_diagrams.py` checks that every class drawn exists. This goes one
 level down: every attribute and operation drawn on an entity of
-`docs/sdd/diagrams/class/detailed/02_class.drawio` must be found in the code, in one of three
-ways:
+`docs/sdd/diagrams/class/detailed/02_class_detailed.drawio` must be found in the
+code, in one of three ways:
 
 1. **the same name** on the entity's code class, in snake case
    (`dailyGoalS` -> `Account.daily_goal_s`);
 2. **a reference kept as an id**: the diagram draws the relation as an
    attribute typed with the other entity (`learner: Account`), the code keeps
    the other's id (`account_id`) -- `ELSEWHERE` says which field;
-3. **a field of the stored document or of the report** that the code class
-   does not declare (`Account.emailVerified` is the `email_verified` key the
-   auth repository writes; `Response.transcript` is `Transcript.text` in the
-   response's report) -- `ELSEWHERE` says where.
+3. **a member of a part the entity is stored as** (`Lesson.publishedVersion`
+   is `LessonMeta.published_version`, kept beside the lesson's content;
+   `Response.transcript` is `Transcript.text` in the response's report) --
+   `ELSEWHERE` says where.
 
 `ELSEWHERE` is checked both ways: an entry for an attribute no longer drawn, or
 pointing at nothing, fails too. And every business collection in the schema
@@ -36,13 +36,16 @@ pytestmark = pytest.mark.unit
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src" / "aicefr"
 CLASS_DIR = ROOT / "docs" / "sdd" / "diagrams" / "class"
-DIAGRAM = CLASS_DIR / "detailed" / "02_class.drawio"
+# The detailed page is the full design the code follows (Hình 2c); the compact
+# page (Hình 2a) is drawn from the same layout with the main attributes only.
+DIAGRAM = CLASS_DIR / "detailed" / "02_class_detailed.drawio"
+CORE = CLASS_DIR / "02_class_core.drawio"
+DETAILED = DIAGRAM
 SNAPSHOT = ROOT / "docs" / "db" / "schema_core.json"
 
 # The code class of each entity drawn, by module.
 ENTITY_CLASS = {
     "Account": "storage/auth_repository.py",
-    "AuditEntry": "contracts.py",
     "Task": "storage/task_repository.py",
     "Response": "contracts.py",
     "Review": "contracts.py",
@@ -68,13 +71,14 @@ ENTITY_CLASS = {
 # "field" (a member of the entity's class under another name), "Class.member"
 # (a member of another code class), or "path:key" (a key the module writes).
 ELSEWHERE = {
+    # The identifier each collection is keyed by, drawn as `id`.
     # References kept as ids.
-    ("AuditEntry", "actor"): "actor_id",
+    ("DrillPassage", "drills"): "drill_ids",
+    ("StepAttempt", "reviewItem"): "review_item_id",
+    ("ReviewItem", "step"): "step_id",
     ("Response", "speaker"): 'storage/repository.py:"account_id"',
     ("Response", "task"): 'storage/repository.py:"task_id"',
     ("Review", "reviewer"): "reviewer_id",
-    ("Response", "lockedBy"): "ReviewLock.reviewer_id",
-    ("Response", "lockedUntil"): "ReviewLock.locked_until",
     ("Classroom", "teachers"): "teacher_ids",
     ("StepAttempt", "learner"): "account_id",
     ("StepAttempt", "step"): "StepResult.step_id",
@@ -90,38 +94,19 @@ ELSEWHERE = {
     ("ReviewItem", "drill"): "drill_id",
     ("Achievement", "learner"): "account_id",
     ("LearningPlan", "owner"): "account_id",
-    ("Wallet", "owner"): "user_ref",
-    ("LedgerEntry", "wallet"): "user_ref",
-    ("LedgerEntry", "response"): "key",
-    # Another name for the same thing.
-    ("Review", "decidedAt"): "created_at",
-    ("LearningPlan", "lessons"): "plan",
-    # Keys of the stored document the code class does not declare.
-    ("Account", "emailVerified"): 'storage/auth_repository.py:"email_verified"',
-    ("Account", "emailCodes"): 'storage/auth_repository.py:"email_codes"',
-    ("Account", "emailReminders"): 'storage/auth_repository.py:"email_reminders"',
-    ("Account", "reminderSentOn"): 'storage/auth_repository.py:"reminder_sent_on"',
-    ("AuditEntry", "id"): 'storage/audit_repository.py:"id"',
-    ("AuditEntry", "service"): 'storage/audit_repository.py:"service"',
-    ("Lesson", "publishedVersion"): 'storage/lesson_repository.py:"published_version"',
-    ("Lesson", "versions"): 'storage/lesson_repository.py:"versions"',
-    ("Lesson", "media"): 'storage/lesson_repository.py:"media"',
-    ("Lesson", "archived"): 'storage/lesson_repository.py:"archived"',
-    ("PriceList", "freeRuns"): 'services/core/metering/price_book.py:"free_runs"',
-    ("PriceList", "packs"): 'services/core/metering/price_book.py:"packs"',
-    ("PriceList", "changedAt"): 'services/core/metering/price_book.py:"changed_at"',
-    ("Response", "replayLabels"): 'storage/replay_repository.py:"replay_labels"',
-    ("Response", "createdAt"): 'storage/repository.py:"created_at"',
+    ("Wallet", "owner"): "account_id",
+    ("LedgerEntry", "wallet"): "wallet_id",
+    # What the stored lesson keeps beside its content (`Lesson`).
+    ("Lesson", "publishedVersion"): "LessonMeta.published_version",
+    ("Lesson", "archived"): "LessonMeta.archived",
     # The response's report: the scored result the response holds.
-    ("Response", "reasonCodes"): "reasons",
-    ("Response", "durationMs"): "QcResult.duration_ms",
     ("Response", "transcript"): "Transcript.text",
     ("Response", "overall06"): "Assessment.overall_0_6",
     ("Response", "overallBand"): "Assessment.overall_band",
-    ("Response", "criterionScores"): "Assessment.indicators",
+    ("Response", "criterionIndicators"): "Assessment.indicators",
     ("Response", "intervalLow"): "ScoreInterval.low",
     ("Response", "intervalHigh"): "ScoreInterval.high",
-    ("Response", "feedback"): "Assessment.comments",
+    ("Response", "feedback"): "Assessment.feedback",
     ("Response", "modelVersion"): "Assessment.model_version",
     ("Response", "teacherVerified"): "Assessment.teacher_verified",
     ("Response", "isSingleBand"): "ScoreInterval.is_single_band",
@@ -132,7 +117,6 @@ ELSEWHERE = {
 # `Lesson`, ...): `EMBEDDED` names the root.
 COLLECTION = {
     "Account": "account",
-    "AuditEntry": "audit_log",
     "Task": "task",
     "Response": "response",
     "Classroom": "classroom",
@@ -157,6 +141,7 @@ EMBEDDED = {
 }
 # Collections of the technical machinery, not of the business: not drawn.
 NOT_DRAWN = {
+    "audit_log": "who did what, a technical record (owner, 24/11/2026)",
     "session": "login sessions, a mechanism like a cookie",
     "system": "configuration, counters, migrations",
     "push_subscription": "a browser's push endpoint; D088 keeps it on the ERD only",
@@ -257,36 +242,6 @@ def test_every_business_collection_belongs_to_an_entity_drawn():
     assert not unused, f"COLLECTION nhắc collection mã không dùng: {unused}"
 
 
-def _generator_spec() -> dict[str, list[str]]:
-    """Each entity of `tools/gen_class_diagram.py` and its attributes, in order."""
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location(
-        "gen_class_diagram", ROOT / "tools/gen_class_diagram.py"
-    )
-    gen = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
-    spec.loader.exec_module(gen)  # type: ignore[union-attr]
-    return {
-        title.split(gen.BR)[-1]: [
-            m.group(1) for line in lines if (m := re.match(r"[-+] (\w+)", line))
-        ]
-        for _cid, title, lines in gen.CLASSES
-    }
-
-
-def test_every_box_drawn_matches_the_generator_spec():
-    """The drawio is routed by hand, the spec is where attributes are added: they must agree.
-
-    The diagram had drifted once: D094's lesson counters were in the spec but
-    never drawn on `Wallet`, `PriceList` and `LedgerEntry`, and every other
-    check passed, since they only ask that what is drawn exists in the code.
-    """
-    spec, boxes = _generator_spec(), drawn()
-    assert sorted(spec) == sorted(boxes), "sơ đồ và bộ sinh không cùng các thực thể"
-    differ = {e: (spec[e], boxes[e]) for e in spec if spec[e] != boxes[e]}
-    assert not differ, f"hộp trên sơ đồ khác đặc tả trong bộ sinh: {differ}"
-
-
 def _page(diagram: pathlib.Path) -> tuple[dict[str, list[str]], list[tuple[str, str, str]]]:
     """Each box's rows as drawn, and each edge as (source, target, style without ports)."""
     cells = list(ET.parse(diagram).getroot().iter("mxCell"))
@@ -327,41 +282,15 @@ def test_the_core_page_is_a_subset_of_the_detailed_page():
     assert sorted(core_edges) == sorted(full_edges), "hai trang phải vẽ cùng các quan hệ"
 
 
-# ---------------------------------------------------------------- detailed page
-# `02_class_detailed.drawio`: Nguyên's A4 layout at the detailed level, derived
-# by `tools/derive_class_diagram.py`. Same entities; its new names below.
-DETAILED = CLASS_DIR / "detailed" / "02_class_detailed.drawio"
-CORE = CLASS_DIR / "02_class_core.drawio"
-DETAILED_ELSEWHERE = {
-    **ELSEWHERE,
-    ("DrillPassage", "drills"): "drill_ids",
-    ("StepAttempt", "reviewItem"): "review_item_id",
-    ("ReviewItem", "step"): "step_id",
-    ("Response", "criterionIndicators"): "Assessment.indicators",
-}
-
-
-def test_every_attribute_on_the_detailed_page_is_in_the_code():
-    page = drawn(DETAILED)
-    assert sorted(page) == sorted(ENTITY_CLASS), "trang chi tiết và ENTITY_CLASS lệch nhau"
-    missing = [
-        f"{e}.{a}"
-        for e, attrs in page.items()
-        for a in attrs
-        if not found(e, a, DETAILED_ELSEWHERE)
-    ]
-    assert not missing, f"trang chi tiết vẽ thứ code không có: {missing}"
-
-
 @pytest.mark.parametrize("page", [DETAILED, CORE], ids=lambda p: p.name)
 def test_relationships_follow_the_rules(page: pathlib.Path):
-    """Each edge is the kind its attribute says it is.
+    """Each edge is the kind its attribute says it is (owner's rule, 24/11/2026).
 
-    Composition: a part that lives and dies with its whole, held by the whole.
-    Aggregation: the holder gathers MANY independent parts, a `List` of them.
-    Association: the holder keeps ONE attribute typed with the other class
-    (an enum included: it is stored, so it is not a dependency).
-    Dependency: only for a type used but not stored -- none on this page.
+    A relation drawn with an attribute of the other class in the holder is an
+    aggregation (hollow diamond at the holder), or a composition (filled) when
+    the part lives and dies with its whole. Association is kept for a relation
+    with NO attribute. A field typed by an enum is drawn as a dashed line with an
+    open arrow at the enum (owner, 24/11/2026), never a diamond.
     One edge per attribute typed with an entity; one edge per enum used.
     """
     import html
@@ -389,7 +318,7 @@ def test_relationships_follow_the_rules(page: pathlib.Path):
         ):
             return "composition" if d.get("startFill", d.get("endFill")) == "1" else "aggregation"
         if d.get("dashed") == "1":
-            return "dependency"
+            return "dependency" if d.get("endArrow") == "open" else "dashed-other"
         if d.get("endArrow") == "block":
             return "generalization"
         return "association"
@@ -402,21 +331,23 @@ def test_relationships_follow_the_rules(page: pathlib.Path):
     bad = []
     for (s, t), kinds in edges.items():
         lines = held(s, t)
-        if not lines:
-            bad.append(f"{s}->{t}: {kinds} nhưng {s} không có thuộc tính kiểu {t}")
         for k in kinds:
-            many = any("List<" in a for a in lines)
-            if k == "aggregation" and (not many or t in enums):
-                bad.append(f"{s}->{t}: aggregation phải gom nhiều {t} độc lập (List<{t}>)")
-            if k == "association" and many:
+            if t in enums:
+                if not lines or k != "dependency":
+                    bad.append(f"{s}->{t}: tới enum phải là nét đứt mũi tên mở, có thuộc tính")
+                continue
+            if lines and k not in ("aggregation", "composition"):
                 bad.append(
-                    f"{s}->{t}: giữ List<{t}> là aggregation/composition, không phải association"
+                    f"{s}->{t}: có thuộc tính kiểu {t}, phải là aggregation/composition, không {k}"
                 )
-            if k in ("dependency", "generalization"):
-                bad.append(f"{s}->{t}: {k} nhưng {t} được lưu thành thuộc tính")
+            if not lines and k != "association":
+                bad.append(
+                    f"{s}->{t}: không có thuộc tính kiểu {t} thì chỉ là association, không phải {k}"
+                )
     for owner in attrs:
         for t in set(name.values()):
-            n_attr, n_edge = len(held(owner, t)), len(edges.get((owner, t), []))
+            n_attr = len(held(owner, t))
+            n_edge = len([k for k in edges.get((owner, t), []) if k != "association"])
             want = (1 if n_attr else 0) if t in enums else n_attr
             if n_edge != want:
                 bad.append(f"{owner}: {n_attr} thuộc tính kiểu {t}, {n_edge} đường (cần {want})")

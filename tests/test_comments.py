@@ -175,9 +175,9 @@ def test_bao_cao_that_co_nhan_xet_va_uu_tien(tone, sr) -> None:
     )
     a = report.assessment
     assert a is not None
-    assert a.comments, "pipeline không gắn nhận xét vào báo cáo"
+    assert a.feedback, "pipeline không gắn nhận xét vào báo cáo"
     ids = {e.evidence_id for e in a.evidence}
-    for c in a.comments:
+    for c in a.feedback:
         assert set(c.evidence_refs) <= ids
 
 
