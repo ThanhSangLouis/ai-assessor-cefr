@@ -59,7 +59,7 @@ INDEXES = {
         (("response_id",), True),
         (("status",), False),
         (("account_id", "created_at"), False),
-        (("reviews.created_at",), False),
+        (("reviews.decided_at",), False),
         (("replay_labels.account_id",), False),
     ],
 }
@@ -144,7 +144,7 @@ def _record_decision(
         old_band=old_band,
         new_band=new_band,
         reason=reason,
-        created_at=_now(),
+        decided_at=_now(),
     )
     db["response"].update_one(
         {"response_id": response_id}, {"$push": {"reviews": review.model_dump(mode="json")}}
@@ -300,7 +300,7 @@ class Repository(MongoStore):
         self,
         response_id: str,
         status: ResponseStatus,
-        reasons: list[ReasonCode] | None = None,
+        reason_codes: list[ReasonCode] | None = None,
         only_from: tuple[ResponseStatus, ...] | None = None,
     ) -> bool:
         """Change the status of a response being processed; True when it changed.
@@ -317,8 +317,8 @@ class Repository(MongoStore):
         if only_from:
             query["status"] = {"$in": [s.value for s in only_from]}
         sets: dict = {"status": status.value}
-        if reasons is not None:
-            sets["reasons"] = [r.value for r in reasons]
+        if reason_codes is not None:
+            sets["reason_codes"] = [r.value for r in reason_codes]
         return self.col("response").update_one(query, {"$set": sets}).modified_count == 1
 
     def mark_running(self, response_id: str) -> bool:
@@ -1006,7 +1006,7 @@ class Repository(MongoStore):
                 overall_0_6=None,
                 overall_band=None,
                 model_version="teacher",
-                reasons=list(report.reasons),
+                reasons=list(report.reason_codes),
             )
         a = report.assessment
         old_score, old_band = a.overall_0_6, a.overall_band

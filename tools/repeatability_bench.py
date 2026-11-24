@@ -73,7 +73,7 @@ def bench(paths: list[pathlib.Path], temperature, runs: int, task: str, model) -
                 Run(
                     score=a.overall_0_6 if a else None,
                     band=a.overall_band.value if a and a.overall_band else None,
-                    hallucination=ReasonCode.ASR_HALLUCINATION in report.reasons,
+                    hallucination=ReasonCode.ASR_HALLUCINATION in report.reason_codes,
                 )
             )
             print(f"{label(temperature)}  {path.name}  lần {i + 1}/{runs}", file=sys.stderr)

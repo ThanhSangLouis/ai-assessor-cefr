@@ -321,7 +321,7 @@ FIELD_PURPOSES: dict[str, str] = {
     "transcript": "Bản chép lời do máy nhận dạng, dùng để trích bằng chứng.",
     "features": "Các số đo trích từ bản ghi (nhịp nói, ngừng nghỉ, từ vựng).",
     "evidence": "Các đoạn cụ thể trong bản ghi dùng làm căn cứ cho nhận xét.",
-    "comments": "Nhận xét sinh từ số đo, mỗi câu kèm bằng chứng.",
+    "feedback": "Nhận xét sinh từ số đo, mỗi câu kèm bằng chứng.",
     "priorities": "Gợi ý luyện tập, xếp theo mức ảnh hưởng tới điểm.",
     "review_history": "Mỗi lần giảng viên sửa điểm: trước, sau, lý do, thời điểm.",
     "audio": "Tệp ghi âm KHÔNG nằm trong tệp này vì kích thước; tải riêng ở"

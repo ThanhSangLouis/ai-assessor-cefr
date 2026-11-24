@@ -387,7 +387,7 @@ def test_bai_dai_khong_con_bao_ngoai_phan_bo() -> None:
     for c in a.criteria:
         assert ReasonCode.OUT_OF_DISTRIBUTION not in c.reasons, c.criterion
     # And the routing decision, which gathers from both.
-    assert ReasonCode.OUT_OF_DISTRIBUTION not in report.reasons
+    assert ReasonCode.OUT_OF_DISTRIBUTION not in report.reason_codes
 
 
 def test_bao_cao_noi_ro_cac_cua_so_lech_nhau_bao_nhieu() -> None:

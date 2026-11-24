@@ -93,7 +93,7 @@ def main() -> int:
                     "status": response.status.value,
                     "score": a.overall_0_6 if a else None,
                     "band": a.overall_band.value if a and a.overall_band else None,
-                    "reasons": [r.value for r in (a.reasons if a else response.reasons)],
+                    "reasons": [r.value for r in (a.reasons if a else response.reason_codes)],
                     "asr_conf_mean": features.value_of("asr_conf_mean") if features else None,
                     "text": response.asr.text if response.asr else "",
                     "human": labels.get(Path(path).name),

@@ -44,6 +44,8 @@ def encode_account(account: Account | None) -> str:
         # D071: the pages greet the person by name.
         "email": account.email,
         "full_name": account.full_name,
+        "email_verified": account.email_verified,
+        "email_reminders": account.email_reminders,
     }
     return base64.urlsafe_b64encode(json.dumps(data).encode()).decode()
 
@@ -62,6 +64,8 @@ def decode_account(value: str | None) -> Account | None:
             avatar_color=data.get("avatar_color"),
             daily_goal_s=int(data.get("daily_goal_s") or DEFAULT_DAILY_GOAL),
             full_name=data.get("full_name"),
+            email_verified=bool(data.get("email_verified")),
+            email_reminders=data.get("email_reminders") is not False,
         )
     except (ValueError, KeyError, TypeError):
         return None

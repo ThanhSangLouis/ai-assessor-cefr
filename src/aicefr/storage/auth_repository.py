@@ -153,6 +153,10 @@ class Account:
     identities: tuple[str, ...] = ()
     # D071: what a teacher reads. None until the owner gives one.
     full_name: str | None = None
+    # D101: the free runs wait for a verified email. D079: reminder emails,
+    # on until the owner turns them off.
+    email_verified: bool = False
+    email_reminders: bool = True
 
     @property
     def is_staff(self) -> bool:
@@ -573,6 +577,8 @@ class AuthRepository(MongoStore):
             daily_goal_s=row["daily_goal_s"] or DEFAULT_DAILY_GOAL,
             identities=tuple(i["provider"] for i in row["identities"] or []),
             full_name=row["full_name"],
+            email_verified=bool(row["email_verified"]),
+            email_reminders=row["email_reminders"] != 0,
         )
 
     def logout(self, token: str | None) -> None:

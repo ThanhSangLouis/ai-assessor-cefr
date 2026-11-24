@@ -150,7 +150,7 @@ def test_a_teachers_decision_reaches_the_learners_devices(m, sent):
             response_id="r-flag",
             status=ResponseStatus.REVIEW_REQUIRED,
             config_version="v1",
-            reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
+            reason_codes=[ReasonCode.LANGUAGE_NOT_ENGLISH],
         ),
         "P3",
         account_id=account_id(m, "SV-001"),

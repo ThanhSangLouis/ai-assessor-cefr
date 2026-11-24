@@ -83,7 +83,7 @@ def test_mft_silence_is_never_scored(req) -> None:
 def test_mft_a_recording_too_short_is_never_scored(req) -> None:
     r = run(speechish(5), req)
     assert r.status is ResponseStatus.REJECTED and not has_band(r)
-    assert ReasonCode.AUDIO_TOO_SHORT in r.reasons
+    assert ReasonCode.AUDIO_TOO_SHORT in r.reason_codes
 
 
 def test_mft_a_clipped_recording_is_not_issued_silently(req) -> None:
@@ -91,26 +91,26 @@ def test_mft_a_clipped_recording_is_not_issued_silently(req) -> None:
     square = np.sign(np.sin(2 * np.pi * 220 * t)).astype(np.float32)  # dinh day thang
     r = run(square, req)
     assert not issued_without_teacher(r)
-    assert ReasonCode.CLIPPING_DETECTED in r.reasons
+    assert ReasonCode.CLIPPING_DETECTED in r.reason_codes
 
 
 def test_mft_noise_or_music_that_yields_no_words_is_never_scored(req) -> None:
     """Whisper tren tieng on/nhac thuong tra ban chep rong; ban chep rong khong duoc ra band."""
     r = run(speechish(), req, FakeAsrEngine(transcript="  "))
     assert not has_band(r)
-    assert ReasonCode.ASR_EMPTY_TRANSCRIPT in r.reasons
+    assert ReasonCode.ASR_EMPTY_TRANSCRIPT in r.reason_codes
 
 
 def test_mft_speech_in_vietnamese_is_never_scored(req) -> None:
     engine = FakeAsrEngine(language="vi", language_probability=0.95)
     r = run(speechish(), req, engine)
-    assert not has_band(r) and ReasonCode.LANGUAGE_NOT_ENGLISH in r.reasons
+    assert not has_band(r) and ReasonCode.LANGUAGE_NOT_ENGLISH in r.reason_codes
 
 
 def test_mft_a_recogniser_loop_is_cut_and_flagged(req) -> None:
     loop = " ".join(["thank you for watching"] * 15)
     r = run(speechish(), req, FakeAsrEngine(transcript="i like my school " + loop))
-    assert ReasonCode.ASR_HALLUCINATION in r.reasons
+    assert ReasonCode.ASR_HALLUCINATION in r.reason_codes
     assert not issued_without_teacher(r)
 
 

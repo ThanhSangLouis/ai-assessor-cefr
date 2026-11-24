@@ -269,7 +269,7 @@ class ResponseProcessor:
         with timed("pipeline_stage_seconds", stage="qc"):
             qc = self.quality_checker.check(pcm, sr, channels=channels, size_bytes=size_bytes)
         if not qc.passed:
-            return Response(**base, status=ResponseStatus.REJECTED, qc=qc, reasons=qc.reasons)
+            return Response(**base, status=ResponseStatus.REJECTED, qc=qc, reason_codes=qc.reasons)
 
         # Voice activity detection runs BEFORE recognition, not after.
         #
@@ -305,7 +305,7 @@ class ResponseProcessor:
             # log has to say why, or a missing package looks like a bad model.
             logger.warning("recogniser failed: %s", e)
             return Response(
-                **base, status=ResponseStatus.FAILED, qc=qc, reasons=[ReasonCode.ASR_FAILED]
+                **base, status=ResponseStatus.FAILED, qc=qc, reason_codes=[ReasonCode.ASR_FAILED]
             )
         if not asr.text.strip():
             return Response(
@@ -313,7 +313,7 @@ class ResponseProcessor:
                 status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
-                reasons=[ReasonCode.ASR_EMPTY_TRANSCRIPT],
+                reason_codes=[ReasonCode.ASR_EMPTY_TRANSCRIPT],
             )
 
         # La chan ngon ngu (D022). Whisper bi ep tieng Anh se "dich" loi tieng
@@ -325,7 +325,7 @@ class ResponseProcessor:
                 status=ResponseStatus.REVIEW_REQUIRED,
                 qc=qc,
                 asr=asr,
-                reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
+                reason_codes=[ReasonCode.LANGUAGE_NOT_ENGLISH],
             )
 
         # Second line of defence: trimming removes the usual cause, but noise in
@@ -366,7 +366,7 @@ class ResponseProcessor:
                 qc=qc,
                 asr=asr,
                 features=features,
-                reasons=[ReasonCode.MODEL_VERSION_MISSING],
+                reason_codes=[ReasonCode.MODEL_VERSION_MISSING],
             )
 
         # The model was fitted on features derived from one recogniser. Running a
@@ -391,7 +391,7 @@ class ResponseProcessor:
         # teacher must look at this, so the report cannot claim confidence the
         # routing does not share.
         confidence = features.value_of("asr_conf_mean")
-        assessment.comments = self.comment_builder.comments(
+        assessment.feedback = self.comment_builder.comments(
             features, assessment.evidence, confidence, assessment.reasons
         )
         # "Dang lam giam X diem" la coef*z cua mo hinh. Khi may da tu choi cham
@@ -414,5 +414,5 @@ class ResponseProcessor:
             asr=asr,
             features=features,
             assessment=assessment,
-            reasons=decision.reasons,
+            reason_codes=decision.reasons,
         )

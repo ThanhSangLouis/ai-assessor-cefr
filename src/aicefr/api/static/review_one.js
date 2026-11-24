@@ -182,12 +182,12 @@ function renderMachineScore(d, a) {
 
   h += windowSummary(a);
 
-  if (d.reasons && d.reasons.length) {
+  if (d.reason_codes && d.reason_codes.length) {
     // The same Vietnamese names as the queue, which is filtered by them. The
     // code itself is for logs, not for the teacher.
     h +=
       '<p class="muted reason-line">Lý do gắn cờ: ' +
-      d.reasons
+      d.reason_codes
         .map((c) => `<span class="badge">${escapeHtml(window.ui.reasonName(c))}</span>`)
         .join(" ") +
       "</p>";
@@ -381,7 +381,7 @@ async function renderHistory() {
     "<th>Lý do</th></tr></thead><tbody>";
   rows.forEach((x) => {
     h +=
-      `<tr><td class="muted">${escapeHtml(window.ui.localTime(x.created_at))}</td>` +
+      `<tr><td class="muted">${escapeHtml(window.ui.localTime(x.decided_at))}</td>` +
       `<td>${x.old_score ?? "—"} → ${x.new_score ?? "—"}</td>` +
       `<td>${escapeHtml(x.old_band ?? "—")} → ${escapeHtml(x.new_band ?? "—")}</td>` +
       `<td>${escapeHtml(x.reason)}</td></tr>`;

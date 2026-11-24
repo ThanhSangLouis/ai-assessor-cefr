@@ -186,7 +186,7 @@ def _unscored(rid: str) -> Response:
         response_id=rid,
         status=ResponseStatus.REVIEW_REQUIRED,
         config_version="v1",
-        reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH],
+        reason_codes=[ReasonCode.LANGUAGE_NOT_ENGLISH],
     )
 
 

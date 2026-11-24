@@ -318,7 +318,7 @@ async function loadReasons() {
         try {
           const res = await fetch(`/api/v1/responses/${encodeURIComponent(r.response_id)}`);
           const d = res.ok ? await res.json() : {};
-          r.reasons = Array.isArray(d.reasons) ? d.reasons : [];
+          r.reasons = Array.isArray(d.reason_codes) ? d.reason_codes : [];
         } catch (err) {
           r.reasons = [];
         }

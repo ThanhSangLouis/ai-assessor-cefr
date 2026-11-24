@@ -27,6 +27,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from pathlib import Path
+from typing import TypedDict
 
 from pymongo import ASCENDING, DESCENDING
 
@@ -127,6 +128,19 @@ REVIEW_FIELDS = (
 _BY_POSITION = [("position", ASCENDING), ("_id", ASCENDING)]
 
 PATH_STATUSES = tuple(s.value for s in PathStatus)
+
+
+class LessonMeta(TypedDict):
+    """What the stored lesson keeps beside its content (`Lesson`): its place,
+    the version learners see (0 until the first publication), whether the
+    draft has changed since, and whether it was set aside."""
+
+    unit_id: str
+    path_id: str
+    published_version: int
+    draft_changed: bool
+    archived: bool
+    updated_at: str
 
 
 class NotFound(LookupError):
@@ -247,8 +261,13 @@ class ReviewItem:
 
 @dataclass
 class Achievement:
-    """One achievement of the catalogue (`AchievementRule`) one learner reached."""
+    """One achievement of the catalogue (`AchievementRule`) one learner reached.
 
+    `achievement_id` is its own identifier (D111); `code` names which rule of the
+    catalogue was reached, and a learner reaches each rule once.
+    """
+
+    achievement_id: str
     account_id: str
     code: str
     unlocked_at: str
@@ -524,13 +543,13 @@ class LessonRepository(MongoStore):
         )
         return lesson.lesson_id
 
-    def draft(self, lesson_id: str) -> tuple[Lesson, dict]:
+    def draft(self, lesson_id: str) -> tuple[Lesson, LessonMeta]:
         """The working copy and its metadata (unit, published version, unpublished changes)."""
         row = self.col("lesson").find_one({"lesson_id": lesson_id})
         owner = self._path_of_unit(row["unit_id"]) if row else None
         if row is None or owner is None:
             raise NotFound(lesson_id)
-        meta = {
+        meta: LessonMeta = {
             "unit_id": row["unit_id"],
             "path_id": owner.path_id,
             "published_version": row["published_version"],
@@ -831,7 +850,8 @@ class LessonRepository(MongoStore):
         stored = []
         for code in codes:
             try:
-                self.col("achievement").insert_one(asdict(Achievement(account_id, code, when)))
+                row = Achievement(new_id("ac"), account_id, code, when)
+                self.col("achievement").insert_one(asdict(row))
             except IntegrityError:
                 continue
             stored.append(code)

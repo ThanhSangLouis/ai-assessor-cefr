@@ -201,7 +201,7 @@ class ResponseStore(Protocol):
     def get(self, response_id: str) -> Response | None: ...
 
     def set_status(
-        self, response_id: str, status: ResponseStatus, reasons: list | None = None
+        self, response_id: str, status: ResponseStatus, reason_codes: list | None = None
     ) -> None: ...
 
 

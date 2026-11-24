@@ -165,13 +165,11 @@ def my_drill_words(account: Account = STUDENT_ONLY) -> dict:
 
 
 def _passage_words(account: Account) -> list[WordDrill]:
-    """The open drills a passage is written for: the latest, one per spelling, at most five."""
+    """The open drills a passage is written for: every one, the latest per spelling."""
     chosen: list[WordDrill] = []
     for d in _drills().open_words(account.account_id):
         if d.word not in {c.word for c in chosen}:
             chosen.append(d)
-        if len(chosen) == passages.MAX_WORDS:
-            break
     return chosen
 
 

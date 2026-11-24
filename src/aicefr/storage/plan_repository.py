@@ -27,7 +27,7 @@ PLAN_FIELDS = (
     "account_id",
     "audience",
     "goal",
-    "plan",
+    "lessons",
     "active",
     "created_at",
 )
@@ -41,7 +41,7 @@ class LearningPlan:
     account_id: str
     audience: Role  # a learner's own plan, or a teacher's proposal
     goal: dict
-    plan: dict  # units, each with its lessons and the reasons they were picked
+    lessons: dict  # the lessons by unit, each with the reasons it was picked
     active: bool
     created_at: str
 
@@ -53,7 +53,7 @@ class LearningPlan:
             account_id=out["account_id"],  # type: ignore[index]
             audience=Role(out["audience"]),  # type: ignore[index]
             goal=out["goal"],  # type: ignore[index]
-            plan=out["plan"],  # type: ignore[index]
+            lessons=out["lessons"],  # type: ignore[index]
             active=bool(out["active"]),  # type: ignore[index]
             created_at=out["created_at"],  # type: ignore[index]
         )
@@ -66,7 +66,7 @@ class LearningPlan:
             "active": self.active,
             "created_at": self.created_at,
             "goal": self.goal,
-            "plan": self.plan,
+            "lessons": self.lessons,
         }
 
 
@@ -94,7 +94,7 @@ class PlanRepository(MongoStore):
                 "audience": audience,
                 "goal": goal,
                 # The goal is its own field (D105): not repeated inside the plan.
-                "plan": {k: v for k, v in plan.items() if k != "goal"},
+                "lessons": {k: v for k, v in plan.items() if k != "goal"},
                 "active": 1,
                 "created_at": _now(),
             }

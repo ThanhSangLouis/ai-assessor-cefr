@@ -187,3 +187,16 @@ def test_passages_are_found_again_for_the_same_words_and_erased():
     ]
     assert repo.erase_account("acc-1") == 2
     assert repo.passage("acc-1", "p-1") is None
+
+
+def test_many_words_lengthen_the_passage_instead_of_failing():
+    """A passage takes every open word (1..*); past five, each adds twelve words of text."""
+    assert passage.MIN_WORDS == 1
+    assert passage.length_for("B1", 1) == passage.length_for("B1", 5) == (60, 90)
+    assert passage.length_for("B1", 8) == (96, 126)
+    many = [f"word{chr(97 + i)}" for i in range(8)]
+    asked = json.loads(passage.user_message("B1", many))
+    assert asked["words"] == many and asked["length_words"] == "96-126"
+    text = " ".join(f"I said {w} again." for w in many) + " " + "and more " * 70
+    kept = passage.check(text, many, "B1")  # longer than a five-word passage may be
+    assert kept.words == many

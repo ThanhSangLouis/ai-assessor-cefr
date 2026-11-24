@@ -2,7 +2,8 @@
 
 Three collections (D060, D078), as the class diagram has them:
 
-* `wallet` -- one document per account (`Wallet`): what it has paid for in
+* `wallet` -- one document per account (`Wallet`, its own `wallet_id` since
+  D112, its owner `account_id`): what it has paid for in
   advance (on the NetID channel, what NetID reports as prepaid IDPoint), the
   free runs used in the current monthly cycle, the lesson recordings of the
   current Vietnam day (D094: how many were measured, how many of them free),
@@ -12,8 +13,9 @@ Three collections (D060, D078), as the class diagram has them:
   recording came in, what was charged when it had a result, or that it was
   released. Unique on (key, action), so a retried submission or a duplicated
   event never charges twice. Entries grow with every recording, so they are
-  documents of their own, pointing at the wallet by its owner;
-* `price_list` -- one document, the prices an administrator set on the
+  documents of their own, pointing at their wallet by its `wallet_id` (D112);
+* `price_list` -- one document (`_id` "current"; its `price_list_id` is new
+  with each version, D112), the prices an administrator set on the
   dashboard (D078): what a recording, a practice attempt and an upgraded
   answer cost, the free runs each month and the run packs on sale, with every
   earlier version and who set it. Absent until the first change: the settings
@@ -70,7 +72,7 @@ class LedgerEntry:
     """What one recording held, and what it was charged or given back."""
 
     entry_id: str
-    user_ref: str  # the wallet's owner
+    wallet_id: str  # the wallet it took from and gives back to
     action: MeteredAction
     key: str  # the response; "upgrade-<response id>" for an upgraded answer
     from_free: int
@@ -109,7 +111,8 @@ class LedgerEntry:
 class Wallet:
     """One account's runs: prepaid balance, this cycle's free runs used, top-ups."""
 
-    user_ref: str  # the owner
+    wallet_id: str  # "" for an account that has none yet
+    account_id: str  # the owner: one wallet per account
     balance: int = 0
     period: str = ""  # the cycle `free_used` counts in
     free_used: int = 0
@@ -122,7 +125,8 @@ class Wallet:
     @classmethod
     def from_doc(cls, doc: dict) -> Wallet:
         return cls(
-            user_ref=doc["user_ref"],
+            wallet_id=doc.get("wallet_id", ""),
+            account_id=doc["account_id"],
             balance=int(doc.get("balance", 0)),
             period=doc.get("period", ""),
             free_used=int(doc.get("free_used", 0)),
@@ -136,6 +140,11 @@ class Wallet:
         """What can be spent now: the free runs left in `period`, then the balance."""
         used = self.free_used if self.period == period else 0
         return max(0, free_units - used) + self.balance
+
+
+def new_wallet_id() -> str:
+    """A wallet's own identifier (D112): "wa" and 10 hex digits."""
+    return "wa" + uuid.uuid4().hex[:10]
 
 
 def _entry(row: dict | None) -> dict | None:
@@ -210,7 +219,12 @@ class MeteringRepository(MongoStore):
         """A new version of the prices, numbered on from the one in force."""
         before = self.price_list()
         number = int(str((before or {}).get("version", "0")).rsplit("-", 1)[-1] or 0) + 1
-        doc = {**values, "version": f"price-admin-{number}", "changed_at": _now()}
+        doc = {
+            **values,
+            "price_list_id": "pl" + uuid.uuid4().hex[:10],
+            "version": f"price-admin-{number}",
+            "changed_at": _now(),
+        }
         self.col("price_list").replace_one({"_id": "current"}, doc, upsert=True)
         return doc
 
@@ -222,42 +236,65 @@ class MeteringRepository(MongoStore):
             return int(round(float(doc["free_runs"]) * UNITS_PER_RUN))
         return self._free_units
 
-    def _wallet(self, user_ref: str) -> Wallet:
-        row = self.col("wallet").find_one({"user_ref": user_ref})
-        return Wallet.from_doc(row) if row else Wallet(user_ref=user_ref)
+    def _wallet(self, account_id: str) -> Wallet:
+        row = self.col("wallet").find_one({"account_id": account_id})
+        return Wallet.from_doc(row) if row else Wallet(wallet_id="", account_id=account_id)
 
-    def _ensure_wallet(self, user_ref: str) -> None:
+    def _ensure_wallet(self, account_id: str) -> str:
+        """The account's wallet, made empty when it has none; its `wallet_id`."""
         try:
             self.col("wallet").update_one(
-                {"user_ref": user_ref},
-                {"$setOnInsert": {"balance": 0, "period": "", "free_used": 0, "grants": []}},
+                {"account_id": account_id},
+                {
+                    "$setOnInsert": {
+                        "wallet_id": new_wallet_id(),
+                        "balance": 0,
+                        "period": "",
+                        "free_used": 0,
+                        "grants": [],
+                    }
+                },
                 upsert=True,
             )
         except IntegrityError:
             pass  # made a moment ago by another request
+        return self._wallet(account_id).wallet_id
+
+    def _wallet_of(self, account_id: str) -> str | None:
+        """The `wallet_id` of the account's wallet, None while it has none."""
+        row = self.col("wallet").find_one({"account_id": account_id}, {"wallet_id": 1})
+        return row["wallet_id"] if row else None
+
+    def _owner(self, wallet_id: str) -> str:
+        """The account a wallet belongs to."""
+        row = self.col("wallet").find_one({"wallet_id": wallet_id}, {"account_id": 1})
+        return row["account_id"]
 
     # ------------------------------------------------------------ balances
 
-    def wallet(self, user_ref: str) -> int:
-        return self._wallet(user_ref).balance
+    def wallet(self, account_id: str) -> int:
+        return self._wallet(account_id).balance
 
-    def free_left(self, user_ref: str, period: str | None = None, free: bool = True) -> int:
+    def free_left(self, account_id: str, period: str | None = None, free: bool = True) -> int:
         """The free units left in `period`; none for an account not allowed them (D101)."""
         if not free:
             return 0
-        w = self._wallet(user_ref)
+        w = self._wallet(account_id)
         used = w.free_used if w.period == (period or cycle()) else 0
         return max(0, self.free_units - used)
 
-    def balance(self, user_ref: str, free: bool = True) -> dict:
-        return {"wallet": self.wallet(user_ref), "free_left": self.free_left(user_ref, free=free)}
+    def balance(self, account_id: str, free: bool = True) -> dict:
+        return {
+            "wallet": self.wallet(account_id),
+            "free_left": self.free_left(account_id, free=free),
+        }
 
-    def available(self, user_ref: str, free: bool = True) -> int:
-        return self._wallet(user_ref).available(self.free_units if free else 0, cycle())
+    def available(self, account_id: str, free: bool = True) -> int:
+        return self._wallet(account_id).available(self.free_units if free else 0, cycle())
 
     # ------------------------------------------------------------ top-ups
 
-    def grant(self, user_ref: str, units: int, source: str, ref: str, by: str | None) -> bool:
+    def grant(self, account_id: str, units: int, source: str, ref: str, by: str | None) -> bool:
         """Credit `units` once per (source, ref); False when this top-up was credited before.
 
         One update records the top-up and raises the balance, and only where
@@ -265,7 +302,7 @@ class MeteringRepository(MongoStore):
         """
         if units <= 0:
             raise ValueError("số lượt cộng phải dương")
-        self._ensure_wallet(user_ref)
+        self._ensure_wallet(account_id)
         top_up = {
             "grant_id": uuid.uuid4().hex[:16],
             "units": units,
@@ -276,77 +313,77 @@ class MeteringRepository(MongoStore):
         }
         done = self.col("wallet").update_one(
             {
-                "user_ref": user_ref,
+                "account_id": account_id,
                 "grants": {"$not": {"$elemMatch": {"source": source, "ref": ref}}},
             },
             {"$push": {"grants": top_up}, "$inc": {"balance": units}},
         )
         return bool(done.modified_count)
 
-    def _add_to_wallet(self, user_ref: str, units: int) -> None:
+    def _add_to_wallet(self, account_id: str, units: int) -> None:
         if units:
-            self._ensure_wallet(user_ref)
-            self.col("wallet").update_one({"user_ref": user_ref}, {"$inc": {"balance": units}})
+            self._ensure_wallet(account_id)
+            self.col("wallet").update_one({"account_id": account_id}, {"$inc": {"balance": units}})
 
     # ------------------------------------------------------------ hold, charge, release
 
-    def _take_free(self, user_ref: str, period: str, wanted: int) -> int:
+    def _take_free(self, account_id: str, period: str, wanted: int) -> int:
         """Take up to `wanted` free units of this cycle, atomically; what was taken."""
         wallets = self.col("wallet")
-        self._ensure_wallet(user_ref)
+        self._ensure_wallet(account_id)
         # A new cycle starts from nothing used.
         wallets.update_one(
-            {"user_ref": user_ref, "period": {"$ne": period}},
+            {"account_id": account_id, "period": {"$ne": period}},
             {"$set": {"period": period, "free_used": 0}},
         )
         for _ in range(8):
-            w = self._wallet(user_ref)
+            w = self._wallet(account_id)
             take = min(wanted, self.free_units - w.free_used)
             if take <= 0:
                 return 0
             # Compare-and-set on the count read: two holds at once never both
             # take the last free run.
             done = wallets.update_one(
-                {"user_ref": user_ref, "period": period, "free_used": w.free_used},
+                {"account_id": account_id, "period": period, "free_used": w.free_used},
                 {"$inc": {"free_used": take}},
             )
             if done.modified_count:
                 return take
         return 0
 
-    def _give_back(self, user_ref: str, period: str, free: int, wallet: int) -> None:
+    def _give_back(self, account_id: str, period: str, free: int, wallet: int) -> None:
         if free:
             # Only into the cycle it came from: a new cycle starts afresh anyway.
             self.col("wallet").update_one(
-                {"user_ref": user_ref, "period": period}, {"$inc": {"free_used": -free}}
+                {"account_id": account_id, "period": period}, {"$inc": {"free_used": -free}}
             )
-        self._add_to_wallet(user_ref, wallet)
+        self._add_to_wallet(account_id, wallet)
 
     def entry(self, key: str, action: MeteredAction) -> dict | None:
         return _entry(self.col("ledger").find_one({"key": key, "action": action.value}))
 
     def _take(
-        self, user_ref: str, period: str, units: int, free_ok: bool = True
+        self, account_id: str, period: str, units: int, free_ok: bool = True
     ) -> tuple[int, int]:
         """Take `units`: free runs of `period` first, then the wallet; (free, wallet).
 
         Without `free_ok` (D101: an email not yet verified) only the wallet pays.
         Raises InsufficientCredits, taking nothing, when the two fall short.
         """
-        free = self._take_free(user_ref, period, units) if free_ok else 0
+        free = self._take_free(account_id, period, units) if free_ok else 0
         rest = units - free
         if rest:
             paid = self.col("wallet").update_one(
-                {"user_ref": user_ref, "balance": {"$gte": rest}}, {"$inc": {"balance": -rest}}
+                {"account_id": account_id, "balance": {"$gte": rest}}, {"$inc": {"balance": -rest}}
             )
             if not paid.modified_count:
-                self._give_back(user_ref, period, free, 0)
-                raise InsufficientCredits(units, self.available(user_ref, free_ok))
+                self._give_back(account_id, period, free, 0)
+                raise InsufficientCredits(units, self.available(account_id, free_ok))
         return free, rest
 
     def hold(
         self,
-        user_ref: str,
+        account_id: str,
         action: MeteredAction,
         key: str,
         units: int,
@@ -364,10 +401,10 @@ class MeteringRepository(MongoStore):
         if existing is not None:
             return existing
         period = cycle()
-        free, rest = (0, 0) if included else self._take(user_ref, period, units, free_ok)
+        free, rest = (0, 0) if included else self._take(account_id, period, units, free_ok)
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
-            user_ref=user_ref,
+            wallet_id=self._ensure_wallet(account_id),
             action=MeteredAction(action.value),
             key=key,
             from_free=free,
@@ -382,20 +419,20 @@ class MeteringRepository(MongoStore):
             self.col("ledger").insert_one(entry.to_doc())
         except IntegrityError:
             # The same key held by a concurrent request: give back what this one took.
-            self._give_back(user_ref, period, free, rest)
+            self._give_back(account_id, period, free, rest)
             return self.entry(key, action)  # type: ignore[return-value]
         return _entry(entry.to_doc())
 
     # ------------------------------------------------------------ lesson recordings (D094)
 
-    def lesson_today(self, user_ref: str, day: str) -> dict:
+    def lesson_today(self, account_id: str, day: str) -> dict:
         """The lesson recordings of `day` so far: measured, and free among them."""
-        w = self._wallet(user_ref)
+        w = self._wallet(account_id)
         if w.lesson_day != day:
             return {"used": 0, "free_used": 0}
         return {"used": w.lesson_used, "free_used": w.lesson_free_used}
 
-    def _take_lesson_slot(self, user_ref: str, day: str, cap: int) -> str:
+    def _take_lesson_slot(self, account_id: str, day: str, cap: int) -> str:
         """Count one more lesson recording of `day`, or raise DailyCapReached.
 
         One conditional update moves the count up only while it is under the
@@ -405,39 +442,43 @@ class MeteringRepository(MongoStore):
         to the next one.
         """
         wallets = self.col("wallet")
-        self._ensure_wallet(user_ref)
+        self._ensure_wallet(account_id)
         # A new day starts from nothing. Only forward: a request computed a
         # moment before midnight never takes the wallet back a day.
         wallets.update_one(
             {
-                "user_ref": user_ref,
+                "account_id": account_id,
                 "$or": [{"lesson_day": {"$exists": False}}, {"lesson_day": {"$lt": day}}],
             },
             {"$set": {"lesson_day": day, "lesson_used": 0, "lesson_free_used": 0}},
         )
         for _ in range(3):
-            day = max(day, self._wallet(user_ref).lesson_day)
+            day = max(day, self._wallet(account_id).lesson_day)
             counted = wallets.update_one(
-                {"user_ref": user_ref, "lesson_day": day, "lesson_used": {"$lt": cap}},
+                {"account_id": account_id, "lesson_day": day, "lesson_used": {"$lt": cap}},
                 {"$inc": {"lesson_used": 1}},
             )
             if counted.modified_count:
                 return day
-            if self._wallet(user_ref).lesson_day == day:
+            if self._wallet(account_id).lesson_day == day:
                 raise DailyCapReached(cap)
         raise DailyCapReached(cap)
 
-    def _take_free_lesson(self, user_ref: str, day: str, free_per_day: int) -> bool:
+    def _take_free_lesson(self, account_id: str, day: str, free_per_day: int) -> bool:
         took = self.col("wallet").update_one(
-            {"user_ref": user_ref, "lesson_day": day, "lesson_free_used": {"$lt": free_per_day}},
+            {
+                "account_id": account_id,
+                "lesson_day": day,
+                "lesson_free_used": {"$lt": free_per_day},
+            },
             {"$inc": {"lesson_free_used": 1}},
         )
         return bool(took.modified_count)
 
-    def _give_back_slot(self, user_ref: str, day: str, free_slot: bool) -> None:
+    def _give_back_slot(self, account_id: str, day: str, free_slot: bool) -> None:
         """Uncount a lesson recording of `day` that got no result; a later day is left alone."""
         give: dict = {"lesson_used": -1}
-        where: dict = {"user_ref": user_ref, "lesson_day": day, "lesson_used": {"$gt": 0}}
+        where: dict = {"account_id": account_id, "lesson_day": day, "lesson_used": {"$gt": 0}}
         if free_slot:
             give["lesson_free_used"] = -1
             where["lesson_free_used"] = {"$gt": 0}
@@ -445,7 +486,7 @@ class MeteringRepository(MongoStore):
 
     def hold_lesson(
         self,
-        user_ref: str,
+        account_id: str,
         key: str,
         units: int,
         day: str,
@@ -464,20 +505,20 @@ class MeteringRepository(MongoStore):
         existing = self.entry(key, MeteredAction.LESSON)
         if existing is not None:
             return existing
-        day = self._take_lesson_slot(user_ref, day, cap)
+        day = self._take_lesson_slot(account_id, day, cap)
         # D101: no free recording of the day, nor free run of the month, for
         # an account whose email is not verified yet.
-        free_slot = free_ok and self._take_free_lesson(user_ref, day, free_per_day)
+        free_slot = free_ok and self._take_free_lesson(account_id, day, free_per_day)
         units = 0 if free_slot else units
         period = cycle()
         try:
-            free, rest = self._take(user_ref, period, units, free_ok)
+            free, rest = self._take(account_id, period, units, free_ok)
         except InsufficientCredits:
-            self._give_back_slot(user_ref, day, free_slot)
+            self._give_back_slot(account_id, day, free_slot)
             raise
         entry = LedgerEntry(
             entry_id=uuid.uuid4().hex[:16],
-            user_ref=user_ref,
+            wallet_id=self._ensure_wallet(account_id),
             action=MeteredAction.LESSON,
             key=key,
             from_free=free,
@@ -492,8 +533,8 @@ class MeteringRepository(MongoStore):
         try:
             self.col("ledger").insert_one(entry.to_doc())
         except IntegrityError:
-            self._give_back(user_ref, period, free, rest)
-            self._give_back_slot(user_ref, day, free_slot)
+            self._give_back(account_id, period, free, rest)
+            self._give_back_slot(account_id, day, free_slot)
             return self.entry(key, MeteredAction.LESSON)  # type: ignore[return-value]
         return _entry(entry.to_doc())
 
@@ -530,10 +571,11 @@ class MeteringRepository(MongoStore):
             return self.entry(key, action)  # settled by another event a moment ago
         refund = current["held"] - charged
         to_wallet = min(refund, current["from_wallet"])
-        self._give_back(current["user_ref"], current["period"], refund - to_wallet, to_wallet)
+        owner = self._owner(current["wallet_id"])
+        self._give_back(owner, current["period"], refund - to_wallet, to_wallet)
         if not result and current.get("day"):
             # D094: a lesson recording with no result gives its place of the day back.
-            self._give_back_slot(current["user_ref"], current["day"], bool(current["free_slot"]))
+            self._give_back_slot(owner, current["day"], bool(current["free_slot"]))
         return _entry(moved)
 
     def release_stale(self, cutoff: str) -> list[str]:
@@ -549,32 +591,32 @@ class MeteringRepository(MongoStore):
                 released.append(row["key"])
         return released
 
-    def runs_paid(self, user_ref: str) -> int:
+    def runs_paid(self, account_id: str) -> int:
         """D107: the scored recordings a run was charged for, ever."""
         return self.col("ledger").count_documents(
             {
-                "user_ref": user_ref,
+                "wallet_id": self._wallet_of(account_id),
                 "action": MeteredAction.ASSESSMENT.value,
                 "state": LedgerState.CHARGED.value,
                 "charged": {"$gt": 0},
             }
         )
 
-    def included_taken(self, user_ref: str, action: MeteredAction) -> int:
+    def included_taken(self, account_id: str, action: MeteredAction) -> int:
         """D107: the `action` answers a run paid for, held or charged (not released)."""
         return self.col("ledger").count_documents(
             {
-                "user_ref": user_ref,
+                "wallet_id": self._wallet_of(account_id),
                 "action": action.value,
                 "included": True,
                 "state": {"$ne": LedgerState.RELEASED.value},
             }
         )
 
-    def history(self, user_ref: str, limit: int = 50) -> list[dict]:
+    def history(self, account_id: str, limit: int = 50) -> list[dict]:
         rows = (
             self.col("ledger")
-            .find({"user_ref": user_ref})
+            .find({"wallet_id": self._wallet_of(account_id)})
             .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
             .limit(limit)
         )

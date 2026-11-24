@@ -114,26 +114,26 @@ def _run(engine, request_obj, tone, sr, task=P4):
 def test_speech_detected_as_vietnamese_is_not_scored(request_obj, tone, sr) -> None:
     r = _run(FakeAsrEngine(language="vi", language_probability=0.92), request_obj, tone, sr)
     assert r.status is ResponseStatus.REVIEW_REQUIRED
-    assert r.reasons == [ReasonCode.LANGUAGE_NOT_ENGLISH]
+    assert r.reason_codes == [ReasonCode.LANGUAGE_NOT_ENGLISH]
     assert r.assessment is None
 
 
 def test_an_unsure_language_guess_does_not_block(request_obj, tone, sr) -> None:
     """Giong Viet noi tieng Anh co the lam may phan van; phan van thi khong chan."""
     r = _run(FakeAsrEngine(language="vi", language_probability=0.3), request_obj, tone, sr)
-    assert ReasonCode.LANGUAGE_NOT_ENGLISH not in r.reasons
+    assert ReasonCode.LANGUAGE_NOT_ENGLISH not in r.reason_codes
 
 
 def test_no_language_information_means_no_language_flag(request_obj, tone, sr) -> None:
     r = _run(FakeAsrEngine(), request_obj, tone, sr)
-    assert ReasonCode.LANGUAGE_NOT_ENGLISH not in r.reasons
+    assert ReasonCode.LANGUAGE_NOT_ENGLISH not in r.reason_codes
 
 
 def test_off_topic_keeps_the_score_and_goes_to_a_teacher(request_obj, tone, sr) -> None:
     on = _run(FakeAsrEngine(transcript=EXAM), request_obj, tone, sr)
     off = _run(FakeAsrEngine(transcript=FOOTBALL), request_obj, tone, sr)
-    assert ReasonCode.OFF_TOPIC_SUSPECTED not in on.reasons
-    assert ReasonCode.OFF_TOPIC_SUSPECTED in off.reasons
+    assert ReasonCode.OFF_TOPIC_SUSPECTED not in on.reason_codes
+    assert ReasonCode.OFF_TOPIC_SUSPECTED in off.reason_codes
     assert off.status is ResponseStatus.REVIEW_REQUIRED
     if off.assessment is not None and off.assessment.overall_0_6 is not None:
         # Khong tru diem: co chi la co.
@@ -144,7 +144,7 @@ def test_without_a_task_lookup_the_shield_is_skipped(request_obj, tone, sr) -> N
     r = ResponseProcessor(FakeAsrEngine(transcript=FOOTBALL), vad=EnergyVad()).process(
         request_obj, tone, sr
     )
-    assert ReasonCode.OFF_TOPIC_SUSPECTED not in r.reasons
+    assert ReasonCode.OFF_TOPIC_SUSPECTED not in r.reason_codes
 
 
 def test_a_failing_language_detector_does_not_break_recognition(monkeypatch) -> None:

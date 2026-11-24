@@ -30,6 +30,7 @@ counts go to the ledger entry and the day's counters, not into the upgrade.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal
 
@@ -168,6 +169,7 @@ def upgrade(response_id: str, account: Account = Depends(require_login)) -> dict
         count("coach_upgrade_failed_total")
         raise HTTPException(502, str(e)) from e
     kept = {
+        "upgrade_id": "up" + uuid.uuid4().hex[:10],
         "from_band": band,
         "to_band": NEXT[band],
         "upgraded": made.upgraded,

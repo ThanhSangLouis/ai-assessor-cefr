@@ -48,12 +48,13 @@
 | TC-PS-U07 | `test_a_passage_has_its_own_price_kept_in_the_versions` | AC-98.3 | 0,1 lượt = 100 phần nghìn = 200 IDPoint; giá âm bị từ chối; bảng giá lưu từ trước D090 vẫn đọc được, giá đoạn đọc lấy mặc định |
 | TC-PS-U08 | `test_the_provider_is_asked_to_write_little` | FR-98 | Gọi đoạn đọc có `max_tokens`; Gemini thêm `reasoning_effort: low`; Groq không nhận tham số đó; bản nâng cấp và bản soạn bài không đổi |
 | TC-PS-U09 | `test_passages_are_found_again_for_the_same_words_and_erased` | AC-98.7 | Tìm lại đoạn theo đúng bộ từ, không phụ thuộc thứ tự; đoạn ghép không tính vào giới hạn của mô hình; lưu lần đọc; xoá theo tài khoản |
+| TC-PS-U10 | `test_many_words_lengthen_the_passage_instead_of_failing` | FR-98 | Đoạn nhận mọi từ đang dở (1..*); từ thứ sáu trở đi, độ dài yêu cầu và giới hạn kiểm tăng 12 chữ mỗi từ (24/11/2026) |
 
 ### 4.2. Integration — `tests/test_d090_passage.py`
 
 | Mã | Test | Truy vết | Kiểm |
 | --- | --- | --- | --- |
-| TC-PS-I01 | `test_a_passage_needs_three_open_words_and_is_for_learners` | AC-98.1 | Hai từ đang dở thì chưa đủ (409), mô hình không bị hỏi; giảng viên nhận 403; trang `/passage` mở cho học viên |
+| TC-PS-I01 | `test_a_passage_needs_an_open_word_and_is_for_learners` | AC-98.1 | Không có từ đang dở thì chưa đủ (409), mô hình không bị hỏi; một từ là đủ; giảng viên nhận 403; trang `/passage` mở cho học viên |
 | TC-PS-I02 | `test_the_model_writes_a_passage_once_and_it_is_read_again_for_free` | AC-98.2 | Chọn từ mới nhất trước, mỗi chính tả một lần; mô hình nhận band B1, các từ, độ dài, `max_tokens`; xin lại thì nhận đúng đoạn cũ, mô hình chỉ bị hỏi một lần; dashboard AI đếm 1 đoạn đọc và số token |
 | TC-PS-I03 | `test_metered_a_passage_costs_its_own_price_and_a_failure_nothing` | AC-98.3 | Giá hiện là 0,1 lượt / 200 IDPoint; đoạn viết xong thu 100 phần nghìn lượt kèm token; đoạn thiếu từ và mô hình lỗi đều trả lại lượt; lịch sử lượt có "Đoạn đọc (AI)" |
 | TC-PS-I04 | `test_a_reading_is_one_take_of_each_word` | AC-98.4 | Lần đọc đầu: hai từ rõ (chuỗi 1), "three" máy nghe thành "tree" và vào ôn; lần đọc hai: hai từ đã xong, "three" chuỗi 1; đoạn ghi từ chưa rõ của mỗi lần đọc; mã đoạn lạ thì 404 |

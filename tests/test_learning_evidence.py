@@ -37,7 +37,7 @@ def _with_feedback(response_id: str, score: float = 3.4) -> None:
     a.update(
         overall_0_6=score,
         overall_band="B1",
-        comments=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}],
+        feedback=[{"criterion": "fluency", "text": "Nói còn ngắt quãng."}],
         priorities=[{"feature_name": "pause_rate", "text": "Bớt ngắt nghỉ.", "impact": 0.4}],
         weakest_criteria=["fluency"],
         evidence=[{"criterion": "fluency", "kind": "pause", "note": "ngắt 2 giây"}],

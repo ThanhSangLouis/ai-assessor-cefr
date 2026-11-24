@@ -541,7 +541,7 @@ class Assessment(BaseModel):
     calibration_version: str | None = None
     scored_at: str | None = None
     reasons: list[ReasonCode] = Field(default_factory=list)
-    comments: list[Comment] = Field(default_factory=list)
+    feedback: list[Comment] = Field(default_factory=list)
     priorities: list[Priority] = Field(default_factory=list)
     # Empty for a recording short enough to score in one piece. Non-empty means
     # the score is a median across windows and carries SCORE_AGGREGATED.
@@ -604,7 +604,7 @@ class Review(BaseModel):
     old_band: Band | None = None
     new_band: Band | None = None
     reason: str
-    created_at: str  # when the teacher decided
+    decided_at: str  # when the teacher decided
     # D060: a review is part of its response's document; numbered in the order
     # decisions were taken.
     review_id: int | None = None
@@ -795,9 +795,11 @@ class CoachUpgrade(BaseModel):
 
     Part of the response (`Response ◆ CoachUpgrade`): it is made from the
     response's transcript and goes with it. Which model wrote it is not kept
-    (D103): the audit log names the provider.
+    (D103): the audit log names the provider. `upgrade_id` is its own
+    identifier (D111), given when it is made.
     """
 
+    upgrade_id: str
     from_band: Band
     to_band: Band
     upgraded: str
@@ -815,7 +817,7 @@ class Response(BaseModel):
     asr: Transcript | None = None
     features: FeatureSet | None = None
     assessment: Assessment | None = None
-    reasons: list[ReasonCode] = Field(default_factory=list)
+    reason_codes: list[ReasonCode] = Field(default_factory=list)
     config_version: str
     # Ban de sinh vien da thay khi nop (truy vet). Co tren ProcessingRequest
     # tu lau nhung khong duoc luu vao ket qua, nen bao cao khong noi duoc sinh

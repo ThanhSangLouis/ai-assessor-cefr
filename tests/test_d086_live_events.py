@@ -177,7 +177,7 @@ def test_locking_and_deciding_tell_the_reviewers_and_the_student(m, recorder):
     student_id, teacher_id = account_id(m, "SV-001"), account_id(m, "GV-01")
     m.repo.save(
         Response(response_id="r-flag", status=ResponseStatus.REVIEW_REQUIRED, config_version="v1",
-                 reasons=[ReasonCode.LANGUAGE_NOT_ENGLISH]), "P3", account_id=student_id,
+                 reason_codes=[ReasonCode.LANGUAGE_NOT_ENGLISH]), "P3", account_id=student_id,
     )  # fmt: skip
 
     assert teacher.post("/api/v1/review/r-flag/lock").status_code == 200

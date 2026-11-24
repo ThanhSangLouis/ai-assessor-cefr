@@ -66,7 +66,9 @@ class LearningFacade:
                 "plan_id": p["plan_id"],
                 "audience": p["audience"],
                 "goal": p["goal"],
-                "lessons": [item["lesson_id"] for u in p["plan"]["units"] for item in u["lessons"]],
+                "lessons": [
+                    item["lesson_id"] for u in p["lessons"]["units"] for item in u["lessons"]
+                ],
                 "active": p["active"],
                 "created_at": p["created_at"],
             }

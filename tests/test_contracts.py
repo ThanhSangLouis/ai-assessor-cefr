@@ -28,7 +28,7 @@ def test_six_bands_within_scope():
 def test_minimal_report_is_valid():
     r = Response(response_id="r1", status=ResponseStatus.FAILED, config_version="v1")
     assert r.assessment is None
-    assert r.reasons == []
+    assert r.reason_codes == []
 
 
 def test_every_reason_code_is_uppercase():
