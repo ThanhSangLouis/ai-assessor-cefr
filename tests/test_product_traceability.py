@@ -230,7 +230,7 @@ PLANS = [
         ROOT / "docs" / "test" / "TEST_PLAN_D101.md",
         {"TC-FD-I": ROOT / "tests" / "test_d101_free_runs_and_delete.py"},
         "10[34]",
-        10,
+        15,
     ),
 ]
 LAYERS = [(plan, prefix) for plan in PLANS for prefix in plan.layers]

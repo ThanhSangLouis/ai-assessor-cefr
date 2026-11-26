@@ -1,6 +1,6 @@
 """Dac ta so do lop THIET KE DICH v3 cho `tools/gen_class_diagram.py --spec v3`.
 
-So do `docs/sdd/diagrams/02_class.drawio` la so do HIEN TRANG: bo test
+So do `docs/sdd/diagrams/class/detailed/02_class.drawio` la so do HIEN TRANG: bo test
 `tests/test_diagrams.py` bat no mo ta dung ma dang chay. Tep nay la nguoc lai --
 THIET KE DICH ma ma nguon phai di theo. Thiet ke la nguon chuan; ma map theo
 sau. Khi ma da chuyen xong sang v3 thi v3 thay cho so do hien trang.

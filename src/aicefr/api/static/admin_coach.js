@@ -42,8 +42,7 @@
       </div>
       <div class="coach-meter" role="meter" aria-valuemin="0" aria-valuemax="${limit}" aria-valuenow="${used}"
            aria-label="${escapeHtml(what)}"><span style="width:${Math.min(100, share * 100).toFixed(1)}%"></span></div>
-      <p class="muted coach-reset">Ngày của nhà cung cấp kết thúc lúc <b>${escapeHtml(vnTime(d.resets_at))}</b> (giờ Việt Nam);
-        ${budget ? "hết ngân sách" : "hết lượt"} thì mọi người phải chờ tới lúc đó.</p>
+      <p class="muted coach-reset">Đặt lại lúc <b>${escapeHtml(vnTime(d.resets_at))}</b> (giờ Việt Nam).</p>
     </div>`;
   }
 
@@ -164,8 +163,8 @@
     const why = d.enabled
       ? ""
       : d.missing_key
-        ? `<p class="muted">Thiếu khoá <code>${escapeHtml(d.missing_key)}</code> trong <code>.env</code> của máy chủ; người học chưa thấy nút "Viết lại ở band cao hơn".</p>`
-        : '<p class="muted">Đặt <code>AICEFR_COACH_PROVIDER</code> và khoá của nhà cung cấp trong <code>.env</code> để bật.</p>';
+        ? `<p class="muted">Thiếu khoá <code>${escapeHtml(d.missing_key)}</code> trong <code>.env</code>.</p>`
+        : '<p class="muted">Chưa đặt <code>AICEFR_COACH_PROVIDER</code> trong <code>.env</code>.</p>';
     const mode =
       d.tier === "paid"
         ? `Gói trả phí · ngân sách <b>${usd(d.budget_usd)}</b>/ngày`
@@ -201,7 +200,7 @@
         : "";
     const noKey = d.paid_ready
       ? ""
-      : `<p class="muted small-note">Chưa có khoá trả phí: thêm <code>${escapeHtml(d.paid_key_env)}</code> (khoá của một project Google đã bật thanh toán) vào <code>.env</code> của máy chủ rồi khởi động lại.</p>`;
+      : `<p class="muted small-note">Chưa có khoá trả phí <code>${escapeHtml(d.paid_key_env)}</code> trong <code>.env</code>.</p>`;
     return `<div class="coach-tier" id="coach-tier">
       <h3>Gói đang dùng</h3>
       ${alarm}

@@ -56,7 +56,7 @@ import sys
 # Chay `python tools/gen_class_diagram.py` tu mot thu muc khac thi duong dan
 # tuong doi se tro ra ngoai repo -- hoac bao loi, hoac te hon la ghi nham cho.
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-OUT = ROOT / "docs/sdd/diagrams/02_class.drawio"
+OUT = ROOT / "docs/sdd/diagrams/class/detailed/02_class.drawio"
 
 # `--no-stereotypes`: bo cac nhan «entity» / «value object» / «enumeration» khoi
 # tieu de hop. Khong the chi xoa chu: tieu de tut tu hai dong xuong mot dong nen
@@ -139,19 +139,6 @@ CLASSES = [
             "- emailReminders: bool",
             "- reminderSentOn: date",
             "+ isStaff(): bool",
-        ],
-    ),
-    _e(
-        "Audit",
-        "AuditEntry",
-        [
-            "- id: int",
-            "- service: str",
-            "- actor: Account [0..1]",
-            "- action: str",
-            "- targetId: str",
-            "- detail: str",
-            "- createdAt: datetime",
         ],
     ),
     _e(
@@ -329,7 +316,7 @@ CLASSES = [
             "- createdAt: datetime",
         ],
     ),
-    # D090: a passage written around three to five open drills and read aloud;
+    # D090: a passage written around some open drills and read aloud;
     # a reading is one take of each of its words. Its readings live with it.
     _e(
         "Passage",
@@ -337,7 +324,7 @@ CLASSES = [
         [
             "- passageId: str",
             "- learner: Account [1]",
-            "- words: WordDrill [3..5]",
+            "- words: WordDrill [1..*]",
             "- text: str",
             "- source: str",
             "- takes: List<str>",
@@ -390,7 +377,7 @@ CLASSES = [
             "- runs: int",
             "- amountVnd: int",
             "- status: OrderStatus",
-            "- createdBy: Account [1]",
+            "- buyer: Account [1]",  # D110: the code's `buyer_id`
             "- createdAt: datetime",
             "- expiresAt: datetime",
             "- creditedAt: datetime",
@@ -436,24 +423,6 @@ CLASSES = [
             "- changedAt: datetime",
         ],
     ),
-    _e(
-        "Ledger",
-        "LedgerEntry",
-        [
-            "- entryId: str",
-            "- wallet: Wallet [1]",
-            "- response: Response [0..1]",
-            "- action: MeteredAction",
-            "- fromFree: int",
-            "- fromWallet: int",
-            "- charged: int",
-            "- state: LedgerState",
-            "- day: str",
-            "- freeSlot: bool",
-            # D107: an AI answer a scored recording's run already paid for.
-            "- included: bool",
-        ],
-    ),
 ]
 
 # Chi giu enum DIEU KHIEN nghiep vu: vai tro, band va tieu chi cham, muc dich,
@@ -489,19 +458,11 @@ ENUMS = [
         ],
     ),
     _n("OrderSt", "OrderStatus", ["PENDING", "PAID", "FAILED", "CANCELLED", "EXPIRED"]),
-    _n("LedgerSt", "LedgerState", ["HELD", "CHARGED", "RELEASED"]),
-    # D072: what a ledger entry paid for -- a recording, or an upgraded answer.
-    _n(
-        "MeterAct",
-        "MeteredAction",
-        ["ASSESSMENT", "PRACTICE", "UPGRADE", "LESSON_DRAFT", "DRILL_PASSAGE", "LESSON"],
-    ),
 ]
 
 # (lop giu quan he, lop kia, "boi so lop giu : boi so lop kia", kieu). Lop giu
 # co thuoc tinh mang kieu lop kia; boi so lop kia chinh la boi so cua thuoc tinh.
 EDGES = [
-    ("Audit", "Account", "0..* : 0..1", "assoc"),
     ("Resp", "Account", "0..* : 1", "assoc"),
     ("Resp", "Task", "0..* : 1", "assoc"),
     ("Resp", "Review", "1 : 0..*", "comp"),
@@ -525,16 +486,12 @@ EDGES = [
     ("Drill", "Account", "0..* : 1", "assoc"),
     ("Drill", "Resp", "0..* : 1", "assoc"),
     ("Passage", "Account", "0..* : 1", "assoc"),
-    ("Passage", "Drill", "0..* : 3..5", "assoc"),
+    ("Passage", "Drill", "0..* : 1..*", "assoc"),
     ("Achv", "Account", "0..* : 1", "assoc"),
     ("Plan", "Account", "0..* : 1", "assoc"),
     ("Plan", "Lesson", "0..* : 1..*", "assoc"),
     ("Order", "Account", "0..* : 1", "assoc"),
     ("Wallet", "Account", "0..1 : 1", "assoc"),
-    ("Ledger", "Wallet", "0..* : 1", "assoc"),
-    # A recording and, since D072, its upgraded answer: two entries at most; a
-    # teacher's lesson draft (D075) pays for no response.
-    ("Ledger", "Resp", "0..2 : 0..1", "assoc"),
 ]
 
 # Phu thuoc UML (net dut, mui ten mo) tu thuc the toi enum ma thuoc tinh cua no
@@ -557,8 +514,6 @@ EDGES += [
         ("Path", "PathSt"),
         ("Step", "StepKind"),
         ("Order", "OrderSt"),
-        ("Ledger", "LedgerSt"),
-        ("Ledger", "MeterAct"),
     ]
 ]
 
@@ -567,9 +522,9 @@ EDGES += [
 # mai va Hoc tap deu noi vao bai noi hoac `Band`.
 # (khoa, tieu de, hang, [(cot, [hop, ...])]); (hop, dy) dat hop cach dinh hang dy.
 ZONES = [
-    ("identity", "Định danh", 0, [(2, ["Audit", "Account"]), (3, ["Role"])]),
+    ("identity", "Định danh", 0, [(2, ["Account"]), (3, ["Role"])]),
     ("commerce", "Thương mại: ví IDPoint, sổ lượt, đơn nạp lượt", 0,
-     [(4, ["Wallet", "Ledger", "LedgerSt", "MeterAct"]), (5, ["Order"]),
+     [(4, ["Wallet"]), (5, ["Order"]),
       (6, ["OrderSt", "Price"])]),
     ("classroom", "Lớp học", 1, [(0, ["Class"])]),
     ("assessment", "Đánh giá", 1,

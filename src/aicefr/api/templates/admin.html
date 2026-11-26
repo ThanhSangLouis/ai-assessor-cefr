@@ -4,7 +4,6 @@
 {% block content %}
 <div class="page-head">
   <h1><span class="head-icon">{{ icon("shield") }}</span>Quản trị</h1>
-  <p class="lede">Tài khoản, mô hình, giá, đơn hàng, dữ liệu và vận hành.</p>
 </div>
 
 <div class="tabs" role="tablist" aria-label="Khu vực quản trị">
@@ -31,10 +30,7 @@
 <section id="panel-accounts" role="tabpanel" aria-labelledby="tab-accounts" tabindex="0">
   <div class="card" aria-labelledby="acc-create-h">
     <h2 id="acc-create-h">{{ icon("user-plus") }} Tạo tài khoản</h2>
-    <p class="muted">
-      Dán email, mỗi dòng một người. Mỗi tài khoản nhận một <b>mật khẩu tạm chỉ hiện một lần</b>
-      ngay dưới đây; lần đầu đăng nhập, người dùng đặt mật khẩu riêng.
-    </p>
+    <p class="muted">Mỗi dòng một email. Mật khẩu tạm <b>chỉ hiện một lần</b>.</p>
     <form id="acc-form" class="inline-form" novalidate>
       <div class="field">
         <label for="acc-role">Vai trò</label>
@@ -66,8 +62,7 @@
       </div>
     </div>
     <div class="notice notice-danger slips-warning">
-      Mật khẩu tạm <b>chỉ hiện một lần</b>: máy chủ không lưu bản rõ. In hoặc tải về trước khi ẩn.
-      Mã trên phiếu dùng để đăng nhập cho tới khi tài khoản có email.
+      Mật khẩu tạm <b>chỉ hiện một lần</b>. In hoặc tải về trước khi ẩn.
     </div>
     <div class="slip-grid" id="slip-grid"></div>
   </div>
@@ -101,11 +96,6 @@
 </section>
 
 <section id="panel-models" role="tabpanel" aria-labelledby="tab-models" tabindex="0" hidden>
-  <div class="notice">
-    Danh sách hiện vật mô hình đã phát hành. Mọi báo cáo đều ghi lại
-    <code>model_version</code> đã dùng, nên không được sửa hiện vật tại chỗ:
-    muốn đổi thì phát hành phiên bản mới.
-  </div>
   <div class="card" id="models-body" aria-busy="true" aria-live="polite">
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-row"></div>
@@ -115,7 +105,6 @@
 </section>
 
 <section id="panel-config" role="tabpanel" aria-labelledby="tab-config" tabindex="0" hidden>
-  <p class="muted">Ngưỡng kiểm tra chất lượng âm thanh đang áp dụng. Mỗi lần sửa tạo một phiên bản mới và được ghi nhật ký.</p>
   <div class="card" id="config-body" aria-busy="true" aria-live="polite">
     <div class="skeleton skeleton-title"></div>
     <div class="skeleton skeleton-row"></div>
@@ -141,14 +130,11 @@
 
 <section id="panel-erase" role="tabpanel" aria-labelledby="tab-erase" tabindex="0" hidden>
   <div class="notice notice-danger">
-    Thao tác xoá dữ liệu cá nhân <b>không hoàn tác được</b>. Bản ghi âm, kết quả
-    chấm và các lần duyệt của người học sẽ bị xoá vĩnh viễn khỏi cơ sở dữ liệu
-    và khỏi ổ đĩa. Không có bản sao lưu để khôi phục.
+    Xoá vĩnh viễn bản ghi âm, kết quả chấm và các lần duyệt. <b>Không hoàn tác được.</b>
   </div>
   <div class="card">
     <h2>Xoá dữ liệu của một người học</h2>
     <label for="erase-email">Email của người học</label>
-    <p class="field-hint">Nút "Xoá dữ liệu…" trong chi tiết tài khoản điền sẵn ô này.</p>
     <input id="erase-email" type="email" placeholder="an@truong.edu.vn" autocomplete="off">
     <div class="button-row">
       <button id="preview-button" type="button" class="secondary">Xem trước</button>
@@ -157,10 +143,9 @@
     <div id="confirm-body" hidden>
       <label for="erase-email-again">Nhập lại email để xác nhận</label>
       <input id="erase-email-again" type="email" placeholder="Nhập lại đúng email ở trên"
-             autocomplete="off" aria-describedby="erase-hint">
+             autocomplete="off">
       <div class="button-row">
-        <button id="erase-button" type="button" class="danger" disabled>Xác nhận xóa</button>
-        <span class="muted" id="erase-hint">Nút chỉ bật khi hai ô nhập khớp nhau.</span>
+        <button id="erase-button" type="button" class="danger" disabled>Xác nhận xoá</button>
       </div>
     </div>
     <div id="erase-message" aria-live="polite"></div>

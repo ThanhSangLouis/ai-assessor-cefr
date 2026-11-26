@@ -33,14 +33,19 @@ class IdentityFacade:
         return _account(self.auth.get(account_id))
 
     @exposed
-    def delete_account(self, account_id: str) -> bool:
-        """Delete the account itself, once its data elsewhere is erased (D101)."""
+    def delete_account(self, account_id: str, actor_id: str | None = None) -> bool:
+        """Delete the account itself, once its data elsewhere is erased (D101).
+
+        `actor_id` is the administrator who deleted it; None when the person
+        deleted their own account.
+        """
         row = self.auth.get(account_id)
         if row is None:
             return False
         deleted = self.auth.delete_account(account_id)
         if deleted:
-            self.audit.write(account_id, "account.delete", account_id, "by=self")
+            by = "by=admin" if actor_id else "by=self"
+            self.audit.write(actor_id or account_id, "account.delete", account_id, by)
         return deleted
 
     @exposed

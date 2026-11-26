@@ -8,7 +8,7 @@
 - Hai bên được giữ khớp bằng `tests/test_diagrams.py` và `tests/test_class_diagram_in_code.py` (mục 5).
 
 **Người soạn:** Sang.
-**Sơ đồ:** [`diagrams/02_class.drawio`](diagrams/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
+**Sơ đồ:** [`diagrams/class/detailed/02_class.drawio`](diagrams/class/detailed/02_class.drawio), sinh bằng `tools/gen_class_diagram.py`. Bản trên Drive ở trang "So do lop".
 
 ## 1. Quyết định của chủ dự án
 
@@ -65,10 +65,10 @@
   - **Kết hợp** (mũi tên mở về lớp được trỏ tới): lớp giữ lưu mã của bên kia. Ví dụ:
     - `Response.speaker: Account`;
     - `WordDrill.response: Response`;
-    - `DrillPassage.words: List<WordDrill>`.
+    - `Order.buyer: Account` (D110: đặt theo vai của đối tượng được trỏ tới, không theo thao tác như `createdBy`).
   - **Nhiều–nhiều** (đường đậm, không mũi tên): `Classroom.members: List<Account>`, không có lớp trung gian.
   - **Bội số** ở đầu xa của đường chính là bội số của thuộc tính. Trong hộp chỉ ghi tên và kiểu (`List<X>` khi đầu xa nhiều hơn một), bội số ghi trên đường.
-  - **Không vẽ quan hệ suy ra được qua lớp khác.** Ví dụ đơn nạp lượt cộng vào ví của chính `createdBy`, nên không có đường `Order` → `Wallet`.
+  - **Không vẽ quan hệ suy ra được qua lớp khác.** Ví dụ đơn nạp lượt cộng vào ví của chính `buyer`, nên không có đường `Order` → `Wallet`.
   - `check_relations()` trong bộ sinh dừng lại nếu một đường thiếu thuộc tính, hoặc một thuộc tính kiểu thực thể thiếu đường.
 - **Hợp thành không vượt database.** Code có ba database (D051): core, learning, metering.
   - `Wallet` ở metering nên là thực thể riêng trỏ tới `Account`, không nhúng vào tài khoản.
@@ -84,19 +84,18 @@
 | Nghiệp vụ | Thực thể | Ghi chú |
 | --- | --- | --- |
 | Tài khoản | `Account` | Email là khoá đăng nhập. Danh tính đăng nhập ngoài, mã email và nhắc học là thuộc tính |
-| Truy vết quyết định | `AuditEntry` | Ai làm gì, với đối tượng nào; mỗi database một nhật ký |
 | Đề và bài nói | `Task`, `Response` | Kết quả chấm (điểm, band, khoảng tin cậy, nhận xét, lý do) và nhãn nghe lại là thuộc tính của `Response` |
 | Giảng viên duyệt | `Review` | `Review`: mỗi lần đổi điểm hoặc band, kèm lý do, nằm trong bài nói. Ai đang giữ quyền duyệt, tới lúc nào là `Response.lockedBy`, `lockedUntil` (D104) |
 | Bản nâng cấp và sổ cụm từ | `CoachUpgrade`, `ReviewItem` | Bài nói viết lại một band cao hơn (D069); các cụm từ của nó ôn theo hộp (D070), mỗi cụm từ một `ReviewItem` loại `phrase` (D104) |
 | Lớp học | `Classroom` | Giảng viên, thành viên và người được mời (D109) là ba quan hệ nhiều–nhiều với `Account`, phân biệt bằng tên vai ở đầu đường; `joinCode` là mã sinh viên tự nhập để vào lớp |
 | Lộ trình, bài học | `LessonPath`, `Unit`, `Lesson`, `Step` | Phiên bản đã xuất bản và media là thuộc tính của `Lesson` |
-| Luyện ở bước bài học | `StepAttempt` | Một lượt nói ở một bước, ghi phiên bản bài học |
+| Luyện ở bước bài học | `StepAttempt` | Một lượt nói của một học viên ở một bước, ghi phiên bản bài học, kết quả máy chấm và lần giảng viên sửa. Khác `Step` (nội dung bài, nằm trong `Lesson`): một bước có nhiều lượt của nhiều học viên |
 | Ôn tập ngắt quãng | `ReviewItem` | Hộp Leitner, ngày đến hạn; từ của một bước bài học, (D089) của một `WordDrill`, hoặc (D104) một cụm từ của Sổ cụm từ |
-| Luyện lại từ máy nghe chưa rõ | `WordDrill`, `DrillPassage` | `WordDrill` (D089): một từ của một bài nói và các lượt nói lại. `DrillPassage` (D090): một đoạn đọc viết quanh 3–5 `WordDrill`, kèm các lần đọc |
+| Luyện lại từ máy nghe chưa rõ | `WordDrill`, `DrillPassage` | `WordDrill` (D089): một từ của một bài nói và các lượt nói lại. `DrillPassage` (D090): một đoạn đọc gom nhiều `WordDrill` (`1..*`; lúc viết chọn 3–5 từ, luật ở `coach/passage.py`), kèm các lần đọc |
 | Thành tựu | `Achievement` | Đạt lúc nào |
 | Lộ trình gợi ý | `LearningPlan` | Của học viên, hoặc đề xuất của giảng viên; đề xuất đã lưu thành lộ trình nháp thì không còn hiệu lực |
 | Nạp lượt | `Order` | Phần mua và phần cổng thanh toán, kèm sự kiện của cổng (D104 gộp `Payment` của D084) |
-| Tính lượt | `Wallet`, `LedgerEntry`, `PriceList` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nằm trong ví. Mỗi lần chấm hay mỗi lần AI viết là một bút toán; D107: bản viết lại và đoạn đọc đã gồm trong lượt chấm ghi `included = true`, thu 0. Bảng giá có phiên bản (D078) |
+| Tính lượt | `Wallet`, `PriceList` | Lượt miễn phí theo chu kỳ và các lần cộng lượt nằm trong ví. Bảng giá có phiên bản (D078). Bút toán giữ, trừ, trả lượt (`ledger`) là cơ chế kỹ thuật, D110 không vẽ trên sơ đồ lớp |
 
 ### Enum: chỉ giữ cái điều khiển nghiệp vụ
 
@@ -131,7 +130,6 @@ Code vẫn dùng các enum này; sơ đồ chỉ không vẽ chúng.
 | Database | Collection | Thực thể | Nhúng | Từ đâu |
 | --- | --- | --- | --- | --- |
 | core | `account` | `Account` | danh tính, mã email | D060 gộp `account`, `account_identity`, `seen_marker`; D103 bỏ dấu đã xem |
-| | `audit_log` | `AuditEntry` | | |
 | | `task` | `Task` | | |
 | | `response` | `Response` | `Review`, `CoachUpgrade`, nhãn nghe lại, khoá duyệt; báo cáo chấm là chính các trường của document | D060 gộp `response`, `replay_label`, `review_action`; D104 gộp lại `review_session` |
 | | `classroom` | `Classroom` | giảng viên, thành viên, người được mời, mã vào lớp | D060; `Assignment` gỡ ở D075; `invited`, `join_code` thêm ở D109 |
@@ -145,13 +143,14 @@ Code vẫn dùng các enum này; sơ đồ chỉ không vẽ chúng.
 | | `word_drill` | `WordDrill` | các lượt nói lại (tối đa 20) | D089, migration 18 |
 | | `drill_passage` | `DrillPassage` | các lần đọc (tối đa 20) | D090, migration 19 |
 | metering | `wallet` | `Wallet` | lượt miễn phí theo chu kỳ, các lần cộng | D060 gộp `credit_wallet`, `free_quota`, `credit_grant` |
-| | `ledger` | `LedgerEntry` | | |
 | | `price_list` | `PriceList` | các phiên bản trước | D078 |
 | kỹ thuật | `session` (chỉ core) | | | Phiên đăng nhập |
 | | `system` (mỗi database) | | | Cấu hình, bộ đếm, migration |
 | | `push_subscription` (chỉ core) | | | Đăng ký nhận thông báo của trình duyệt; D088 để ở ERD, không ở sơ đồ lớp |
+| | `audit_log` (mỗi database) | | | Nhật ký ai làm gì (lớp `AuditEntry` trong code); D110 để ở ERD, không ở sơ đồ lớp |
+| | `ledger` (chỉ metering) | | | Bút toán giữ, trừ, trả lượt đúng một lần (lớp `LedgerEntry`); D110 để ở ERD, không ở sơ đồ lớp |
 
-Mỗi database có `audit_log` riêng vì mỗi phần ghi nhật ký vào database của mình. Đó vẫn là một collection, một thực thể.
+Mỗi database có `audit_log` riêng vì mỗi phần ghi nhật ký vào database của mình.
 
 **Không gộp thêm, kèm lý do:**
 
@@ -161,7 +160,7 @@ Mỗi database có `audit_log` riêng vì mỗi phần ghi nhật ký vào datab
 | `lesson` vào `path` | Mỗi bài giữ mọi phiên bản đã xuất bản nên lớn dần. Lượt luyện, ôn tập, lộ trình gợi ý đều tìm bài theo mã bài. |
 | `attempt`, `review_item`, `achievement` vào một chỗ | Ba thực thể khác vòng đời và đều tăng theo từng lượt luyện. Không có document học viên nào ở database learning để nhúng vào. |
 | `word_drill` vào `response` | Khác database: bài nói ở core, việc luyện ở learning. |
-| `drill_passage` vào `word_drill` | Một đoạn đọc viết cho 3–5 từ, có thể của nhiều bài nói khác nhau. |
+| `drill_passage` vào `word_drill` | Một đoạn đọc gom nhiều từ, có thể của nhiều bài nói khác nhau. |
 | `learning_plan` vào `account` | Khác database. |
 | `session` vào `account` | Phiên cần chỉ mục TTL tự xoá khi hết hạn. TTL không áp được lên phần tử của mảng. |
 

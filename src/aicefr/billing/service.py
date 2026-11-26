@@ -215,7 +215,7 @@ class BillingService:
                 "runs": runs,
                 "amount_vnd": price,
                 "status": OrderStatus.PENDING.value,
-                "created_by": by_account,
+                "buyer_id": by_account,
                 "created_at": self._stamp(),
                 "expires_at": self._expiry(now),
             }
@@ -248,7 +248,7 @@ class BillingService:
         if self._credit is None:
             return False
         try:
-            self._credit(order["created_by"], int(order["runs"]), order["order_id"])
+            self._credit(order["buyer_id"], int(order["runs"]), order["order_id"])
         except Exception:  # noqa: BLE001 - retried later; the payment itself is kept
             logger.exception("crediting order %s failed; will retry", order["order_id"])
             return False
@@ -360,7 +360,7 @@ class BillingService:
             return
         payload = {
             "order_id": order["order_id"],
-            "account_id": order["created_by"],
+            "account_id": order["buyer_id"],
             "status": order["status"],
             "runs": int(order["runs"]),
             "amount_vnd": int(order["amount_vnd"]),

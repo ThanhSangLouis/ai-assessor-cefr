@@ -19,7 +19,7 @@
 
 ## 2. Collection theo phần
 
-Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs/sdd/diagrams/02_class.drawio`). Phần hợp thành nằm trong document của gốc, ghi ở cột "Phần nhúng".
+Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs/sdd/diagrams/class/detailed/02_class.drawio`). Phần hợp thành nằm trong document của gốc, ghi ở cột "Phần nhúng".
 
 ### 2.1. Tài khoản (`identity`)
 
@@ -55,7 +55,7 @@ Từ D060 mỗi collection là một aggregate root của sơ đồ lớp (`docs
 
 | Collection | CN | Nội dung | Phần nhúng | Khoá và ràng buộc |
 | --- | --- | --- | --- | --- |
-| `order` | | Đơn nạp lượt (D053, D075): `runs` là số lượt (`seats` ở đơn trước D075), `amount_vnd` số tiền, `created_by` người mua (học viên hay giảng viên), trạng thái, hạn, `credited_at` lúc lượt vào ví. D104 gộp lại `payment` của D084: mã checkout của cổng (`checkout_ref`), mã giao dịch (`reference`), lúc chốt (`settled_at`). Không giữ số thẻ, tài khoản ngân hàng hay tên người trả (BR-32). Collection `license` của D033 không còn được tạo hay đọc (D075) | `events`: những gì cổng báo về đơn, tin trùng được đếm vào lần đầu (D035) | PK `order_id`; chỉ mục `checkout_ref` |
+| `order` | | Đơn nạp lượt (D053, D075): `runs` là số lượt (`seats` ở đơn trước D075), `amount_vnd` số tiền, `buyer_id` người mua (học viên hay giảng viên; `created_by` trước D110, migration 26), trạng thái, hạn, `credited_at` lúc lượt vào ví. D104 gộp lại `payment` của D084: mã checkout của cổng (`checkout_ref`), mã giao dịch (`reference`), lúc chốt (`settled_at`). Không giữ số thẻ, tài khoản ngân hàng hay tên người trả (BR-32). Collection `license` của D033 không còn được tạo hay đọc (D075) | `events`: những gì cổng báo về đơn, tin trùng được đếm vào lần đầu (D035) | PK `order_id`; chỉ mục `buyer_id`, `checkout_ref` |
 
 ### 2.5. Tính lượt (`metering`, D049)
 

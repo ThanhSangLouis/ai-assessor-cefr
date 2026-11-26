@@ -14,6 +14,7 @@
 3. **Không làm khó tài khoản do quản trị viên tạo** (không có email).
 4. **Người học tự xoá được mình**, xoá thật (bài nói, bản ghi âm, tài khoản, phiên), mà sổ sách tiền vẫn còn.
 5. **Không xoá nhầm.** Phải gõ lại email; giảng viên và quản trị viên không xoá ở đây.
+6. **Quản trị viên xoá được tài khoản mọi vai trò** (bổ sung 21/11/2026), cùng cách xoá và cùng điều kiện gõ lại email; không tự xoá mình; chỉ quản trị viên làm được.
 
 ## 2. Các tầng
 
@@ -35,6 +36,11 @@
 | AC-104.3 | TC-FD-I08 |
 | AC-104.4 | TC-FD-I09 |
 | AC-104.5 | TC-FD-I10 |
+| AC-104.6 | TC-FD-I11 |
+| AC-104.7 | TC-FD-I12 |
+| AC-104.8 | TC-FD-I13 |
+| AC-104.9 | TC-FD-I14 |
+| AC-104.10 | TC-FD-I15 |
 
 ## 4. Test case
 
@@ -50,10 +56,15 @@
 | TC-FD-I08 | `test_staff_cannot_delete_themselves_here` | AC-104.3 | Giảng viên 403, tài khoản còn |
 | TC-FD-I09 | `test_payments_and_the_ledger_stay` | AC-104.4 | Bút toán của bài vẫn còn sau khi xoá |
 | TC-FD-I10 | `test_the_account_page_offers_the_delete_card_to_students_only` | AC-104.5 | Trang của sinh viên có `delete-form` và "Xoá vĩnh viễn"; của giảng viên thì không |
+| TC-FD-I11 | `test_an_administrator_deletes_a_learner_and_their_data` | AC-104.6 | 200, `responses` 1; bài nói, tài khoản không còn; phiên cũ 401; bút toán còn; nhật ký `account.delete`, người xoá là quản trị viên, `by=admin` |
+| TC-FD-I12 | `test_an_administrator_deletes_a_teacher` | AC-104.7 | 200; tài khoản giảng viên không còn |
+| TC-FD-I13 | `test_the_administrator_must_type_the_accounts_email` | AC-104.8 | Gõ email của người khác: 422 có "email"; tài khoản còn |
+| TC-FD-I14 | `test_an_administrator_cannot_delete_their_own_account` | AC-104.9 | 409; tài khoản quản trị viên còn |
+| TC-FD-I15 | `test_only_an_administrator_deletes_other_accounts` | AC-104.10 | Giảng viên gọi: 403, tài khoản còn; mã không tồn tại: 404 |
 
 ## 5. Kết quả
 
 | Lệnh | Kết quả |
 | --- | --- |
-| `pytest tests/test_d101_free_runs_and_delete.py` | 10 passed |
+| `pytest tests/test_d101_free_runs_and_delete.py` | 10 passed (08/11); 15 passed sau khi thêm đường quản trị viên xoá (21/11) |
 | Các test tính lượt có sẵn (`test_metering*`, `test_d094_*`, `test_d090_*`, `test_d072_*`, `test_credit_packs`) | passed; hai test so khớp báo giá bài học thêm trường `free_locked` |

@@ -190,7 +190,7 @@ def admin_credit_orders(status: str = "", account: Account = ADMIN_ONLY) -> dict
             days[day][1] += int(order["amount_vnd"])
     rows = billing.store.recent(ADMIN_ORDER_LIMIT, status or None)
     lookup = svc().display_names
-    ids = sorted({o["created_by"] for o in rows})
+    ids = sorted({o["buyer_id"] for o in rows})
     names = lookup(ids) if lookup and ids else {}
     return {
         "on_sale": billing.sells_credits,
@@ -198,8 +198,7 @@ def admin_credit_orders(status: str = "", account: Account = ADMIN_ONLY) -> dict
         "counts": billing.store.count_by_status(),
         "days": [{"date": d, "paid": n, "revenue_vnd": v} for d, (n, v) in days.items()],
         "orders": [
-            billing.order_view(o) | {"buyer": names.get(o["created_by"], o["created_by"])}
-            for o in rows
+            billing.order_view(o) | {"buyer": names.get(o["buyer_id"], o["buyer_id"])} for o in rows
         ],
     }
 
@@ -411,7 +410,7 @@ def billing_receipt(
     if order is None or order["status"] != OrderStatus.PAID.value:
         raise HTTPException(404, "không có biên nhận cho đơn này")
     # A run pack's receipt is its buyer's, and the administrator's (D053).
-    buyer = order["created_by"] == account.account_id
+    buyer = order["buyer_id"] == account.account_id
     if account.role is not Role.ADMIN and not buyer:
         raise HTTPException(403, "biên nhận này của người mua khác")
     return templates.TemplateResponse(
