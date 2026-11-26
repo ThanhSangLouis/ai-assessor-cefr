@@ -10,12 +10,17 @@ The A4 page (`class/detailed/02_class_a4_ngang.drawio`) is the official layout a
 never edited here. Both pages keep its boxes, frames and edge waypoints, so
 the report's two figures look alike; only the content changes:
 
-  * `--level detailed` (default, Hình 2c): every business field, no
-    technical-only one (generated ids, timestamps no rule depends on, gateway
-    references, OTP codes, the review lock); business rows the code has added;
-    two fixes (`DrillPassage.drills`, `Response.criterionIndicators`).
-  * `--level core` (Hình 2a): the main attributes only -- every attribute
-    that holds a relation, the business state, the fields a rule depends on.
+  * `--level detailed` (default, Hình 2c): every business field and each
+    entity's id (`orderId`, `responseId`, ...), no technical-only one
+    (timestamps no rule depends on, gateway references, OTP codes, the review
+    lock); business rows the code has added; two fixes (`DrillPassage.drills`,
+    `Response.criterionIndicators`).
+  * `--level core` (Hình 2a): the main attributes only -- the id, every
+    attribute that holds a relation, the business state, the fields a rule
+    depends on.
+  * Both (D110): `Order.buyer` (the code's `buyer_id`); no `AuditEntry`,
+    `LedgerEntry` and their enums (technical records, kept on the ERD); a
+    passage gathers `1..*` drills.
   * Both: end markers set by the relationship rules -- composition (a part
     lives and dies with its whole) a filled diamond; aggregation (the holder
     gathers MANY independent parts in a List) a hollow diamond at the holder;
@@ -46,18 +51,12 @@ PORT_GAP, JOG_DX = 20, 12
 TITLE, ROW = 46, 22
 
 DROP = {
-    "Account": ["accountId", "identities", "emailCodes", "reminderSentOn", "isStaff"],
-    "AuditEntry": ["id", "service"],
+    "Account": ["identities", "emailCodes", "reminderSentOn", "isStaff"],
     "Achievement": ["unlockedAt"],
-    "Classroom": ["classId"],
     "CoachUpgrade": ["createdAt"],
-    "DrillPassage": ["passageId", "takes", "createdAt"],
-    "LearningPlan": ["planId"],
-    "LedgerEntry": ["entryId", "day"],
-    "Lesson": ["lessonId", "versions", "media"],
-    "LessonPath": ["pathId"],
+    "DrillPassage": ["takes", "createdAt"],
+    "Lesson": ["versions", "media"],
     "Order": [
-        "orderId",
         "createdAt",
         "creditedAt",
         "checkoutRef",
@@ -67,20 +66,14 @@ DROP = {
     ],
     "PriceList": ["changedAt"],
     "Response": [
-        "responseId",
         "durationMs",
         "replayLabels",
         "createdAt",
         "lockedBy",
         "lockedUntil",
     ],
-    "Review": ["reviewId"],
-    "ReviewItem": ["itemId"],
-    "Step": ["stepId"],
-    "StepAttempt": ["attemptId", "lessonVersion", "createdAt"],
-    "Task": ["taskId"],
-    "Unit": ["unitId"],
-    "WordDrill": ["drillId", "takes", "createdAt"],
+    "StepAttempt": ["lessonVersion", "createdAt"],
+    "WordDrill": ["takes", "createdAt"],
 }
 # Replace one row with one or more rows, in place.
 REPLACE = {
@@ -89,7 +82,7 @@ REPLACE = {
     ("Response", "modelVersion"): ["- modelVersion: str", "- configVersion: str"],
     ("Lesson", "title"): ["- title: str", "- summary: str", "- keywords: List<str>"],
     ("LessonPath", "title"): ["- title: str", "- description: str"],
-    ("LedgerEntry", "state"): ["- state: LedgerState", "- period: str"],
+    ("Order", "createdBy"): ["- buyer: Account"],
     ("ReviewItem", "drill"): ["- drill: WordDrill", "- step: Step"],
     ("ReviewItem", "dueDate"): ["- dueDate: date", "- done: bool"],
     ("StepAttempt", "result"): [
@@ -101,7 +94,7 @@ REPLACE = {
 }
 # Step: every business field of the code class, in a reading order.
 STEP_ROWS = [
-    "- kind: StepKind", "- title: str", "- instruction: str", "- text: str",
+    "- stepId: str", "- kind: StepKind", "- title: str", "- instruction: str", "- text: str",
     "- hintWords: List<str>", "- answers: List<str>", "- keywords: List<str>",
     "- starter: str", "- outline: List<str>",
     "- useAtLeast: int", "- minWords: int", "- prepSeconds: int", "- showSeconds: int",
@@ -115,38 +108,51 @@ STEP_ROWS = [
 # association too, not a dependency.
 # `--level core`: the main attributes of each class, every relation kept.
 CORE_ROWS = {
-    "Account": ["- email: str", "- emailVerified: bool", "- fullName: str", "- role: Role",
-                "- dailyGoalS: int"],
-    "AuditEntry": ["- actor: Account", "- action: str", "- targetId: str", "- createdAt: datetime"],
-    "Task": ["- title: str", "- promptText: str", "- topicKeywords: List<str>", "- band: Band"],
-    "Response": ["- speaker: Account", "- task: Task", "- status: ResponseStatus",
-                 "- transcript: str", "- overall06: float", "- overallBand: Band",
-                 "- feedback: List<str>", "- reviews: List<Review>", "- upgrade: CoachUpgrade"],
-    "Review": ["- reviewer: Account", "- oldBand: Band", "- newBand: Band", "- reason: str"],
+    "Account": ["- accountId: str", "- email: str", "- emailVerified: bool", "- fullName: str",
+                "- role: Role", "- dailyGoalS: int"],
+    "Task": ["- taskId: str", "- title: str", "- promptText: str", "- topicKeywords: List<str>",
+             "- band: Band"],
+    "Response": ["- responseId: str", "- speaker: Account", "- task: Task",
+                 "- status: ResponseStatus", "- transcript: str", "- overall06: float",
+                 "- overallBand: Band", "- feedback: List<str>", "- reviews: List<Review>",
+                 "- upgrade: CoachUpgrade"],
+    "Review": ["- reviewId: int", "- reviewer: Account", "- oldBand: Band", "- newBand: Band",
+               "- reason: str"],
     "CoachUpgrade": ["- fromBand: Band", "- toBand: Band", "- upgraded: str"],
-    "Classroom": ["- name: str", "- joinCode: str", "- teachers: List<Account>",
+    "Classroom": ["- classId: str", "- name: str", "- joinCode: str", "- teachers: List<Account>",
                   "- members: List<Account>", "- invited: List<Account>", "- archived: bool"],
-    "LessonPath": ["- title: str", "- bandFrom: Band", "- bandTo: Band", "- status: PathStatus",
-                   "- units: List<Unit>"],
-    "Unit": ["- title: str", "- band: Band", "- criterion: Criterion", "- lessons: List<Lesson>"],
-    "Lesson": ["- title: str", "- band: Band", "- criterion: Criterion", "- passRatio: float",
-               "- steps: List<Step>"],
-    "Step": ["- kind: StepKind", "- text: str", "- prepSeconds: int"],
-    "StepAttempt": ["- learner: Account", "- step: Step", "- round: int", "- passed: bool",
-                    "- overriddenBy: Account", "- reviewItem: ReviewItem"],
-    "WordDrill": ["- learner: Account", "- response: Response", "- word: str", "- passed: bool"],
-    "DrillPassage": ["- learner: Account", "- drills: List<WordDrill>", "- text: str"],
-    "ReviewItem": ["- learner: Account", "- lesson: Lesson", "- drill: WordDrill", "- step: Step",
-                   "- dueDate: date", "+ isDue(today: date): bool"],
+    "LessonPath": ["- pathId: str", "- title: str", "- bandFrom: Band", "- bandTo: Band",
+                   "- status: PathStatus", "- units: List<Unit>"],
+    "Unit": ["- unitId: str", "- title: str", "- band: Band", "- criterion: Criterion",
+             "- lessons: List<Lesson>"],
+    "Lesson": ["- lessonId: str", "- title: str", "- band: Band", "- criterion: Criterion",
+               "- passRatio: float", "- steps: List<Step>"],
+    "Step": ["- stepId: str", "- kind: StepKind", "- text: str", "- prepSeconds: int"],
+    "StepAttempt": ["- attemptId: str", "- learner: Account", "- step: Step", "- round: int",
+                    "- passed: bool", "- overriddenBy: Account", "- reviewItem: ReviewItem"],
+    "WordDrill": ["- drillId: str", "- learner: Account", "- response: Response", "- word: str",
+                  "- passed: bool"],
+    "DrillPassage": ["- passageId: str", "- learner: Account", "- drills: List<WordDrill>",
+                     "- text: str"],
+    "ReviewItem": ["- itemId: str", "- learner: Account", "- lesson: Lesson", "- drill: WordDrill",
+                   "- step: Step", "- dueDate: date", "+ isDue(today: date): bool"],
     "Achievement": ["- code: str", "- learner: Account"],
-    "LearningPlan": ["- owner: Account", "- goal: str", "- audience: Role",
+    "LearningPlan": ["- planId: str", "- owner: Account", "- goal: str", "- audience: Role",
                      "- lessons: List<Lesson>"],
-    "Order": ["- runs: int", "- amountVnd: int", "- status: OrderStatus", "- createdBy: Account"],
+    "Order": ["- orderId: str", "- runs: int", "- amountVnd: int", "- status: OrderStatus",
+              "- buyer: Account"],
     "Wallet": ["- owner: Account", "- balance: int", "+ available(): int"],
     "PriceList": ["- version: str", "- freeRuns: float", "- packs: List<str>"],
-    "LedgerEntry": ["- wallet: Wallet", "- response: Response", "- action: MeteredAction",
-                    "- charged: int", "- state: LedgerState"],
 }  # fmt: skip
+
+# Not drawn: technical records, not business concepts. `AuditEntry` (audit_log)
+# is a log of who did what; `LedgerEntry` (ledger) is how a run is held,
+# charged or given back exactly once -- the business sees the wallet's balance.
+# Their two enums go with them. Both stay on the ERD and in the data dictionary.
+REMOVED = {"AuditEntry", "LedgerEntry", "LedgerState", "MeteredAction"}
+# Multiplicity labels changed: a passage gathers many drills, the 3..5 its
+# writer picks is a rule of `coach/passage.py`, not a bound of the relation.
+RELABEL = {("DrillPassage", "WordDrill", "3..5"): "1..*"}
 
 AGGREGATION = {("Classroom", "Account"), ("LearningPlan", "Lesson"), ("DrillPassage", "WordDrill")}
 
@@ -165,6 +171,21 @@ boxes = {}  # id -> name
 for cid, c in cells.items():
     if "swimlane" in (c.get("style") or ""):
         boxes[cid] = text(c).replace("«entity»", "").replace("«enumeration»", "").strip()
+by_name = {n: i for i, n in boxes.items()}
+
+# --- classes not drawn: their boxes, rows, edges and edge labels go
+gone = {bid for bid, n in boxes.items() if n in REMOVED}
+gone |= {
+    c.get("id")
+    for c in model_root
+    if c.get("edge") == "1" and (c.get("source") in gone or c.get("target") in gone)
+}
+for c in list(model_root):
+    if c.get("id") in gone or c.get("parent") in gone:
+        model_root.remove(c)
+for bid in gone:
+    boxes.pop(bid, None)
+    cells.pop(bid, None)
 by_name = {n: i for i, n in boxes.items()}
 
 
@@ -332,6 +353,12 @@ for c in [x for x in model_root if x.get("edge") == "1"]:
         d.pop("startFill", None)
         d.pop("startSize", None)
     c.set("style", style_str(d))
+
+for c in [x for x in model_root if x.get("edge") == "1"]:
+    s_t = (boxes.get(c.get("source")), boxes.get(c.get("target")))
+    for lab in [x for x in model_root if x.get("parent") == c.get("id")]:
+        if (*s_t, lab.get("value")) in RELABEL:
+            lab.set("value", RELABEL[(*s_t, lab.get("value"))])
 
 # --- three new relations, routed in free space
 template = next(

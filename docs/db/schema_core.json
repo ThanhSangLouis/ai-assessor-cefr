@@ -204,6 +204,13 @@
   ],
   "order": [
     {
+      "name": "i_buyer_id",
+      "keys": [
+        "buyer_id"
+      ],
+      "unique": false
+    },
+    {
       "name": "i_checkout_ref",
       "keys": [
         "checkout_ref"
@@ -214,13 +221,6 @@
       "name": "i_created_at",
       "keys": [
         "created_at"
-      ],
-      "unique": false
-    },
-    {
-      "name": "i_created_by",
-      "keys": [
-        "created_by"
       ],
       "unique": false
     },
