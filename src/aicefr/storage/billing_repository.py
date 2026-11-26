@@ -49,7 +49,7 @@ INDEXES = {
         (("order_id",), True),
         (("created_at",), False),
         (("status", "expires_at"), False),
-        (("created_by",), False),
+        (("buyer_id",), False),
         (("checkout_ref",), False),
     ],
 }
@@ -74,7 +74,7 @@ class Order:
     runs: int
     amount_vnd: int
     status: OrderStatus
-    created_by: str
+    buyer_id: str  # the account that bought the runs (D110)
     created_at: str
     expires_at: str | None = None
     credited_at: str | None = None
@@ -131,7 +131,7 @@ class BillingRepository(MongoStore):
         """One account's own run packs, newest first."""
         rows = list(
             self.col("order")
-            .find({"created_by": account_id}, NO_EVENTS)
+            .find({"buyer_id": account_id}, NO_EVENTS)
             .sort([("created_at", DESCENDING), ("_id", DESCENDING)])
             .limit(limit)
         )
@@ -151,7 +151,7 @@ class BillingRepository(MongoStore):
         """How many orders this account opened since `since` that are still waiting (D099)."""
         return self.col("order").count_documents(
             {
-                "created_by": account_id,
+                "buyer_id": account_id,
                 "status": OrderStatus.PENDING.value,
                 "created_at": {"$gte": since},
             }

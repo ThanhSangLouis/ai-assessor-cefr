@@ -42,7 +42,6 @@ SNAPSHOT = ROOT / "docs" / "db" / "schema_core.json"
 # The code class of each entity drawn, by module.
 ENTITY_CLASS = {
     "Account": "storage/auth_repository.py",
-    "AuditEntry": "contracts.py",
     "Task": "storage/task_repository.py",
     "Response": "contracts.py",
     "Review": "contracts.py",
@@ -61,7 +60,6 @@ ENTITY_CLASS = {
     "Order": "storage/billing_repository.py",
     "Wallet": "storage/metering_repository.py",
     "PriceList": "metering/pricing.py",
-    "LedgerEntry": "storage/metering_repository.py",
 }
 
 # Attributes not on their entity's class under their own name. The value is
@@ -69,7 +67,6 @@ ENTITY_CLASS = {
 # (a member of another code class), or "path:key" (a key the module writes).
 ELSEWHERE = {
     # References kept as ids.
-    ("AuditEntry", "actor"): "actor_id",
     ("Response", "speaker"): 'storage/repository.py:"account_id"',
     ("Response", "task"): 'storage/repository.py:"task_id"',
     ("Review", "reviewer"): "reviewer_id",
@@ -91,8 +88,7 @@ ELSEWHERE = {
     ("Achievement", "learner"): "account_id",
     ("LearningPlan", "owner"): "account_id",
     ("Wallet", "owner"): "user_ref",
-    ("LedgerEntry", "wallet"): "user_ref",
-    ("LedgerEntry", "response"): "key",
+    ("Order", "buyer"): "buyer_id",  # D110
     # Another name for the same thing.
     ("Review", "decidedAt"): "created_at",
     ("LearningPlan", "lessons"): "plan",
@@ -101,8 +97,6 @@ ELSEWHERE = {
     ("Account", "emailCodes"): 'storage/auth_repository.py:"email_codes"',
     ("Account", "emailReminders"): 'storage/auth_repository.py:"email_reminders"',
     ("Account", "reminderSentOn"): 'storage/auth_repository.py:"reminder_sent_on"',
-    ("AuditEntry", "id"): 'storage/audit_repository.py:"id"',
-    ("AuditEntry", "service"): 'storage/audit_repository.py:"service"',
     ("Lesson", "publishedVersion"): 'storage/lesson_repository.py:"published_version"',
     ("Lesson", "versions"): 'storage/lesson_repository.py:"versions"',
     ("Lesson", "media"): 'storage/lesson_repository.py:"media"',
@@ -132,7 +126,6 @@ ELSEWHERE = {
 # `Lesson`, ...): `EMBEDDED` names the root.
 COLLECTION = {
     "Account": "account",
-    "AuditEntry": "audit_log",
     "Task": "task",
     "Response": "response",
     "Classroom": "classroom",
@@ -147,7 +140,6 @@ COLLECTION = {
     "Order": "order",
     "Wallet": "wallet",
     "PriceList": "price_list",
-    "LedgerEntry": "ledger",
 }
 EMBEDDED = {
     "Review": "Response",
@@ -160,6 +152,8 @@ NOT_DRAWN = {
     "session": "login sessions, a mechanism like a cookie",
     "system": "configuration, counters, migrations",
     "push_subscription": "a browser's push endpoint; D088 keeps it on the ERD only",
+    "audit_log": "who did what, a log; D110 keeps it on the ERD only",
+    "ledger": "how a run is held, charged or released once; D110: the wallet is the business",
 }
 
 

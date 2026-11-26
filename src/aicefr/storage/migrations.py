@@ -1273,6 +1273,23 @@ def _d109_join_code(db: Database, target: str) -> None:
     )
 
 
+def _d110_order_buyer(db: Database, target: str) -> None:
+    """An order names its buyer: `created_by` becomes `buyer_id` (D110).
+
+    The class diagram calls the account an order belongs to `buyer`, as the
+    administrator's order list already did; the stored key follows. Only the
+    key is renamed, every value stays, and its index goes with it. Running it
+    twice changes nothing more. Chosen by the project owner on 23/11/2026.
+    """
+    if not _has(db, "order"):
+        return
+    db["order"].update_many(
+        {"created_by": {"$exists": True}}, {"$rename": {"created_by": "buyer_id"}}
+    )
+    _drop_index(db, "order", "i_created_by")
+    db["order"].create_index([("buyer_id", 1)], name="i_buyer_id")
+
+
 MIGRATIONS: tuple[Migration, ...] = (
     Migration(1, "baseline: the collections of D044", _baseline),
     Migration(
@@ -1321,6 +1338,7 @@ MIGRATIONS: tuple[Migration, ...] = (
     Migration(
         25, "classroom.join_code: a student joins by code or invitation (D109)", _d109_join_code
     ),
+    Migration(26, "order.created_by renamed buyer_id (D110)", _d110_order_buyer),
 )
 
 LATEST = MIGRATIONS[-1].version
