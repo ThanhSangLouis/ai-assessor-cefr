@@ -28,7 +28,7 @@ x-public: &public
 services:
   caddy:
     image: caddy:2-alpine
-    restart: unless-stopped
+    restart: "no"
     ports:
       - "80:80"
       - "443:443"

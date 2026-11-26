@@ -90,7 +90,7 @@ services:
     depends_on:
       - core
       - web
-    restart: unless-stopped
+    restart: "no"
 
   # Accounts, consent, responses, review, blind rating, the feedback study,
   # lessons, achievements, plans and payment: every collection, one database (D048).
@@ -99,7 +99,7 @@ services:
       context: .
       target: service
     image: aicefr-service:latest
-    restart: unless-stopped
+    restart: "no"
     security_opt:
       - no-new-privileges:true
     environment:
@@ -136,7 +136,7 @@ services:
   # The pages and their static files; it asks core for what a page quotes.
   web:
     image: aicefr-service:latest
-    restart: unless-stopped
+    restart: "no"
     security_opt:
       - no-new-privileges:true
     environment:
@@ -157,7 +157,7 @@ services:
         # administrator activates a fusion artifact; needs the weights in /models.
         TEXT: "1"
     image: aicefr-speech:latest
-    restart: unless-stopped
+    restart: "no"
     environment:
       <<: *bus
       # Set to "whisper" for real scoring. Anything else and the interface
@@ -201,7 +201,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    restart: unless-stopped
+    restart: "no"
 
   # D050. Jobs waiting to be scored must survive a restart: append-only file on.
   # BullMQ needs `noeviction`: an evicted key is a lost job.
@@ -220,7 +220,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
-    restart: unless-stopped
+    restart: "no"
 
 volumes:
   uploads:
