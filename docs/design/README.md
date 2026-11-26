@@ -13,3 +13,5 @@ Sắp xếp mockup theo cấu trúc `<role>/<screen>/`, dùng tên role trong h�
 - `student/my-responses/`: Bài đã nộp (`/my-responses`), đã chọn C — [mockup](student/my-responses/responses-c-mockup.html), [bàn giao FE](student/my-responses/handoff.md).
 - **Tiến trình xử lý** (`/progress/{response_id}`) — [Mockup A](student/progress/processing-a-mockup.html) · [Bàn giao](student/progress/handoff.md).
 - **Sổ cụm từ** (`/phrases`) — [Mockup D](student/phrases/phrases-d-mockup.html) · [Ghi chú FE](student/phrases/README.md).
+
+- [Kế hoạch và trạng thái duyệt](design-plan.md) — ba màn retell/drill/passage đang chờ duyệt.

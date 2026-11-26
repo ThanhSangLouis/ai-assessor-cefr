@@ -1,0 +1,51 @@
+
+/* B puts the task on a centered stage. */
+.variant-b { max-width:1200px; }
+.variant-b .landscape { min-height:290px; border-radius:30px 30px 0 0; padding-bottom:75px; }
+.variant-b .landscape h1 { max-width:600px; font-size:clamp(34px,5vw,60px); }
+.variant-b .landscape img { max-height:220px; }
+.variant-b .panels { position:relative; margin:-48px 35px 0; grid-template-columns:1fr; gap:0; border-radius:24px; overflow:hidden; box-shadow:0 15px 45px #22132b14; }
+.variant-b .surface { border-radius:0; border:0; padding:30px 38px; }
+.variant-b .side { border-top:1px solid var(--line); background:var(--soft); }
+.variant-b .side .level-bars { margin:12px auto; }
+.variant-b .side #record { min-width:230px; }
+.variant-b .word-pills { justify-content:center; }
+.variant-b #word,.variant-b #phonetic { text-align:center; }
+.variant-b #word { font-size:42px; }
+/* C uses a notebook with a narrow reference column. */
+.variant-c { max-width:1240px; }
+.variant-c .landscape { min-height:135px; border-radius:16px; grid-template-columns:1fr 110px; }
+.variant-c .landscape h1 { font-size:32px; }
+.variant-c .landscape img { max-height:100px; }
+.variant-c .panels { grid-template-columns:minmax(0,1fr) minmax(260px,.65fr); gap:0; background:var(--paper); border:1px solid var(--line); border-radius:7px 23px 23px 7px; box-shadow:-6px 0 var(--soft); margin-top:26px; overflow:hidden; }
+.variant-c .surface { border:0; border-radius:0; padding:32px; }
+.variant-c .surface:first-child { border-right:1px dashed var(--line); }
+.variant-c .surface blockquote { background:transparent; border:0; padding:8px 0 20px; font-size:1.25em; line-height:2; }
+.variant-c .side { background:var(--soft); text-align:left; }
+.variant-c .level-bars { justify-content:flex-start; }
+.variant-c .side #record { width:100%; }
+.variant-c[data-screen=passage] .panels { grid-template-columns:1fr; }
+.variant-c[data-screen=passage] #passage-text { max-width:650px; margin:25px auto; font-size:1.5em; }
+.variant-c[data-screen=passage] .side { display:block; border-top:1px dashed var(--line); text-align:center; }
+.variant-c[data-screen=account] .panels { grid-template-columns:240px 1fr; }
+.variant-c[data-screen=account] .surface:first-child { background:var(--soft); }
+.variant-b[data-screen=account] .landscape img { border-radius:50%; background:#ffffff25; padding:15px; }
+@media(max-width:700px) {
+.variant-b .panels { margin:-30px 10px 0; }
+.variant-b .landscape { min-height:220px; padding-bottom:55px; }
+.variant-b .surface,.variant-c .surface { padding:21px; }
+.variant-b .landscape img { max-height:125px; }
+.variant-c .panels,.variant-c[data-screen=account] .panels { grid-template-columns:1fr; }
+.variant-c .surface:first-child { border-right:0; border-bottom:1px dashed var(--line); }
+.variant-c .landscape { grid-template-columns:1fr 75px; }
+.variant-c .landscape h1 { font-size:28px; }
+}
+.variant-b .landscape { min-height:200px; padding-bottom:60px; }
+.variant-b .panels { margin:-35px 24px 0; grid-template-columns:1fr; gap:0; }
+.variant-b .surface:first-child { border-radius:22px 22px 0 0; }
+.variant-b .side { position:static; border-radius:0 0 22px 22px; display:grid; grid-template-columns:1fr 1fr; align-items:center; gap:8px 24px; text-align:left; }
+.variant-b .side h2 { grid-column:1/-1; }
+.variant-b .side #record { grid-column:2; grid-row:2/5; }
+.variant-b .side #record-actions,.variant-b .side #feedback,.variant-b .side small { grid-column:1/-1; }
+.variant-b .side .level-bars { display:none; }
+@media(max-width:650px){.variant-b .panels{margin:-25px 8px 0}.variant-b .side{display:block;text-align:center}}
