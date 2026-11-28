@@ -44,15 +44,21 @@ Mã giao diện là các tệp `<script>` thường trong `src/aicefr/api/static
 
 ## 4. Nhánh, commit và pull request
 
+Áp dụng từ W12 (30/11/2026). Chi tiết luồng nhánh: [QUY_TRINH_NHANH.md](plan/QUY_TRINH_NHANH.md).
+
 | Quy tắc | Kiểm ở đâu |
 | --- | --- |
-| Không đẩy thẳng lên `main`; mọi thay đổi qua pull request | Branch protection của `main` |
-| Tên nhánh `loai/nguoi/chu-de`, ví dụ `feat/sang/d109-join-class`, `docs/sang/submission-evidence`; `loai` ∈ `feat`, `fix`, `docs`, `refactor`, `test`, `ui` | review PR |
-| Nhánh mới tạo từ `origin/main` mới nhất; cập nhật bằng cách merge `origin/main` vào | review PR |
-| PR chỉ merge khi CI xanh; chủ dự án merge | Branch protection, `.github/workflows/ci.yml` |
-| Tiêu đề commit/PR nêu việc làm; việc theo quyết định ghi mã quyết định đầu dòng (`D109: …`) | review PR |
+| Không đẩy thẳng lên `dev` hay `production`; mọi thay đổi qua pull request | Branch protection của `dev`, `production` |
+| Tên nhánh `loai/nguoi/SCRUM-<số>-mo-ta`, ví dụ `feat/nguyen/SCRUM-130-sus-survey`; `loai` ∈ `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `ui`, `hotfix` | Job CI `Ma Jira trong PR`, review PR |
+| Nhánh mới tạo từ `origin/dev` mới nhất; cập nhật bằng cách merge `origin/dev` vào, trước khi code và trước khi push | review PR |
+| Commit: `SCRUM-<số>: <việc đã làm>`; việc theo quyết định thêm mã quyết định (`SCRUM-130: D113 …`) | review PR |
+| Tiêu đề PR `[SCRUM-<số>] <tóm tắt>`; mô tả theo `.github/pull_request_template.md` | Job CI `Ma Jira trong PR` |
+| Ít nhất **một thành viên khác** duyệt PR trước khi merge | Branch protection của `dev` (1 lượt duyệt bắt buộc) |
+| PR chỉ merge khi CI xanh; vào `dev` bằng squash | Branch protection, `.github/workflows/ci.yml` |
+| PR vào `production` chỉ từ `dev` (phát hành, merge commit) hoặc `hotfix/*` | Job CI `Nhanh nguon cua PR vao production` |
 | Một PR một việc; không trộn tái cấu trúc với tính năng | review PR |
-| Merge vào `main` là tự deploy lên EC2 | `.github/workflows/deploy.yml` |
+| Không force push, không merge nhánh của người khác vào nhánh mình | Branch protection, review PR |
+| Merge vào `production` là tự deploy lên EC2 | `.github/workflows/deploy.yml` |
 
 ## 5. Tệp không được commit
 
