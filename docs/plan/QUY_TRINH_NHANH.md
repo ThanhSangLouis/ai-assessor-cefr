@@ -30,6 +30,20 @@ flowchart LR
 5. **Deploy:** merge vào `production` → CI chạy trên `production` → xanh thì `Deploy EC2` sao lưu, dựng lại ảnh và kiểm `/healthz`. CI đỏ hoặc bị huỷ thì không deploy.
 6. **Sửa gấp production:** `git switch -c hotfix/<việc> origin/production`, PR vào `production`. Merge xong, mở PR `production` → `dev` để `dev` không thiếu bản sửa.
 
+## Đặt tên và duyệt (từ W12, 30/11/2026)
+
+Mỗi việc là một task Jira `SCRUM-<số>`; nhánh, commit và PR đều mang mã đó để Jira tự nối PR và commit vào task.
+
+| Gì | Mẫu | Ví dụ |
+| --- | --- | --- |
+| Nhánh | `<loại>/<tên>/SCRUM-<số>-<mô-tả>` | `feat/nguyen/SCRUM-130-sus-survey` |
+| Commit | `SCRUM-<số>: <việc đã làm>` | `SCRUM-130: thêm phiếu SUS 10 câu` |
+| Tiêu đề PR | `[SCRUM-<số>] <tóm tắt>` | `[SCRUM-130] Phiếu SUS cho thực nghiệm` |
+
+- Job CI **Ma Jira trong PR** chặn PR vào `dev` thiếu mã SCRUM ở tiêu đề hoặc tên nhánh. Dependabot được miễn; việc bảo trì repo không có task thì ghi `[NO-JIRA]` trong tiêu đề và người duyệt phải đồng ý.
+- PR vào `dev` cần **1 lượt duyệt của một thành viên khác** người mở PR. Người mở PR không tự duyệt.
+- Việc không ra PR (research, kiểm tra bảo mật, review, lập kế hoạch, viết báo cáo) cũng là một task Jira để log work, không cần nhánh.
+
 ## Quy tắc
 
 - Không đẩy thẳng lên `dev` hay `production`. Không force push, không xoá hai nhánh này.

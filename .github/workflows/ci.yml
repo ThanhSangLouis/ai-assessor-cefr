@@ -52,6 +52,40 @@ jobs:
           echo "::error::PR vao production chi duoc mo tu dev hoac hotfix/*. Hay doi base cua PR sang dev."
           exit 1
 
+  ma-jira:
+    name: Ma Jira trong PR
+    runs-on: ubuntu-latest
+    steps:
+      # Every pull request into `dev` names its Jira task (SCRUM-<number>) in
+      # its title or branch, so Jira links the PR and its commits by itself.
+      # Dependabot is exempt; "[NO-JIRA]" in the title is for repository
+      # upkeep with no task, and the reviewer has to agree with it. On any
+      # other event the job passes, so it can stay a required check.
+      - name: Kiem tra ma SCRUM
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" || "$BASE" != "dev" ]]; then
+            echo "Khong phai PR vao dev: bo qua."
+            exit 0
+          fi
+          if [[ "$HEAD" == dependabot/* ]]; then
+            echo "PR cua Dependabot: bo qua."
+            exit 0
+          fi
+          if [[ "$TITLE" =~ SCRUM-[0-9]+ || "$HEAD" =~ SCRUM-[0-9]+ ]]; then
+            echo "Co ma Jira: hop le."
+            exit 0
+          fi
+          if [[ "$TITLE" == *"[NO-JIRA]"* ]]; then
+            echo "::warning::PR khong gan task Jira ([NO-JIRA]); nguoi duyet can dong y."
+            exit 0
+          fi
+          echo "::error::Tieu de PR hoac ten nhanh phai co ma task Jira, vi du [SCRUM-130] ... hoac feat/ten/SCRUM-130-mo-ta (docs/plan/QUY_TRINH_NHANH.md)."
+          exit 1
+
   docs-and-guards:
     name: Tài liệu và file bị cấm
     runs-on: ubuntu-latest
