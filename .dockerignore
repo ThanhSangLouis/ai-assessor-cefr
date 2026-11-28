@@ -13,3 +13,5 @@ docs/sdd/images
 tests
 *.md
 !README.md
+
+node_modules/

@@ -1,0 +1,21 @@
+# Gom moi thanh vien ve mot danh tinh khi doc lich su (git shortlog, git log --use-mailmap).
+# Khong viet lai lich su: commit giu nguyen, chi cach hien thi thay doi.
+#
+# Ba cap ten/email duoi day KHONG duoc gom vi ten va email thuoc hai nguoi khac nhau
+# (commit tu may cua nguoi nay nhung de ten nguoi kia). Thanh vien tu xac nhan roi moi them:
+#   ThanhSangLouis <hocitthoii@gmail.com>          7 commit ngay 27/10 (port W7, PR #64-#66)
+#   Hoang Nguyen <hocitthoii@gmail.com>            3 commit ngay 25/10 (SCRUM-88)
+#   Thang Le <143681204+Nguyneee@users.noreply.github.com>  9 commit ngay 04/11 (SEC-01..05)
+
+Võ Thanh Sang <149806658+ThanhSangLouis@users.noreply.github.com> Louis <149806658+ThanhSangLouis@users.noreply.github.com>
+Võ Thanh Sang <149806658+ThanhSangLouis@users.noreply.github.com> Thanh Sang <vothanhsangtv2017@gmail.com>
+Võ Thanh Sang <149806658+ThanhSangLouis@users.noreply.github.com> ThanhSangLouis <vothanhsangtv2017@gmail.com>
+
+Lê Văn Chiến Thắng <318512857+thanglvc@users.noreply.github.com> Le Van Chien Thang <thanglvc@runsystem.net>
+Lê Văn Chiến Thắng <318512857+thanglvc@users.noreply.github.com> Le Van Chien Thang <hocitthoii@gmail.com>
+Lê Văn Chiến Thắng <318512857+thanglvc@users.noreply.github.com> Thang Le <hocitthoii@gmail.com>
+Lê Văn Chiến Thắng <318512857+thanglvc@users.noreply.github.com> Panda <hocitthoii@gmail.com>
+Lê Văn Chiến Thắng <318512857+thanglvc@users.noreply.github.com> thanglvc <thanglvc@runsystem.net>
+
+Trịnh Nguyễn Hoàng Nguyên <143681204+Nguyneee@users.noreply.github.com> Hoang Nguyen <nguyendh6g@Gmail.com>
+Trịnh Nguyễn Hoàng Nguyên <143681204+Nguyneee@users.noreply.github.com> Hoang Nguyen <143681204+Nguyneee@users.noreply.github.com>

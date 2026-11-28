@@ -1,7 +1,8 @@
 # CI of the project (W7): the submission repository's own guards (Markdown
 # links, forbidden files) plus the four jobs of the service architecture --
 # format, lint and tests; MongoDB and Redis; images and compose (with a
-# Trivy scan, D087); secret scan. CodeQL runs in codeql.yml.
+# Trivy scan, D087); ESLint for the browser JS; secret scan. CodeQL runs in
+# codeql.yml.
 # Ported from ThanhSangLouis/ai-assessor-cefr@059fa28 (.github/workflows/ci.yml).
 #
 # Branch flow (docs/plan/QUY_TRINH_NHANH.md): feature branch -> PR into `dev`
@@ -240,6 +241,23 @@ jobs:
               echo '```'; } >> "$GITHUB_STEP_SUMMARY"
             scan --severity CRITICAL --exit-code 1 --format table "$img"
           done
+
+  eslint:
+    name: Lint JavaScript (ESLint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Static analysis for the browser scripts in src/aicefr/api/static. Python
+    # has ruff in the job above; this is the same gate for the JS side.
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Cai ESLint
+        run: npm ci --no-audit --no-fund
+      - name: ESLint
+        run: npx eslint src/aicefr/api/static
 
   quet-bi-mat:
     name: Quet lo khoa bi mat

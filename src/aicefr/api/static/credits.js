@@ -13,7 +13,7 @@ const runs = (n) => `${Number(n).toLocaleString("vi-VN", { maximumFractionDigits
 const vnd = (n) => `${Number(n).toLocaleString("vi-VN")} ₫`;
 // D107: a learner reads runs, and money only on the packs; IDPoint stays on the dashboard.
 const renewDate = (iso) => (iso ? iso.split("-").reverse().slice(0, 2).join("/") : "");
-const when = (iso) => (iso ? new Date(iso).toLocaleString("vi-VN") : "—");
+const fmtWhen = (iso) => (iso ? new Date(iso).toLocaleString("vi-VN") : "—");
 
 async function load() {
   const [credits, packs] = await Promise.all([
@@ -65,7 +65,7 @@ function ledgerRow(e) {
     : free ? "Miễn phí" : STATE[e.state] || escapeHtml(e.state);
   return `<li class="ledger-row">
     <span class="ledger-mark">${icon(ACTION_ICON[e.action] || "star")}</span>
-    <span class="ledger-what"><b>${ACTION[e.action] || escapeHtml(e.action)}</b><small>${state} · ${when(e.created_at)}</small></span>
+    <span class="ledger-what"><b>${ACTION[e.action] || escapeHtml(e.action)}</b><small>${state} · ${fmtWhen(e.created_at)}</small></span>
     <span class="ledger-runs${e.state === "released" ? " back" : ""}">${e.state === "released" ? "+" : "−"}${amount}</span></li>`;
 }
 
@@ -130,7 +130,7 @@ function showPacks(d) {
         <span class="ledger-what"><b>${escapeHtml(o.plan_name)} · ${vnd(o.amount_vnd)}</b>
           <small><span class="badge ${PILL[o.status] || "state-off"}">${escapeHtml(o.status_name)}</span>${
             o.status === "paid" && !o.credited ? " đang cộng lượt" : ""
-          } · ${when(o.created_at)}</small></span>
+          } · ${fmtWhen(o.created_at)}</small></span>
         ${o.status === "paid" ? `<a class="button small secondary" href="/billing/orders/${encodeURIComponent(o.order_id)}/receipt">Biên nhận</a>` : ""}</li>`,
     )
     .join("")}</ul>`;

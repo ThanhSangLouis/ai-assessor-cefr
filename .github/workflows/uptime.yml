@@ -1,0 +1,38 @@
+# Uptime of the public demo (https://speakup.fit), measured from outside the server.
+# Every 30 minutes a GitHub runner calls /healthz and the home page. A run fails when
+# either answer is not 200 or takes longer than 20 seconds, so the run history of this
+# workflow is the uptime record: uptime = successful runs / all runs in the period.
+# tools/uptime_report.py turns that history into the number for the report.
+#
+# Read-only: no secret, no SSH, nothing is written to the server.
+name: Uptime
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    name: Kiem tra speakup.fit con chay
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Goi /healthz va trang chu
+        run: |
+          fail=0
+          for url in https://speakup.fit/healthz https://speakup.fit/; do
+            out=$(curl -s -o /dev/null --max-time 20 -w '%{http_code} %{time_total}' "$url" || echo "000 20")
+            code=${out%% *}; secs=${out##* }
+            echo "| $url | $code | ${secs}s |" >> "$GITHUB_STEP_SUMMARY"
+            echo "$url -> $code in ${secs}s"
+            [ "$code" = "200" ] || fail=1
+          done
+          exit $fail
