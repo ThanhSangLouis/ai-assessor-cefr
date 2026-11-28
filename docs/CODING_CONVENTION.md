@@ -52,7 +52,7 @@ Mã giao diện là các tệp `<script>` thường trong `src/aicefr/api/static
 | Tên nhánh `loai/nguoi/SCRUM-<số>-mo-ta`, ví dụ `feat/nguyen/SCRUM-130-sus-survey`; `loai` ∈ `feat`, `fix`, `docs`, `test`, `refactor`, `ci`, `ui`, `hotfix` | Job CI `Ma Jira trong PR`, review PR |
 | Nhánh mới tạo từ `origin/dev` mới nhất; cập nhật bằng cách merge `origin/dev` vào, trước khi code và trước khi push | review PR |
 | Commit: `SCRUM-<số>: <việc đã làm>`; việc theo quyết định thêm mã quyết định (`SCRUM-130: D113 …`) | review PR |
-| Tiêu đề PR `[SCRUM-<số>] <tóm tắt>`; mô tả theo `.github/pull_request_template.md` | Job CI `Ma Jira trong PR` |
+| Tiêu đề PR `[SCRUM-<số>] <tóm tắt>` | Job CI `Ma Jira trong PR` |
 | Ít nhất **một thành viên khác** duyệt PR trước khi merge | Branch protection của `dev` (1 lượt duyệt bắt buộc) |
 | PR chỉ merge khi CI xanh; vào `dev` bằng squash | Branch protection, `.github/workflows/ci.yml` |
 | PR vào `production` chỉ từ `dev` (phát hành, merge commit) hoặc `hotfix/*` | Job CI `Nhanh nguon cua PR vao production` |

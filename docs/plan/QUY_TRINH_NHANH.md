@@ -42,7 +42,7 @@ Mỗi việc là một task Jira `SCRUM-<số>`; nhánh, commit và PR đều ma
 
 - Job CI **Ma Jira trong PR** chặn PR vào `dev` thiếu mã SCRUM ở tiêu đề hoặc tên nhánh. Dependabot được miễn; việc bảo trì repo không có task thì ghi `[NO-JIRA]` trong tiêu đề và người duyệt phải đồng ý.
 - PR vào `dev` cần **1 lượt duyệt của một thành viên khác** người mở PR. Người mở PR không tự duyệt.
-- Mô tả PR theo mẫu `.github/pull_request_template.md`: task Jira, đã làm gì, đã kiểm gì, ảnh nếu đổi giao diện.
+- Việc không ra PR (research, kiểm tra bảo mật, review, lập kế hoạch, viết báo cáo) cũng là một task Jira để log work, không cần nhánh.
 
 ## Quy tắc
 
