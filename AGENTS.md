@@ -9,12 +9,14 @@
 [docs/plan/CHAY_DU_AN_CHO_AI.md](docs/plan/CHAY_DU_AN_CHO_AI.md) trước khi thử cách khác.
 Tóm tắt: `./demo.sh` (cần Docker cho MongoDB); artifact mô hình nằm ngoài repo ở
 `../aicefr-models`, thiếu thì `demo.sh` dùng artifact giả lập và điểm vô nghĩa; không
-commit artifact, `.env`, dữ liệu ghi âm; không đẩy thẳng lên `main`.
+commit artifact, `.env`, dữ liệu ghi âm; không đẩy thẳng lên `dev` hay `production`.
+- Quy trình nhánh: tách nhánh từ `dev`, PR vào `dev`; chỉ PR `dev` → `production` (hoặc `hotfix/*`)
+mới lên production. Chi tiết: [docs/plan/QUY_TRINH_NHANH.md](docs/plan/QUY_TRINH_NHANH.md).
 
 Hỏi về production, EC2/AWS, GitHub Actions, CI, deploy, `.env` máy chủ hay sao lưu: đọc
 [docs/plan/TRIEN_KHAI_CHO_AI.md](docs/plan/TRIEN_KHAI_CHO_AI.md) trước. Tóm tắt: merge vào
-`main` + CI xanh là tự deploy lên EC2 (runner của GitHub SSH vào máy chủ, không có
-self-hosted runner); `main` có branch protection; AI agent không SSH, không gọi AWS, không
+`production` + CI xanh là tự deploy lên EC2 (runner của GitHub SSH vào máy chủ, không có
+self-hosted runner); `dev` và `production` có branch protection; AI agent không SSH, không gọi AWS, không
 đụng secret.
 
 Viết báo cáo hay trả lời về giá, lượt, chi phí vận hành hoặc điểm hoà vốn: đọc

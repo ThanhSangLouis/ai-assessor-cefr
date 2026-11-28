@@ -1,11 +1,12 @@
-# Deploy main to the EC2 server (docs/plan/TRIEN_KHAI_EC2.md).
+# Deploy `production` to the EC2 server (docs/plan/TRIEN_KHAI_EC2.md).
 #
 # A GitHub-hosted runner SSHes into the server and runs deploy/vps/deploy.sh,
 # the same script used by hand (TRIEN_KHAI_VPS.md, step 5). No self-hosted
 # runner: this repository is public, and a self-hosted runner would let any
 # fork's pull request run code on the server.
 #
-# Runs only after CI succeeded on a push to main, or by hand on main. Never on
+# Runs only after CI succeeded on a push to `production`, or by hand on
+# `production`; `dev` is the integration branch and never deploys. Never on
 # pull_request, so no fork ever reaches the secrets of the `production`
 # environment. Until those secrets exist the job ends early and stays green.
 name: Deploy EC2
@@ -14,7 +15,7 @@ on:
   workflow_run:
     workflows: [CI]
     types: [completed]
-    branches: [main]
+    branches: [production]
   workflow_dispatch:
 
 # One deploy at a time; a second one waits instead of cutting the first
@@ -33,7 +34,7 @@ jobs:
       (github.event_name == 'workflow_run'
         && github.event.workflow_run.conclusion == 'success'
         && github.event.workflow_run.event == 'push')
-      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/production')
     runs-on: ubuntu-latest
     # First build on the server takes 5-15 minutes, plus up to 5 for /healthz.
     timeout-minutes: 40
@@ -62,15 +63,15 @@ jobs:
 
       # CI runs can finish out of order; deploying an older commit after a
       # newer one would roll the server back.
-      - name: Chi trien khai commit moi nhat cua main
+      - name: Chi trien khai commit moi nhat cua production
         id: latest
         if: steps.config.outputs.ready == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          head="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          head="$(gh api "repos/${GITHUB_REPOSITORY}/commits/production" --jq .sha)"
           if [[ "$head" != "$DEPLOY_SHA" ]]; then
-            echo "::notice::Bo qua ${DEPLOY_SHA}: main da sang ${head}, lan chay cua commit do se trien khai."
+            echo "::notice::Bo qua ${DEPLOY_SHA}: production da sang ${head}, lan chay cua commit do se trien khai."
             echo "current=false" >> "$GITHUB_OUTPUT"
           else
             echo "current=true" >> "$GITHUB_OUTPUT"

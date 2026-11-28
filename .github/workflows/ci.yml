@@ -4,6 +4,11 @@
 # Trivy scan, D087); secret scan. CodeQL runs in codeql.yml.
 # Ported from ThanhSangLouis/ai-assessor-cefr@059fa28 (.github/workflows/ci.yml).
 #
+# Branch flow (docs/plan/QUY_TRINH_NHANH.md): feature branch -> PR into `dev`
+# -> PR from `dev` into `production` -> deploy. CI runs on every pull request
+# and on every push to `dev` and `production`; Deploy EC2 follows CI only on
+# `production`.
+#
 # Only ".[dev]" for the main job: the `asr` and `vad` extras pull Whisper and
 # torch, which no test needs (`default_vad()` falls back to EnergyVad).
 name: CI
@@ -12,7 +17,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
   push:
-    branches: [main, migrate/w7-repo-goc]
+    branches: [production, dev]
   workflow_dispatch:
 
 concurrency:
@@ -23,6 +28,29 @@ permissions:
   contents: read
 
 jobs:
+  nhanh-nguon:
+    name: Nhanh nguon cua PR vao production
+    runs-on: ubuntu-latest
+    steps:
+      # Only `dev` (the integration branch) and `hotfix/*` may open a pull
+      # request into `production`; everything else goes into `dev` first. On
+      # any other event the job passes, so it can stay a required check.
+      - name: Kiem tra nhanh nguon
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          if [[ "${{ github.event_name }}" != "pull_request" || "$BASE" != "production" ]]; then
+            echo "Khong phai PR vao production: bo qua."
+            exit 0
+          fi
+          if [[ "$HEAD" == "dev" || "$HEAD" == hotfix/* ]]; then
+            echo "PR tu ${HEAD} vao production: hop le."
+            exit 0
+          fi
+          echo "::error::PR vao production chi duoc mo tu dev hoac hotfix/*. Hay doi base cua PR sang dev."
+          exit 1
+
   docs-and-guards:
     name: Tài liệu và file bị cấm
     runs-on: ubuntu-latest

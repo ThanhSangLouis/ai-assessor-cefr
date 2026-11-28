@@ -393,7 +393,7 @@ Luật 91/2025/QH15.
 ```
 
 Định dạng, lint và toàn bộ test đơn vị — đúng những gì CI chạy trên mỗi PR.
-Đẩy thẳng lên `main` thì CI chỉ báo đỏ sau khi đã muộn: luôn đi qua PR.
+Đẩy thẳng lên `dev` hay `production` thì CI chỉ báo đỏ sau khi đã muộn: luôn đi qua PR vào `dev` ([QUY_TRINH_NHANH.md](QUY_TRINH_NHANH.md)).
 
 ### Các biến môi trường hay dùng
 
