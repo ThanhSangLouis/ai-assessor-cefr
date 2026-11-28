@@ -11,9 +11,9 @@ rồi biến việc luyện tập thành một lộ trình bài học ngắn. Gi
 
 [![Dùng thử](https://img.shields.io/badge/D%C3%B9ng_th%E1%BB%AD-speakup.fit-e64a19?style=for-the-badge)](https://speakup.fit)
 
-[![CI](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml)
-[![Deploy EC2](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml)
-[![CodeQL](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml)
+[![CI](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml)
+[![Deploy EC2](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml)
+[![CodeQL](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml)
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-3776ab?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7-47a248?logo=mongodb&logoColor=white)
@@ -214,13 +214,16 @@ Bản chạy thật ở **[speakup.fit](https://speakup.fit)** trên AWS EC2.
 
 ```mermaid
 flowchart LR
-    PR["Pull request"] --> CI["CI: lint, test,<br/>MongoDB + Redis, Docker, CodeQL"]
-    CI -->|xanh| MAIN["merge vào main"]
-    MAIN --> DEP["Deploy EC2<br/>SSH, dựng lại ảnh, kiểm sức khoẻ"]
+    PR["PR tính năng"] --> CI["CI: lint, test,<br/>MongoDB + Redis, Docker, CodeQL"]
+    CI -->|xanh| DEV["merge vào dev"]
+    DEV --> REL["PR dev → production<br/>CI chạy lại"]
+    REL -->|xanh| PROD["merge vào production"]
+    PROD --> DEP["Deploy EC2<br/>SSH, dựng lại ảnh, kiểm sức khoẻ"]
     DEP --> LIVE(["speakup.fit"])
 ```
 
-`main` có branch protection: mọi thay đổi đi qua pull request, CI xanh mới được merge, merge xong thì tự triển khai.
+`dev` (nhánh tích hợp, mặc định) và `production` (bản đang chạy) đều có branch protection: mọi thay đổi đi qua pull request, CI xanh mới được merge. Chỉ merge vào `production` mới tự triển khai.
+Quy trình nhánh: [QUY_TRINH_NHANH.md](docs/plan/QUY_TRINH_NHANH.md).
 Cấu trúc máy chủ, luồng deploy và lỗi hay gặp: [TRIEN_KHAI_CHO_AI.md](docs/plan/TRIEN_KHAI_CHO_AI.md).
 Dựng lại máy chủ từ đầu: [TRIEN_KHAI_EC2.md](docs/plan/TRIEN_KHAI_EC2.md).
 
