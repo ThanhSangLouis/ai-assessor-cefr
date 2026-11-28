@@ -4,10 +4,27 @@ The committed copy has to match the routes in the code; regenerate it with
 `python tools/export_openapi.py` after adding or changing a route.
 """
 
+import importlib.util
 import json
 from pathlib import Path
 
-from tools.export_openapi import OUT, build_spec, operations, render_index
+
+def _load_tool(name: str):
+    """Load tools/<name>.py by path; the `pytest` binary in CI does not put the repo root on
+    sys.path, so `from tools...` only works locally under `python -m pytest`."""
+    path = Path(__file__).resolve().parent.parent / "tools" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"tools_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_tool = _load_tool("export_openapi")
+OUT = _tool.OUT
+build_spec = _tool.build_spec
+operations = _tool.operations
+render_index = _tool.render_index
+
 
 ROOT = Path(__file__).resolve().parents[1]
 

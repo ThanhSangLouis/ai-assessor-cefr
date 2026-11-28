@@ -1,6 +1,21 @@
 """The uptime number in the report is successful checks over finished checks."""
 
-from tools.uptime_report import summarize
+import importlib.util
+from pathlib import Path
+
+
+def _load_tool(name: str):
+    """Load tools/<name>.py by path; the `pytest` binary in CI does not put the repo root on
+    sys.path, so `from tools...` only works locally under `python -m pytest`."""
+    path = Path(__file__).resolve().parent.parent / "tools" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"tools_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_tool = _load_tool("uptime_report")
+summarize = _tool.summarize
 
 
 def run(day: str, conclusion: str | None) -> dict:
