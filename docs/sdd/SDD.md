@@ -2456,7 +2456,7 @@ sequenceDiagram
 
 **Một tiến trình.** `aicefr.api.main` dựng cả ba dịch vụ với facade cục bộ và bus trong tiến trình — cùng router, cùng quy tắc, chỉ khác dây nối. Kiểm thử chạy trên dạng này; `tests/test_services_split.py` chạy ba ứng dụng tách rời (web gọi core qua HTTP) sau một gateway giả lập; CI chạy thêm toàn bộ bộ kiểm thử trên PostgreSQL và bus trên RabbitMQ thật.
 
-### 4.19. Lược đồ có phiên bản — D045 (đề xuất)
+### 4.19. Lược đồ có phiên bản — D045 (đã hiện thực)
 
 **Vì sao có mục này.** Chủ dự án yêu cầu "chốt database" (14/10/2026). Đến D044, mỗi repository tự tạo bảng của mình bằng `CREATE TABLE IF NOT EXISTS` và tự thêm cột lúc khởi động (`add_columns`). Cách đó không biết kho đang ở phiên bản nào, và một lần sửa chuỗi `SCHEMA` có thể lọt qua không ai thấy.
 
@@ -2469,7 +2469,7 @@ sequenceDiagram
 
 **Cập nhật theo D048 (21/10/2026, đề xuất).** Kho chuyển sang MongoDB. Thiết kế phiên bản giữ nguyên ý: sổ `schema_migrations` (một document mỗi phiên bản, chỉ mục duy nhất), phiên bản 1 dựng bằng repository, phiên bản 2 tạo chỉ mục của `learning_plan`. Khác với SQL: cấu trúc của một collection là các chỉ mục của nó, nên bản chụp chuẩn là `docs/db/schema_core.json` (collection và chỉ mục). Không còn khoá ghi hay giao dịch: mọi migration phải chạy lại được (tạo chỉ mục đã có là không làm gì), hai tiến trình cùng nâng thì cả hai chạy nhưng chỉ một ghi sổ. Đoạn "không dùng Alembic" ở trên không còn áp dụng.
 
-### 4.20. Model ghép lộ trình — D046 (đề xuất)
+### 4.20. Model ghép lộ trình — D046 (đã hiện thực)
 
 **Vì sao có mục này.** Chủ dự án yêu cầu "một model AI tạo lộ trình từ những lộ trình đã có, theo hướng giáo viên hoặc sinh viên muốn" (14/10/2026). D025 cam kết không model ngôn ngữ nào viết nội dung bài học. Vì vậy model **chọn và xếp thứ tự** bài đã xuất bản, không sinh câu chữ (BR-40).
 
@@ -2484,7 +2484,7 @@ sequenceDiagram
 
 **Giới hạn đã biết.** Trọng số relevance là hằng số có lý do, chưa được hiệu chỉnh trên dữ liệu người dùng thật. Tín hiệu từ khớp chỉ có ích khi mục tiêu chứa từ tiếng Anh có trong bài. Với lộ trình mẫu hiện có (31 bài, 30 cặp), thứ tự học được không tốt hơn quy tắc cố định nên model dùng quy tắc đó và nói rõ.
 
-### 4.21. Triển khai lên máy chủ — D047 (đề xuất)
+### 4.21. Triển khai lên máy chủ — D047 (đã hiện thực)
 
 **Vì sao có mục này.** Chủ dự án yêu cầu "deploy web" (14/10/2026).
 
@@ -2494,7 +2494,7 @@ sequenceDiagram
 - **Hướng dẫn:** `docs/plan/TRIEN_KHAI_VPS.md`.
 - **Giới hạn.** Chỉ dùng phi thương mại vì mô hình chấm học từ Speak & Improve theo giấy phép nghiên cứu. Không mở đăng ký. Không thu tiền thật.
 
-### 4.22. Tính lượt trên kênh NetID — D049 (đề xuất)
+### 4.22. Tính lượt trên kênh NetID — D049 (đã hiện thực)
 
 **Vì sao có mục này.** Chủ dự án muốn đưa phần AI lên NetID và thu theo lượt bằng IDPoint (21/10/2026). Thu theo lượt ngược với BR-29, BR-30 và FR-W7 của bản dành cho trường, nên chỉ bật trên một bản triển khai riêng cho kênh NetID.
 
@@ -2506,7 +2506,7 @@ sequenceDiagram
 
 **Chưa làm:** adapter API IDPoint của NetID, đối soát mỗi ngày, tính lượt cho bước luyện trong bài học và lộ trình, lối vào API riêng cho NetID, Redis/BullMQ.
 
-### 4.23. Bus trên Redis và BullMQ — D050 (đề xuất)
+### 4.23. Bus trên Redis và BullMQ — D050 (đã hiện thực)
 
 **Vì sao có mục này.** Chủ dự án yêu cầu dùng job worker BullMQ/Redis (21/10/2026). Redis còn dùng được cho giới hạn tần suất và bộ nhớ đệm, nên một hạ tầng thay được hai.
 
@@ -2516,7 +2516,7 @@ sequenceDiagram
 - **Hỏi đáp** (`call` / `serve`): yêu cầu đẩy vào danh sách kèm hạn chót, máy trả lời đẩy kết quả vào khoá riêng có hạn 60 giây; quá giờ thì `BusTimeout`. Máy trả lời lỗi thì trả `{"error": "internal"}` ngay, không bắt người gọi chờ hết giờ.
 - **Triển khai:** `redis:7-alpine`, có mật khẩu, bật AOF để việc đang chờ còn sau khi khởi động lại, `maxmemory-policy noeviction` theo yêu cầu của BullMQ.
 
-### 4.24. Kho riêng cho từng dịch vụ, object storage, giám sát — D051 (đề xuất)
+### 4.24. Kho riêng cho từng dịch vụ, object storage, giám sát — D051 (đã hiện thực)
 
 **Kho dữ liệu riêng.** `learning` đọc `AICEFR_LEARNING_DB`, `metering` đọc `AICEFR_METERING_DB`; không đặt thì dùng kho của `core`. Compose dùng ba database `aicefr`, `aicefr_learning`, `aicefr_metering`. Người dùng `core` có `readWrite` trên ba database này và không có quyền ở đâu khác. Không dịch vụ nào đọc database của dịch vụ khác: xoá dữ liệu một người và xuất dữ liệu cá nhân đi qua facade như trước. `PlanRepository` tự tạo chỉ mục của mình, vì database riêng của `learning` không chạy migration của `core`. Sao lưu: một tệp `mongodump` cho mỗi database.
 
@@ -2526,15 +2526,15 @@ sequenceDiagram
 - **Số đo:** thời gian mỗi bước pipeline (`qc`, `vad`, `asr`, `features`, `scoring`), thời gian chờ trong hàng đợi chấm, thời gian xử lý mỗi việc chấm theo mục đích (cơ sở đặt giá một lượt, mục 4 của thiết kế D049), độ trễ HTTP, số đơn vị đã thu và đã hoàn.
 - **Thu thập và hiển thị:** mỗi dịch vụ phục vụ `/metrics`; gateway trả 404 cho đường này. Prometheus có 4 luật cảnh báo: dịch vụ không trả lời, việc chấm lỗi, hàng đợi chậm, lỗi 5xx. Grafana có bảng dựng sẵn.
 
-### 4.25. Hiệu chuẩn band tuỳ chọn — D052 (đề xuất)
+### 4.25. Hiệu chuẩn band tuỳ chọn — D052 (đã hiện thực, mặc định tắt)
 
 Phép giãn `y' = mu + lambda * (y_hat - mu)` là tuyến tính, nên mô hình hiệu chuẩn vẫn là một mô hình ridge: hệ số nhân lambda, hệ số chặn dời theo mu. Vì vậy nó là một artifact bình thường (`ridge_resp_v2_cal.json`), đi qua `RidgeScorer` không đổi dòng nào; `contributions()` vẫn tính theo điểm hiển thị, và ngưỡng để kiểm điểm giảng viên sửa là ngưỡng của chính mô hình đã chấm. Khoảng CV+ đi kèm dùng năm mô hình fold giãn cùng lambda. Công cụ sinh: `tools/calibrate_bands.py`.
 
-### 4.26. Gói lượt — D053 (đề xuất)
+### 4.26. Gói lượt — D053 (đã hiện thực)
 
 Đơn `kind = credits` dùng lại máy trạng thái đơn của D033/D035; khác ở bước cuối: thay vì cấp giấy phép, `BillingService.credit_order` gọi `metering.credit(account_id, runs, order_id)`. Metering cộng một lần nhờ chỉ mục duy nhất (`source`, `ref`) của `credit_grant`, còn billing ghi `credited_at` sau khi cộng xong. Nếu lời gọi lỗi, đơn vẫn đã thanh toán và được cộng ở lần gọi sau.
 
-### 4.27. Lớp học và giao bài — D054 (đề xuất)
+### 4.27. Lớp học và giao bài — D054 (đã hiện thực)
 
 Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment`, migration 4). Không thêm trường vào `response`: trạng thái nộp tính bằng truy vấn bài đánh giá của đề đó, của các thành viên, từ lúc giao (`Repository.assessments_since`). Trang Nộp bài nhận `?task=` để mở đúng đề.
 
@@ -2542,15 +2542,15 @@ Ba collection mới trong `assessment` (`classroom`, `class_member`, `assignment
 
 **Sinh viên tự vào lớp (D109).** Lớp cho giảng viên quyền trên bài của thành viên, nên chỉ việc của sinh viên mới thêm sinh viên vào `members`. `classroom` có thêm `invited` (mã tài khoản được mời, chưa trả lời) và `join_code` (6 ký tự trong bảng chữ không có 0/O, 1/I/L; không có trường là tắt mã; chỉ mục duy nhất có điều kiện `join_code` tồn tại, migration 25). Mọi bước là một lệnh cập nhật có điều kiện trên một document: `invite` thêm vào `invited` khi chưa là thành viên và chưa được mời; `accept` chuyển từ `invited` sang `members` khi lớp chưa lưu trữ; `join_by_code` chuẩn hoá mã (bỏ hoa thường, dấu cách, gạch nối) rồi `add_member`, đồng thời gỡ lời mời cũ. `teaches`, `students_of`, `teachers_of` không đổi: chỉ đọc `members`, nên lời mời chưa trả lời không cho quyền gì. API: giảng viên `POST /api/v1/classes/{id}/members` thành mời (trả `invited`, `pending`, `already`, `not_students`, `unknown`), quản trị viên vẫn thêm thẳng (`added`); `DELETE /api/v1/classes/{id}/invites/{account_id}`; `POST`/`DELETE /api/v1/classes/{id}/code`. Sinh viên: `GET /api/v1/me/classes`, `POST /api/v1/me/classes/join` (mười lần một phút cho mỗi tài khoản), `POST /api/v1/me/classes/{id}/accept|decline|leave`; sinh viên không bao giờ thấy mã của lớp. Thanh bên của sinh viên có số `class_invites` (`/api/v1/me/badges`, qua `AssessmentFacade.class_invites`), trang Lộ trình có lời nhắc tới `/my-classes`. Nhật ký: `class.invite`, `class.join` (chi tiết `code` hay `invite`), `class.decline`, `class.leave`, `class.code`. **Email (hình 3b):** `classes_api` phát `classroom.invited` và `classroom.joined` (`contracts.py`) qua `bus.publish`; lỗi bus chỉ được ghi log, không làm hỏng yêu cầu. Dịch vụ định danh đăng ký `notify.classes.on_invited` và `on_joined`, dựng thư bằng `messages.class_invite_email` và `class_joined_email` (cùng khung thẻ thương hiệu với thư thanh toán), giữ khoá `class_email:<loại>:<lớp>:<tài khoản>:<lúc>` bằng `setting_once` để bus giao lại không gửi hai lần. `email.has_mailbox` loại địa chỉ ở `demo.speakup.fit`, dùng chung cho nhắc học và biên nhận.
 
-### 4.28. Nhắc việc — D055 (đề xuất)
+### 4.28. Nhắc việc — D055 (đã hiện thực)
 
 `GET /api/v1/me/nudges` ở dịch vụ web (gateway chuyển như `/api/v1/me/badges`), gom số liệu từ `assessment` (bài được giao, mục tiêu hôm nay), `learning` (ôn tập) và `metering` (lượt còn lại), rồi áp quy tắc thuần `practice/nudges.py`.
 
-### 4.29. Tự nghe lại có mốc đối chứng — D056 (đề xuất)
+### 4.29. Tự nghe lại có mốc đối chứng — D056 (đã hiện thực, mặc định tắt)
 
 `report/replay.py` chọn đoạn từ evidence có mốc thời gian và từ bản chép (đoạn đối chứng cần ít nhất 3 từ, cách mọi cờ 1 giây); hạt giống là băm của mã bài nên mỗi lần mở đều ra cùng các đoạn. Nhãn lưu trong `replay_label` (migration 5) kèm nguồn đoạn, để phân tích không phải tính lại. API: `GET/POST /api/v1/responses/{id}/replay[/{moment}]`, `GET /api/v1/me/replay-labels`, `GET /api/v1/admin/replay/report`.
 
-### 4.30. Bảng giá theo bài, đo kèm token — D057 (đề xuất)
+### 4.30. Bảng giá theo bài, đo kèm token — D057 (đã hiện thực)
 
 `PriceList` gồm lượt cho bài tới 1 phút, lượt cho mỗi phút thêm, hệ số bài luyện tập và số IDPoint mỗi lượt. Các giá trị đọc từ `AICEFR_PRICE_FIRST_MINUTE_RUNS`, `AICEFR_PRICE_EXTRA_MINUTE_RUNS`, `AICEFR_PRICE_PRACTICE_FACTOR`, `AICEFR_IDPOINT_PER_RUN` (mặc định 1,0 / 0,7 / 0,5 / 2.000 theo bảng giá team chốt ngày 24/10/2026) và được truyền vào `MeteringFacade`.
 
@@ -2667,7 +2667,49 @@ Khác 5.1 và 5.2 — lược đồ nghiên cứu dự kiến của hình 5b —
 
 ## 6. Thiết kế API
 
-Base path `/api/v1`. Xác thực bằng JWT Bearer. Mọi phản hồi lỗi theo một khuôn dạng chung:
+### 6.0. Sơ đồ API theo mã hiện hành (cập nhật 28/11/2026)
+
+Sơ đồ và số liệu mục này sinh từ chính các route của ứng dụng bằng `python tools/export_openapi.py`:
+- [`docs/sdd/api/openapi.json`](api/openapi.json): tài liệu OpenAPI do FastAPI sinh;
+- [`docs/sdd/api/ENDPOINTS.md`](api/ENDPOINTS.md): đủ 191 thao tác, mỗi dòng có nhóm người gọi và dịch vụ nhận.
+
+`tests/test_openapi_export.py` báo đỏ khi bản lưu lệch mã. Production tắt `/docs` và `/openapi.json` (`AICEFR_ENV=production`, `src/aicefr/api/main.py`) để không lộ bề mặt API cho người lạ, nên bản lưu này là nguồn tra cứu.
+
+```mermaid
+flowchart LR
+  SV([Sinh viên]) & GV([Giảng viên]) & QT([Quản trị]) & K([Khách]) -->|HTTPS| CADDY[Caddy<br/>TLS speakup.fit]
+  CADDY --> GW[Gateway nginx<br/>chuyển theo đường dẫn]
+  GW -->|35 trang HTML| WEB[Dịch vụ web]
+  GW -->|156 thao tác /api/v1| CORE[Dịch vụ core]
+  subgraph CORE_API[Nhóm API của core]
+    AUTH["/auth — 5<br/>đăng nhập, đăng ký, Google"]
+    ME["/me — 40<br/>hồ sơ, đồng thuận, ví lượt, tiến độ"]
+    LEARN["/learn — 20<br/>bài luyện, lộ trình"]
+    RESP["/responses — 10<br/>nộp bài, báo cáo"]
+    CLS["/classes — 12<br/>vào lớp, bài được giao"]
+    TEACH["/teach — 31<br/>lớp, đề, bài học, thống kê"]
+    REV["/review — 6<br/>hàng chờ, duyệt"]
+    ADM["/admin — 26<br/>tài khoản, mô hình, giá, đơn"]
+    BILL["/billing — 2<br/>payOS báo kết quả"]
+  end
+  CORE --- CORE_API
+  CORE -->|việc chấm qua Redis/BullMQ| SPEECH[Dịch vụ speech<br/>Whisper, đặc trưng, mô hình ghép]
+  SPEECH -->|kết quả| CORE
+  CORE --> DB[(MongoDB<br/>mỗi dịch vụ một database)]
+```
+
+| Nhóm người gọi (tag OpenAPI) | Số thao tác `/api/` | Quyền |
+| --- | --- | --- |
+| `student` | 50 | `require_login` |
+| `teacher` | 48 | `require_role(TEACHER, ADMIN)` |
+| `admin` | 32 | `require_role(ADMIN)` |
+| `auth` | 20 | đăng nhập, đăng ký, quên mật khẩu: công khai, có giới hạn tốc độ; `/me/*` của tài khoản: `require_login` |
+| `me` | 4 | `require_login` |
+| `billing` | 2 | chữ ký của cổng thanh toán |
+
+Xác thực bằng **JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`** (D091, thay QĐ-07; `src/aicefr/auth/sessions.py`). Mỗi token ứng với một bản ghi phiên, nên đăng xuất, đổi mật khẩu hay tắt tài khoản thu hồi phiên ngay. Dịch vụ speech không nhận yêu cầu HTTP từ ngoài: gateway không chuyển đường dẫn nào tới nó, việc chấm đi qua bus. Bảng dưới là thiết kế ban đầu (14/09/2026), giữ lại để đối chiếu với mã hiện hành ở trên.
+
+Base path `/api/v1`. Mọi phản hồi lỗi theo một khuôn dạng chung:
 
 ```json
 { "error": { "code": "AUDIO_TOO_LARGE", "message": "File vuot qua 25 MiB",
@@ -2945,7 +2987,16 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: test chạy được ngay từ tuần 1, đổi engine không đụng nghiệp vụ, demo vẫn chạy nếu model hỏng. Tiêu cực: thêm một lớp gián tiếp và nguy cơ adapter fake lệch hành vi thật; giảm thiểu bằng một smoke test có marker chạy với model thật khi có.
 - **Trạng thái hiện thực.** Đã hiện thực cho ASR (`AsrEngine` ← `WhisperEngine`, `FakeAsrEngine`), cho VAD (`VoiceActivityDetector` ← `SileroVad`, `EnergyVad`), cho chấm điểm (`Scorer` ← `RidgeScorer`) và cho lưu trữ (`ResponseStore` ← `Repository`). Port `AudioDecoder` nêu trong ADR này nay cũng đã hiện thực (`AudioDecoder` ← `SoundFileDecoder`, `FfmpegDecoder`, `FirstMatchDecoder`); riêng `ArtifactStore` **chưa hiện thực**. Test `tests/test_ports.py` đọc mã nguồn để bảo đảm lõi không nhắc tên adapter nào.
 
-### ADR-02 — Hợp nhất Ridge và BERT với trọng số 0.6 / 0.4 (**nhánh văn bản đã huấn luyện, hợp nhất chưa hiện thực**)
+### ADR-02 — Hợp nhất mô hình đặc trưng và mô hình văn bản (**đã hiện thực: `fusion_resp_v4`, production từ 16/11/2026**)
+
+> **Cập nhật 28/11/2026 — quyết định cuối thay cho phương án (c) bên dưới.**
+> - **Chọn (d), stacking học được**, không dùng trọng số cố định 0,6/0,4. Lý do (c) bị loại: con số 0,6 không kiểm chứng được. Lý do ban đầu loại (d), "thiếu tập mà hai nhánh chưa thấy", đã được gỡ bằng dự đoán **ngoài fold**: 5 fold chia theo người nói trên dev, mỗi bài chỉ được chấm bởi mô hình chưa học bài đó.
+> - **Nhánh văn bản là DeBERTa-v3-base tinh chỉnh bằng LoRA**, thắng 5 cấu hình (BERT/DeBERTa × đóng băng/toàn bộ/LoRA) và ổn định qua 3 seed. Nhánh đặc trưng là `ridge_resp_v4`, học lại trên đúng 18 đặc trưng do app trích.
+> - **Mã:** `src/aicefr/scoring/fusion.py` (`DebertaScorer`, `is_fusion_artifact`). Điểm = hệ số chặn + w₁·Ridge + w₂·DeBERTa, cắt về 1–6, kèm khoảng dự đoán 90 %. Trọng số và số đo nằm trong artifact và hồ sơ nội bộ ngoài repo, vì học trên Speak & Improve (phi thương mại, chưa được phép công bố).
+> - **Dự phòng:** không có bản chép lời hoặc DeBERTa lỗi thì chấm bằng `ridge_resp_v4`. Quản trị viên đổi mô hình ở Quản trị → Mô hình; quay lại bản cũ bằng cách kích hoạt lại `ridge_resp_v2`.
+> - **Chi phí:** DeBERTa chạy CPU khoảng 0,3 giây/bài trên EC2 2 vCPU, nhỏ so với khoảng 12 giây của Whisper.
+>
+> Nội dung bên dưới là bản ghi quyết định ban đầu (09/2026), giữ để thấy vì sao phương án đổi.
 
 - **Bối cảnh.** Cần điểm số vừa chính xác vừa giải thích được trước hội đồng.
 - **Phương án.** (a) Chỉ Ridge trên đặc trưng. (b) Chỉ BERT trên transcript. (c) Hợp nhất tuyến tính có trọng số cố định. (d) Hợp nhất bằng mô hình stacking học được.
@@ -2957,7 +3008,9 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 
   Bước hợp nhất vẫn **chưa hiện thực**, và không phải vì thiếu thời gian. Trọng số `w = 0.6` chỉ có nghĩa khi đo được hai nhánh trên **cùng một tập mà cả hai đều chưa từng thấy**, và tập đó hiện **không tồn tại**: `ridge_resp_v2` huấn luyện trên chính các mẫu dev P3+P4 mà DeBERTa dùng làm tập đánh giá. Chốt một trọng số trước khi có tập so sánh thứ ba là chốt một con số không ai kiểm chứng được. Phân tích đầy đủ ở `docs/plan/SPEC_HOAN_THIEN.md` mục 4b.
 
-### ADR-03 — SQLite cho phát triển, PostgreSQL cho staging
+### ADR-03 — SQLite cho phát triển, PostgreSQL cho staging (**đã thay bằng MongoDB, D048**)
+
+> **Cập nhật 28/11/2026.** Phương án này không còn chạy. Từ D048 (W7), cả ba dịch vụ dùng **MongoDB 7**, mỗi dịch vụ một database (D051). Bản trong bộ nhớ dùng cho test nhanh, CI có job riêng chạy lại bộ test trên MongoDB và Redis thật (`Kiem thu tren MongoDB va Redis`, `.github/workflows/ci.yml`). Các nhắc tới SQLite/PostgreSQL ở mục 4–5 là thiết kế giai đoạn 09–10/2026; lược đồ hiện hành xem mục 3.5 (ERD) và `docs/db/TU_DIEN_DU_LIEU.md`. Phần dưới giữ làm lịch sử quyết định.
 
 - **Bối cảnh.** Ba máy cá nhân cấu hình khác nhau, cần chạy test nhanh và không phụ thuộc dịch vụ nền.
 - **Phương án.** (a) PostgreSQL ở mọi môi trường. (b) SQLite ở mọi môi trường. (c) SQLite dev + PostgreSQL staging qua cùng một lớp SQLAlchemy.
@@ -3068,7 +3121,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: còn hai tiến trình web và một vai trò cơ sở dữ liệu; lời gọi giữa tài khoản, bài nộp, bài học, gói thành lời gọi hàm; `speech` vẫn tách riêng với ảnh nặng và không giữ khoá. Tiêu cực: một lỗi trong `core` ảnh hưởng mọi API; vai trò PostgreSQL không còn chặn phần này đọc bảng phần kia — chỉ quy ước mã chặn. Giảm thiểu: facade và kiểm thử ranh giới giữ nguyên, tách lại chỉ là đổi dây nối.
 - **Trạng thái hiện thực.** Đã hiện thực ở D044 (mục 4.18, Hình 6).
 
-### ADR-17 — Lược đồ có phiên bản bằng bộ chạy migration nhỏ, không Alembic (đề xuất)
+### ADR-17 — Lược đồ có phiên bản bằng bộ chạy migration nhỏ, không Alembic (đã áp dụng)
 
 - **Bối cảnh.** Phải "chốt database"; lược đồ do chín repository tự tạo, không có phiên bản (D045).
 - **Phương án.** (a) Chỉ ghi tài liệu. (b) SQLAlchemy và Alembic. (c) Bộ chạy migration riêng: phiên bản 1 là lược đồ hiện có, sau đó là các migration SQL đánh số, kèm bản chụp lược đồ được kiểm thử.
@@ -3076,7 +3129,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Tích cực: biết kho ở phiên bản nào, tự nâng cấp khi khởi động, không đổi lược đồ lén được. Tiêu cực: phiên bản 1 vẫn dựng bằng repository nên chuỗi `SCHEMA` cũ không được sửa nữa; chưa có migration lùi phiên bản. Giảm thiểu: sao lưu trước khi nâng (D047).
 - **Trạng thái hiện thực.** Đã hiện thực (mục 4.19).
 
-### ADR-18 — Model lộ trình chọn và xếp bài, không viết bài (đề xuất)
+### ADR-18 — Model lộ trình chọn và xếp bài, không viết bài (đã áp dụng)
 
 - **Bối cảnh.** Cần model tạo lộ trình theo ý giáo viên hoặc sinh viên. D025 cấm model ngôn ngữ viết nội dung bài; dự án ưu tiên chạy cục bộ và mô hình giải thích được (AGENTS.md).
 - **Phương án.** (a) Ghép từ bài có sẵn: chấm mức phù hợp giải thích được, thứ tự học từ lộ trình hiện có. (b) LLM cục bộ viết bài mới. (c) LLM qua API.
@@ -3084,7 +3137,7 @@ Bảng này là công cụ chính để hội đồng đối chiếu ngẫu nhi�
 - **Hệ quả.** Lộ trình chỉ tốt bằng kho bài hiện có; ít bài thì có cảnh báo, không bịa bài. Trọng số cần hiệu chỉnh khi có dữ liệu người dùng thật.
 - **Trạng thái hiện thực.** Đã hiện thực (mục 4.20).
 
-### ADR-19 — Một máy chủ, Docker Compose, Caddy cấp HTTPS (đề xuất)
+### ADR-19 — Một máy chủ, Docker Compose, Caddy cấp HTTPS (đã áp dụng)
 
 - **Bối cảnh.** Cần đưa hệ thống lên mạng cho GVHD, nhóm và sinh viên khảo sát (D047).
 - **Phương án.** (a) Một VPS chạy đúng bộ compose hiện có, Caddy phía trước. (b) Máy cá nhân cộng Cloudflare Tunnel. (c) PaaS (Render, Railway, Fly.io).
