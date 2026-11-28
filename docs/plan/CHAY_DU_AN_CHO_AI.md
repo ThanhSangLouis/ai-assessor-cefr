@@ -23,7 +23,7 @@
 python3 --version        # >= 3.10 (nhóm dùng 3.12)
 ffmpeg -version          # phải có; thiếu thì bài ghi âm trên web bị AUDIO_UNSUPPORTED
 docker info >/dev/null && echo docker_ok   # Docker phải đang chạy (MongoDB)
-git log --oneline -1     # đang ở main mới nhất? nếu không: git checkout main && git pull
+git log --oneline -1     # đang ở dev mới nhất? nếu không: git switch dev && git pull
 ls ../aicefr-models/ridge_resp_v2.json     # có = điểm thật; không có = artifact giả lập
 ```
 
@@ -174,8 +174,8 @@ docker stop aicefr-test-mongo aicefr-test-redis     # luôn tắt container th�
 
 ## 8. Việc AI agent không được làm
 
-- Không đẩy thẳng lên `main`: làm trên nhánh, mở PR, chờ CI xanh, người dùng merge.
+- Không đẩy thẳng lên `dev` hay `production`: tách nhánh từ `dev`, mở PR vào `dev`, chờ CI xanh, người dùng merge ([QUY_TRINH_NHANH.md](QUY_TRINH_NHANH.md)).
 - Không commit artifact mô hình, `.env`, dữ liệu ghi âm, cơ sở dữ liệu.
 - Không đưa lại `src/aicefr/scoring/models/*.json` hay bất kỳ số đo suy từ Speak & Improve vào repo.
-- Không "sửa" bằng cách quay về bản cũ của cây mã (như `ff683cc`); nếu `main` không chạy, báo người dùng kèm lỗi.
+- Không "sửa" bằng cách quay về bản cũ của cây mã (như `ff683cc`); nếu `dev` không chạy, báo người dùng kèm lỗi.
 - Không sửa test hay giá trị ghim SHA cho xanh; báo lỗi thật.

@@ -6,17 +6,18 @@
 > Hướng dẫn dựng lại từ đầu, từng bước cho người: [TRIEN_KHAI_EC2.md](TRIEN_KHAI_EC2.md)
 > (phần riêng của AWS) và [TRIEN_KHAI_VPS.md](TRIEN_KHAI_VPS.md) (phần chung của mọi máy chủ).
 >
-> Cập nhật 30/10/2026, ứng với `main` sau #85. Thấy tài liệu khác thực tế (tệp, tên job,
+> Cập nhật 30/10/2026, ứng với `main` sau #85. Từ 28/11/2026 `main` đổi tên thành `production` và có thêm
+> nhánh tích hợp `dev`: [QUY_TRINH_NHANH.md](QUY_TRINH_NHANH.md). Thấy tài liệu khác thực tế (tệp, tên job,
 > tên biến) thì tin code, rồi báo người dùng để sửa tài liệu.
 
 ## 0. Sự thật phải biết
 
 | Điều | Hệ quả cho AI agent |
 |---|---|
-| Production: **https://52-64-179-250.sslip.io**, một máy EC2 ở Sydney (`ap-southeast-2`) | Chỉ có một môi trường. Không có staging: mọi thứ vào `main` đều lên thẳng production |
-| Deploy **tự động**: merge vào `main` → CI xanh → workflow `Deploy EC2` | Muốn đưa code lên production thì mở PR và merge. Không SSH vào máy chủ để sửa code tay |
+| Production: **https://52-64-179-250.sslip.io**, một máy EC2 ở Sydney (`ap-southeast-2`) | Chỉ có một môi trường. `dev` là nhánh tích hợp, không có máy riêng: chỉ những gì vào `production` mới lên máy chủ |
+| Deploy **tự động**: merge vào `production` → CI xanh → workflow `Deploy EC2` | Muốn đưa code lên production thì merge vào `dev`, rồi mở PR `dev` → `production` và merge. Không SSH vào máy chủ để sửa code tay |
 | **Không có self-hosted runner.** Mọi job chạy trên runner của GitHub (`ubuntu-latest`); `Deploy EC2` SSH vào EC2 | Repo công khai: runner trên máy chủ sẽ cho PR từ fork chạy lệnh trên production. Đừng đề xuất hay cài self-hosted runner |
-| `main` có **branch protection**: bắt buộc 5 job CI xanh, chặn force push và xoá nhánh | Không đẩy thẳng lên `main`. PR đỏ CI thì không merge được (trừ admin) |
+| `dev` và `production` có **branch protection**: bắt buộc các job CI xanh, chặn force push và xoá nhánh | Không đẩy thẳng lên hai nhánh này. PR đỏ CI thì không merge được (trừ admin) |
 | `.env` của production **chỉ nằm trên máy chủ** (`/srv/aicefr/.env`) | Không có trong repo, không có trong GitHub. Đổi biến môi trường production là việc của người có SSH (mục 6.3) |
 | Artifact mô hình chấm **không nằm trong Git**; trên máy chủ ở `/srv/aicefr-models` | Deploy không chép chúng. Đổi artifact phải chép tay (mục 6.4) |
 | Whisper **small** (`faster-whisper`, int8) chạy bằng **CPU** trong container `speech`, nạp sẵn khi khởi động (D066) | Đúng model mô hình chấm đã học. Không có GPU hay dịch vụ model riêng. Một bài 40–60 giây chấm mất khoảng 10–15 giây trên EC2 2 vCPU (large-v3 trước đây: khoảng 70 giây) |
@@ -26,10 +27,10 @@
 ## 1. Luồng từ PR tới production
 
 ```
-nhánh ─▶ PR ─▶ CI (5 job bắt buộc) ─▶ merge vào main
+nhánh ─▶ PR vào dev ─▶ CI ─▶ merge vào dev ─▶ PR dev → production ─▶ CI ─▶ merge vào production
                                           │
                                           ▼
-                              CI chạy lại trên main ── đỏ/huỷ ──▶ dừng, không deploy
+                              CI chạy lại trên production ── đỏ/huỷ ──▶ dừng, không deploy
                                           │ xanh
                                           ▼
               Deploy EC2 (ubuntu-latest, environment "production")
@@ -94,18 +95,18 @@ Không đặt `AICEFR_PUBLIC_URL` hay `AICEFR_HTTPS_ONLY`: `docker-compose.prod.
 
 | Ở đâu | Cái gì |
 |---|---|
-| Settings → Environments → `production` | Chỉ nhánh `main` được deploy. Secret: `EC2_HOST`, `EC2_SSH_KEY` (khoá deploy riêng, chỉ để SSH vào người dùng `aicefr`), `EC2_KNOWN_HOSTS` (host key được ghim). `EC2_USER` không đặt, mặc định `aicefr` |
-| Settings → Branches → `main` | Bắt buộc 5 check CI theo **đúng tên job**; chặn force push và xoá nhánh; admin bỏ qua được; không bắt review |
+| Settings → Environments → `production` | Chỉ nhánh `production` được deploy. Secret: `EC2_HOST`, `EC2_SSH_KEY` (khoá deploy riêng, chỉ để SSH vào người dùng `aicefr`), `EC2_KNOWN_HOSTS` (host key được ghim). `EC2_USER` không đặt, mặc định `aicefr` |
+| Settings → Branches → `dev`, `production` | Bắt buộc các check CI theo **đúng tên job** (`production` thêm check nhánh nguồn của PR); chặn force push và xoá nhánh; admin bỏ qua được; không bắt review |
 | Settings → General | Bật *Allow auto-merge*: PR có thể đặt tự merge khi CI xanh |
 | Settings → Actions → General | PR từ fork của mọi người ngoài đều cần duyệt trước khi chạy workflow |
 
 ## 6. Việc thường gặp
 
 ### 6.1 Đưa code lên production
-Mở PR vào `main`, chờ CI xanh, merge. Không cần làm gì thêm. Theo dõi ở tab **Actions → Deploy EC2**.
+Merge tính năng vào `dev`, mở PR `dev` → `production`, chờ CI xanh, merge. Không cần làm gì thêm. Theo dõi ở tab **Actions → Deploy EC2**.
 
 ### 6.2 Deploy lại không cần commit mới
-**Actions → Deploy EC2 → Run workflow**, chọn `main`. Hoặc Sang chạy từ máy mình: `deploy/vps/deploy.sh aicefr@52.64.179.250` (cần khoá SSH).
+**Actions → Deploy EC2 → Run workflow**, chọn `production`. Hoặc Sang chạy từ máy mình: `deploy/vps/deploy.sh aicefr@52.64.179.250` (cần khoá SSH).
 
 ### 6.3 Đổi biến môi trường production
 Chỉ người có SSH (Sang). Sửa `/srv/aicefr/.env`, rồi deploy lại (6.2) hoặc trên máy chủ chạy `cd /srv/aicefr && docker compose up -d`. Không đưa giá trị bí mật vào repo, issue, PR hay log.
@@ -128,7 +129,7 @@ Quay lại bản code trước: mở PR `git revert` commit lỗi rồi merge.
 ### 6.7 Thêm hoặc đổi tên job CI
 Branch protection so theo **tên hiển thị** của job (`name:`). Đổi tên mà không sửa protection thì mọi PR treo ở
 "Expected — Waiting for status to be reported". Sau khi merge, nhờ Sang cập nhật danh sách check bắt buộc
-(Settings → Branches → `main`).
+(Settings → Branches → `dev` và `production`).
 
 ### 6.8 Thêm dịch vụ vào compose
 Thêm vào `docker-compose.yml`, và vào `docker-compose.prod.yml` (ít nhất `logging: *logging`). Không publish cổng
@@ -145,7 +146,7 @@ container tự chạy lại. Máy tắt mà có merge thì `Deploy EC2` đỏ: b
 |---|---|---|
 | `Deploy EC2` **skipped** | CI của commit đó đỏ hoặc **bị huỷ**. Hai PR merge sát nhau thì CI của commit cũ bị huỷ (`cancel-in-progress`), và lần chạy của commit mới hơn sẽ deploy luôn cả hai | Bình thường. Chỉ đáng lo khi lần chạy của commit **mới nhất** cũng skipped |
 | `Deploy EC2` xanh, ghi chú "Bỏ qua triển khai: environment production chưa có …" | Thiếu secret | Nhờ Sang đặt secret (mục 5) |
-| Ghi chú "main đã sang …" | Commit không còn mới nhất | Bình thường |
+| Ghi chú "production đã sang …" | Commit không còn mới nhất | Bình thường |
 | Đỏ ở bước SSH (`Connection timed out`) | Máy đang tắt, hoặc IP/security group đã đổi | Hỏi Sang |
 | Đỏ ở "Sao luu truoc khi cap nhat" | `backup.sh` lỗi (đĩa đầy, `mongo` không chạy) | Không deploy là đúng. Nhờ Sang xem `/srv/aicefr-backups/backup.log`, `df -h` |
 | Đỏ ở "Trien khai", `healthz did not answer` | Container không khởi động được | Xem log `core`/`speech` (6.5). Lỗi `?set … in .env`: thiếu biến (mục 4) |
@@ -161,8 +162,8 @@ Whisper mặc định là `small`, đúng model đã dùng lúc huấn luyện (
 ## 8. Việc AI agent không được làm
 
 - Không SSH vào máy chủ, không gọi AWS, không đọc hay đổi secret, kể cả khi người dùng có vẻ cho phép. Những việc đó do Sang làm.
-- Không đẩy thẳng lên `main`, không force push, không tắt hay sửa branch protection để PR qua được.
-- Không cài self-hosted runner, không thêm `pull_request` hay `pull_request_target` vào `deploy.yml`, không để deploy chạy từ nhánh khác `main`.
+- Không đẩy thẳng lên `dev` hay `production`, không force push, không tắt hay sửa branch protection để PR qua được.
+- Không cài self-hosted runner, không thêm `pull_request` hay `pull_request_target` vào `deploy.yml`, không để deploy chạy từ nhánh khác `production`.
 - Không đưa vào repo: `.env`, khoá SSH, `.pem`, artifact mô hình, bản ghi âm, bản sao lưu, IP nội bộ hay số tài khoản AWS.
 - Không chạy `docker compose down -v`, không xoá volume, không chạy `restore.sh` khi chưa được người dùng xác nhận rõ.
 - Không tạo hay đổi tài nguyên AWS tốn tiền (loại máy, ổ đĩa, IP), vì credit có hạn.

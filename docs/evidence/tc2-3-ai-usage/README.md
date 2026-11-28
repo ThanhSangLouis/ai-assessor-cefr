@@ -10,7 +10,7 @@ AI Usage Log, prompt gốc, mục đích dùng AI, file sinh ra, phần người
 
 | Artifact | Vai trò | Tình trạng |
 | --- | --- | --- |
-| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Mười hai workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | W04 có 8 bản ghi bổ sung của Nguyên ngày 12/10 theo yêu cầu; W05 hiện có 28 Thắng, 74 Nguyên, 28 Sang (130 tổng); W06 hiện có 8 Thắng, 17 Nguyên, 0 Sang (25 tổng); W07 hiện có 14 Thắng, 3 Nguyên, 21 Sang (38 tổng); W08 hiện có 0 Thắng, 6 Nguyên, 0 Sang (6 tổng); W09–W12 đã tạo khung sẵn sàng điền |
+| [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) | Mười hai workbook; mỗi file có sheet Thắng, Sang, Nguyên và Tổng hợp | Số dòng từng người, từng tuần: bảng [AI Prompt Log theo tuần](#ai-prompt-log-theo-tuan) (đếm lại 28/11/2026). Còn trống: Thắng W09, W11; Nguyên W10; Sang W12 |
 | [Kiểm tra task và tạo PR W4 của Nguyên](nguyen/pr-W4-20261012.md) | Ba yêu cầu thực tế ngày 12/10; phạm vi commit và ánh xạ workbook | W05 trong PR: 3 dòng Nguyên/Codex; không khép lịch sử W04 còn thiếu |
 | [Chuyển log Nguyên sang W04](nguyen/chuyen-log-sang-W04-20261012.md) | Ánh xạ 7 dòng từ W05 sang W04 và yêu cầu chuyển file | Ngoại lệ nơi lưu theo chỉ dẫn Nguyên; giữ ngày thực tế 12/10/2026 |
 | [Biên tập prompt của Nguyên](nguyen/prompt-log-bien-tap-20261012.md) | Đối chiếu nội dung gốc và phiên bản diễn đạt chuyên nghiệp của W05, hàng 6–12 | Biên tập theo yêu cầu ngày 12/10; bản gốc được giữ để kiểm tra |
@@ -34,13 +34,22 @@ Phân loại theo ngày ghi ở cột A; tên task có W2/W3 không làm thay đ
 | [W03](AI%20Prompt%20Log%20-%20W03%20-%202026-09-28_2026-10-04.xlsx) | 28/09–04/10/2026 | 21 | 9 | 24 | 54 |
 | [W04](AI%20Prompt%20Log%20-%20W04%20-%202026-10-05_2026-10-11.xlsx) | 05–11/10/2026; có bổ sung 12/10 của Nguyên | 20 | 8 | 17 | 45 |
 | [W05](AI%20Prompt%20Log%20-%20W05%20-%202026-10-12_2026-10-18.xlsx) | 12–18/10/2026 | 28 | 74 | 28 | 130 |
-| [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 8 | 17 | 0 | 25 |
+| [W06](AI%20Prompt%20Log%20-%20W06%20-%202026-10-19_2026-10-25.xlsx) | 19–25/10/2026 | 8 | 17 | 20 | 45 |
 | [W07](AI%20Prompt%20Log%20-%20W07%20-%202026-10-26_2026-11-01.xlsx) | 26/10–01/11/2026 | 14 | 3 | 21 | 38 |
-| [W08](AI%20Prompt%20Log%20-%20W08%20-%202026-11-02_2026-11-08.xlsx) | 02–08/11/2026 | 0 | 7 | 0 | 7 |
-| [W09](AI%20Prompt%20Log%20-%20W09%20-%202026-11-09_2026-11-15.xlsx) | 09–15/11/2026 | 0 | 0 | 0 | 0 |
-| [W10](AI%20Prompt%20Log%20-%20W10%20-%202026-11-16_2026-11-22.xlsx) | 16–22/11/2026 | 0 | 0 | 0 | 0 |
-| [W11](AI%20Prompt%20Log%20-%20W11%20-%202026-11-23_2026-11-29.xlsx) | 23–29/11/2026 | 0 | 0 | 0 | 0 |
+| [W08](AI%20Prompt%20Log%20-%20W08%20-%202026-11-02_2026-11-08.xlsx) | 02–08/11/2026 | 35 | 7 | 23 | 65 |
+| [W09](AI%20Prompt%20Log%20-%20W09%20-%202026-11-09_2026-11-15.xlsx) | 09–15/11/2026 | 0 | 1 | 22 | 23 |
+| [W10](AI%20Prompt%20Log%20-%20W10%20-%202026-11-16_2026-11-22.xlsx) | 16–22/11/2026 | 43 | 0 | 23 | 66 |
+| [W11](AI%20Prompt%20Log%20-%20W11%20-%202026-11-23_2026-11-29.xlsx) | 23–29/11/2026 | 0 | 1 | 21 | 22 |
 | [W12](AI%20Prompt%20Log%20-%20W12%20-%202026-11-30_2026-12-06.xlsx) | 30/11–06/12/2026 | 0 | 0 | 0 | 0 |
+
+**Cập nhật 28/11/2026 — nhật ký của Sang W06, W08–W11.** Bảng trên đếm lại từ chính các workbook bằng đúng quy tắc của sheet `Tổng hợp` (dòng có ngày ở cột A). Nguồn là **bản ghi phiên gốc của Claude Code** trên máy của Sang (328 lượt gõ), không viết lại theo trí nhớ. Để người đọc dễ theo dõi, workbook ghi theo **đầu việc**: các lượt liên tiếp cùng một việc (hỏi, yêu cầu sửa, “merge khi CI xanh”, “check deploy”) được gộp thành một dòng (109 dòng, khoảng 20 dòng mỗi tuần), và prompt được **viết lại cho rõ, bám đúng yêu cầu gốc**:
+- cột D: đầu việc, model (`claude-opus-5-5`), khung giờ (UTC+7) và số lượt gốc đã gộp;
+- cột E: prompt đã chuẩn hoá;
+- cột F: PR hoặc tệp được sửa trong các lượt đó, kèm mã phiên và khung giờ để đối chiếu với bản nguyên văn.
+
+Bản chuẩn hoá ở [`sang/ai-usage-log-sang-W06-W11-chuan-hoa.csv`](sang/ai-usage-log-sang-W06-W11-chuan-hoa.csv). Bản nguyên văn từng lượt, gồm cả 147 lượt W07 (workbook W07 giữ 21 dòng đã gom theo đầu việc), ở [`sang/ai-usage-log-sang-W06-W11.csv`](sang/ai-usage-log-sang-W06-W11.csv): nội dung người khác viết mà Sang dán vào được thay bằng `[nội dung dán, N ký tự]`; email và mã tài khoản AWS bị che.
+
+Google Sheet chung: tab `Sang(Week6)` đang chứa bản sao dữ liệu W3 (28/09–04/10), không phải W6. Thắng và Nguyên chưa có dòng nào cho W09 và W11.
 
 W07 ghi ba lượt Codex của Nguyên cho SCRUM-103: chuyển giao M15/E2E, mở rộng middleware M16 theo yêu cầu chủ dự án, và chuẩn bị [PR #68 vào main](https://github.com/thanglb2005/ai-assessor-cefr/pull/68). Bộ E2E đạt 79/79 trên MongoDB 7.0.45; xem [checkpoint SCRUM-103](../../sdd/modules/m15-product-web/reviews/implementation-transfer-scrum-103-2026-10-28.md) và [minh chứng M16](../../sdd/modules/m16-monolith-runtime/evidence/scrum-103-middleware-integration.md).
 

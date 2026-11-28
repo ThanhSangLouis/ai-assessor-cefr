@@ -2,6 +2,8 @@
 
 ## Hệ thống AI hỗ trợ đánh giá năng lực nói tiếng Anh theo CEFR (A1–C2) cho sinh viên đại học Việt Nam
 
+> **Đối chiếu với tên đề tài đã duyệt** ("… theo CEFR (A2–B2) …"). Đối tượng và phần được kiểm định vẫn là **A2–B2**. Từ D059 (29/10/2026), hệ thống hiển thị đủ sáu band A1–C2 vì mô hình xuất điểm liên tục 1–6. Các ngưỡng A1/A2, B2/C1, C1/C2 chưa hiệu chuẩn, nên không có cam kết độ chính xác cho A1, C1, C2.
+
 | Thuộc tính | Giá trị |
 | --- | --- |
 | Mã tài liệu | SRS-AICEFR-001 |
@@ -45,6 +47,7 @@
 | **1.21** | **03/11/2026** | **D090.** +1 FR: FR-98 đoạn đọc viết quanh 3–5 từ đang luyện dở: mô hình ngôn ngữ viết theo band (học viên trả 0,1 lượt mỗi đoạn mới, đọc lại miễn phí) hoặc ghép từ cụm của chính học viên (miễn phí); mỗi lần đọc là một lượt của từng từ. Collection `drill_passage` (lược đồ phiên bản 19). | D090 (APPROVED) |
 | **1.22** | **04/11/2026** | **D091.** Phiên đăng nhập mang bằng JWT (HS256) trong cookie `HttpOnly`, `SameSite=Lax`, ký bằng khoá của bản triển khai; mỗi token vẫn ứng với một bản ghi `session` nên đăng xuất, đổi mật khẩu, tắt tài khoản vẫn thu hồi phiên ngay (BR-09 giữ nguyên). NFR-07 sửa theo; thay QD-07. Phiên mở trước bản này phải đăng nhập lại một lần. | D091 (APPROVED) |
 | **1.33** | **16/11/2026** | **D108.** Lưu trữ lớp là thu lại quyền: giảng viên của lớp đã lưu trữ không còn xem, duyệt bài hay giao lộ trình cho học viên của lớp đó; khôi phục lớp thì có lại. Thêm học viên bằng email của giảng viên hay quản trị viên báo "không phải tài khoản sinh viên". Sửa FR-88, thêm AC-88.4, AC-88.5 | D108 |
+| **1.36** | **28/11/2026** | **Không thêm FR.** Đối chiếu tài liệu với mã đang chạy: ghi chú tên đề tài đã duyệt (A2–B2) và phạm vi hiển thị A1–C2 của D059; mục 1.2 ghi mô hình chấm `fusion_resp_v4` (Ridge v4 + DeBERTa-LoRA), 18 đặc trưng, thang 1–6, thanh toán payOS là phần mở rộng ngoài KPI; FR-20 thêm trạng thái hiện thực | — |
 | **1.35** | **21/11/2026** | **Mở rộng D101.** FR-104 thêm đường quản trị viên xoá tài khoản mọi vai trò ở trang quản trị: gõ lại email (hoặc mã tài khoản), không tự xoá mình, nhật ký `by=admin`; thêm AC-104.6..AC-104.10 | D101 |
 | **1.34** | **16/11/2026** | **D109.** Sinh viên vào lớp chỉ bằng việc của chính mình: giảng viên mời bằng email và sinh viên chấp nhận hay từ chối ở trang Lớp của tôi, hoặc sinh viên nhập mã lớp 6 ký tự giảng viên đưa (bật, đổi, tắt được). Quản trị viên vẫn thêm thẳng. Sinh viên rời lớp được. Email báo lời mời cho sinh viên và báo học viên mới cho giảng viên. Sửa FR-88 (AC-88.1, AC-88.2 viết lại; thêm AC-88.6..AC-88.13), UC-30; thêm UC-36; AC-53.1 thêm số lời mời trên thanh bên. Rà mục 4 theo hệ thống đang chạy: thêm UC-37..UC-41 (tự đăng ký và xác minh email, luyện lại từ chưa rõ, đoạn đọc AI, tự xoá tài khoản, theo dõi đơn nạp lượt) có đặc tả; UC-30 thêm Quản trị viên, UC-35 cho mọi vai trò; ba sơ đồ use case theo vai vẽ lại | D109 |
 | **1.32** | **16/11/2026** | **D107.** Phần AI dùng mô hình ngôn ngữ trả phí được tính bằng lượt: một lượt gồm chấm bài nói, một lần AI viết lại chính bài đó và một đoạn đọc AI; đoạn đọc thêm và bản viết lại của bài không có lượt nào trả mỗi lần 1 lượt; giảng viên soạn bài bằng AI miễn phí, 5 bản mỗi ngày; bản ghi trong lộ trình vẫn miễn phí, tối đa 30 lần ghi âm mỗi ngày. Người học chỉ thấy lượt, không thấy IDPoint; trang Lượt của tôi ghi ngày làm mới lượt miễn phí và đánh dấu phần "đã gồm trong lượt chấm" trong lịch sử. Sửa FR-85, AC-91.5, FR-98 và màn đặt giá | D107 |
@@ -92,9 +95,9 @@ AICEFR nhận file audio bài nói tiếng Anh (độc thoại, Task A và Task 
 - Upload/quản lý phiên đánh giá, lưu audio ở kho có kiểm soát.
 - Quality Control audio: duration, sample rate, clipping, silence ratio, SNR proxy.
 - ASR local (faster-whisper) với word-level timestamp, ưu tiên bản verbatim giữ filler `um/uh`.
-- Trích 14 đặc trưng định lượng (fluency + lexical + chất lượng transcript).
-- Mô hình chấm: ridge regression trên đặc trưng + BERT text grader, late fusion, đầu ra thang 0–6.
-- Quy band A2/B1/B2 từ thang 0–6 theo bảng ngưỡng có version.
+- Trích đặc trưng định lượng (fluency + lexical + chất lượng transcript); bản đang chạy dùng 18 đặc trưng.
+- Mô hình chấm: ridge regression trên đặc trưng + mô hình văn bản tinh chỉnh, late fusion. Bản đang chạy (28/11/2026) là `fusion_resp_v4`: Ridge v4 + DeBERTa-v3-base tinh chỉnh bằng LoRA, trọng số học bằng stacking, đầu ra cắt về thang 1–6 (SDD ADR-02).
+- Quy band từ thang điểm theo bảng ngưỡng có version: ban đầu A2/B1/B2, từ D059 hiển thị sáu band A1–C2 (chỉ A2–B2 được kiểm định).
 - Báo cáo bằng chứng: trích đoạn transcript, mốc thời gian pause/filler, từ có ASR confidence thấp.
 - Cờ chuyển giảng viên (low confidence / audio kém / điểm gần ranh giới).
 - Màn hình giảng viên duyệt và sửa điểm, lưu audit record.
@@ -104,9 +107,10 @@ AICEFR nhận file audio bài nói tiếng Anh (độc thoại, Task A và Task 
 
 - Chấm tiêu chí **Interaction** từ hội thoại (không có Task C trong bản này).
 - Cấp chứng chỉ CEFR; quyết định đậu/rớt/xếp lớp tự động.
-- A1, C1, C2; người dưới 18 tuổi; ngôn ngữ khác tiếng Anh.
-- Fine-tune mô hình nền lớn, huấn luyện ASR từ đầu.
-- Mobile app native, chatbot hội thoại, LMS đầy đủ, proctoring, thanh toán.
+- Cam kết độ chính xác cho A1, C1, C2 (chỉ hiển thị từ D059, chưa hiệu chuẩn); người dưới 18 tuổi; ngôn ngữ khác tiếng Anh.
+- Fine-tune mô hình nền lớn, huấn luyện ASR từ đầu. (Có tinh chỉnh LoRA một mô hình văn bản cỡ base, không phải mô hình nền lớn.)
+- Mobile app native, chatbot hội thoại, LMS đầy đủ, proctoring.
+- Thanh toán ban đầu nằm ngoài phạm vi. Sau đó được thêm làm phần mở rộng, **không thuộc KPI của đề tài**: bán gói lượt qua payOS (FR-100, FR-102; D095, D099, D106, D107).
 - Speaker identification, suy diễn cảm xúc/tính cách/giới tính/dân tộc.
 
 ## 1.3. Định nghĩa và từ viết tắt
@@ -555,6 +559,11 @@ Ngưỡng mặc định (`qc_config_version = "qc-v1"`, là ngưỡng candidate,
 ### FR-20 — Kết hợp hai mô hình (late fusion)
 
 **Mô tả:** Điểm cuối là tổ hợp tuyến tính `score_final = w1 × score_feature + w2 × score_text + b`, trọng số học trên tập dev và đóng băng trong `fusion_{version}.json`.
+
+> **Hiện thực (28/11/2026):** artifact `fusion_resp_v4`, chạy production từ 16/11/2026, mã ở `src/aicefr/scoring/fusion.py`.
+> - `score_feature` lấy từ Ridge v4 trên 18 đặc trưng; `score_text` lấy từ DeBERTa-v3-base tinh chỉnh LoRA (không phải BERT như bản đầu).
+> - w1, w2, b học bằng stacking trên dự đoán ngoài fold, 5 fold theo người nói. Giá trị nằm trong artifact ngoài repo (dữ liệu S&I).
+> - Không có bản chép lời hoặc mô hình văn bản lỗi thì dùng riêng `ridge_resp_v4`, đúng tinh thần AC-20.2.
 **Ưu tiên:** M
 
 | Acceptance Criteria |

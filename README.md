@@ -11,9 +11,9 @@ rồi biến việc luyện tập thành một lộ trình bài học ngắn. Gi
 
 [![Dùng thử](https://img.shields.io/badge/D%C3%B9ng_th%E1%BB%AD-speakup.fit-e64a19?style=for-the-badge)](https://speakup.fit)
 
-[![CI](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml)
-[![Deploy EC2](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml)
-[![CodeQL](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml)
+[![CI](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/ci.yml)
+[![Deploy EC2](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/deploy.yml)
+[![CodeQL](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml/badge.svg?branch=production)](https://github.com/ThanhSangLouis/ai-assessor-cefr/actions/workflows/codeql.yml)
 ![Python 3.12](https://img.shields.io/badge/Python-3.12-3776ab?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/MongoDB-7-47a248?logo=mongodb&logoColor=white)
@@ -76,7 +76,7 @@ cần sửa gì. Giảng viên thì không đủ thời gian nghe từng bài. S
     <td width="50%" valign="top">
       <img src="docs/assets/readme/review-one.webp" alt="Màn hình giảng viên duyệt bài: bản chép lời, bằng chứng, kết quả máy chấm và quyết định của giảng viên">
       <h3>Giảng viên quyết định</h3>
-      Bài máy chưa chắc chắn tự vào hàng đợi. Giảng viên nghe lại, đối chiếu bằng chứng, giữ hoặc sửa band. Có chấm mù kép để đo độ đồng thuận.
+      Bài máy chưa chắc chắn tự vào hàng đợi. Giảng viên nghe lại, đối chiếu bằng chứng, giữ hoặc sửa band.
     </td>
     <td width="50%" valign="top" align="center">
       <img src="docs/assets/readme/practice-mobile.webp" alt="Lộ trình học trên điện thoại" width="260">
@@ -96,8 +96,8 @@ cần sửa gì. Giảng viên thì không đủ thời gian nghe từng bài. S
 | Đánh giá | Ước lượng band A1–C2, khoảng tin cậy conformal 90%, gắn cờ bài cần người duyệt, nhận xét theo năm tiêu chí Range, Accuracy, Fluency, Coherence, Phonology |
 | Bằng chứng | Bản chép lời đồng bộ với âm thanh, từ máy nghe chưa rõ, chỗ ngập ngừng, tốc độ nói, từ nối, xuất PDF và JSON |
 | Luyện tập | Lộ trình sáu bậc, bài học nhiều bước, ôn tập, nói lại, luyện từ khó, đọc đoạn văn do AI viết, cụm từ hay dùng, thành tựu và chuỗi ngày học |
-| Giảng viên | Hàng đợi duyệt, chấm mù kép, lớp học, soạn đề và bài học, lộ trình riêng cho lớp, thống kê lớp |
-| Tài khoản | Đăng nhập bằng mật khẩu hoặc Google (OAuth PKCE), đồng thuận dữ liệu, xoá dữ liệu theo yêu cầu, nhật ký kiểm toán |
+| Giảng viên | Hàng đợi duyệt, lớp học, soạn đề và bài học, lộ trình riêng cho lớp, thống kê lớp |
+| Tài khoản | Đăng nhập bằng mật khẩu hoặc Google (OAuth PKCE), xuất dữ liệu cá nhân, tự xoá tài khoản, nhật ký kiểm toán |
 | Tính lượt | Lượt chấm theo phút nói (1 lượt = 2.000 IDPoint), lượt miễn phí mỗi tháng, bản ghi miễn phí mỗi ngày trong lộ trình, gói lượt qua payOS (chuyển khoản VietQR), email biên nhận. Mặc định tắt (`AICEFR_METERING`) |
 | Vận hành | Ba dịch vụ tách rời, hàng đợi Redis, lưu bản ghi trên S3 tương thích, chỉ số Prometheus và Grafana, sao lưu MongoDB |
 
@@ -125,7 +125,7 @@ Với bài độc thoại, tiêu chí Interaction luôn để trống vì không
 
 | Dịch vụ | Việc chính | Lưu trữ |
 | --- | --- | --- |
-| `core` | Tài khoản, phiên, Google OAuth PKCE, đồng thuận, bài nộp và đánh giá, duyệt bài, chấm mù kép, lộ trình, tính lượt NetID IDPoint, thanh toán | MongoDB `aicefr`, `aicefr_learning`, `aicefr_metering` |
+| `core` | Tài khoản, phiên, Google OAuth PKCE, bài nộp và đánh giá, duyệt bài, lộ trình, tính lượt NetID IDPoint, thanh toán | MongoDB `aicefr`, `aicefr_learning`, `aicefr_metering` |
 | `speech` | Xử lý âm thanh độc lập, nhận việc qua Redis BullMQ, trả kết quả qua Redis Streams | Không giữ khoá hay dữ liệu người dùng |
 | `web` | Giao diện Jinja2, tệp tĩnh, BFF gọi `core` qua HTTP nội bộ | Không có |
 
@@ -214,13 +214,16 @@ Bản chạy thật ở **[speakup.fit](https://speakup.fit)** trên AWS EC2.
 
 ```mermaid
 flowchart LR
-    PR["Pull request"] --> CI["CI: lint, test,<br/>MongoDB + Redis, Docker, CodeQL"]
-    CI -->|xanh| MAIN["merge vào main"]
-    MAIN --> DEP["Deploy EC2<br/>SSH, dựng lại ảnh, kiểm sức khoẻ"]
+    PR["PR tính năng"] --> CI["CI: lint, test,<br/>MongoDB + Redis, Docker, CodeQL"]
+    CI -->|xanh| DEV["merge vào dev"]
+    DEV --> REL["PR dev → production<br/>CI chạy lại"]
+    REL -->|xanh| PROD["merge vào production"]
+    PROD --> DEP["Deploy EC2<br/>SSH, dựng lại ảnh, kiểm sức khoẻ"]
     DEP --> LIVE(["speakup.fit"])
 ```
 
-`main` có branch protection: mọi thay đổi đi qua pull request, CI xanh mới được merge, merge xong thì tự triển khai.
+`dev` (nhánh tích hợp, mặc định) và `production` (bản đang chạy) đều có branch protection: mọi thay đổi đi qua pull request, CI xanh mới được merge. Chỉ merge vào `production` mới tự triển khai.
+Quy trình nhánh: [QUY_TRINH_NHANH.md](docs/plan/QUY_TRINH_NHANH.md).
 Cấu trúc máy chủ, luồng deploy và lỗi hay gặp: [TRIEN_KHAI_CHO_AI.md](docs/plan/TRIEN_KHAI_CHO_AI.md).
 Dựng lại máy chủ từ đầu: [TRIEN_KHAI_EC2.md](docs/plan/TRIEN_KHAI_EC2.md).
 

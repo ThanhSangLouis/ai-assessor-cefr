@@ -9,10 +9,10 @@
 | TC2.1 — Phân tích nghiệp vụ, SRS và thiết kế | [tc2-1-requirements-design](tc2-1-requirements-design/README.md) | PARTIAL |
 | TC2.2 — Mức độ hoàn thiện sản phẩm | [tc2-2-product](tc2-2-product/README.md) | PARTIAL — source/local demo, user acceptance PENDING |
 | TC2.3 — Làm chủ và kiểm soát AI | [tc2-3-ai-usage](tc2-3-ai-usage/README.md) | PARTIAL |
-| TC2.4 — Chất lượng mã nguồn | [tc2-4-code-quality](tc2-4-code-quality/README.md) | PARTIAL — actual diff/review/lint local |
-| TC2.5 — Kiểm thử phần mềm | [tc2-5-testing](tc2-5-testing/README.md) | PARTIAL — regression/coverage/smoke, không là accuracy validation |
-| TC2.6 — CI/CD và vận hành | [tc2-6-cicd-ops](tc2-6-cicd-ops/README.md) | PARTIAL — workflow/local guide, remote run/deploy chưa có |
-| TC2.7 — Thực nghiệm người dùng | [tc2-7-user-study](tc2-7-user-study/README.md) | PENDING |
+| TC2.4 — Chất lượng mã nguồn | [tc2-4-code-quality](tc2-4-code-quality/README.md) | Có đủ (28/11): ruff, ESLint, gitleaks toàn lịch sử, CodeQL, Trivy, convention; chờ GVHD |
+| TC2.5 — Kiểm thử phần mềm | [tc2-5-testing](tc2-5-testing/README.md) | Có đủ (28/11): kế hoạch tổng, 27 kế hoạch con, 1.901 test, độ phủ 91 %, danh sách defect; chờ GVHD |
+| TC2.6 — CI/CD và vận hành | [tc2-6-cicd-ops](tc2-6-cicd-ops/README.md) | Có đủ (28/11): CI, deploy EC2 tự động, https://speakup.fit, đo uptime; chờ GVHD |
+| TC2.7 — Thực nghiệm người dùng | [tc2-7-user-study](tc2-7-user-study/README.md) | PENDING — bộ tài liệu sẵn (28/11), chạy 01–03/12/2026 |
 | TC3 — Chất lượng thuyết trình | [tc3-presentation](tc3-presentation/README.md) | PENDING |
 | TC4 — Luận văn và tài liệu tham khảo | [tc4-thesis](tc4-thesis/README.md) | PENDING |
 | TC5 — Trả lời hội đồng | [tc5-defense](tc5-defense/README.md) | PENDING |
@@ -26,12 +26,12 @@
 | 2 | Sổ tiến độ hằng tuần có xác nhận GVHD | [00-process](00-process/README.md) | Báo cáo W1 có; xác nhận GVHD chưa có |
 | 3 | Cam kết sản phẩm cuối + metric có chữ ký | [00-process](00-process/README.md) | PENDING |
 | 4 | Link Git và lịch sử commit, quyền hội đồng | [TC2.2](tc2-2-product/README.md) / [TC2.4](tc2-4-code-quality/README.md) | Git history có; branch W3 local chưa push, quyền hội đồng chưa xác minh |
-| 5 | AI Usage Log hoặc cam kết không dùng AI | [TC2.3](tc2-3-ai-usage/README.md) | Sheet Thắng có prompts W3/Luna và correction trước dispatch |
+| 5 | AI Usage Log hoặc cam kết không dùng AI | [TC2.3](tc2-3-ai-usage/README.md) | Workbook W01–W12; Sang W06, W08–W11 trích từ bản ghi phiên gốc (28/11); Thắng và Nguyên còn trống W09, W11 |
 | 6 | SRS/SDD và sơ đồ | [TC2.1](tc2-1-requirements-design/README.md) | Báo cáo/sơ đồ W1 có; module verdict riêng; W3 scope có đủ artifact triển khai |
-| 7 | Static analysis, secret scan, convention | [TC2.4](tc2-4-code-quality/README.md) | Ruff/guards và content review local có; scan limits ghi rõ |
-| 8 | Test plan/case/code/coverage/defect | [TC2.5](tc2-5-testing/README.md) | W3 scope có tests/evidence/review; kết quả gắn revision |
-| 9 | Config pipeline, run/deploy history, link | [TC2.6](tc2-6-cicd-ops/README.md) | CI config/local run có; remote run/deploy NOT_RUN |
-| 10 | User study: task, người tham gia ẩn danh, data, metric, cải tiến | [TC2.7](tc2-7-user-study/README.md) | PENDING |
+| 7 | Static analysis, secret scan, convention | [TC2.4](tc2-4-code-quality/README.md) | Ruff + ESLint 0 lỗi; gitleaks 353 commit: 0; [CODING_CONVENTION.md](../CODING_CONVENTION.md) |
+| 8 | Test plan/case/code/coverage/defect | [TC2.5](tc2-5-testing/README.md) | [TEST_PLAN.md](../test/TEST_PLAN.md), [DEFECTS.md](../test/DEFECTS.md), CI 1.802 passed, độ phủ 91,07 % |
+| 9 | Config pipeline, run/deploy history, link | [TC2.6](tc2-6-cicd-ops/README.md) | CI + Deploy EC2 xanh 26/11; https://speakup.fit |
+| 10 | User study: task, người tham gia ẩn danh, data, metric, cải tiến | [TC2.7](tc2-7-user-study/README.md) | PENDING — [kịch bản](tc2-7-user-study/KICH_BAN_THUC_NGHIEM.md) sẵn |
 | 11 | Báo cáo trùng lặp, tài liệu tham khảo ngoại ngữ | [TC4](tc4-thesis/README.md) | PENDING |
 | 12 | Minh chứng kết quả nổi bật | [TC6](tc6-achievements/README.md) | PENDING |
 

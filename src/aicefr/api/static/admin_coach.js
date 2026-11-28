@@ -26,7 +26,6 @@
 
   // ---------------------------------------------------------------- today
   function gauge(d) {
-    const t = d.today;
     const budget = d.tier === "paid";
     const used = d.used_today;
     const limit = d.cap_today;

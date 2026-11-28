@@ -901,7 +901,6 @@ if (printButton) {
 // ---------------------------------------------------------------- next band (D069)
 // Targets in numbers read off the scoring model, and the learner's own answer
 // rewritten one band higher by a language model, made on request and kept.
-const COACH_DIR = { up: "tăng", down: "giảm" };
 
 function coachTargets(nb) {
   const num = (x) => escapeHtml(String(x).replace(".", ","));
