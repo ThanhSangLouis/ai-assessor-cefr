@@ -7,9 +7,9 @@ name: CodeQL
 
 on:
   push:
-    branches: [main]
+    branches: [production, dev]
   pull_request:
-    branches: [main]
+    branches: [production, dev]
   schedule:
     - cron: "17 2 * * 1"  # Mondays 09:17 Vietnam time: new queries, old code
   workflow_dispatch:

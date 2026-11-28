@@ -1,14 +1,14 @@
 # Triển khai lên AWS EC2, tự động từ GitHub Actions
 
-Hướng dẫn này đưa hệ thống lên một máy EC2 chạy Ubuntu 24.04. Mỗi lần `main` có commit mới và CI xanh, hệ thống tự cập nhật. Máy EC2 được dùng như một VPS, nên phần lớn các bước dùng lại [TRIEN_KHAI_VPS.md](TRIEN_KHAI_VPS.md). Tài liệu này chỉ ghi phần riêng của AWS và phần tự động.
+Hướng dẫn này đưa hệ thống lên một máy EC2 chạy Ubuntu 24.04. Mỗi lần `production` có commit mới và CI xanh, hệ thống tự cập nhật. Máy EC2 được dùng như một VPS, nên phần lớn các bước dùng lại [TRIEN_KHAI_VPS.md](TRIEN_KHAI_VPS.md). Tài liệu này chỉ ghi phần riêng của AWS và phần tự động.
 
 | Tệp | Việc |
 | --- | --- |
-| [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) | Workflow `Deploy EC2`: sau khi CI xanh trên `main`, runner của GitHub SSH vào EC2, sao lưu, rồi chạy `deploy/vps/deploy.sh` |
+| [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) | Workflow `Deploy EC2`: sau khi CI xanh trên `production`, runner của GitHub SSH vào EC2, sao lưu, rồi chạy `deploy/vps/deploy.sh` |
 | `deploy/vps/*.sh`, `docker-compose.prod.yml`, `deploy/Caddyfile` | Giữ nguyên như trong hướng dẫn VPS |
 
 ```
-push main ──▶ CI (5 job) ──xanh──▶ Deploy EC2 (ubuntu-latest)
+push production ──▶ CI (5 job) ──xanh──▶ Deploy EC2 (ubuntu-latest)
                                         │ ssh + rsync, khoá deploy riêng
                                         ▼
                          EC2: backup.sh ─▶ docker compose up -d --build ─▶ /healthz
@@ -126,7 +126,7 @@ Bước này cần **quyền admin** của repo nộp bài. Nếu không có, nh
 
 **Settings → Environments → New environment**, đặt tên `production`:
 
-- **Deployment branches and tags:** chọn *Selected branches*, thêm `main`.
+- **Deployment branches and tags:** chọn *Selected branches*, thêm `production`.
 - Tuỳ chọn: **Required reviewers**, nếu muốn mỗi lần deploy phải có người bấm duyệt.
 - **Environment secrets:**
 
@@ -148,17 +148,17 @@ Khi environment chưa có đủ secret, job `Deploy EC2` vẫn xanh và chỉ gh
 Lần đầu nên chạy tay, để xem trực tiếp quá trình dựng ảnh (5–15 phút). Chọn một trong hai cách:
 
 - trên máy của bạn: `deploy/vps/deploy.sh aicefr-ec2` (dùng mục `aicefr-ec2` trong `~/.ssh/config` ở bước 4);
-- trên GitHub: **Actions → Deploy EC2 → Run workflow**, chọn nhánh `main`.
+- trên GitHub: **Actions → Deploy EC2 → Run workflow**, chọn nhánh `production`.
 
 Sau đó làm tiếp [mục 6](TRIEN_KHAI_VPS.md#6-tạo-quản-trị-viên-đầu-tiên) (tạo quản trị viên), [mục 7](TRIEN_KHAI_VPS.md#7-kiểm-tra-toàn-hệ-thống) (kiểm tra toàn hệ thống) và [mục 8](TRIEN_KHAI_VPS.md#8-sao-lưu-định-kỳ) (đặt lịch sao lưu) của hướng dẫn VPS.
 
 ## 8. Triển khai tự động
 
-Từ đây, mỗi pull request được merge vào `main` sẽ đi qua các bước sau:
+Từ đây, mỗi pull request được merge vào `production` (từ `dev` hoặc `hotfix/*`, [QUY_TRINH_NHANH.md](QUY_TRINH_NHANH.md)) sẽ đi qua các bước sau:
 
-1. CI chạy trên commit mới của `main`.
+1. CI chạy trên commit mới của `production`.
 2. CI xanh thì `Deploy EC2` bắt đầu. CI đỏ thì không có gì xảy ra.
-3. Job bỏ qua nếu commit đó không còn là commit mới nhất của `main`. Nhờ vậy, khi hai lần CI xong không theo thứ tự, máy chủ không bị đưa về bản cũ.
+3. Job bỏ qua nếu commit đó không còn là commit mới nhất của `production`. Nhờ vậy, khi hai lần CI xong không theo thứ tự, máy chủ không bị đưa về bản cũ.
 4. Job chạy `backup.sh` trên máy chủ, như [mục 9.2](TRIEN_KHAI_VPS.md#9-cập-nhật-phiên-bản). Nếu sao lưu lỗi thì dừng, không deploy.
 5. Job chạy `deploy/vps/deploy.sh`: rsync mã, `docker compose up -d --build`, rồi chờ `https://<AICEFR_DOMAIN>/healthz`.
 
@@ -169,7 +169,7 @@ Mỗi lúc chỉ có một lần deploy; lần sau xếp hàng chờ lần trư�
 ## 9. Tắt máy khi không dùng
 
 - **EC2 → Instance state → Stop**: không tính tiền máy, nhưng vẫn tính ổ EBS (khoảng 4 USD/tháng cho 40 GB) và Elastic IP. Khi **Start** lại, các container tự chạy (`restart: unless-stopped`) với cùng IP.
-- Khi máy đang tắt, nếu `main` có commit mới thì job `Deploy EC2` sẽ đỏ vì không SSH được. Bật máy lên rồi bấm **Re-run** là xong.
+- Khi máy đang tắt, nếu `production` có commit mới thì job `Deploy EC2` sẽ đỏ vì không SSH được. Bật máy lên rồi bấm **Re-run** là xong.
 - **Terminate** sẽ xoá máy cùng ổ đĩa. Trước khi terminate, chép thư mục sao lưu ra ngoài.
 
 ## 10. Giới hạn
