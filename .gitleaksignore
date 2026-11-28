@@ -19,3 +19,7 @@ a4fa8a665fe9389222bff455685de7a9863ab501:.env.production.example:generic-api-key
 # Bao nham (D081): mat khau THU khi doi ten tests/test_signup_recovery.py thanh
 # tests/test_signup.py; commit sau viet bang join. Khong phai khoa.
 7937de5520200fef7230aef45004b0edb37afc83:tests/test_signup.py:generic-api-key:21
+# Bao nham (quet toan lich su 28/11/2026): ma SHA-256 cua tep, khong phai khoa.
+# local.py ghim checksum cua tokenizer.json (Whisper small); checks.json ghi checksum test_auth.py.
+1f14f7fb7b46cef47bcca86c8b7319caa24a6d02:docs/sdd/modules/m01-intake-student/evidence/pr-2026-10-12/checks.json:generic-api-key:118
+98e70da8427b9c301522fc5f01c8fd6161fa62c0:src/aicefr/asr/local.py:generic-api-key:15

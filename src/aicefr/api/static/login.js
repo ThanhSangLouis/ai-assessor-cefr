@@ -52,6 +52,8 @@ function safeNext(value, origin) {
   if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
     return null;
   }
+  // Control characters are what the check rejects (redirect target hardening).
+  // eslint-disable-next-line no-control-regex
   if (/[\\\s\u0000-\u001f\u007f-\u009f]/.test(value)) return null;
   let decoded;
   try {
@@ -59,6 +61,8 @@ function safeNext(value, origin) {
   } catch (err) {
     return null;
   }
+  // Control characters are what the check rejects (redirect target hardening).
+  // eslint-disable-next-line no-control-regex
   if (decoded.startsWith("//") || /[\\\u0000-\u001f\u007f-\u009f]/.test(decoded)) return null;
   let url;
   try {

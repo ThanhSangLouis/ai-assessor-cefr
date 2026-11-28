@@ -113,3 +113,6 @@ build/
 *.pth
 .idea/
 .vscode/
+
+# JavaScript lint tooling (ESLint); package-lock.json is committed
+node_modules/

@@ -17,7 +17,7 @@ const MAX_PICK = 12;
 let data = null;
 let units = [];
 const picked = new Set();
-let open = null; // the attempt in the dialog: { id, words, machine }
+let dialogAttempt = null; // the attempt in the dialog: { id, words, machine }
 
 const pct = (x) => Math.round((Number(x) || 0) * 100);
 const makeLabel = () =>
@@ -238,7 +238,6 @@ root.addEventListener("click", (e) => {
 
 $("words-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const unit = units.find((u) => u.unit_id === $("words-unit").value);
   const body = {
     title: $("words-title").value.trim(),
     keywords: [...picked],
@@ -261,11 +260,11 @@ $("words-form").addEventListener("submit", async (e) => {
 
 // ---------------------------------------------------------------- one attempt
 function wordButtons() {
-  return Object.keys(open.words)
+  return Object.keys(dialogAttempt.words)
     .map((i) => {
-      const w = open.text[i];
-      const st = open.words[i];
-      const changed = st !== open.machine[i];
+      const w = dialogAttempt.text[i];
+      const st = dialogAttempt.words[i];
+      const changed = st !== dialogAttempt.machine[i];
       return (
         `<button type="button" class="w ${st}${changed ? " teacher" : ""}" data-index="${i}" ` +
         `aria-label="${escapeHtml(w)}: ${STATUS_NAMES[st]}${changed ? ", giáo viên đã sửa" : ""}">${escapeHtml(w)}</button>`
@@ -284,11 +283,11 @@ async function openAttempt(id) {
   }
   const res = d.result;
   const ov = d.override || {};
-  open = { id, words: {}, machine: {}, text: {} };
+  dialogAttempt = { id, words: {}, machine: {}, text: {} };
   res.words.forEach((w) => {
-    open.words[w.index] = w.teacher || w.status;
-    open.machine[w.index] = w.status;
-    open.text[w.index] = w.text;
+    dialogAttempt.words[w.index] = w.teacher || w.status;
+    dialogAttempt.machine[w.index] = w.status;
+    dialogAttempt.text[w.index] = w.text;
   });
   const has = (k) => Object.prototype.hasOwnProperty.call(ov, k);
   const verdict = has("passed") ? (ov.passed ? "pass" : "fail") : "keep";
@@ -336,22 +335,22 @@ async function openAttempt(id) {
 
 $("attempt-body").addEventListener("click", async (e) => {
   const word = e.target.closest("[data-index]");
-  if (word && open) {
+  if (word && dialogAttempt) {
     const i = word.dataset.index;
-    open.words[i] = NEXT_STATUS[open.words[i]];
+    dialogAttempt.words[i] = NEXT_STATUS[dialogAttempt.words[i]];
     $("override-words").innerHTML = wordButtons();
     const again = $("override-words").querySelector(`[data-index="${CSS.escape(i)}"]`);
     if (again) again.focus();
     return;
   }
-  if (!e.target.closest("#override-save") || !open) return;
+  if (!e.target.closest("#override-save") || !dialogAttempt) return;
   const words = {};
-  Object.keys(open.words).forEach((i) => {
-    if (open.words[i] !== open.machine[i]) words[i] = open.words[i];
+  Object.keys(dialogAttempt.words).forEach((i) => {
+    if (dialogAttempt.words[i] !== dialogAttempt.machine[i]) words[i] = dialogAttempt.words[i];
   });
   const v = document.querySelector('input[name="verdict"]:checked').value;
   const body = { words, note: $("override-note").value.trim(), passed: v === "keep" ? null : v === "pass" };
-  const r = await fetch(`/api/v1/teach/attempts/${encodeURIComponent(open.id)}/override`, {
+  const r = await fetch(`/api/v1/teach/attempts/${encodeURIComponent(dialogAttempt.id)}/override`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
